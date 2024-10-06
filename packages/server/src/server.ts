@@ -61,7 +61,6 @@ async function handleMessages<
   }
 
   async function handleNext() {
-    // Read next message
     const next = await transport.read()
     if (next.done) {
       await disposer.dispose()
@@ -93,6 +92,8 @@ async function handleMessages<
       case 'stream':
         throw new Error('Not implemented')
     }
+
+    handleNext()
   }
   handleNext()
 
@@ -118,7 +119,6 @@ export function serve<Definitions extends AnyActionDefinitions, Meta extends Opt
   const rejections = createPipe<RejectionType>()
   const rejectionsWriter = rejections.writable.getWriter()
   function reject(rejection: RejectionType) {
-    console.warn('Handler rejection', rejection)
     void rejectionsWriter.write(rejection)
   }
 

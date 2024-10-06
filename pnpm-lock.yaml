@@ -97,6 +97,21 @@ importers:
 
   packages/util: {}
 
+  tests/integration:
+    devDependencies:
+      '@enkaku/client':
+        specifier: workspace:^
+        version: link:../../packages/client
+      '@enkaku/protocol':
+        specifier: workspace:^
+        version: link:../../packages/protocol
+      '@enkaku/server':
+        specifier: workspace:^
+        version: link:../../packages/server
+      '@enkaku/transport':
+        specifier: workspace:^
+        version: link:../../packages/transport
+
 packages:
 
   '@ampproject/remapping@2.3.0':

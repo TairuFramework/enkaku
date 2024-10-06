@@ -8,7 +8,7 @@ import type {
   RequestActionDefinition,
   StreamActionDefinition,
 } from '@enkaku/protocol'
-import { type Deferred, defer } from '@enkaku/util'
+import { type Deferred, type Disposer, defer } from '@enkaku/util'
 
 export type InvokeReturn<Result> = {
   // biome-ignore lint/suspicious/noExplicitAny: from AbortController
@@ -149,7 +149,8 @@ export class Client<
   Definitions extends AnyActionDefinitions,
   Meta extends OptionalRecord,
   ClientDefinitions extends ClientDefinitionsType<Definitions> = ClientDefinitionsType<Definitions>,
-> {
+> implements Disposer
+{
   #meta: Meta
   #transport: ClientTransportOf<Definitions, Meta>
   #controllers: Record<string, AnyClientController> = {}
@@ -157,6 +158,13 @@ export class Client<
   constructor(params: ClientParams<Definitions, Meta>) {
     this.#meta = params.meta as Meta
     this.#transport = params.transport
+    // Abort all controllers on disconnect
+    this.#transport.disposed.then(() => {
+      for (const controller of Object.values(this.#controllers)) {
+        controller.abort()
+      }
+    })
+    // Start reading from transport
     this.#read()
   }
 
@@ -193,6 +201,14 @@ export class Client<
 
   async #write(action: AnyClientPayloadOf<Definitions>): Promise<void> {
     await this.#transport.write({ action, meta: this.#meta })
+  }
+
+  get disposed() {
+    return this.#transport.disposed
+  }
+
+  async dispose() {
+    await this.#transport.dispose()
   }
 
   async sendEvent<
