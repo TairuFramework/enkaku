@@ -1,0 +1,8 @@
+{
+  "tasks": {
+    "clean": {},
+    "build:js": {
+      "dependsOn": ["^clean"]
+    }
+  }
+}
