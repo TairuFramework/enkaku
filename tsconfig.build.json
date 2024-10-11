@@ -8,7 +8,6 @@
     "module": "es2022",
     "moduleResolution": "node",
     "strict": true,
-    "target": "es2022",
-    "jsx": "react-jsx"
+    "target": "es2022"
   }
 }

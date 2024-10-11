@@ -6,6 +6,7 @@ export type Deferred<T, R = unknown> = {
   reject: (reason?: R) => void
 }
 
+// Replace by Promise.withResolvers() when widely available
 export function defer<T, R = unknown>(): Deferred<T, R> {
   let resolve: (value: T | PromiseLike<T>) => void = noop
   let reject: (reason?: unknown) => void = noop

@@ -7,10 +7,18 @@ import type {
 import { createPipe } from '@enkaku/stream'
 import { type Disposer, createDisposer } from '@enkaku/util'
 
+import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'
 import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { type RequestMessageOf, handleRequest } from './handlers/request.js'
+import { type StreamMessageOf, handleStream } from './handlers/stream.js'
 import { ErrorRejection, type RejectionType } from './rejections.js'
-import type { ActionController, ActionHandlers, HandlerContext } from './types.js'
+import type {
+  ActionController,
+  ActionHandlers,
+  ActionSendType,
+  ChannelController,
+  HandlerContext,
+} from './types.js'
 
 export type HandleMessagesParams<
   Definitions extends AnyActionDefinitions,
@@ -34,7 +42,7 @@ async function handleMessages<
     reject,
     send: (message) => transport.write(message),
   }
-  const running: Record<string, Promise<unknown>> = Object.create(null)
+  const running: Record<string, Promise<void>> = Object.create(null)
 
   const disposer = createDisposer(async () => {
     // Abort all currently running handlers
@@ -73,7 +81,11 @@ async function handleMessages<
         controllers[msg.action.id]?.abort()
         break
       case 'channel':
-        throw new Error('Not implemented')
+        process(
+          msg.action,
+          handleChannel(context, msg as unknown as ChannelMessageOf<Definitions, Meta>),
+        )
+        break
       case 'event':
         process(
           msg.action,
@@ -86,11 +98,17 @@ async function handleMessages<
           handleRequest(context, msg as unknown as RequestMessageOf<Definitions, Meta>),
         )
         break
-      case 'send':
-        // TODO: send to tracked channel
-        throw new Error('Not implemented')
+      case 'send': {
+        const controller = controllers[msg.action.id] as ChannelController | undefined
+        controller?.writer.write(msg.action.value)
+        break
+      }
       case 'stream':
-        throw new Error('Not implemented')
+        process(
+          msg.action,
+          handleStream(context, msg as unknown as StreamMessageOf<Definitions, Meta>),
+        )
+        break
     }
 
     handleNext()

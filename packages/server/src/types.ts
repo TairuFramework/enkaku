@@ -3,17 +3,22 @@ import type {
   AnyActionDefinitions,
   AnyServerMessageOf,
   ChannelActionDefinition,
+  ChannelActionPayload,
   EventActionDefinition,
   OptionalRecord,
   RequestActionDefinition,
+  RequestActionPayload,
   StreamActionDefinition,
+  StreamActionPayload,
 } from '@enkaku/protocol'
 
 import type { RejectionType } from './rejections.js'
 
 export type RequestController = AbortController
 
-export type ChannelController<Send = unknown> = AbortController & { writable: WritableStream<Send> }
+export type ChannelController<Send = unknown> = AbortController & {
+  writer: WritableStreamDefaultWriter<Send>
+}
 
 export type ActionController<Send = unknown> = RequestController | ChannelController<Send>
 
@@ -24,7 +29,7 @@ export type EventHandlerContext<Data, Meta extends OptionalRecord> = {
 
 export type EventHandler<Data, Meta extends OptionalRecord> = (
   context: EventHandlerContext<Data, Meta>,
-) => void
+) => void | Promise<void>
 
 export type RequestHandlerContext<Params, Meta extends OptionalRecord> = {
   params: Params
@@ -111,6 +116,15 @@ export type ActionParamsType<
       ? Params
       : never
 
+export type ActionReceiveType<
+  Definitions extends Record<string, unknown>,
+  Name extends keyof Definitions & string,
+> = Definitions[Name] extends StreamActionDefinition<infer Params, infer Receive>
+  ? Receive
+  : Definitions[Name] extends ChannelActionDefinition<infer Params, infer Send, infer Receive>
+    ? Receive
+    : never
+
 export type ActionResultType<
   Definitions extends Record<string, unknown>,
   Name extends keyof Definitions & string,
@@ -126,6 +140,15 @@ export type ActionResultType<
         >
       ? Result
       : never
+
+export type ActionSendType<
+  Definitions extends Record<string, unknown>,
+  Name extends keyof Definitions & string,
+> = Definitions[Name] extends ChannelActionDefinition<infer Params, infer Send> ? Send : never
+
+export type ExecuteHandlerActionPayload<Name extends string = string> =
+  // biome-ignore lint/suspicious/noExplicitAny: any params
+  RequestActionPayload<Name, any> | StreamActionPayload<Name, any> | ChannelActionPayload<Name, any>
 
 export type HandlerContext<
   Definitions extends AnyActionDefinitions,

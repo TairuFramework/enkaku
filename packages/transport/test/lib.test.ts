@@ -11,6 +11,12 @@ describe('Transport', () => {
     await transport.write(3)
 
     const results: Array<number> = []
+    // Use read() method directly
+    const first = await transport.read()
+    if (first.value != null) {
+      results.push(first.value)
+    }
+    // Use iterator to read
     for await (const value of transport) {
       results.push(value)
       if (results.length === 3) {

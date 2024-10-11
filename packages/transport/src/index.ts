@@ -26,8 +26,10 @@ export class Transport<R, W> implements TransportType<R, W> {
   constructor(params: TransportParams<R, W>) {
     this.#params = params
     this.#disposer = createDisposer(async () => {
-      const writer = await this.#getWriter()
-      await writer.close()
+      if (this.#stream != null) {
+        const writer = await this.#getWriter()
+        await writer.close()
+      }
     })
   }
 

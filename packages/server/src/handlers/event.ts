@@ -7,6 +7,7 @@ import type {
 
 import { ErrorRejection } from '../rejections.js'
 import type { EventDataType, EventHandler, HandlerContext } from '../types.js'
+import { toPromise } from '../utils.js'
 
 export type EventMessageOf<
   Definitions extends AnyActionDefinitions,
@@ -28,12 +29,12 @@ export function handleEvent<
     Meta
   >
   if (handler == null) {
-    return new ErrorRejection(`No handler for action ${action.name}`, { info: action })
+    return new ErrorRejection(`No handler for action: ${action.name}`, { info: action })
   }
 
   const data = action.data as EventDataType<Definitions, Name>
-  return Promise.resolve(handler({ data, meta })).catch((cause) => {
-    const err = new ErrorRejection(`Error handling ${action.name}`, { info: action, cause })
+  return toPromise(() => handler({ data, meta })).catch((cause) => {
+    const err = new ErrorRejection(`Error handling action: ${action.name}`, { info: action, cause })
     context.reject(err)
   })
 }

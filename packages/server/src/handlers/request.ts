@@ -1,6 +1,5 @@
 import type {
   AnyActionDefinitions,
-  AnyServerMessageOf,
   ClientMessage,
   OptionalRecord,
   RequestActionPayloadOf,
@@ -13,6 +12,7 @@ import type {
   HandlerContext,
   RequestHandler,
 } from '../types.js'
+import { executeHandler } from '../utils.js'
 
 export type RequestMessageOf<
   Definitions extends AnyActionDefinitions,
@@ -35,30 +35,12 @@ export function handleRequest<
     Meta
   >
   if (handler == null) {
-    return new ErrorRejection(`No handler for action ${action.name}`, { info: action })
+    return new ErrorRejection(`No handler for action: ${action.name}`, { info: action })
   }
 
   const controller = new AbortController()
   context.controllers[action.id] = controller
 
   const params = action.params as ActionParamsType<Definitions, Name>
-  return Promise.resolve(handler({ params, meta, signal: controller.signal }))
-    .then((value) => {
-      if (!controller.signal.aborted) {
-        return context.send({
-          action: {
-            type: 'result',
-            id: action.id,
-            value,
-          },
-        } as AnyServerMessageOf<Definitions>)
-      }
-    })
-    .catch((cause) => {
-      const err = new ErrorRejection(`Error handling ${action.name}`, { info: action, cause })
-      context.reject(err)
-    })
-    .finally(() => {
-      delete context.controllers[action.id]
-    })
+  return executeHandler(context, action, () => handler({ params, meta, signal: controller.signal }))
 }

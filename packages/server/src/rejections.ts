@@ -36,6 +36,15 @@ export class Rejection<
   }
 }
 
+export class AbortRejection<Info extends OptionalRecord = OptionalRecord> extends Rejection<
+  RejectionReason.ABORT,
+  Info
+> {
+  constructor(info: Info) {
+    super(RejectionReason.ABORT, info)
+  }
+}
+
 export type ErrorRejectionOptions<Info extends OptionalRecord = OptionalRecord> = ErrorOptions & {
   info: Info
 }
@@ -46,9 +55,9 @@ export class ErrorRejection<Info extends OptionalRecord = OptionalRecord>
 {
   #info: Info
 
-  constructor(message: string, options?: ErrorRejectionOptions<Info>) {
-    super(message)
-    this.#info = options?.info ?? ({} as Info)
+  constructor(message: string, options = {} as ErrorRejectionOptions<Info>) {
+    super(message, { cause: options.cause })
+    this.#info = options.info ?? ({} as Info)
   }
 
   get reason(): RejectionReason.ERROR {
