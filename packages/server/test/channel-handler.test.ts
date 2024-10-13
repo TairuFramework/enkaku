@@ -1,9 +1,15 @@
-import type { AnyServerMessageOf, ErrorObject } from '@enkaku/protocol'
+import { unsignedToken } from '@enkaku/jwt'
+import type { AnyServerPayloadOf, ErrorObject } from '@enkaku/protocol'
 import { jest } from '@jest/globals'
 
 import { handleChannel } from '../src/handlers/channel.js'
 import { ErrorRejection } from '../src/rejections.js'
-import type { ChannelHandlerContext, HandlerContext } from '../src/types.js'
+import type {
+  ChannelController,
+  ChannelHandlerContext,
+  HandlerContext,
+  HandlerController,
+} from '../src/types.js'
 import { consumeReader } from '../src/utils.js'
 
 type Definitions = {
@@ -16,28 +22,31 @@ type Definitions = {
     error: ErrorObject
   }
 }
-type Meta = undefined
 
 type ChannelContext = ChannelHandlerContext<
   Definitions['test']['params'],
   Definitions['test']['send'],
-  Definitions['test']['receive'],
-  Meta
+  Definitions['test']['receive']
 >
 
 describe('handleChannel()', () => {
-  const action = { type: 'channel', id: '1', name: 'test', params: { test: true } } as const
+  const clientToken = unsignedToken({
+    typ: 'channel',
+    rid: '1',
+    cmd: 'test',
+    prm: { test: true },
+  } as const)
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
-    const unknownAction = { type: 'channel', id: '1', name: 'unknown', params: {} } as const
+    const unknownPayload = { typ: 'channel', rid: '1', cmd: 'unknown', prm: {} } as const
     const returned = handleChannel(
-      { handlers: {} } as unknown as HandlerContext<Definitions, Meta>,
+      { handlers: {} } as unknown as HandlerContext<Definitions>,
       // @ts-expect-error
-      { action: unknownAction },
+      { payload: unknownPayload },
     )
     expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for action: unknown')
-    expect((returned as ErrorRejection).info).toEqual(unknownAction)
+    expect((returned as ErrorRejection).message).toBe('No handler for command: unknown')
+    expect((returned as ErrorRejection).info).toEqual(unknownPayload)
   })
 
   test('sends receive messages', async () => {
@@ -59,24 +68,26 @@ describe('handleChannel()', () => {
     const send = jest.fn()
 
     await handleChannel(
-      { controllers, handlers: { test: handler }, reject, send } as unknown as HandlerContext<
-        Definitions,
-        Meta
-      >,
-      { action, meta: undefined },
+      {
+        controllers,
+        handlers: { test: handler },
+        reject,
+        send,
+      } as unknown as HandlerContext<Definitions>,
+      clientToken,
     )
 
     expect(send).toHaveBeenCalledTimes(4)
-    expect(send).toHaveBeenCalledWith({ action: { type: 'receive', id: '1', value: 0 } })
-    expect(send).toHaveBeenCalledWith({ action: { type: 'receive', id: '1', value: 1 } })
-    expect(send).toHaveBeenCalledWith({ action: { type: 'receive', id: '1', value: 2 } })
-    expect(send).toHaveBeenCalledWith({ action: { type: 'result', id: '1', value: 'OK' } })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 2 })
+    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
   })
 
   test('stops sending receive messages if the abort signal is triggered', async () => {
-    const controllers = {}
+    const controllers: Record<string, HandlerController> = {}
     const handler = jest.fn((ctx: ChannelContext) => {
       const writer = ctx.writable.getWriter()
       let count = 0
@@ -91,29 +102,31 @@ describe('handleChannel()', () => {
       })
     })
     const reject = jest.fn()
-    const send = jest.fn((msg: AnyServerMessageOf<Definitions>) => {
-      if (msg.action.type === 'receive' && msg.action.value === 1) {
+    const send = jest.fn((payload: AnyServerPayloadOf<Definitions>) => {
+      if (payload.typ === 'receive' && payload.val === 1) {
         controllers['1']?.abort()
       }
     })
 
     await handleChannel(
-      { controllers, handlers: { test: handler }, reject, send } as unknown as HandlerContext<
-        Definitions,
-        Meta
-      >,
-      { action, meta: undefined },
+      {
+        controllers,
+        handlers: { test: handler },
+        reject,
+        send,
+      } as unknown as HandlerContext<Definitions>,
+      clientToken,
     )
 
     expect(send).toHaveBeenCalledTimes(2)
-    expect(send).toHaveBeenCalledWith({ action: { type: 'receive', id: '1', value: 0 } })
-    expect(send).toHaveBeenCalledWith({ action: { type: 'receive', id: '1', value: 1 } })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
   })
 
   test('receives sent messages', async () => {
-    const controllers = {}
+    const controllers: Record<string, ChannelController> = {}
     const handler = jest.fn((ctx: ChannelContext) => {
       const writer = ctx.writable.getWriter()
 
@@ -133,11 +146,13 @@ describe('handleChannel()', () => {
     const send = jest.fn()
 
     const resultPromise = handleChannel(
-      { controllers, handlers: { test: handler }, reject, send } as unknown as HandlerContext<
-        Definitions,
-        Meta
-      >,
-      { action, meta: undefined },
+      {
+        controllers,
+        handlers: { test: handler },
+        reject,
+        send,
+      } as unknown as HandlerContext<Definitions>,
+      clientToken,
     )
     await controllers['1'].writer.write(0)
     await controllers['1'].writer.write(1)
@@ -145,10 +160,10 @@ describe('handleChannel()', () => {
     await resultPromise
 
     expect(send).toHaveBeenCalledTimes(4)
-    expect(send).toHaveBeenCalledWith({ action: { type: 'receive', id: '1', value: 0 } })
-    expect(send).toHaveBeenCalledWith({ action: { type: 'receive', id: '1', value: 2 } })
-    expect(send).toHaveBeenCalledWith({ action: { type: 'receive', id: '1', value: 4 } })
-    expect(send).toHaveBeenCalledWith({ action: { type: 'result', id: '1', value: 'OK' } })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 2 })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 4 })
+    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
   })

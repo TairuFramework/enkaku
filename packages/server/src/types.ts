@@ -1,15 +1,12 @@
+import type {} from '@enkaku/jwt'
 import type {
-  AnyActionDefinition,
-  AnyActionDefinitions,
-  AnyServerMessageOf,
-  ChannelActionDefinition,
-  ChannelActionPayload,
-  EventActionDefinition,
-  OptionalRecord,
-  RequestActionDefinition,
-  RequestActionPayload,
-  StreamActionDefinition,
-  StreamActionPayload,
+  AnyDefinition,
+  AnyDefinitions,
+  AnyServerPayloadOf,
+  ChannelDefinition,
+  EventDefinition,
+  RequestDefinition,
+  StreamDefinition,
 } from '@enkaku/protocol'
 
 import type { RejectionType } from './rejections.js'
@@ -20,119 +17,96 @@ export type ChannelController<Send = unknown> = AbortController & {
   writer: WritableStreamDefaultWriter<Send>
 }
 
-export type ActionController<Send = unknown> = RequestController | ChannelController<Send>
+export type HandlerController<Send = unknown> = RequestController | ChannelController<Send>
 
-export type EventHandlerContext<Data, Meta extends OptionalRecord> = {
+export type EventHandlerContext<Data> = {
   data: Data
-  meta: Meta
 }
 
-export type EventHandler<Data, Meta extends OptionalRecord> = (
-  context: EventHandlerContext<Data, Meta>,
-) => void | Promise<void>
+export type EventHandler<Data> = (context: EventHandlerContext<Data>) => void | Promise<void>
 
-export type RequestHandlerContext<Params, Meta extends OptionalRecord> = {
+export type RequestHandlerContext<Params> = {
   params: Params
-  meta: Meta
   signal: AbortSignal
 }
 
 export type HandlerReturn<Result> = Result | Promise<Result>
 
-export type RequestHandler<Params, Result, Meta extends OptionalRecord> = (
-  context: RequestHandlerContext<Params, Meta>,
+export type RequestHandler<Params, Result> = (
+  context: RequestHandlerContext<Params>,
 ) => HandlerReturn<Result>
 
-export type StreamHandlerContext<
-  Params,
-  Receive,
-  Meta extends OptionalRecord,
-> = RequestHandlerContext<Params, Meta> & {
+export type StreamHandlerContext<Params, Receive> = RequestHandlerContext<Params> & {
   writable: WritableStream<Receive>
 }
 
-export type StreamHandler<Params, Receive, Result, Meta extends OptionalRecord> = (
-  context: StreamHandlerContext<Params, Receive, Meta>,
+export type StreamHandler<Params, Receive, Result> = (
+  context: StreamHandlerContext<Params, Receive>,
 ) => HandlerReturn<Result>
 
-export type ChannelHandlerContext<
-  Params,
-  Sent,
-  Receive,
-  Meta extends OptionalRecord,
-> = StreamHandlerContext<Params, Receive, Meta> & {
+export type ChannelHandlerContext<Params, Sent, Receive> = StreamHandlerContext<Params, Receive> & {
   readable: ReadableStream<Sent>
 }
 
-export type ChannelHandler<
-  Params,
-  Sent,
-  Receive,
-  Result,
-  Meta extends OptionalRecord = OptionalRecord,
-> = (context: ChannelHandlerContext<Params, Sent, Receive, Meta>) => HandlerReturn<Result>
+export type ChannelHandler<Params, Sent, Receive, Result> = (
+  context: ChannelHandlerContext<Params, Sent, Receive>,
+) => HandlerReturn<Result>
 
-export type ActionHandlers<Definitions, Meta extends OptionalRecord> = Definitions extends Record<
-  infer Names extends string,
-  AnyActionDefinition
+export type CommandHandlers<Definitions> = Definitions extends Record<
+  infer Commands extends string,
+  AnyDefinition
 >
   ? {
-      [Name in Names & string]: Definitions[Name] extends EventActionDefinition<infer Data>
-        ? (context: EventHandlerContext<Data, Meta>) => void
-        : Definitions[Name] extends RequestActionDefinition<infer Params, infer Result>
-          ? (context: RequestHandlerContext<Params, Meta>) => HandlerReturn<Result>
-          : Definitions[Name] extends StreamActionDefinition<
-                infer Params,
-                infer Receive,
-                infer Result
-              >
-            ? (context: StreamHandlerContext<Params, Receive, Meta>) => HandlerReturn<Result>
-            : Definitions[Name] extends ChannelActionDefinition<
+      [Command in Commands & string]: Definitions[Command] extends EventDefinition<infer Data>
+        ? (context: EventHandlerContext<Data>) => void
+        : Definitions[Command] extends RequestDefinition<infer Params, infer Result>
+          ? (context: RequestHandlerContext<Params>) => HandlerReturn<Result>
+          : Definitions[Command] extends StreamDefinition<infer Params, infer Receive, infer Result>
+            ? (context: StreamHandlerContext<Params, Receive>) => HandlerReturn<Result>
+            : Definitions[Command] extends ChannelDefinition<
                   infer Params,
                   infer Send,
                   infer Receive,
                   infer Result
                 >
-              ? (
-                  context: ChannelHandlerContext<Params, Send, Receive, Meta>,
-                ) => HandlerReturn<Result>
+              ? (context: ChannelHandlerContext<Params, Send, Receive>) => HandlerReturn<Result>
               : never
     }
   : Record<string, never>
 
 export type EventDataType<
-  Definitions extends AnyActionDefinitions,
-  Name extends keyof Definitions & string,
-> = Definitions[Name] extends EventActionDefinition<infer Data> ? Data : never
+  Definitions extends AnyDefinitions,
+  Command extends keyof Definitions & string,
+> = Definitions[Command] extends EventDefinition<infer Data> ? Data : never
 
-export type ActionParamsType<
-  Definitions extends AnyActionDefinitions,
-  Name extends keyof Definitions & string,
-> = Definitions[Name] extends RequestActionDefinition<infer Params>
+export type ParamsType<
+  Definitions extends AnyDefinitions,
+  Command extends keyof Definitions & string,
+> = Definitions[Command] extends RequestDefinition<infer Params>
   ? Params
-  : Definitions[Name] extends StreamActionDefinition<infer Params>
+  : Definitions[Command] extends StreamDefinition<infer Params>
     ? Params
-    : Definitions[Name] extends ChannelActionDefinition<infer Params>
+    : Definitions[Command] extends ChannelDefinition<infer Params>
       ? Params
       : never
 
-export type ActionReceiveType<
+export type ReceiveType<
   Definitions extends Record<string, unknown>,
-  Name extends keyof Definitions & string,
-> = Definitions[Name] extends StreamActionDefinition<infer Params, infer Receive>
+  Command extends keyof Definitions & string,
+> = Definitions[Command] extends StreamDefinition<infer Params, infer Receive>
   ? Receive
-  : Definitions[Name] extends ChannelActionDefinition<infer Params, infer Send, infer Receive>
+  : Definitions[Command] extends ChannelDefinition<infer Params, infer Send, infer Receive>
     ? Receive
     : never
 
-export type ActionResultType<
+export type ResultType<
   Definitions extends Record<string, unknown>,
-  Name extends keyof Definitions & string,
-> = Definitions[Name] extends RequestActionDefinition<infer Params, infer Result>
+  Command extends keyof Definitions & string,
+> = Definitions[Command] extends RequestDefinition<infer Params, infer Result>
   ? Result
-  : Definitions[Name] extends StreamActionDefinition<infer Params, infer Receive, infer Result>
+  : Definitions[Command] extends StreamDefinition<infer Params, infer Receive, infer Result>
     ? Result
-    : Definitions[Name] extends ChannelActionDefinition<
+    : Definitions[Command] extends ChannelDefinition<
           infer Params,
           infer Send,
           infer Receive,
@@ -141,21 +115,14 @@ export type ActionResultType<
       ? Result
       : never
 
-export type ActionSendType<
+export type SendType<
   Definitions extends Record<string, unknown>,
-  Name extends keyof Definitions & string,
-> = Definitions[Name] extends ChannelActionDefinition<infer Params, infer Send> ? Send : never
+  Command extends keyof Definitions & string,
+> = Definitions[Command] extends ChannelDefinition<infer Params, infer Send> ? Send : never
 
-export type ExecuteHandlerActionPayload<Name extends string = string> =
-  // biome-ignore lint/suspicious/noExplicitAny: any params
-  RequestActionPayload<Name, any> | StreamActionPayload<Name, any> | ChannelActionPayload<Name, any>
-
-export type HandlerContext<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord,
-> = {
-  controllers: Record<string, ActionController>
-  handlers: ActionHandlers<Definitions, Meta>
+export type HandlerContext<Definitions extends AnyDefinitions> = {
+  controllers: Record<string, HandlerController>
+  handlers: CommandHandlers<Definitions>
   reject: (rejection: RejectionType) => void
-  send: (message: AnyServerMessageOf<Definitions>) => Promise<void>
+  send: (payload: AnyServerPayloadOf<Definitions>) => Promise<void>
 }

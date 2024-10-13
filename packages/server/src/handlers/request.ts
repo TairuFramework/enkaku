@@ -1,46 +1,32 @@
-import type {
-  AnyActionDefinitions,
-  ClientMessage,
-  OptionalRecord,
-  RequestActionPayloadOf,
-} from '@enkaku/protocol'
+import type { AnyDefinitions, ClientMessage, RequestPayloadOf } from '@enkaku/protocol'
 
 import { ErrorRejection } from '../rejections.js'
-import type {
-  ActionParamsType,
-  ActionResultType,
-  HandlerContext,
-  RequestHandler,
-} from '../types.js'
+import type { HandlerContext, ParamsType, RequestHandler, ResultType } from '../types.js'
 import { executeHandler } from '../utils.js'
 
 export type RequestMessageOf<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord,
-  Name extends keyof Definitions & string = keyof Definitions & string,
-> = ClientMessage<RequestActionPayloadOf<Name, Definitions[Name]>, Meta>
+  Definitions extends AnyDefinitions,
+  Command extends keyof Definitions & string = keyof Definitions & string,
+> = ClientMessage<RequestPayloadOf<Command, Definitions[Command]>>
 
 export function handleRequest<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord,
-  Name extends keyof Definitions & string,
+  Definitions extends AnyDefinitions,
+  Command extends keyof Definitions & string,
 >(
-  context: HandlerContext<Definitions, Meta>,
-  message: RequestMessageOf<Definitions, Meta, Name>,
+  ctx: HandlerContext<Definitions>,
+  msg: RequestMessageOf<Definitions, Command>,
 ): ErrorRejection | Promise<void> {
-  const { action, meta } = message
-  const handler = context.handlers[action.name] as RequestHandler<
-    ActionParamsType<Definitions, Name>,
-    ActionResultType<Definitions, Name>,
-    Meta
+  const handler = ctx.handlers[msg.payload.cmd] as RequestHandler<
+    ParamsType<Definitions, Command>,
+    ResultType<Definitions, Command>
   >
   if (handler == null) {
-    return new ErrorRejection(`No handler for action: ${action.name}`, { info: action })
+    return new ErrorRejection(`No handler for command: ${msg.payload.cmd}`, { info: msg.payload })
   }
 
   const controller = new AbortController()
-  context.controllers[action.id] = controller
+  ctx.controllers[msg.payload.rid] = controller
 
-  const params = action.params as ActionParamsType<Definitions, Name>
-  return executeHandler(context, action, () => handler({ params, meta, signal: controller.signal }))
+  const params = msg.payload.prm as ParamsType<Definitions, Command>
+  return executeHandler(ctx, msg.payload, () => handler({ params, signal: controller.signal }))
 }

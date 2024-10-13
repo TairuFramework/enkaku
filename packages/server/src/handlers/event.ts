@@ -1,40 +1,32 @@
-import type {
-  AnyActionDefinitions,
-  ClientMessage,
-  EventActionPayloadOf,
-  OptionalRecord,
-} from '@enkaku/protocol'
+import type { AnyDefinitions, ClientMessage, EventPayloadOf } from '@enkaku/protocol'
 
 import { ErrorRejection } from '../rejections.js'
 import type { EventDataType, EventHandler, HandlerContext } from '../types.js'
 import { toPromise } from '../utils.js'
 
 export type EventMessageOf<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord,
-  Name extends keyof Definitions & string = keyof Definitions & string,
-> = ClientMessage<EventActionPayloadOf<Name, Definitions[Name]>, Meta>
+  Definitions extends AnyDefinitions,
+  Command extends keyof Definitions & string = keyof Definitions & string,
+> = ClientMessage<EventPayloadOf<Command, Definitions[Command]>>
 
 export function handleEvent<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord,
-  Name extends keyof Definitions & string,
+  Definitions extends AnyDefinitions,
+  Command extends keyof Definitions & string,
 >(
-  context: HandlerContext<Definitions, Meta>,
-  message: EventMessageOf<Definitions, Meta, Name>,
+  ctx: HandlerContext<Definitions>,
+  msg: EventMessageOf<Definitions, Command>,
 ): ErrorRejection | Promise<void> {
-  const { action, meta } = message
-  const handler = context.handlers[action.name] as EventHandler<
-    EventDataType<Definitions, Name>,
-    Meta
-  >
+  const handler = ctx.handlers[msg.payload.cmd] as EventHandler<EventDataType<Definitions, Command>>
   if (handler == null) {
-    return new ErrorRejection(`No handler for action: ${action.name}`, { info: action })
+    return new ErrorRejection(`No handler for command: ${msg.payload.cmd}`, { info: msg.payload })
   }
 
-  const data = action.data as EventDataType<Definitions, Name>
-  return toPromise(() => handler({ data, meta })).catch((cause) => {
-    const err = new ErrorRejection(`Error handling action: ${action.name}`, { info: action, cause })
-    context.reject(err)
+  const data = msg.payload.data as EventDataType<Definitions, Command>
+  return toPromise(() => handler({ data })).catch((cause) => {
+    const err = new ErrorRejection(`Error handling command: ${msg.payload.cmd}`, {
+      info: msg.payload,
+      cause,
+    })
+    ctx.reject(err)
   })
 }

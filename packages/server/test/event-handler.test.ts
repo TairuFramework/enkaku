@@ -1,3 +1,4 @@
+import { unsignedToken } from '@enkaku/jwt'
 import { jest } from '@jest/globals'
 
 import { handleEvent } from '../src/handlers/event.js'
@@ -10,22 +11,22 @@ type Definitions = {
     data: { test: boolean }
   }
 }
-type Meta = undefined
 
 describe('handleEvent()', () => {
+  const clientToken = unsignedToken({ typ: 'event', cmd: 'test', data: { test: true } } as const)
+
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
-    const action = { type: 'event', name: 'unknown' }
-    const returned = handleEvent({ handlers: {} } as unknown as HandlerContext<Definitions, Meta>, {
+    const payload = { typ: 'event', cmd: 'unknown' }
+    const returned = handleEvent({ handlers: {} } as unknown as HandlerContext<Definitions>, {
       // @ts-expect-error
-      action,
+      payload,
     })
     expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for action: unknown')
-    expect((returned as ErrorRejection).info).toEqual(action)
+    expect((returned as ErrorRejection).message).toBe('No handler for command: unknown')
+    expect((returned as ErrorRejection).info).toEqual(payload)
   })
 
   test('sends an ErrorRejection if the handler fails but resolves the returned promise', async () => {
-    const action = { type: 'event', name: 'test', data: { test: true } } as const
     const errorCause = new Error('Failed!')
     const handler = jest.fn(() => {
       throw errorCause
@@ -35,8 +36,8 @@ describe('handleEvent()', () => {
     // Handler promise should always resolve
     await expect(
       handleEvent(
-        { handlers: { test: handler }, reject } as unknown as HandlerContext<Definitions, Meta>,
-        { action, meta: undefined },
+        { handlers: { test: handler }, reject } as unknown as HandlerContext<Definitions>,
+        clientToken,
       ),
     ).resolves.toBeUndefined()
 
@@ -44,20 +45,20 @@ describe('handleEvent()', () => {
     expect(reject).toHaveBeenCalled()
     const rejection = reject.mock.calls[0][0]
     expect(rejection).toBeInstanceOf(ErrorRejection)
-    expect((rejection as ErrorRejection).message).toBe('Error handling action: test')
-    expect((rejection as ErrorRejection).info).toBe(action)
+    expect((rejection as ErrorRejection).message).toBe('Error handling command: test')
+    expect((rejection as ErrorRejection).info).toBe(clientToken.payload)
     expect((rejection as ErrorRejection).cause).toBe(errorCause)
   })
 
   test('successfully calls the event handler', async () => {
-    const action = { type: 'event', name: 'test', data: { test: true } } as const
+    const payload = { typ: 'event', cmd: 'test', data: { test: true } } as const
     const handler = jest.fn()
     const reject = jest.fn()
 
     await expect(
       handleEvent(
-        { handlers: { test: handler }, reject } as unknown as HandlerContext<Definitions, Meta>,
-        { action, meta: undefined },
+        { handlers: { test: handler }, reject } as unknown as HandlerContext<Definitions>,
+        clientToken,
       ),
     ).resolves.toBeUndefined()
     expect(reject).not.toHaveBeenCalled()

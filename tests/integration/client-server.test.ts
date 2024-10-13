@@ -2,38 +2,35 @@ import { Client } from '@enkaku/client'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
-  EventActionDefinition,
-  RequestActionDefinition,
+  EventDefinition,
+  RequestDefinition,
 } from '@enkaku/protocol'
-import { type ActionHandlers, type EventHandler, type RequestHandler, serve } from '@enkaku/server'
+import { type CommandHandlers, type EventHandler, type RequestHandler, serve } from '@enkaku/server'
 import { createDirectTransports } from '@enkaku/transport'
 import { jest } from '@jest/globals'
 
 describe('client-server integration', () => {
-  type Meta = { test: boolean }
-
   test('events', async () => {
     type Definitions = {
-      'test/event': EventActionDefinition<{ hello: string }>
+      'test/event': EventDefinition<{ hello: string }>
     }
 
-    const testEventHandler = jest.fn() as jest.Mock<EventHandler<{ hello: string }, Meta>>
+    const testEventHandler = jest.fn() as jest.Mock<EventHandler<{ hello: string }>>
     const handlers = {
       'test/event': testEventHandler,
-    } as ActionHandlers<Definitions, Meta>
+    } as CommandHandlers<Definitions>
 
     const transports = createDirectTransports<
       AnyServerMessageOf<Definitions>,
-      AnyClientMessageOf<Definitions, Meta>
+      AnyClientMessageOf<Definitions>
     >()
 
-    const client = new Client({ meta: { test: true }, transport: transports.client })
-    serve<Definitions, Meta>({ handlers, transport: transports.server })
+    const client = new Client({ transport: transports.client })
+    serve<Definitions>({ handlers, transport: transports.server })
 
     await client.sendEvent('test/event', { hello: 'world' })
     expect(testEventHandler).toHaveBeenCalledWith({
       data: { hello: 'world' },
-      meta: { test: true },
     })
 
     await transports.dispose()
@@ -42,7 +39,7 @@ describe('client-server integration', () => {
   describe('requests', () => {
     test('handles request', async () => {
       type Definitions = {
-        'test/request': RequestActionDefinition<undefined, string>
+        'test/request': RequestDefinition<undefined, string>
       }
 
       const testRequestHandler = jest.fn((ctx) => {
@@ -55,18 +52,18 @@ describe('client-server integration', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<RequestHandler<undefined, string, Meta>>
+      }) as jest.Mock<RequestHandler<undefined, string>>
       const handlers = {
         'test/request': testRequestHandler,
-      } as ActionHandlers<Definitions, Meta>
+      } as CommandHandlers<Definitions>
 
       const transports = createDirectTransports<
         AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions, Meta>
+        AnyClientMessageOf<Definitions>
       >()
 
-      const client = new Client({ meta: { test: true }, transport: transports.client })
-      serve<Definitions, Meta>({ handlers, transport: transports.server })
+      const client = new Client({ transport: transports.client })
+      serve<Definitions>({ handlers, transport: transports.server })
 
       const request = await client.request('test/request')
       await expect(request.result).resolves.toBe('OK')

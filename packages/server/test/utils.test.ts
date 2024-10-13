@@ -14,10 +14,9 @@ type Definitions = {
     error: ErrorObject
   }
 }
-type Meta = undefined
 
 describe('executeHandler()', () => {
-  const action = { type: 'request', id: '1', name: 'test', params: { test: true } } as const
+  const payload = { typ: 'request', rid: '1', cmd: 'test', prm: { test: true } } as const
 
   test('sends an error response and a rejection in case of error', async () => {
     const error = new HandlerError({ code: 'TEST123', message: 'Request failed' })
@@ -29,19 +28,27 @@ describe('executeHandler()', () => {
     const send = jest.fn()
 
     await executeHandler(
-      { controllers, handlers: { test: handler }, reject, send } as unknown as HandlerContext<
-        Definitions,
-        Meta
-      >,
-      action,
+      {
+        controllers,
+        handlers: { test: handler },
+        reject,
+        send,
+      } as unknown as HandlerContext<Definitions>,
+      payload,
       () => handler(),
     )
-    expect(send).toHaveBeenCalledWith({ action: { type: 'error', id: '1', error: error.toJSON() } })
+    expect(send).toHaveBeenCalledWith({
+      typ: 'error',
+      rid: '1',
+      code: error.code,
+      data: {},
+      msg: 'Request failed',
+    })
     expect(reject).toHaveBeenCalled()
     const rejection = reject.mock.calls[0][0]
     expect(rejection).toBeInstanceOf(ErrorRejection)
-    expect((rejection as ErrorRejection).message).toBe('Error handling action: test')
-    expect((rejection as ErrorRejection).info).toBe(action)
+    expect((rejection as ErrorRejection).message).toBe('Error handling command: test')
+    expect((rejection as ErrorRejection).info).toBe(payload)
     expect((rejection as ErrorRejection).cause).toBe(error)
     expect(controllers).toEqual({})
   })
@@ -60,11 +67,13 @@ describe('executeHandler()', () => {
     const send = jest.fn()
 
     const requestPromise = executeHandler(
-      { controllers, handlers: { test: handler }, reject, send } as unknown as HandlerContext<
-        Definitions,
-        Meta
-      >,
-      action,
+      {
+        controllers,
+        handlers: { test: handler },
+        reject,
+        send,
+      } as unknown as HandlerContext<Definitions>,
+      payload,
       () => handler(),
     )
     controllers['1']?.abort()
@@ -74,8 +83,8 @@ describe('executeHandler()', () => {
     expect(reject).toHaveBeenCalled()
     const rejection = reject.mock.calls[0][0]
     expect(rejection).toBeInstanceOf(ErrorRejection)
-    expect((rejection as ErrorRejection).message).toBe('Error handling action: test')
-    expect((rejection as ErrorRejection).info).toBe(action)
+    expect((rejection as ErrorRejection).message).toBe('Error handling command: test')
+    expect((rejection as ErrorRejection).info).toBe(payload)
     expect((rejection as ErrorRejection).cause).toBe(error)
     expect(controllers).toEqual({})
   })
@@ -87,14 +96,16 @@ describe('executeHandler()', () => {
     const send = jest.fn()
 
     await executeHandler(
-      { controllers, handlers: { test: handler }, reject, send } as unknown as HandlerContext<
-        Definitions,
-        Meta
-      >,
-      action,
+      {
+        controllers,
+        handlers: { test: handler },
+        reject,
+        send,
+      } as unknown as HandlerContext<Definitions>,
+      payload,
       () => handler(),
     )
-    expect(send).toHaveBeenCalledWith({ action: { type: 'result', id: '1', value: 'OK' } })
+    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
   })
@@ -112,11 +123,13 @@ describe('executeHandler()', () => {
     const send = jest.fn()
 
     const requestPromise = executeHandler(
-      { controllers, handlers: { test: handler }, reject, send } as unknown as HandlerContext<
-        Definitions,
-        Meta
-      >,
-      action,
+      {
+        controllers,
+        handlers: { test: handler },
+        reject,
+        send,
+      } as unknown as HandlerContext<Definitions>,
+      payload,
       () => handler(),
     )
     controllers['1']?.abort()

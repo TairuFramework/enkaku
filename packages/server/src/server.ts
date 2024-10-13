@@ -1,9 +1,5 @@
-import type {
-  AnyActionDefinitions,
-  AnyClientPayloadOf,
-  OptionalRecord,
-  ServerTransportOf,
-} from '@enkaku/protocol'
+import { unsignedToken } from '@enkaku/jwt'
+import type { AnyClientPayloadOf, AnyDefinitions, ServerTransportOf } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
 import { type Disposer, createDisposer } from '@enkaku/util'
 
@@ -13,34 +9,29 @@ import { type RequestMessageOf, handleRequest } from './handlers/request.js'
 import { type StreamMessageOf, handleStream } from './handlers/stream.js'
 import { ErrorRejection, type RejectionType } from './rejections.js'
 import type {
-  ActionController,
-  ActionHandlers,
-  ActionSendType,
   ChannelController,
+  CommandHandlers,
   HandlerContext,
+  HandlerController,
 } from './types.js'
 
-export type HandleMessagesParams<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord,
-> = {
-  controllers: Record<string, ActionController>
-  handlers: ActionHandlers<Definitions, Meta>
+export type HandleMessagesParams<Definitions extends AnyDefinitions> = {
+  controllers: Record<string, HandlerController>
+  handlers: CommandHandlers<Definitions>
   reject: (rejection: RejectionType) => void
   signal: AbortSignal
-  transport: ServerTransportOf<Definitions, Meta>
+  transport: ServerTransportOf<Definitions>
 }
 
-async function handleMessages<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord,
->(params: HandleMessagesParams<Definitions, Meta>): Promise<void> {
+async function handleMessages<Definitions extends AnyDefinitions>(
+  params: HandleMessagesParams<Definitions>,
+): Promise<void> {
   const { controllers, handlers, reject, signal, transport } = params
-  const context: HandlerContext<Definitions, Meta> = {
+  const context: HandlerContext<Definitions> = {
     controllers,
     handlers,
     reject,
-    send: (message) => transport.write(message),
+    send: (payload) => transport.write(unsignedToken(payload)),
   }
   const running: Record<string, Promise<void>> = Object.create(null)
 
@@ -54,13 +45,13 @@ async function handleMessages<
   }, signal)
 
   function process(
-    action: AnyClientPayloadOf<Definitions>,
+    payload: AnyClientPayloadOf<Definitions>,
     returned: ErrorRejection | Promise<void>,
   ) {
     if (returned instanceof ErrorRejection) {
       reject(returned)
     } else {
-      const id = action.type === 'event' ? Math.random().toString(36).slice(2) : action.id
+      const id = payload.typ === 'event' ? Math.random().toString(36).slice(2) : payload.rid
       running[id] = returned
       returned.then(() => {
         delete running[id]
@@ -76,38 +67,32 @@ async function handleMessages<
     }
 
     const msg = next.value
-    switch (msg.action.type) {
+    switch (msg.payload.typ) {
       case 'abort':
-        controllers[msg.action.id]?.abort()
+        controllers[msg.payload.rid]?.abort()
         break
       case 'channel':
         process(
-          msg.action,
-          handleChannel(context, msg as unknown as ChannelMessageOf<Definitions, Meta>),
+          msg.payload,
+          handleChannel(context, msg as unknown as ChannelMessageOf<Definitions>),
         )
         break
       case 'event':
-        process(
-          msg.action,
-          handleEvent(context, msg as unknown as EventMessageOf<Definitions, Meta>),
-        )
+        process(msg.payload, handleEvent(context, msg as unknown as EventMessageOf<Definitions>))
         break
       case 'request':
         process(
-          msg.action,
-          handleRequest(context, msg as unknown as RequestMessageOf<Definitions, Meta>),
+          msg.payload,
+          handleRequest(context, msg as unknown as RequestMessageOf<Definitions>),
         )
         break
       case 'send': {
-        const controller = controllers[msg.action.id] as ChannelController | undefined
-        controller?.writer.write(msg.action.value)
+        const controller = controllers[msg.payload.rid] as ChannelController | undefined
+        controller?.writer.write(msg.payload.val)
         break
       }
       case 'stream':
-        process(
-          msg.action,
-          handleStream(context, msg as unknown as StreamMessageOf<Definitions, Meta>),
-        )
+        process(msg.payload, handleStream(context, msg as unknown as StreamMessageOf<Definitions>))
         break
     }
 
@@ -118,21 +103,21 @@ async function handleMessages<
   return disposer.disposed
 }
 
-export type ServeParams<Definitions extends AnyActionDefinitions, Meta extends OptionalRecord> = {
-  handlers: ActionHandlers<Definitions, Meta>
+export type ServeParams<Definitions extends AnyDefinitions> = {
+  handlers: CommandHandlers<Definitions>
   signal?: AbortSignal
-  transport: ServerTransportOf<Definitions, Meta>
+  transport: ServerTransportOf<Definitions>
 }
 
 export type Server = Disposer & {
   rejections: ReadableStream<RejectionType>
 }
 
-export function serve<Definitions extends AnyActionDefinitions, Meta extends OptionalRecord>(
-  params: ServeParams<Definitions, Meta>,
+export function serve<Definitions extends AnyDefinitions>(
+  params: ServeParams<Definitions>,
 ): Server {
   const abortController = new AbortController()
-  const controllers: Record<string, ActionController> = Object.create(null)
+  const controllers: Record<string, HandlerController> = Object.create(null)
 
   const rejections = createPipe<RejectionType>()
   const rejectionsWriter = rejections.writable.getWriter()

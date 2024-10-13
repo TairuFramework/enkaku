@@ -1,5 +1,5 @@
 {
-  "name": "@enkaku/protocol",
+  "name": "@enkaku/jwt",
   "version": "0.2.0",
   "license": "MIT",
   "keywords": [],
@@ -23,8 +23,8 @@
     "test": "pnpm run test:types && pnpm run test:unit",
     "prepublishOnly": "pnpm run build"
   },
-  "devDependencies": {
-    "@enkaku/jwt": "workspace:^",
-    "@enkaku/transport": "workspace:^"
+  "dependencies": {
+    "@noble/ed25519": "^2.1.0",
+    "multiformats": "^13.3.0"
   }
 }

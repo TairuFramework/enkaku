@@ -1,12 +1,12 @@
+import { unsignedToken } from '@enkaku/jwt'
 import type {
-  AnyActionDefinitions,
   AnyClientPayloadOf,
-  ChannelActionDefinition,
+  AnyDefinitions,
+  ChannelDefinition,
   ClientTransportOf,
-  EventActionDefinition,
-  OptionalRecord,
-  RequestActionDefinition,
-  StreamActionDefinition,
+  EventDefinition,
+  RequestDefinition,
+  StreamDefinition,
 } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
 import { type Deferred, type Disposer, defer } from '@enkaku/util'
@@ -30,10 +30,10 @@ export type InvokeChannelReturn<Send, Receive, Result> = InvokeStreamReturn<Rece
 }
 
 export type EventDefinitionsType<
-  Definitions extends AnyActionDefinitions,
-  Names extends keyof Definitions & string = keyof Definitions & string,
+  Definitions extends AnyDefinitions,
+  Commands extends keyof Definitions & string = keyof Definitions & string,
 > = {
-  [Name in Names]: Definitions[Name] extends EventActionDefinition<infer Data>
+  [Command in Commands]: Definitions[Command] extends EventDefinition<infer Data>
     ? {
         Argument: Data extends undefined ? never : Data
         Return: undefined
@@ -42,10 +42,10 @@ export type EventDefinitionsType<
 }
 
 export type RequestDefinitionsType<
-  Definitions extends AnyActionDefinitions,
-  Names extends keyof Definitions & string = keyof Definitions & string,
+  Definitions extends AnyDefinitions,
+  Commands extends keyof Definitions & string = keyof Definitions & string,
 > = {
-  [Name in Names]: Definitions[Name] extends RequestActionDefinition<infer Params, infer Result>
+  [Command in Commands]: Definitions[Command] extends RequestDefinition<infer Params, infer Result>
     ? {
         Argument: Params extends undefined ? never : Params
         Return: InvokeReturn<Result>
@@ -54,10 +54,10 @@ export type RequestDefinitionsType<
 }
 
 export type StreamDefinitionsType<
-  Definitions extends AnyActionDefinitions,
-  Names extends keyof Definitions & string = keyof Definitions & string,
+  Definitions extends AnyDefinitions,
+  Commands extends keyof Definitions & string = keyof Definitions & string,
 > = {
-  [Name in Names]: Definitions[Name] extends StreamActionDefinition<
+  [Command in Commands]: Definitions[Command] extends StreamDefinition<
     infer Params,
     infer Receive,
     infer Result
@@ -71,10 +71,10 @@ export type StreamDefinitionsType<
 }
 
 export type ChannelDefinitionsType<
-  Definitions extends AnyActionDefinitions,
-  Names extends keyof Definitions & string = keyof Definitions & string,
+  Definitions extends AnyDefinitions,
+  Commands extends keyof Definitions & string = keyof Definitions & string,
 > = {
-  [Name in Names]: Definitions[Name] extends ChannelActionDefinition<
+  [Command in Commands]: Definitions[Command] extends ChannelDefinition<
     infer Params,
     infer Send,
     infer Receive,
@@ -89,7 +89,7 @@ export type ChannelDefinitionsType<
     : never
 }
 
-export type ClientDefinitionsType<Definitions extends AnyActionDefinitions> = {
+export type ClientDefinitionsType<Definitions extends AnyDefinitions> = {
   Channels: ChannelDefinitionsType<Definitions>
   Events: EventDefinitionsType<Definitions>
   Requests: RequestDefinitionsType<Definitions>
@@ -97,28 +97,28 @@ export type ClientDefinitionsType<Definitions extends AnyActionDefinitions> = {
 }
 
 export type InvokeArgumentType<
-  Definitions extends AnyActionDefinitions,
+  Definitions extends AnyDefinitions,
   Name extends keyof Definitions & string = keyof Definitions & string,
-> = Definitions[Name] extends EventActionDefinition<infer Data>
+> = Definitions[Name] extends EventDefinition<infer Data>
   ? Data
-  : Definitions[Name] extends RequestActionDefinition<infer Params>
+  : Definitions[Name] extends RequestDefinition<infer Params>
     ? Params
-    : Definitions[Name] extends StreamActionDefinition<infer Params>
+    : Definitions[Name] extends StreamDefinition<infer Params>
       ? Params
-      : Definitions[Name] extends ChannelActionDefinition<infer Params>
+      : Definitions[Name] extends ChannelDefinition<infer Params>
         ? Params
         : never
 
 export type InvokeReturnType<
-  Definitions extends AnyActionDefinitions,
+  Definitions extends AnyDefinitions,
   Name extends keyof Definitions & string,
-> = Definitions[Name] extends EventActionDefinition<infer Data>
+> = Definitions[Name] extends EventDefinition<infer Data>
   ? undefined
-  : Definitions[Name] extends RequestActionDefinition<infer Params, infer Result>
+  : Definitions[Name] extends RequestDefinition<infer Params, infer Result>
     ? InvokeReturn<Result>
-    : Definitions[Name] extends StreamActionDefinition<infer Params, infer Receive, infer Result>
+    : Definitions[Name] extends StreamDefinition<infer Params, infer Receive, infer Result>
       ? InvokeStreamReturn<Receive, Result>
-      : Definitions[Name] extends ChannelActionDefinition<
+      : Definitions[Name] extends ChannelDefinition<
             infer Params,
             infer Send,
             infer Receive,
@@ -143,26 +143,19 @@ type AnyClientController =
   // biome-ignore lint/suspicious/noExplicitAny: what other way to type this?
   RequestController<any> | StreamController<any, any> | ChannelController<any, any, any>
 
-export type ClientParams<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord = undefined,
-> = {
-  transport: ClientTransportOf<Definitions, Meta>
-  meta?: Meta
+export type ClientParams<Definitions extends AnyDefinitions> = {
+  transport: ClientTransportOf<Definitions>
 }
 
 export class Client<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord,
+  Definitions extends AnyDefinitions,
   ClientDefinitions extends ClientDefinitionsType<Definitions> = ClientDefinitionsType<Definitions>,
 > implements Disposer
 {
-  #meta: Meta
-  #transport: ClientTransportOf<Definitions, Meta>
+  #transport: ClientTransportOf<Definitions>
   #controllers: Record<string, AnyClientController> = {}
 
-  constructor(params: ClientParams<Definitions, Meta>) {
-    this.#meta = params.meta as Meta
+  constructor(params: ClientParams<Definitions>) {
     this.#transport = params.transport
     // Abort all controllers on disconnect
     this.#transport.disposed.then(() => {
@@ -182,32 +175,32 @@ export class Client<
       }
 
       const msg = next.value
-      const controller = this.#controllers[msg.action.id]
+      const controller = this.#controllers[msg.payload.rid]
       if (controller == null) {
-        console.warn(`No controller for action ${msg.action.id}`)
+        console.warn(`No controller for request ${msg.payload.rid}`)
         continue
       }
 
-      switch (msg.action.type) {
+      switch (msg.payload.typ) {
         case 'error':
           void (controller as StreamController<unknown, unknown>).receive?.close()
-          controller.result.reject(new RequestError(msg.action.error))
-          delete this.#controllers[msg.action.id]
+          controller.result.reject(RequestError.fromPayload(msg.payload))
+          delete this.#controllers[msg.payload.rid]
           break
         case 'receive':
-          void (controller as StreamController<unknown, unknown>).receive?.write(msg.action.value)
+          void (controller as StreamController<unknown, unknown>).receive?.write(msg.payload.val)
           break
         case 'result':
           void (controller as StreamController<unknown, unknown>).receive?.close()
-          controller.result.resolve(msg.action.value)
-          delete this.#controllers[msg.action.id]
+          controller.result.resolve(msg.payload.val)
+          delete this.#controllers[msg.payload.rid]
           break
       }
     }
   }
 
-  async #write(action: AnyClientPayloadOf<Definitions>): Promise<void> {
-    await this.#transport.write({ action, meta: this.#meta })
+  async #write(payload: AnyClientPayloadOf<Definitions>): Promise<void> {
+    await this.#transport.write(unsignedToken(payload))
   }
 
   get disposed() {
@@ -219,84 +212,86 @@ export class Client<
   }
 
   async sendEvent<
-    Name extends keyof ClientDefinitions['Events'] & string,
-    T extends ClientDefinitions['Events'][Name] = ClientDefinitions['Events'][Name],
-  >(name: Name, ...args: T['Argument'] extends never ? [] : [T['Argument']]): Promise<void> {
-    const action = args.length ? { type: 'event', name, data: args[0] } : { type: 'event', name }
-    await this.#write(action as unknown as AnyClientPayloadOf<Definitions>)
+    Command extends keyof ClientDefinitions['Events'] & string,
+    T extends ClientDefinitions['Events'][Command] = ClientDefinitions['Events'][Command],
+  >(command: Command, ...args: T['Argument'] extends never ? [] : [T['Argument']]): Promise<void> {
+    const payload = args.length
+      ? { typ: 'event', cmd: command, data: args[0] }
+      : { typ: 'event', cmd: command }
+    await this.#write(payload as unknown as AnyClientPayloadOf<Definitions>)
   }
 
   async request<
-    Name extends keyof ClientDefinitions['Requests'] & string,
-    T extends ClientDefinitions['Requests'][Name] = ClientDefinitions['Requests'][Name],
+    Command extends keyof ClientDefinitions['Requests'] & string,
+    T extends ClientDefinitions['Requests'][Command] = ClientDefinitions['Requests'][Command],
   >(
-    name: Name,
+    command: Command,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
   ): Promise<InvokeReturn<T['Return']>> {
-    const id = globalThis.crypto.randomUUID()
+    const rid = globalThis.crypto.randomUUID()
     const controller: RequestController<T['Return']> = Object.assign(new AbortController(), {
       result: defer<T['Return']>(),
     })
-    this.#controllers[id] = controller
+    this.#controllers[rid] = controller
 
     controller.signal.addEventListener('abort', () => {
-      void this.#write({ type: 'abort', id } as unknown as AnyClientPayloadOf<Definitions>)
+      void this.#write({ typ: 'abort', rid } as unknown as AnyClientPayloadOf<Definitions>)
       controller.result.reject(ABORTED)
     })
 
-    const action = args.length
-      ? { type: 'request', id, name, params: args[0] }
-      : { type: 'request', id, name }
-    await this.#write(action as unknown as AnyClientPayloadOf<Definitions>)
+    const payload = args.length
+      ? { typ: 'request', rid, cmd: command, prm: args[0] }
+      : { typ: 'request', rid, cmd: command }
+    await this.#write(payload as unknown as AnyClientPayloadOf<Definitions>)
 
     return {
       abort: () => controller.abort(),
-      id,
+      id: rid,
       result: controller.result.promise,
     }
   }
 
   async createStream<
-    Name extends keyof ClientDefinitions['Streams'] & string,
-    T extends ClientDefinitions['Streams'][Name] = ClientDefinitions['Streams'][Name],
+    Command extends keyof ClientDefinitions['Streams'] & string,
+    T extends ClientDefinitions['Streams'][Command] = ClientDefinitions['Streams'][Command],
   >(
-    name: Name,
+    command: Command,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
   ): Promise<InvokeStreamReturn<T['Receive'], T['Return']>> {
-    const id = globalThis.crypto.randomUUID()
+    const rid = globalThis.crypto.randomUUID()
     const receive = createPipe<T['Receive']>()
     const controller: StreamController<T['Receive'], T['Return']> = Object.assign(
       new AbortController(),
       { receive: receive.writable.getWriter(), result: defer<T['Return']>() },
     )
-    this.#controllers[id] = controller
+    this.#controllers[rid] = controller
 
     controller.signal.addEventListener('abort', () => {
-      void this.#write({ type: 'abort', id } as unknown as AnyClientPayloadOf<Definitions>)
+      void this.#write({ typ: 'abort', rid } as unknown as AnyClientPayloadOf<Definitions>)
       controller.result.reject(ABORTED)
     })
 
     const action = args.length
-      ? { type: 'stream', id, name, params: args[0] }
-      : { type: 'stream', id, name }
+      ? { typ: 'stream', rid, cmd: command, prm: args[0] }
+      : { typ: 'stream', rid, cmd: command }
     await this.#write(action as unknown as AnyClientPayloadOf<Definitions>)
 
     return {
       abort: () => controller.abort(),
-      id,
+      id: rid,
       receive: receive.readable.getReader(),
       result: controller.result.promise,
     }
   }
 
   async createChannel<
-    Name extends keyof ClientDefinitions['Channels'] & string,
-    T extends ClientDefinitions['Channels'][Name] = ClientDefinitions['Channels'][Name],
+    Command extends keyof ClientDefinitions['Channels'] & string,
+    T extends ClientDefinitions['Channels'][Command] = ClientDefinitions['Channels'][Command],
   >(
-    name: Name,
+    command: Command,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
   ): Promise<InvokeChannelReturn<T['Send'], T['Receive'], T['Return']>> {
-    const id = globalThis.crypto.randomUUID()
+    const rid = globalThis.crypto.randomUUID()
     const receive = createPipe<T['Receive']>()
     const send = createPipe<T['Send']>()
     const controller: ChannelController<T['Send'], T['Receive'], T['Return']> = Object.assign(
@@ -307,28 +302,25 @@ export class Client<
         send: send.writable.getWriter(),
       },
     )
-    this.#controllers[id] = controller
+    this.#controllers[rid] = controller
 
     controller.signal.addEventListener('abort', () => {
-      void this.#write({ type: 'abort', id } as unknown as AnyClientPayloadOf<Definitions>)
+      void this.#write({ typ: 'abort', rid } as unknown as AnyClientPayloadOf<Definitions>)
       controller.result.reject(ABORTED)
     })
 
-    // TODO: consume from send readable to push to transport
-
-    const action = args.length
-      ? { type: 'channel', id, name, params: args[0] }
-      : { type: 'channel', id, name }
-    await this.#write(action as unknown as AnyClientPayloadOf<Definitions>)
+    const payload = args.length
+      ? { typ: 'channel', rid, cmd: command, prm: args[0] }
+      : { typ: 'channel', rid, cmd: command }
+    await this.#write(payload as unknown as AnyClientPayloadOf<Definitions>)
 
     return {
       abort: () => controller.abort(),
-      id,
+      id: rid,
       receive: receive.readable.getReader(),
       result: controller.result.promise,
-      send: async (value: T['Send']) => {
-        // await controller.send.write(value)
-        await this.#write({ type: 'send', id, value } as unknown as AnyClientPayloadOf<Definitions>)
+      send: async (val: T['Send']) => {
+        await this.#write({ typ: 'send', rid, val } as unknown as AnyClientPayloadOf<Definitions>)
       },
     }
   }

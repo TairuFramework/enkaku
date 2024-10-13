@@ -12,18 +12,17 @@ type Definitions = {
     error: ErrorObject
   }
 }
-type Meta = undefined
 
 describe('handleRequest()', () => {
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
-    const action = { type: 'request', id: '1', name: 'unknown' }
+    const payload = { typ: 'request', rid: '1', cmd: 'unknown' }
     const returned = handleRequest(
-      { handlers: {} } as unknown as HandlerContext<Definitions, Meta>,
+      { handlers: {} } as unknown as HandlerContext<Definitions>,
       // @ts-expect-error
-      { action },
+      { payload },
     )
     expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for action: unknown')
-    expect((returned as ErrorRejection).info).toEqual(action)
+    expect((returned as ErrorRejection).message).toBe('No handler for command: unknown')
+    expect((returned as ErrorRejection).info).toEqual(payload)
   })
 })

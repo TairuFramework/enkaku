@@ -1,13 +1,12 @@
 import type { ErrorObject } from './error.js'
-import type { OptionalRecord } from './utils.js'
 
-export type EventActionDefinition<Data extends OptionalRecord> = {
+export type EventDefinition<Data extends Record<string, unknown> = Record<string, unknown>> = {
   type: 'event'
   data: Data
 }
 
-export type RequestActionDefinition<
-  Params extends OptionalRecord,
+export type RequestDefinition<
+  Params = unknown,
   Result = unknown,
   Err extends ErrorObject = ErrorObject,
 > = {
@@ -17,8 +16,8 @@ export type RequestActionDefinition<
   error: Err
 }
 
-export type StreamActionDefinition<
-  Params extends OptionalRecord,
+export type StreamDefinition<
+  Params = unknown,
   Receive = unknown,
   Result = unknown,
   Err extends ErrorObject = ErrorObject,
@@ -30,8 +29,8 @@ export type StreamActionDefinition<
   error: Err
 }
 
-export type ChannelActionDefinition<
-  Params extends OptionalRecord,
+export type ChannelDefinition<
+  Params = unknown,
   Send = unknown,
   Receive = unknown,
   Result = unknown,
@@ -45,16 +44,16 @@ export type ChannelActionDefinition<
   error: Err
 }
 
-export type AnyActionDefinition =
+export type AnyDefinition =
   // biome-ignore lint/suspicious/noExplicitAny: what else could it be?
-  | EventActionDefinition<any>
+  | EventDefinition<any>
   // biome-ignore lint/suspicious/noExplicitAny: what else could it be?
-  | RequestActionDefinition<any, any>
+  | RequestDefinition<any, any>
   // biome-ignore lint/suspicious/noExplicitAny: what else could it be?
-  | StreamActionDefinition<any, any, any>
+  | StreamDefinition<any, any, any>
   // biome-ignore lint/suspicious/noExplicitAny: what else could it be?
-  | ChannelActionDefinition<any, any, any, any>
+  | ChannelDefinition<any, any, any, any>
 
-export type AnyActionDefinitions<Names extends string = string> = {
-  [Name in Names & string]: AnyActionDefinition
+export type AnyDefinitions<Commands extends string = string> = {
+  [Command in Commands & string]: AnyDefinition
 }

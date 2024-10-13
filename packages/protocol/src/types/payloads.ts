@@ -1,188 +1,142 @@
 import type {
-  ChannelActionDefinition,
-  EventActionDefinition,
-  RequestActionDefinition,
-  StreamActionDefinition,
+  ChannelDefinition,
+  EventDefinition,
+  RequestDefinition,
+  StreamDefinition,
 } from './definitions.js'
-import type { OptionalRecord } from './utils.js'
+import type {
+  AbortCallPayload,
+  ErrorReplyPayload,
+  EventCallPayload,
+  ReceiveReplyPayload,
+  RequestCallPayload,
+  ResultReplyPayload,
+  SendCallPayload,
+} from './invocations.js'
 
 // Client payloads
 
-export type AbortActionPayload<Reason extends string | undefined = undefined> = {
-  type: 'abort'
-  id: string
-  reason: Reason
-}
-
-export type EventActionPayload<Name extends string, Data extends OptionalRecord> = {
-  type: 'event'
-  name: Name
-  data: Data
-}
-
-export type EventActionPayloadOf<
-  Name extends string,
-  Definition,
-> = Definition extends EventActionDefinition<infer Data> ? EventActionPayload<Name, Data> : never
-
-export type RequestActionPayload<Name extends string, Params extends OptionalRecord> = {
-  type: 'request'
-  name: Name
-  id: string
-  params: Params
-}
-
-export type RequestActionPayloadOf<
-  Name extends string,
-  Definition,
-> = Definition extends RequestActionDefinition<infer Params extends OptionalRecord>
-  ? RequestActionPayload<Name, Params>
+export type EventPayloadOf<Command extends string, Definition> = Definition extends EventDefinition<
+  infer Data
+>
+  ? EventCallPayload<Command, Data>
   : never
 
-export type StreamActionPayload<Name extends string, Params extends OptionalRecord> = {
-  type: 'stream'
-  name: Name
-  id: string
-  params: Params
-}
-
-export type StreamActionPayloadOf<
-  Name extends string,
+export type RequestPayloadOf<
+  Command extends string,
   Definition,
-> = Definition extends StreamActionDefinition<infer Params extends OptionalRecord>
-  ? StreamActionPayload<Name, Params>
+> = Definition extends RequestDefinition<infer Params>
+  ? RequestCallPayload<'request', Command, Params>
   : never
 
-export type ChannelActionPayload<Name extends string, Params extends OptionalRecord> = {
-  type: 'channel'
-  name: Name
-  id: string
-  params: Params
-}
-
-export type ChannelActionPayloadOf<
-  Name extends string,
+export type StreamPayloadOf<
+  Command extends string,
   Definition,
-> = Definition extends ChannelActionDefinition<infer Params extends OptionalRecord>
-  ? ChannelActionPayload<Name, Params>
+> = Definition extends StreamDefinition<infer Params>
+  ? RequestCallPayload<'stream', Command, Params>
   : never
 
-export type SendActionPayload<Value> = {
-  type: 'send'
-  id: string
-  value: Value
-}
+export type ChannelPayloadOf<
+  Command extends string,
+  Definition,
+> = Definition extends ChannelDefinition<infer Params>
+  ? RequestCallPayload<'channel', Command, Params>
+  : never
 
-export type SendActionPayloadOf<Definition> = Definition extends ChannelActionDefinition<
+export type SendPayloadOf<Definition> = Definition extends ChannelDefinition<
   infer Params,
   infer Send
 >
-  ? SendActionPayload<Send>
+  ? SendCallPayload<Send>
   : never
 
-export type ClientActionPayloadOf<
-  Name extends string,
+export type ClientPayloadOf<
+  Command extends string,
   Definition,
-> = Definition extends EventActionDefinition<infer Data>
-  ? EventActionPayload<Name, Data>
-  : Definition extends RequestActionDefinition<infer Params extends OptionalRecord>
-    ? RequestActionPayload<Name, Params> | AbortActionPayload
-    : Definition extends StreamActionDefinition<infer Params extends OptionalRecord>
-      ? StreamActionPayload<Name, Params> | AbortActionPayload
-      : Definition extends ChannelActionDefinition<infer Params extends OptionalRecord, infer Send>
-        ? ChannelActionPayload<Name, Params> | SendActionPayload<Send>
+> = Definition extends EventDefinition<infer Data>
+  ? EventCallPayload<Command, Data>
+  : Definition extends RequestDefinition<infer Params>
+    ? RequestCallPayload<'request', Command, Params> | AbortCallPayload
+    : Definition extends StreamDefinition<infer Params>
+      ? RequestCallPayload<'stream', Command, Params> | AbortCallPayload
+      : Definition extends ChannelDefinition<infer Params, infer Send>
+        ? RequestCallPayload<'channel', Command, Params> | SendCallPayload<Send> | AbortCallPayload
         : never
 
-export type ClientActionPayloadRecordsOf<Definitions> = Definitions extends Record<
-  infer Names extends string,
+export type ClientPayloadRecordsOf<Definitions> = Definitions extends Record<
+  infer Commands extends string,
   unknown
 >
-  ? { [Name in Names & string]: ClientActionPayloadOf<Name, Definitions[Name]> }
+  ? { [Command in Commands & string]: ClientPayloadOf<Command, Definitions[Command]> }
   : Record<string, never>
 
 // Server payloads
 
-export type ErrorActionPayload<Err> = {
-  type: 'error'
-  id: string
-  error: Err
-}
-
-export type ErrorActionPayloadOf<Definition> = Definition extends RequestActionDefinition<
+export type ErrorPayloadOf<Definition> = Definition extends RequestDefinition<
   infer Params,
   infer Result,
   infer Err
 >
-  ? ErrorActionPayload<Err>
-  : Definition extends StreamActionDefinition<infer Params, infer Receive, infer Result, infer Err>
-    ? ErrorActionPayload<Err>
-    : Definition extends ChannelActionDefinition<
+  ? ErrorReplyPayload<Err['code'], Err['data']>
+  : Definition extends StreamDefinition<infer Params, infer Receive, infer Result, infer Err>
+    ? ErrorReplyPayload<Err['code'], Err['data']>
+    : Definition extends ChannelDefinition<
           infer Params,
           infer Send,
           infer Receive,
           infer Result,
           infer Err
         >
-      ? ErrorActionPayload<Err>
+      ? ErrorReplyPayload<Err['code'], Err['data']>
       : never
 
-export type ResultActionPayload<Value> = {
-  type: 'result'
-  id: string
-  value: Value
-}
-
-export type ResultActionPayloadOf<Definition> = Definition extends RequestActionDefinition<
+export type ResultPayloadOf<Definition> = Definition extends RequestDefinition<
+  infer Params,
   infer Result
 >
-  ? ResultActionPayload<Result>
-  : Definition extends StreamActionDefinition<infer Params, infer Result>
-    ? ResultActionPayload<Result>
-    : Definition extends ChannelActionDefinition<
-          infer Params,
-          infer Send,
-          infer Receive,
-          infer Result
-        >
-      ? ResultActionPayload<Result>
+  ? ResultReplyPayload<Result>
+  : Definition extends StreamDefinition<infer Params, infer Receive, infer Result>
+    ? ResultReplyPayload<Result>
+    : Definition extends ChannelDefinition<infer Params, infer Send, infer Receive, infer Result>
+      ? ResultReplyPayload<Result>
       : never
 
-export type ReceiveActionPayload<Value> = {
-  type: 'receive'
-  id: string
-  value: Value
-}
-
-export type ReceiveActionPayloadOf<Definition> = Definition extends StreamActionDefinition<
+export type ReceiveActionPayloadOf<Definition> = Definition extends StreamDefinition<
   infer Params,
   infer Receive
 >
-  ? ReceiveActionPayload<Receive>
-  : Definition extends ChannelActionDefinition<infer Params, infer Send, infer Receive>
-    ? ReceiveActionPayload<Receive>
+  ? ReceiveReplyPayload<Receive>
+  : Definition extends ChannelDefinition<infer Params, infer Send, infer Receive>
+    ? ReceiveReplyPayload<Receive>
     : never
 
-export type ServerActionPayloadOf<Definition> = Definition extends RequestActionDefinition<
+export type ServerPayloadOf<Definition> = Definition extends RequestDefinition<
   infer Params,
   infer Result,
   infer Err
 >
-  ? ResultActionPayload<Result> | ErrorActionPayload<Err>
-  : Definition extends StreamActionDefinition<infer Params, infer Receive, infer Result, infer Err>
-    ? ReceiveActionPayload<Receive> | ResultActionPayload<Result> | ErrorActionPayload<Err>
-    : Definition extends ChannelActionDefinition<
+  ? ResultReplyPayload<Result> | ErrorReplyPayload<Err['code'], Err['data']>
+  : Definition extends StreamDefinition<infer Params, infer Receive, infer Result, infer Err>
+    ?
+        | ReceiveReplyPayload<Receive>
+        | ResultReplyPayload<Result>
+        | ErrorReplyPayload<Err['code'], Err['data']>
+    : Definition extends ChannelDefinition<
           infer Params,
           infer Send,
           infer Receive,
           infer Result,
           infer Err
         >
-      ? ReceiveActionPayload<Receive> | ResultActionPayload<Result> | ErrorActionPayload<Err>
+      ?
+          | ReceiveReplyPayload<Receive>
+          | ResultReplyPayload<Result>
+          | ErrorReplyPayload<Err['code'], Err['data']>
       : never
 
-export type ServerActionPayloadRecordsOf<Definitions> = Definitions extends Record<
-  infer Names extends string,
+export type ServerPayloadRecordsOf<Definitions> = Definitions extends Record<
+  infer Commands extends string,
   unknown
 >
-  ? { [Name in Names & string]: ServerActionPayloadOf<Definitions[Name]> }
+  ? { [Command in Commands & string]: ServerPayloadOf<Definitions[Command]> }
   : Record<string, never>

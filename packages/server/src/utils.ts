@@ -1,8 +1,13 @@
-import type { AnyActionDefinitions, AnyServerMessageOf, OptionalRecord } from '@enkaku/protocol'
+import type {
+  AnyDefinitions,
+  AnyServerPayloadOf,
+  RequestCallPayload,
+  RequestType,
+} from '@enkaku/protocol'
 
 import { HandlerError } from './error.js'
 import { ErrorRejection } from './rejections.js'
-import type { ActionResultType, ExecuteHandlerActionPayload, HandlerContext } from './types.js'
+import type { HandlerContext, ParamsType, ResultType } from './types.js'
 
 export type ConsumeReaderParams<T> = {
   onDone?: () => void
@@ -43,38 +48,38 @@ export function toPromise<T = unknown>(execute: () => T | Promise<T>): Promise<T
 }
 
 export async function executeHandler<
-  Definitions extends AnyActionDefinitions,
-  Name extends keyof Definitions & string,
-  Meta extends OptionalRecord,
-  Result extends ActionResultType<Definitions, Name> = ActionResultType<Definitions, Name>,
+  Definitions extends AnyDefinitions,
+  Command extends keyof Definitions & string,
+  Result extends ResultType<Definitions, Command> = ResultType<Definitions, Command>,
 >(
-  context: HandlerContext<Definitions, Meta>,
-  action: ExecuteHandlerActionPayload,
+  context: HandlerContext<Definitions>,
+  payload: RequestCallPayload<RequestType, Command, ParamsType<Definitions, Command>>,
   execute: () => Result | Promise<Result>,
 ): Promise<void> {
-  const controller = context.controllers[action.id]
+  const controller = context.controllers[payload.rid]
   try {
-    const value = await toPromise(execute)
+    const val = await toPromise(execute)
     if (!controller.signal.aborted) {
       await context.send({
-        action: { type: 'result', id: action.id, value },
-      } as AnyServerMessageOf<Definitions>)
+        typ: 'result',
+        rid: payload.rid,
+        val,
+      } as AnyServerPayloadOf<Definitions>)
     }
   } catch (cause) {
     if (!controller.signal.aborted) {
-      context.send({
-        action: {
-          type: 'error',
-          id: action.id,
-          error: HandlerError.from(cause, { code: 'EKK2000', info: action }).toJSON(),
-        },
-      } as AnyServerMessageOf<Definitions>)
+      context.send(
+        HandlerError.from(cause, {
+          code: 'EKK2000',
+          message: 'Error code EKK2000',
+        }).toPayload(payload.rid) as AnyServerPayloadOf<Definitions>,
+      )
     }
 
     context.reject(
-      new ErrorRejection(`Error handling action: ${action.name}`, { info: action, cause }),
+      new ErrorRejection(`Error handling command: ${payload.cmd}`, { info: payload, cause }),
     )
   } finally {
-    delete context.controllers[action.id]
+    delete context.controllers[payload.rid]
   }
 }

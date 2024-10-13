@@ -1,5 +1,3 @@
-import type { OptionalRecord } from '@enkaku/protocol'
-
 export enum RejectionReason {
   ABORT = 1,
   ERROR = 2,
@@ -8,7 +6,7 @@ export enum RejectionReason {
 
 export type RejectionType<
   Reason extends RejectionReason = RejectionReason,
-  Info extends OptionalRecord = OptionalRecord,
+  Info extends Record<string, unknown> = Record<string, unknown>,
 > = {
   readonly reason: Reason
   readonly info: Info
@@ -16,8 +14,8 @@ export type RejectionType<
 
 export class Rejection<
   Reason extends RejectionReason = RejectionReason,
-  Info extends OptionalRecord = OptionalRecord,
-> implements RejectionType<Reason>
+  Info extends Record<string, unknown> = Record<string, unknown>,
+> implements RejectionType<Reason, Info>
 {
   #reason: Reason
   #info: Info
@@ -36,20 +34,20 @@ export class Rejection<
   }
 }
 
-export class AbortRejection<Info extends OptionalRecord = OptionalRecord> extends Rejection<
-  RejectionReason.ABORT,
-  Info
-> {
+export class AbortRejection<
+  Info extends Record<string, unknown> = Record<string, unknown>,
+> extends Rejection<RejectionReason.ABORT, Info> {
   constructor(info: Info) {
     super(RejectionReason.ABORT, info)
   }
 }
 
-export type ErrorRejectionOptions<Info extends OptionalRecord = OptionalRecord> = ErrorOptions & {
-  info: Info
-}
+export type ErrorRejectionOptions<Info extends Record<string, unknown> = Record<string, unknown>> =
+  ErrorOptions & {
+    info: Info
+  }
 
-export class ErrorRejection<Info extends OptionalRecord = OptionalRecord>
+export class ErrorRejection<Info extends Record<string, unknown> = Record<string, unknown>>
   extends Error
   implements RejectionType<RejectionReason.ERROR, Info>
 {

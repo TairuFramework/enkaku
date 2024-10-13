@@ -1,77 +1,73 @@
 import type {
-  AnyActionDefinitions,
-  AnyServerMessageOf,
-  ChannelActionPayloadOf,
+  AnyDefinitions,
+  AnyServerPayloadOf,
+  ChannelPayloadOf,
   ClientMessage,
-  OptionalRecord,
 } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
 
 import { ErrorRejection } from '../rejections.js'
 import type {
-  ActionParamsType,
-  ActionReceiveType,
-  ActionResultType,
-  ActionSendType,
   ChannelController,
   ChannelHandler,
   HandlerContext,
+  ParamsType,
+  ReceiveType,
+  ResultType,
+  SendType,
 } from '../types.js'
 import { consumeReader, executeHandler } from '../utils.js'
 
 export type ChannelMessageOf<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord,
-  Name extends keyof Definitions & string = keyof Definitions & string,
-> = ClientMessage<ChannelActionPayloadOf<Name, Definitions[Name]>, Meta>
+  Definitions extends AnyDefinitions,
+  Command extends keyof Definitions & string = keyof Definitions & string,
+> = ClientMessage<ChannelPayloadOf<Command, Definitions[Command]>>
 
 export function handleChannel<
-  Definitions extends AnyActionDefinitions,
-  Meta extends OptionalRecord,
-  Name extends keyof Definitions & string,
+  Definitions extends AnyDefinitions,
+  Command extends keyof Definitions & string,
 >(
-  context: HandlerContext<Definitions, Meta>,
-  message: ChannelMessageOf<Definitions, Meta, Name>,
+  ctx: HandlerContext<Definitions>,
+  msg: ChannelMessageOf<Definitions, Command>,
 ): ErrorRejection | Promise<void> {
-  const { action, meta } = message
-  const handler = context.handlers[action.name] as ChannelHandler<
-    ActionParamsType<Definitions, Name>,
-    ActionSendType<Definitions, Name>,
-    ActionReceiveType<Definitions, Name>,
-    ActionResultType<Definitions, Name>,
-    Meta
+  const handler = ctx.handlers[msg.payload.cmd] as ChannelHandler<
+    ParamsType<Definitions, Command>,
+    SendType<Definitions, Command>,
+    ReceiveType<Definitions, Command>,
+    ResultType<Definitions, Command>
   >
   if (handler == null) {
-    return new ErrorRejection(`No handler for action: ${action.name}`, { info: action })
+    return new ErrorRejection(`No handler for command: ${msg.payload.cmd}`, { info: msg.payload })
   }
 
-  const sendStream = createPipe<ActionSendType<Definitions, Name>>()
-  const controller: ChannelController<ActionSendType<Definitions, Name>> = Object.assign(
+  const sendStream = createPipe<SendType<Definitions, Command>>()
+  const controller: ChannelController<SendType<Definitions, Command>> = Object.assign(
     new AbortController(),
     { writer: sendStream.writable.getWriter() },
   )
   controller.signal.addEventListener('abort', () => {
     controller.writer.close()
   })
-  context.controllers[action.id] = controller
+  ctx.controllers[msg.payload.rid] = controller
 
-  const receiveStream = createPipe<ActionReceiveType<Definitions, Name>>()
+  const receiveStream = createPipe<ReceiveType<Definitions, Command>>()
   consumeReader({
-    onValue: async (value) => {
-      await context.send({
-        action: { type: 'receive', id: message.action.id, value },
-      } as AnyServerMessageOf<Definitions>)
+    onValue: async (val) => {
+      await ctx.send({
+        typ: 'receive',
+        rid: msg.payload.rid,
+        val,
+      } as AnyServerPayloadOf<Definitions>)
     },
     reader: receiveStream.readable.getReader(),
     signal: controller.signal,
   })
 
   const handlerContext = {
-    params: action.params,
-    meta,
+    params: msg.payload.prm,
     readable: sendStream.readable,
     signal: controller.signal,
     writable: receiveStream.writable,
   }
-  return executeHandler(context, action, () => handler(handlerContext))
+  return executeHandler(ctx, msg.payload, () => handler(handlerContext))
 }

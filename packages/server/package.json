@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/server",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "MIT",
   "keywords": [],
   "type": "module",
@@ -23,6 +23,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/jwt": "workspace:^",
     "@enkaku/stream": "workspace:^",
     "@enkaku/util": "workspace:^"
   },

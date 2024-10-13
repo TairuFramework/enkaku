@@ -1,10 +1,8 @@
-import type { OptionalRecord } from './utils.js'
-
 export type ErrorObject<
   Code extends string = string,
-  Data extends OptionalRecord = OptionalRecord,
+  Data extends Record<string, unknown> = Record<string, unknown>,
 > = {
   code: Code
-  message: string
   data: Data
+  message: string
 }
