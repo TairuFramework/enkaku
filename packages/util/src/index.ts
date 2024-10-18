@@ -44,3 +44,12 @@ export function createDisposer(run: () => Promise<void>, signal?: AbortSignal): 
 
   return { dispose, disposed: deferred.promise }
 }
+
+// Replace by Promise.try() when widely available
+export function toPromise<T = unknown>(execute: () => T | Promise<T>): Promise<T> {
+  try {
+    return Promise.resolve(execute())
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}

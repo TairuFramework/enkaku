@@ -1,4 +1,4 @@
-import { unsignedToken } from '@enkaku/jwt'
+import { createUnsignedToken } from '@enkaku/jwt'
 import type { AnyClientPayloadOf, AnyDefinitions, ServerTransportOf } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
 import { type Disposer, createDisposer } from '@enkaku/util'
@@ -31,7 +31,7 @@ async function handleMessages<Definitions extends AnyDefinitions>(
     controllers,
     handlers,
     reject,
-    send: (payload) => transport.write(unsignedToken(payload)),
+    send: (payload) => transport.write(createUnsignedToken(payload)),
   }
   const running: Record<string, Promise<void>> = Object.create(null)
 

@@ -1,4 +1,4 @@
-import { unsignedToken } from '@enkaku/jwt'
+import { createUnsignedToken as unsignedToken } from '@enkaku/jwt'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,

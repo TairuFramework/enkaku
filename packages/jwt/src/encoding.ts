@@ -1,3 +1,10 @@
+import serialize from 'canonicalize'
+
+export function serializeJSON(data: unknown): string {
+  // @ts-ignore bad definition
+  return serialize(data) as string
+}
+
 // Adapted from https://developer.mozilla.org/en-US/docs/Glossary/Base64#the_unicode_problem
 
 export function base64ToBytes(base64: string) {
@@ -32,10 +39,10 @@ export function base64URLToString(base64url: string): string {
   return bytesToString(base64URLToBytes(base64url))
 }
 
-export function decodeJSON(base64url: string): Record<string, unknown> {
+export function parseJSON<T = Record<string, unknown>>(base64url: string): T {
   return JSON.parse(base64URLToString(base64url))
 }
 
-export function encodeJSON(value: Record<string, unknown>): string {
-  return stringToBase64URL(JSON.stringify(value))
+export function stringifyJSON(value: Record<string, unknown>): string {
+  return stringToBase64URL(serializeJSON(value))
 }

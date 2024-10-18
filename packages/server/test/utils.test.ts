@@ -4,7 +4,7 @@ import { jest } from '@jest/globals'
 import { HandlerError } from '../src/error.js'
 import { ErrorRejection } from '../src/rejections.js'
 import type { HandlerContext } from '../src/types.js'
-import { executeHandler, toPromise } from '../src/utils.js'
+import { executeHandler } from '../src/utils.js'
 
 type Definitions = {
   test: {
@@ -138,27 +138,5 @@ describe('executeHandler()', () => {
     expect(send).not.toHaveBeenCalled()
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
-  })
-})
-
-describe('toPromise()', () => {
-  test('with sync return', async () => {
-    await expect(toPromise(() => 'OK')).resolves.toBe('OK')
-  })
-
-  test('with sync throw', async () => {
-    await expect(
-      toPromise(() => {
-        throw 'thrown'
-      }),
-    ).rejects.toBe('thrown')
-  })
-
-  test('with resolved promise', async () => {
-    await expect(toPromise(() => Promise.resolve('OK'))).resolves.toBe('OK')
-  })
-
-  test('with rejected promise', async () => {
-    await expect(toPromise(() => Promise.reject('rejected'))).rejects.toBe('rejected')
   })
 })

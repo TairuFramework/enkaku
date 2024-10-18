@@ -1,4 +1,4 @@
-import { unsignedToken } from '@enkaku/jwt'
+import { createUnsignedToken } from '@enkaku/jwt'
 import type { AnyServerPayloadOf, ErrorObject } from '@enkaku/protocol'
 import { jest } from '@jest/globals'
 
@@ -30,7 +30,7 @@ type ChannelContext = ChannelHandlerContext<
 >
 
 describe('handleChannel()', () => {
-  const clientToken = unsignedToken({
+  const clientToken = createUnsignedToken({
     typ: 'channel',
     rid: '1',
     cmd: 'test',

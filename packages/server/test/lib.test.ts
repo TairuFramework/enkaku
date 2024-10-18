@@ -1,4 +1,4 @@
-import { unsignedToken } from '@enkaku/jwt'
+import { createUnsignedToken } from '@enkaku/jwt'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -48,10 +48,10 @@ describe('serve()', () => {
     const server = serve<Definitions>({ handlers, transport: transports.server })
 
     await transports.client.write(
-      unsignedToken({ typ: 'event', cmd: 'test/event', data: { hello: 'world' } }),
+      createUnsignedToken({ typ: 'event', cmd: 'test/event', data: { hello: 'world' } }),
     )
     await transports.client.write(
-      unsignedToken({ typ: 'request', cmd: 'test/request', rid: '1', prm: undefined }),
+      createUnsignedToken({ typ: 'request', cmd: 'test/request', rid: '1', prm: undefined }),
     )
     await server.dispose()
     await transports.dispose()

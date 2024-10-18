@@ -1,4 +1,4 @@
-import { getPublicKey, signAsync, utils, verifyAsync } from '@noble/ed25519'
+import { getPublicKeyAsync, signAsync, utils, verifyAsync } from '@noble/ed25519'
 
 import { getPublicKey as didPublicKey, getDID } from './did.js'
 import { base64ToBytes, bytesToBase64 } from './encoding.js'
@@ -15,19 +15,20 @@ export type Signer = Principal & {
   sign: (bytes: Uint8Array) => Promise<Uint8Array>
 }
 
-export function getSigner(privateKey: Uint8Array | string): Signer {
+export async function getSigner(privateKey: Uint8Array | string): Promise<Signer> {
   const key = typeof privateKey === 'string' ? base64ToBytes(privateKey) : privateKey
   return {
-    did: getDID(getPublicKey(key)),
+    did: getDID(await getPublicKeyAsync(key)),
     sign: (bytes: Uint8Array) => signAsync(bytes, key),
   }
 }
 
 export type OwnSigner = Signer & { privateKey: Uint8Array }
 
-export function randomSigner(): OwnSigner {
+export async function randomSigner(): Promise<OwnSigner> {
   const privateKey = randomPrivateKey()
-  return { ...getSigner(privateKey), privateKey }
+  const signer = await getSigner(privateKey)
+  return { ...signer, privateKey }
 }
 
 export async function verifySignature(

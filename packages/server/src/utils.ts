@@ -4,6 +4,7 @@ import type {
   RequestCallPayload,
   RequestType,
 } from '@enkaku/protocol'
+import { toPromise } from '@enkaku/util'
 
 import { HandlerError } from './error.js'
 import { ErrorRejection } from './rejections.js'
@@ -36,15 +37,6 @@ export async function consumeReader<T>(params: ConsumeReaderParams<T>): Promise<
   }
 
   handle()
-}
-
-// Replace by Promise.try() when widely available
-export function toPromise<T = unknown>(execute: () => T | Promise<T>): Promise<T> {
-  try {
-    return Promise.resolve(execute())
-  } catch (err) {
-    return Promise.reject(err)
-  }
 }
 
 export async function executeHandler<

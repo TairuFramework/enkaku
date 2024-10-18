@@ -1,4 +1,4 @@
-import { unsignedToken } from '@enkaku/jwt'
+import { createUnsignedToken } from '@enkaku/jwt'
 import type { AnyServerPayloadOf, ErrorObject } from '@enkaku/protocol'
 import { jest } from '@jest/globals'
 
@@ -22,7 +22,7 @@ type StreamContext = StreamHandlerContext<
 >
 
 describe('handleStream()', () => {
-  const clientToken = unsignedToken({
+  const clientToken = createUnsignedToken({
     typ: 'stream',
     rid: '1',
     cmd: 'test',

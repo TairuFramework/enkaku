@@ -1,11 +1,10 @@
-import type { CapabilityToken } from './capability.js'
-
 // Call payloads: from client to server
 
 export type AbortCallPayload = {
   typ: 'abort'
   rid: string
   jti?: string
+  cap?: string | Array<string>
 }
 
 export type EventCallPayload<
@@ -15,7 +14,7 @@ export type EventCallPayload<
   typ: 'event'
   cmd: Command
   jti?: string
-  cap?: Array<CapabilityToken | string>
+  cap?: string | Array<string>
 } & (Data extends undefined ? { data?: never } : { data: Data })
 
 export type RequestType = 'request' | 'stream' | 'channel'
@@ -26,7 +25,7 @@ export type RequestCallPayload<Type extends RequestType, Command extends string,
   rid: string
   prm: Params
   jti?: string
-  cap?: Array<CapabilityToken | string>
+  cap?: string | Array<string>
 }
 
 export type SendCallPayload<Value> = {
@@ -34,6 +33,7 @@ export type SendCallPayload<Value> = {
   rid: string
   val: Value
   jti?: string
+  cap?: string | Array<string>
 }
 
 export type UnknownCallPayload =

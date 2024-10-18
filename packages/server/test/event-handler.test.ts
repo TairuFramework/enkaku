@@ -1,4 +1,4 @@
-import { unsignedToken } from '@enkaku/jwt'
+import { createUnsignedToken } from '@enkaku/jwt'
 import { jest } from '@jest/globals'
 
 import { handleEvent } from '../src/handlers/event.js'
@@ -13,7 +13,11 @@ type Definitions = {
 }
 
 describe('handleEvent()', () => {
-  const clientToken = unsignedToken({ typ: 'event', cmd: 'test', data: { test: true } } as const)
+  const clientToken = createUnsignedToken({
+    typ: 'event',
+    cmd: 'test',
+    data: { test: true },
+  } as const)
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const payload = { typ: 'event', cmd: 'unknown' }

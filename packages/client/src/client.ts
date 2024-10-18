@@ -1,4 +1,4 @@
-import { unsignedToken } from '@enkaku/jwt'
+import { createUnsignedToken } from '@enkaku/jwt'
 import type {
   AnyClientPayloadOf,
   AnyDefinitions,
@@ -200,7 +200,7 @@ export class Client<
   }
 
   async #write(payload: AnyClientPayloadOf<Definitions>): Promise<void> {
-    await this.#transport.write(unsignedToken(payload))
+    await this.#transport.write(createUnsignedToken(payload))
   }
 
   get disposed() {

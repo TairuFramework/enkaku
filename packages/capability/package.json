@@ -1,5 +1,5 @@
 {
-  "name": "@enkaku/util",
+  "name": "@enkaku/capability",
   "version": "0.2.0",
   "license": "MIT",
   "keywords": [],
@@ -22,6 +22,7 @@
     "test": "pnpm run test:types && pnpm run test:unit",
     "prepublishOnly": "pnpm run build"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "dependencies": {
+    "@enkaku/jwt": "workspace:^"
+  }
 }

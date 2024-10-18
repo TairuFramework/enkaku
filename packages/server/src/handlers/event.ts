@@ -1,8 +1,8 @@
 import type { AnyDefinitions, ClientMessage, EventPayloadOf } from '@enkaku/protocol'
+import { toPromise } from '@enkaku/util'
 
 import { ErrorRejection } from '../rejections.js'
 import type { EventDataType, EventHandler, HandlerContext } from '../types.js'
-import { toPromise } from '../utils.js'
 
 export type EventMessageOf<
   Definitions extends AnyDefinitions,
