@@ -24,6 +24,7 @@ type Definitions = {
 }
 
 type ChannelContext = ChannelHandlerContext<
+  'test',
   Definitions['test']['params'],
   Definitions['test']['send'],
   Definitions['test']['receive']

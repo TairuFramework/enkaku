@@ -1,4 +1,5 @@
 import { Client } from '@enkaku/client'
+import { createUnsignedToken } from '@enkaku/jwt'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -10,30 +11,33 @@ import { createDirectTransports } from '@enkaku/transport'
 import { jest } from '@jest/globals'
 
 describe('client-server integration', () => {
-  test('events', async () => {
-    type Definitions = {
-      'test/event': EventDefinition<{ hello: string }>
-    }
+  describe('events', () => {
+    test('handles event', async () => {
+      type Definitions = {
+        'test/event': EventDefinition<{ hello: string }>
+      }
 
-    const testEventHandler = jest.fn() as jest.Mock<EventHandler<{ hello: string }>>
-    const handlers = {
-      'test/event': testEventHandler,
-    } as CommandHandlers<Definitions>
+      const testEventHandler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
+      const handlers = {
+        'test/event': testEventHandler,
+      } as CommandHandlers<Definitions>
 
-    const transports = createDirectTransports<
-      AnyServerMessageOf<Definitions>,
-      AnyClientMessageOf<Definitions>
-    >()
+      const transports = createDirectTransports<
+        AnyServerMessageOf<Definitions>,
+        AnyClientMessageOf<Definitions>
+      >()
 
-    const client = new Client({ transport: transports.client })
-    serve<Definitions>({ handlers, transport: transports.server })
+      const client = new Client({ transport: transports.client })
+      serve<Definitions>({ handlers, transport: transports.server })
 
-    await client.sendEvent('test/event', { hello: 'world' })
-    expect(testEventHandler).toHaveBeenCalledWith({
-      data: { hello: 'world' },
+      await client.sendEvent('test/event', { hello: 'world' })
+      expect(testEventHandler).toHaveBeenCalledWith({
+        data: { hello: 'world' },
+        message: createUnsignedToken({ typ: 'event', cmd: 'test/event', data: { hello: 'world' } }),
+      })
+
+      await transports.dispose()
     })
-
-    await transports.dispose()
   })
 
   describe('requests', () => {
@@ -52,7 +56,7 @@ describe('client-server integration', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<RequestHandler<undefined, string>>
+      }) as jest.Mock<RequestHandler<'test/request', undefined, string>>
       const handlers = {
         'test/request': testRequestHandler,
       } as CommandHandlers<Definitions>

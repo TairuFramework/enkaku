@@ -30,6 +30,7 @@ export function handleStream<
   msg: StreamMessageOf<Definitions, Command>,
 ): ErrorRejection | Promise<void> {
   const handler = ctx.handlers[msg.payload.cmd] as StreamHandler<
+    Command,
     ParamsType<Definitions, Command>,
     ReceiveType<Definitions, Command>,
     ResultType<Definitions, Command>
@@ -58,6 +59,11 @@ export function handleStream<
     params: msg.payload.prm,
     signal: controller.signal,
     writable: receiveStream.writable,
-  }
+  } as unknown as StreamHandlerContext<
+    'stream',
+    Command,
+    ParamsType<Definitions, Command>,
+    ReceiveType<Definitions, Command>
+  >
   return executeHandler(ctx, msg.payload, () => handler(handlerContext))
 }

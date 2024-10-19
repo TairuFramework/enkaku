@@ -1,7 +1,13 @@
 import type { AnyDefinitions, ClientMessage, RequestPayloadOf } from '@enkaku/protocol'
 
 import { ErrorRejection } from '../rejections.js'
-import type { HandlerContext, ParamsType, RequestHandler, ResultType } from '../types.js'
+import type {
+  HandlerContext,
+  ParamsType,
+  RequestHandler,
+  RequestHandlerContext,
+  ResultType,
+} from '../types.js'
 import { executeHandler } from '../utils.js'
 
 export type RequestMessageOf<
@@ -17,6 +23,7 @@ export function handleRequest<
   msg: RequestMessageOf<Definitions, Command>,
 ): ErrorRejection | Promise<void> {
   const handler = ctx.handlers[msg.payload.cmd] as RequestHandler<
+    Command,
     ParamsType<Definitions, Command>,
     ResultType<Definitions, Command>
   >
@@ -27,6 +34,9 @@ export function handleRequest<
   const controller = new AbortController()
   ctx.controllers[msg.payload.rid] = controller
 
-  const params = msg.payload.prm as ParamsType<Definitions, Command>
-  return executeHandler(ctx, msg.payload, () => handler({ params, signal: controller.signal }))
+  const handlerContext = {
+    params: msg.payload.prm,
+    signal: controller.signal,
+  } as unknown as RequestHandlerContext<'request', Command, ParamsType<Definitions, Command>>
+  return executeHandler(ctx, msg.payload, () => handler(handlerContext))
 }

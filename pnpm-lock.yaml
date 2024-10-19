@@ -157,6 +157,10 @@ importers:
   packages/util: {}
 
   tests/integration:
+    dependencies:
+      '@enkaku/jwt':
+        specifier: workspace:^
+        version: link:../../packages/jwt
     devDependencies:
       '@enkaku/client':
         specifier: workspace:^

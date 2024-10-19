@@ -17,6 +17,8 @@ type Definitions = {
 }
 
 type StreamContext = StreamHandlerContext<
+  'stream',
+  'test',
   Definitions['test']['params'],
   Definitions['test']['receive']
 >

@@ -9,15 +9,14 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": [
-    "lib/*"
-  ],
+  "files": ["lib/*"],
   "sideEffects": false,
   "scripts": {
     "test": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js"
   },
   "devDependencies": {
     "@enkaku/client": "workspace:^",
+    "@enkaku/jwt": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
     "@enkaku/transport": "workspace:^"

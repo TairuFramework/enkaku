@@ -22,7 +22,7 @@ describe('serve()', () => {
       'test/request': RequestDefinition<undefined, string>
     }
 
-    const testEventHandler = jest.fn() as jest.Mock<EventHandler<{ hello: string }>>
+    const testEventHandler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
     const testRequestHandler = jest.fn((ctx) => {
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
@@ -33,7 +33,7 @@ describe('serve()', () => {
           reject(new Error('aborted'))
         })
       })
-    }) as jest.Mock<RequestHandler<undefined, string>>
+    }) as jest.Mock<RequestHandler<'test/request', undefined, string>>
 
     const handlers = {
       'test/event': testEventHandler,
@@ -47,9 +47,12 @@ describe('serve()', () => {
 
     const server = serve<Definitions>({ handlers, transport: transports.server })
 
-    await transports.client.write(
-      createUnsignedToken({ typ: 'event', cmd: 'test/event', data: { hello: 'world' } }),
-    )
+    const eventMessage = createUnsignedToken({
+      typ: 'event',
+      cmd: 'test/event',
+      data: { hello: 'world' },
+    })
+    await transports.client.write(eventMessage)
     await transports.client.write(
       createUnsignedToken({ typ: 'request', cmd: 'test/request', rid: '1', prm: undefined }),
     )
@@ -57,6 +60,7 @@ describe('serve()', () => {
     await transports.dispose()
 
     expect(testEventHandler).toHaveBeenCalledWith({
+      message: eventMessage,
       data: { hello: 'world' },
     })
   })

@@ -1,11 +1,14 @@
-import type {} from '@enkaku/jwt'
+import type { Token } from '@enkaku/jwt'
 import type {
   AnyDefinition,
   AnyDefinitions,
   AnyServerPayloadOf,
   ChannelDefinition,
+  EventCallPayload,
   EventDefinition,
+  RequestCallPayload,
   RequestDefinition,
+  RequestType,
   StreamDefinition,
 } from '@enkaku/protocol'
 
@@ -19,37 +22,55 @@ export type ChannelController<Send = unknown> = AbortController & {
 
 export type HandlerController<Send = unknown> = RequestController | ChannelController<Send>
 
-export type EventHandlerContext<Data> = {
+export type EventHandlerContext<
+  Command extends string,
+  Data extends Record<string, unknown> | undefined,
+> = {
+  message: Token<EventCallPayload<Command, Data>>
   data: Data
 }
 
-export type EventHandler<Data> = (context: EventHandlerContext<Data>) => void | Promise<void>
+export type EventHandler<
+  Command extends string,
+  Data extends Record<string, unknown> | undefined,
+> = (context: EventHandlerContext<Command, Data>) => void | Promise<void>
 
-export type RequestHandlerContext<Params> = {
+export type RequestHandlerContext<Type extends RequestType, Command extends string, Params> = {
+  message: Token<RequestCallPayload<Type, Command, Params>>
   params: Params
   signal: AbortSignal
 }
 
 export type HandlerReturn<Result> = Result | Promise<Result>
 
-export type RequestHandler<Params, Result> = (
-  context: RequestHandlerContext<Params>,
+export type RequestHandler<Command extends string, Params, Result> = (
+  context: RequestHandlerContext<'request', Command, Params>,
 ) => HandlerReturn<Result>
 
-export type StreamHandlerContext<Params, Receive> = RequestHandlerContext<Params> & {
+export type StreamHandlerContext<
+  Type extends Exclude<RequestType, 'request'>,
+  Command extends string,
+  Params,
+  Receive,
+> = RequestHandlerContext<Type, Command, Params> & {
   writable: WritableStream<Receive>
 }
 
-export type StreamHandler<Params, Receive, Result> = (
-  context: StreamHandlerContext<Params, Receive>,
+export type StreamHandler<Command extends string, Params, Receive, Result> = (
+  context: StreamHandlerContext<'stream', Command, Params, Receive>,
 ) => HandlerReturn<Result>
 
-export type ChannelHandlerContext<Params, Sent, Receive> = StreamHandlerContext<Params, Receive> & {
+export type ChannelHandlerContext<
+  Command extends string,
+  Params,
+  Sent,
+  Receive,
+> = StreamHandlerContext<'channel', Command, Params, Receive> & {
   readable: ReadableStream<Sent>
 }
 
-export type ChannelHandler<Params, Sent, Receive, Result> = (
-  context: ChannelHandlerContext<Params, Sent, Receive>,
+export type ChannelHandler<Command extends string, Params, Sent, Receive, Result> = (
+  context: ChannelHandlerContext<Command, Params, Sent, Receive>,
 ) => HandlerReturn<Result>
 
 export type CommandHandlers<Definitions> = Definitions extends Record<
@@ -58,18 +79,22 @@ export type CommandHandlers<Definitions> = Definitions extends Record<
 >
   ? {
       [Command in Commands & string]: Definitions[Command] extends EventDefinition<infer Data>
-        ? (context: EventHandlerContext<Data>) => void
+        ? (context: EventHandlerContext<Command, Data>) => void
         : Definitions[Command] extends RequestDefinition<infer Params, infer Result>
-          ? (context: RequestHandlerContext<Params>) => HandlerReturn<Result>
+          ? (context: RequestHandlerContext<'request', Command, Params>) => HandlerReturn<Result>
           : Definitions[Command] extends StreamDefinition<infer Params, infer Receive, infer Result>
-            ? (context: StreamHandlerContext<Params, Receive>) => HandlerReturn<Result>
+            ? (
+                context: StreamHandlerContext<'stream', Command, Params, Receive>,
+              ) => HandlerReturn<Result>
             : Definitions[Command] extends ChannelDefinition<
                   infer Params,
                   infer Send,
                   infer Receive,
                   infer Result
                 >
-              ? (context: ChannelHandlerContext<Params, Send, Receive>) => HandlerReturn<Result>
+              ? (
+                  context: ChannelHandlerContext<Command, Params, Send, Receive>,
+                ) => HandlerReturn<Result>
               : never
     }
   : Record<string, never>

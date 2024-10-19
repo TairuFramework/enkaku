@@ -2,7 +2,7 @@ import type { AnyDefinitions, ClientMessage, EventPayloadOf } from '@enkaku/prot
 import { toPromise } from '@enkaku/util'
 
 import { ErrorRejection } from '../rejections.js'
-import type { EventDataType, EventHandler, HandlerContext } from '../types.js'
+import type { EventDataType, EventHandler, EventHandlerContext, HandlerContext } from '../types.js'
 
 export type EventMessageOf<
   Definitions extends AnyDefinitions,
@@ -16,13 +16,19 @@ export function handleEvent<
   ctx: HandlerContext<Definitions>,
   msg: EventMessageOf<Definitions, Command>,
 ): ErrorRejection | Promise<void> {
-  const handler = ctx.handlers[msg.payload.cmd] as EventHandler<EventDataType<Definitions, Command>>
+  const handler = ctx.handlers[msg.payload.cmd] as EventHandler<
+    Command,
+    EventDataType<Definitions, Command>
+  >
   if (handler == null) {
     return new ErrorRejection(`No handler for command: ${msg.payload.cmd}`, { info: msg.payload })
   }
 
-  const data = msg.payload.data as EventDataType<Definitions, Command>
-  return toPromise(() => handler({ data })).catch((cause) => {
+  const handlerContext = {
+    message: msg,
+    data: msg.payload.data,
+  } as unknown as EventHandlerContext<Command, EventDataType<Definitions, Command>>
+  return toPromise(() => handler(handlerContext)).catch((cause) => {
     const err = new ErrorRejection(`Error handling command: ${msg.payload.cmd}`, {
       info: msg.payload,
       cause,

@@ -65,6 +65,10 @@ describe('handleEvent()', () => {
         clientToken,
       ),
     ).resolves.toBeUndefined()
+    expect(handler).toHaveBeenCalledWith({
+      message: createUnsignedToken(payload),
+      data: { test: true },
+    })
     expect(reject).not.toHaveBeenCalled()
   })
 })

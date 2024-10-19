@@ -31,6 +31,7 @@ export function handleChannel<
   msg: ChannelMessageOf<Definitions, Command>,
 ): ErrorRejection | Promise<void> {
   const handler = ctx.handlers[msg.payload.cmd] as ChannelHandler<
+    Command,
     ParamsType<Definitions, Command>,
     SendType<Definitions, Command>,
     ReceiveType<Definitions, Command>,
@@ -64,6 +65,7 @@ export function handleChannel<
   })
 
   const handlerContext = {
+    message: msg,
     params: msg.payload.prm,
     readable: sendStream.readable,
     signal: controller.signal,
