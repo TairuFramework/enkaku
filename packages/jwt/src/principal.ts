@@ -1,9 +1,9 @@
+import { fromB64, toB64 } from '@enkaku/codec'
 import { getPublicKeyAsync, signAsync, utils, verifyAsync } from '@noble/ed25519'
 
 import { getPublicKey as didPublicKey, getDID } from './did.js'
-import { base64ToBytes, bytesToBase64 } from './encoding.js'
 
-export { base64ToBytes as decodePrivateKey, bytesToBase64 as encodePrivateKey }
+export { fromB64 as decodePrivateKey, toB64 as encodePrivateKey }
 
 export const randomPrivateKey = utils.randomPrivateKey
 
@@ -16,7 +16,7 @@ export type Signer = Principal & {
 }
 
 export async function getSigner(privateKey: Uint8Array | string): Promise<Signer> {
-  const key = typeof privateKey === 'string' ? base64ToBytes(privateKey) : privateKey
+  const key = typeof privateKey === 'string' ? fromB64(privateKey) : privateKey
   return {
     did: getDID(await getPublicKeyAsync(key)),
     sign: (bytes: Uint8Array) => signAsync(bytes, key),

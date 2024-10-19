@@ -1,11 +1,6 @@
+import { b64uFromJSON, b64uToJSON, fromB64U, fromUTF, toB64U } from '@enkaku/codec'
+
 import { getPublicKey } from './did.js'
-import {
-  base64URLToBytes,
-  bytesToBase64URL,
-  parseJSON,
-  stringToBytes,
-  stringifyJSON,
-} from './encoding.js'
 import { type Signer, verifySignature } from './principal.js'
 
 export const SUPPORTED_ALG = 'EdDSA' as const
@@ -40,7 +35,7 @@ export async function verifySignedPayload<
     throw new Error('Missing issuer in signed token')
   }
   const publicKey = getPublicKey(payload.iss as string)
-  const message = typeof data === 'string' ? stringToBytes(data) : data
+  const message = typeof data === 'string' ? fromUTF(data) : data
   const verified = await verifySignature(signature, message, publicKey)
   if (!verified) {
     throw new Error('Invalid signature')
@@ -121,17 +116,17 @@ export async function createSignedToken<
     typ: 'JWT',
     alg: SUPPORTED_ALG,
   } as SignedHeader<HeaderParams>
-  const encodedHeader = stringifyJSON(fullHeader)
+  const encodedHeader = b64uFromJSON(fullHeader)
   const fullPayload = { ...payload, iss: signer.did }
-  const encodedPayload = stringifyJSON(fullPayload)
+  const encodedPayload = b64uFromJSON(fullPayload)
 
   const data = `${encodedHeader}.${encodedPayload}`
-  const signature = await signer.sign(stringToBytes(data))
+  const signature = await signer.sign(fromUTF(data))
 
   return {
     header: fullHeader,
     payload: fullPayload,
-    signature: bytesToBase64URL(signature),
+    signature: toB64U(signature),
     data,
   }
 }
@@ -154,7 +149,7 @@ export async function signToken<Payload extends Record<string, unknown>>(
 }
 
 export function stringifyToken(token: Token): string {
-  const parts = [stringifyJSON(token.header), stringifyJSON(token.payload)]
+  const parts = [b64uFromJSON(token.header), b64uFromJSON(token.payload)]
   if (token.signature != null) {
     parts.push(token.signature)
   }
@@ -170,7 +165,7 @@ export async function verifyToken<
     }
     if (isSignedToken(token)) {
       const verifiedPublicKey = await verifySignedPayload(
-        base64URLToBytes(token.signature),
+        fromB64U(token.signature),
         token.payload,
         token.data,
       )
@@ -181,12 +176,12 @@ export async function verifyToken<
 
   const [encodedHeader, encodedPayload, signature] = token.split('.')
 
-  const header = parseJSON(encodedHeader)
+  const header = b64uToJSON(encodedHeader)
   if (header.typ !== 'JWT') {
     throw new Error(`Invalid token header type: ${header.typ}`)
   }
   if (header.alg === 'none') {
-    return { header, payload: parseJSON<Payload>(encodedPayload) } as UnsignedToken<Payload>
+    return { header, payload: b64uToJSON<Payload>(encodedPayload) } as UnsignedToken<Payload>
   }
 
   if (header.alg === SUPPORTED_ALG) {
@@ -194,9 +189,9 @@ export async function verifyToken<
       throw new Error('Missing signature for token with signed header')
     }
 
-    const payload = parseJSON<Payload>(encodedPayload)
+    const payload = b64uToJSON<Payload>(encodedPayload)
     const data = `${encodedHeader}.${encodedPayload}`
-    const verifiedPublicKey = await verifySignedPayload(base64URLToBytes(signature), payload, data)
+    const verifiedPublicKey = await verifySignedPayload(fromB64U(signature), payload, data)
     return {
       data,
       header,

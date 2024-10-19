@@ -70,17 +70,27 @@ importers:
         specifier: workspace:^
         version: link:../transport
 
+  packages/codec:
+    dependencies:
+      canonicalize:
+        specifier: ^2.0.0
+        version: 2.0.0
+    devDependencies:
+      uint8arrays:
+        specifier: ^5.1.0
+        version: 5.1.0
+
   packages/jwt:
     dependencies:
+      '@enkaku/codec':
+        specifier: workspace:^
+        version: link:../codec
       '@enkaku/stream':
         specifier: workspace:^
         version: link:../stream
       '@noble/ed25519':
         specifier: ^2.1.0
         version: 2.1.0
-      canonicalize:
-        specifier: ^2.0.0
-        version: 2.0.0
       multiformats:
         specifier: ^13.3.0
         version: 13.3.0

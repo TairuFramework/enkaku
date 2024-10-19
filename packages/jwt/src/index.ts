@@ -1,16 +1,4 @@
 export {
-  base64ToBytes,
-  base64URLToBytes,
-  base64URLToString,
-  bytesToBase64,
-  bytesToBase64URL,
-  bytesToString,
-  stringToBase64URL,
-  stringToBytes,
-  stringifyJSON,
-  parseJSON,
-} from './encoding.js'
-export {
   type OwnSigner,
   type Principal,
   type Signer,

@@ -1,6 +1,6 @@
 {
-  "name": "@enkaku/jwt",
-  "version": "0.2.3",
+  "name": "@enkaku/codec",
+  "version": "0.2.0",
   "license": "MIT",
   "keywords": [],
   "type": "module",
@@ -12,7 +12,6 @@
   "files": ["lib/*"],
   "sideEffects": false,
   "scripts": {
-    "start": "tsx ./src/run.ts",
     "build:clean": "del lib",
     "build:js": "swc src -d ./lib --config-file ../../swc.json --strip-leading-paths",
     "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
@@ -24,10 +23,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/codec": "workspace:^",
-    "@enkaku/stream": "workspace:^",
-    "@noble/ed25519": "^2.1.0",
-    "multiformats": "^13.3.0"
+    "canonicalize": "^2.0.0"
   },
   "devDependencies": {
     "uint8arrays": "^5.1.0"
