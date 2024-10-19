@@ -2,133 +2,299 @@ import { createSignedToken, randomSigner, stringifyToken } from '@enkaku/jwt'
 
 import {
   type CapabilityPayload,
-  can,
+  assertNonExpired,
+  assertValidDelegation,
   checkCapability,
   checkDelegationChain,
-  checkExpired,
-  checkValidParent,
   createCapability,
+  hasPermission,
   now,
 } from '../src/index.js'
 
-describe('can()', () => {
-  test('with single resource', () => {
-    expect(can('foo/bar', 'foo/bar')).toBe(true)
-    expect(can('foo/bar', 'foo/baz')).toBe(false)
-    expect(can('foo/bar', 'foo/*')).toBe(true)
-    expect(can('foo/bar', '*')).toBe(true)
-    expect(can('foo/bar', '')).toBe(false)
+describe('hasPermission()', () => {
+  test('with single action and resource', () => {
+    // Same action, different resources
+    expect(
+      hasPermission({ act: 'test/read', res: 'foo/bar' }, { act: 'test/read', res: 'foo/bar' }),
+    ).toBe(true)
+    expect(
+      hasPermission({ act: 'test/read', res: 'foo/bar' }, { act: 'test/read', res: 'foo/baz' }),
+    ).toBe(false)
+    expect(
+      hasPermission({ act: 'test/read', res: 'foo/bar' }, { act: 'test/read', res: 'foo/*' }),
+    ).toBe(true)
+    expect(
+      hasPermission({ act: 'test/read', res: 'foo/bar' }, { act: 'test/read', res: '*' }),
+    ).toBe(true)
+    expect(hasPermission({ act: 'test/read', res: 'foo/bar' }, { act: 'test/read', res: '' })).toBe(
+      false,
+    )
+    // Same resource, different actions
+    expect(
+      hasPermission({ act: 'test/read', res: 'foo/bar' }, { act: 'test/read', res: 'foo/bar' }),
+    ).toBe(true)
+
+    expect(
+      hasPermission({ act: 'test/read', res: 'foo/bar' }, { act: 'test/write', res: 'foo/bar' }),
+    ).toBe(false)
+    expect(
+      hasPermission({ act: 'test/read', res: 'foo/bar' }, { act: 'test/*', res: 'foo/bar' }),
+    ).toBe(true)
+    expect(hasPermission({ act: 'test/read', res: 'foo/bar' }, { act: '*', res: 'foo/bar' })).toBe(
+      true,
+    )
+    expect(hasPermission({ act: 'test/read', res: 'foo/bar' }, { act: '', res: 'foo/bar' })).toBe(
+      false,
+    )
   })
 
-  test('with multiple resources granted, check for any match', () => {
-    expect(can('foo/bar', ['foo/foo', 'foo/bar'])).toBe(true)
-    expect(can('foo/bar', ['foo/foo', 'foo/baz'])).toBe(false)
-    expect(can('foo/bar', ['foo/foo', 'foo/*'])).toBe(true)
-    expect(can('foo/bar', ['foo/foo', '*'])).toBe(true)
-    expect(can('foo/bar', ['foo/foo', ''])).toBe(false)
+  test('with multiple actions or resources granted, check for any match', () => {
+    // Same action, different resources
+    expect(
+      hasPermission(
+        { act: 'test/read', res: 'foo/bar' },
+        { act: 'test/read', res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: 'foo/bar' },
+        { act: 'test/read', res: ['foo/foo', 'foo/baz'] },
+      ),
+    ).toBe(false)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: 'foo/bar' },
+        { act: 'test/read', res: ['foo/foo', 'foo/*'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: 'foo/bar' },
+        { act: 'test/read', res: ['foo/foo', '*'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: 'foo/bar' },
+        { act: 'test/read', res: ['foo/foo', ''] },
+      ),
+    ).toBe(false)
+    // Same resource, different actions
+    expect(
+      hasPermission(
+        { act: 'test/read', res: 'foo/bar' },
+        { act: ['test/other', 'test/read'], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: 'foo/bar' },
+        { act: ['test/other', 'test/write'], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(false)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: 'foo/bar' },
+        { act: ['test/other', 'test/*'], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: 'foo/bar' },
+        { act: ['test/other', '*'], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: 'foo/bar' },
+        { act: ['test/other', ''], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(false)
   })
 
-  test('with multiple resources expected, check for every match', () => {
-    expect(can(['foo/foo', 'foo/bar'], ['foo/foo', 'foo/bar'])).toBe(true)
-    expect(can(['foo/foo', 'foo/bar'], ['foo/foo', 'foo/baz'])).toBe(false)
-    expect(can(['foo/foo', 'foo/bar'], ['foo/foo', 'foo/*'])).toBe(true)
-    expect(can(['foo/foo', 'foo/bar'], ['foo/foo', ''])).toBe(false)
-    expect(can(['foo/foo', 'foo/bar'], 'foo/*')).toBe(true)
-    expect(can(['foo/foo', 'foo/bar'], '*')).toBe(true)
-    expect(can(['foo/foo', 'foo/bar'], '')).toBe(false)
+  test('with multiple actions or resources expected, check for every match', () => {
+    // Same action, different resources
+    expect(
+      hasPermission(
+        { act: 'test/read', res: ['foo/foo', 'foo/bar'] },
+        { act: 'test/read', res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: ['foo/foo', 'foo/bar'] },
+        { act: 'test/read', res: ['foo/foo', 'foo/baz'] },
+      ),
+    ).toBe(false)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: ['foo/foo', 'foo/bar'] },
+        { act: 'test/read', res: ['foo/foo', 'foo/*'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: ['foo/foo', 'foo/bar'] },
+        { act: 'test/read', res: ['foo/foo', ''] },
+      ),
+    ).toBe(false)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: ['foo/foo', 'foo/bar'] },
+        { act: 'test/read', res: 'foo/*' },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: ['foo/foo', 'foo/bar'] },
+        { act: 'test/read', res: '*' },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: 'test/read', res: ['foo/foo', 'foo/bar'] },
+        { act: 'test/read', res: '' },
+      ),
+    ).toBe(false)
+    // Same resource, different actions
+    expect(
+      hasPermission(
+        { act: ['test/read', 'test/write'], res: ['foo/foo', 'foo/bar'] },
+        { act: ['test/read', 'test/write'], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: ['test/read', 'test/delete'], res: ['foo/foo', 'foo/bar'] },
+        { act: ['test/read', 'test/write'], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(false)
+    expect(
+      hasPermission(
+        { act: ['test/read', 'test/write'], res: ['foo/foo', 'foo/bar'] },
+        { act: ['test/read'], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(false)
+    expect(
+      hasPermission(
+        { act: ['test/read', 'test/write'], res: ['foo/foo', 'foo/bar'] },
+        { act: ['test/read', 'test/*'], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: ['test/read', 'test/write'], res: ['foo/foo', 'foo/bar'] },
+        { act: ['test/read', '*'], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(true)
+    expect(
+      hasPermission(
+        { act: ['test/read', 'test/write'], res: ['foo/foo', 'foo/bar'] },
+        { act: ['test/read', ''], res: ['foo/foo', 'foo/bar'] },
+      ),
+    ).toBe(false)
   })
 })
 
-describe('checkExpired()', () => {
+describe('assertNonExpired()', () => {
   test('with no expiration', () => {
-    expect(() => checkExpired({})).not.toThrow()
-    expect(() => checkExpired({ exp: undefined })).not.toThrow()
+    expect(() => assertNonExpired({})).not.toThrow()
+    expect(() => assertNonExpired({ exp: undefined })).not.toThrow()
   })
 
   test('with valid expiration', () => {
     const exp = now() + 1000
-    expect(() => checkExpired({ exp })).not.toThrow()
-    expect(() => checkExpired({ exp }, exp - 100)).not.toThrow()
+    expect(() => assertNonExpired({ exp })).not.toThrow()
+    expect(() => assertNonExpired({ exp }, exp - 100)).not.toThrow()
   })
 
   test('with invalid expiration', () => {
     const exp = now() - 1000
-    expect(() => checkExpired({ exp })).toThrow('Invalid token: expired')
-    expect(() => checkExpired({ exp: exp - 1000 }, exp)).toThrow('Invalid token: expired')
+    expect(() => assertNonExpired({ exp })).toThrow('Invalid token: expired')
+    expect(() => assertNonExpired({ exp: exp - 1000 }, exp)).toThrow('Invalid token: expired')
   })
 })
 
-describe('checkValidParent()', () => {
+describe('assertValidDelegation()', () => {
   test('checks matching issuer and audience', () => {
     expect(() => {
-      checkValidParent(
-        { iss: 'did:test:123' } as CapabilityPayload,
+      assertValidDelegation(
         { aud: 'did:test:123' } as CapabilityPayload,
+        { iss: 'did:test:123' } as CapabilityPayload,
       )
     }).not.toThrow()
     expect(() => {
-      checkValidParent(
-        { iss: 'did:test:123' } as CapabilityPayload,
+      assertValidDelegation(
         { aud: 'did:test:456' } as CapabilityPayload,
+        { iss: 'did:test:123' } as CapabilityPayload,
       )
     }).toThrow('Invalid capability: audience mismatch')
   })
 
   test('checks matching subject', () => {
     expect(() => {
-      checkValidParent(
-        { iss: 'did:test:123', sub: 'did:test:456' } as CapabilityPayload,
+      assertValidDelegation(
         { aud: 'did:test:123', sub: 'did:test:456' } as CapabilityPayload,
+        { iss: 'did:test:123', sub: 'did:test:456' } as CapabilityPayload,
       )
     }).not.toThrow()
     expect(() => {
-      checkValidParent(
-        { iss: 'did:test:123', sub: 'did:test:456' } as CapabilityPayload,
+      assertValidDelegation(
         { aud: 'did:test:123', sub: 'did:test:789' } as CapabilityPayload,
+        { iss: 'did:test:123', sub: 'did:test:456' } as CapabilityPayload,
       )
     }).toThrow('Invalid capability: subject mismatch')
   })
 
   test('checks expired parent', () => {
     expect(() => {
-      checkValidParent(
-        { iss: 'did:test:123', sub: 'did:test:456' } as CapabilityPayload,
+      assertValidDelegation(
         { aud: 'did:test:123', sub: 'did:test:456', exp: now() + 1000 } as CapabilityPayload,
+        { iss: 'did:test:123', sub: 'did:test:456' } as CapabilityPayload,
       )
     }).not.toThrow()
     expect(() => {
-      checkValidParent(
-        { iss: 'did:test:123', sub: 'did:test:456' } as CapabilityPayload,
+      assertValidDelegation(
         { aud: 'did:test:123', sub: 'did:test:456', exp: now() - 1000 } as CapabilityPayload,
+        { iss: 'did:test:123', sub: 'did:test:456' } as CapabilityPayload,
       )
     }).toThrow('Invalid token: expired')
   })
 
-  test('checks matching resources', () => {
+  test('checks matching actions and resources', () => {
     expect(() => {
-      checkValidParent(
-        {
-          iss: 'did:test:123',
-          sub: 'did:test:456',
-          res: ['foo/bar', 'foo/baz'],
-        } as CapabilityPayload,
-        { aud: 'did:test:123', sub: 'did:test:456', res: ['foo/*'] } as CapabilityPayload,
-      )
-    }).not.toThrow()
-    expect(() => {
-      checkValidParent(
-        {
-          iss: 'did:test:123',
-          sub: 'did:test:456',
-          res: ['foo/bar', 'foo/baz'],
-        } as CapabilityPayload,
+      assertValidDelegation(
         {
           aud: 'did:test:123',
           sub: 'did:test:456',
-          res: ['foo/bar', 'foo/foo'],
+          act: 'test',
+          res: 'foo/*',
+        } as CapabilityPayload,
+        {
+          iss: 'did:test:123',
+          sub: 'did:test:456',
+          act: 'test',
+          res: ['foo/bar', 'foo/baz'],
         } as CapabilityPayload,
       )
-    }).toThrow('Invalid capability: resource mismatch')
+    }).not.toThrow()
+    expect(() => {
+      assertValidDelegation(
+        {
+          aud: 'did:test:123',
+          sub: 'did:test:456',
+          act: 'test',
+          res: ['foo/bar', 'foo/foo'],
+        } as CapabilityPayload,
+        {
+          iss: 'did:test:123',
+          sub: 'did:test:456',
+          act: 'test',
+          res: ['foo/bar', 'foo/baz'],
+        } as CapabilityPayload,
+      )
+    }).toThrow('Invalid capability: permission mismatch')
   })
 })
 
@@ -161,17 +327,20 @@ describe('checkDelegationChain()', () => {
     const delegateToB = await createCapability(signerA, {
       sub: signerA.did,
       aud: signerB.did,
-      res: ['foo/*'],
+      act: '*',
+      res: 'foo/*',
     })
     const delegateToC = await createCapability(signerB, {
       sub: signerA.did,
       aud: signerC.did,
+      act: 'test/*',
       res: ['foo/bar', 'foo/baz'],
     })
     const delegateToD = await createCapability(signerC, {
       sub: signerA.did,
       aud: signerD.did,
-      res: ['foo/baz'],
+      act: ['test/read', 'test/write'],
+      res: 'foo/baz',
     })
     await expect(
       checkDelegationChain(delegateToD.payload, [
@@ -193,23 +362,28 @@ describe('checkCapability()', () => {
     const delegateToB = await createCapability(signerA, {
       sub: signerA.did,
       aud: signerB.did,
+      act: '*',
       res: ['foo/*'],
     })
     const delegateToC = await createCapability(signerB, {
       sub: signerA.did,
       aud: signerC.did,
+      act: 'test/*',
       res: ['foo/bar', 'foo/baz'],
     })
     const delegateToD = await createCapability(signerC, {
       sub: signerA.did,
       aud: signerD.did,
+      act: 'test/*',
       res: ['foo/baz'],
     })
     const token = await createSignedToken(signerD, {
       sub: signerA.did,
-      cmd: 'foo/baz',
+      cmd: 'test/call',
       cap: [stringifyToken(delegateToD), stringifyToken(delegateToC), stringifyToken(delegateToB)],
     })
-    await expect(checkCapability('foo/baz', token.payload)).resolves.not.toThrow()
+    await expect(
+      checkCapability({ act: 'test/call', res: 'foo/baz' }, token.payload),
+    ).resolves.not.toThrow()
   })
 })

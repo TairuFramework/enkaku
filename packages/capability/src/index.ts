@@ -13,11 +13,15 @@ export function now(): number {
   return Math.floor(Date.now() / 1000)
 }
 
-export type CapabilityPayload = {
+export type Permission = {
+  act: string | Array<string>
+  res: string | Array<string>
+}
+
+export type CapabilityPayload = Permission & {
   iss: string
   sub: string
   aud: string
-  res: string | Array<string>
   exp?: number
   iat?: number
   jti?: string
@@ -35,6 +39,7 @@ export function isCapabilityToken<Payload extends CapabilityPayload>(
     isVerifiedToken(token) &&
     token.payload.aud != null &&
     token.payload.sub != null &&
+    token.payload.act != null &&
     token.payload.res != null
   )
 }
@@ -60,52 +65,74 @@ export async function createCapability<
   return await createSignedToken(signer, payload, header)
 }
 
-export function can(expected: string | Array<string>, granted: string | Array<string>): boolean {
-  if (Array.isArray(expected)) {
-    return expected.every((e) => can(e, granted))
-  }
-  if (Array.isArray(granted)) {
-    return granted.some((g) => can(expected, g))
-  }
+function isMatch(expected: string, granted: string): boolean {
+  return expected === granted || granted === '*'
+}
 
-  if (granted === '') {
-    return false
-  }
-  if (expected === granted || granted === '*') {
-    return true
-  }
-
+function hasPartsMatch(expected: string, granted: string): boolean {
   const expectedParts = expected.split('/')
   const grantedParts = granted.split('/')
   for (let i = 0; i < expectedParts.length; i++) {
     const part = grantedParts[i]
-    if (part !== '*' && part !== expectedParts[i]) {
+    if (part === '*') {
+      break
+    }
+    if (expectedParts[i] !== part) {
       return false
     }
   }
   return true
 }
 
-export function checkExpired(payload: { exp?: number }, atTime?: number): void {
+export function hasPermission(expected: Permission, granted: Permission): boolean {
+  // If multiple actions are expected, check that all of them are granted
+  if (Array.isArray(expected.act)) {
+    return expected.act.every((act) => hasPermission({ act, res: expected.res }, granted))
+  }
+  // If multiple resources are expected, check that all of them are granted
+  if (Array.isArray(expected.res)) {
+    return expected.res.every((res) => hasPermission({ act: expected.act, res }, granted))
+  }
+  // If multiple actions are granted, check that at least one of them matches the expectation
+  if (Array.isArray(granted.act)) {
+    return granted.act.some((act) => hasPermission(expected, { act, res: granted.res }))
+  }
+  // If multiple resource are granted, check that at least one of them matches the expectation
+  if (Array.isArray(granted.res)) {
+    return granted.res.some((res) => hasPermission(expected, { act: granted.act, res }))
+  }
+  // Sanity check
+  if (granted.act === '' || granted.res === '') {
+    return false
+  }
+  // Check for exact or wildcard match of the action and resource
+  if (isMatch(expected.act, granted.act) && isMatch(expected.res, granted.res)) {
+    return true
+  }
+  // Check for partial match of the action and resource
+  return hasPartsMatch(expected.act, granted.act) && hasPartsMatch(expected.res, granted.res)
+}
+
+export function assertNonExpired(payload: { exp?: number }, atTime?: number): void {
   if (payload.exp != null && payload.exp < (atTime ?? now())) {
     throw new Error('Invalid token: expired')
   }
 }
 
-export function checkValidParent(
-  child: CapabilityPayload,
-  parent: CapabilityPayload,
+export function assertValidDelegation(
+  from: CapabilityPayload,
+  to: CapabilityPayload,
   atTime?: number,
 ): void {
-  if (child.iss !== parent.aud) {
+  if (to.iss !== from.aud) {
     throw new Error('Invalid capability: audience mismatch')
   }
-  if (child.sub !== parent.sub) {
+  if (to.sub !== from.sub) {
     throw new Error('Invalid capability: subject mismatch')
   }
-  checkExpired(parent, atTime)
-  if (!can(child.res, parent.res)) {
-    throw new Error('Invalid capability: resource mismatch')
+  assertNonExpired(from, atTime)
+  if (!hasPermission(to, from)) {
+    throw new Error('Invalid capability: permission mismatch')
   }
 }
 
@@ -118,19 +145,19 @@ export async function checkDelegationChain(
     if (payload.iss !== payload.sub) {
       throw new Error('Invalid capability: issuer should be subject')
     }
-    checkExpired(payload, atTime)
+    assertNonExpired(payload, atTime)
     return
   }
 
   const [head, ...tail] = capabilities
-  const parent = await verifyToken<CapabilityPayload>(head)
-  assertCapabilityToken(parent)
-  checkValidParent(payload, parent.payload, atTime)
-  await checkDelegationChain(parent.payload, tail, atTime)
+  const next = await verifyToken<CapabilityPayload>(head)
+  assertCapabilityToken(next)
+  assertValidDelegation(next.payload, payload, atTime)
+  await checkDelegationChain(next.payload, tail, atTime)
 }
 
 export async function checkCapability(
-  resource: string | Array<string>,
+  permission: Permission,
   payload: SignedPayload,
   atTime?: number,
 ): Promise<void> {
@@ -141,7 +168,7 @@ export async function checkCapability(
   const time = atTime ?? now()
   if (payload.iss === payload.sub) {
     // Subject is issuer, no delegation required
-    checkExpired(payload, time)
+    assertNonExpired(payload, time)
     return
   }
 
@@ -156,13 +183,7 @@ export async function checkCapability(
   const capability = await verifyToken<CapabilityPayload>(head)
   assertCapabilityToken(capability)
 
-  const asCapability = {
-    iss: payload.iss,
-    sub: payload.sub,
-    aud: payload.sub,
-    res: resource,
-    exp: payload.exp,
-  }
-  checkValidParent(asCapability, capability.payload, time)
+  const toCapability = { ...payload, ...permission } as CapabilityPayload
+  assertValidDelegation(capability.payload, toCapability, time)
   await checkDelegationChain(capability.payload, tail, time)
 }
