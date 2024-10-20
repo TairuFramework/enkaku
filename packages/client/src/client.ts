@@ -227,7 +227,7 @@ export class Client<
   >(
     command: Command,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
-  ): Promise<InvokeReturn<T['Return']>> {
+  ): Promise<T['Return']> {
     const rid = globalThis.crypto.randomUUID()
     const controller: RequestController<T['Return']> = Object.assign(new AbortController(), {
       result: defer<T['Return']>(),
@@ -257,7 +257,7 @@ export class Client<
   >(
     command: Command,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
-  ): Promise<InvokeStreamReturn<T['Receive'], T['Return']>> {
+  ): Promise<T['Return']> {
     const rid = globalThis.crypto.randomUUID()
     const receive = createPipe<T['Receive']>()
     const controller: StreamController<T['Receive'], T['Return']> = Object.assign(
@@ -290,7 +290,7 @@ export class Client<
   >(
     command: Command,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
-  ): Promise<InvokeChannelReturn<T['Send'], T['Receive'], T['Return']>> {
+  ): Promise<T['Return']> {
     const rid = globalThis.crypto.randomUUID()
     const receive = createPipe<T['Receive']>()
     const send = createPipe<T['Send']>()
