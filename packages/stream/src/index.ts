@@ -1,23 +1,21 @@
 import { toPromise } from '@enkaku/util'
 
+export function createReadable<T>(): [ReadableStream<T>, ReadableStreamDefaultController<T>] {
+  let controller: ReadableStreamDefaultController<T> | undefined
+  const stream = new ReadableStream<T>({
+    start(ctrl) {
+      controller = ctrl
+    },
+  })
+  return [stream, controller as ReadableStreamDefaultController<T>]
+}
+
 export function createConnection<AtoB, BtoA = AtoB>(): [
   ReadableWritablePair<BtoA, AtoB>,
   ReadableWritablePair<AtoB, BtoA>,
 ] {
-  let controllerA: ReadableStreamDefaultController<BtoA>
-  let controllerB: ReadableStreamDefaultController<AtoB>
-
-  const toA = new ReadableStream<BtoA>({
-    start(ctrl) {
-      controllerA = ctrl
-    },
-  })
-
-  const toB = new ReadableStream<AtoB>({
-    start(ctrl) {
-      controllerB = ctrl
-    },
-  })
+  const [toA, controllerA] = createReadable<BtoA>()
+  const [toB, controllerB] = createReadable<AtoB>()
 
   const fromA = new WritableStream<AtoB>({
     write(msg) {
@@ -44,13 +42,7 @@ export function createConnection<AtoB, BtoA = AtoB>(): [
 }
 
 export function createPipe<T>(): ReadableWritablePair<T, T> {
-  let controller: ReadableStreamDefaultController<T>
-
-  const readable = new ReadableStream<T>({
-    start(ctrl) {
-      controller = ctrl
-    },
-  })
+  const [readable, controller] = createReadable<T>()
 
   const writable = new WritableStream<T>({
     write(msg) {
