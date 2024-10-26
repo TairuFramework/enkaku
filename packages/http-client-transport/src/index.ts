@@ -23,7 +23,12 @@ export async function createEventStream<Definitions extends AnyDefinitions>(
       console.warn('Event stream onMessage error', err)
     }
   }
-  return { id: res.id, close: source.close }
+  return {
+    id: res.id,
+    close: () => {
+      source.close()
+    },
+  }
 }
 
 type TransportStream<Definitions extends AnyDefinitions> = ReadableWritablePair<
@@ -42,7 +47,9 @@ export function createTransportStream<Definitions extends AnyDefinitions>(
   let eventStreamPromise: Promise<EventStream> | undefined
   function getEventStream() {
     if (eventStreamPromise == null) {
-      eventStreamPromise = createEventStream(url, controller.enqueue)
+      eventStreamPromise = createEventStream<Definitions>(url, (msg) => {
+        controller.enqueue(msg)
+      })
     }
     return eventStreamPromise
   }
@@ -65,9 +72,10 @@ export function createTransportStream<Definitions extends AnyDefinitions>(
   }
 
   const writable = new WritableStream<AnyClientMessageOf<Definitions>>({
-    write(msg) {
+    async write(msg) {
       if (msg.payload.typ === 'channel' || msg.payload.typ === 'stream') {
-        getEventStream().then((session) => sendMessage(msg, session.id))
+        const session = await getEventStream()
+        sendMessage(msg, session.id)
       } else {
         sendMessage(msg)
       }
