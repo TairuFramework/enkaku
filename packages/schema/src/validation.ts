@@ -1,5 +1,5 @@
 import { Ajv } from 'ajv'
-import { type FromSchema, asConst } from 'json-schema-to-ts'
+import type { FromSchema } from 'json-schema-to-ts'
 
 import { ValidationError } from './errors.js'
 import type { SchemaType, SchemaWithID } from './types.js'

@@ -16,9 +16,13 @@
   },
   "devDependencies": {
     "@enkaku/client": "workspace:^",
+    "@enkaku/http-client-transport": "workspace:^",
+    "@enkaku/http-server-transport": "workspace:^",
     "@enkaku/jwt": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
-    "@enkaku/transport": "workspace:^"
+    "@enkaku/transport": "workspace:^",
+    "@hono/node-server": "^1.13.2",
+    "get-port": "^7.1.0"
   }
 }

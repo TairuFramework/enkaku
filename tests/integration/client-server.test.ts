@@ -12,15 +12,13 @@ import { jest } from '@jest/globals'
 
 describe('client-server integration', () => {
   describe('events', () => {
-    test('handles event', async () => {
+    test('handles events', async () => {
       type Definitions = {
         'test/event': EventDefinition<{ hello: string }>
       }
 
-      const testEventHandler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
-      const handlers = {
-        'test/event': testEventHandler,
-      } as CommandHandlers<Definitions>
+      const handler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
+      const handlers = { 'test/event': handler } as CommandHandlers<Definitions>
 
       const transports = createDirectTransports<
         AnyServerMessageOf<Definitions>,
@@ -31,7 +29,7 @@ describe('client-server integration', () => {
       serve<Definitions>({ handlers, transport: transports.server })
 
       await client.sendEvent('test/event', { hello: 'world' })
-      expect(testEventHandler).toHaveBeenCalledWith({
+      expect(handler).toHaveBeenCalledWith({
         data: { hello: 'world' },
         message: createUnsignedToken({ typ: 'event', cmd: 'test/event', data: { hello: 'world' } }),
       })
@@ -41,12 +39,12 @@ describe('client-server integration', () => {
   })
 
   describe('requests', () => {
-    test('handles request', async () => {
+    test('handles requests', async () => {
       type Definitions = {
         'test/request': RequestDefinition<undefined, string>
       }
 
-      const testRequestHandler = jest.fn((ctx) => {
+      const handler = jest.fn((ctx) => {
         return new Promise((resolve, reject) => {
           const timer = setTimeout(() => {
             resolve('OK')
@@ -57,9 +55,7 @@ describe('client-server integration', () => {
           })
         })
       }) as jest.Mock<RequestHandler<'test/request', undefined, string>>
-      const handlers = {
-        'test/request': testRequestHandler,
-      } as CommandHandlers<Definitions>
+      const handlers = { 'test/request': handler } as CommandHandlers<Definitions>
 
       const transports = createDirectTransports<
         AnyServerMessageOf<Definitions>,
