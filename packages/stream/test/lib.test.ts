@@ -1,3 +1,5 @@
+import { Result } from 'typescript-result'
+
 import {
   combineTransformSteps,
   createConnection,
@@ -6,7 +8,6 @@ import {
   createTransformSink,
   createTransformSource,
   createTransformStep,
-  toStep,
 } from '../src/index.js'
 
 describe('createConnection()', () => {
@@ -88,7 +89,7 @@ describe('transformations pipeline', () => {
   test('using transformation functions directly', async () => {
     const source = createTransformSource<string>((input, controller) => {
       if (input.trim() !== '') {
-        controller.enqueue(toStep(input))
+        controller.enqueue(Result.ok(input))
       }
     })
     const transforms = combineTransformSteps<string, number>(
@@ -97,10 +98,10 @@ describe('transformations pipeline', () => {
       createTransformStep((value) => value * 2),
     )
     const sink = createTransformSink<number>((result, controller) => {
-      if (result.ok) {
+      if (result.isOk()) {
         controller.enqueue(result.value)
       } else {
-        controller.error(result.reason)
+        controller.error(result.error)
       }
     })
 
@@ -123,7 +124,7 @@ describe('transformations pipeline', () => {
     const pipeline = createPipeline<string, number>({
       source: (input, controller) => {
         if (input.trim() !== '') {
-          controller.enqueue(toStep(input))
+          controller.enqueue(Result.ok(input))
         }
       },
       steps: [
@@ -132,10 +133,10 @@ describe('transformations pipeline', () => {
         createTransformStep<number>((value) => value * 2),
       ],
       sink: (result, controller) => {
-        if (result.ok) {
+        if (result.isOk()) {
           controller.enqueue(result.value)
         } else {
-          controller.error(result.reason)
+          controller.error(result.error)
         }
       },
     })

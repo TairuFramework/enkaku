@@ -24,8 +24,7 @@
   "dependencies": {
     "@enkaku/protocol": "workspace:^",
     "@enkaku/stream": "workspace:^",
-    "@enkaku/transport": "workspace:^",
-    "ofetch": "^1.4.1"
+    "@enkaku/transport": "workspace:^"
   },
   "devDependencies": {
     "undici": "^6.20.1"

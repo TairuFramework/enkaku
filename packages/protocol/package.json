@@ -23,6 +23,10 @@
     "test": "pnpm run test:types && pnpm run test:unit",
     "prepublishOnly": "pnpm run build"
   },
+  "dependencies": {
+    "@enkaku/schema": "workspace:^",
+    "typescript-result": "^3.0.0"
+  },
   "devDependencies": {
     "@enkaku/jwt": "workspace:^",
     "@enkaku/transport": "workspace:^"

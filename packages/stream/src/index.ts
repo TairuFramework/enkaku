@@ -1,4 +1,5 @@
 import { toPromise } from '@enkaku/util'
+import { Result } from 'typescript-result'
 
 export function createReadable<T>(): [ReadableStream<T>, ReadableStreamDefaultController<T>] {
   let controller: ReadableStreamDefaultController<T> | undefined
@@ -56,77 +57,58 @@ export function createPipe<T>(): ReadableWritablePair<T, T> {
   return { readable, writable }
 }
 
-export type TransformStepSuccess<T> = { ok: true; value: T }
-export type TransformStepFailure<R = unknown> = { ok: false; reason: R }
-export type TransformStepResult<T, R = unknown> = TransformStepSuccess<T> | TransformStepFailure<R>
-
-export function toStep<T>(value: T): TransformStepSuccess<T> {
-  return { ok: true, value }
-}
-
 export function createTransformSource<T>(
-  transform?: TransformerTransformCallback<T, TransformStepSuccess<T>>,
-): TransformStream<T, TransformStepSuccess<T>> {
-  return new TransformStream<T, TransformStepSuccess<T>>({
-    transform: transform ?? ((value, controller) => controller.enqueue(toStep(value))),
+  transform?: TransformerTransformCallback<T, Result<T, never>>,
+): TransformStream<T, Result<T, never>> {
+  return new TransformStream<T, Result<T, never>>({
+    transform: transform ?? ((value, controller) => controller.enqueue(Result.ok(value))),
   })
 }
 
-export function createTransformSink<I, O = I, R = unknown>(
-  transform: TransformerTransformCallback<TransformStepResult<I, R>, O>,
-): TransformStream<TransformStepResult<I, R>, O> {
-  return new TransformStream<TransformStepResult<I, R>, O>({ transform })
+export function createTransformSink<I, O = I, E = unknown>(
+  transform: TransformerTransformCallback<Result<I, E>, O>,
+): TransformStream<Result<I, E>, O> {
+  return new TransformStream<Result<I, E>, O>({ transform })
 }
 
-export type TransformStepStream<I, O = I, R = unknown> = TransformStream<
-  TransformStepResult<I, R>,
-  TransformStepResult<O, R>
->
+export type TransformStepStream<I, O = I, E = unknown> = TransformStream<Result<I, E>, Result<O, E>>
 
-export function createTransformStep<I, O = I, R = unknown>(
+export function createTransformStep<I, O = I, E = unknown>(
   transform: (input: I) => O | Promise<O>,
-): TransformStepStream<I, O, R> {
+): TransformStepStream<I, O, E> {
   return new TransformStream({
     transform: async (prev, controller) => {
-      if (prev.ok) {
-        try {
-          const value = await toPromise(() => transform(prev.value))
-          controller.enqueue({ ok: true, value })
-        } catch (reason) {
-          controller.enqueue({ ok: false, reason: reason as R })
-        }
-      } else {
-        controller.enqueue(prev)
-      }
+      const next = await prev.mapCatching(transform, (error) => error)
+      controller.enqueue(next as Result<O, E>)
     },
   })
 }
 
-export function combineTransformSteps<I, O = I, R = unknown>(
-  step: TransformStepStream<I, O, R>,
-): TransformStepStream<I, O, R>
-export function combineTransformSteps<I, T = I, O = T, R = unknown>(
-  step1: TransformStepStream<I, T, R>,
-  step2: TransformStepStream<T, O, R>,
-): TransformStepStream<I, O, R>
-export function combineTransformSteps<I, T1 = I, T2 = T1, O = T2, R = unknown>(
-  step1: TransformStepStream<I, T1, R>,
-  step2: TransformStepStream<T1, T2, R>,
-  step3: TransformStepStream<T2, O, R>,
-): TransformStepStream<I, O, R>
-export function combineTransformSteps<I, T1 = I, T2 = T1, T3 = T2, O = T3, R = unknown>(
-  step1: TransformStepStream<I, T1, R>,
-  step2: TransformStepStream<T1, T2, R>,
-  step3: TransformStepStream<T2, T3, R>,
-  step4: TransformStepStream<T3, O, R>,
-): TransformStream<I, TransformStepResult<O, R>>
-export function combineTransformSteps<I, T1 = I, T2 = T1, T3 = T2, T4 = T3, O = T4, R = unknown>(
-  step1: TransformStepStream<I, T1, R>,
-  step2: TransformStepStream<T1, T2, R>,
-  step3: TransformStepStream<T2, T3, R>,
-  step4: TransformStepStream<T3, T4, R>,
-  step5: TransformStepStream<T4, O, R>,
-): TransformStream<I, TransformStepResult<O, R>>
+export function combineTransformSteps<I, O = I, E = unknown>(
+  step: TransformStepStream<I, O, E>,
+): TransformStepStream<I, O, E>
+export function combineTransformSteps<I, T = I, O = T, E = unknown>(
+  step1: TransformStepStream<I, T, E>,
+  step2: TransformStepStream<T, O, E>,
+): TransformStepStream<I, O, E>
+export function combineTransformSteps<I, T1 = I, T2 = T1, O = T2, E = unknown>(
+  step1: TransformStepStream<I, T1, E>,
+  step2: TransformStepStream<T1, T2, E>,
+  step3: TransformStepStream<T2, O, E>,
+): TransformStepStream<I, O, E>
+export function combineTransformSteps<I, T1 = I, T2 = T1, T3 = T2, O = T3, E = unknown>(
+  step1: TransformStepStream<I, T1, E>,
+  step2: TransformStepStream<T1, T2, E>,
+  step3: TransformStepStream<T2, T3, E>,
+  step4: TransformStepStream<T3, O, E>,
+): TransformStream<I, Result<O, E>>
+export function combineTransformSteps<I, T1 = I, T2 = T1, T3 = T2, T4 = T3, O = T4, E = unknown>(
+  step1: TransformStepStream<I, T1, E>,
+  step2: TransformStepStream<T1, T2, E>,
+  step3: TransformStepStream<T2, T3, E>,
+  step4: TransformStepStream<T3, T4, E>,
+  step5: TransformStepStream<T4, O, E>,
+): TransformStream<I, Result<O, E>>
 export function combineTransformSteps<
   I,
   T1 = I,
@@ -135,15 +117,15 @@ export function combineTransformSteps<
   T4 = T3,
   T5 = T4,
   O = unknown,
-  R = unknown,
+  E = unknown,
 >(
-  step1: TransformStepStream<I, T1, R>,
-  step2: TransformStepStream<T1, T2, R>,
-  step3: TransformStepStream<T2, T3, R>,
-  step4: TransformStepStream<T3, T4, R>,
-  step5: TransformStepStream<T4, T5, R>,
+  step1: TransformStepStream<I, T1, E>,
+  step2: TransformStepStream<T1, T2, E>,
+  step3: TransformStepStream<T2, T3, E>,
+  step4: TransformStepStream<T3, T4, E>,
+  step5: TransformStepStream<T4, T5, E>,
   ...steps: Array<TransformStepStream<unknown>>
-): TransformStepStream<I, O, R>
+): TransformStepStream<I, O, E>
 export function combineTransformSteps(...steps: Array<TransformStepStream<unknown>>) {
   const [first, ...rest] = steps
   let current = first
@@ -154,19 +136,15 @@ export function combineTransformSteps(...steps: Array<TransformStepStream<unknow
   return { readable: current.readable, writable: first.writable }
 }
 
-export type CreatePipelineParams<I, T = I, O = T, R = unknown> = {
-  source?:
-    | TransformStream<I, TransformStepSuccess<I>>
-    | TransformerTransformCallback<I, TransformStepSuccess<I>>
+export type CreatePipelineParams<I, T = I, O = T, E = unknown> = {
+  source?: TransformStream<I, Result<I, never>> | TransformerTransformCallback<I, Result<I, never>>
   // biome-ignore lint/suspicious/noExplicitAny: how to make type-safe?
-  steps: Array<TransformStepStream<any, any, R> | ((input: any) => any | Promise<any>)>
-  sink:
-    | TransformStream<TransformStepResult<T, R>, O>
-    | TransformerTransformCallback<TransformStepResult<T, R>, O>
+  steps: Array<TransformStepStream<any, any, E> | ((input: any) => any | Promise<any>)>
+  sink: TransformStream<Result<T, E>, O> | TransformerTransformCallback<Result<T, E>, O>
 }
 
-export function createPipeline<I, T = I, O = T, R = unknown>(
-  params: CreatePipelineParams<I, T, O, R>,
+export function createPipeline<I, T = I, O = T, E = unknown>(
+  params: CreatePipelineParams<I, T, O, E>,
 ): ReadableWritablePair<O, I> {
   const source =
     params.source instanceof TransformStream ? params.source : createTransformSource(params.source)

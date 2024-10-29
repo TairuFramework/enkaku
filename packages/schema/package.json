@@ -25,6 +25,7 @@
   "dependencies": {
     "@enkaku/stream": "workspace:^",
     "ajv": "^8.17.1",
-    "json-schema-to-ts": "^3.1.1"
+    "json-schema-to-ts": "^3.1.1",
+    "typescript-result": "^3.0.0"
   }
 }

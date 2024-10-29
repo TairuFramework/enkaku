@@ -46,11 +46,9 @@ export function createServerBridge<
       const url = new URL(request.url)
       const sessionID = url.searchParams.get('id')
       if (sessionID == null) {
-        // No session ID, create one an redirect
+        // No session ID, create one and return its ID to the client
         const id = globalThis.crypto.randomUUID()
         sessions.set(id, { controller: null })
-        const redirectTo = new URL(url)
-        redirectTo.searchParams.set('id', id)
         return Response.json({ id })
       }
 

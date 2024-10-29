@@ -74,8 +74,7 @@ describe('client-server integration', () => {
       const client = new Client({ transport: transports.client })
       serve<Definitions>({ handlers, transport: transports.server })
 
-      const request = await client.request('test/request')
-      await expect(request.result).resolves.toBe('OK')
+      await expect(client.request('test/request').toValue()).resolves.toBe('OK')
 
       await transports.dispose()
     })
@@ -116,9 +115,10 @@ describe('client-server integration', () => {
       serve<Definitions>({ handlers, transport: transports.server })
 
       const stream = await client.createStream('test/stream', 3)
+      const reader = stream.receive.getReader()
       const received: Array<number> = []
       while (true) {
-        const { done, value } = await stream.receive.read()
+        const { done, value } = await reader.read()
         if (done) {
           break
         }
@@ -126,7 +126,8 @@ describe('client-server integration', () => {
       }
 
       expect(received).toEqual([3, 4, 5])
-      await expect(stream.result).resolves.toBe('END')
+      const result = await stream.result
+      expect(result.value).toBe('END')
 
       await transports.dispose()
     })
@@ -171,9 +172,10 @@ describe('client-server integration', () => {
       }
       sendNext()
 
+      const reader = channel.receive.getReader()
       const received: Array<number> = []
       while (true) {
-        const { done, value } = await channel.receive.read()
+        const { done, value } = await reader.read()
         if (done) {
           break
         }
@@ -182,7 +184,8 @@ describe('client-server integration', () => {
       }
 
       expect(received).toEqual([10, 8, 15])
-      await expect(channel.result).resolves.toBe('END')
+      const result = await channel.result
+      await expect(result.value).toBe('END')
 
       await transports.dispose()
     })

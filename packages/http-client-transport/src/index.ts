@@ -1,7 +1,8 @@
 import type { AnyClientMessageOf, AnyDefinitions, AnyServerMessageOf } from '@enkaku/protocol'
 import { createReadable } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
-import { ofetch } from 'ofetch'
+
+const HEADERS = { accept: 'application/json', 'content-type': 'application/json' }
 
 export type EventStream = {
   id: string
@@ -12,19 +13,20 @@ export async function createEventStream<Definitions extends AnyDefinitions>(
   url: string,
   onMessage: (msg: AnyServerMessageOf<Definitions>) => void,
 ): Promise<EventStream> {
-  const res = await ofetch<{ id: string }>(url)
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error('Failed to access event source')
+  }
+
+  const data = (await res.json()) as { id: string }
   const sourceURL = new URL(url)
-  sourceURL.searchParams.set('id', res.id)
+  sourceURL.searchParams.set('id', data.id)
   const source = new EventSource(sourceURL)
   source.onmessage = (event) => {
-    try {
-      onMessage(JSON.parse(event.data))
-    } catch (err) {
-      console.warn('Event stream onMessage error', err)
-    }
+    void onMessage(JSON.parse(event.data))
   }
   return {
-    id: res.id,
+    id: data.id,
     close: () => {
       source.close()
     },
@@ -38,6 +40,7 @@ type TransportStream<Definitions extends AnyDefinitions> = ReadableWritablePair<
 
 export function createTransportStream<Definitions extends AnyDefinitions>(
   url: string,
+  onErrorResponse?: (response: Response) => void,
 ): TransportStream<Definitions> {
   const [readable, controller] = createReadable<AnyServerMessageOf<Definitions>>()
 
@@ -54,30 +57,31 @@ export function createTransportStream<Definitions extends AnyDefinitions>(
     return eventStreamPromise
   }
 
-  function sendMessage(msg: AnyClientMessageOf<Definitions>, sessionID?: string) {
-    ofetch(url, {
+  async function sendMessage(
+    msg: AnyClientMessageOf<Definitions>,
+    sessionID?: string,
+  ): Promise<void> {
+    const res = await fetch(url, {
       method: 'POST',
       body: JSON.stringify(msg),
-      headers: sessionID ? { 'enkaku-session-id': sessionID } : {},
-    }).then(
-      (res) => {
-        if (res != null) {
-          controller.enqueue(res)
-        }
-      },
-      (err) => {
-        console.warn('fetch error', err)
-      },
-    )
+      headers: sessionID ? { ...HEADERS, 'enkaku-session-id': sessionID } : HEADERS,
+    })
+    if (res.ok) {
+      if (res.status !== 204) {
+        res.json().then((msg) => controller.enqueue(msg))
+      }
+    } else {
+      onErrorResponse?.(res)
+    }
   }
 
   const writable = new WritableStream<AnyClientMessageOf<Definitions>>({
     async write(msg) {
       if (msg.payload.typ === 'channel' || msg.payload.typ === 'stream') {
         const session = await getEventStream()
-        sendMessage(msg, session.id)
+        await sendMessage(msg, session.id)
       } else {
-        sendMessage(msg)
+        await sendMessage(msg)
       }
     },
     // The transport will call this method when disposing
@@ -95,6 +99,7 @@ export function createTransportStream<Definitions extends AnyDefinitions>(
 
 export type ClientTransportParams = {
   url: string
+  onErrorResponse?: (response: Response) => void
 }
 
 export class ClientTransport<Definitions extends AnyDefinitions> extends Transport<

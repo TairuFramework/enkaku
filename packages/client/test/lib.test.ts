@@ -11,6 +11,7 @@ import type {
   StreamPayloadOf,
 } from '@enkaku/protocol'
 import { createDirectTransports } from '@enkaku/transport'
+import { Result } from 'typescript-result'
 
 import { Client } from '../src/client.js'
 import { ABORTED } from '../src/constants.js'
@@ -56,7 +57,10 @@ describe('Client', () => {
       >
       expect(payload.cmd).toBe('test/request')
       await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
-      await expect(request.result).resolves.toBe('OK')
+      const result = await request.result
+      expect(result).toBeInstanceOf(Result)
+      expect(result.isOk()).toBe(true)
+      expect(result.value).toBe('OK')
 
       await transports.dispose()
     })
@@ -78,7 +82,8 @@ describe('Client', () => {
       >
       const abortRead = await transports.server.read()
       expect(abortRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid })
-      await expect(request.result).rejects.toBe(ABORTED)
+      const result = await request.result
+      expect(result.error).toBe(ABORTED)
 
       await transports.dispose()
     })
@@ -107,11 +112,13 @@ describe('Client', () => {
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 3 }))
       await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
-      await expect(stream.result).resolves.toBe('OK')
+      const result = await stream.result
+      expect(result.value).toBe('OK')
 
+      const reader = stream.receive.getReader()
       const received: Array<number> = []
       while (true) {
-        const next = await stream.receive.read()
+        const next = await reader.read()
         if (next.done) {
           break
         }
@@ -139,7 +146,8 @@ describe('Client', () => {
       >
       const abortRead = await transports.server.read()
       expect(abortRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid })
-      await expect(stream.result).rejects.toBe(ABORTED)
+      const result = await stream.result
+      expect(result.error).toBe(ABORTED)
 
       await transports.dispose()
     })
@@ -184,11 +192,13 @@ describe('Client', () => {
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 3 }))
       await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
-      await expect(channel.result).resolves.toBe('OK')
+      const result = await channel.result
+      expect(result.value).toBe('OK')
 
+      const reader = channel.receive.getReader()
       const received: Array<number> = []
       while (true) {
-        const next = await channel.receive.read()
+        const next = await reader.read()
         if (next.done) {
           break
         }
@@ -206,7 +216,7 @@ describe('Client', () => {
       >()
       const client = new Client({ transport: transports.client })
 
-      const channel = await client.createStream('test/channel')
+      const channel = await client.createChannel('test/channel')
       channel.abort()
 
       const requestRead = await transports.server.read()
@@ -216,7 +226,8 @@ describe('Client', () => {
       >
       const abortRead = await transports.server.read()
       expect(abortRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid })
-      await expect(channel.result).rejects.toBe(ABORTED)
+      const result = await channel.result
+      expect(result.error).toBe(ABORTED)
 
       await transports.dispose()
     })

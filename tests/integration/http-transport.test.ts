@@ -78,8 +78,7 @@ describe('HTTP transports', () => {
       >
 
       const { client, dispose } = await createContext<Definitions>({ 'test/request': handler })
-      const request = await client.request('test/request')
-      await expect(request.result).resolves.toBe('OK')
+      await expect(client.request('test/request').toValue()).resolves.toBe('OK')
 
       await dispose()
     })
@@ -112,9 +111,10 @@ describe('HTTP transports', () => {
       const { client, dispose } = await createContext<Definitions>({ 'test/stream': handler })
 
       const stream = await client.createStream('test/stream', 3)
+      const reader = stream.receive.getReader()
       const received: Array<number> = []
       while (true) {
-        const { done, value } = await stream.receive.read()
+        const { done, value } = await reader.read()
         if (done) {
           break
         }
@@ -122,7 +122,8 @@ describe('HTTP transports', () => {
       }
 
       expect(received).toEqual([3, 4, 5])
-      await expect(stream.result).resolves.toBe('END')
+      const result = await stream.result
+      expect(result.value).toBe('END')
 
       await dispose()
     })
@@ -161,8 +162,9 @@ describe('HTTP transports', () => {
       sendNext()
 
       const received: Array<number> = []
+      const reader = channel.receive.getReader()
       while (true) {
-        const { done, value } = await channel.receive.read()
+        const { done, value } = await reader.read()
         if (done) {
           break
         }
@@ -171,7 +173,8 @@ describe('HTTP transports', () => {
       }
 
       expect(received).toEqual([10, 8, 15])
-      await expect(channel.result).resolves.toBe('END')
+      const result = await channel.result
+      expect(result.value).toBe('END')
 
       await dispose()
     })
