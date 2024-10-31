@@ -23,6 +23,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/capability": "workspace:^",
     "@enkaku/jwt": "workspace:^",
     "@enkaku/stream": "workspace:^",
     "@enkaku/util": "workspace:^"

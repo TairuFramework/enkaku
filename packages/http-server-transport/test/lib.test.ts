@@ -23,7 +23,7 @@ describe('ServerTransport', () => {
       'test/request': testRequestHandler,
     } as CommandHandlers<Definitions>
     const transport = new ServerTransport<Definitions>()
-    const server = serve<Definitions>({ handlers, transport })
+    const server = serve<Definitions>({ handlers, insecure: true, transport })
 
     const headers = new Headers()
     headers.set('content-type', 'application/json')

@@ -6,6 +6,7 @@ import {
   type Token,
   createSignedToken,
   isVerifiedToken,
+  stringifyToken,
   verifyToken,
 } from '@enkaku/jwt'
 
@@ -65,15 +66,15 @@ export async function createCapability<
   return await createSignedToken(signer, payload, header)
 }
 
-function isMatch(expected: string, granted: string): boolean {
-  return expected === granted || granted === '*'
+export function isMatch(expected: string, actual: string): boolean {
+  return expected === actual || actual === '*'
 }
 
-function hasPartsMatch(expected: string, granted: string): boolean {
+export function hasPartsMatch(expected: string, actual: string): boolean {
   const expectedParts = expected.split('/')
-  const grantedParts = granted.split('/')
+  const actualParts = actual.split('/')
   for (let i = 0; i < expectedParts.length; i++) {
-    const part = grantedParts[i]
+    const part = actualParts[i]
     if (part === '*') {
       break
     }

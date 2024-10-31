@@ -35,7 +35,7 @@ describe('client-server integration', () => {
       >()
 
       const client = new Client({ transport: transports.client })
-      serve<Definitions>({ handlers, transport: transports.server })
+      serve<Definitions>({ handlers, insecure: true, transport: transports.server })
 
       await client.sendEvent('test/event', { hello: 'world' })
       expect(handler).toHaveBeenCalledWith({
@@ -72,7 +72,7 @@ describe('client-server integration', () => {
       >()
 
       const client = new Client({ transport: transports.client })
-      serve<Definitions>({ handlers, transport: transports.server })
+      serve<Definitions>({ handlers, insecure: true, transport: transports.server })
 
       await expect(client.request('test/request').toValue()).resolves.toBe('OK')
 
@@ -112,7 +112,7 @@ describe('client-server integration', () => {
       >()
 
       const client = new Client({ transport: transports.client })
-      serve<Definitions>({ handlers, transport: transports.server })
+      serve<Definitions>({ handlers, insecure: true, transport: transports.server })
 
       const stream = await client.createStream('test/stream', 3)
       const reader = stream.receive.getReader()
@@ -160,7 +160,7 @@ describe('client-server integration', () => {
       >()
 
       const client = new Client({ transport: transports.client })
-      serve<Definitions>({ handlers, transport: transports.server })
+      serve<Definitions>({ handlers, insecure: true, transport: transports.server })
       const channel = await client.createChannel('test/channel', 5)
 
       const send = [5, 3, 10, 20]

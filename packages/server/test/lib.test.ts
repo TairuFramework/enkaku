@@ -1,4 +1,4 @@
-import { createUnsignedToken } from '@enkaku/jwt'
+import { createSignedToken, createUnsignedToken, randomSigner } from '@enkaku/jwt'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -20,6 +20,8 @@ import {
 } from '../src/index.js'
 
 describe('serve()', () => {
+  const expiresAt = Math.floor(Date.now() / 1000) + 300 // 5 mins from now
+
   test('handles events', async () => {
     type Definitions = {
       'test/event': EventDefinition<{ hello: string }>
@@ -32,12 +34,16 @@ describe('serve()', () => {
       AnyServerMessageOf<Definitions>,
       AnyClientMessageOf<Definitions>
     >()
-    const server = serve<Definitions>({ handlers, transport: transports.server })
 
-    const message = createUnsignedToken({
+    const signer = await randomSigner()
+    const server = serve<Definitions>({ handlers, id: signer.did, transport: transports.server })
+
+    const message = await createSignedToken(signer, {
       typ: 'event',
+      aud: signer.did,
       cmd: 'test/event',
       data: { hello: 'world' },
+      exp: expiresAt,
     } as const)
     await transports.client.write(message)
     await server.dispose()
@@ -71,11 +77,16 @@ describe('serve()', () => {
       AnyServerMessageOf<Definitions>,
       AnyClientMessageOf<Definitions>
     >()
-    serve<Definitions>({ handlers, transport: transports.server })
+    const signer = await randomSigner()
+    serve<Definitions>({ handlers, id: signer.did, transport: transports.server })
 
-    await transports.client.write(
-      createUnsignedToken({ typ: 'request', cmd: 'test/request', rid: '1', prm: undefined }),
-    )
+    const message = await createSignedToken(signer, {
+      typ: 'request',
+      cmd: 'test/request',
+      rid: '1',
+      prm: undefined,
+    } as const)
+    await transports.client.write(message)
     const read = await transports.client.read()
     expect(read.value?.payload.val).toBe('OK')
 
@@ -111,11 +122,16 @@ describe('serve()', () => {
       AnyServerMessageOf<Definitions>,
       AnyClientMessageOf<Definitions>
     >()
-    serve<Definitions>({ handlers, transport: transports.server })
+    const signer = await randomSigner()
+    serve<Definitions>({ handlers, id: signer.did, transport: transports.server })
 
-    await transports.client.write(
-      createUnsignedToken({ typ: 'stream', cmd: 'test/stream', rid: '1', prm: 3 }),
-    )
+    const message = await createSignedToken(signer, {
+      typ: 'stream',
+      cmd: 'test/stream',
+      rid: '1',
+      prm: 3,
+    } as const)
+    await transports.client.write(message)
 
     const received: Array<number> = []
     let result = ''
@@ -157,11 +173,16 @@ describe('serve()', () => {
       AnyServerMessageOf<Definitions>,
       AnyClientMessageOf<Definitions>
     >()
-    serve<Definitions>({ handlers, transport: transports.server })
+    const signer = await randomSigner()
+    serve<Definitions>({ handlers, id: signer.did, transport: transports.server })
 
-    await transports.client.write(
-      createUnsignedToken({ typ: 'channel', cmd: 'test/channel', rid: '1', prm: 5 }),
-    )
+    const message = await createSignedToken(signer, {
+      typ: 'channel',
+      cmd: 'test/channel',
+      rid: '1',
+      prm: 5,
+    } as const)
+    await transports.client.write(message)
 
     const send = [5, 3, 10, 20]
     async function sendNext() {

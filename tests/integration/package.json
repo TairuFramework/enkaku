@@ -22,7 +22,7 @@
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
     "@enkaku/transport": "workspace:^",
-    "@hono/node-server": "^1.13.3",
+    "@hono/node-server": "^1.13.4",
     "get-port": "^7.1.0"
   }
 }

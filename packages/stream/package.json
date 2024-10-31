@@ -23,7 +23,6 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/util": "workspace:^",
     "typescript-result": "^3.0.0"
   }
 }

@@ -134,12 +134,10 @@ export function createClientMessageSchema<Commands extends string>(
       case 'request':
       case 'stream':
         addAbort = true
-        if (def.params != null) {
-          schemasRecord[def.params?.$id ?? `${command}:params`] = createRequestMessageSchema(
-            command,
-            def,
-          )
-        }
+        schemasRecord[def.params?.$id ?? `${command}:params`] = createRequestMessageSchema(
+          command,
+          def,
+        )
     }
   }
   if (addAbort) {

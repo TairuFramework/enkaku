@@ -33,7 +33,7 @@ async function createContext<Definitions extends AnyDefinitions>(
   const port = await getPort()
 
   const serverTransport = new ServerTransport<Definitions>()
-  serve<Definitions>({ handlers, transport: serverTransport })
+  serve<Definitions>({ handlers, insecure: true, transport: serverTransport })
   const httpServer = serveHTTP({ fetch: serverTransport.handleRequest, port })
 
   const clientTransport = new ClientTransport<Definitions>({ url: `http://localhost:${port}` })

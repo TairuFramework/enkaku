@@ -1,4 +1,3 @@
-import { toPromise } from '@enkaku/util'
 import { Result } from 'typescript-result'
 
 export function createReadable<T>(): [ReadableStream<T>, ReadableStreamDefaultController<T>] {
@@ -78,7 +77,7 @@ export function createTransformStep<I, O = I, E = unknown>(
 ): TransformStepStream<I, O, E> {
   return new TransformStream({
     transform: async (prev, controller) => {
-      const next = await prev.mapCatching(transform, (error) => error)
+      const next = await prev.mapCatching(transform)
       controller.enqueue(next as Result<O, E>)
     },
   })

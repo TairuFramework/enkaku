@@ -1,8 +1,14 @@
-import { createUnsignedToken } from '@enkaku/jwt'
-import type { AnyClientPayloadOf, AnyDefinitions, ServerTransportOf } from '@enkaku/protocol'
+import { type SignedToken, type Token, createUnsignedToken, isSignedToken } from '@enkaku/jwt'
+import type {
+  AnyClientPayloadOf,
+  AnyDefinitions,
+  AnyServerPayloadOf,
+  ServerTransportOf,
+} from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
 import { type Disposer, createDisposer } from '@enkaku/util'
 
+import { type CommandAccessRecord, checkClientToken } from './access-control.js'
 import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'
 import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { type RequestMessageOf, handleRequest } from './handlers/request.js'
@@ -15,13 +21,19 @@ import type {
   HandlerController,
 } from './types.js'
 
+type ProcessMessageOf<Definitions extends AnyDefinitions> =
+  | EventMessageOf<Definitions>
+  | RequestMessageOf<Definitions>
+  | StreamMessageOf<Definitions>
+  | ChannelMessageOf<Definitions>
+
 export type HandleMessagesParams<Definitions extends AnyDefinitions> = {
   controllers: Record<string, HandlerController>
   handlers: CommandHandlers<Definitions>
   reject: (rejection: RejectionType) => void
   signal: AbortSignal
   transport: ServerTransportOf<Definitions>
-}
+} & ({ insecure: true } | { insecure: false; serverID: string; access: CommandAccessRecord })
 
 async function handleMessages<Definitions extends AnyDefinitions>(
   params: HandleMessagesParams<Definitions>,
@@ -44,20 +56,56 @@ async function handleMessages<Definitions extends AnyDefinitions>(
     await Promise.all(Object.values(running))
   }, signal)
 
-  function process(
-    payload: AnyClientPayloadOf<Definitions>,
-    returned: ErrorRejection | Promise<void>,
+  function processHandler(
+    message: ProcessMessageOf<Definitions>,
+    handle: () => ErrorRejection | Promise<void>,
   ) {
+    const returned = handle()
     if (returned instanceof ErrorRejection) {
       reject(returned)
     } else {
-      const id = payload.typ === 'event' ? Math.random().toString(36).slice(2) : payload.rid
+      const id =
+        message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
       running[id] = returned
       returned.then(() => {
         delete running[id]
       })
     }
   }
+
+  const process = params.insecure
+    ? processHandler
+    : async (
+        message: ProcessMessageOf<Definitions>,
+        handle: () => ErrorRejection | Promise<void>,
+      ) => {
+        try {
+          if (!params.insecure) {
+            if (!isSignedToken(message as Token)) {
+              throw new Error('Message is not signed')
+            }
+            await checkClientToken(
+              params.serverID,
+              params.access,
+              message as unknown as SignedToken<AnyClientPayloadOf<Definitions>>,
+            )
+          }
+        } catch (err) {
+          const errorMessage = (err as Error).message ?? 'Access denied'
+          if (message.payload.typ === 'event') {
+            reject(new ErrorRejection(errorMessage, { cause: err, info: message }))
+          } else {
+            context.send({
+              typ: 'error',
+              rid: message.payload.rid,
+              code: 'EKK1000',
+              msg: errorMessage,
+            } as AnyServerPayloadOf<Definitions>)
+          }
+          return
+        }
+        processHandler(message, handle)
+      }
 
   async function handleNext() {
     const next = await transport.read()
@@ -71,29 +119,31 @@ async function handleMessages<Definitions extends AnyDefinitions>(
       case 'abort':
         controllers[msg.payload.rid]?.abort()
         break
-      case 'channel':
-        process(
-          msg.payload,
-          handleChannel(context, msg as unknown as ChannelMessageOf<Definitions>),
-        )
+      case 'channel': {
+        const message = msg as unknown as ChannelMessageOf<Definitions>
+        process(message, () => handleChannel(context, message))
         break
-      case 'event':
-        process(msg.payload, handleEvent(context, msg as unknown as EventMessageOf<Definitions>))
+      }
+      case 'event': {
+        const message = msg as unknown as EventMessageOf<Definitions>
+        process(message, () => handleEvent(context, message))
         break
-      case 'request':
-        process(
-          msg.payload,
-          handleRequest(context, msg as unknown as RequestMessageOf<Definitions>),
-        )
+      }
+      case 'request': {
+        const message = msg as unknown as RequestMessageOf<Definitions>
+        process(message, () => handleRequest(context, message))
         break
+      }
       case 'send': {
         const controller = controllers[msg.payload.rid] as ChannelController | undefined
         controller?.writer.write(msg.payload.val)
         break
       }
-      case 'stream':
-        process(msg.payload, handleStream(context, msg as unknown as StreamMessageOf<Definitions>))
+      case 'stream': {
+        const message = msg as unknown as StreamMessageOf<Definitions>
+        process(message, () => handleStream(context, message))
         break
+      }
     }
 
     handleNext()
@@ -107,7 +157,7 @@ export type ServeParams<Definitions extends AnyDefinitions> = {
   handlers: CommandHandlers<Definitions>
   signal?: AbortSignal
   transport: ServerTransportOf<Definitions>
-}
+} & ({ insecure: true } | { insecure?: false; id: string; access?: CommandAccessRecord })
 
 export type Server = Disposer & {
   rejections: ReadableStream<RejectionType>
@@ -129,8 +179,11 @@ export function serve<Definitions extends AnyDefinitions>(
     controllers,
     handlers: params.handlers,
     reject,
-    transport: params.transport,
     signal: abortController.signal,
+    transport: params.transport,
+    ...(params.insecure
+      ? { insecure: true }
+      : { insecure: false, serverID: params.id, access: params.access ?? {} }),
   })
 
   const disposer = createDisposer(async () => {
