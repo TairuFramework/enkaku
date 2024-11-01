@@ -4,6 +4,7 @@ export type AbortCallPayload = {
   typ: 'abort'
   rid: string
   aud?: string
+  sub?: string
   jti?: string
   cap?: string | Array<string>
   exp?: number
@@ -17,6 +18,7 @@ export type EventCallPayload<
   typ: 'event'
   cmd: Command
   aud?: string
+  sub?: string
   jti?: string
   cap?: string | Array<string>
   exp?: number
@@ -31,6 +33,7 @@ export type RequestCallPayload<Type extends RequestType, Command extends string,
   rid: string
   prm: Params
   aud?: string
+  sub?: string
   jti?: string
   cap?: string | Array<string>
   exp?: number
@@ -42,6 +45,7 @@ export type SendCallPayload<Value> = {
   rid: string
   val: Value
   aud?: string
+  sub?: string
   jti?: string
   cap?: string | Array<string>
   exp?: number

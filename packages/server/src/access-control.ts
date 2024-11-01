@@ -13,6 +13,7 @@ export type CommandAccessPayload = {
 }
 
 export async function checkCommandAccess(
+  serverID: string,
   record: CommandAccessRecord,
   token: SignedToken<CommandAccessPayload>,
   atTime?: number,
@@ -22,7 +23,6 @@ export async function checkCommandAccess(
     throw new Error('No command to check')
   }
 
-  const subject = payload.sub ?? payload.iss
   for (const [command, access] of Object.entries(record)) {
     if (hasPartsMatch(payload.cmd, command)) {
       if (access === true) {
@@ -33,12 +33,17 @@ export async function checkCommandAccess(
         // Command cannot be accessed
         continue
       }
-      if (!access.includes(subject)) {
+      if (access.includes(payload.iss)) {
+        // Issuer is allowed directly
+        return
+      }
+      if (payload.sub == null || !access.includes(payload.sub)) {
         // Subject is not allowed to access this command
         continue
       }
       try {
-        await checkCapability({ act: payload.cmd, res: subject }, payload, atTime)
+        // Check delegation from subject
+        await checkCapability({ act: payload.cmd, res: serverID }, payload, atTime)
         return
       } catch {}
     }
@@ -54,6 +59,11 @@ export async function checkClientToken<Definition extends AnyDefinitions>(
   atTime?: number,
 ): Promise<void> {
   const payload = token.payload
+  const command = (payload as CommandAccessPayload).cmd
+  if (command == null) {
+    throw new Error('No command to check')
+  }
+
   if (payload.iss === serverID) {
     // If issuer uses the server's signer, only check audience and expiration if provided
     if (payload.aud != null && payload.aud !== serverID) {
@@ -64,8 +74,15 @@ export async function checkClientToken<Definition extends AnyDefinitions>(
     }
     return
   }
+
+  if (payload.sub === serverID) {
+    // If subject is the server, check capability directly
+    await checkCapability({ act: command, res: serverID }, payload, atTime)
+    return
+  }
+
   if (payload.aud !== serverID) {
     throw new Error('Invalid audience')
   }
-  await checkCommandAccess(record, token, atTime)
+  await checkCommandAccess(serverID, record, token, atTime)
 }
