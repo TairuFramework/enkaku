@@ -1,4 +1,4 @@
-import { createUnsignedToken as unsignedToken } from '@enkaku/jwt'
+import { createSignedToken, randomSigner, createUnsignedToken as unsignedToken } from '@enkaku/jwt'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -18,6 +18,8 @@ import { ABORTED } from '../src/constants.js'
 
 describe('Client', () => {
   test('sendEvent()', async () => {
+    const [serverSigner, clientSigner] = await Promise.all([randomSigner(), randomSigner()])
+
     type Definitions = {
       'test/event': EventDefinition<{ hello: string }>
     }
@@ -26,14 +28,23 @@ describe('Client', () => {
       AnyServerMessageOf<Definitions>,
       AnyClientMessageOf<Definitions>
     >()
-    const client = new Client({ transport: transports.client })
+    const client = new Client({
+      serverID: serverSigner.did,
+      signer: clientSigner,
+      transport: transports.client,
+    })
 
     await client.sendEvent('test/event', { hello: 'world' })
+    const signedMessage = await createSignedToken(clientSigner, {
+      aud: serverSigner.did,
+      typ: 'event',
+      cmd: 'test/event',
+      data: { hello: 'world' },
+    })
+
     const eventRead = await transports.server.read()
     expect(eventRead.done).toBe(false)
-    expect(eventRead.value).toEqual(
-      unsignedToken({ typ: 'event', cmd: 'test/event', data: { hello: 'world' } }),
-    )
+    expect(eventRead.value).toEqual(signedMessage)
     await transports.dispose()
   })
 

@@ -1,5 +1,6 @@
-import { createUnsignedToken } from '@enkaku/jwt'
+import { type Signer, createSignedToken, createUnsignedToken } from '@enkaku/jwt'
 import type {
+  AnyClientMessageOf,
   AnyClientPayloadOf,
   AnyDefinitions,
   ChannelDefinition,
@@ -189,8 +190,28 @@ export function createInvovation<ResultValue, Return>(
   })
 }
 
+type CreateMessage<Definitions extends AnyDefinitions> = (
+  payload: AnyClientPayloadOf<Definitions>,
+) => AnyClientMessageOf<Definitions> | Promise<AnyClientMessageOf<Definitions>>
+
+function getCreateMessage<Definitions extends AnyDefinitions>(
+  signer?: Signer,
+  aud?: string,
+): CreateMessage<Definitions> {
+  if (signer == null) {
+    return createUnsignedToken
+  }
+  return (
+    aud
+      ? (payload) => createSignedToken(signer, { aud, ...payload })
+      : (payload) => createSignedToken(signer, payload)
+  ) as CreateMessage<Definitions>
+}
+
 export type ClientParams<Definitions extends AnyDefinitions> = {
   transport: ClientTransportOf<Definitions>
+  serverID?: string
+  signer?: Signer
 }
 
 export class Client<
@@ -198,10 +219,12 @@ export class Client<
   ClientDefinitions extends ClientDefinitionsType<Definitions> = ClientDefinitionsType<Definitions>,
 > implements Disposer
 {
-  #transport: ClientTransportOf<Definitions>
   #controllers: Record<string, AnyClientController> = {}
+  #createMessage: CreateMessage<Definitions>
+  #transport: ClientTransportOf<Definitions>
 
   constructor(params: ClientParams<Definitions>) {
+    this.#createMessage = getCreateMessage(params.signer, params.serverID)
     this.#transport = params.transport
     // Abort all controllers on disconnect
     this.#transport.disposed.then(() => {
@@ -246,7 +269,8 @@ export class Client<
   }
 
   async #write(payload: AnyClientPayloadOf<Definitions>): Promise<void> {
-    await this.#transport.write(createUnsignedToken(payload))
+    const message = await this.#createMessage(payload)
+    await this.#transport.write(message)
   }
 
   get disposed() {

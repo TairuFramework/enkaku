@@ -6,7 +6,6 @@ import {
   type Token,
   createSignedToken,
   isVerifiedToken,
-  stringifyToken,
   verifyToken,
 } from '@enkaku/jwt'
 
