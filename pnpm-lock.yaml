@@ -193,6 +193,25 @@ importers:
         specifier: workspace:^
         version: link:../transport
 
+  packages/standalone:
+    dependencies:
+      '@enkaku/client':
+        specifier: workspace:^
+        version: link:../client
+      '@enkaku/server':
+        specifier: workspace:^
+        version: link:../server
+      '@enkaku/transport':
+        specifier: workspace:^
+        version: link:../transport
+    devDependencies:
+      '@enkaku/jwt':
+        specifier: workspace:^
+        version: link:../jwt
+      '@enkaku/protocol':
+        specifier: workspace:^
+        version: link:../protocol
+
   packages/stream:
     dependencies:
       typescript-result:
