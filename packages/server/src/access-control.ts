@@ -1,11 +1,10 @@
 import { assertNonExpired, checkCapability, hasPartsMatch } from '@enkaku/capability'
-import type { SignedToken } from '@enkaku/jwt'
-import type { AnyClientPayloadOf, AnyDefinitions } from '@enkaku/protocol'
+import type { SignedToken } from '@enkaku/token'
 
 export type CommandAccessRecord = Record<string, boolean | Array<string>>
 
 export type CommandAccessPayload = {
-  iss?: string
+  iss: string
   sub?: string
   aud?: string
   cmd?: string
@@ -52,10 +51,10 @@ export async function checkCommandAccess(
   throw new Error('Access denied')
 }
 
-export async function checkClientToken<Definition extends AnyDefinitions>(
+export async function checkClientToken(
   serverID: string,
   record: CommandAccessRecord,
-  token: SignedToken<AnyClientPayloadOf<Definition>>,
+  token: SignedToken,
   atTime?: number,
 ): Promise<void> {
   const payload = token.payload

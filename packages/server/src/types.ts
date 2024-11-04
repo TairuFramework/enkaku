@@ -1,4 +1,3 @@
-import type { Token } from '@enkaku/jwt'
 import type {
   AnyDefinition,
   AnyDefinitions,
@@ -11,6 +10,7 @@ import type {
   RequestType,
   StreamDefinition,
 } from '@enkaku/protocol'
+import type { Token } from '@enkaku/token'
 
 import type { RejectionType } from './rejections.js'
 

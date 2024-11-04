@@ -1,5 +1,4 @@
 import { Client } from '@enkaku/client'
-import { createUnsignedToken } from '@enkaku/jwt'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -16,6 +15,7 @@ import {
   type StreamHandler,
   serve,
 } from '@enkaku/server'
+import { createUnsignedToken } from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
 import { jest } from '@jest/globals'
 

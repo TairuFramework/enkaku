@@ -1,5 +1,5 @@
-import { createUnsignedToken } from '@enkaku/jwt'
 import type { AnyServerPayloadOf, ErrorObject } from '@enkaku/protocol'
+import { createUnsignedToken } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
 import { handleStream } from '../src/handlers/stream.js'

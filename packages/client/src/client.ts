@@ -1,4 +1,3 @@
-import { type Signer, createSignedToken, createUnsignedToken } from '@enkaku/jwt'
 import type {
   AnyClientMessageOf,
   AnyClientPayloadOf,
@@ -10,6 +9,12 @@ import type {
   StreamDefinition,
 } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
+import {
+  type SignedPayload,
+  type Signer,
+  createSignedToken,
+  createUnsignedToken,
+} from '@enkaku/token'
 import type { Disposer } from '@enkaku/util'
 import { Result } from 'typescript-result'
 

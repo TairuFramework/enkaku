@@ -12,11 +12,6 @@ export {
   verifySignature,
 } from './principal.js'
 export {
-  type SignerInput,
-  createSignTokenStream,
-  createVerifyTokenStream,
-} from './stream.js'
-export {
   type SignedHeader,
   type SignedPayload,
   type SignedToken,
@@ -24,13 +19,17 @@ export {
   type Token,
   type UnsignedHeader,
   type UnsignedToken,
+  capabilitySchema,
   createSignedToken,
   createUnsignedToken,
-  isSignedHeader,
   isSignedToken,
   isUnsignedToken,
   isVerifiedToken,
   signToken,
+  signedHeaderSchema,
+  signedPayloadSchema,
   stringifyToken,
+  supportedHeaderSchema,
+  unsignedHeaderSchema,
   verifyToken,
 } from './token.js'

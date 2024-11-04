@@ -1,4 +1,3 @@
-import { createSignedToken, createUnsignedToken, randomSigner } from '@enkaku/jwt'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -7,6 +6,7 @@ import type {
   RequestDefinition,
   StreamDefinition,
 } from '@enkaku/protocol'
+import { createSignedToken, createUnsignedToken, randomSigner } from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
 import { jest } from '@jest/globals'
 

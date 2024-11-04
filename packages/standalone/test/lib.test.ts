@@ -1,4 +1,3 @@
-import { createSignedToken, randomSigner } from '@enkaku/jwt'
 import type {
   ChannelDefinition,
   EventDefinition,
@@ -6,6 +5,7 @@ import type {
   StreamDefinition,
 } from '@enkaku/protocol'
 import type { ChannelHandler, EventHandler, RequestHandler, StreamHandler } from '@enkaku/server'
+import { createSignedToken, randomSigner } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
 import { standalone } from '../src'

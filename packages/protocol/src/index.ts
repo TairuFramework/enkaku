@@ -1,5 +1,5 @@
 export * from './schemas/client.js'
-export * from './schemas/jwt.js'
+export * from './schemas/message.js'
 export * from './schemas/server.js'
 export type * from './types/definitions.js'
 export type * from './types/error.js'

@@ -1,4 +1,4 @@
-import { createSignedToken, randomSigner, stringifyToken } from '@enkaku/jwt'
+import { createSignedToken, randomSigner, stringifyToken } from '@enkaku/token'
 
 import {
   type CapabilityPayload,

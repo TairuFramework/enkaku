@@ -1,11 +1,11 @@
 import { createTransformStep } from '@enkaku/stream'
-import type { FromSchema } from 'json-schema-to-ts'
 
 import type { ValidationError } from './errors.js'
-import type { SchemaType, SchemaWithID } from './types.js'
+import { type Validator, assertType } from './validation.js'
 
-export function createValidationStream<S extends SchemaWithID, T = FromSchema<S>>(
-  type: SchemaType<S, T>,
-) {
-  return createTransformStep<unknown, T, ValidationError>(type.cast)
+export function createValidationStream<T>(validator: Validator<T>) {
+  return createTransformStep<unknown, T, ValidationError>((value) => {
+    assertType(validator, value)
+    return value
+  })
 }

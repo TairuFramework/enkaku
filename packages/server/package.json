@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/server",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "license": "MIT",
   "keywords": [],
   "type": "module",
@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@enkaku/capability": "workspace:^",
-    "@enkaku/jwt": "workspace:^",
+    "@enkaku/token": "workspace:^",
     "@enkaku/stream": "workspace:^",
     "@enkaku/util": "workspace:^"
   },

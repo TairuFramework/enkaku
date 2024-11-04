@@ -1,5 +1,5 @@
-import { createUnsignedToken } from '@enkaku/jwt'
-import { createSchemaType } from '@enkaku/schema'
+import { createValidator, isType } from '@enkaku/schema'
+import { createUnsignedToken } from '@enkaku/token'
 
 import {
   type CommandsRecordProtocol,
@@ -32,34 +32,34 @@ const protocol = {
 describe('protocol messages validation', () => {
   test('createClientMessageSchema()', () => {
     const schema = createClientMessageSchema(protocol)
-    const type = createSchemaType({ ...schema, $id: 'client' })
+    const validator = createValidator({ ...schema, $id: 'client' })
 
     const validAbort = createUnsignedToken({ typ: 'abort', rid: '1' })
-    expect(type.is(validAbort)).toBe(true)
+    expect(isType(validator, validAbort)).toBe(true)
 
     const invalidAbort = createUnsignedToken({ typ: 'abort' })
-    expect(type.is(invalidAbort)).toBe(false)
+    expect(isType(validator, invalidAbort)).toBe(false)
 
     const validEvent = createUnsignedToken({
       typ: 'event',
       cmd: 'test/event',
       data: { foo: 'bar' },
     })
-    expect(type.is(validEvent)).toBe(true)
+    expect(isType(validator, validEvent)).toBe(true)
 
     const invalidEvent = createUnsignedToken({
       typ: 'event',
       cmd: 'test/event',
       data: { foo: 'bar', invalid: true },
     })
-    expect(type.is(invalidEvent)).toBe(false)
+    expect(isType(validator, invalidEvent)).toBe(false)
 
     const validRequest = createUnsignedToken({
       typ: 'request',
       cmd: 'test/request',
       rid: '1',
     })
-    expect(type.is(validRequest)).toBe(true)
+    expect(isType(validator, validRequest)).toBe(true)
 
     const invalidRequest = createUnsignedToken({
       typ: 'request',
@@ -67,7 +67,7 @@ describe('protocol messages validation', () => {
       rid: '1',
       prm: true,
     })
-    expect(type.is(invalidRequest)).toBe(false)
+    expect(isType(validator, invalidRequest)).toBe(false)
 
     const validStream = createUnsignedToken({
       typ: 'stream',
@@ -75,49 +75,48 @@ describe('protocol messages validation', () => {
       rid: '1',
       prm: 1,
     })
-    expect(type.is(validStream)).toBe(true)
+    expect(isType(validator, validStream)).toBe(true)
 
     const invalidStream = createUnsignedToken({
       typ: 'stream',
       cmd: 'test/other',
       rid: '1',
     })
-    expect(type.is(invalidStream)).toBe(false)
+    expect(isType(validator, invalidStream)).toBe(false)
 
     const validSend = createUnsignedToken({ typ: 'send', rid: '1', val: '1' })
-    expect(type.is(validSend)).toBe(true)
+    expect(isType(validator, validSend)).toBe(true)
 
     const invalidSend = createUnsignedToken({ typ: 'send', val: '1' })
-    expect(type.is(invalidSend)).toBe(false)
+    expect(isType(validator, invalidSend)).toBe(false)
   })
 
   test('createServerMessageSchema()', () => {
     const schema = createServerMessageSchema(protocol)
-    // console.log('schema', JSON.stringify(schema, null, 2))
-    const type = createSchemaType({ ...schema, $id: 'server' })
+    const validator = createValidator({ ...schema, $id: 'server' })
 
     const validResult = createUnsignedToken({
       typ: 'result',
       rid: '1',
       val: 'test',
     })
-    expect(type.is(validResult)).toBe(true)
+    expect(isType(validator, validResult)).toBe(true)
 
     const invalidResult = createUnsignedToken({ typ: 'result', val: 'test' })
-    expect(type.is(invalidResult)).toBe(false)
+    expect(isType(validator, invalidResult)).toBe(false)
 
     const validReceive = createUnsignedToken({
       typ: 'receive',
       rid: '1',
       val: 1,
     })
-    expect(type.is(validReceive)).toBe(true)
+    expect(isType(validator, validReceive)).toBe(true)
 
     const invalidReceive = createUnsignedToken({
       typ: 'receive',
       rid: '1',
       val: { test: true },
     })
-    expect(type.is(invalidReceive)).toBe(false)
+    expect(isType(validator, invalidReceive)).toBe(false)
   })
 })

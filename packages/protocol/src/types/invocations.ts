@@ -3,12 +3,6 @@
 export type AbortCallPayload = {
   typ: 'abort'
   rid: string
-  aud?: string
-  sub?: string
-  jti?: string
-  cap?: string | Array<string>
-  exp?: number
-  iat?: number
 }
 
 export type EventCallPayload<
@@ -17,12 +11,6 @@ export type EventCallPayload<
 > = {
   typ: 'event'
   cmd: Command
-  aud?: string
-  sub?: string
-  jti?: string
-  cap?: string | Array<string>
-  exp?: number
-  iat?: number
 } & (Data extends undefined ? { data?: never } : { data: Data })
 
 export type RequestType = 'request' | 'stream' | 'channel'
@@ -32,24 +20,12 @@ export type RequestCallPayload<Type extends RequestType, Command extends string,
   cmd: Command
   rid: string
   prm: Params
-  aud?: string
-  sub?: string
-  jti?: string
-  cap?: string | Array<string>
-  exp?: number
-  iat?: number
 }
 
 export type SendCallPayload<Value> = {
   typ: 'send'
   rid: string
   val: Value
-  aud?: string
-  sub?: string
-  jti?: string
-  cap?: string | Array<string>
-  exp?: number
-  iat?: number
 }
 
 export type UnknownCallPayload =
@@ -69,21 +45,18 @@ export type ErrorReplyPayload<
   code: Code
   msg: string
   data: Data
-  jti?: string
 }
 
 export type ReceiveReplyPayload<Value> = {
   typ: 'receive'
   rid: string
   val: Value
-  jti?: string
 }
 
 export type ResultReplyPayload<Value> = {
   typ: 'result'
   rid: string
   val: Value
-  jti?: string
 }
 
 export type UnknownReplyPayload =

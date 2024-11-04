@@ -1,7 +1,7 @@
 import { setTimeout } from 'node:timers/promises'
-import { createUnsignedToken } from '@enkaku/jwt'
 import type { EventDefinition, RequestDefinition } from '@enkaku/protocol'
 import { type CommandHandlers, type EventHandler, type RequestHandler, serve } from '@enkaku/server'
+import { createUnsignedToken } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
 import { ServerTransport } from '../src/index.js'

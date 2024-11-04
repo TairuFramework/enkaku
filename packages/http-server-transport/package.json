@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/http-server-transport",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "license": "MIT",
   "keywords": [],
   "type": "module",
@@ -29,7 +29,7 @@
     "@enkaku/util": "workspace:^"
   },
   "devDependencies": {
-    "@enkaku/jwt": "workspace:^",
+    "@enkaku/token": "workspace:^",
     "@enkaku/server": "workspace:^"
   }
 }

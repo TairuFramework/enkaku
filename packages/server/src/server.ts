@@ -1,11 +1,6 @@
-import { type SignedToken, type Token, createUnsignedToken, isSignedToken } from '@enkaku/jwt'
-import type {
-  AnyClientPayloadOf,
-  AnyDefinitions,
-  AnyServerPayloadOf,
-  ServerTransportOf,
-} from '@enkaku/protocol'
+import type { AnyDefinitions, AnyServerPayloadOf, ServerTransportOf } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
+import { type SignedToken, type Token, createUnsignedToken, isSignedToken } from '@enkaku/token'
 import { type Disposer, createDisposer } from '@enkaku/util'
 
 import { type CommandAccessRecord, checkClientToken } from './access-control.js'
@@ -87,7 +82,7 @@ async function handleMessages<Definitions extends AnyDefinitions>(
             await checkClientToken(
               params.serverID,
               params.access,
-              message as unknown as SignedToken<AnyClientPayloadOf<Definitions>>,
+              message as unknown as SignedToken,
             )
           }
         } catch (err) {
@@ -98,7 +93,7 @@ async function handleMessages<Definitions extends AnyDefinitions>(
             context.send({
               typ: 'error',
               rid: message.payload.rid,
-              code: 'EKK1000',
+              code: 'EK02',
               msg: errorMessage,
             } as AnyServerPayloadOf<Definitions>)
           }

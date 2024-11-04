@@ -10,6 +10,7 @@ import { ErrorRejection } from '../rejections.js'
 import type {
   ChannelController,
   ChannelHandler,
+  ChannelHandlerContext,
   HandlerContext,
   ParamsType,
   ReceiveType,
@@ -70,6 +71,11 @@ export function handleChannel<
     readable: sendStream.readable,
     signal: controller.signal,
     writable: receiveStream.writable,
-  }
+  } as unknown as ChannelHandlerContext<
+    Command,
+    ParamsType<Definitions, Command>,
+    SendType<Definitions, Command>,
+    ReceiveType<Definitions, Command>
+  >
   return executeHandler(ctx, msg.payload, () => handler(handlerContext))
 }

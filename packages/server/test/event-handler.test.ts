@@ -1,4 +1,4 @@
-import { createUnsignedToken } from '@enkaku/jwt'
+import { createUnsignedToken } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
 import { handleEvent } from '../src/handlers/event.js'

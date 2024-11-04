@@ -62,8 +62,8 @@ export async function executeHandler<
     if (!controller.signal.aborted) {
       context.send(
         HandlerError.from(cause, {
-          code: 'EKK2000',
-          message: 'Error code EKK2000',
+          code: 'EK01',
+          message: (cause as Error).message ?? 'Handler execution failed',
         }).toPayload(payload.rid) as AnyServerPayloadOf<Definitions>,
       )
     }

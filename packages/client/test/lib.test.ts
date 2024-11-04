@@ -1,4 +1,3 @@
-import { createSignedToken, randomSigner, createUnsignedToken as unsignedToken } from '@enkaku/jwt'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -10,6 +9,11 @@ import type {
   StreamDefinition,
   StreamPayloadOf,
 } from '@enkaku/protocol'
+import {
+  createSignedToken,
+  randomSigner,
+  createUnsignedToken as unsignedToken,
+} from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
 import { Result } from 'typescript-result'
 

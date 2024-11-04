@@ -10,7 +10,7 @@ import type {
   StreamCommandProtocol,
 } from '../types/protocol.js'
 
-import { createMessageSchema } from './jwt.js'
+import { createMessageSchema } from './message.js'
 
 export const abortMessageSchema: Schema = createMessageSchema({
   type: 'object',

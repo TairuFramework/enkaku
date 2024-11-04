@@ -1,7 +1,7 @@
 import { Client } from '@enkaku/client'
-import type { Signer } from '@enkaku/jwt'
 import type { AnyClientMessageOf, AnyDefinitions, AnyServerMessageOf } from '@enkaku/protocol'
 import { type CommandHandlers, serve } from '@enkaku/server'
+import type { Signer } from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
 
 export type StandaloneOptions = {

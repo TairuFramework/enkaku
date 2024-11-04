@@ -1,40 +1,69 @@
 import { b64uFromJSON, b64uToJSON, fromB64U, fromUTF, toB64U } from '@enkaku/codec'
+import { type FromSchema, type Schema, assertType, createValidator, isType } from '@enkaku/schema'
 
 import { getPublicKey } from './did.js'
 import { type Signer, verifySignature } from './principal.js'
 
 export const SUPPORTED_ALG = 'EdDSA' as const
 
-export type SignedHeader<Params extends Record<string, unknown> = Record<string, unknown>> =
-  Params & { typ: 'JWT'; alg: 'EdDSA' }
+export const signedHeaderSchema = {
+  type: 'object',
+  properties: {
+    typ: { type: 'string', const: 'JWT' },
+    alg: { type: 'string', enum: ['EdDSA'] },
+  },
+  required: ['typ', 'alg'],
+  additionalProperties: true,
+} as const satisfies Schema
+export type SignedHeader = FromSchema<typeof signedHeaderSchema>
 
-export function isSignedHeader(header: unknown): header is SignedHeader {
-  const h = header as SupportedHeader
-  return h.typ === 'JWT' && h.alg === SUPPORTED_ALG
-}
+export const validateSignedHeader = createValidator(signedHeaderSchema)
 
-export type UnsignedHeader<Params extends Record<string, unknown> = Record<string, unknown>> =
-  Params & { typ: 'JWT'; alg: 'none' }
+export const unsignedHeaderSchema = {
+  type: 'object',
+  properties: {
+    typ: { type: 'string', const: 'JWT' },
+    alg: { type: 'string', const: 'none' },
+  },
+  required: ['typ', 'alg'],
+  additionalProperties: true,
+} as const satisfies Schema
+export type UnsignedHeader = FromSchema<typeof unsignedHeaderSchema>
 
-export function isUnsignedHeader(header: unknown): header is UnsignedHeader {
-  const h = header as UnsignedHeader
-  return h.typ === 'JWT' && h.alg === 'none'
-}
+export const validateUnsignedHeader = createValidator(unsignedHeaderSchema)
 
-export type SupportedHeader<Params extends Record<string, unknown> = Record<string, unknown>> =
-  | SignedHeader<Params>
-  | UnsignedHeader<Params>
+export const supportedHeaderSchema = {
+  anyOf: [signedHeaderSchema, unsignedHeaderSchema],
+} as const satisfies Schema
+export type SupportedHeader = FromSchema<typeof supportedHeaderSchema>
 
-export type SignedPayload<Payload extends Record<string, unknown> = Record<string, unknown>> =
-  Payload & { iss: string; sub?: string; aud?: string; exp?: number }
+export const capabilitySchema = {
+  anyOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
+} as const satisfies Schema
+
+export const signedPayloadSchema = {
+  type: 'object',
+  properties: {
+    iss: { type: 'string' },
+    sub: { type: 'string' },
+    aud: { type: 'string' },
+    cap: capabilitySchema,
+    exp: { type: 'number' },
+    nbf: { type: 'number' },
+    iat: { type: 'number' },
+  },
+  required: ['iss'],
+  additionalProperties: true,
+} as const satisfies Schema
+export type SignedPayload = FromSchema<typeof signedPayloadSchema>
+
+export const validateSignedPayload = createValidator(signedPayloadSchema)
 
 export async function verifySignedPayload<
   Payload extends Record<string, unknown> = Record<string, unknown>,
 >(signature: Uint8Array, payload: Payload, data: Uint8Array | string): Promise<Uint8Array> {
-  if (payload.iss == null) {
-    throw new Error('Missing issuer in signed token')
-  }
-  const publicKey = getPublicKey(payload.iss as string)
+  assertType(validateSignedPayload, payload)
+  const publicKey = getPublicKey(payload.iss)
   const message = typeof data === 'string' ? fromUTF(data) : data
   const verified = await verifySignature(signature, message, publicKey)
   if (!verified) {
@@ -44,19 +73,24 @@ export async function verifySignedPayload<
 }
 
 export type SignedToken<
-  Payload extends Record<string, unknown> = Record<string, unknown>,
+  Payload extends SignedPayload = SignedPayload,
   Header extends SignedHeader = SignedHeader,
 > = {
   data: string
   header: Header
-  payload: SignedPayload<Payload>
+  payload: Payload
   signature: string
 }
 
-export function isSignedToken<Payload extends Record<string, unknown> = Record<string, unknown>>(
-  token: Token<Payload>,
+export function isSignedToken<Payload extends SignedPayload = SignedPayload>(
+  token: unknown,
 ): token is SignedToken<Payload> {
-  return isSignedHeader(token.header) && token.signature != null
+  const t = token as SignedToken<Payload>
+  return (
+    isType(validateSignedHeader, t.header) &&
+    isType(validateSignedPayload, t.payload) &&
+    t.signature != null
+  )
 }
 
 export type UnsignedToken<
@@ -72,39 +106,38 @@ export type UnsignedToken<
 export function isUnsignedToken<Payload extends Record<string, unknown>>(
   token: Token<Payload>,
 ): token is UnsignedToken<Payload> {
-  return isUnsignedHeader(token.header)
+  return isType(validateUnsignedHeader, token.header)
 }
 
 export type VerifiedToken<
-  Payload extends Record<string, unknown> = Record<string, unknown>,
+  Payload extends SignedPayload = SignedPayload,
   Header extends SignedHeader = SignedHeader,
 > = SignedToken<Payload, Header> & {
   verifiedPublicKey: Uint8Array
 }
 
-export function isVerifiedToken<Payload extends Record<string, unknown>>(
-  token: Token<Payload>,
+export function isVerifiedToken<Payload extends SignedPayload>(
+  token: unknown,
 ): token is VerifiedToken<Payload> {
-  return isSignedHeader(token.header) && (token as VerifiedToken<Payload>).verifiedPublicKey != null
+  return isSignedToken(token) && (token as VerifiedToken<Payload>).verifiedPublicKey != null
 }
 
 export type Token<
   Payload extends Record<string, unknown> = Record<string, unknown>,
   Header extends SupportedHeader = SupportedHeader,
-> = Header extends UnsignedHeader
-  ? UnsignedToken<Payload, Header>
-  : Header extends SignedHeader
+> = Header extends SignedHeader
+  ? Payload extends SignedPayload
     ? SignedToken<Payload, Header> | VerifiedToken<Payload, Header>
     : never
+  : Header extends UnsignedHeader
+    ? UnsignedToken<Payload, Header>
+    : never
 
-export async function createSignedToken<
-  Payload extends Record<string, unknown> = Record<string, unknown>,
-  HeaderParams extends Record<string, unknown> = Record<string, unknown>,
->(
+export async function createSignedToken<Payload extends SignedPayload = SignedPayload>(
   signer: Signer,
-  payload: Payload,
-  header?: HeaderParams,
-): Promise<SignedToken<Payload, SignedHeader<HeaderParams>>> {
+  payload: Partial<Payload>,
+  header?: Record<string, unknown>,
+): Promise<SignedToken<Payload, SignedHeader>> {
   if (payload.iss != null && payload.iss !== signer.did) {
     throw new Error(
       `Invalid signer ${signer.did} provided to sign payload with issuer ${payload.iss}`,
@@ -115,7 +148,7 @@ export async function createSignedToken<
     ...(header ?? {}),
     typ: 'JWT',
     alg: SUPPORTED_ALG,
-  } as SignedHeader<HeaderParams>
+  } as SignedHeader
   const encodedHeader = b64uFromJSON(fullHeader)
   const fullPayload = { ...payload, iss: signer.did }
   const encodedPayload = b64uFromJSON(fullPayload)
@@ -125,7 +158,7 @@ export async function createSignedToken<
 
   return {
     header: fullHeader,
-    payload: fullPayload,
+    payload: fullPayload as Payload,
     signature: toB64U(signature),
     data,
   }
@@ -133,19 +166,18 @@ export async function createSignedToken<
 
 export function createUnsignedToken<
   Payload extends Record<string, unknown>,
-  HeaderParams extends Record<string, unknown> = Record<string, unknown>,
->(payload: Payload, header?: HeaderParams): UnsignedToken<Payload, UnsignedHeader<HeaderParams>> {
-  return {
-    header: { ...((header ?? {}) as HeaderParams), typ: 'JWT', alg: 'none' },
-    payload,
-  }
+  Header extends UnsignedHeader = UnsignedHeader,
+>(payload: Payload, header: Record<string, unknown> = {}): UnsignedToken<Payload, Header> {
+  return { header: { ...header, typ: 'JWT', alg: 'none' } as Header, payload }
 }
 
-export async function signToken<Payload extends Record<string, unknown>>(
+export async function signToken<Payload extends SignedPayload>(
   signer: Signer,
   token: Token<Payload>,
 ): Promise<SignedToken<Payload>> {
-  return isSignedToken(token) ? token : await createSignedToken(signer, token.payload, token.header)
+  return isSignedToken(token)
+    ? (token as SignedToken<Payload>)
+    : await createSignedToken<Payload>(signer, token.payload, token.header)
 }
 
 export function stringifyToken(token: Token): string {
@@ -169,7 +201,7 @@ export async function verifyToken<
         token.payload,
         token.data,
       )
-      return { ...token, verifiedPublicKey } as VerifiedToken<Payload>
+      return { ...token, verifiedPublicKey } as Token<Payload>
     }
     throw new Error('Unsupported token')
   }
@@ -198,7 +230,7 @@ export async function verifyToken<
       payload,
       signature,
       verifiedPublicKey,
-    } as VerifiedToken<Payload>
+    } as Token<Payload>
   }
 
   throw new Error(`Unsupported header algorithm: ${header.alg}`)

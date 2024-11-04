@@ -1,6 +1,6 @@
 import type { ErrorObject } from 'ajv'
 
-import type { SchemaWithID } from './types.js'
+import type { Schema } from './types.js'
 
 export class ValidationErrorObject extends Error {
   #details: ErrorObject
@@ -20,12 +20,12 @@ export class ValidationErrorObject extends Error {
 
 export class ValidationError extends AggregateError {
   #data: unknown
-  #schema: SchemaWithID
+  #schema: Schema
 
-  constructor(schema: SchemaWithID, data: unknown, errorObjects?: Array<ErrorObject> | null) {
+  constructor(schema: Schema, data: unknown, errorObjects?: Array<ErrorObject> | null) {
     super(
       (errorObjects ?? []).map((err) => new ValidationErrorObject(err)),
-      `Validation failed for schema ${schema.$id}`,
+      `Validation failed for schema ${schema.$id ?? schema.type}`,
     )
     this.#data = data
     this.#schema = schema
@@ -35,7 +35,7 @@ export class ValidationError extends AggregateError {
     return this.#data
   }
 
-  get schema(): SchemaWithID {
+  get schema(): Schema {
     return this.#schema
   }
 }

@@ -1,6 +1,6 @@
 import { createCapability } from '@enkaku/capability'
-import { createSignedToken, randomSigner, stringifyToken } from '@enkaku/jwt'
 import type { AnyClientPayloadOf, AnyDefinitions } from '@enkaku/protocol'
+import { createSignedToken, randomSigner, stringifyToken } from '@enkaku/token'
 
 import { checkClientToken, checkCommandAccess } from '../src/access-control.js'
 

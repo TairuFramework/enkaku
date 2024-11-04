@@ -7,7 +7,7 @@ import {
   createSignedToken,
   isVerifiedToken,
   verifyToken,
-} from '@enkaku/jwt'
+} from '@enkaku/token'
 
 export function now(): number {
   return Math.floor(Date.now() / 1000)
@@ -33,7 +33,7 @@ export type CapabilityToken<
 > = SignedToken<Payload, Header>
 
 export function isCapabilityToken<Payload extends CapabilityPayload>(
-  token: Token<Payload>,
+  token: unknown,
 ): token is CapabilityToken<Payload> {
   return (
     isVerifiedToken(token) &&
@@ -45,7 +45,7 @@ export function isCapabilityToken<Payload extends CapabilityPayload>(
 }
 
 export function assertCapabilityToken<Payload extends CapabilityPayload>(
-  token: Token<Payload>,
+  token: unknown,
 ): asserts token is CapabilityToken<Payload> {
   if (!isCapabilityToken(token)) {
     throw new Error('Invalid token: not a capability')
@@ -61,8 +61,12 @@ export async function createCapability<
   signer: Signer,
   payload: Payload,
   header?: HeaderParams,
-): Promise<CapabilityToken<Payload & { iss: string }, SignedHeader<HeaderParams>>> {
-  return await createSignedToken(signer, payload, header)
+): Promise<CapabilityToken<Payload & { iss: string }, SignedHeader>> {
+  return await createSignedToken<Payload & { iss: string }>(
+    signer,
+    payload as Payload & { iss: string },
+    header,
+  )
 }
 
 export function isMatch(expected: string, actual: string): boolean {

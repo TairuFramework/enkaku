@@ -2,7 +2,6 @@ import { setTimeout } from 'node:timers/promises'
 import { Client } from '@enkaku/client'
 import { ClientTransport } from '@enkaku/http-client-transport'
 import { ServerTransport } from '@enkaku/http-server-transport'
-import { createUnsignedToken } from '@enkaku/jwt'
 import type {
   AnyDefinitions,
   ChannelDefinition,
@@ -18,6 +17,7 @@ import {
   type StreamHandler,
   serve,
 } from '@enkaku/server'
+import { createUnsignedToken } from '@enkaku/token'
 import { serve as serveHTTP } from '@hono/node-server'
 import { jest } from '@jest/globals'
 import getPort from 'get-port'
