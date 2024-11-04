@@ -5,12 +5,12 @@ import type {
   ChannelDefinition,
   EventCallPayload,
   EventDefinition,
+  Message,
   RequestCallPayload,
   RequestDefinition,
   RequestType,
   StreamDefinition,
 } from '@enkaku/protocol'
-import type { Token } from '@enkaku/token'
 
 import type { RejectionType } from './rejections.js'
 
@@ -26,7 +26,7 @@ export type EventHandlerContext<
   Command extends string,
   Data extends Record<string, unknown> | undefined,
 > = {
-  message: Token<EventCallPayload<Command, Data>>
+  message: Message<EventCallPayload<Command, Data>>
   data: Data
 }
 
@@ -36,7 +36,7 @@ export type EventHandler<
 > = (context: EventHandlerContext<Command, Data>) => void | Promise<void>
 
 export type RequestHandlerContext<Type extends RequestType, Command extends string, Params> = {
-  message: Token<RequestCallPayload<Type, Command, Params>>
+  message: Message<RequestCallPayload<Type, Command, Params>>
   params: Params
   signal: AbortSignal
 }

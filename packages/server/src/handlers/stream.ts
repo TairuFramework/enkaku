@@ -13,7 +13,6 @@ import type {
   ReceiveType,
   ResultType,
   StreamHandler,
-  StreamHandlerContext,
 } from '../types.js'
 import { consumeReader, executeHandler } from '../utils.js'
 
@@ -56,14 +55,10 @@ export function handleStream<
   })
 
   const handlerContext = {
+    message: msg,
     params: msg.payload.prm,
     signal: controller.signal,
     writable: receiveStream.writable,
-  } as unknown as StreamHandlerContext<
-    'stream',
-    Command,
-    ParamsType<Definitions, Command>,
-    ReceiveType<Definitions, Command>
-  >
+  }
   return executeHandler(ctx, msg.payload, () => handler(handlerContext))
 }
