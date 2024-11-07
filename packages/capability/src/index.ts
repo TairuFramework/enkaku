@@ -2,9 +2,7 @@ import {
   type SignedHeader,
   type SignedPayload,
   type SignedToken,
-  type Signer,
-  type Token,
-  createSignedToken,
+  type TokenSigner,
   isVerifiedToken,
   verifyToken,
 } from '@enkaku/token'
@@ -29,7 +27,7 @@ export type CapabilityPayload = Permission & {
 
 export type CapabilityToken<
   Payload extends CapabilityPayload = CapabilityPayload,
-  Header extends SignedHeader = SignedHeader,
+  Header extends Record<string, unknown> = Record<string, unknown>,
 > = SignedToken<Payload, Header>
 
 export function isCapabilityToken<Payload extends CapabilityPayload>(
@@ -58,15 +56,11 @@ export async function createCapability<
   Payload extends SignCapabilityPayload = SignCapabilityPayload,
   HeaderParams extends Record<string, unknown> = Record<string, unknown>,
 >(
-  signer: Signer,
+  signer: TokenSigner,
   payload: Payload,
   header?: HeaderParams,
 ): Promise<CapabilityToken<Payload & { iss: string }, SignedHeader>> {
-  return await createSignedToken<Payload & { iss: string }>(
-    signer,
-    payload as Payload & { iss: string },
-    header,
-  )
+  return await signer.createToken(payload, header)
 }
 
 export function isMatch(expected: string, actual: string): boolean {

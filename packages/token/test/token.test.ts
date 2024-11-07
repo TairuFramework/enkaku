@@ -1,24 +1,24 @@
 import { getPublicKeyAsync } from '@noble/ed25519'
 import { equals } from 'uint8arrays'
 
-import { randomSigner } from '../src/principal.js'
+import { randomSigner, randomTokenSigner, toTokenSigner } from '../src/signer.js'
 import {
-  type VerifiedToken,
-  createSignedToken,
   createUnsignedToken,
   isSignedToken,
   isUnsignedToken,
   isVerifiedToken,
   signToken,
-  stringifyToken,
   verifyToken,
 } from '../src/token.js'
+import type { VerifiedToken } from '../src/types.js'
+import { stringifyToken } from '../src/utils.js'
 
 test('create a signed token and verify it', async () => {
-  const signer = await randomSigner()
-  const token = await createSignedToken(signer, { test: true })
+  const signer = randomSigner()
+  const tokenSigner = await toTokenSigner(signer)
+  const token = await tokenSigner.createToken({ test: true })
   expect(isSignedToken(token)).toBe(true)
-  expect(token.payload.iss).toBe(signer.did)
+  expect(token.payload.iss).toBe(await tokenSigner.getIssuer())
   const verified = await verifyToken(token)
   expect(isVerifiedToken(verified)).toBe(true)
   const publicKey = await getPublicKeyAsync(signer.privateKey)
@@ -30,7 +30,7 @@ test('create a signed token and verify it', async () => {
 test('create an unsigned token, sign and stringify it', async () => {
   const unsigned = createUnsignedToken({ test: true })
   expect(isUnsignedToken(unsigned)).toBe(true)
-  const signer = await randomSigner()
+  const signer = randomTokenSigner()
   const signed = await signToken(signer, unsigned)
   expect(isSignedToken(signed)).toBe(true)
   const stringified = stringifyToken(signed)

@@ -6,7 +6,7 @@ import type {
   RequestDefinition,
   StreamDefinition,
 } from '@enkaku/protocol'
-import { createSignedToken, createUnsignedToken, randomSigner } from '@enkaku/token'
+import { createUnsignedToken, randomTokenSigner } from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
 import { jest } from '@jest/globals'
 
@@ -35,12 +35,13 @@ describe('serve()', () => {
       AnyClientMessageOf<Definitions>
     >()
 
-    const signer = await randomSigner()
-    const server = serve<Definitions>({ handlers, id: signer.did, transport: transports.server })
+    const signer = randomTokenSigner()
+    const signerID = await signer.getIssuer()
+    const server = serve<Definitions>({ handlers, id: signerID, transport: transports.server })
 
-    const message = await createSignedToken(signer, {
+    const message = await signer.createToken({
       typ: 'event',
-      aud: signer.did,
+      aud: signerID,
       cmd: 'test/event',
       data: { hello: 'world' },
       exp: expiresAt,
@@ -77,10 +78,11 @@ describe('serve()', () => {
       AnyServerMessageOf<Definitions>,
       AnyClientMessageOf<Definitions>
     >()
-    const signer = await randomSigner()
-    serve<Definitions>({ handlers, id: signer.did, transport: transports.server })
+    const signer = randomTokenSigner()
+    const signerID = await signer.getIssuer()
+    serve<Definitions>({ handlers, id: signerID, transport: transports.server })
 
-    const message = await createSignedToken(signer, {
+    const message = await signer.createToken({
       typ: 'request',
       cmd: 'test/request',
       rid: '1',
@@ -122,10 +124,11 @@ describe('serve()', () => {
       AnyServerMessageOf<Definitions>,
       AnyClientMessageOf<Definitions>
     >()
-    const signer = await randomSigner()
-    serve<Definitions>({ handlers, id: signer.did, transport: transports.server })
+    const signer = randomTokenSigner()
+    const signerID = await signer.getIssuer()
+    serve<Definitions>({ handlers, id: signerID, transport: transports.server })
 
-    const message = await createSignedToken(signer, {
+    const message = await signer.createToken({
       typ: 'stream',
       cmd: 'test/stream',
       rid: '1',
@@ -173,10 +176,11 @@ describe('serve()', () => {
       AnyServerMessageOf<Definitions>,
       AnyClientMessageOf<Definitions>
     >()
-    const signer = await randomSigner()
-    serve<Definitions>({ handlers, id: signer.did, transport: transports.server })
+    const signer = randomTokenSigner()
+    const signerID = await signer.getIssuer()
+    serve<Definitions>({ handlers, id: signerID, transport: transports.server })
 
-    const message = await createSignedToken(signer, {
+    const message = await signer.createToken({
       typ: 'channel',
       cmd: 'test/channel',
       rid: '1',

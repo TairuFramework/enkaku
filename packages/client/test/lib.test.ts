@@ -9,11 +9,7 @@ import type {
   StreamDefinition,
   StreamPayloadOf,
 } from '@enkaku/protocol'
-import {
-  createSignedToken,
-  randomSigner,
-  createUnsignedToken as unsignedToken,
-} from '@enkaku/token'
+import { randomTokenSigner, createUnsignedToken as unsignedToken } from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
 import { Result } from 'typescript-result'
 
@@ -22,7 +18,9 @@ import { ABORTED } from '../src/constants.js'
 
 describe('Client', () => {
   test('sendEvent()', async () => {
-    const [serverSigner, clientSigner] = await Promise.all([randomSigner(), randomSigner()])
+    const serverSigner = randomTokenSigner()
+    const clientSigner = randomTokenSigner()
+    const serverID = await serverSigner.getIssuer()
 
     type Definitions = {
       'test/event': EventDefinition<{ hello: string }>
@@ -33,14 +31,14 @@ describe('Client', () => {
       AnyClientMessageOf<Definitions>
     >()
     const client = new Client({
-      serverID: serverSigner.did,
+      serverID,
       signer: clientSigner,
       transport: transports.client,
     })
 
     await client.sendEvent('test/event', { hello: 'world' })
-    const signedMessage = await createSignedToken(clientSigner, {
-      aud: serverSigner.did,
+    const signedMessage = await clientSigner.createToken({
+      aud: serverID,
       typ: 'event',
       cmd: 'test/event',
       data: { hello: 'world' },

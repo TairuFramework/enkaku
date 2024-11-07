@@ -1,35 +1,42 @@
+export { CODECS, getAlgorithmAndPublicKey, getDID, getSignatureInfo } from './did.js'
 export {
-  type OwnSigner,
-  type Principal,
-  type Signer,
-  type Verifier,
+  type SignatureAlgorithm,
+  type SignedHeader,
+  type SignedPayload,
+  type SupportedHeader,
+  type UnsignedHeader,
+  capabilitySchema,
+  signedHeaderSchema,
+  signedPayloadSchema,
+  supportedHeaderSchema,
+  unsignedHeaderSchema,
+  validateAlgorithm,
+  validateSignedHeader,
+  validateSignedPayload,
+  validateUnsignedHeader,
+} from './schemas.js'
+export {
   decodePrivateKey,
   encodePrivateKey,
   getSigner,
-  getVerifier,
+  getTokenSigner,
   randomPrivateKey,
   randomSigner,
-  verifySignature,
-} from './principal.js'
+  randomTokenSigner,
+  toTokenSigner,
+} from './signer.js'
 export {
-  type SignedHeader,
-  type SignedPayload,
-  type SignedToken,
-  type SupportedHeader,
-  type Token,
-  type UnsignedHeader,
-  type UnsignedToken,
-  capabilitySchema,
-  createSignedToken,
   createUnsignedToken,
   isSignedToken,
   isUnsignedToken,
   isVerifiedToken,
   signToken,
-  signedHeaderSchema,
-  signedPayloadSchema,
-  stringifyToken,
-  supportedHeaderSchema,
-  unsignedHeaderSchema,
   verifyToken,
 } from './token.js'
+export type * from './types.js'
+export { stringifyToken } from './utils.js'
+export {
+  type Verifier,
+  type Verifiers,
+  getVerifier,
+} from './verifier.js'

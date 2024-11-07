@@ -1,4 +1,4 @@
-import { createSignedToken, randomSigner, stringifyToken } from '@enkaku/token'
+import { randomTokenSigner, stringifyToken } from '@enkaku/token'
 
 import {
   type CapabilityPayload,
@@ -318,27 +318,31 @@ describe('checkDelegationChain()', () => {
   })
 
   test('validates the full chain', async () => {
-    const [signerA, signerB, signerC, signerD] = await Promise.all([
-      randomSigner(),
-      randomSigner(),
-      randomSigner(),
-      randomSigner(),
+    const signerA = randomTokenSigner()
+    const signerB = randomTokenSigner()
+    const signerC = randomTokenSigner()
+    const signerD = randomTokenSigner()
+    const [didA, didB, didC, didD] = await Promise.all([
+      signerA.getIssuer(),
+      signerB.getIssuer(),
+      signerC.getIssuer(),
+      signerD.getIssuer(),
     ])
     const delegateToB = await createCapability(signerA, {
-      sub: signerA.did,
-      aud: signerB.did,
+      sub: didA,
+      aud: didB,
       act: '*',
       res: 'foo/*',
     })
     const delegateToC = await createCapability(signerB, {
-      sub: signerA.did,
-      aud: signerC.did,
+      sub: didA,
+      aud: didC,
       act: 'test/*',
       res: ['foo/bar', 'foo/baz'],
     })
     const delegateToD = await createCapability(signerC, {
-      sub: signerA.did,
-      aud: signerD.did,
+      sub: didA,
+      aud: didD,
       act: ['test/read', 'test/write'],
       res: 'foo/baz',
     })
@@ -353,32 +357,36 @@ describe('checkDelegationChain()', () => {
 
 describe('checkCapability()', () => {
   test('validates the full chain', async () => {
-    const [signerA, signerB, signerC, signerD] = await Promise.all([
-      randomSigner(),
-      randomSigner(),
-      randomSigner(),
-      randomSigner(),
+    const signerA = randomTokenSigner()
+    const signerB = randomTokenSigner()
+    const signerC = randomTokenSigner()
+    const signerD = randomTokenSigner()
+    const [didA, didB, didC, didD] = await Promise.all([
+      signerA.getIssuer(),
+      signerB.getIssuer(),
+      signerC.getIssuer(),
+      signerD.getIssuer(),
     ])
     const delegateToB = await createCapability(signerA, {
-      sub: signerA.did,
-      aud: signerB.did,
+      sub: didA,
+      aud: didB,
       act: '*',
       res: ['foo/*'],
     })
     const delegateToC = await createCapability(signerB, {
-      sub: signerA.did,
-      aud: signerC.did,
+      sub: didA,
+      aud: didC,
       act: 'test/*',
       res: ['foo/bar', 'foo/baz'],
     })
     const delegateToD = await createCapability(signerC, {
-      sub: signerA.did,
-      aud: signerD.did,
+      sub: didA,
+      aud: didD,
       act: 'test/*',
       res: ['foo/baz'],
     })
-    const token = await createSignedToken(signerD, {
-      sub: signerA.did,
+    const token = await signerD.createToken({
+      sub: didA,
       cmd: 'test/call',
       cap: [stringifyToken(delegateToD), stringifyToken(delegateToC), stringifyToken(delegateToB)],
     })

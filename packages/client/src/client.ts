@@ -9,12 +9,7 @@ import type {
   StreamDefinition,
 } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
-import {
-  type SignedPayload,
-  type Signer,
-  createSignedToken,
-  createUnsignedToken,
-} from '@enkaku/token'
+import { type TokenSigner, createUnsignedToken } from '@enkaku/token'
 import type { Disposer } from '@enkaku/util'
 import { Result } from 'typescript-result'
 
@@ -200,7 +195,7 @@ type CreateMessage<Definitions extends AnyDefinitions> = (
 ) => AnyClientMessageOf<Definitions> | Promise<AnyClientMessageOf<Definitions>>
 
 function getCreateMessage<Definitions extends AnyDefinitions>(
-  signer?: Signer,
+  signer?: TokenSigner,
   aud?: string,
 ): CreateMessage<Definitions> {
   if (signer == null) {
@@ -208,15 +203,15 @@ function getCreateMessage<Definitions extends AnyDefinitions>(
   }
   return (
     aud
-      ? (payload) => createSignedToken(signer, { aud, ...payload })
-      : (payload) => createSignedToken(signer, payload)
+      ? (payload) => signer.createToken({ aud, ...payload })
+      : (payload) => signer.createToken(signer, payload)
   ) as CreateMessage<Definitions>
 }
 
 export type ClientParams<Definitions extends AnyDefinitions> = {
   transport: ClientTransportOf<Definitions>
   serverID?: string
-  signer?: Signer
+  signer?: TokenSigner
 }
 
 export class Client<

@@ -5,7 +5,7 @@ import type {
   StreamDefinition,
 } from '@enkaku/protocol'
 import type { ChannelHandler, EventHandler, RequestHandler, StreamHandler } from '@enkaku/server'
-import { createSignedToken, randomSigner } from '@enkaku/token'
+import { randomTokenSigner } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
 import { standalone } from '../src'
@@ -13,17 +13,18 @@ import { standalone } from '../src'
 describe('standalone', () => {
   describe('events', () => {
     test('handles events', async () => {
-      const signer = await randomSigner()
+      const signer = randomTokenSigner()
+      const signerID = await signer.getIssuer()
 
       type Definitions = {
         'test/event': EventDefinition<{ hello: string }>
       }
       const handler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
-      const client = standalone<Definitions>({ 'test/event': handler }, { signer })
+      const client = await standalone<Definitions>({ 'test/event': handler }, { signer })
 
       await client.sendEvent('test/event', { hello: 'world' })
-      const message = await createSignedToken(signer, {
-        aud: signer.did,
+      const message = await signer.createToken({
+        aud: signerID,
         typ: 'event',
         cmd: 'test/event',
         data: { hello: 'world' },
@@ -49,7 +50,7 @@ describe('standalone', () => {
           })
         })
       }) as jest.Mock<RequestHandler<'test/request', undefined, string>>
-      const client = standalone<Definitions>({ 'test/request': handler })
+      const client = await standalone<Definitions>({ 'test/request': handler })
 
       await expect(client.request('test/request').toValue()).resolves.toBe('OK')
     })
@@ -79,7 +80,7 @@ describe('standalone', () => {
           })
         })
       }) as jest.Mock<StreamHandler<'test/stream', number, number, string>>
-      const client = standalone<Definitions>({ 'test/stream': handler })
+      const client = await standalone<Definitions>({ 'test/stream': handler })
 
       const stream = await client.createStream('test/stream', 3)
       const reader = stream.receive.getReader()
@@ -117,7 +118,7 @@ describe('standalone', () => {
         }
         return 'END'
       }) as jest.Mock<ChannelHandler<'test/channel', number, number, number, string>>
-      const client = standalone<Definitions>({ 'test/channel': handler })
+      const client = await standalone<Definitions>({ 'test/channel': handler })
 
       const channel = await client.createChannel('test/channel', 5)
       const send = [5, 3, 10, 20]

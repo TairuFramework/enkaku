@@ -83,5 +83,5 @@ export async function checkClientToken(
   if (payload.aud !== serverID) {
     throw new Error('Invalid audience')
   }
-  await checkCommandAccess(serverID, record, token, atTime)
+  await checkCommandAccess(serverID, record, token as SignedToken<CommandAccessPayload>, atTime)
 }
