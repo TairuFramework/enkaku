@@ -10,7 +10,28 @@ export type Verifier = (
 
 export type Verifiers = Partial<Record<SignatureAlgorithm, Verifier>>
 
+const verifyES256: Verifier = async (
+  signature: Uint8Array,
+  message: Uint8Array,
+  publicKey: Uint8Array,
+): Promise<boolean> => {
+  const key = await globalThis.crypto.subtle.importKey(
+    'raw',
+    publicKey,
+    { name: 'ECDSA', namedCurve: 'P-256' },
+    false,
+    ['verify'],
+  )
+  return await globalThis.crypto.subtle.verify(
+    { name: 'ECDSA', hash: 'SHA-256' },
+    key,
+    signature,
+    message,
+  )
+}
+
 export const defaultVerifiers: Verifiers = {
+  ES256: verifyES256,
   EdDSA: verifyAsync,
 }
 

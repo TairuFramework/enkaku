@@ -1,6 +1,6 @@
 {
-  "name": "@enkaku/token",
-  "version": "0.5.1",
+  "name": "@enkaku/browser-keystore",
+  "version": "0.5.0",
   "license": "MIT",
   "keywords": [],
   "type": "module",
@@ -9,10 +9,11 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": ["lib/*"],
+  "files": [
+    "lib/*"
+  ],
   "sideEffects": false,
   "scripts": {
-    "start": "tsx ./src/run.ts",
     "build:clean": "del lib",
     "build:js": "swc src -d ./lib --config-file ../../swc.json --strip-leading-paths",
     "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
@@ -24,12 +25,6 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/codec": "workspace:^",
-    "@enkaku/schema": "workspace:^",
-    "@noble/ed25519": "^2.1.0",
-    "multiformats": "^13.3.1"
-  },
-  "devDependencies": {
-    "uint8arrays": "^5.1.0"
+    "@enkaku/token": "workspace:^"
   }
 }
