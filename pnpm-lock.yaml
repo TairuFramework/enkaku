@@ -129,6 +129,12 @@ importers:
         specifier: workspace:^
         version: link:../token
 
+  packages/message-transport:
+    dependencies:
+      '@enkaku/transport':
+        specifier: workspace:^
+        version: link:../transport
+
   packages/protocol:
     dependencies:
       '@enkaku/schema':

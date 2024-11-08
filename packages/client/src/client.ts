@@ -204,7 +204,7 @@ function getCreateMessage<Definitions extends AnyDefinitions>(
   return (
     aud
       ? (payload) => signer.createToken({ aud, ...payload })
-      : (payload) => signer.createToken(signer, payload)
+      : (payload) => signer.createToken(payload)
   ) as CreateMessage<Definitions>
 }
 
