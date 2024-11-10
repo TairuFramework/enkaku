@@ -322,27 +322,21 @@ describe('checkDelegationChain()', () => {
     const signerB = randomTokenSigner()
     const signerC = randomTokenSigner()
     const signerD = randomTokenSigner()
-    const [didA, didB, didC, didD] = await Promise.all([
-      signerA.getIssuer(),
-      signerB.getIssuer(),
-      signerC.getIssuer(),
-      signerD.getIssuer(),
-    ])
     const delegateToB = await createCapability(signerA, {
-      sub: didA,
-      aud: didB,
+      sub: signerA.id,
+      aud: signerB.id,
       act: '*',
       res: 'foo/*',
     })
     const delegateToC = await createCapability(signerB, {
-      sub: didA,
-      aud: didC,
+      sub: signerA.id,
+      aud: signerC.id,
       act: 'test/*',
       res: ['foo/bar', 'foo/baz'],
     })
     const delegateToD = await createCapability(signerC, {
-      sub: didA,
-      aud: didD,
+      sub: signerA.id,
+      aud: signerD.id,
       act: ['test/read', 'test/write'],
       res: 'foo/baz',
     })
@@ -361,32 +355,26 @@ describe('checkCapability()', () => {
     const signerB = randomTokenSigner()
     const signerC = randomTokenSigner()
     const signerD = randomTokenSigner()
-    const [didA, didB, didC, didD] = await Promise.all([
-      signerA.getIssuer(),
-      signerB.getIssuer(),
-      signerC.getIssuer(),
-      signerD.getIssuer(),
-    ])
     const delegateToB = await createCapability(signerA, {
-      sub: didA,
-      aud: didB,
+      sub: signerA.id,
+      aud: signerB.id,
       act: '*',
       res: ['foo/*'],
     })
     const delegateToC = await createCapability(signerB, {
-      sub: didA,
-      aud: didC,
+      sub: signerA.id,
+      aud: signerC.id,
       act: 'test/*',
       res: ['foo/bar', 'foo/baz'],
     })
     const delegateToD = await createCapability(signerC, {
-      sub: didA,
-      aud: didD,
+      sub: signerA.id,
+      aud: signerD.id,
       act: 'test/*',
       res: ['foo/baz'],
     })
     const token = await signerD.createToken({
-      sub: didA,
+      sub: signerA.id,
       cmd: 'test/call',
       cap: [stringifyToken(delegateToD), stringifyToken(delegateToC), stringifyToken(delegateToB)],
     })

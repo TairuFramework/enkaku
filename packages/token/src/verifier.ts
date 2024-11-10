@@ -1,4 +1,6 @@
-import { verifyAsync } from '@noble/ed25519'
+import { ed25519 } from '@noble/curves/ed25519'
+import { p256 } from '@noble/curves/p256'
+import { sha256 } from '@noble/hashes/sha256'
 
 import type { SignatureAlgorithm } from './schemas.js'
 
@@ -6,33 +8,17 @@ export type Verifier = (
   signature: Uint8Array,
   message: Uint8Array,
   publicKey: Uint8Array,
-) => Promise<boolean>
+) => boolean
 
 export type Verifiers = Partial<Record<SignatureAlgorithm, Verifier>>
 
-const verifyES256: Verifier = async (
-  signature: Uint8Array,
-  message: Uint8Array,
-  publicKey: Uint8Array,
-): Promise<boolean> => {
-  const key = await globalThis.crypto.subtle.importKey(
-    'raw',
-    publicKey,
-    { name: 'ECDSA', namedCurve: 'P-256' },
-    false,
-    ['verify'],
-  )
-  return await globalThis.crypto.subtle.verify(
-    { name: 'ECDSA', hash: 'SHA-256' },
-    key,
-    signature,
-    message,
-  )
-}
-
 export const defaultVerifiers: Verifiers = {
-  ES256: verifyES256,
-  EdDSA: verifyAsync,
+  ES256: (signature: Uint8Array, message: Uint8Array, publicKey: Uint8Array) => {
+    return p256.verify(signature, sha256(message), publicKey)
+  },
+  EdDSA: (signature: Uint8Array, message: Uint8Array, publicKey: Uint8Array) => {
+    return ed25519.verify(signature, message, publicKey)
+  },
 }
 
 export function getVerifier(algorithm: SignatureAlgorithm, verifiers: Verifiers = {}): Verifier {

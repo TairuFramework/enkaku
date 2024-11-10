@@ -12,10 +12,12 @@ export async function getPublicKey(keyPair: CryptoKeyPair): Promise<Uint8Array> 
   return ecPointCompress(new Uint8Array(rawKey.slice(1, 33)), new Uint8Array(rawKey.slice(33, 65)))
 }
 
-export function getSigner(keyPair: CryptoKeyPair): TokenSigner {
+export async function getSigner(keyPair: CryptoKeyPair): Promise<TokenSigner> {
+  const publicKey = await getPublicKey(keyPair)
+
   return toTokenSigner({
     algorithm: 'ES256',
-    getPublicKey: () => getPublicKey(keyPair),
+    publicKey,
     async sign(data) {
       const signature = await globalThis.crypto.subtle.sign(
         { name: 'ECDSA', hash: 'SHA-256' },

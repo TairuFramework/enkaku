@@ -1,5 +1,5 @@
 import { b64uFromJSON, fromB64, fromUTF, toB64, toB64U } from '@enkaku/codec'
-import { getPublicKeyAsync, signAsync, utils } from '@noble/ed25519'
+import { ed25519 } from '@noble/curves/ed25519'
 
 import { CODECS, getDID } from './did.js'
 import type { SignedHeader } from './schemas.js'
@@ -7,14 +7,14 @@ import type { GenericSigner, OwnSigner, SignedToken, TokenSigner } from './types
 
 export { fromB64 as decodePrivateKey, toB64 as encodePrivateKey }
 
-export const randomPrivateKey = utils.randomPrivateKey
+export const randomPrivateKey = ed25519.utils.randomPrivateKey
 
 export function getSigner(privateKey: Uint8Array | string): GenericSigner {
   const key = typeof privateKey === 'string' ? fromB64(privateKey) : privateKey
   return {
     algorithm: 'EdDSA',
-    getPublicKey: () => getPublicKeyAsync(key),
-    sign: (bytes: Uint8Array) => signAsync(bytes, key),
+    publicKey: ed25519.getPublicKey(key),
+    sign: (bytes: Uint8Array) => ed25519.sign(bytes, key),
   }
 }
 
@@ -29,25 +29,18 @@ export function toTokenSigner(signer: GenericSigner): TokenSigner {
     throw new Error(`Unsupported signature algorithm: ${signer.algorithm}`)
   }
 
-  let issuerPromise: Promise<string> | undefined
-  function getIssuer(): Promise<string> {
-    if (issuerPromise == null) {
-      issuerPromise = signer.getPublicKey().then((publiKey) => getDID(codec, publiKey))
-    }
-    return issuerPromise
-  }
+  const id = getDID(codec, signer.publicKey)
 
   async function createToken<
     Payload extends Record<string, unknown> = Record<string, unknown>,
     Header extends Record<string, unknown> = Record<string, unknown>,
   >(payload: Payload, header?: Header): Promise<SignedToken<Payload, Header>> {
-    const iss = await getIssuer()
-    if (payload.iss != null && payload.iss !== iss) {
-      throw new Error(`Invalid payload with issuer ${payload.iss} used with signer ${iss}`)
+    if (payload.iss != null && payload.iss !== id) {
+      throw new Error(`Invalid payload with issuer ${payload.iss} used with signer ${id}`)
     }
 
     const fullHeader = { ...header, typ: 'JWT', alg: signer.algorithm } as SignedHeader & Header
-    const fullPayload = { ...payload, iss }
+    const fullPayload = { ...payload, iss: id }
     const data = `${b64uFromJSON(fullHeader)}.${b64uFromJSON(fullPayload)}`
 
     return {
@@ -58,7 +51,7 @@ export function toTokenSigner(signer: GenericSigner): TokenSigner {
     }
   }
 
-  return { createToken, getIssuer }
+  return { createToken, id }
 }
 
 export function getTokenSigner(privateKey: Uint8Array | string): TokenSigner {

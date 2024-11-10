@@ -11,30 +11,27 @@ describe('access control', () => {
     test('server signer can access all commands', async () => {
       const signer = randomTokenSigner()
       const token = await signer.createToken({ cmd: 'kubun:test/test' } as Payload)
-      const issuer = await signer.getIssuer()
-      await expect(checkClientToken(issuer, { '*': false }, token)).resolves.toBeUndefined()
+      await expect(checkClientToken(signer.id, { '*': false }, token)).resolves.toBeUndefined()
     })
 
     test('with delegation', async () => {
       const serverSigner = randomTokenSigner()
       const clientSigner = randomTokenSigner()
-      const [serverID, clientID] = await Promise.all([
-        serverSigner.getIssuer(),
-        clientSigner.getIssuer(),
-      ])
       const delegation = await createCapability(serverSigner, {
-        aud: clientID,
-        sub: serverID,
+        aud: clientSigner.id,
+        sub: serverSigner.id,
         act: 'kubun:graph/*',
-        res: serverID,
+        res: serverSigner.id,
       })
       const token = await clientSigner.createToken({
         cmd: 'kubun:graph/test',
-        aud: serverID,
-        sub: serverID,
+        aud: serverSigner.id,
+        sub: serverSigner.id,
         cap: stringifyToken(delegation),
       } as unknown as Payload)
-      await expect(checkClientToken(serverID, { '*': false }, token)).resolves.toBeUndefined()
+      await expect(
+        checkClientToken(serverSigner.id, { '*': false }, token),
+      ).resolves.toBeUndefined()
     })
 
     test('audience check', async () => {
@@ -43,9 +40,8 @@ describe('access control', () => {
         cmd: 'kubun:test/test',
         aud: 'did:test:123',
       } as unknown as Payload)
-      const issuer = await signer.getIssuer()
       await expect(async () => {
-        await checkClientToken(issuer, { '*': false }, token)
+        await checkClientToken(signer.id, { '*': false }, token)
       }).rejects.toThrow('Invalid audience')
     })
 
@@ -55,9 +51,8 @@ describe('access control', () => {
         cmd: 'kubun:test/test',
         exp: 1000,
       } as unknown as Payload)
-      const issuer = await signer.getIssuer()
       await expect(async () => {
-        await checkClientToken(issuer, { '*': false }, token)
+        await checkClientToken(signer.id, { '*': false }, token)
       }).rejects.toThrow('Invalid token: expired')
     })
   })
@@ -66,13 +61,12 @@ describe('access control', () => {
     test('can execute allowed commands', async () => {
       const serverSigner = randomTokenSigner()
       const clientSigner = randomTokenSigner()
-      const serverID = await serverSigner.getIssuer()
       const token = await clientSigner.createToken({
         cmd: 'kubun:graph/test',
-        aud: serverID,
+        aud: serverSigner.id,
       } as unknown as Payload)
       await expect(
-        checkClientToken(serverID, { '*': false, 'kubun:graph/test': true }, token),
+        checkClientToken(serverSigner.id, { '*': false, 'kubun:graph/test': true }, token),
       ).resolves.toBeUndefined()
     })
   })
@@ -81,16 +75,16 @@ describe('access control', () => {
     test('can execute allowed commands', async () => {
       const serverSigner = randomTokenSigner()
       const clientSigner = randomTokenSigner()
-      const [serverID, clientID] = await Promise.all([
-        serverSigner.getIssuer(),
-        clientSigner.getIssuer(),
-      ])
       const token = await clientSigner.createToken({
         cmd: 'kubun:graph/test',
-        aud: serverID,
+        aud: serverSigner.id,
       } as unknown as Payload)
       await expect(
-        checkClientToken(serverID, { '*': false, 'kubun:graph/test': [clientID] }, token),
+        checkClientToken(
+          serverSigner.id,
+          { '*': false, 'kubun:graph/test': [clientSigner.id] },
+          token,
+        ),
       ).resolves.toBeUndefined()
     })
 
@@ -98,26 +92,25 @@ describe('access control', () => {
       const serverSigner = randomTokenSigner()
       const delegationSigner = randomTokenSigner()
       const clientSigner = randomTokenSigner()
-      const [serverID, delegationID, clientID] = await Promise.all([
-        serverSigner.getIssuer(),
-        delegationSigner.getIssuer(),
-        clientSigner.getIssuer(),
-      ])
       // Delegation signer is subject, audience is client to grant access to and resource is server
       const delegation = await createCapability(delegationSigner, {
-        aud: clientID,
-        sub: delegationID,
+        aud: clientSigner.id,
+        sub: delegationSigner.id,
         act: 'kubun:graph/*',
-        res: serverID,
+        res: serverSigner.id,
       })
       const token = await clientSigner.createToken({
         cmd: 'kubun:graph/test',
-        aud: serverID,
-        sub: delegationID,
+        aud: serverSigner.id,
+        sub: delegationSigner.id,
         cap: stringifyToken(delegation),
       } as unknown as Payload)
       await expect(
-        checkClientToken(serverID, { '*': false, 'kubun:graph/test': [delegationID] }, token),
+        checkClientToken(
+          serverSigner.id,
+          { '*': false, 'kubun:graph/test': [delegationSigner.id] },
+          token,
+        ),
       ).resolves.toBeUndefined()
     })
   })

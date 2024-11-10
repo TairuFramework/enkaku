@@ -2,8 +2,8 @@ import type { SignatureAlgorithm, SignedHeader, SignedPayload, UnsignedHeader } 
 
 export type GenericSigner = {
   algorithm: SignatureAlgorithm
-  getPublicKey: () => Promise<Uint8Array>
-  sign: (message: Uint8Array) => Promise<Uint8Array>
+  publicKey: Uint8Array
+  sign: (message: Uint8Array) => Uint8Array | Promise<Uint8Array>
 }
 
 export type OwnSigner = GenericSigner & { privateKey: Uint8Array }
@@ -19,7 +19,7 @@ export type SignedToken<
 }
 
 export type TokenSigner = {
-  getIssuer: () => Promise<string>
+  id: string
   createToken: <
     Payload extends Record<string, unknown> = Record<string, unknown>,
     Header extends Record<string, unknown> = Record<string, unknown>,

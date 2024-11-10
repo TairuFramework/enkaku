@@ -20,7 +20,6 @@ describe('Client', () => {
   test('sendEvent()', async () => {
     const serverSigner = randomTokenSigner()
     const clientSigner = randomTokenSigner()
-    const serverID = await serverSigner.getIssuer()
 
     type Definitions = {
       'test/event': EventDefinition<{ hello: string }>
@@ -31,14 +30,14 @@ describe('Client', () => {
       AnyClientMessageOf<Definitions>
     >()
     const client = new Client({
-      serverID,
+      serverID: serverSigner.id,
       signer: clientSigner,
       transport: transports.client,
     })
 
     await client.sendEvent('test/event', { hello: 'world' })
     const signedMessage = await clientSigner.createToken({
-      aud: serverID,
+      aud: serverSigner.id,
       typ: 'event',
       cmd: 'test/event',
       data: { hello: 'world' },

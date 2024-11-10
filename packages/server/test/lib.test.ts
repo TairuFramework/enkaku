@@ -36,12 +36,11 @@ describe('serve()', () => {
     >()
 
     const signer = randomTokenSigner()
-    const signerID = await signer.getIssuer()
-    const server = serve<Definitions>({ handlers, id: signerID, transport: transports.server })
+    const server = serve<Definitions>({ handlers, id: signer.id, transport: transports.server })
 
     const message = await signer.createToken({
       typ: 'event',
-      aud: signerID,
+      aud: signer.id,
       cmd: 'test/event',
       data: { hello: 'world' },
       exp: expiresAt,
@@ -79,8 +78,7 @@ describe('serve()', () => {
       AnyClientMessageOf<Definitions>
     >()
     const signer = randomTokenSigner()
-    const signerID = await signer.getIssuer()
-    serve<Definitions>({ handlers, id: signerID, transport: transports.server })
+    serve<Definitions>({ handlers, id: signer.id, transport: transports.server })
 
     const message = await signer.createToken({
       typ: 'request',
@@ -125,8 +123,7 @@ describe('serve()', () => {
       AnyClientMessageOf<Definitions>
     >()
     const signer = randomTokenSigner()
-    const signerID = await signer.getIssuer()
-    serve<Definitions>({ handlers, id: signerID, transport: transports.server })
+    serve<Definitions>({ handlers, id: signer.id, transport: transports.server })
 
     const message = await signer.createToken({
       typ: 'stream',
@@ -177,8 +174,7 @@ describe('serve()', () => {
       AnyClientMessageOf<Definitions>
     >()
     const signer = randomTokenSigner()
-    const signerID = await signer.getIssuer()
-    serve<Definitions>({ handlers, id: signerID, transport: transports.server })
+    serve<Definitions>({ handlers, id: signer.id, transport: transports.server })
 
     const message = await signer.createToken({
       typ: 'channel',

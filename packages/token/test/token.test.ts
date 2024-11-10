@@ -1,4 +1,4 @@
-import { getPublicKeyAsync } from '@noble/ed25519'
+import { ed25519 } from '@noble/curves/ed25519'
 import { equals } from 'uint8arrays'
 
 import { randomSigner, randomTokenSigner, toTokenSigner } from '../src/signer.js'
@@ -15,13 +15,13 @@ import { stringifyToken } from '../src/utils.js'
 
 test('create a signed token and verify it', async () => {
   const signer = randomSigner()
-  const tokenSigner = await toTokenSigner(signer)
+  const tokenSigner = toTokenSigner(signer)
   const token = await tokenSigner.createToken({ test: true })
   expect(isSignedToken(token)).toBe(true)
-  expect(token.payload.iss).toBe(await tokenSigner.getIssuer())
+  expect(token.payload.iss).toBe(tokenSigner.id)
   const verified = await verifyToken(token)
   expect(isVerifiedToken(verified)).toBe(true)
-  const publicKey = await getPublicKeyAsync(signer.privateKey)
+  const publicKey = ed25519.getPublicKey(signer.privateKey)
   expect(equals((verified as VerifiedToken<{ test: true }>).verifiedPublicKey, publicKey)).toBe(
     true,
   )

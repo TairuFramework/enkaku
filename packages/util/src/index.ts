@@ -53,3 +53,16 @@ export function toPromise<T = unknown>(execute: () => T | Promise<T>): Promise<T
     return Promise.reject(err)
   }
 }
+
+export function lazy<T>(execute: () => Promise<T>): PromiseLike<T> {
+  let promise: Promise<T> | undefined
+  return {
+    // biome-ignore lint/suspicious/noThenProperty: intentional PromiseLike
+    then: (onfullfilled, onrejected) => {
+      if (!promise) {
+        promise = execute()
+      }
+      return promise.then(onfullfilled, onrejected)
+    },
+  }
+}

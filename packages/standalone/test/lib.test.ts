@@ -14,17 +14,16 @@ describe('standalone', () => {
   describe('events', () => {
     test('handles events', async () => {
       const signer = randomTokenSigner()
-      const signerID = await signer.getIssuer()
 
       type Definitions = {
         'test/event': EventDefinition<{ hello: string }>
       }
       const handler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
-      const client = await standalone<Definitions>({ 'test/event': handler }, { signer })
+      const client = standalone<Definitions>({ 'test/event': handler }, { signer })
 
       await client.sendEvent('test/event', { hello: 'world' })
       const message = await signer.createToken({
-        aud: signerID,
+        aud: signer.id,
         typ: 'event',
         cmd: 'test/event',
         data: { hello: 'world' },
@@ -80,7 +79,7 @@ describe('standalone', () => {
           })
         })
       }) as jest.Mock<StreamHandler<'test/stream', number, number, string>>
-      const client = await standalone<Definitions>({ 'test/stream': handler })
+      const client = standalone<Definitions>({ 'test/stream': handler })
 
       const stream = await client.createStream('test/stream', 3)
       const reader = stream.receive.getReader()
@@ -118,7 +117,7 @@ describe('standalone', () => {
         }
         return 'END'
       }) as jest.Mock<ChannelHandler<'test/channel', number, number, number, string>>
-      const client = await standalone<Definitions>({ 'test/channel': handler })
+      const client = standalone<Definitions>({ 'test/channel': handler })
 
       const channel = await client.createChannel('test/channel', 5)
       const send = [5, 3, 10, 20]

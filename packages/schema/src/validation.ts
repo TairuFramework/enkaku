@@ -28,6 +28,11 @@ export function assertType<T>(validator: Validator<T>, data: unknown): asserts d
   }
 }
 
+export function asType<T>(validator: Validator<T>, data: unknown): T {
+  assertType(validator, data)
+  return data
+}
+
 export function isType<T>(validator: Validator<T>, data: unknown): data is T {
   return validator(data).isOk()
 }

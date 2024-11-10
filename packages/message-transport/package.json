@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/message-transport",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "license": "MIT",
   "keywords": [],
   "type": "module",
@@ -9,9 +9,7 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": [
-    "lib/*"
-  ],
+  "files": ["lib/*"],
   "sideEffects": false,
   "scripts": {
     "build:clean": "del lib",

@@ -9,17 +9,17 @@ export type StandaloneOptions = {
   signer?: TokenSigner
 }
 
-export async function standalone<Definitions extends AnyDefinitions>(
+export function standalone<Definitions extends AnyDefinitions>(
   handlers: CommandHandlers<Definitions>,
   options: StandaloneOptions = {},
-): Promise<Client<Definitions>> {
+): Client<Definitions> {
   const { signal, signer } = options
   const transports = createDirectTransports<
     AnyServerMessageOf<Definitions>,
     AnyClientMessageOf<Definitions>
   >({ signal })
 
-  const serverID = signer ? await signer.getIssuer() : undefined
+  const serverID = signer ? signer.id : undefined
   serve({
     handlers,
     signal,
