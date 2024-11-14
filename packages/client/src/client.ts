@@ -195,23 +195,32 @@ type CreateMessage<Definitions extends AnyDefinitions> = (
 ) => AnyClientMessageOf<Definitions> | Promise<AnyClientMessageOf<Definitions>>
 
 function getCreateMessage<Definitions extends AnyDefinitions>(
-  signer?: TokenSigner,
+  signer?: TokenSigner | Promise<TokenSigner>,
   aud?: string,
 ): CreateMessage<Definitions> {
   if (signer == null) {
     return createUnsignedToken
   }
+
+  const signerPromise = Promise.resolve(signer)
+  const createToken = (payload: Record<string, unknown>) => {
+    return signerPromise.then((s) => s.createToken(payload))
+  }
+
   return (
-    aud
-      ? (payload) => signer.createToken({ aud, ...payload })
-      : (payload) => signer.createToken(payload)
+    aud ? (payload) => createToken({ aud, ...payload }) : createToken
   ) as CreateMessage<Definitions>
 }
 
+function defaultRandomID(): string {
+  return globalThis.crypto.randomUUID()
+}
+
 export type ClientParams<Definitions extends AnyDefinitions> = {
+  getRandomID?: () => string
   transport: ClientTransportOf<Definitions>
   serverID?: string
-  signer?: TokenSigner
+  signer?: TokenSigner | Promise<TokenSigner>
 }
 
 export class Client<
@@ -221,10 +230,12 @@ export class Client<
 {
   #controllers: Record<string, AnyClientController> = {}
   #createMessage: CreateMessage<Definitions>
+  #getRandomID: () => string
   #transport: ClientTransportOf<Definitions>
 
   constructor(params: ClientParams<Definitions>) {
     this.#createMessage = getCreateMessage(params.signer, params.serverID)
+    this.#getRandomID = params.getRandomID ?? defaultRandomID
     this.#transport = params.transport
     // Abort all controllers on disconnect
     this.#transport.disposed.then(() => {
@@ -298,7 +309,7 @@ export class Client<
     command: Command,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
   ): Invocation<T['Result'], T['Return']> {
-    const rid = globalThis.crypto.randomUUID()
+    const rid = this.#getRandomID()
     const controller = createController<T['Result']>()
     this.#controllers[rid] = controller
 
@@ -329,7 +340,7 @@ export class Client<
     command: Command,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
   ): Invocation<T['Result'], T['Return']> {
-    const rid = globalThis.crypto.randomUUID()
+    const rid = this.#getRandomID()
     const receive = createPipe<T['Receive']>()
     const controller: StreamController<T['Receive'], T['Result']> = Object.assign(
       createController<T['Result']>(),
@@ -364,7 +375,7 @@ export class Client<
     command: Command,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
   ): Invocation<T['Result'], T['Return']> {
-    const rid = globalThis.crypto.randomUUID()
+    const rid = this.#getRandomID()
     const receive = createPipe<T['Receive']>()
     const send = createPipe<T['Send']>()
     const controller: ChannelController<T['Send'], T['Receive'], T['Result']> = Object.assign(

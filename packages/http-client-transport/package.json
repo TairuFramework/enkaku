@@ -27,6 +27,6 @@
     "@enkaku/transport": "workspace:^"
   },
   "devDependencies": {
-    "undici": "^6.20.1"
+    "undici": "^6.21.0"
   }
 }

@@ -8,7 +8,7 @@ export type Verifier = (
   signature: Uint8Array,
   message: Uint8Array,
   publicKey: Uint8Array,
-) => boolean
+) => boolean | Promise<boolean>
 
 export type Verifiers = Partial<Record<SignatureAlgorithm, Verifier>>
 

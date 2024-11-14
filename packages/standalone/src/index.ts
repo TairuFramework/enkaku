@@ -5,6 +5,7 @@ import type { TokenSigner } from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
 
 export type StandaloneOptions = {
+  getRandomID?: () => string
   signal?: AbortSignal
   signer?: TokenSigner
 }
@@ -13,7 +14,7 @@ export function standalone<Definitions extends AnyDefinitions>(
   handlers: CommandHandlers<Definitions>,
   options: StandaloneOptions = {},
 ): Client<Definitions> {
-  const { signal, signer } = options
+  const { getRandomID, signal, signer } = options
   const transports = createDirectTransports<
     AnyServerMessageOf<Definitions>,
     AnyClientMessageOf<Definitions>
@@ -26,5 +27,5 @@ export function standalone<Definitions extends AnyDefinitions>(
     transport: transports.server,
     ...(serverID ? { id: serverID } : { insecure: true }),
   })
-  return new Client<Definitions>({ serverID, signer, transport: transports.client })
+  return new Client<Definitions>({ getRandomID, serverID, signer, transport: transports.client })
 }

@@ -1,4 +1,4 @@
-import { base58btc } from 'multiformats/bases/base58'
+import { base58 } from '@scure/base'
 
 import type { SignatureAlgorithm } from './schemas.js'
 
@@ -6,6 +6,8 @@ export const CODECS: Record<SignatureAlgorithm, Uint8Array> = {
   ES256: new Uint8Array([128, 36]),
   EdDSA: new Uint8Array([0xed, 0x01]),
 }
+
+const PREFIX = 'did:key:z'
 
 function isCodecMatch(codec: Uint8Array, bytes: Uint8Array): boolean {
   for (let i = 0; i < codec.length; i++) {
@@ -33,15 +35,15 @@ export function getDID(codec: Uint8Array, publicKey: Uint8Array): string {
     bytes[i] = v
   })
   bytes.set(publicKey, codec.length)
-  return `did:key:${base58btc.encode(bytes)}`
+  return PREFIX + base58.encode(bytes)
 }
 
 export function getSignatureInfo(did: string): [SignatureAlgorithm, Uint8Array] {
-  if (!did.startsWith('did:key:z')) {
+  if (!did.startsWith(PREFIX)) {
     throw new Error(`Invalid DID to decode: ${did}`)
   }
 
-  const bytes = base58btc.decode(did.slice(8))
+  const bytes = base58.decode(did.slice(PREFIX.length))
   const info = getAlgorithmAndPublicKey(bytes)
   if (info == null) {
     throw new Error(`Unsupported DID signature codec: ${did}`)

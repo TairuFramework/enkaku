@@ -58,6 +58,11 @@ export function getTokenSigner(privateKey: Uint8Array | string): TokenSigner {
   return toTokenSigner(getSigner(privateKey))
 }
 
-export function randomTokenSigner(): TokenSigner {
-  return toTokenSigner(randomSigner())
+export type OwnTokenSigner = TokenSigner & {
+  privateKey: Uint8Array
+}
+
+export function randomTokenSigner(): OwnTokenSigner {
+  const { privateKey, ...signer } = randomSigner()
+  return { privateKey, ...toTokenSigner(signer) }
 }

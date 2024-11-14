@@ -1,6 +1,6 @@
 {
-  "name": "@enkaku/client",
-  "version": "0.6.2",
+  "name": "@enkaku/expo-keystore",
+  "version": "0.6.0",
   "license": "MIT",
   "keywords": [],
   "type": "module",
@@ -23,13 +23,9 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/codec": "workspace:^",
     "@enkaku/token": "workspace:^",
-    "@enkaku/stream": "workspace:^",
-    "typescript-result": "^3.0.0"
-  },
-  "devDependencies": {
-    "@enkaku/protocol": "workspace:^",
-    "@enkaku/transport": "workspace:^",
-    "@enkaku/util": "workspace:^"
+    "expo-crypto": "^14.0.1",
+    "expo-secure-store": "^14.0.0"
   }
 }
