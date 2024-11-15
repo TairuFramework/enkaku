@@ -3,7 +3,7 @@ import { ed25519 } from '@noble/curves/ed25519'
 
 import { CODECS, getDID } from './did.js'
 import type { SignedHeader } from './schemas.js'
-import type { GenericSigner, OwnSigner, SignedToken, TokenSigner } from './types.js'
+import type { GenericSigner, OwnSigner, OwnTokenSigner, SignedToken, TokenSigner } from './types.js'
 
 export { fromB64 as decodePrivateKey, toB64 as encodePrivateKey }
 
@@ -56,10 +56,6 @@ export function toTokenSigner(signer: GenericSigner): TokenSigner {
 
 export function getTokenSigner(privateKey: Uint8Array | string): TokenSigner {
   return toTokenSigner(getSigner(privateKey))
-}
-
-export type OwnTokenSigner = TokenSigner & {
-  privateKey: Uint8Array
 }
 
 export function randomTokenSigner(): OwnTokenSigner {

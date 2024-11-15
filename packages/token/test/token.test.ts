@@ -1,7 +1,7 @@
 import { ed25519 } from '@noble/curves/ed25519'
 import { equals } from 'uint8arrays'
 
-import { randomSigner, randomTokenSigner, toTokenSigner } from '../src/signer.js'
+import { randomTokenSigner } from '../src/signer.js'
 import {
   createUnsignedToken,
   isSignedToken,
@@ -14,11 +14,10 @@ import type { VerifiedToken } from '../src/types.js'
 import { stringifyToken } from '../src/utils.js'
 
 test('create a signed token and verify it', async () => {
-  const signer = randomSigner()
-  const tokenSigner = toTokenSigner(signer)
-  const token = await tokenSigner.createToken({ test: true })
+  const signer = randomTokenSigner()
+  const token = await signer.createToken({ test: true })
   expect(isSignedToken(token)).toBe(true)
-  expect(token.payload.iss).toBe(tokenSigner.id)
+  expect(token.payload.iss).toBe(signer.id)
   const verified = await verifyToken(token)
   expect(isVerifiedToken(verified)).toBe(true)
   const publicKey = ed25519.getPublicKey(signer.privateKey)

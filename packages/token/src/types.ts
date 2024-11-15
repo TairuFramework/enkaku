@@ -29,6 +29,10 @@ export type TokenSigner = {
   ) => Promise<SignedToken<Payload, Header>>
 }
 
+export type OwnTokenSigner = TokenSigner & {
+  privateKey: Uint8Array
+}
+
 export type UnsignedToken<
   Payload extends Record<string, unknown> = Record<string, unknown>,
   Header extends Record<string, unknown> = Record<string, unknown>,

@@ -49,7 +49,15 @@ export class BrowserKeyStore {
     })
   }
 
-  async #setKeyPair(id: string): Promise<CryptoKeyPair> {
+  #remove(id: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = this.#getStore('readwrite').delete(id)
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => resolve()
+    })
+  }
+
+  async #createKeyPair(id: string): Promise<CryptoKeyPair> {
     const keyPair = await randomKeyPair()
     await this.#store(id, keyPair)
     return keyPair
@@ -57,10 +65,18 @@ export class BrowserKeyStore {
 
   async get(id = DEFAULT_ID): Promise<CryptoKeyPair> {
     const existing = await this.#load(id)
-    return existing ?? (await this.#setKeyPair(id))
+    return existing ?? (await this.#createKeyPair(id))
+  }
+
+  async set(keyPair: CryptoKeyPair, id = DEFAULT_ID): Promise<void> {
+    await this.#store(id, keyPair)
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.#remove(id)
   }
 
   async reset(id = DEFAULT_ID): Promise<CryptoKeyPair> {
-    return await this.#setKeyPair(id)
+    return await this.#createKeyPair(id)
   }
 }
