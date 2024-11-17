@@ -1,4 +1,4 @@
-import { type TokenSigner, toTokenSigner } from '@enkaku/token'
+import type { GenericSigner } from '@enkaku/token'
 
 function ecPointCompress(x: Uint8Array, y: Uint8Array): Uint8Array {
   const out = new Uint8Array(x.length + 1)
@@ -12,10 +12,10 @@ export async function getPublicKey(keyPair: CryptoKeyPair): Promise<Uint8Array> 
   return ecPointCompress(new Uint8Array(rawKey.slice(1, 33)), new Uint8Array(rawKey.slice(33, 65)))
 }
 
-export async function getSigner(keyPair: CryptoKeyPair): Promise<TokenSigner> {
+export async function getSigner(keyPair: CryptoKeyPair): Promise<GenericSigner> {
   const publicKey = await getPublicKey(keyPair)
 
-  return toTokenSigner({
+  return {
     algorithm: 'ES256',
     publicKey,
     async sign(data) {
@@ -26,7 +26,7 @@ export async function getSigner(keyPair: CryptoKeyPair): Promise<TokenSigner> {
       )
       return new Uint8Array(signature)
     },
-  })
+  }
 }
 
 export async function randomKeyPair(): Promise<CryptoKeyPair> {

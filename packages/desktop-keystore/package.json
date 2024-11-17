@@ -1,6 +1,6 @@
 {
-  "name": "@enkaku/browser-keystore",
-  "version": "0.6.2",
+  "name": "@enkaku/desktop-keystore",
+  "version": "0.6.0",
   "license": "MIT",
   "keywords": [],
   "type": "module",
@@ -23,8 +23,9 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/codec": "workspace:^",
     "@enkaku/token": "workspace:^",
-    "@enkaku/util": "workspace:^"
+    "@napi-rs/keyring": "^1.1.6"
   },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^"

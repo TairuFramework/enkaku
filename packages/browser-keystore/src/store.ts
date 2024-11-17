@@ -1,82 +1,56 @@
+import type { KeyStore } from '@enkaku/protocol'
+import { defer } from '@enkaku/util'
+
+import { BrowserKeyEntry, type GetStore } from './entry.js'
+
 const DEFAULT_DB_NAME = 'enkaku:key-store'
-const DEFAULT_ID = 'default'
 const STORE_NAME = 'keys'
 
-import { randomKeyPair } from './utils.js'
+function createGetStore(db: IDBDatabase): GetStore {
+  return function getStore(mode: IDBTransactionMode = 'readonly'): IDBObjectStore {
+    return db.transaction(STORE_NAME, mode).objectStore(STORE_NAME)
+  }
+}
 
-export class BrowserKeyStore {
+export class BrowserKeyStore implements KeyStore<CryptoKeyPair, BrowserKeyEntry> {
+  static #byName: Record<string, Promise<BrowserKeyStore>> = {}
+
   static open(name = DEFAULT_DB_NAME): Promise<BrowserKeyStore> {
-    return new Promise((resolve, reject) => {
-      if (typeof globalThis.crypto.subtle === 'undefined') {
-        return reject(new Error('Unable to open KeyStore: SubtleCrypto is not available'))
-      }
-      if (typeof globalThis.indexedDB === 'undefined') {
-        return reject(new Error('Unable to open KeyStore: IndexedDB is not available'))
-      }
+    const existing = BrowserKeyStore.#byName[name]
+    if (existing != null) {
+      return existing
+    }
 
-      const request = indexedDB.open(name, 1)
-      request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve(new BrowserKeyStore(request.result))
-      request.onupgradeneeded = (event) => {
-        ;(event.target as IDBOpenDBRequest).result.createObjectStore(STORE_NAME)
-      }
-    })
+    const { promise, reject, resolve } = defer<BrowserKeyStore>()
+    BrowserKeyStore.#byName[name] = promise
+
+    if (typeof globalThis.crypto.subtle === 'undefined') {
+      reject(new Error('Unable to open KeyStore: SubtleCrypto is not available'))
+      return promise
+    }
+    if (typeof globalThis.indexedDB === 'undefined') {
+      reject(new Error('Unable to open KeyStore: IndexedDB is not available'))
+      return promise
+    }
+
+    const request = indexedDB.open(name, 1)
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => resolve(new BrowserKeyStore(request.result))
+    request.onupgradeneeded = (event) => {
+      ;(event.target as IDBOpenDBRequest).result.createObjectStore(STORE_NAME)
+    }
+    return promise
   }
 
-  #db: IDBDatabase
+  #entries: Record<string, BrowserKeyEntry> = {}
+  #getStore: GetStore
 
   constructor(db: IDBDatabase) {
-    this.#db = db
+    this.#getStore = createGetStore(db)
   }
 
-  #getStore(mode: IDBTransactionMode = 'readonly'): IDBObjectStore {
-    return this.#db.transaction(STORE_NAME, mode).objectStore(STORE_NAME)
-  }
-
-  #load(id = DEFAULT_ID): Promise<CryptoKeyPair | undefined> {
-    return new Promise((resolve, reject) => {
-      const request = this.#getStore().get(id)
-      request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve(request.result)
-    })
-  }
-
-  #store(id: string, value: CryptoKeyPair): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = this.#getStore('readwrite').put(value, id)
-      request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve()
-    })
-  }
-
-  #remove(id: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = this.#getStore('readwrite').delete(id)
-      request.onerror = () => reject(request.error)
-      request.onsuccess = () => resolve()
-    })
-  }
-
-  async #createKeyPair(id: string): Promise<CryptoKeyPair> {
-    const keyPair = await randomKeyPair()
-    await this.#store(id, keyPair)
-    return keyPair
-  }
-
-  async get(id = DEFAULT_ID): Promise<CryptoKeyPair> {
-    const existing = await this.#load(id)
-    return existing ?? (await this.#createKeyPair(id))
-  }
-
-  async set(keyPair: CryptoKeyPair, id = DEFAULT_ID): Promise<void> {
-    await this.#store(id, keyPair)
-  }
-
-  async remove(id: string): Promise<void> {
-    await this.#remove(id)
-  }
-
-  async reset(id = DEFAULT_ID): Promise<CryptoKeyPair> {
-    return await this.#createKeyPair(id)
+  entry(keyID: string): BrowserKeyEntry {
+    this.#entries[keyID] ??= new BrowserKeyEntry(keyID, this.#getStore)
+    return this.#entries[keyID]
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/expo-keystore",
-  "version": "0.6.1",
+  "version": "0.6.4",
   "license": "MIT",
   "keywords": [],
   "type": "module",
@@ -27,5 +27,8 @@
     "@enkaku/token": "workspace:^",
     "expo-crypto": "^14.0.1",
     "expo-secure-store": "^14.0.0"
+  },
+  "devDependencies": {
+    "@enkaku/protocol": "workspace:^"
   }
 }

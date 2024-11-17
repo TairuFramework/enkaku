@@ -1,12 +1,13 @@
 import { type TokenSigner, getTokenSigner } from '@enkaku/token'
 
-import { get, getAsync } from './store.js'
+import { ExpoKeyStore } from './store.js'
 
-export function loadSigner(keyID?: string): TokenSigner {
-  return getTokenSigner(get(keyID))
+export function provideTokenSigner(keyID: string): TokenSigner {
+  const key = ExpoKeyStore.entry(keyID).provide()
+  return getTokenSigner(key)
 }
 
-export async function loadSignerAsync(keyID?: string): Promise<TokenSigner> {
-  const key = await getAsync(keyID)
+export async function provideTokenSignerAsync(keyID: string): Promise<TokenSigner> {
+  const key = await ExpoKeyStore.entry(keyID).provideAsync()
   return getTokenSigner(key)
 }
