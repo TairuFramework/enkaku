@@ -2,7 +2,14 @@
   "name": "@enkaku/standalone",
   "version": "0.6.0",
   "license": "MIT",
-  "keywords": [],
+  "homepage": "https://enkaku.dev",
+  "description": "Standalone client and server for Enkaku RPC",
+  "keywords": ["json", "rpc", "client", "server"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/standalone"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

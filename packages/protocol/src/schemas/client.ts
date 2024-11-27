@@ -12,6 +12,7 @@ import type {
 
 import { createMessageSchema } from './message.js'
 
+/** @internal */
 export const abortMessageSchema: Schema = createMessageSchema({
   type: 'object',
   properties: {
@@ -23,6 +24,7 @@ export const abortMessageSchema: Schema = createMessageSchema({
   additionalProperties: false,
 } as const satisfies Schema)
 
+/** @internal */
 export function createEventPayloadWithData(command: string, dataSchema: Schema): Schema {
   return {
     type: 'object',
@@ -37,6 +39,7 @@ export function createEventPayloadWithData(command: string, dataSchema: Schema):
   } as const satisfies Schema
 }
 
+/** @internal */
 export function createEventPayloadWithoutData(command: string): Schema {
   return {
     type: 'object',
@@ -50,6 +53,7 @@ export function createEventPayloadWithoutData(command: string): Schema {
   } as const satisfies Schema
 }
 
+/** @internal */
 export function createEventMessageSchema(command: string, protocol: EventCommandProtocol): Schema {
   const payload = protocol.data
     ? createEventPayloadWithData(command, protocol.data)
@@ -57,6 +61,7 @@ export function createEventMessageSchema(command: string, protocol: EventCommand
   return createMessageSchema(payload)
 }
 
+/** @internal */
 export function createRequestPayloadWithParams(
   command: string,
   type: RequestType,
@@ -76,6 +81,7 @@ export function createRequestPayloadWithParams(
   } as const satisfies Schema
 }
 
+/** @internal */
 export function createRequestPayloadWithoutParams(command: string, type: RequestType): Schema {
   return {
     type: 'object',
@@ -90,6 +96,7 @@ export function createRequestPayloadWithoutParams(command: string, type: Request
   } as const satisfies Schema
 }
 
+/** @internal */
 export function createRequestMessageSchema(
   command: string,
   protocol: RequestCommandProtocol | StreamCommandProtocol | ChannelCommandProtocol,
@@ -100,6 +107,7 @@ export function createRequestMessageSchema(
   return createMessageSchema(payload)
 }
 
+/** @internal */
 export function createSendMessageSchema(protocol: ChannelCommandProtocol): Schema {
   const payloadSchema = {
     type: 'object',

@@ -2,7 +2,14 @@
   "name": "@enkaku/client",
   "version": "0.6.2",
   "license": "MIT",
-  "keywords": [],
+  "homepage": "https://enkaku.dev",
+  "description": "Enkaku RPC client",
+  "keywords": ["rpc", "client", "json", "jwt"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/client"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

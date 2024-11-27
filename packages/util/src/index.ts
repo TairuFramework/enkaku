@@ -1,12 +1,17 @@
 function noop() {}
 
+/**
+ * Deferred objects, providing a Promise with associated resolve and reject function.
+ */
 export type Deferred<T, R = unknown> = {
   promise: Promise<T>
   resolve: (value: T | PromiseLike<T>) => void
   reject: (reason?: R) => void
 }
 
-// Replace by Promise.withResolvers() when widely available
+/**
+ * Create a Deferred object.
+ */
 export function defer<T, R = unknown>(): Deferred<T, R> {
   let resolve: (value: T | PromiseLike<T>) => void = noop
   let reject: (reason?: unknown) => void = noop
@@ -19,11 +24,17 @@ export function defer<T, R = unknown>(): Deferred<T, R> {
 
 type DisposerState = 'pending' | 'disposing' | 'disposed'
 
+/**
+ * Disposer object, providing a dispose function and a disposed Promise.
+ */
 export type Disposer = {
   dispose: () => Promise<void>
   disposed: Promise<void>
 }
 
+/**
+ * Create a Disposer object from a function to execute on disposal and an optional AbortSignal.
+ */
 export function createDisposer(run: () => Promise<void>, signal?: AbortSignal): Disposer {
   const deferred = defer<void>()
   let state: DisposerState = 'pending'
@@ -45,7 +56,9 @@ export function createDisposer(run: () => Promise<void>, signal?: AbortSignal): 
   return { dispose, disposed: deferred.promise }
 }
 
-// Replace by Promise.try() when widely available
+/**
+ * Converts a function returning a value or promise to a Promise.
+ */
 export function toPromise<T = unknown>(execute: () => T | Promise<T>): Promise<T> {
   try {
     return Promise.resolve(execute())
@@ -54,6 +67,9 @@ export function toPromise<T = unknown>(execute: () => T | Promise<T>): Promise<T
   }
 }
 
+/**
+ * Lazily run the `execute` function at most once when awaited.
+ */
 export function lazy<T>(execute: () => Promise<T>): PromiseLike<T> {
   let promise: Promise<T> | undefined
   return {

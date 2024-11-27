@@ -1,8 +1,15 @@
 {
   "name": "@enkaku/protocol",
-  "version": "0.6.1",
+  "version": "0.6.3",
   "license": "MIT",
-  "keywords": [],
+  "homepage": "https://enkaku.dev",
+  "description": "Enkaku RPC protocol",
+  "keywords": ["protocol", "json", "rpc", "schema"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/protocol"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

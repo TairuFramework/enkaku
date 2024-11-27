@@ -1,0 +1,8 @@
+paul:
+  name: Paul Le Cam
+  title: Full stack engineer
+  url: https://github.com/PaulLeCam
+  image_url: https://github.com/PaulLeCam.png
+  page: true
+  socials:
+    github: PaulLeCam

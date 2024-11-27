@@ -1,4 +1,5 @@
 import type {
+  AnyDefinitions,
   ChannelDefinition,
   EventDefinition,
   RequestDefinition,
@@ -63,12 +64,9 @@ export type ClientPayloadOf<
         ? RequestCallPayload<'channel', Command, Params> | SendCallPayload<Send> | AbortCallPayload
         : never
 
-export type ClientPayloadRecordsOf<Definitions> = Definitions extends Record<
-  infer Commands extends string,
-  unknown
->
-  ? { [Command in Commands & string]: ClientPayloadOf<Command, Definitions[Command]> }
-  : Record<string, never>
+export type ClientPayloadRecordsOf<Definitions extends AnyDefinitions> = {
+  [Command in keyof Definitions & string]: ClientPayloadOf<Command, Definitions[Command]>
+}
 
 // Server payloads
 
@@ -134,9 +132,6 @@ export type ServerPayloadOf<Definition> = Definition extends RequestDefinition<
           | ErrorReplyPayload<Err['code'], Err['data']>
       : never
 
-export type ServerPayloadRecordsOf<Definitions> = Definitions extends Record<
-  infer Commands extends string,
-  unknown
->
-  ? { [Command in Commands & string]: ServerPayloadOf<Definitions[Command]> }
-  : Record<string, never>
+export type ServerPayloadRecordsOf<Definitions extends AnyDefinitions> = {
+  [Command in keyof Definitions & string]: ServerPayloadOf<Definitions[Command]>
+}

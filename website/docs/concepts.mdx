@@ -1,0 +1,33 @@
+# Core concepts
+
+## Messages
+
+Enkaku messages are JSON objects using the [JSON Web Token (IETF RFC 7519)](https://datatracker.ietf.org/doc/html/rfc7519) format.
+
+Messages may be signed and verified using the [JSON Web Signature (IETF RFC 7515)](https://datatracker.ietf.org/doc/html/rfc7515) standard.
+
+## JSON Web Token
+
+Enkaku uses JSON Web Token (JWT) to represent [messages](#messages).
+
+## Validation
+
+[Messages](#messages) supported by a given [protocol](#protocol) are defined using [JSON Schemas](https://json-schema.org/) and validated by the [server](#server) logic.
+
+## Protocol
+
+TODO: a protocol defines JSON schemas for the supported interactions a server provides via its handlers
+
+## Commands
+
+TODO: commands are types of interactions supported by Enkaku.
+
+## Handlers
+
+## Transport
+
+## Server
+
+## Client
+
+## Key store

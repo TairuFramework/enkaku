@@ -1,5 +1,8 @@
 import { Result } from 'typescript-result'
 
+/**
+ * Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and associated [ReadableStreamDefaultController](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStreamDefaultController).
+ */
 export function createReadable<T>(): [ReadableStream<T>, ReadableStreamDefaultController<T>] {
   let controller: ReadableStreamDefaultController<T> | undefined
   const stream = new ReadableStream<T>({
@@ -10,6 +13,9 @@ export function createReadable<T>(): [ReadableStream<T>, ReadableStreamDefaultCo
   return [stream, controller as ReadableStreamDefaultController<T>]
 }
 
+/**
+ * Create a tuple of `ReadableWritablePair` streams connected to each other.
+ */
 export function createConnection<AtoB, BtoA = AtoB>(): [
   ReadableWritablePair<BtoA, AtoB>,
   ReadableWritablePair<AtoB, BtoA>,
@@ -41,6 +47,9 @@ export function createConnection<AtoB, BtoA = AtoB>(): [
   ]
 }
 
+/**
+ * Create a `ReadableWritablePair` stream queuing written messages until they are read from the other end.
+ */
 export function createPipe<T>(): ReadableWritablePair<T, T> {
   const [readable, controller] = createReadable<T>()
 
@@ -56,6 +65,7 @@ export function createPipe<T>(): ReadableWritablePair<T, T> {
   return { readable, writable }
 }
 
+/** @internal */
 export function createTransformSource<T>(
   transform?: TransformerTransformCallback<T, Result<T, never>>,
 ): TransformStream<T, Result<T, never>> {
@@ -64,14 +74,17 @@ export function createTransformSource<T>(
   })
 }
 
+/** @internal */
 export function createTransformSink<I, O = I, E = unknown>(
   transform: TransformerTransformCallback<Result<I, E>, O>,
 ): TransformStream<Result<I, E>, O> {
   return new TransformStream<Result<I, E>, O>({ transform })
 }
 
+/** @internal */
 export type TransformStepStream<I, O = I, E = unknown> = TransformStream<Result<I, E>, Result<O, E>>
 
+/** @internal */
 export function createTransformStep<I, O = I, E = unknown>(
   transform: (input: I) => O | Promise<O>,
 ): TransformStepStream<I, O, E> {
@@ -125,6 +138,7 @@ export function combineTransformSteps<
   step5: TransformStepStream<T4, T5, E>,
   ...steps: Array<TransformStepStream<unknown>>
 ): TransformStepStream<I, O, E>
+/** @internal */
 export function combineTransformSteps(...steps: Array<TransformStepStream<unknown>>) {
   const [first, ...rest] = steps
   let current = first
@@ -135,6 +149,7 @@ export function combineTransformSteps(...steps: Array<TransformStepStream<unknow
   return { readable: current.readable, writable: first.writable }
 }
 
+/** @internal */
 export type CreatePipelineParams<I, T = I, O = T, E = unknown> = {
   source?: TransformStream<I, Result<I, never>> | TransformerTransformCallback<I, Result<I, never>>
   // biome-ignore lint/suspicious/noExplicitAny: how to make type-safe?
@@ -142,6 +157,7 @@ export type CreatePipelineParams<I, T = I, O = T, E = unknown> = {
   sink: TransformStream<Result<T, E>, O> | TransformerTransformCallback<Result<T, E>, O>
 }
 
+/** @internal */
 export function createPipeline<I, T = I, O = T, E = unknown>(
   params: CreatePipelineParams<I, T, O, E>,
 ): ReadableWritablePair<O, I> {

@@ -7,8 +7,14 @@ import type { GenericSigner, OwnSigner, OwnTokenSigner, SignedToken, TokenSigner
 
 export { fromB64 as decodePrivateKey, toB64 as encodePrivateKey }
 
+/**
+ * Generate a random private key.
+ */
 export const randomPrivateKey = ed25519.utils.randomPrivateKey
 
+/**
+ * Create a generic signer object for the given private key.
+ */
 export function getSigner(privateKey: Uint8Array | string): GenericSigner {
   const key = typeof privateKey === 'string' ? fromB64(privateKey) : privateKey
   return {
@@ -18,11 +24,17 @@ export function getSigner(privateKey: Uint8Array | string): GenericSigner {
   }
 }
 
+/**
+ * Generate a generic signer object with a random private key.
+ */
 export function randomSigner(): OwnSigner {
   const privateKey = randomPrivateKey()
   return { ...getSigner(privateKey), privateKey }
 }
 
+/**
+ * Create a token signer from a generic signer.
+ */
 export function toTokenSigner(signer: GenericSigner): TokenSigner {
   const codec = CODECS[signer.algorithm]
   if (codec == null) {
@@ -54,10 +66,16 @@ export function toTokenSigner(signer: GenericSigner): TokenSigner {
   return { createToken, id }
 }
 
+/**
+ * Create a token signer object for the given private key.
+ */
 export function getTokenSigner(privateKey: Uint8Array | string): TokenSigner {
   return toTokenSigner(getSigner(privateKey))
 }
 
+/**
+ * Generate a token signer object with a random private key.
+ */
 export function randomTokenSigner(): OwnTokenSigner {
   const { privateKey, ...signer } = randomSigner()
   return { privateKey, ...toTokenSigner(signer) }

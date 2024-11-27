@@ -5,7 +5,7 @@ import { getSigner } from './utils.js'
 
 export async function provideTokenSigner(
   keyID: string,
-  useStore: BrowserKeyStore | Promise<BrowserKeyStore> | string,
+  useStore?: BrowserKeyStore | Promise<BrowserKeyStore> | string,
 ): Promise<TokenSigner> {
   const storePromise =
     useStore == null || typeof useStore === 'string'

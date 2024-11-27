@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200" color="#04809d">
+  <line x1="60" y1="40" x2="60" y2="160" stroke="currentColor" stroke-width="12" stroke-linecap="round" />
+  <line x1="60" y1="40" x2="140" y2="40" stroke="currentColor" stroke-width="12" stroke-linecap="round" />
+  <polygon points="140,40 120,30 120,50" fill="currentColor" />
+  <line x1="60" y1="100" x2="140" y2="100" stroke="currentColor" stroke-width="12" stroke-linecap="round" />
+  <polygon points="60,100 80,90 80,110" fill="currentColor" />
+  <line x1="60" y1="160" x2="140" y2="160" stroke="currentColor" stroke-width="12" stroke-linecap="round" />
+  <polygon points="140,160 120,150 120,170" fill="currentColor" />
+  <circle cx="60" cy="40" r="8" fill="currentColor" />
+  <circle cx="60" cy="100" r="8" fill="currentColor" />
+  <circle cx="60" cy="160" r="8" fill="currentColor" />
+  <circle cx="140" cy="40" r="8" fill="currentColor" />
+  <circle cx="140" cy="100" r="8" fill="currentColor" />
+  <circle cx="140" cy="160" r="8" fill="currentColor" />
+</svg>

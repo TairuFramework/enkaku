@@ -172,10 +172,10 @@ export function serve<Definitions extends AnyDefinitions>(
 
   const handlersDone = handleMessages({
     controllers,
-    handlers: params.handlers,
+    handlers: params.handlers as CommandHandlers<AnyDefinitions>,
     reject,
     signal: abortController.signal,
-    transport: params.transport,
+    transport: params.transport as ServerTransportOf<AnyDefinitions>,
     ...(params.insecure
       ? { insecure: true }
       : { insecure: false, serverID: params.id, access: params.access ?? {} }),

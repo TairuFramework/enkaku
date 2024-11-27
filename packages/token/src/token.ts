@@ -12,6 +12,9 @@ import {
 import type { SignedToken, Token, TokenSigner, UnsignedToken, VerifiedToken } from './types.js'
 import { type Verifiers, getVerifier } from './verifier.js'
 
+/**
+ * Verify the signature of a signed payload and return the public key of the issuer.
+ */
 export async function verifySignedPayload<
   Payload extends Record<string, unknown> = Record<string, unknown>,
 >(
@@ -31,6 +34,9 @@ export async function verifySignedPayload<
   return publicKey
 }
 
+/**
+ * Check if a token is signed.
+ */
 export function isSignedToken<Payload extends SignedPayload = SignedPayload>(
   token: unknown,
 ): token is SignedToken<Payload> {
@@ -42,18 +48,27 @@ export function isSignedToken<Payload extends SignedPayload = SignedPayload>(
   )
 }
 
+/**
+ * Check if a token is unsigned.
+ */
 export function isUnsignedToken<Payload extends Record<string, unknown>>(
   token: Token<Payload>,
 ): token is UnsignedToken<Payload> {
   return isType(validateUnsignedHeader, token.header)
 }
 
+/**
+ * Check if a token is verified.
+ */
 export function isVerifiedToken<Payload extends SignedPayload>(
   token: unknown,
 ): token is VerifiedToken<Payload> {
   return isSignedToken(token) && (token as VerifiedToken<Payload>).verifiedPublicKey != null
 }
 
+/**
+ * Create an unsigned token object.
+ */
 export function createUnsignedToken<
   Payload extends Record<string, unknown>,
   Header extends Record<string, unknown> = Record<string, unknown>,
@@ -61,6 +76,9 @@ export function createUnsignedToken<
   return { header: { ...(header ?? ({} as Header)), typ: 'JWT', alg: 'none' }, payload }
 }
 
+/**
+ * Sign a token object if not already signed.
+ */
 export async function signToken<
   Payload extends Record<string, unknown>,
   Header extends Record<string, unknown>,
@@ -70,6 +88,9 @@ export async function signToken<
     : await signer.createToken(token.payload, token.header)
 }
 
+/**
+ * Verify a token is either unsigned or signed with a valid signature.
+ */
 export async function verifyToken<
   Payload extends Record<string, unknown> = Record<string, unknown>,
 >(token: Token<Payload> | string, verifiers?: Verifiers): Promise<Token<Payload>> {

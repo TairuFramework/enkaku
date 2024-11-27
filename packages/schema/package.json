@@ -2,7 +2,14 @@
   "name": "@enkaku/schema",
   "version": "0.6.0",
   "license": "MIT",
-  "keywords": [],
+  "homepage": "https://enkaku.dev",
+  "description": "JSON schema validation for Enkaku RPC",
+  "keywords": ["json", "schema", "json-schema", "validation"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/schema"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

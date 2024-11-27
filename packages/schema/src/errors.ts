@@ -2,6 +2,9 @@ import type { ErrorObject } from 'ajv'
 
 import type { Schema } from './types.js'
 
+/**
+ * JSON schema validation error for a specified input.
+ */
 export class ValidationErrorObject extends Error {
   #details: ErrorObject
 
@@ -18,6 +21,9 @@ export class ValidationErrorObject extends Error {
   }
 }
 
+/**
+ * Aggregate of errors raised when validating a `data` input against a JSON `schema`.
+ */
 export class ValidationError extends AggregateError {
   #data: unknown
   #schema: Schema

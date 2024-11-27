@@ -5,6 +5,9 @@ export type TransportStream<R, W> = ReadableWritablePair<R, W> | Promise<Readabl
 
 export type TransportInput<R, W> = TransportStream<R, W> | (() => TransportStream<R, W>)
 
+/**
+ * Generic Transport object type implementing read and write functions.
+ */
 export type TransportType<R, W> = Disposer & {
   [Symbol.asyncIterator](): AsyncIterator<R, R | null>
   read: () => Promise<ReadableStreamReadResult<R>>
@@ -16,6 +19,9 @@ export type TransportParams<R, W> = {
   stream: TransportInput<R, W>
 }
 
+/**
+ * Base Transport class implementing TransportType.
+ */
 export class Transport<R, W> implements TransportType<R, W> {
   #disposer: Disposer
   #params: TransportParams<R, W>
@@ -92,6 +98,9 @@ export type DirectTransportsOptions = {
   signal?: AbortSignal
 }
 
+/**
+ * Couple of Transports for communication between a client and server in the same process.
+ */
 export type DirectTransports<ToClient, ToServer> = AsyncDisposable & {
   client: TransportType<ToClient, ToServer>
   server: TransportType<ToServer, ToClient>
@@ -99,6 +108,9 @@ export type DirectTransports<ToClient, ToServer> = AsyncDisposable & {
   disposed: Promise<void>
 }
 
+/**
+ * Create direct Transports for communication between a client and server in the same process.
+ */
 export function createDirectTransports<ToClient, ToServer>(
   options: DirectTransportsOptions = {},
 ): DirectTransports<ToClient, ToServer> {

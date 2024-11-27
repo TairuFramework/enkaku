@@ -10,6 +10,7 @@ import type {
 
 import { createMessageSchema } from './message.js'
 
+/** @internal */
 export const errorMessageSchema: Schema = createMessageSchema({
   type: 'object',
   properties: {
@@ -24,6 +25,7 @@ export const errorMessageSchema: Schema = createMessageSchema({
   additionalProperties: false,
 } as const satisfies Schema)
 
+/** @internal */
 export function createReceiveMessageSchema(
   protocol: StreamCommandProtocol | ChannelCommandProtocol,
 ): Schema {
@@ -41,6 +43,7 @@ export function createReceiveMessageSchema(
   return createMessageSchema(payloadSchema)
 }
 
+/** @internal */
 export function createResultMessageWithValue(valueSchema: Schema): Schema {
   return createMessageSchema({
     type: 'object',
@@ -55,6 +58,7 @@ export function createResultMessageWithValue(valueSchema: Schema): Schema {
   } as const satisfies Schema)
 }
 
+/** @internal */
 export const resultMessageWithoutValue: Schema = createMessageSchema({
   type: 'object',
   properties: {
@@ -66,6 +70,7 @@ export const resultMessageWithoutValue: Schema = createMessageSchema({
   additionalProperties: false,
 } as const satisfies Schema)
 
+/** @internal */
 export function createResultMessageSchema(
   protocol: RequestCommandProtocol | StreamCommandProtocol | ChannelCommandProtocol,
 ): Schema {

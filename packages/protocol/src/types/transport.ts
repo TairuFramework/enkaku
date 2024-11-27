@@ -16,13 +16,21 @@ export type ClientMessage<Payload extends UnknownCallPayload = UnknownCallPayloa
 export type ServerMessage<Payload extends UnknownReplyPayload = UnknownReplyPayload> =
   Message<Payload>
 
-export type AnyClientPayloadOf<Definitions> = ValueOf<ClientPayloadRecordsOf<Definitions>>
+export type AnyClientPayloadOf<Definitions extends AnyDefinitions> = ValueOf<
+  ClientPayloadRecordsOf<Definitions>
+>
 
-export type AnyClientMessageOf<Definitions> = Message<AnyClientPayloadOf<Definitions>>
+export type AnyClientMessageOf<Definitions extends AnyDefinitions> = Message<
+  AnyClientPayloadOf<Definitions>
+>
 
-export type AnyServerPayloadOf<Definitions> = ValueOf<ServerPayloadRecordsOf<Definitions>>
+export type AnyServerPayloadOf<Definitions extends AnyDefinitions> = ValueOf<
+  ServerPayloadRecordsOf<Definitions>
+>
 
-export type AnyServerMessageOf<Definitions> = Message<AnyServerPayloadOf<Definitions>>
+export type AnyServerMessageOf<Definitions extends AnyDefinitions> = Message<
+  AnyServerPayloadOf<Definitions>
+>
 
 export type ClientTransportOf<Definitions extends AnyDefinitions> = TransportType<
   AnyServerMessageOf<Definitions>,

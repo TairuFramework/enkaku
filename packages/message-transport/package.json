@@ -2,7 +2,14 @@
   "name": "@enkaku/message-transport",
   "version": "0.6.0",
   "license": "MIT",
-  "keywords": [],
+  "homepage": "https://enkaku.dev",
+  "description": "MessagePort transport for Enkaku RPC clients and servers",
+  "keywords": ["message", "transport", "rpc", "messageport", "web", "browser"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/message-transport"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

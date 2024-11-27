@@ -1,8 +1,15 @@
 {
   "name": "@enkaku/expo-keystore",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "license": "MIT",
-  "keywords": [],
+  "homepage": "https://enkaku.dev",
+  "description": "Enkaku key store for React Native",
+  "keywords": ["cryptography", "key-management", "react-native", "expo", "storage"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/expo-keystore"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

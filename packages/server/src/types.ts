@@ -1,5 +1,4 @@
 import type {
-  AnyDefinition,
   AnyDefinitions,
   AnyServerPayloadOf,
   ChannelDefinition,
@@ -73,31 +72,26 @@ export type ChannelHandler<Command extends string, Params, Sent, Receive, Result
   context: ChannelHandlerContext<Command, Params, Sent, Receive>,
 ) => HandlerReturn<Result>
 
-export type CommandHandlers<Definitions> = Definitions extends Record<
-  infer Commands extends string,
-  AnyDefinition
->
-  ? {
-      [Command in Commands & string]: Definitions[Command] extends EventDefinition<infer Data>
-        ? (context: EventHandlerContext<Command, Data>) => void
-        : Definitions[Command] extends RequestDefinition<infer Params, infer Result>
-          ? (context: RequestHandlerContext<'request', Command, Params>) => HandlerReturn<Result>
-          : Definitions[Command] extends StreamDefinition<infer Params, infer Receive, infer Result>
-            ? (
-                context: StreamHandlerContext<'stream', Command, Params, Receive>,
-              ) => HandlerReturn<Result>
-            : Definitions[Command] extends ChannelDefinition<
-                  infer Params,
-                  infer Send,
-                  infer Receive,
-                  infer Result
-                >
-              ? (
-                  context: ChannelHandlerContext<Command, Params, Send, Receive>,
-                ) => HandlerReturn<Result>
-              : never
-    }
-  : Record<string, never>
+export type CommandHandlers<Definitions extends AnyDefinitions> = {
+  [Command in keyof Definitions & string]: Definitions[Command] extends EventDefinition<infer Data>
+    ? (context: EventHandlerContext<Command, Data>) => void
+    : Definitions[Command] extends RequestDefinition<infer Params, infer Result>
+      ? (context: RequestHandlerContext<'request', Command, Params>) => HandlerReturn<Result>
+      : Definitions[Command] extends StreamDefinition<infer Params, infer Receive, infer Result>
+        ? (
+            context: StreamHandlerContext<'stream', Command, Params, Receive>,
+          ) => HandlerReturn<Result>
+        : Definitions[Command] extends ChannelDefinition<
+              infer Params,
+              infer Send,
+              infer Receive,
+              infer Result
+            >
+          ? (
+              context: ChannelHandlerContext<Command, Params, Send, Receive>,
+            ) => HandlerReturn<Result>
+          : never
+}
 
 export type EventDataType<
   Definitions extends AnyDefinitions,
@@ -116,7 +110,7 @@ export type ParamsType<
       : never
 
 export type ReceiveType<
-  Definitions extends Record<string, unknown>,
+  Definitions extends AnyDefinitions,
   Command extends keyof Definitions & string,
 > = Definitions[Command] extends StreamDefinition<infer Params, infer Receive>
   ? Receive
@@ -125,7 +119,7 @@ export type ReceiveType<
     : never
 
 export type ResultType<
-  Definitions extends Record<string, unknown>,
+  Definitions extends AnyDefinitions,
   Command extends keyof Definitions & string,
 > = Definitions[Command] extends RequestDefinition<infer Params, infer Result>
   ? Result
@@ -141,7 +135,7 @@ export type ResultType<
       : never
 
 export type SendType<
-  Definitions extends Record<string, unknown>,
+  Definitions extends AnyDefinitions,
   Command extends keyof Definitions & string,
 > = Definitions[Command] extends ChannelDefinition<infer Params, infer Send> ? Send : never
 

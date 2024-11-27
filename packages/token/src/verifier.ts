@@ -4,14 +4,17 @@ import { sha256 } from '@noble/hashes/sha256'
 
 import type { SignatureAlgorithm } from './schemas.js'
 
+/** @internal */
 export type Verifier = (
   signature: Uint8Array,
   message: Uint8Array,
   publicKey: Uint8Array,
 ) => boolean | Promise<boolean>
 
+/** @internal */
 export type Verifiers = Partial<Record<SignatureAlgorithm, Verifier>>
 
+/** @internal */
 export const defaultVerifiers: Verifiers = {
   ES256: (signature: Uint8Array, message: Uint8Array, publicKey: Uint8Array) => {
     return p256.verify(signature, sha256(message), publicKey)
@@ -21,6 +24,7 @@ export const defaultVerifiers: Verifiers = {
   },
 }
 
+/** @internal */
 export function getVerifier(algorithm: SignatureAlgorithm, verifiers: Verifiers = {}): Verifier {
   const verifier = verifiers[algorithm] ?? defaultVerifiers[algorithm]
   if (verifier == null) {

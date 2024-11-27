@@ -2,7 +2,14 @@
   "name": "@enkaku/transport",
   "version": "0.6.0",
   "license": "MIT",
-  "keywords": [],
+  "homepage": "https://enkaku.dev",
+  "description": "Generic transport for Enkaku RPC clients and servers",
+  "keywords": ["transport", "web", "stream"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/transport"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",

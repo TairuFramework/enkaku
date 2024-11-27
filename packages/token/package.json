@@ -2,7 +2,14 @@
   "name": "@enkaku/token",
   "version": "0.6.3",
   "license": "MIT",
-  "keywords": [],
+  "homepage": "https://enkaku.dev",
+  "description": "JWT signing and verification for Enkaku RPC",
+  "keywords": ["json", "web", "token", "jwt", "signature"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/token"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -26,9 +33,9 @@
   "dependencies": {
     "@enkaku/codec": "workspace:^",
     "@enkaku/schema": "workspace:^",
-    "@noble/curves": "^1.6.0",
-    "@noble/hashes": "^1.5.0",
-    "@scure/base": "^1.1.9"
+    "@noble/curves": "^1.7.0",
+    "@noble/hashes": "^1.6.0",
+    "@scure/base": "^1.2.1"
   },
   "devDependencies": {
     "uint8arrays": "^5.1.0"
