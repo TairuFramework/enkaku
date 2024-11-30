@@ -1,3 +1,15 @@
+/**
+ * Generic transport for Enkaku RPC clients and servers.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/transport
+ * ```
+ *
+ * @module transport
+ */
+
 import { createConnection } from '@enkaku/stream'
 import { type Disposer, createDisposer } from '@enkaku/util'
 

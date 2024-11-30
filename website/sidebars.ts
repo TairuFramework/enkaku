@@ -4,7 +4,7 @@ const sidebars: SidebarsConfig = {
   docs: [
     { type: 'doc', id: 'overview' },
     { type: 'doc', id: 'quick-start' },
-    { type: 'doc', id: 'concepts' },
+    // { type: 'doc', id: 'concepts' },
   ],
   apis: [
     { type: 'doc', id: 'api' },
@@ -12,12 +12,12 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Core',
       items: [
-        'api/protocol/index',
         'api/schema/index',
         'api/token/index',
         'api/capability/index',
         'api/stream/index',
         'api/transport/index',
+        'api/protocol/index',
       ],
     },
     {
@@ -45,7 +45,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Misc',
+      label: 'Miscellaneous',
       items: ['api/codec/index', 'api/util/index'],
     },
   ],

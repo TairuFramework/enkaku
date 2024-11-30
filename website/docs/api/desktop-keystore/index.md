@@ -1,5 +1,13 @@
 # @enkaku/desktop-keystore
 
+Enkaku key store for desktop.
+
+## Installation
+
+```sh
+npm install @enkaku/desktop-keystore
+```
+
 ## Classes
 
 ### DesktopKeyEntry
@@ -16,11 +24,17 @@
 
 ###### Parameters
 
-• **service**: `string`
+###### service
 
-• **keyID**: `string`
+`string`
 
-• **key?**: `Uint8Array`\<`ArrayBufferLike`\>
+###### keyID
+
+`string`
+
+###### key?
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 ###### Returns
 
@@ -124,7 +138,9 @@
 
 ###### Parameters
 
-• **key**: `Uint8Array`\<`ArrayBufferLike`\>
+###### key
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 ###### Returns
 
@@ -138,7 +154,9 @@
 
 ###### Parameters
 
-• **key**: `Uint8Array`\<`ArrayBufferLike`\>
+###### key
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 ###### Returns
 
@@ -164,7 +182,9 @@
 
 ###### Parameters
 
-• **service**: `string`
+###### service
+
+`string`
 
 ###### Returns
 
@@ -178,7 +198,9 @@
 
 ###### Parameters
 
-• **keyID**: `string`
+###### keyID
+
+`string`
 
 ###### Returns
 
@@ -216,7 +238,9 @@
 
 ###### Parameters
 
-• **service**: `string`
+###### service
+
+`string`
 
 ###### Returns
 
@@ -230,9 +254,13 @@
 
 #### Parameters
 
-• **store**: `string` \| [`DesktopKeyStore`](index.md#desktopkeystore)
+##### store
 
-• **keyID**: `string`
+`string` | [`DesktopKeyStore`](index.md#desktopkeystore)
+
+##### keyID
+
+`string`
 
 #### Returns
 
@@ -246,9 +274,13 @@
 
 #### Parameters
 
-• **store**: `string` \| [`DesktopKeyStore`](index.md#desktopkeystore)
+##### store
 
-• **keyID**: `string`
+`string` | [`DesktopKeyStore`](index.md#desktopkeystore)
+
+##### keyID
+
+`string`
 
 #### Returns
 

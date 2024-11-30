@@ -1,5 +1,13 @@
 # @enkaku/server
 
+Server logic for Enkaku RPC.
+
+## Installation
+
+```sh
+npm install @enkaku/server
+```
+
 ## Type Aliases
 
 ### ChannelHandler()\<Command, Params, Sent, Receive, Result\>
@@ -20,7 +28,9 @@
 
 #### Parameters
 
-• **context**: [`ChannelHandlerContext`](index.md#channelhandlercontextcommand-params-sent-receive)\<`Command`, `Params`, `Sent`, `Receive`\>
+##### context
+
+[`ChannelHandlerContext`](index.md#channelhandlercontextcommand-params-sent-receive)\<`Command`, `Params`, `Sent`, `Receive`\>
 
 #### Returns
 
@@ -58,7 +68,7 @@
 
 ### CommandHandlers\<Definitions\>
 
-> **CommandHandlers**\<`Definitions`\>: `{ [Command in keyof Definitions & string]: Definitions[Command] extends EventDefinition<infer Data> ? Function : Definitions[Command] extends RequestDefinition<infer Params, infer Result> ? Function : Definitions[Command] extends StreamDefinition<infer Params, infer Receive, infer Result> ? Function : Definitions[Command] extends ChannelDefinition<infer Params, infer Send, infer Receive, infer Result> ? Function : never }`
+> **CommandHandlers**\<`Definitions`\>: `{ [Command in keyof Definitions & string]: Definitions[Command] extends EventDefinition<infer Data> ? (context: EventHandlerContext<Command, Data>) => void : Definitions[Command] extends RequestDefinition<infer Params, infer Result> ? (context: RequestHandlerContext<"request", Command, Params>) => HandlerReturn<Result> : Definitions[Command] extends StreamDefinition<infer Params, infer Receive, infer Result> ? (context: StreamHandlerContext<"stream", Command, Params, Receive>) => HandlerReturn<Result> : Definitions[Command] extends ChannelDefinition<infer Params, infer Send, infer Receive, infer Result> ? (context: ChannelHandlerContext<Command, Params, Send, Receive>) => HandlerReturn<Result> : never }`
 
 #### Type Parameters
 
@@ -78,7 +88,9 @@
 
 #### Parameters
 
-• **context**: [`EventHandlerContext`](index.md#eventhandlercontextcommand-data)\<`Command`, `Data`\>
+##### context
+
+[`EventHandlerContext`](index.md#eventhandlercontextcommand-data)\<`Command`, `Data`\>
 
 #### Returns
 
@@ -154,7 +166,9 @@
 
 #### Parameters
 
-• **context**: [`RequestHandlerContext`](index.md#requesthandlercontexttype-command-params)\<`"request"`, `Command`, `Params`\>
+##### context
+
+[`RequestHandlerContext`](index.md#requesthandlercontexttype-command-params)\<`"request"`, `Command`, `Params`\>
 
 #### Returns
 
@@ -192,7 +206,7 @@
 
 ### ServeParams\<Definitions\>
 
-> **ServeParams**\<`Definitions`\>: `object` & `object` \| `object`
+> **ServeParams**\<`Definitions`\>: `object` & \{`insecure`: `true`; \} \| \{`access`: [`CommandAccessRecord`](index.md#commandaccessrecord);`id`: `string`;`insecure`: `false`; \}
 
 #### Type declaration
 
@@ -242,7 +256,9 @@
 
 #### Parameters
 
-• **context**: [`StreamHandlerContext`](index.md#streamhandlercontexttype-command-params-receive)\<`"stream"`, `Command`, `Params`, `Receive`\>
+##### context
+
+[`StreamHandlerContext`](index.md#streamhandlercontexttype-command-params-receive)\<`"stream"`, `Command`, `Params`, `Receive`\>
 
 #### Returns
 
@@ -282,7 +298,9 @@
 
 #### Parameters
 
-• **params**: [`ServeParams`](index.md#serveparamsdefinitions)\<`Definitions`\>
+##### params
+
+[`ServeParams`](index.md#serveparamsdefinitions)\<`Definitions`\>
 
 #### Returns
 

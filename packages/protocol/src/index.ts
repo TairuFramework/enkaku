@@ -1,3 +1,15 @@
+/**
+ * Enkaku RPC protocol.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/protocol
+ * ```
+ *
+ * @module protocol
+ */
+
 export * from './schemas/client.js'
 export * from './schemas/message.js'
 export * from './schemas/server.js'

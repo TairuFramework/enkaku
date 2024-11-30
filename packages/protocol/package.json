@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/protocol",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Enkaku RPC protocol",

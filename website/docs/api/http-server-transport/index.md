@@ -1,5 +1,13 @@
 # @enkaku/http-server-transport
 
+HTTP transport for Enkaku RPC servers.
+
+## Installation
+
+```sh
+npm install @enkaku/http-server-transport
+```
+
 ## Classes
 
 ### ServerTransport\<Definitions\>
@@ -58,11 +66,11 @@ Base Transport class implementing TransportType.
 
 ###### next()
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\> \| `object`\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\>; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\> \| `object`\>
+`Promise`\<`ReadableStreamReadValueResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\>; \}\>
 
 ###### Inherited from
 
@@ -90,7 +98,9 @@ Base Transport class implementing TransportType.
 
 ###### Parameters
 
-• **request**: `Request`
+###### request
+
+`Request`
 
 ###### Returns
 
@@ -118,7 +128,9 @@ Base Transport class implementing TransportType.
 
 ###### Parameters
 
-• **value**: [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>
+###### value
+
+[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>
 
 ###### Returns
 
@@ -136,7 +148,9 @@ Base Transport class implementing TransportType.
 
 #### Parameters
 
-• **request**: `Request`
+##### request
+
+`Request`
 
 #### Returns
 

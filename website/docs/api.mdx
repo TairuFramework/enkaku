@@ -1,1 +1,43 @@
 # Enkaku APIs
+
+## Core
+
+These packages implement the core functionalities provided by Enkaku.
+
+- [`@enkaku/schema`](./api/schema/index.md): JSON schema validation.
+- [`@enkaku/token`](./api/token/index.md): JSON Web Token signing and validation.
+- [`@enkaku/capability`](./api/capability/index.md): capabilities delegation and verification for JWTs.
+- [`@enkaku/stream`](./api/stream/index.md): Web streams utilities for transports.
+- [`@enkaku/transport`](./api/transport/index.md): generic transport for RPC clients and servers.
+- [`@enkaku/protocol`](./api/protocol/index.md): schemas and types for messages and other packages.
+
+## RPC
+
+These packages support RPC interactions.
+
+- [`@enkaku/client`](./api/client/index.md): RPC client.
+- [`@enkaku/server`](./api/server/index.md): server logic for handling RPC.
+- [`@enkaku/standalone`](./api/standalone/index.md): standalone RPC client and server, mainly useful for testing.
+
+## Transports
+
+These packages support messaging interactions for RPC clients and/or servers.
+
+- [`@enkaku/http-client-transport`](./api/http-client-transport/index.md): HTTP transport for RPC clients.
+- [`@enkaku/http-server-transport`](./api/http-server-transport/index.md): HTTP transport for RPC servers.
+- [`@enkaku/message-transport`](./api/message-transport/index.md): [MessagePort](https://developer.mozilla.org/en-US/docs/Web/API/MessagePort) transport for Enkaku RPC clients and servers.
+
+## Key stores
+
+These packages support secure storage for signer keys in various environment.
+
+- [`@enkaku/browser-keystore`](./api/browser-keystore/index.md): [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) store for [CryptoKeys](https://developer.mozilla.org/en-US/docs/Web/API/CryptoKey) in browser environments.
+- [`@enkaku/desktop-keystore`](./api/desktop-keystore/index.md): [Keyring](https://github.com/hwchen/keyring-rs) store for desktop environments.
+- [`@enkaku/expo-keystore`](./api/expo-keystore/index.md): [SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/) for Expo (React-Native) environments.
+
+## Miscellaneous
+
+This packages are used internally byt other packages to support common functionalities.
+
+- [`@enkaku/codec`](./api/codec/index.md): base64 and UTF8 encoding and decoding.
+- [`@enkaku/util`](./api/util/index.md): generic utilities.

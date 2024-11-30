@@ -1,5 +1,13 @@
 # @enkaku/token
 
+JWT signing and verification for Enkaku RPC.
+
+## Installation
+
+```sh
+npm install @enkaku/token
+```
+
 ## Type Aliases
 
 ### GenericSigner
@@ -22,7 +30,9 @@
 
 ###### Parameters
 
-• **message**: `Uint8Array`
+###### message
+
+`Uint8Array`
 
 ###### Returns
 
@@ -114,9 +124,13 @@
 
 ###### Parameters
 
-• **payload**: `Payload`
+###### payload
 
-• **header?**: `Header`
+`Payload`
+
+###### header?
+
+`Header`
 
 ###### Returns
 
@@ -190,9 +204,13 @@ Create an unsigned token object.
 
 #### Parameters
 
-• **payload**: `Payload`
+##### payload
 
-• **header?**: `Header`
+`Payload`
+
+##### header?
+
+`Header`
 
 #### Returns
 
@@ -204,9 +222,13 @@ Create an unsigned token object.
 
 > **decodePrivateKey**(`base64`): `Uint8Array`
 
+Convert a base64-encoded string to a Uint8Array.
+
 #### Parameters
 
-• **base64**: `string`
+##### base64
+
+`string`
 
 #### Returns
 
@@ -218,9 +240,13 @@ Create an unsigned token object.
 
 > **encodePrivateKey**(`bytes`): `string`
 
+Convert a Uint8Array to a base64-encoded string.
+
 #### Parameters
 
-• **bytes**: `Uint8Array`\<`ArrayBufferLike`\>
+##### bytes
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 #### Returns
 
@@ -236,7 +262,9 @@ Create a generic signer object for the given private key.
 
 #### Parameters
 
-• **privateKey**: `string` \| `Uint8Array`\<`ArrayBufferLike`\>
+##### privateKey
+
+`string` | `Uint8Array`\<`ArrayBufferLike`\>
 
 #### Returns
 
@@ -252,7 +280,9 @@ Create a token signer object for the given private key.
 
 #### Parameters
 
-• **privateKey**: `string` \| `Uint8Array`\<`ArrayBufferLike`\>
+##### privateKey
+
+`string` | `Uint8Array`\<`ArrayBufferLike`\>
 
 #### Returns
 
@@ -268,11 +298,13 @@ Check if a token is signed.
 
 #### Type Parameters
 
-• **Payload** *extends* `object` = `object`
+• **Payload** *extends* `object` = \{`[key: string]`: `unknown`; `aud`: `string`;`cap`: `string` \| `string`[];`exp`: `number`;`iat`: `number`;`iss`: `string`;`nbf`: `number`;`sub`: `string`; \}
 
 #### Parameters
 
-• **token**: `unknown`
+##### token
+
+`unknown`
 
 #### Returns
 
@@ -292,7 +324,9 @@ Check if a token is unsigned.
 
 #### Parameters
 
-• **token**: [`Token`](index.md#tokenpayload-header)\<`Payload`\>
+##### token
+
+[`Token`](index.md#tokenpayload-header)\<`Payload`\>
 
 #### Returns
 
@@ -312,7 +346,9 @@ Check if a token is verified.
 
 #### Parameters
 
-• **token**: `unknown`
+##### token
+
+`unknown`
 
 #### Returns
 
@@ -370,9 +406,13 @@ Sign a token object if not already signed.
 
 #### Parameters
 
-• **signer**: [`TokenSigner`](index.md#tokensigner)
+##### signer
 
-• **token**: [`Token`](index.md#tokenpayload-header)\<`Payload`, `Header`\>
+[`TokenSigner`](index.md#tokensigner)
+
+##### token
+
+[`Token`](index.md#tokenpayload-header)\<`Payload`, `Header`\>
 
 #### Returns
 
@@ -388,7 +428,9 @@ Convert a Token object to its JWT string representation.
 
 #### Parameters
 
-• **token**: [`Token`](index.md#tokenpayload-header)
+##### token
+
+[`Token`](index.md#tokenpayload-header)
 
 #### Returns
 
@@ -404,7 +446,9 @@ Create a token signer from a generic signer.
 
 #### Parameters
 
-• **signer**: [`GenericSigner`](index.md#genericsigner)
+##### signer
+
+[`GenericSigner`](index.md#genericsigner)
 
 #### Returns
 
@@ -424,9 +468,13 @@ Verify a token is either unsigned or signed with a valid signature.
 
 #### Parameters
 
-• **token**: `string` \| [`Token`](index.md#tokenpayload-header)\<`Payload`\>
+##### token
 
-• **verifiers?**: `Partial`\<`Record`\<`"EdDSA"` \| `"ES256"`, `Verifier`\>\>
+`string` | [`Token`](index.md#tokenpayload-header)\<`Payload`\>
+
+##### verifiers?
+
+`Partial`\<`Record`\<`"EdDSA"` \| `"ES256"`, `Verifier`\>\>
 
 #### Returns
 

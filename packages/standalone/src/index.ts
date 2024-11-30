@@ -1,3 +1,15 @@
+/**
+ * Standalone client and server for Enkaku RPC.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/standalone
+ * ```
+ *
+ * @module standalone
+ */
+
 import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyDefinitions, AnyServerMessageOf } from '@enkaku/protocol'
 import { type CommandHandlers, serve } from '@enkaku/server'

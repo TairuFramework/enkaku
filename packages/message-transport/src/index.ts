@@ -1,3 +1,15 @@
+/**
+ * MessagePort transport for Enkaku RPC clients and servers.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/message-transport
+ * ```
+ *
+ * @module message-transport
+ */
+
 import { Transport } from '@enkaku/transport'
 
 export type PortOrPromise = MessagePort | Promise<MessagePort>

@@ -1,5 +1,13 @@
 # @enkaku/message-transport
 
+MessagePort transport for Enkaku RPC clients and servers.
+
+## Installation
+
+```sh
+npm install @enkaku/message-transport
+```
+
 ## Classes
 
 ### MessageTransport\<R, W\>
@@ -24,7 +32,9 @@ Base Transport class implementing TransportType.
 
 ###### Parameters
 
-• **params**: [`MessageTransportParams`](index.md#messagetransportparams)
+###### params
+
+[`MessageTransportParams`](index.md#messagetransportparams)
 
 ###### Returns
 
@@ -64,11 +74,11 @@ Base Transport class implementing TransportType.
 
 ###### next()
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| `object`\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<`R`\>; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| `object`\>
+`Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<`R`\>; \}\>
 
 ###### Inherited from
 
@@ -110,7 +120,9 @@ Base Transport class implementing TransportType.
 
 ###### Parameters
 
-• **value**: `W`
+###### value
+
+`W`
 
 ###### Returns
 
@@ -162,7 +174,9 @@ Base Transport class implementing TransportType.
 
 #### Parameters
 
-• **input**: [`PortInput`](index.md#portinput)
+##### input
+
+[`PortInput`](index.md#portinput)
 
 #### Returns
 

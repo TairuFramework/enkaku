@@ -1,3 +1,15 @@
+/**
+ * Web streams utilities for Enkaku transports.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/stream
+ * ```
+ *
+ * @module stream
+ */
+
 import { Result } from 'typescript-result'
 
 /**

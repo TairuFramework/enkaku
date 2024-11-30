@@ -1,3 +1,15 @@
+/**
+ * Enkaku utilities.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/util
+ * ```
+ *
+ * @module util
+ */
+
 function noop() {}
 
 /**

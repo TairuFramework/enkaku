@@ -1,3 +1,15 @@
+/**
+ * HTTP transport for Enkaku RPC servers.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/http-server-transport
+ * ```
+ *
+ * @module http-server-transport
+ */
+
 import type { AnyClientMessageOf, AnyDefinitions, AnyServerMessageOf } from '@enkaku/protocol'
 import { createReadable } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'

@@ -1,5 +1,13 @@
 # @enkaku/protocol
 
+Enkaku RPC protocol.
+
+## Installation
+
+```sh
+npm install @enkaku/protocol
+```
+
 ## Type Aliases
 
 ### AbortCallPayload
@@ -392,7 +400,9 @@
 
 ###### Parameters
 
-• **privateKey**: `PrivateKeyType`
+###### privateKey
+
+`PrivateKeyType`
 
 ###### Returns
 
@@ -416,7 +426,9 @@
 
 ###### Parameters
 
-• **keyID**: `string`
+###### keyID
+
+`string`
 
 ###### Returns
 
@@ -784,7 +796,9 @@
 
 #### Parameters
 
-• **protocol**: [`CommandsRecordProtocol`](index.md#commandsrecordprotocolcommands)\<`Commands`\>
+##### protocol
+
+[`CommandsRecordProtocol`](index.md#commandsrecordprotocolcommands)\<`Commands`\>
 
 #### Returns
 
@@ -802,7 +816,9 @@
 
 #### Parameters
 
-• **protocol**: [`CommandsRecordProtocol`](index.md#commandsrecordprotocolcommands)\<`Commands`\>
+##### protocol
+
+[`CommandsRecordProtocol`](index.md#commandsrecordprotocolcommands)\<`Commands`\>
 
 #### Returns
 

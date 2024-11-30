@@ -1,5 +1,13 @@
 # @enkaku/http-client-transport
 
+HTTP transport for Enkaku RPC clients.
+
+## Installation
+
+```sh
+npm install @enkaku/http-client-transport
+```
+
 ## Classes
 
 ### ClientTransport\<Definitions\>
@@ -22,7 +30,9 @@ Base Transport class implementing TransportType.
 
 ###### Parameters
 
-• **params**: [`ClientTransportParams`](index.md#clienttransportparams)
+###### params
+
+[`ClientTransportParams`](index.md#clienttransportparams)
 
 ###### Returns
 
@@ -62,11 +72,11 @@ Base Transport class implementing TransportType.
 
 ###### next()
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\> \| `object`\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\>; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\> \| `object`\>
+`Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\>; \}\>
 
 ###### Inherited from
 
@@ -108,7 +118,9 @@ Base Transport class implementing TransportType.
 
 ###### Parameters
 
-• **value**: [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>
+###### value
+
+[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>
 
 ###### Returns
 
@@ -132,7 +144,9 @@ Base Transport class implementing TransportType.
 
 ###### Parameters
 
-• **response**: `Response`
+###### response
+
+`Response`
 
 ###### Returns
 
@@ -174,9 +188,13 @@ Base Transport class implementing TransportType.
 
 #### Parameters
 
-• **url**: `string`
+##### url
 
-• **onMessage**
+`string`
+
+##### onMessage
+
+(`msg`) => `void`
 
 #### Returns
 
@@ -194,9 +212,13 @@ Base Transport class implementing TransportType.
 
 #### Parameters
 
-• **url**: `string`
+##### url
 
-• **onErrorResponse?**
+`string`
+
+##### onErrorResponse?
+
+(`response`) => `void`
 
 #### Returns
 

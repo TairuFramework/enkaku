@@ -1,3 +1,15 @@
+/**
+ * JWT signing and verification for Enkaku RPC.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/token
+ * ```
+ *
+ * @module token
+ */
+
 export { CODECS, getAlgorithmAndPublicKey, getDID, getSignatureInfo } from './did.js'
 export {
   type SignatureAlgorithm,

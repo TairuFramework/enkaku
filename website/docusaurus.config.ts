@@ -1,6 +1,7 @@
-import { themes as prismThemes } from 'prism-react-renderer'
-import type { Config } from '@docusaurus/types'
+import type { Options as UmamiOptions } from '@dipakparmar/docusaurus-plugin-umami'
 import type * as Preset from '@docusaurus/preset-classic'
+import type { Config } from '@docusaurus/types'
+import { themes as prismThemes } from 'prism-react-renderer'
 
 const config: Config = {
   title: 'Enkaku',
@@ -50,16 +51,27 @@ const config: Config = {
     [
       'docusaurus-plugin-typedoc',
       {
-        tsconfig: '../tsconfig.docs.json',
+        tsconfig: './tsconfig.docs.json',
         sidebar: {
           autoConfiguration: false,
         },
       },
     ],
+    [
+      '@dipakparmar/docusaurus-plugin-umami',
+      {
+        websiteID: '02a7c6ea-561e-4ea2-b210-f7e3dbb34a86',
+        analyticsDomain: 'metrics.tairu.dev',
+        dataAutoTrack: true,
+        dataDoNotTrack: true,
+        dataCache: true,
+      } satisfies UmamiOptions,
+    ],
+    '@orama/plugin-docusaurus-v3',
   ],
   themeConfig: {
     // Replace with your project's social card
-    image: 'img/docusaurus-social-card.jpg',
+    // image: 'img/docusaurus-social-card.jpg',
     navbar: {
       title: 'Enkaku',
       logo: {
@@ -72,7 +84,7 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'docs',
           position: 'left',
-          label: 'Docs',
+          label: 'Documentation',
         },
         {
           type: 'docSidebar',
@@ -91,7 +103,7 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: 'Documentation',
           items: [{ label: 'Overview', to: '/docs/overview' }],
         },
         {
@@ -101,7 +113,7 @@ const config: Config = {
         {
           title: 'More',
           items: [
-            { label: 'Blog', to: '/blog' },
+            // { label: 'Blog', to: '/blog' },
             { label: 'GitHub', href: 'https://github.com/TairuFramework/enkaku' },
           ],
         },

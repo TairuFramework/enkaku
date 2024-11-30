@@ -1,5 +1,13 @@
 # @enkaku/codec
 
+Enkaku codecs.
+
+## Installation
+
+```sh
+npm install @enkaku/codec
+```
+
 ## Functions
 
 ### b64uFromJSON()
@@ -10,9 +18,13 @@ Convert a JSON object to a base64url-encoded string.
 
 #### Parameters
 
-• **value**: `Record`\<`string`, `unknown`\>
+##### value
 
-• **canonicalize**: `boolean` = `true`
+`Record`\<`string`, `unknown`\>
+
+##### canonicalize
+
+`boolean` = `true`
 
 #### Returns
 
@@ -28,7 +40,9 @@ Convert a UTF string to a base64url-encoded string.
 
 #### Parameters
 
-• **value**: `string`
+##### value
+
+`string`
 
 #### Returns
 
@@ -48,7 +62,9 @@ Convert a base64url-encoded string to a JSON object.
 
 #### Parameters
 
-• **base64url**: `string`
+##### base64url
+
+`string`
 
 #### Returns
 
@@ -64,7 +80,9 @@ Convert a base64url-encoded string to a UTF string.
 
 #### Parameters
 
-• **base64url**: `string`
+##### base64url
+
+`string`
 
 #### Returns
 
@@ -80,7 +98,9 @@ Convert a base64-encoded string to a Uint8Array.
 
 #### Parameters
 
-• **base64**: `string`
+##### base64
+
+`string`
 
 #### Returns
 
@@ -96,7 +116,9 @@ Convert a base64url-encoded string to a Uint8Array.
 
 #### Parameters
 
-• **base64url**: `string`
+##### base64url
+
+`string`
 
 #### Returns
 
@@ -112,7 +134,9 @@ Convert a UTF string to a Uint8Array.
 
 #### Parameters
 
-• **value**: `string`
+##### value
+
+`string`
 
 #### Returns
 
@@ -128,7 +152,9 @@ Convert a Uint8Array to a base64-encoded string.
 
 #### Parameters
 
-• **bytes**: `Uint8Array`\<`ArrayBufferLike`\>
+##### bytes
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 #### Returns
 
@@ -144,7 +170,9 @@ Convert a Uint8Array to a base64url-encoded string.
 
 #### Parameters
 
-• **bytes**: `Uint8Array`\<`ArrayBufferLike`\>
+##### bytes
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 #### Returns
 
@@ -160,7 +188,9 @@ Convert a Uint8Array to a UTF string.
 
 #### Parameters
 
-• **bytes**: `Uint8Array`\<`ArrayBufferLike`\>
+##### bytes
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 #### Returns
 

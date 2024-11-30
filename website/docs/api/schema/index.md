@@ -1,5 +1,13 @@
 # @enkaku/schema
 
+JSON schema validation for Enkaku RPC.
+
+## Installation
+
+```sh
+npm install @enkaku/schema
+```
+
 ## Classes
 
 ### ValidationError
@@ -18,11 +26,17 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 ###### Parameters
 
-• **schema**: `Readonly`\<`object`\>
+###### schema
 
-• **data**: `unknown`
+`Readonly`\<`object`\>
 
-• **errorObjects?**: `null` \| `ErrorObject`\<`string`, `Record`\<`string`, `any`\>, `unknown`\>[]
+###### data
+
+`unknown`
+
+###### errorObjects?
+
+`null` | `ErrorObject`\<`string`, `Record`\<`string`, `any`\>, `unknown`\>[]
 
 ###### Returns
 
@@ -324,7 +338,9 @@ JSON schema validation error for a specified input.
 
 ###### Parameters
 
-• **errorObject**: `ErrorObject`\<`string`, `Record`\<`string`, `any`\>, `unknown`\>
+###### errorObject
+
+`ErrorObject`\<`string`, `Record`\<`string`, `any`\>, `unknown`\>
 
 ###### Returns
 
@@ -384,9 +400,13 @@ Optional override for formatting stack traces
 
 ###### Parameters
 
-• **err**: `Error`
+###### err
 
-• **stackTraces**: `CallSite`[]
+`Error`
+
+###### stackTraces
+
+`CallSite`[]
 
 ###### Returns
 
@@ -434,9 +454,13 @@ Create .stack property on a target object
 
 ###### Parameters
 
-• **targetObject**: `object`
+###### targetObject
 
-• **constructorOpt?**: `Function`
+`object`
+
+###### constructorOpt?
+
+`Function`
 
 ###### Returns
 
@@ -480,7 +504,9 @@ Validator function, returning a Result of the validation.
 
 #### Parameters
 
-• **data**: `unknown`
+##### data
+
+`unknown`
 
 #### Returns
 
@@ -500,9 +526,13 @@ Asserts the type of the given `data` using the `validator`.
 
 #### Parameters
 
-• **validator**: [`Validator`](index.md#validatort)\<`T`\>
+##### validator
 
-• **data**: `unknown`
+[`Validator`](index.md#validatort)\<`T`\>
+
+##### data
+
+`unknown`
 
 #### Returns
 
@@ -522,9 +552,13 @@ Asserts the type of the given `data` using the `validator` and returns it.
 
 #### Parameters
 
-• **validator**: [`Validator`](index.md#validatort)\<`T`\>
+##### validator
 
-• **data**: `unknown`
+[`Validator`](index.md#validatort)\<`T`\>
+
+##### data
+
+`unknown`
 
 #### Returns
 
@@ -546,7 +580,9 @@ Validator function factory using a JSON schema.
 
 #### Parameters
 
-• **schema**: `S`
+##### schema
+
+`S`
 
 #### Returns
 
@@ -566,9 +602,13 @@ Checks the type of the given `data` using the `validator`.
 
 #### Parameters
 
-• **validator**: [`Validator`](index.md#validatort)\<`T`\>
+##### validator
 
-• **data**: `unknown`
+[`Validator`](index.md#validatort)\<`T`\>
+
+##### data
+
+`unknown`
 
 #### Returns
 

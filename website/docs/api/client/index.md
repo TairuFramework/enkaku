@@ -1,5 +1,13 @@
 # @enkaku/client
 
+Enkaku RPC client.
+
+## Installation
+
+```sh
+npm install @enkaku/client
+```
+
 ## Classes
 
 ### Client\<Definitions, ClientDefinitions\>
@@ -22,7 +30,9 @@
 
 ###### Parameters
 
-• **params**: [`ClientParams`](index.md#clientparamsdefinitions)\<`Definitions`\>
+###### params
+
+[`ClientParams`](index.md#clientparamsdefinitions)\<`Definitions`\>
 
 ###### Returns
 
@@ -60,9 +70,13 @@
 
 ###### Parameters
 
-• **command**: `Command`
+###### command
 
-• ...**args**: `T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
+`Command`
+
+###### args
+
+...`T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
 
 ###### Returns
 
@@ -82,9 +96,13 @@
 
 ###### Parameters
 
-• **command**: `Command`
+###### command
 
-• ...**args**: `T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
+`Command`
+
+###### args
+
+...`T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
 
 ###### Returns
 
@@ -118,9 +136,13 @@
 
 ###### Parameters
 
-• **command**: `Command`
+###### command
 
-• ...**args**: `T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
+`Command`
+
+###### args
+
+...`T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
 
 ###### Returns
 
@@ -140,9 +162,13 @@
 
 ###### Parameters
 
-• **command**: `Command`
+###### command
 
-• ...**args**: `T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
+`Command`
+
+###### args
+
+...`T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
 
 ###### Returns
 
@@ -194,7 +220,9 @@
 
 ###### Parameters
 
-• **value**: `Send`
+###### value
+
+`Send`
 
 ###### Returns
 
@@ -226,7 +254,9 @@
 
 ###### Parameters
 
-• **reason?**: `any`
+###### reason?
+
+`any`
 
 ###### Returns
 

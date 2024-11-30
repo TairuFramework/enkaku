@@ -1,5 +1,13 @@
 # @enkaku/stream
 
+Web streams utilities for Enkaku transports.
+
+## Installation
+
+```sh
+npm install @enkaku/stream
+```
+
 ## Functions
 
 ### createConnection()

@@ -1,5 +1,13 @@
 # @enkaku/transport
 
+Generic transport for Enkaku RPC clients and servers.
+
+## Installation
+
+```sh
+npm install @enkaku/transport
+```
+
 ## Classes
 
 ### Transport\<R, W\>
@@ -7,6 +15,10 @@
 Base Transport class implementing TransportType.
 
 #### Extended by
+
+- [`ClientTransport`](../http-client-transport/index.md#clienttransportdefinitions)
+- [`ServerTransport`](../http-server-transport/index.md#servertransportdefinitions)
+- [`MessageTransport`](../message-transport/index.md#messagetransportr-w)
 
 #### Type Parameters
 
@@ -26,7 +38,9 @@ Base Transport class implementing TransportType.
 
 ###### Parameters
 
-• **params**: [`TransportParams`](index.md#transportparamsr-w)\<`R`, `W`\>
+###### params
+
+[`TransportParams`](index.md#transportparamsr-w)\<`R`, `W`\>
 
 ###### Returns
 
@@ -62,11 +76,11 @@ Base Transport class implementing TransportType.
 
 ###### next()
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| `object`\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<`R`\>; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| `object`\>
+`Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<`R`\>; \}\>
 
 ###### Implementation of
 
@@ -108,7 +122,9 @@ Base Transport class implementing TransportType.
 
 ###### Parameters
 
-• **value**: `W`
+###### value
+
+`W`
 
 ###### Returns
 
@@ -236,7 +252,9 @@ Generic Transport object type implementing read and write functions.
 
 ###### Parameters
 
-• **value**: `W`
+###### value
+
+`W`
 
 ###### Returns
 
@@ -270,7 +288,9 @@ Create direct Transports for communication between a client and server in the sa
 
 #### Parameters
 
-• **options**: [`DirectTransportsOptions`](index.md#directtransportsoptions) = `{}`
+##### options
+
+[`DirectTransportsOptions`](index.md#directtransportsoptions) = `{}`
 
 #### Returns
 

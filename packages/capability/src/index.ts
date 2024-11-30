@@ -1,3 +1,15 @@
+/**
+ * Capability delegation and verification for Enkaku JWTs.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/capability
+ * ```
+ *
+ * @module capability
+ */
+
 import {
   type SignedHeader,
   type SignedPayload,

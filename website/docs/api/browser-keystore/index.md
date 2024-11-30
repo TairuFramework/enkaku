@@ -1,5 +1,13 @@
 # @enkaku/browser-keystore
 
+Enkaku key store for browser.
+
+## Installation
+
+```sh
+npm install @enkaku/browser-keystore
+```
+
 ## Classes
 
 ### BrowserKeyEntry
@@ -16,9 +24,13 @@
 
 ###### Parameters
 
-• **keyID**: `string`
+###### keyID
 
-• **getStore**: `GetStore`
+`string`
+
+###### getStore
+
+`GetStore`
 
 ###### Returns
 
@@ -92,7 +104,9 @@
 
 ###### Parameters
 
-• **keyPair**: `CryptoKeyPair`
+###### keyPair
+
+`CryptoKeyPair`
 
 ###### Returns
 
@@ -118,7 +132,9 @@
 
 ###### Parameters
 
-• **db**: `IDBDatabase`
+###### db
+
+`IDBDatabase`
 
 ###### Returns
 
@@ -132,7 +148,9 @@
 
 ###### Parameters
 
-• **keyID**: `string`
+###### keyID
+
+`string`
 
 ###### Returns
 
@@ -150,7 +168,9 @@
 
 ###### Parameters
 
-• **name**: `string` = `DEFAULT_DB_NAME`
+###### name
+
+`string` = `DEFAULT_DB_NAME`
 
 ###### Returns
 
@@ -164,7 +184,9 @@
 
 #### Parameters
 
-• **keyPair**: `CryptoKeyPair`
+##### keyPair
+
+`CryptoKeyPair`
 
 #### Returns
 
@@ -178,7 +200,9 @@
 
 #### Parameters
 
-• **keyPair**: `CryptoKeyPair`
+##### keyPair
+
+`CryptoKeyPair`
 
 #### Returns
 
@@ -192,9 +216,13 @@
 
 #### Parameters
 
-• **keyID**: `string`
+##### keyID
 
-• **useStore?**: `string` \| [`BrowserKeyStore`](index.md#browserkeystore) \| `Promise`\<[`BrowserKeyStore`](index.md#browserkeystore)\>
+`string`
+
+##### useStore?
+
+`string` | [`BrowserKeyStore`](index.md#browserkeystore) | `Promise`\<[`BrowserKeyStore`](index.md#browserkeystore)\>
 
 #### Returns
 

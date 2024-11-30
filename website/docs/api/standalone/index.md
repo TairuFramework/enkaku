@@ -1,5 +1,13 @@
 # @enkaku/standalone
 
+Standalone client and server for Enkaku RPC.
+
+## Installation
+
+```sh
+npm install @enkaku/standalone
+```
+
 ## Type Aliases
 
 ### StandaloneOptions
@@ -36,9 +44,13 @@
 
 #### Parameters
 
-• **handlers**: [`CommandHandlers`](../server/index.md#commandhandlersdefinitions)\<`Definitions`\>
+##### handlers
 
-• **options**: [`StandaloneOptions`](index.md#standaloneoptions) = `{}`
+[`CommandHandlers`](../server/index.md#commandhandlersdefinitions)\<`Definitions`\>
+
+##### options
+
+[`StandaloneOptions`](index.md#standaloneoptions) = `{}`
 
 #### Returns
 

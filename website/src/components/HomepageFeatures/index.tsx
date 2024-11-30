@@ -1,58 +1,42 @@
-import clsx from 'clsx';
-import Heading from '@theme/Heading';
-import styles from './styles.module.css';
+import Link from '@docusaurus/Link'
+import useBaseUrl from '@docusaurus/useBaseUrl'
+import Heading from '@theme/Heading'
+import ThemedImage from '@theme/ThemedImage'
+
+import styles from './styles.module.css'
 
 type FeatureItem = {
-  title: string;
-  Svg: React.ComponentType<React.ComponentProps<'svg'>>;
-  description: JSX.Element;
-};
+  img: string
+  title: string
+  description: string
+  link: string
+}
 
-const FeatureList: FeatureItem[] = [
-  {
-    title: 'Easy to Use',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
-    description: (
-      <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
-      </>
-    ),
-  },
-  {
-    title: 'Focus on What Matters',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
-    description: (
-      <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
-      </>
-    ),
-  },
-  {
-    title: 'Powered by React',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
-    description: (
-      <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
-      </>
-    ),
-  },
-];
-
-function Feature({title, Svg, description}: FeatureItem) {
+function Feature({ img, title, description, link }: FeatureItem) {
   return (
-    <div className={clsx('col col--4')}>
+    <div className="col col--4">
       <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
+        <ThemedImage
+          className={styles.featureSvg}
+          sources={{
+            light: useBaseUrl(`/img/${img}-light.svg`),
+            dark: useBaseUrl(`/img/${img}-dark.svg`),
+          }}
+        />
       </div>
       <div className="text--center padding-horiz--md">
-        <Heading as="h3">{title}</Heading>
+        <Heading as="h2">{title}</Heading>
         <p>{description}</p>
+        <Link
+          className="button button--primary"
+          to={link}
+          data-umami-event="Home CTA"
+          data-umami-event-cta={title}>
+          Learn more
+        </Link>
       </div>
     </div>
-  );
+  )
 }
 
 export default function HomepageFeatures(): JSX.Element {
@@ -60,11 +44,26 @@ export default function HomepageFeatures(): JSX.Element {
     <section className={styles.features}>
       <div className="container">
         <div className="row">
-          {FeatureList.map((props, idx) => (
-            <Feature key={idx} {...props} />
-          ))}
+          <Feature
+            img="easy"
+            title="Easy to use"
+            link="/docs/overview#server-defined-user-interface"
+            description="With server-defined Tiles, developers can easily create and update components to display in multiple clients without having to update the clients themselves"
+          />
+          <Feature
+            img="universal"
+            title="Universal access"
+            link="/docs/overview#universally-accessible"
+            description="Uniquely identified using URIs, Tiles render on the Web, native UIs or even fallback images as needed"
+          />
+          <Feature
+            img="auth"
+            title="Authenticated interactions"
+            link="/docs/overview#authenticated-interactions"
+            description="User actions are authenticated using cryptographic signatures, enabling trusted interactions from Tiles without the need for account creation"
+          />
         </div>
       </div>
     </section>
-  );
+  )
 }

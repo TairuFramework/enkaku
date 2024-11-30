@@ -1,5 +1,13 @@
 # @enkaku/capability
 
+Capability delegation and verification for Enkaku JWTs.
+
+## Installation
+
+```sh
+npm install @enkaku/capability
+```
+
 ## Type Aliases
 
 ### CapabilityPayload
@@ -84,7 +92,9 @@
 
 #### Parameters
 
-• **token**: `unknown`
+##### token
+
+`unknown`
 
 #### Returns
 
@@ -98,11 +108,15 @@
 
 #### Parameters
 
-• **payload**
+##### payload
 
-• **payload.exp?**: `number`
+###### payload.exp
 
-• **atTime?**: `number`
+`number`
+
+##### atTime?
+
+`number`
 
 #### Returns
 
@@ -116,11 +130,17 @@
 
 #### Parameters
 
-• **from**: [`CapabilityPayload`](index.md#capabilitypayload)
+##### from
 
-• **to**: [`CapabilityPayload`](index.md#capabilitypayload)
+[`CapabilityPayload`](index.md#capabilitypayload)
 
-• **atTime?**: `number`
+##### to
+
+[`CapabilityPayload`](index.md#capabilitypayload)
+
+##### atTime?
+
+`number`
 
 #### Returns
 
@@ -134,25 +154,43 @@
 
 #### Parameters
 
-• **permission**: [`Permission`](index.md#permission)
+##### permission
 
-• **payload**
+[`Permission`](index.md#permission)
 
-• **payload.aud**: `undefined` \| `string`
+##### payload
 
-• **payload.cap?**: `undefined` \| `string` \| `string`[]
+###### payload.aud
 
-• **payload.exp?**: `undefined` \| `number`
+`string`
 
-• **payload.iat?**: `undefined` \| `number`
+###### payload.cap
 
-• **payload.iss?**: `string`
+`string` \| `string`[]
 
-• **payload.nbf?**: `undefined` \| `number`
+###### payload.exp
 
-• **payload.sub?**: `undefined` \| `string`
+`number`
 
-• **atTime?**: `number`
+###### payload.iat
+
+`number`
+
+###### payload.iss
+
+`string`
+
+###### payload.nbf
+
+`number`
+
+###### payload.sub
+
+`string`
+
+##### atTime?
+
+`number`
 
 #### Returns
 
@@ -166,11 +204,17 @@
 
 #### Parameters
 
-• **payload**: [`CapabilityPayload`](index.md#capabilitypayload)
+##### payload
 
-• **capabilities**: `string`[]
+[`CapabilityPayload`](index.md#capabilitypayload)
 
-• **atTime?**: `number`
+##### capabilities
+
+`string`[]
+
+##### atTime?
+
+`number`
 
 #### Returns
 
@@ -190,11 +234,17 @@
 
 #### Parameters
 
-• **signer**: [`TokenSigner`](../token/index.md#tokensigner)
+##### signer
 
-• **payload**: `Payload`
+[`TokenSigner`](../token/index.md#tokensigner)
 
-• **header?**: `HeaderParams`
+##### payload
+
+`Payload`
+
+##### header?
+
+`HeaderParams`
 
 #### Returns
 
@@ -208,9 +258,13 @@
 
 #### Parameters
 
-• **expected**: `string`
+##### expected
 
-• **actual**: `string`
+`string`
+
+##### actual
+
+`string`
 
 #### Returns
 
@@ -224,9 +278,13 @@
 
 #### Parameters
 
-• **expected**: [`Permission`](index.md#permission)
+##### expected
 
-• **granted**: [`Permission`](index.md#permission)
+[`Permission`](index.md#permission)
+
+##### granted
+
+[`Permission`](index.md#permission)
 
 #### Returns
 
@@ -244,7 +302,9 @@
 
 #### Parameters
 
-• **token**: `unknown`
+##### token
+
+`unknown`
 
 #### Returns
 
@@ -258,9 +318,13 @@
 
 #### Parameters
 
-• **expected**: `string`
+##### expected
 
-• **actual**: `string`
+`string`
+
+##### actual
+
+`string`
 
 #### Returns
 

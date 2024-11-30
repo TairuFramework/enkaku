@@ -1,5 +1,13 @@
 # @enkaku/expo-keystore
 
+Enkaku key store for React Native.
+
+## Installation
+
+```sh
+npm install @enkaku/expo-keystore
+```
+
 ## Classes
 
 ### ExpoKeyEntry
@@ -16,7 +24,9 @@
 
 ###### Parameters
 
-• **keyID**: `string`
+###### keyID
+
+`string`
 
 ###### Returns
 
@@ -110,7 +120,9 @@
 
 ###### Parameters
 
-• **privateKey**: `Uint8Array`\<`ArrayBufferLike`\>
+###### privateKey
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 ###### Returns
 
@@ -124,7 +136,9 @@
 
 ###### Parameters
 
-• **privateKey**: `Uint8Array`\<`ArrayBufferLike`\>
+###### privateKey
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 ###### Returns
 
@@ -148,7 +162,9 @@
 
 #### Parameters
 
-• **keyID**: `string`
+##### keyID
+
+`string`
 
 #### Returns
 
@@ -162,7 +178,9 @@
 
 #### Parameters
 
-• **keyID**: `string`
+##### keyID
+
+`string`
 
 #### Returns
 

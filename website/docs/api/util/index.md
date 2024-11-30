@@ -1,5 +1,13 @@
 # @enkaku/util
 
+Enkaku utilities.
+
+## Installation
+
+```sh
+npm install @enkaku/util
+```
+
 ## Type Aliases
 
 ### Deferred\<T, R\>
@@ -26,7 +34,9 @@ Deferred objects, providing a Promise with associated resolve and reject functio
 
 ###### Parameters
 
-• **reason?**: `R`
+###### reason?
+
+`R`
 
 ###### Returns
 
@@ -38,7 +48,9 @@ Deferred objects, providing a Promise with associated resolve and reject functio
 
 ###### Parameters
 
-• **value**: `T` \| `PromiseLike`\<`T`\>
+###### value
+
+`T` | `PromiseLike`\<`T`\>
 
 ###### Returns
 
@@ -76,9 +88,13 @@ Create a Disposer object from a function to execute on disposal and an optional 
 
 #### Parameters
 
-• **run**
+##### run
 
-• **signal?**: `AbortSignal`
+() => `Promise`\<`void`\>
+
+##### signal?
+
+`AbortSignal`
 
 #### Returns
 
@@ -116,7 +132,9 @@ Lazily run the `execute` function at most once when awaited.
 
 #### Parameters
 
-• **execute**
+##### execute
+
+() => `Promise`\<`T`\>
 
 #### Returns
 
@@ -136,7 +154,9 @@ Converts a function returning a value or promise to a Promise.
 
 #### Parameters
 
-• **execute**
+##### execute
+
+() => `T` \| `Promise`\<`T`\>
 
 #### Returns
 

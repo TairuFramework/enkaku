@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/server",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Server logic for Enkaku RPC",

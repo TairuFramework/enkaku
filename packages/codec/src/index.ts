@@ -1,3 +1,15 @@
+/**
+ * Enkaku codecs.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/codec
+ * ```
+ *
+ * @module codec
+ */
+
 import serialize from 'canonicalize'
 
 /** @internal */
