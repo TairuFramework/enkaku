@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkwebsite=self.webpackChunkwebsite||[]).push([["106"],{4200:function(e){e.exports=JSON.parse('{"title":"Recent posts","items":[{"title":"Introducing Enkaku","permalink":"/blog/introducing-enkaku","unlisted":false,"date":"2024-11-30T00:00:00.000Z"}]}')}}]);
