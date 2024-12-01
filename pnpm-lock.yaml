@@ -11,9 +11,6 @@ importers:
       '@biomejs/biome':
         specifier: ^1.9.4
         version: 1.9.4
-      '@enkaku/standalone':
-        specifier: ^0.6.0
-        version: 0.6.0
       '@jest/globals':
         specifier: ^29.7.0
         version: 29.7.0
@@ -1832,36 +1829,6 @@ packages:
   '@docusaurus/utils@3.6.3':
     resolution: {integrity: sha512-0R/FR3bKVl4yl8QwbL4TYFfR+OXBRpVUaTJdENapBGR3YMwfM6/JnhGilWQO8AOwPJGtGoDK7ib8+8UF9f3OZQ==}
     engines: {node: '>=18.0'}
-
-  '@enkaku/capability@0.6.0':
-    resolution: {integrity: sha512-KFO3ZnFn/GkB2FSjQis+zIaTvJOibY3rJTt6Ogrq5U/eqU45jKWJeqhHyOHBP0eotw6HN4gOsM+G695LtqsY3w==}
-
-  '@enkaku/client@0.6.2':
-    resolution: {integrity: sha512-ntQjjaI0OYffmClt3mVU8X3XY0L7IoYKu6EARdr93DglPlLEFQbt1zP1GEfLiUfIIolUENMbyxDqNaBMXxI+yQ==}
-
-  '@enkaku/codec@0.6.0':
-    resolution: {integrity: sha512-kbutIKWmEx2LG6kuailpzfmHbmbiVl1vuMlfJPucbFS3J4LcHyTHWFp+Qu98avMcvPjGa8FijybAR0yQpZIXiQ==}
-
-  '@enkaku/schema@0.6.0':
-    resolution: {integrity: sha512-Fw9Z07c20j+u3pJhwiWJyrj1Q+96aTJPyu5UmQGlzQTUcbBalfAgYdOsK3sV7pZf65U/POz0o8dFbJTfWH0N+g==}
-
-  '@enkaku/server@0.6.3':
-    resolution: {integrity: sha512-zOEj4HW69/81d2dU3cFdv+CHWMXwSeo/4iXKv121aXG41xYcpJf0YGIWY4CA4sKTPhEf7IhGXGWIkO3tbcyjwg==}
-
-  '@enkaku/standalone@0.6.0':
-    resolution: {integrity: sha512-LgTQ22B/pveKRcfqdeckzrN3iTZrlBncrdn1CNaKSlCPCt1Knw1sDMB994Qr3J/DPn+MlKCAJLvLrJnIOGN1Lw==}
-
-  '@enkaku/stream@0.6.0':
-    resolution: {integrity: sha512-WsAiH3wHGaSwBi4smamewf7j+cyDP/ouN488NatM8t7C7Ju6z07k1nYC+2YJ9ywzNwoL+N5cVQBAx8lN7IKdRw==}
-
-  '@enkaku/token@0.6.3':
-    resolution: {integrity: sha512-XhupvsatFuMjexPM3R4rsjSrQ8fAG32RArJCqfvTHCQ84mtPOoZoC4rfwURoCyttbTqojpZBimmrhWGw68ajFA==}
-
-  '@enkaku/transport@0.6.0':
-    resolution: {integrity: sha512-dCk2HeLeTe8AxCzKGZuG/iJRfFzZkiBO03vERcPSh4PbgGDf18hLnj6K3rTHUqLJVFX60BpP3LAkEnjmzDa8aA==}
-
-  '@enkaku/util@0.6.0':
-    resolution: {integrity: sha512-onKQ0KQSleEkn14HhBCdPgeEN9AO1Vsf9mhs/Yp6Q2zDWwZMfUd9B3kaMOYQ6txmYMUwj1tuXj0MK/qK7E/LvA==}
 
   '@esbuild/aix-ppc64@0.23.1':
     resolution: {integrity: sha512-6VhYk1diRqrhBAqpJEdjASR/+WVRtfjpqKuNw11cLiaWpAT/Uu+nokB+UJnevzy/P9C/ty6AOe0dwueMrGh/iQ==}
@@ -11988,59 +11955,6 @@ snapshots:
       - typescript
       - uglify-js
       - webpack-cli
-
-  '@enkaku/capability@0.6.0':
-    dependencies:
-      '@enkaku/token': 0.6.3
-
-  '@enkaku/client@0.6.2':
-    dependencies:
-      '@enkaku/stream': 0.6.0
-      '@enkaku/token': 0.6.3
-      typescript-result: 3.1.0
-
-  '@enkaku/codec@0.6.0':
-    dependencies:
-      canonicalize: 2.0.0
-
-  '@enkaku/schema@0.6.0':
-    dependencies:
-      '@enkaku/stream': 0.6.0
-      ajv: 8.17.1
-      json-schema-to-ts: 3.1.1
-      typescript-result: 3.1.0
-
-  '@enkaku/server@0.6.3':
-    dependencies:
-      '@enkaku/capability': 0.6.0
-      '@enkaku/stream': 0.6.0
-      '@enkaku/token': 0.6.3
-      '@enkaku/util': 0.6.0
-
-  '@enkaku/standalone@0.6.0':
-    dependencies:
-      '@enkaku/client': 0.6.2
-      '@enkaku/server': 0.6.3
-      '@enkaku/transport': 0.6.0
-
-  '@enkaku/stream@0.6.0':
-    dependencies:
-      typescript-result: 3.1.0
-
-  '@enkaku/token@0.6.3':
-    dependencies:
-      '@enkaku/codec': 0.6.0
-      '@enkaku/schema': 0.6.0
-      '@noble/curves': 1.7.0
-      '@noble/hashes': 1.6.1
-      '@scure/base': 1.2.1
-
-  '@enkaku/transport@0.6.0':
-    dependencies:
-      '@enkaku/stream': 0.6.0
-      '@enkaku/util': 0.6.0
-
-  '@enkaku/util@0.6.0': {}
 
   '@esbuild/aix-ppc64@0.23.1':
     optional: true

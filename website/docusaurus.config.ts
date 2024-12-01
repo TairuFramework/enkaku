@@ -9,6 +9,7 @@ const config: Config = {
   favicon: 'img/favicon.ico',
   url: 'https://enkaku.dev',
   baseUrl: '/',
+  trailingSlash: true,
   organizationName: 'TairuFramework',
   projectName: 'enkaku',
   onBrokenLinks: 'throw',

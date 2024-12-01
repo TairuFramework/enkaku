@@ -45,22 +45,22 @@ export default function HomepageFeatures(): JSX.Element {
       <div className="container">
         <div className="row">
           <Feature
-            img="easy"
-            title="Easy to use"
-            link="/docs/overview#server-defined-user-interface"
-            description="With server-defined Tiles, developers can easily create and update components to display in multiple clients without having to update the clients themselves"
+            img="sync"
+            title="Stateless or stateful"
+            link="/docs/overview/#stateless-or-stateful---define-the-commands-you-want"
+            description="Enkaku supports stateless event and request messages, as well as stateful streams and channels supporting the exchange of multiple messages"
           />
           <Feature
-            img="universal"
-            title="Universal access"
-            link="/docs/overview#universally-accessible"
-            description="Uniquely identified using URIs, Tiles render on the Web, native UIs or even fallback images as needed"
+            img="safe"
+            title="Optional authentication"
+            link="/docs/overview/#validate-and-authenticate-as-needed"
+            description="Using JSON Web Tokens (JWTs), Enkaku supports both signed and unsigned messages"
           />
           <Feature
-            img="auth"
-            title="Authenticated interactions"
-            link="/docs/overview#authenticated-interactions"
-            description="User actions are authenticated using cryptographic signatures, enabling trusted interactions from Tiles without the need for account creation"
+            img="online"
+            title="Run anywhere JS goes"
+            link="/docs/overview/#run-your-clients-and-servers-anywhere-js-goes"
+            description="Using Web Streams for communications allows Enkaku clients and servers to run in a variety of environments"
           />
         </div>
       </div>

@@ -36,7 +36,7 @@ export default function Home(): JSX.Element {
       description="RPC for modern applications">
       <HomepageHeader />
       <main>
-        {/* <HomepageFeatures /> */}
+        <HomepageFeatures />
       </main>
     </Layout>
   );
