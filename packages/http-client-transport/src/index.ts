@@ -10,7 +10,7 @@
  * @module http-client-transport
  */
 
-import type { AnyClientMessageOf, AnyDefinitions, AnyServerMessageOf } from '@enkaku/protocol'
+import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createReadable } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
 
@@ -21,9 +21,9 @@ export type EventStream = {
   close: () => void
 }
 
-export async function createEventStream<Definitions extends AnyDefinitions>(
+export async function createEventStream<Protocol extends ProtocolDefinition>(
   url: string,
-  onMessage: (msg: AnyServerMessageOf<Definitions>) => void,
+  onMessage: (msg: AnyServerMessageOf<Protocol>) => void,
 ): Promise<EventStream> {
   const res = await fetch(url)
   if (!res.ok) {
@@ -45,16 +45,16 @@ export async function createEventStream<Definitions extends AnyDefinitions>(
   }
 }
 
-type TransportStream<Definitions extends AnyDefinitions> = ReadableWritablePair<
-  AnyServerMessageOf<Definitions>,
-  AnyClientMessageOf<Definitions>
-> & { controller: ReadableStreamDefaultController<AnyServerMessageOf<Definitions>> }
+type TransportStream<Protocol extends ProtocolDefinition> = ReadableWritablePair<
+  AnyServerMessageOf<Protocol>,
+  AnyClientMessageOf<Protocol>
+> & { controller: ReadableStreamDefaultController<AnyServerMessageOf<Protocol>> }
 
-export function createTransportStream<Definitions extends AnyDefinitions>(
+export function createTransportStream<Protocol extends ProtocolDefinition>(
   url: string,
   onErrorResponse?: (response: Response) => void,
-): TransportStream<Definitions> {
-  const [readable, controller] = createReadable<AnyServerMessageOf<Definitions>>()
+): TransportStream<Protocol> {
+  const [readable, controller] = createReadable<AnyServerMessageOf<Protocol>>()
 
   // Lazily get the SSE stream:
   // - Only connect if there is a stateful request (channel or stream)
@@ -62,17 +62,14 @@ export function createTransportStream<Definitions extends AnyDefinitions>(
   let eventStreamPromise: Promise<EventStream> | undefined
   function getEventStream() {
     if (eventStreamPromise == null) {
-      eventStreamPromise = createEventStream<Definitions>(url, (msg) => {
+      eventStreamPromise = createEventStream<Protocol>(url, (msg) => {
         controller.enqueue(msg)
       })
     }
     return eventStreamPromise
   }
 
-  async function sendMessage(
-    msg: AnyClientMessageOf<Definitions>,
-    sessionID?: string,
-  ): Promise<void> {
+  async function sendMessage(msg: AnyClientMessageOf<Protocol>, sessionID?: string): Promise<void> {
     const res = await fetch(url, {
       method: 'POST',
       body: JSON.stringify(msg),
@@ -87,7 +84,7 @@ export function createTransportStream<Definitions extends AnyDefinitions>(
     }
   }
 
-  const writable = new WritableStream<AnyClientMessageOf<Definitions>>({
+  const writable = new WritableStream<AnyClientMessageOf<Protocol>>({
     async write(msg) {
       if (msg.payload.typ === 'channel' || msg.payload.typ === 'stream') {
         const session = await getEventStream()
@@ -114,11 +111,11 @@ export type ClientTransportParams = {
   onErrorResponse?: (response: Response) => void
 }
 
-export class ClientTransport<Definitions extends AnyDefinitions> extends Transport<
-  AnyServerMessageOf<Definitions>,
-  AnyClientMessageOf<Definitions>
+export class ClientTransport<Protocol extends ProtocolDefinition> extends Transport<
+  AnyServerMessageOf<Protocol>,
+  AnyClientMessageOf<Protocol>
 > {
   constructor(params: ClientTransportParams) {
-    super({ stream: createTransportStream(params.url) })
+    super({ stream: createTransportStream<Protocol>(params.url) })
   }
 }

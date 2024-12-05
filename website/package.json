@@ -23,7 +23,7 @@
     "@mdx-js/react": "^3.0.0",
     "@orama/plugin-docusaurus-v3": "^3.0.2",
     "clsx": "^2.0.0",
-    "docusaurus-plugin-typedoc": "^1.1.0",
+    "docusaurus-plugin-typedoc": "^1.1.1",
     "prism-react-renderer": "^2.3.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"

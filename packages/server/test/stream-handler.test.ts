@@ -1,4 +1,4 @@
-import type { AnyServerPayloadOf, ErrorObject } from '@enkaku/protocol'
+import type { AnyServerPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createUnsignedToken } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
@@ -6,22 +6,22 @@ import { handleStream } from '../src/handlers/stream.js'
 import { ErrorRejection } from '../src/rejections.js'
 import type { HandlerContext, HandlerController, StreamHandlerContext } from '../src/types.js'
 
-type Definitions = {
+const protocol = {
   test: {
-    type: 'stream'
-    params: { test: boolean }
-    receive: number
-    result: string
-    error: ErrorObject
-  }
-}
+    type: 'stream',
+    params: {
+      type: 'object',
+      properties: { test: { type: 'boolean' } },
+      required: ['test'],
+      additionalProperties: false,
+    },
+    receive: { type: 'number' },
+    result: { type: 'string' },
+  },
+} as const satisfies ProtocolDefinition
+type Protocol = typeof protocol
 
-type StreamContext = StreamHandlerContext<
-  'stream',
-  'test',
-  Definitions['test']['params'],
-  Definitions['test']['receive']
->
+type StreamContext = StreamHandlerContext<Protocol, 'test'>
 
 describe('handleStream()', () => {
   const clientToken = createUnsignedToken({
@@ -33,8 +33,9 @@ describe('handleStream()', () => {
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const unknownPayload = { typ: 'stream', rid: '1', cmd: 'unknown' }
+    // @ts-ignore type instantiation too deep
     const returned = handleStream(
-      { handlers: {} } as unknown as HandlerContext<Definitions>,
+      { handlers: {} } as unknown as HandlerContext<Protocol>,
       // @ts-expect-error
       { payload: unknownPayload },
     )
@@ -67,7 +68,7 @@ describe('handleStream()', () => {
         handlers: { test: handler },
         reject,
         send,
-      } as unknown as HandlerContext<Definitions>,
+      } as unknown as HandlerContext<Protocol>,
       clientToken,
     )
 
@@ -96,7 +97,7 @@ describe('handleStream()', () => {
       })
     })
     const reject = jest.fn()
-    const send = jest.fn((payload: AnyServerPayloadOf<Definitions>) => {
+    const send = jest.fn((payload: AnyServerPayloadOf<Protocol>) => {
       if (payload.typ === 'receive' && payload.val === 1) {
         controllers['1']?.abort()
       }
@@ -108,7 +109,7 @@ describe('handleStream()', () => {
         handlers: { test: handler },
         reject,
         send,
-      } as unknown as HandlerContext<Definitions>,
+      } as unknown as HandlerContext<Protocol>,
       clientToken,
     )
 

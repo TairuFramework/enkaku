@@ -1,7 +1,7 @@
 import type { SignedPayload, SignedToken, UnsignedToken } from '@enkaku/token'
 import type { TransportType } from '@enkaku/transport'
 
-import type { AnyDefinitions } from './definitions.js'
+import type { ProtocolDefinition } from '../schemas/protocol.js'
 import type { UnknownCallPayload, UnknownReplyPayload } from './invocations.js'
 import type { ClientPayloadRecordsOf, ServerPayloadRecordsOf } from './payloads.js'
 import type { ValueOf } from './utils.js'
@@ -16,28 +16,28 @@ export type ClientMessage<Payload extends UnknownCallPayload = UnknownCallPayloa
 export type ServerMessage<Payload extends UnknownReplyPayload = UnknownReplyPayload> =
   Message<Payload>
 
-export type AnyClientPayloadOf<Definitions extends AnyDefinitions> = ValueOf<
-  ClientPayloadRecordsOf<Definitions>
+export type AnyClientPayloadOf<Protocol extends ProtocolDefinition> = ValueOf<
+  ClientPayloadRecordsOf<Protocol>
 >
 
-export type AnyClientMessageOf<Definitions extends AnyDefinitions> = Message<
-  AnyClientPayloadOf<Definitions>
+export type AnyClientMessageOf<Protocol extends ProtocolDefinition> = Message<
+  AnyClientPayloadOf<Protocol>
 >
 
-export type AnyServerPayloadOf<Definitions extends AnyDefinitions> = ValueOf<
-  ServerPayloadRecordsOf<Definitions>
+export type AnyServerPayloadOf<Protocol extends ProtocolDefinition> = ValueOf<
+  ServerPayloadRecordsOf<Protocol>
 >
 
-export type AnyServerMessageOf<Definitions extends AnyDefinitions> = Message<
-  AnyServerPayloadOf<Definitions>
+export type AnyServerMessageOf<Protocol extends ProtocolDefinition> = Message<
+  AnyServerPayloadOf<Protocol>
 >
 
-export type ClientTransportOf<Definitions extends AnyDefinitions> = TransportType<
-  AnyServerMessageOf<Definitions>,
-  AnyClientMessageOf<Definitions>
+export type ClientTransportOf<Protocol extends ProtocolDefinition> = TransportType<
+  AnyServerMessageOf<Protocol>,
+  AnyClientMessageOf<Protocol>
 >
 
-export type ServerTransportOf<Definitions extends AnyDefinitions> = TransportType<
-  AnyClientMessageOf<Definitions>,
-  AnyServerMessageOf<Definitions>
+export type ServerTransportOf<Protocol extends ProtocolDefinition> = TransportType<
+  AnyClientMessageOf<Protocol>,
+  AnyServerMessageOf<Protocol>
 >

@@ -1,11 +1,4 @@
-import type {
-  AnyClientMessageOf,
-  AnyServerMessageOf,
-  ChannelDefinition,
-  EventDefinition,
-  RequestDefinition,
-  StreamDefinition,
-} from '@enkaku/protocol'
+import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createUnsignedToken, randomTokenSigner } from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
 import { jest } from '@jest/globals'
@@ -23,25 +16,34 @@ describe('serve()', () => {
   const expiresAt = Math.floor(Date.now() / 1000) + 300 // 5 mins from now
 
   test('handles events', async () => {
-    type Definitions = {
-      'test/event': EventDefinition<{ hello: string }>
-    }
+    const protocol = {
+      test: {
+        type: 'event',
+        data: {
+          type: 'object',
+          properties: { hello: { type: 'string' } },
+          required: ['hello'],
+          additionalProperties: false,
+        },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
 
-    const handler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
+    const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
 
-    const handlers = { 'test/event': handler } as CommandHandlers<Definitions>
+    const handlers = { test: handler } as CommandHandlers<Protocol>
     const transports = createDirectTransports<
-      AnyServerMessageOf<Definitions>,
-      AnyClientMessageOf<Definitions>
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
     >()
 
     const signer = randomTokenSigner()
-    const server = serve<Definitions>({ handlers, id: signer.id, transport: transports.server })
+    const server = serve<Protocol>({ handlers, id: signer.id, transport: transports.server })
 
     const message = await signer.createToken({
       typ: 'event',
       aud: signer.id,
-      cmd: 'test/event',
+      cmd: 'test',
       data: { hello: 'world' },
       exp: expiresAt,
     } as const)
@@ -56,9 +58,13 @@ describe('serve()', () => {
   })
 
   test('handles requests', async () => {
-    type Definitions = {
-      'test/request': RequestDefinition<undefined, string>
-    }
+    const protocol = {
+      test: {
+        type: 'request',
+        result: { type: 'string' },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
 
     const handler = jest.fn((ctx) => {
       return new Promise((resolve, reject) => {
@@ -70,22 +76,23 @@ describe('serve()', () => {
           reject(new Error('aborted'))
         })
       })
-    }) as jest.Mock<RequestHandler<'test/request', undefined, string>>
-    const handlers = { 'test/request': handler } as CommandHandlers<Definitions>
+    }) as jest.Mock<RequestHandler<Protocol, 'test'>>
+    const handlers = { test: handler } as CommandHandlers<Protocol>
 
     const transports = createDirectTransports<
-      AnyServerMessageOf<Definitions>,
-      AnyClientMessageOf<Definitions>
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
     >()
     const signer = randomTokenSigner()
-    serve<Definitions>({ handlers, id: signer.id, transport: transports.server })
+    serve<Protocol>({ handlers, id: signer.id, transport: transports.server })
 
-    const message = await signer.createToken({
+    const message = (await signer.createToken({
       typ: 'request',
-      cmd: 'test/request',
+      iss: signer.id,
+      cmd: 'test',
       rid: '1',
       prm: undefined,
-    } as const)
+    })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
     expect(read.value?.payload.val).toBe('OK')
@@ -94,9 +101,15 @@ describe('serve()', () => {
   })
 
   test('handles streams', async () => {
-    type Definitions = {
-      'test/stream': StreamDefinition<number, number, string>
-    }
+    const protocol = {
+      test: {
+        type: 'stream',
+        params: { type: 'number' },
+        receive: { type: 'number' },
+        result: { type: 'string' },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
 
     const handler = jest.fn((ctx) => {
       return new Promise((resolve, reject) => {
@@ -115,19 +128,19 @@ describe('serve()', () => {
           reject(new Error('aborted'))
         })
       })
-    }) as jest.Mock<StreamHandler<'test/stream', number, number, string>>
-    const handlers = { 'test/stream': handler } as CommandHandlers<Definitions>
+    }) as jest.Mock<StreamHandler<Protocol, 'test'>>
+    const handlers = { test: handler } as CommandHandlers<Protocol>
 
     const transports = createDirectTransports<
-      AnyServerMessageOf<Definitions>,
-      AnyClientMessageOf<Definitions>
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
     >()
     const signer = randomTokenSigner()
-    serve<Definitions>({ handlers, id: signer.id, transport: transports.server })
+    serve<Protocol>({ handlers, id: signer.id, transport: transports.server })
 
     const message = await signer.createToken({
       typ: 'stream',
-      cmd: 'test/stream',
+      cmd: 'test',
       rid: '1',
       prm: 3,
     } as const)
@@ -150,9 +163,16 @@ describe('serve()', () => {
   })
 
   test('handles channels', async () => {
-    type Definitions = {
-      'test/channel': ChannelDefinition<number, number, number, string>
-    }
+    const protocol = {
+      test: {
+        type: 'channel',
+        params: { type: 'number' },
+        send: { type: 'number' },
+        receive: { type: 'number' },
+        result: { type: 'string' },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
 
     const handler = jest.fn(async (ctx) => {
       const reader = ctx.readable.getReader()
@@ -166,19 +186,19 @@ describe('serve()', () => {
         writer.write(ctx.params + value)
       }
       return 'END'
-    }) as jest.Mock<ChannelHandler<'test/channel', number, number, number, string>>
-    const handlers = { 'test/channel': handler } as CommandHandlers<Definitions>
+    }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
+    const handlers = { test: handler } as CommandHandlers<Protocol>
 
     const transports = createDirectTransports<
-      AnyServerMessageOf<Definitions>,
-      AnyClientMessageOf<Definitions>
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
     >()
     const signer = randomTokenSigner()
-    serve<Definitions>({ handlers, id: signer.id, transport: transports.server })
+    serve<Protocol>({ handlers, id: signer.id, transport: transports.server })
 
     const message = await signer.createToken({
       typ: 'channel',
-      cmd: 'test/channel',
+      cmd: 'test',
       rid: '1',
       prm: 5,
     } as const)

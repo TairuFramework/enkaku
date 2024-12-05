@@ -1,26 +1,22 @@
-import type { AnyDefinitions, ClientMessage, RequestPayloadOf } from '@enkaku/protocol'
+import type { ClientMessage, ProtocolDefinition, RequestPayloadOf } from '@enkaku/protocol'
 
 import { ErrorRejection } from '../rejections.js'
-import type { HandlerContext, ParamsType, RequestHandler, ResultType } from '../types.js'
+import type { HandlerContext, RequestHandler } from '../types.js'
 import { executeHandler } from '../utils.js'
 
 export type RequestMessageOf<
-  Definitions extends AnyDefinitions,
-  Command extends keyof Definitions & string = keyof Definitions & string,
-> = ClientMessage<RequestPayloadOf<Command, Definitions[Command]>>
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string = keyof Protocol & string,
+> = ClientMessage<RequestPayloadOf<Command, Protocol[Command]>>
 
 export function handleRequest<
-  Definitions extends AnyDefinitions,
-  Command extends keyof Definitions & string,
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
 >(
-  ctx: HandlerContext<Definitions>,
-  msg: RequestMessageOf<Definitions, Command>,
+  ctx: HandlerContext<Protocol>,
+  msg: RequestMessageOf<Protocol, Command>,
 ): ErrorRejection | Promise<void> {
-  const handler = ctx.handlers[msg.payload.cmd] as RequestHandler<
-    Command,
-    ParamsType<Definitions, Command>,
-    ResultType<Definitions, Command>
-  >
+  const handler = ctx.handlers[msg.payload.cmd] as unknown as RequestHandler<Protocol, Command>
   if (handler == null) {
     return new ErrorRejection(`No handler for command: ${msg.payload.cmd}`, { info: msg.payload })
   }
@@ -33,5 +29,6 @@ export function handleRequest<
     params: msg.payload.prm,
     signal: controller.signal,
   }
+  // @ts-ignore context and handler types
   return executeHandler(ctx, msg.payload, () => handler(handlerContext))
 }

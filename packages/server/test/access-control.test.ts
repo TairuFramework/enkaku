@@ -1,10 +1,10 @@
 import { createCapability } from '@enkaku/capability'
-import type { AnyClientPayloadOf, AnyDefinitions } from '@enkaku/protocol'
+import type { AnyClientPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 import { randomTokenSigner, stringifyToken } from '@enkaku/token'
 
 import { checkClientToken } from '../src/access-control.js'
 
-type Payload = AnyClientPayloadOf<AnyDefinitions>
+type Payload = AnyClientPayloadOf<ProtocolDefinition>
 
 describe('access control', () => {
   describe('using server signer', () => {

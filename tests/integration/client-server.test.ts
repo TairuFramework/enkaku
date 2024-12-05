@@ -1,12 +1,5 @@
 import { Client } from '@enkaku/client'
-import type {
-  AnyClientMessageOf,
-  AnyServerMessageOf,
-  ChannelDefinition,
-  EventDefinition,
-  RequestDefinition,
-  StreamDefinition,
-} from '@enkaku/protocol'
+import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import {
   type ChannelHandler,
   type CommandHandlers,
@@ -22,25 +15,34 @@ import { jest } from '@jest/globals'
 describe('client-server integration', () => {
   describe('events', () => {
     test('handles events', async () => {
-      type Definitions = {
-        'test/event': EventDefinition<{ hello: string }>
-      }
+      const protocol = {
+        test: {
+          type: 'event',
+          data: {
+            type: 'object',
+            properties: { hello: { type: 'string' } },
+            required: ['hello'],
+            additionalProperties: false,
+          },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
 
-      const handler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
-      const handlers = { 'test/event': handler } as CommandHandlers<Definitions>
+      const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
+      const handlers = { test: handler } as CommandHandlers<Protocol>
 
       const transports = createDirectTransports<
-        AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions>
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
       >()
 
-      const client = new Client({ transport: transports.client })
-      serve<Definitions>({ handlers, insecure: true, transport: transports.server })
+      const client = new Client<Protocol>({ transport: transports.client })
+      serve<Protocol>({ handlers, insecure: true, transport: transports.server })
 
-      await client.sendEvent('test/event', { hello: 'world' })
+      await client.sendEvent('test', { hello: 'world' })
       expect(handler).toHaveBeenCalledWith({
         data: { hello: 'world' },
-        message: createUnsignedToken({ typ: 'event', cmd: 'test/event', data: { hello: 'world' } }),
+        message: createUnsignedToken({ typ: 'event', cmd: 'test', data: { hello: 'world' } }),
       })
 
       await transports.dispose()
@@ -49,9 +51,13 @@ describe('client-server integration', () => {
 
   describe('requests', () => {
     test('handles requests', async () => {
-      type Definitions = {
-        'test/request': RequestDefinition<undefined, string>
-      }
+      const protocol = {
+        test: {
+          type: 'request',
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
 
       const handler = jest.fn((ctx) => {
         return new Promise((resolve, reject) => {
@@ -63,18 +69,18 @@ describe('client-server integration', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<RequestHandler<'test/request', undefined, string>>
-      const handlers = { 'test/request': handler } as CommandHandlers<Definitions>
+      }) as jest.Mock<RequestHandler<Protocol, 'test'>>
+      const handlers = { test: handler } as CommandHandlers<Protocol>
 
       const transports = createDirectTransports<
-        AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions>
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
       >()
 
-      const client = new Client({ transport: transports.client })
-      serve<Definitions>({ handlers, insecure: true, transport: transports.server })
+      const client = new Client<Protocol>({ transport: transports.client })
+      serve<Protocol>({ handlers, insecure: true, transport: transports.server })
 
-      await expect(client.request('test/request').toValue()).resolves.toBe('OK')
+      await expect(client.request('test').toValue()).resolves.toBe('OK')
 
       await transports.dispose()
     })
@@ -82,9 +88,15 @@ describe('client-server integration', () => {
 
   describe('streams', () => {
     test('handles streams', async () => {
-      type Definitions = {
-        'test/stream': StreamDefinition<number, number, string>
-      }
+      const protocol = {
+        test: {
+          type: 'stream',
+          params: { type: 'number' },
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
 
       const handler = jest.fn((ctx) => {
         return new Promise((resolve, reject) => {
@@ -103,18 +115,18 @@ describe('client-server integration', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<StreamHandler<'test/stream', number, number, string>>
-      const handlers = { 'test/stream': handler } as CommandHandlers<Definitions>
+      }) as jest.Mock<StreamHandler<Protocol, 'test'>>
+      const handlers = { test: handler } as CommandHandlers<Protocol>
 
       const transports = createDirectTransports<
-        AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions>
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
       >()
 
-      const client = new Client({ transport: transports.client })
-      serve<Definitions>({ handlers, insecure: true, transport: transports.server })
+      const client = new Client<Protocol>({ transport: transports.client })
+      serve<Protocol>({ handlers, insecure: true, transport: transports.server })
 
-      const stream = await client.createStream('test/stream', 3)
+      const stream = await client.createStream('test', 3)
       const reader = stream.receive.getReader()
       const received: Array<number> = []
       while (true) {
@@ -135,9 +147,16 @@ describe('client-server integration', () => {
 
   describe('channels', () => {
     test('handles channels', async () => {
-      type Definitions = {
-        'test/channel': ChannelDefinition<number, number, number, string>
-      }
+      const protocol = {
+        test: {
+          type: 'channel',
+          params: { type: 'number' },
+          send: { type: 'number' },
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
 
       const handler = jest.fn(async (ctx) => {
         const reader = ctx.readable.getReader()
@@ -151,17 +170,17 @@ describe('client-server integration', () => {
           writer.write(ctx.params + value)
         }
         return 'END'
-      }) as jest.Mock<ChannelHandler<'test/channel', number, number, number, string>>
-      const handlers = { 'test/channel': handler } as CommandHandlers<Definitions>
+      }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
+      const handlers = { test: handler } as CommandHandlers<Protocol>
 
       const transports = createDirectTransports<
-        AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions>
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
       >()
 
-      const client = new Client({ transport: transports.client })
-      serve<Definitions>({ handlers, insecure: true, transport: transports.server })
-      const channel = await client.createChannel('test/channel', 5)
+      const client = new Client<Protocol>({ transport: transports.client })
+      serve<Protocol>({ handlers, insecure: true, transport: transports.server })
+      const channel = await client.createChannel('test', 5)
 
       const send = [5, 3, 10, 20]
       async function sendNext() {

@@ -2,13 +2,7 @@ import { setTimeout } from 'node:timers/promises'
 import { Client } from '@enkaku/client'
 import { ClientTransport } from '@enkaku/http-client-transport'
 import { ServerTransport } from '@enkaku/http-server-transport'
-import type {
-  AnyDefinitions,
-  ChannelDefinition,
-  EventDefinition,
-  RequestDefinition,
-  StreamDefinition,
-} from '@enkaku/protocol'
+import type { ProtocolDefinition } from '@enkaku/protocol'
 import {
   type ChannelHandler,
   type CommandHandlers,
@@ -22,22 +16,22 @@ import { serve as serveHTTP } from '@hono/node-server'
 import { jest } from '@jest/globals'
 import getPort from 'get-port'
 
-type TestContext<Definitions extends AnyDefinitions> = {
-  client: Client<Definitions>
+type TestContext<Protocol extends ProtocolDefinition> = {
+  client: Client<Protocol>
   dispose: () => Promise<void>
 }
 
-async function createContext<Definitions extends AnyDefinitions>(
-  handlers: CommandHandlers<Definitions>,
-): Promise<TestContext<Definitions>> {
+async function createContext<Protocol extends ProtocolDefinition>(
+  handlers: CommandHandlers<Protocol>,
+): Promise<TestContext<Protocol>> {
   const port = await getPort()
 
-  const serverTransport = new ServerTransport<Definitions>()
-  serve<Definitions>({ handlers, insecure: true, transport: serverTransport })
+  const serverTransport = new ServerTransport<Protocol>()
+  serve<Protocol>({ handlers, insecure: true, transport: serverTransport })
   const httpServer = serveHTTP({ fetch: serverTransport.handleRequest, port })
 
-  const clientTransport = new ClientTransport<Definitions>({ url: `http://localhost:${port}` })
-  const client = new Client({ transport: clientTransport })
+  const clientTransport = new ClientTransport<Protocol>({ url: `http://localhost:${port}` })
+  const client = new Client<Protocol>({ transport: clientTransport })
 
   return {
     client,
@@ -51,17 +45,27 @@ async function createContext<Definitions extends AnyDefinitions>(
 describe('HTTP transports', () => {
   describe('events', () => {
     test('handles events', async () => {
-      type Definitions = {
-        'test/event': EventDefinition<{ hello: string }>
-      }
-      const handler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
+      const protocol = {
+        test: {
+          type: 'event',
+          data: {
+            type: 'object',
+            properties: { hello: { type: 'string' } },
+            required: ['hello'],
+            additionalProperties: false,
+          },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
 
-      const { client, dispose } = await createContext<Definitions>({ 'test/event': handler })
-      await client.sendEvent('test/event', { hello: 'world' })
+      const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
+
+      await client.sendEvent('test', { hello: 'world' })
       await setTimeout(100)
       expect(handler).toHaveBeenCalledWith({
         data: { hello: 'world' },
-        message: createUnsignedToken({ typ: 'event', cmd: 'test/event', data: { hello: 'world' } }),
+        message: createUnsignedToken({ typ: 'event', cmd: 'test', data: { hello: 'world' } }),
       })
 
       await dispose()
@@ -70,15 +74,17 @@ describe('HTTP transports', () => {
 
   describe('requests', () => {
     test('handles requests', async () => {
-      type Definitions = {
-        'test/request': RequestDefinition<undefined, string>
-      }
-      const handler = jest.fn(() => 'OK') as jest.Mock<
-        RequestHandler<'test/request', undefined, string>
-      >
+      const protocol = {
+        test: {
+          type: 'request',
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
 
-      const { client, dispose } = await createContext<Definitions>({ 'test/request': handler })
-      await expect(client.request('test/request').toValue()).resolves.toBe('OK')
+      const handler = jest.fn(() => 'OK') as jest.Mock<RequestHandler<Protocol, 'test'>>
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
+      await expect(client.request('test').toValue()).resolves.toBe('OK')
 
       await dispose()
     })
@@ -86,9 +92,16 @@ describe('HTTP transports', () => {
 
   describe('streams', () => {
     test('handles streams', async () => {
-      type Definitions = {
-        'test/stream': StreamDefinition<number, number, string>
-      }
+      const protocol = {
+        test: {
+          type: 'stream',
+          params: { type: 'number' },
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
+
       const handler = jest.fn((ctx) => {
         return new Promise((resolve, reject) => {
           const writer = ctx.writable.getWriter()
@@ -106,11 +119,10 @@ describe('HTTP transports', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<StreamHandler<'test/stream', number, number, string>>
+      }) as jest.Mock<StreamHandler<Protocol, 'test'>>
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
 
-      const { client, dispose } = await createContext<Definitions>({ 'test/stream': handler })
-
-      const stream = await client.createStream('test/stream', 3)
+      const stream = await client.createStream('test', 3)
       const reader = stream.receive.getReader()
       const received: Array<number> = []
       while (true) {
@@ -131,9 +143,17 @@ describe('HTTP transports', () => {
 
   describe('channels', () => {
     test('handles channels', async () => {
-      type Definitions = {
-        'test/channel': ChannelDefinition<number, number, number, string>
-      }
+      const protocol = {
+        test: {
+          type: 'channel',
+          params: { type: 'number' },
+          send: { type: 'number' },
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
+
       const handler = jest.fn(async (ctx) => {
         const reader = ctx.readable.getReader()
         const writer = ctx.writable.getWriter()
@@ -146,11 +166,9 @@ describe('HTTP transports', () => {
           writer.write(ctx.params + value)
         }
         return 'END'
-      }) as jest.Mock<ChannelHandler<'test/channel', number, number, number, string>>
-
-      const { client, dispose } = await createContext<Definitions>({ 'test/channel': handler })
-
-      const channel = await client.createChannel('test/channel', 5)
+      }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
+      const channel = await client.createChannel('test', 5)
 
       const send = [5, 3, 10, 20]
       async function sendNext() {

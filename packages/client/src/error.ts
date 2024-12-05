@@ -1,16 +1,25 @@
-import type { ErrorObject, ErrorReplyPayload } from '@enkaku/protocol'
+import type { ErrorReplyPayload } from '@enkaku/protocol'
+
+export type ErrorObjectType<
+  Code extends string = string,
+  Data extends Record<string, unknown> = Record<string, unknown>,
+> = {
+  code: Code
+  message: string
+  data?: Data
+}
 
 export type RequestErrorParams<
   Code extends string = string,
   Data extends Record<string, unknown> = Record<string, unknown>,
-> = ErrorOptions & ErrorObject<Code, Data>
+> = ErrorOptions & ErrorObjectType<Code, Data>
 
 export class RequestError<
     Code extends string = string,
     Data extends Record<string, unknown> = Record<string, unknown>,
   >
   extends Error
-  implements ErrorObject<Code, Data>
+  implements ErrorObjectType<Code, Data>
 {
   static fromPayload<
     Code extends string = string,

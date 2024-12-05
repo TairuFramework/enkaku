@@ -1,14 +1,13 @@
 import type { Schema } from '@enkaku/schema'
 
-import type {
-  AnyCommandProtocol,
-  ChannelCommandProtocol,
-  CommandsRecordProtocol,
-  RequestCommandProtocol,
-  StreamCommandProtocol,
-} from '../types/protocol.js'
-
 import { createMessageSchema } from './message.js'
+import type {
+  AnyCommandDefinition,
+  ChannelCommandDefinition,
+  ProtocolDefinition,
+  RequestCommandDefinition,
+  StreamCommandDefinition,
+} from './protocol.js'
 
 /** @internal */
 export const errorMessageSchema: Schema = createMessageSchema({
@@ -27,14 +26,14 @@ export const errorMessageSchema: Schema = createMessageSchema({
 
 /** @internal */
 export function createReceiveMessageSchema(
-  protocol: StreamCommandProtocol | ChannelCommandProtocol,
+  definition: StreamCommandDefinition | ChannelCommandDefinition,
 ): Schema {
   const payloadSchema = {
     type: 'object',
     properties: {
       typ: { type: 'string', const: 'receive' },
       rid: { type: 'string' },
-      val: protocol.receive,
+      val: definition.receive,
       jti: { type: 'string' },
     },
     required: ['typ', 'rid', 'val'],
@@ -72,19 +71,19 @@ export const resultMessageWithoutValue: Schema = createMessageSchema({
 
 /** @internal */
 export function createResultMessageSchema(
-  protocol: RequestCommandProtocol | StreamCommandProtocol | ChannelCommandProtocol,
+  definition: RequestCommandDefinition | StreamCommandDefinition | ChannelCommandDefinition,
 ): Schema {
-  return protocol.result ? createResultMessageWithValue(protocol.result) : resultMessageWithoutValue
+  return definition.result
+    ? createResultMessageWithValue(definition.result)
+    : resultMessageWithoutValue
 }
 
-export function createServerMessageSchema<Commands extends string>(
-  protocol: CommandsRecordProtocol<Commands>,
-): Schema {
+export function createServerMessageSchema(protocol: ProtocolDefinition): Schema {
   const schemasRecord: Record<string, Schema> = {
     error: errorMessageSchema,
   }
   for (const [command, definition] of Object.entries(protocol)) {
-    const def = definition as AnyCommandProtocol
+    const def = definition as AnyCommandDefinition
     switch (def.type) {
       case 'channel':
       // biome-ignore lint/suspicious/noFallthroughSwitchClause: fallthrough is intentional

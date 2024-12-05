@@ -1,4 +1,4 @@
-import type { ErrorObject } from '@enkaku/protocol'
+import type { ProtocolDefinition } from '@enkaku/protocol'
 import { jest } from '@jest/globals'
 
 import { HandlerError } from '../src/error.js'
@@ -6,14 +6,19 @@ import { ErrorRejection } from '../src/rejections.js'
 import type { HandlerContext } from '../src/types.js'
 import { executeHandler } from '../src/utils.js'
 
-type Definitions = {
+const protocol = {
   test: {
-    type: 'request'
-    params: { test: boolean }
-    result: string
-    error: ErrorObject
-  }
-}
+    type: 'request',
+    params: {
+      type: 'object',
+      properties: { test: { type: 'boolean' } },
+      required: ['test'],
+      additionalProperties: false,
+    },
+    result: { type: 'string' },
+  },
+} as const satisfies ProtocolDefinition
+type Protocol = typeof protocol
 
 describe('executeHandler()', () => {
   const payload = { typ: 'request', rid: '1', cmd: 'test', prm: { test: true } } as const
@@ -33,7 +38,7 @@ describe('executeHandler()', () => {
         handlers: { test: handler },
         reject,
         send,
-      } as unknown as HandlerContext<Definitions>,
+      } as unknown as HandlerContext<Protocol>,
       payload,
       () => handler(),
     )
@@ -66,13 +71,14 @@ describe('executeHandler()', () => {
     const reject = jest.fn()
     const send = jest.fn()
 
+    // @ts-ignore type instantiation too deep
     const requestPromise = executeHandler(
       {
         controllers,
         handlers: { test: handler },
         reject,
         send,
-      } as unknown as HandlerContext<Definitions>,
+      } as unknown as HandlerContext<Protocol>,
       payload,
       () => handler(),
     )
@@ -101,7 +107,7 @@ describe('executeHandler()', () => {
         handlers: { test: handler },
         reject,
         send,
-      } as unknown as HandlerContext<Definitions>,
+      } as unknown as HandlerContext<Protocol>,
       payload,
       () => handler(),
     )
@@ -122,13 +128,14 @@ describe('executeHandler()', () => {
     const reject = jest.fn()
     const send = jest.fn()
 
+    // @ts-ignore type instantiation too deep
     const requestPromise = executeHandler(
       {
         controllers,
         handlers: { test: handler },
         reject,
         send,
-      } as unknown as HandlerContext<Definitions>,
+      } as unknown as HandlerContext<Protocol>,
       payload,
       () => handler(),
     )

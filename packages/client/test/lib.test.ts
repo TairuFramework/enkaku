@@ -1,12 +1,9 @@
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
-  ChannelDefinition,
   ChannelPayloadOf,
-  EventDefinition,
-  RequestDefinition,
+  ProtocolDefinition,
   RequestPayloadOf,
-  StreamDefinition,
   StreamPayloadOf,
 } from '@enkaku/protocol'
 import { randomTokenSigner, createUnsignedToken as unsignedToken } from '@enkaku/token'
@@ -21,15 +18,24 @@ describe('Client', () => {
     const serverSigner = randomTokenSigner()
     const clientSigner = randomTokenSigner()
 
-    type Definitions = {
-      'test/event': EventDefinition<{ hello: string }>
-    }
+    const protocol = {
+      'test/event': {
+        type: 'event',
+        data: {
+          type: 'object',
+          properties: { hello: { type: 'string' } },
+          required: ['hello'],
+          additionalProperties: false,
+        },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
 
     const transports = createDirectTransports<
-      AnyServerMessageOf<Definitions>,
-      AnyClientMessageOf<Definitions>
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
     >()
-    const client = new Client({
+    const client = new Client<Protocol>({
       serverID: serverSigner.id,
       signer: clientSigner,
       transport: transports.client,
@@ -50,22 +56,26 @@ describe('Client', () => {
   })
 
   describe('request()', () => {
-    type Definitions = {
-      'test/request': RequestDefinition<undefined, string>
-    }
+    const protocol = {
+      'test/request': {
+        type: 'request',
+        result: { type: 'string' },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
 
     test('sends request and gets result', async () => {
       const transports = createDirectTransports<
-        AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions>
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
       >()
-      const client = new Client({ transport: transports.client })
+      const client = new Client<Protocol>({ transport: transports.client })
 
       const request = await client.request('test/request')
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as RequestPayloadOf<
         'test/request',
-        Definitions['test/request']
+        Protocol['test/request']
       >
       expect(payload.cmd).toBe('test/request')
       await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
@@ -79,10 +89,10 @@ describe('Client', () => {
 
     test('aborts request', async () => {
       const transports = createDirectTransports<
-        AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions>
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
       >()
-      const client = new Client({ transport: transports.client })
+      const client = new Client<Protocol>({ transport: transports.client })
 
       const request = await client.request('test/request')
       request.abort()
@@ -90,7 +100,7 @@ describe('Client', () => {
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as RequestPayloadOf<
         'test/request',
-        Definitions['test/request']
+        Protocol['test/request']
       >
       const abortRead = await transports.server.read()
       expect(abortRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid })
@@ -102,22 +112,27 @@ describe('Client', () => {
   })
 
   describe('createStream()', () => {
-    type Definitions = {
-      'test/stream': StreamDefinition<undefined, number, string>
-    }
+    const protocol = {
+      'test/stream': {
+        type: 'stream',
+        receive: { type: 'number' },
+        result: { type: 'string' },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
 
     test('sends request and gets receive stream and result', async () => {
       const transports = createDirectTransports<
-        AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions>
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
       >()
-      const client = new Client({ transport: transports.client })
+      const client = new Client<Protocol>({ transport: transports.client })
 
       const stream = await client.createStream('test/stream')
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as StreamPayloadOf<
         'test/stream',
-        Definitions['test/stream']
+        Protocol['test/stream']
       >
 
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 1 }))
@@ -143,10 +158,10 @@ describe('Client', () => {
 
     test('aborts request', async () => {
       const transports = createDirectTransports<
-        AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions>
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
       >()
-      const client = new Client({ transport: transports.client })
+      const client = new Client<Protocol>({ transport: transports.client })
 
       const stream = await client.createStream('test/stream')
       stream.abort()
@@ -154,7 +169,7 @@ describe('Client', () => {
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as StreamPayloadOf<
         'test/stream',
-        Definitions['test/stream']
+        Protocol['test/stream']
       >
       const abortRead = await transports.server.read()
       expect(abortRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid })
@@ -166,29 +181,35 @@ describe('Client', () => {
   })
 
   describe('createChannel()', () => {
-    type Definitions = {
-      'test/channel': ChannelDefinition<undefined, number, number, string>
-    }
+    const protocol = {
+      'test/channel': {
+        type: 'channel',
+        send: { type: 'number' },
+        receive: { type: 'number' },
+        result: { type: 'string' },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
 
     test('sends request and channel values and gets receive stream and result', async () => {
       const transports = createDirectTransports<
-        AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions>
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
       >()
-      const client = new Client({ transport: transports.client })
+      const client = new Client<Protocol>({ transport: transports.client })
 
       const channel = await client.createChannel('test/channel')
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as ChannelPayloadOf<
         'test/channel',
-        Definitions['test/channel']
+        Protocol['test/channel']
       >
 
       await channel.send(1)
       const sentRead1 = await transports.server.read()
       const sent1 = sentRead1.value?.payload as ChannelPayloadOf<
         'test/channel',
-        Definitions['test/channel']
+        Protocol['test/channel']
       >
       await expect(sent1).toEqual({ typ: 'send', rid: payload.rid, val: 1 })
 
@@ -196,7 +217,7 @@ describe('Client', () => {
       const sentRead2 = await transports.server.read()
       const sent2 = sentRead2.value?.payload as ChannelPayloadOf<
         'test/channel',
-        Definitions['test/channel']
+        Protocol['test/channel']
       >
       await expect(sent2).toEqual({ typ: 'send', rid: payload.rid, val: 2 })
 
@@ -223,10 +244,10 @@ describe('Client', () => {
 
     test('aborts request', async () => {
       const transports = createDirectTransports<
-        AnyServerMessageOf<Definitions>,
-        AnyClientMessageOf<Definitions>
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
       >()
-      const client = new Client({ transport: transports.client })
+      const client = new Client<Protocol>({ transport: transports.client })
 
       const channel = await client.createChannel('test/channel')
       channel.abort()
@@ -234,7 +255,7 @@ describe('Client', () => {
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as ChannelPayloadOf<
         'test/channel',
-        Definitions['test/channel']
+        Protocol['test/channel']
       >
       const abortRead = await transports.server.read()
       expect(abortRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid })

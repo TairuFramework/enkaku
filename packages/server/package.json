@@ -31,8 +31,8 @@
   },
   "dependencies": {
     "@enkaku/capability": "workspace:^",
-    "@enkaku/token": "workspace:^",
     "@enkaku/stream": "workspace:^",
+    "@enkaku/token": "workspace:^",
     "@enkaku/util": "workspace:^"
   },
   "devDependencies": {

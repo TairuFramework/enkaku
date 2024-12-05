@@ -10,16 +10,16 @@
  * @module http-server-transport
  */
 
-import type { AnyClientMessageOf, AnyDefinitions, AnyServerMessageOf } from '@enkaku/protocol'
+import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createReadable } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
 import { type Deferred, defer } from '@enkaku/util'
 
 export type RequestHandler = (request: Request) => Promise<Response>
 
-export type ServerBridge<Definitions extends AnyDefinitions> = {
+export type ServerBridge<Protocol extends ProtocolDefinition> = {
   handleRequest: RequestHandler
-  stream: ReadableWritablePair<AnyClientMessageOf<Definitions>, AnyServerMessageOf<Definitions>>
+  stream: ReadableWritablePair<AnyClientMessageOf<Protocol>, AnyServerMessageOf<Protocol>>
 }
 
 type ActiveSession = { controller: ReadableStreamDefaultController<string> | null }
@@ -29,10 +29,10 @@ type InflightRequest<Message> =
   | { type: 'stream'; write: (msg: Message) => void }
 
 export function createServerBridge<
-  Definitions extends AnyDefinitions,
-  Incoming extends AnyClientMessageOf<Definitions> = AnyClientMessageOf<Definitions>,
-  Outgoing extends AnyServerMessageOf<Definitions> = AnyServerMessageOf<Definitions>,
->(): ServerBridge<Definitions> {
+  Protocol extends ProtocolDefinition,
+  Incoming extends AnyClientMessageOf<Protocol> = AnyClientMessageOf<Protocol>,
+  Outgoing extends AnyServerMessageOf<Protocol> = AnyServerMessageOf<Protocol>,
+>(): ServerBridge<Protocol> {
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest<Outgoing>> = new Map()
 
@@ -140,14 +140,14 @@ export function createServerBridge<
   return { handleRequest, stream: { readable, writable } }
 }
 
-export class ServerTransport<Definitions extends AnyDefinitions> extends Transport<
-  AnyClientMessageOf<Definitions>,
-  AnyServerMessageOf<Definitions>
+export class ServerTransport<Protocol extends ProtocolDefinition> extends Transport<
+  AnyClientMessageOf<Protocol>,
+  AnyServerMessageOf<Protocol>
 > {
-  #bridge: ServerBridge<Definitions>
+  #bridge: ServerBridge<Protocol>
 
   constructor() {
-    const bridge = createServerBridge<Definitions>()
+    const bridge = createServerBridge<Protocol>()
     super({ stream: bridge.stream })
     this.#bridge = bridge
   }

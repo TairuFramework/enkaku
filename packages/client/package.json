@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/client",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Enkaku RPC client",
@@ -30,8 +30,8 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/token": "workspace:^",
     "@enkaku/stream": "workspace:^",
+    "@enkaku/token": "workspace:^",
     "typescript-result": "^3.0.0"
   },
   "devDependencies": {

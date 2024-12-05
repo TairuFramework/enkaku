@@ -1,4 +1,4 @@
-import type { AnyServerPayloadOf, ErrorObject } from '@enkaku/protocol'
+import type { AnyServerPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createUnsignedToken } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
@@ -12,23 +12,23 @@ import type {
 } from '../src/types.js'
 import { consumeReader } from '../src/utils.js'
 
-type Definitions = {
+const protocol = {
   test: {
-    type: 'channel'
-    params: { test: boolean }
-    send: number
-    receive: number
-    result: string
-    error: ErrorObject
-  }
-}
+    type: 'channel',
+    params: {
+      type: 'object',
+      properties: { test: { type: 'boolean' } },
+      required: ['test'],
+      additionalProperties: false,
+    },
+    send: { type: 'number' },
+    receive: { type: 'number' },
+    result: { type: 'string' },
+  },
+} as const satisfies ProtocolDefinition
+type Protocol = typeof protocol
 
-type ChannelContext = ChannelHandlerContext<
-  'test',
-  Definitions['test']['params'],
-  Definitions['test']['send'],
-  Definitions['test']['receive']
->
+type ChannelContext = ChannelHandlerContext<Protocol, 'test'>
 
 describe('handleChannel()', () => {
   const clientToken = createUnsignedToken({
@@ -40,8 +40,9 @@ describe('handleChannel()', () => {
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const unknownPayload = { typ: 'channel', rid: '1', cmd: 'unknown', prm: {} } as const
+    // @ts-ignore type instantiation too deep
     const returned = handleChannel(
-      { handlers: {} } as unknown as HandlerContext<Definitions>,
+      { handlers: {} } as unknown as HandlerContext<Protocol>,
       // @ts-expect-error
       { payload: unknownPayload },
     )
@@ -74,7 +75,7 @@ describe('handleChannel()', () => {
         handlers: { test: handler },
         reject,
         send,
-      } as unknown as HandlerContext<Definitions>,
+      } as unknown as HandlerContext<Protocol>,
       clientToken,
     )
 
@@ -103,7 +104,7 @@ describe('handleChannel()', () => {
       })
     })
     const reject = jest.fn()
-    const send = jest.fn((payload: AnyServerPayloadOf<Definitions>) => {
+    const send = jest.fn((payload: AnyServerPayloadOf<Protocol>) => {
       if (payload.typ === 'receive' && payload.val === 1) {
         controllers['1']?.abort()
       }
@@ -115,7 +116,7 @@ describe('handleChannel()', () => {
         handlers: { test: handler },
         reject,
         send,
-      } as unknown as HandlerContext<Definitions>,
+      } as unknown as HandlerContext<Protocol>,
       clientToken,
     )
 
@@ -146,13 +147,14 @@ describe('handleChannel()', () => {
     const reject = jest.fn()
     const send = jest.fn()
 
+    // @ts-ignore type instantiation too deep
     const resultPromise = handleChannel(
       {
         controllers,
         handlers: { test: handler },
         reject,
         send,
-      } as unknown as HandlerContext<Definitions>,
+      } as unknown as HandlerContext<Protocol>,
       clientToken,
     )
     await controllers['1'].writer.write(0)

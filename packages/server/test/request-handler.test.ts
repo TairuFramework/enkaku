@@ -1,23 +1,29 @@
-import type { ErrorObject } from '@enkaku/protocol'
+import type { ProtocolDefinition } from '@enkaku/protocol'
 
 import { handleRequest } from '../src/handlers/request.js'
 import { ErrorRejection } from '../src/rejections.js'
 import type { HandlerContext } from '../src/types.js'
 
-type Definitions = {
+const protocol = {
   test: {
-    type: 'request'
-    params: { test: boolean }
-    result: string
-    error: ErrorObject
-  }
-}
+    type: 'request',
+    params: {
+      type: 'object',
+      properties: { test: { type: 'boolean' } },
+      required: ['test'],
+      additionalProperties: false,
+    },
+    result: { type: 'string' },
+  },
+} as const satisfies ProtocolDefinition
+type Protocol = typeof protocol
 
 describe('handleRequest()', () => {
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const payload = { typ: 'request', rid: '1', cmd: 'unknown' }
+    // @ts-ignore type instantiation too deep
     const returned = handleRequest(
-      { handlers: {} } as unknown as HandlerContext<Definitions>,
+      { handlers: {} } as unknown as HandlerContext<Protocol>,
       // @ts-expect-error
       { payload },
     )

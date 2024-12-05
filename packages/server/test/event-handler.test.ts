@@ -1,3 +1,4 @@
+import type { ProtocolDefinition } from '@enkaku/protocol'
 import { createUnsignedToken } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
@@ -5,12 +6,18 @@ import { handleEvent } from '../src/handlers/event.js'
 import { ErrorRejection } from '../src/rejections.js'
 import type { HandlerContext } from '../src/types.js'
 
-type Definitions = {
+const protocol = {
   test: {
-    type: 'event'
-    data: { test: boolean }
-  }
-}
+    type: 'event',
+    data: {
+      type: 'object',
+      properties: { test: { type: 'boolean' } },
+      required: ['test'],
+      additionalProperties: false,
+    },
+  },
+} as const satisfies ProtocolDefinition
+type Protocol = typeof protocol
 
 describe('handleEvent()', () => {
   const clientToken = createUnsignedToken({
@@ -21,7 +28,8 @@ describe('handleEvent()', () => {
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const payload = { typ: 'event', cmd: 'unknown' }
-    const returned = handleEvent({ handlers: {} } as unknown as HandlerContext<Definitions>, {
+    // @ts-ignore type instantiation too deep
+    const returned = handleEvent({ handlers: {} } as unknown as HandlerContext<Protocol>, {
       // @ts-expect-error
       payload,
     })
@@ -40,7 +48,7 @@ describe('handleEvent()', () => {
     // Handler promise should always resolve
     await expect(
       handleEvent(
-        { handlers: { test: handler }, reject } as unknown as HandlerContext<Definitions>,
+        { handlers: { test: handler }, reject } as unknown as HandlerContext<Protocol>,
         clientToken,
       ),
     ).resolves.toBeUndefined()
@@ -61,7 +69,7 @@ describe('handleEvent()', () => {
 
     await expect(
       handleEvent(
-        { handlers: { test: handler }, reject } as unknown as HandlerContext<Definitions>,
+        { handlers: { test: handler }, reject } as unknown as HandlerContext<Protocol>,
         clientToken,
       ),
     ).resolves.toBeUndefined()

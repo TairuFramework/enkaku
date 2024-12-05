@@ -1,16 +1,14 @@
 import type { Schema } from '@enkaku/schema'
 
-import type { RequestType } from '../types/invocations.js'
-import type {
-  AnyCommandProtocol,
-  ChannelCommandProtocol,
-  CommandsRecordProtocol,
-  EventCommandProtocol,
-  RequestCommandProtocol,
-  StreamCommandProtocol,
-} from '../types/protocol.js'
-
 import { createMessageSchema } from './message.js'
+import type {
+  AnyCommandDefinition,
+  AnyRequestCommandDefinition,
+  ChannelCommandDefinition,
+  EventCommandDefinition,
+  ProtocolDefinition,
+  RequestType,
+} from './protocol.js'
 
 /** @internal */
 export const abortMessageSchema: Schema = createMessageSchema({
@@ -54,9 +52,12 @@ export function createEventPayloadWithoutData(command: string): Schema {
 }
 
 /** @internal */
-export function createEventMessageSchema(command: string, protocol: EventCommandProtocol): Schema {
-  const payload = protocol.data
-    ? createEventPayloadWithData(command, protocol.data)
+export function createEventMessageSchema(
+  command: string,
+  definition: EventCommandDefinition,
+): Schema {
+  const payload = definition.data
+    ? createEventPayloadWithData(command, definition.data)
     : createEventPayloadWithoutData(command)
   return createMessageSchema(payload)
 }
@@ -99,22 +100,22 @@ export function createRequestPayloadWithoutParams(command: string, type: Request
 /** @internal */
 export function createRequestMessageSchema(
   command: string,
-  protocol: RequestCommandProtocol | StreamCommandProtocol | ChannelCommandProtocol,
+  definition: AnyRequestCommandDefinition,
 ): Schema {
-  const payload = protocol.params
-    ? createRequestPayloadWithParams(command, protocol.type, protocol.params)
-    : createRequestPayloadWithoutParams(command, protocol.type)
+  const payload = definition.params
+    ? createRequestPayloadWithParams(command, definition.type, definition.params)
+    : createRequestPayloadWithoutParams(command, definition.type)
   return createMessageSchema(payload)
 }
 
 /** @internal */
-export function createSendMessageSchema(protocol: ChannelCommandProtocol): Schema {
+export function createSendMessageSchema(definition: ChannelCommandDefinition): Schema {
   const payloadSchema = {
     type: 'object',
     properties: {
       typ: { type: 'string', const: 'send' },
       rid: { type: 'string' },
-      val: protocol.send,
+      val: definition.send,
       jti: { type: 'string' },
     },
     required: ['typ', 'rid', 'val'],
@@ -123,13 +124,11 @@ export function createSendMessageSchema(protocol: ChannelCommandProtocol): Schem
   return createMessageSchema(payloadSchema)
 }
 
-export function createClientMessageSchema<Commands extends string>(
-  protocol: CommandsRecordProtocol<Commands>,
-): Schema {
+export function createClientMessageSchema(protocol: ProtocolDefinition): Schema {
   let addAbort = false
   const schemasRecord: Record<string, Schema> = {}
   for (const [command, definition] of Object.entries(protocol)) {
-    const def = definition as AnyCommandProtocol
+    const def = definition as AnyCommandDefinition
     switch (def.type) {
       case 'event':
         if (def.data != null) {

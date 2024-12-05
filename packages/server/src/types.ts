@@ -1,14 +1,15 @@
 import type {
-  AnyDefinitions,
+  AnyRequestCommandDefinition,
   AnyServerPayloadOf,
-  ChannelDefinition,
+  ChannelCommandDefinition,
+  DataOf,
   EventCallPayload,
-  EventDefinition,
+  EventCommandDefinition,
   Message,
+  ProtocolDefinition,
   RequestCallPayload,
-  RequestDefinition,
-  RequestType,
-  StreamDefinition,
+  RequestCommandDefinition,
+  StreamCommandDefinition,
 } from '@enkaku/protocol'
 
 import type { RejectionType } from './rejections.js'
@@ -22,126 +23,132 @@ export type ChannelController<Send = unknown> = AbortController & {
 export type HandlerController<Send = unknown> = RequestController | ChannelController<Send>
 
 export type EventHandlerContext<
-  Command extends string,
-  Data extends Record<string, unknown> | undefined,
-> = {
-  message: Message<EventCallPayload<Command, Data>>
-  data: Data
-}
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends EventCommandDefinition
+  ? {
+      message: Message<EventCallPayload<Command, DataOf<Protocol[Command]['data']>>>
+      data: DataOf<Protocol[Command]['data']>
+    }
+  : never
 
 export type EventHandler<
-  Command extends string,
-  Data extends Record<string, unknown> | undefined,
-> = (context: EventHandlerContext<Command, Data>) => void | Promise<void>
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = (context: EventHandlerContext<Protocol, Command>) => void | Promise<void>
 
-export type RequestHandlerContext<Type extends RequestType, Command extends string, Params> = {
-  message: Message<RequestCallPayload<Type, Command, Params>>
-  params: Params
-  signal: AbortSignal
-}
+export type RequestHandlerContext<
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends AnyRequestCommandDefinition
+  ? {
+      message: Message<
+        RequestCallPayload<Protocol[Command]['type'], Command, DataOf<Protocol[Command]['params']>>
+      >
+      params: DataOf<Protocol[Command]['params']>
+      signal: AbortSignal
+    }
+  : never
 
-export type HandlerReturn<Result> = Result | Promise<Result>
+export type HandlerReturn<ResultSchema, Data = DataOf<ResultSchema>> = Data | Promise<Data>
 
-export type RequestHandler<Command extends string, Params, Result> = (
-  context: RequestHandlerContext<'request', Command, Params>,
-) => HandlerReturn<Result>
+export type RequestHandler<
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends AnyRequestCommandDefinition
+  ? (
+      context: RequestHandlerContext<Protocol, Command>,
+    ) => HandlerReturn<Protocol[Command]['result']>
+  : never
 
 export type StreamHandlerContext<
-  Type extends Exclude<RequestType, 'request'>,
-  Command extends string,
-  Params,
-  Receive,
-> = RequestHandlerContext<Type, Command, Params> & {
-  writable: WritableStream<Receive>
-}
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends StreamCommandDefinition | ChannelCommandDefinition
+  ? RequestHandlerContext<Protocol, Command> & {
+      writable: WritableStream<DataOf<Protocol[Command]['receive']>>
+    }
+  : never
 
-export type StreamHandler<Command extends string, Params, Receive, Result> = (
-  context: StreamHandlerContext<'stream', Command, Params, Receive>,
-) => HandlerReturn<Result>
+export type StreamHandler<
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends StreamCommandDefinition | ChannelCommandDefinition
+  ? (context: StreamHandlerContext<Protocol, Command>) => HandlerReturn<Protocol[Command]['result']>
+  : never
 
 export type ChannelHandlerContext<
-  Command extends string,
-  Params,
-  Sent,
-  Receive,
-> = StreamHandlerContext<'channel', Command, Params, Receive> & {
-  readable: ReadableStream<Sent>
-}
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends ChannelCommandDefinition
+  ? StreamHandlerContext<Protocol, Command> & {
+      readable: ReadableStream<DataOf<Protocol[Command]['send']>>
+    }
+  : never
 
-export type ChannelHandler<Command extends string, Params, Sent, Receive, Result> = (
-  context: ChannelHandlerContext<Command, Params, Sent, Receive>,
-) => HandlerReturn<Result>
+export type ChannelHandler<
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends ChannelCommandDefinition
+  ? (
+      context: ChannelHandlerContext<Protocol, Command>,
+    ) => HandlerReturn<Protocol[Command]['result']>
+  : never
 
-export type CommandHandlers<Definitions extends AnyDefinitions> = {
-  [Command in keyof Definitions & string]: Definitions[Command] extends EventDefinition<infer Data>
-    ? (context: EventHandlerContext<Command, Data>) => void
-    : Definitions[Command] extends RequestDefinition<infer Params, infer Result>
-      ? (context: RequestHandlerContext<'request', Command, Params>) => HandlerReturn<Result>
-      : Definitions[Command] extends StreamDefinition<infer Params, infer Receive, infer Result>
+export type CommandHandlers<Protocol extends ProtocolDefinition> = {
+  [Command in keyof Protocol & string]: Protocol[Command] extends EventCommandDefinition
+    ? (context: EventHandlerContext<Protocol, Command>) => void
+    : Protocol[Command] extends RequestCommandDefinition
+      ? (
+          context: RequestHandlerContext<Protocol, Command>,
+        ) => HandlerReturn<Protocol[Command]['result']>
+      : Protocol[Command] extends StreamCommandDefinition
         ? (
-            context: StreamHandlerContext<'stream', Command, Params, Receive>,
-          ) => HandlerReturn<Result>
-        : Definitions[Command] extends ChannelDefinition<
-              infer Params,
-              infer Send,
-              infer Receive,
-              infer Result
-            >
+            context: StreamHandlerContext<Protocol, Command>,
+          ) => HandlerReturn<Protocol[Command]['result']>
+        : Protocol[Command] extends ChannelCommandDefinition
           ? (
-              context: ChannelHandlerContext<Command, Params, Send, Receive>,
-            ) => HandlerReturn<Result>
+              context: ChannelHandlerContext<Protocol, Command>,
+            ) => HandlerReturn<Protocol[Command]['result']>
           : never
 }
 
 export type EventDataType<
-  Definitions extends AnyDefinitions,
-  Command extends keyof Definitions & string,
-> = Definitions[Command] extends EventDefinition<infer Data> ? Data : never
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends EventCommandDefinition ? DataOf<Protocol[Command]['data']> : never
 
 export type ParamsType<
-  Definitions extends AnyDefinitions,
-  Command extends keyof Definitions & string,
-> = Definitions[Command] extends RequestDefinition<infer Params>
-  ? Params
-  : Definitions[Command] extends StreamDefinition<infer Params>
-    ? Params
-    : Definitions[Command] extends ChannelDefinition<infer Params>
-      ? Params
-      : never
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends AnyRequestCommandDefinition
+  ? DataOf<Protocol[Command]['params']>
+  : never
 
 export type ReceiveType<
-  Definitions extends AnyDefinitions,
-  Command extends keyof Definitions & string,
-> = Definitions[Command] extends StreamDefinition<infer Params, infer Receive>
-  ? Receive
-  : Definitions[Command] extends ChannelDefinition<infer Params, infer Send, infer Receive>
-    ? Receive
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends StreamCommandDefinition
+  ? DataOf<Protocol[Command]['receive']>
+  : Protocol[Command] extends ChannelCommandDefinition
+    ? DataOf<Protocol[Command]['receive']>
     : never
 
 export type ResultType<
-  Definitions extends AnyDefinitions,
-  Command extends keyof Definitions & string,
-> = Definitions[Command] extends RequestDefinition<infer Params, infer Result>
-  ? Result
-  : Definitions[Command] extends StreamDefinition<infer Params, infer Receive, infer Result>
-    ? Result
-    : Definitions[Command] extends ChannelDefinition<
-          infer Params,
-          infer Send,
-          infer Receive,
-          infer Result
-        >
-      ? Result
-      : never
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends AnyRequestCommandDefinition
+  ? DataOf<Protocol[Command]['result']>
+  : never
 
 export type SendType<
-  Definitions extends AnyDefinitions,
-  Command extends keyof Definitions & string,
-> = Definitions[Command] extends ChannelDefinition<infer Params, infer Send> ? Send : never
+  Protocol extends ProtocolDefinition,
+  Command extends keyof Protocol & string,
+> = Protocol[Command] extends ChannelCommandDefinition ? DataOf<Protocol[Command]['send']> : never
 
-export type HandlerContext<Definitions extends AnyDefinitions> = {
+export type HandlerContext<Protocol extends ProtocolDefinition> = {
   controllers: Record<string, HandlerController>
-  handlers: CommandHandlers<Definitions>
+  handlers: CommandHandlers<Protocol>
   reject: (rejection: RejectionType) => void
-  send: (payload: AnyServerPayloadOf<Definitions>) => Promise<void>
+  send: (payload: AnyServerPayloadOf<Protocol>) => Promise<void>
 }

@@ -1,8 +1,8 @@
-import { createValidator, isType } from '@enkaku/schema'
+import { type FromSchema, createValidator, isType } from '@enkaku/schema'
 import { createUnsignedToken } from '@enkaku/token'
 
 import {
-  type CommandsRecordProtocol,
+  type ProtocolDefinition,
   createClientMessageSchema,
   createServerMessageSchema,
 } from '../src'
@@ -15,6 +15,15 @@ const protocol = {
   'test/request': {
     type: 'request',
     result: { type: 'string' },
+    error: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', const: 'TEST' },
+        message: { type: 'string' },
+      },
+      required: ['code', 'message'],
+      additionalProperties: false,
+    },
   },
   'test/stream': {
     type: 'stream',
@@ -27,7 +36,7 @@ const protocol = {
     send: { type: 'string' },
     receive: { type: 'number' },
   },
-} satisfies CommandsRecordProtocol<string>
+} as const satisfies ProtocolDefinition
 
 describe('protocol messages validation', () => {
   test('createClientMessageSchema()', () => {
