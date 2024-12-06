@@ -1,6 +1,6 @@
 import { setTimeout } from 'node:timers/promises'
-import type { EventDefinition, RequestDefinition } from '@enkaku/protocol'
-import { type CommandHandlers, type EventHandler, type RequestHandler, serve } from '@enkaku/server'
+import type { ProtocolDefinition } from '@enkaku/protocol'
+import { type EventHandler, type RequestHandler, serve } from '@enkaku/server'
 import { createUnsignedToken } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
@@ -8,22 +8,34 @@ import { ServerTransport } from '../src/index.js'
 
 describe('ServerTransport', () => {
   test('server with transport', async () => {
-    type Definitions = {
-      'test/event': EventDefinition<{ hello: string }>
-      'test/request': RequestDefinition<undefined, string>
-    }
+    const protocol = {
+      'test/event': {
+        type: 'event',
+        data: {
+          type: 'object',
+          properties: { hello: { type: 'string' } },
+          required: ['hello'],
+          additionalProperties: false,
+        },
+      },
+      'test/request': {
+        type: 'request',
+        result: { type: 'string' },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
 
-    const testEventHandler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
+    const testEventHandler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test/event'>>
     const testRequestHandler = jest.fn((ctx) => {
       return setTimeout(100, 'hello')
-    }) as jest.Mock<RequestHandler<'test/request', undefined, string>>
+    }) as jest.Mock<RequestHandler<Protocol, 'test/request'>>
 
     const handlers = {
       'test/event': testEventHandler,
       'test/request': testRequestHandler,
-    } as CommandHandlers<Definitions>
-    const transport = new ServerTransport<Definitions>()
-    const server = serve<Definitions>({ handlers, insecure: true, transport })
+    }
+    const transport = new ServerTransport<Protocol>()
+    const server = serve<Protocol>({ handlers, insecure: true, transport })
 
     const headers = new Headers()
     headers.set('content-type', 'application/json')

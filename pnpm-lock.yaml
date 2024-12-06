@@ -181,6 +181,15 @@ importers:
         specifier: workspace:^
         version: link:../transport
 
+  packages/node-process-transport:
+    dependencies:
+      '@enkaku/stream':
+        specifier: workspace:^
+        version: link:../stream
+      '@enkaku/transport':
+        specifier: workspace:^
+        version: link:../transport
+
   packages/protocol:
     dependencies:
       '@enkaku/schema':
@@ -303,6 +312,9 @@ importers:
       '@enkaku/http-server-transport':
         specifier: workspace:^
         version: link:../../packages/http-server-transport
+      '@enkaku/node-process-transport':
+        specifier: workspace:^
+        version: link:../../packages/node-process-transport
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../../packages/protocol
@@ -12142,7 +12154,7 @@ snapshots:
       '@babel/runtime': 7.26.0
       '@expo/code-signing-certificates': 0.0.5
       '@expo/config': 10.0.6
-      '@expo/config-plugins': 9.0.9
+      '@expo/config-plugins': 9.0.11
       '@expo/devcert': 1.1.4
       '@expo/env': 0.4.0
       '@expo/image-utils': 0.6.3

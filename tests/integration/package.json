@@ -18,6 +18,7 @@
     "@enkaku/client": "workspace:^",
     "@enkaku/http-client-transport": "workspace:^",
     "@enkaku/http-server-transport": "workspace:^",
+    "@enkaku/node-process-transport": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
     "@enkaku/token": "workspace:^",

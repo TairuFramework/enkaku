@@ -13,12 +13,12 @@
 import { Transport } from '@enkaku/transport'
 
 export type PortOrPromise = MessagePort | Promise<MessagePort>
-export type PortInput = PortOrPromise | (() => PortOrPromise)
+export type PortSource = PortOrPromise | (() => PortOrPromise)
 
 export async function createTransportStream<R, W>(
-  input: PortInput,
+  source: PortSource,
 ): Promise<ReadableWritablePair<R, W>> {
-  const port = await Promise.resolve(typeof input === 'function' ? input() : input)
+  const port = await Promise.resolve(typeof source === 'function' ? source() : source)
 
   const readable = new ReadableStream({
     start(controller) {
@@ -39,7 +39,7 @@ export async function createTransportStream<R, W>(
 }
 
 export type MessageTransportParams = {
-  port: PortInput
+  port: PortSource
   signal?: AbortSignal
 }
 

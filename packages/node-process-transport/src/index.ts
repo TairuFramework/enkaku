@@ -1,0 +1,70 @@
+/**
+ * Node process transport for Enkaku RPC clients and servers.
+ *
+ * ## Installation
+ *
+ * ```sh
+ * npm install @enkaku/node-process-transport
+ * ```
+ *
+ * @module node-process-transport
+ */
+
+import { Readable, Writable } from 'node:stream'
+import { createPipe } from '@enkaku/stream'
+import { Transport } from '@enkaku/transport'
+
+const SEPARATOR = '\n'
+
+export type Streams = { readable: Readable; writable: Writable }
+export type StreamsOrPromise = Streams | Promise<Streams>
+export type StreamsSource = StreamsOrPromise | (() => StreamsOrPromise)
+
+export async function createTransportStream<R, W>(
+  source: StreamsSource,
+): Promise<ReadableWritablePair<R, W>> {
+  const streams = await Promise.resolve(typeof source === 'function' ? source() : source)
+
+  let buffered = ''
+  const input = Readable.toWeb(streams.readable) as ReadableStream<Uint8Array>
+  const readable = input.pipeThrough(new TextDecoderStream()).pipeThrough(
+    new TransformStream<string, R>({
+      transform: (chunk, controller) => {
+        buffered += chunk
+        let index = buffered.indexOf(SEPARATOR)
+        while (index !== -1) {
+          const value = buffered.slice(0, index)
+          if (value !== '') {
+            controller.enqueue(JSON.parse(value))
+          }
+          buffered = buffered.slice(index + SEPARATOR.length)
+          index = buffered.indexOf(SEPARATOR)
+        }
+      },
+    }),
+  )
+
+  const pipe = createPipe<W>()
+  pipe.readable
+    .pipeThrough(
+      new TransformStream({
+        transform: (chunk, controller) => {
+          controller.enqueue(JSON.stringify(chunk) + SEPARATOR)
+        },
+      }),
+    )
+    .pipeTo(Writable.toWeb(streams.writable))
+
+  return { readable, writable: pipe.writable }
+}
+
+export type NodeProcessTransportParams = {
+  streams: StreamsSource
+  signal?: AbortSignal
+}
+
+export class NodeProcessTransport<R, W> extends Transport<R, W> {
+  constructor(params: NodeProcessTransportParams) {
+    super({ stream: () => createTransportStream(params.streams), signal: params.signal })
+  }
+}
