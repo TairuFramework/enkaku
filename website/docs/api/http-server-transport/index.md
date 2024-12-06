@@ -10,27 +10,27 @@ npm install @enkaku/http-server-transport
 
 ## Classes
 
-### ServerTransport\<Definitions\>
+### ServerTransport\<Protocol\>
 
 Base Transport class implementing TransportType.
 
 #### Extends
 
-- [`Transport`](../transport/index.md#transportr-w)\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>, [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\>
+- [`Transport`](../transport/index.md#transportr-w)\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>, [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Constructors
 
 ##### new ServerTransport()
 
-> **new ServerTransport**\<`Definitions`\>(): [`ServerTransport`](index.md#servertransportdefinitions)\<`Definitions`\>
+> **new ServerTransport**\<`Protocol`\>(): [`ServerTransport`](index.md#servertransportprotocol)\<`Protocol`\>
 
 ###### Returns
 
-[`ServerTransport`](index.md#servertransportdefinitions)\<`Definitions`\>
+[`ServerTransport`](index.md#servertransportprotocol)\<`Protocol`\>
 
 ###### Overrides
 
@@ -66,11 +66,11 @@ Base Transport class implementing TransportType.
 
 ###### next()
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\>; \}\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\>; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\>; \}\>
+`Promise`\<`ReadableStreamReadValueResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\>; \}\>
 
 ###### Inherited from
 
@@ -110,11 +110,11 @@ Base Transport class implementing TransportType.
 
 ##### read()
 
-> **read**(): `Promise`\<`ReadableStreamReadResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\>\>
+> **read**(): `Promise`\<`ReadableStreamReadResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\>\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\>\>
+`Promise`\<`ReadableStreamReadResult`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\>\>
 
 ###### Inherited from
 
@@ -130,7 +130,7 @@ Base Transport class implementing TransportType.
 
 ###### value
 
-[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>
+[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>
 
 ###### Returns
 
@@ -158,13 +158,13 @@ Base Transport class implementing TransportType.
 
 ***
 
-### ServerBridge\<Definitions\>
+### ServerBridge\<Protocol\>
 
-> **ServerBridge**\<`Definitions`\>: `object`
+> **ServerBridge**\<`Protocol`\>: `object`
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Type declaration
 
@@ -174,22 +174,22 @@ Base Transport class implementing TransportType.
 
 ##### stream
 
-> **stream**: `ReadableWritablePair`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>, [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\>
+> **stream**: `ReadableWritablePair`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>, [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>
 
 ## Functions
 
 ### createServerBridge()
 
-> **createServerBridge**\<`Definitions`, `Incoming`, `Outgoing`\>(): [`ServerBridge`](index.md#serverbridgedefinitions)\<`Definitions`\>
+> **createServerBridge**\<`Protocol`, `Incoming`, `Outgoing`\>(): [`ServerBridge`](index.md#serverbridgeprotocol)\<`Protocol`\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* `object`
 
-• **Incoming** *extends* [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\> = [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>
+• **Incoming** *extends* [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\> = [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>
 
-• **Outgoing** *extends* [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\> = [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>
+• **Outgoing** *extends* [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\> = [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>
 
 #### Returns
 
-[`ServerBridge`](index.md#serverbridgedefinitions)\<`Definitions`\>
+[`ServerBridge`](index.md#serverbridgeprotocol)\<`Protocol`\>

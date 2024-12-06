@@ -68,6 +68,7 @@ export const eventCommandDefinition = {
   type: 'object',
   properties: {
     type: { type: 'string', const: 'event' },
+    description: { type: 'string' },
     data: objectTypeDefinition,
   },
   required: ['type'],
@@ -79,6 +80,7 @@ export const requestCommandDefinition = {
   type: 'object',
   properties: {
     type: { type: 'string', const: 'request' },
+    description: { type: 'string' },
     params: anyTypeDefinition,
     result: anyTypeDefinition,
     error: errorObjectDefinition,
@@ -92,6 +94,7 @@ export const streamCommandDefinition = {
   type: 'object',
   properties: {
     type: { type: 'string', const: 'stream' },
+    description: { type: 'string' },
     params: anyTypeDefinition,
     receive: anyTypeDefinition,
     result: anyTypeDefinition,
@@ -106,6 +109,7 @@ export const channelCommandDefinition = {
   type: 'object',
   properties: {
     type: { type: 'string', const: 'channel' },
+    description: { type: 'string' },
     params: anyTypeDefinition,
     send: anyTypeDefinition,
     receive: anyTypeDefinition,

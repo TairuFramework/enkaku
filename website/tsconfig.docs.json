@@ -19,6 +19,7 @@
       "../packages/http-client-transport",
       "../packages/http-server-transport",
       "../packages/message-transport",
+      "../packages/node-streams-transport",
       "../packages/protocol",
       "../packages/schema",
       "../packages/server",

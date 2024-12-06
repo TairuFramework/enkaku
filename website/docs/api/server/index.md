@@ -10,53 +10,27 @@ npm install @enkaku/server
 
 ## Type Aliases
 
-### ChannelHandler()\<Command, Params, Sent, Receive, Result\>
+### ChannelHandler\<Protocol, Command\>
 
-> **ChannelHandler**\<`Command`, `Params`, `Sent`, `Receive`, `Result`\>: (`context`) => [`HandlerReturn`](index.md#handlerreturnresult)\<`Result`\>
+> **ChannelHandler**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`ChannelCommandDefinition`](../protocol/index.md#channelcommanddefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Command`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Params**
-
-• **Sent**
-
-• **Receive**
-
-• **Result**
-
-#### Parameters
-
-##### context
-
-[`ChannelHandlerContext`](index.md#channelhandlercontextcommand-params-sent-receive)\<`Command`, `Params`, `Sent`, `Receive`\>
-
-#### Returns
-
-[`HandlerReturn`](index.md#handlerreturnresult)\<`Result`\>
+• **Command** *extends* keyof `Protocol` & `string`
 
 ***
 
-### ChannelHandlerContext\<Command, Params, Sent, Receive\>
+### ChannelHandlerContext\<Protocol, Command\>
 
-> **ChannelHandlerContext**\<`Command`, `Params`, `Sent`, `Receive`\>: [`StreamHandlerContext`](index.md#streamhandlercontexttype-command-params-receive)\<`"channel"`, `Command`, `Params`, `Receive`\> & `object`
-
-#### Type declaration
-
-##### readable
-
-> **readable**: `ReadableStream`\<`Sent`\>
+> **ChannelHandlerContext**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`ChannelCommandDefinition`](../protocol/index.md#channelcommanddefinition) ? [`StreamHandlerContext`](index.md#streamhandlercontextprotocol-command)\<`Protocol`, `Command`\> & `object` : `never`
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Params**
-
-• **Sent**
-
-• **Receive**
+• **Command** *extends* keyof `Protocol` & `string`
 
 ***
 
@@ -66,31 +40,31 @@ npm install @enkaku/server
 
 ***
 
-### CommandHandlers\<Definitions\>
+### CommandHandlers\<Protocol\>
 
-> **CommandHandlers**\<`Definitions`\>: `{ [Command in keyof Definitions & string]: Definitions[Command] extends EventDefinition<infer Data> ? (context: EventHandlerContext<Command, Data>) => void : Definitions[Command] extends RequestDefinition<infer Params, infer Result> ? (context: RequestHandlerContext<"request", Command, Params>) => HandlerReturn<Result> : Definitions[Command] extends StreamDefinition<infer Params, infer Receive, infer Result> ? (context: StreamHandlerContext<"stream", Command, Params, Receive>) => HandlerReturn<Result> : Definitions[Command] extends ChannelDefinition<infer Params, infer Send, infer Receive, infer Result> ? (context: ChannelHandlerContext<Command, Params, Send, Receive>) => HandlerReturn<Result> : never }`
+> **CommandHandlers**\<`Protocol`\>: `{ [Command in keyof Protocol & string]: Protocol[Command] extends EventCommandDefinition ? (context: EventHandlerContext<Protocol, Command>) => void : Protocol[Command] extends RequestCommandDefinition ? (context: RequestHandlerContext<Protocol, Command>) => HandlerReturn<Protocol[Command]["result"]> : Protocol[Command] extends StreamCommandDefinition ? (context: StreamHandlerContext<Protocol, Command>) => HandlerReturn<Protocol[Command]["result"]> : Protocol[Command] extends ChannelCommandDefinition ? (context: ChannelHandlerContext<Protocol, Command>) => HandlerReturn<Protocol[Command]["result"]> : never }`
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
-### EventHandler()\<Command, Data\>
+### EventHandler()\<Protocol, Command\>
 
-> **EventHandler**\<`Command`, `Data`\>: (`context`) => `void` \| `Promise`\<`void`\>
+> **EventHandler**\<`Protocol`, `Command`\>: (`context`) => `void` \| `Promise`\<`void`\>
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Data** *extends* `Record`\<`string`, `unknown`\> \| `undefined`
+• **Command** *extends* keyof `Protocol` & `string`
 
 #### Parameters
 
 ##### context
 
-[`EventHandlerContext`](index.md#eventhandlercontextcommand-data)\<`Command`, `Data`\>
+[`EventHandlerContext`](index.md#eventhandlercontextprotocol-command)\<`Protocol`, `Command`\>
 
 #### Returns
 
@@ -98,35 +72,27 @@ npm install @enkaku/server
 
 ***
 
-### EventHandlerContext\<Command, Data\>
+### EventHandlerContext\<Protocol, Command\>
 
-> **EventHandlerContext**\<`Command`, `Data`\>: `object`
+> **EventHandlerContext**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`EventCommandDefinition`](../protocol/index.md#eventcommanddefinition) ? `object` : `never`
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Data** *extends* `Record`\<`string`, `unknown`\> \| `undefined`
-
-#### Type declaration
-
-##### data
-
-> **data**: `Data`
-
-##### message
-
-> **message**: [`Message`](../protocol/index.md#messagepayload)\<[`EventCallPayload`](../protocol/index.md#eventcallpayloadcommand-data)\<`Command`, `Data`\>\>
+• **Command** *extends* keyof `Protocol` & `string`
 
 ***
 
-### HandlerReturn\<Result\>
+### HandlerReturn\<ResultSchema, Data\>
 
-> **HandlerReturn**\<`Result`\>: `Result` \| `Promise`\<`Result`\>
+> **HandlerReturn**\<`ResultSchema`, `Data`\>: `Data` \| `Promise`\<`Data`\>
 
 #### Type Parameters
 
-• **Result**
+• **ResultSchema**
+
+• **Data** = [`DataOf`](../protocol/index.md#dataofs)\<`ResultSchema`\>
 
 ***
 
@@ -152,67 +118,39 @@ npm install @enkaku/server
 
 ***
 
-### RequestHandler()\<Command, Params, Result\>
+### RequestHandler\<Protocol, Command\>
 
-> **RequestHandler**\<`Command`, `Params`, `Result`\>: (`context`) => [`HandlerReturn`](index.md#handlerreturnresult)\<`Result`\>
-
-#### Type Parameters
-
-• **Command** *extends* `string`
-
-• **Params**
-
-• **Result**
-
-#### Parameters
-
-##### context
-
-[`RequestHandlerContext`](index.md#requesthandlercontexttype-command-params)\<`"request"`, `Command`, `Params`\>
-
-#### Returns
-
-[`HandlerReturn`](index.md#handlerreturnresult)\<`Result`\>
-
-***
-
-### RequestHandlerContext\<Type, Command, Params\>
-
-> **RequestHandlerContext**\<`Type`, `Command`, `Params`\>: `object`
+> **RequestHandler**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`AnyRequestCommandDefinition`](../protocol/index.md#anyrequestcommanddefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Command`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
-• **Type** *extends* [`RequestType`](../protocol/index.md#requesttype)
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Command** *extends* `string`
-
-• **Params**
-
-#### Type declaration
-
-##### message
-
-> **message**: [`Message`](../protocol/index.md#messagepayload)\<[`RequestCallPayload`](../protocol/index.md#requestcallpayloadtype-command-params)\<`Type`, `Command`, `Params`\>\>
-
-##### params
-
-> **params**: `Params`
-
-##### signal
-
-> **signal**: `AbortSignal`
+• **Command** *extends* keyof `Protocol` & `string`
 
 ***
 
-### ServeParams\<Definitions\>
+### RequestHandlerContext\<Protocol, Command\>
 
-> **ServeParams**\<`Definitions`\>: `object` & \{`insecure`: `true`; \} \| \{`access`: [`CommandAccessRecord`](index.md#commandaccessrecord);`id`: `string`;`insecure`: `false`; \}
+> **RequestHandlerContext**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`AnyRequestCommandDefinition`](../protocol/index.md#anyrequestcommanddefinition) ? `object` : `never`
+
+#### Type Parameters
+
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+• **Command** *extends* keyof `Protocol` & `string`
+
+***
+
+### ServeParams\<Protocol\>
+
+> **ServeParams**\<`Protocol`\>: `object` & \{`public`: `true`; \} \| \{`access`: [`CommandAccessRecord`](index.md#commandaccessrecord);`id`: `string`;`public`: `false`; \}
 
 #### Type declaration
 
 ##### handlers
 
-> **handlers**: [`CommandHandlers`](index.md#commandhandlersdefinitions)\<`Definitions`\>
+> **handlers**: [`CommandHandlers`](index.md#commandhandlersprotocol)\<`Protocol`\>
 
 ##### signal?
 
@@ -220,11 +158,11 @@ npm install @enkaku/server
 
 ##### transport
 
-> **transport**: [`ServerTransportOf`](../protocol/index.md#servertransportofdefinitions)\<`Definitions`\>
+> **transport**: [`ServerTransportOf`](../protocol/index.md#servertransportofprotocol)\<`Protocol`\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
@@ -240,67 +178,43 @@ npm install @enkaku/server
 
 ***
 
-### StreamHandler()\<Command, Params, Receive, Result\>
+### StreamHandler\<Protocol, Command\>
 
-> **StreamHandler**\<`Command`, `Params`, `Receive`, `Result`\>: (`context`) => [`HandlerReturn`](index.md#handlerreturnresult)\<`Result`\>
+> **StreamHandler**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`StreamCommandDefinition`](../protocol/index.md#streamcommanddefinition) \| [`ChannelCommandDefinition`](../protocol/index.md#channelcommanddefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Command`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Params**
-
-• **Receive**
-
-• **Result**
-
-#### Parameters
-
-##### context
-
-[`StreamHandlerContext`](index.md#streamhandlercontexttype-command-params-receive)\<`"stream"`, `Command`, `Params`, `Receive`\>
-
-#### Returns
-
-[`HandlerReturn`](index.md#handlerreturnresult)\<`Result`\>
+• **Command** *extends* keyof `Protocol` & `string`
 
 ***
 
-### StreamHandlerContext\<Type, Command, Params, Receive\>
+### StreamHandlerContext\<Protocol, Command\>
 
-> **StreamHandlerContext**\<`Type`, `Command`, `Params`, `Receive`\>: [`RequestHandlerContext`](index.md#requesthandlercontexttype-command-params)\<`Type`, `Command`, `Params`\> & `object`
-
-#### Type declaration
-
-##### writable
-
-> **writable**: `WritableStream`\<`Receive`\>
+> **StreamHandlerContext**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`StreamCommandDefinition`](../protocol/index.md#streamcommanddefinition) \| [`ChannelCommandDefinition`](../protocol/index.md#channelcommanddefinition) ? [`RequestHandlerContext`](index.md#requesthandlercontextprotocol-command)\<`Protocol`, `Command`\> & `object` : `never`
 
 #### Type Parameters
 
-• **Type** *extends* `Exclude`\<[`RequestType`](../protocol/index.md#requesttype), `"request"`\>
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Command** *extends* `string`
-
-• **Params**
-
-• **Receive**
+• **Command** *extends* keyof `Protocol` & `string`
 
 ## Functions
 
 ### serve()
 
-> **serve**\<`Definitions`\>(`params`): [`Server`](index.md#server)
+> **serve**\<`Protocol`\>(`params`): [`Server`](index.md#server)
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* `object`
 
 #### Parameters
 
 ##### params
 
-[`ServeParams`](index.md#serveparamsdefinitions)\<`Definitions`\>
+[`ServeParams`](index.md#serveparamsprotocol)\<`Protocol`\>
 
 #### Returns
 

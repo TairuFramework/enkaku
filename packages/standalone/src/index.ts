@@ -37,7 +37,7 @@ export function standalone<Protocol extends ProtocolDefinition>(
     handlers,
     signal,
     transport: transports.server,
-    ...(serverID ? { id: serverID } : { insecure: true }),
+    ...(serverID ? { id: serverID } : { public: true }),
   })
   return new Client<Protocol>({ getRandomID, serverID, signer, transport: transports.client })
 }

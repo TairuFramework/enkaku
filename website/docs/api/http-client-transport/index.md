@@ -10,23 +10,23 @@ npm install @enkaku/http-client-transport
 
 ## Classes
 
-### ClientTransport\<Definitions\>
+### ClientTransport\<Protocol\>
 
 Base Transport class implementing TransportType.
 
 #### Extends
 
-- [`Transport`](../transport/index.md#transportr-w)\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>\>
+- [`Transport`](../transport/index.md#transportr-w)\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Constructors
 
 ##### new ClientTransport()
 
-> **new ClientTransport**\<`Definitions`\>(`params`): [`ClientTransport`](index.md#clienttransportdefinitions)\<`Definitions`\>
+> **new ClientTransport**\<`Protocol`\>(`params`): [`ClientTransport`](index.md#clienttransportprotocol)\<`Protocol`\>
 
 ###### Parameters
 
@@ -36,7 +36,7 @@ Base Transport class implementing TransportType.
 
 ###### Returns
 
-[`ClientTransport`](index.md#clienttransportdefinitions)\<`Definitions`\>
+[`ClientTransport`](index.md#clienttransportprotocol)\<`Protocol`\>
 
 ###### Overrides
 
@@ -72,11 +72,11 @@ Base Transport class implementing TransportType.
 
 ###### next()
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\>; \}\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\>; \}\>
+`Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>; \}\>
 
 ###### Inherited from
 
@@ -100,11 +100,11 @@ Base Transport class implementing TransportType.
 
 ##### read()
 
-> **read**(): `Promise`\<`ReadableStreamReadResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\>\>
+> **read**(): `Promise`\<`ReadableStreamReadResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofdefinitions)\<`Definitions`\>\>\>
+`Promise`\<`ReadableStreamReadResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>\>
 
 ###### Inherited from
 
@@ -120,7 +120,7 @@ Base Transport class implementing TransportType.
 
 ###### value
 
-[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofdefinitions)\<`Definitions`\>
+[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>
 
 ###### Returns
 
@@ -180,11 +180,11 @@ Base Transport class implementing TransportType.
 
 ### createEventStream()
 
-> **createEventStream**\<`Definitions`\>(`url`, `onMessage`): `Promise`\<[`EventStream`](index.md#eventstream)\>
+> **createEventStream**\<`Protocol`\>(`url`, `onMessage`): `Promise`\<[`EventStream`](index.md#eventstream)\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* `object`
 
 #### Parameters
 
@@ -204,11 +204,11 @@ Base Transport class implementing TransportType.
 
 ### createTransportStream()
 
-> **createTransportStream**\<`Definitions`\>(`url`, `onErrorResponse`?): `TransportStream`\<`Definitions`\>
+> **createTransportStream**\<`Protocol`\>(`url`, `onErrorResponse`?): `TransportStream`\<`Protocol`\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* `object`
 
 #### Parameters
 
@@ -222,4 +222,4 @@ Base Transport class implementing TransportType.
 
 #### Returns
 
-`TransportStream`\<`Definitions`\>
+`TransportStream`\<`Protocol`\>

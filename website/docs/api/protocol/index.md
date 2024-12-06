@@ -26,143 +26,67 @@ npm install @enkaku/protocol
 
 ***
 
-### AnyClientMessageOf\<Definitions\>
+### AnyClientMessageOf\<Protocol\>
 
-> **AnyClientMessageOf**\<`Definitions`\>: [`Message`](index.md#messagepayload)\<[`AnyClientPayloadOf`](index.md#anyclientpayloadofdefinitions)\<`Definitions`\>\>
-
-#### Type Parameters
-
-• **Definitions** *extends* [`AnyDefinitions`](index.md#anydefinitionscommands)
-
-***
-
-### AnyClientPayloadOf\<Definitions\>
-
-> **AnyClientPayloadOf**\<`Definitions`\>: [`ValueOf`](index.md#valueoft)\<[`ClientPayloadRecordsOf`](index.md#clientpayloadrecordsofdefinitions)\<`Definitions`\>\>
+> **AnyClientMessageOf**\<`Protocol`\>: [`Message`](index.md#messagepayload)\<[`AnyClientPayloadOf`](index.md#anyclientpayloadofprotocol)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
 
 ***
 
-### AnyCommandProtocol
+### AnyClientPayloadOf\<Protocol\>
 
-> **AnyCommandProtocol**: [`EventCommandProtocol`](index.md#eventcommandprotocol) \| [`RequestCommandProtocol`](index.md#requestcommandprotocol) \| [`StreamCommandProtocol`](index.md#streamcommandprotocol) \| [`ChannelCommandProtocol`](index.md#channelcommandprotocol)
-
-***
-
-### AnyDefinition
-
-> **AnyDefinition**: [`EventDefinition`](index.md#eventdefinitiondata)\<`any`\> \| [`RequestDefinition`](index.md#requestdefinitionparams-result-err)\<`any`, `any`\> \| [`StreamDefinition`](index.md#streamdefinitionparams-receive-result-err)\<`any`, `any`, `any`\> \| [`ChannelDefinition`](index.md#channeldefinitionparams-send-receive-result-err)\<`any`, `any`, `any`, `any`\>
-
-***
-
-### AnyDefinitions\<Commands\>
-
-> **AnyDefinitions**\<`Commands`\>: `{ [Command in Commands & string]: AnyDefinition }`
+> **AnyClientPayloadOf**\<`Protocol`\>: [`ValueOf`](index.md#valueoft)\<[`ClientPayloadRecordsOf`](index.md#clientpayloadrecordsofprotocol)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Commands** *extends* `string` = `string`
+• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
 
 ***
 
-### AnyServerMessageOf\<Definitions\>
+### AnyCommandDefinition
 
-> **AnyServerMessageOf**\<`Definitions`\>: [`Message`](index.md#messagepayload)\<[`AnyServerPayloadOf`](index.md#anyserverpayloadofdefinitions)\<`Definitions`\>\>
+> **AnyCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`anyCommandDefinition`](index.md#anycommanddefinition-1)\>
+
+***
+
+### AnyRequestCommandDefinition
+
+> **AnyRequestCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`anyRequestCommandDefinition`](index.md#anyrequestcommanddefinition-1)\>
+
+***
+
+### AnyServerMessageOf\<Protocol\>
+
+> **AnyServerMessageOf**\<`Protocol`\>: [`Message`](index.md#messagepayload)\<[`AnyServerPayloadOf`](index.md#anyserverpayloadofprotocol)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
 
 ***
 
-### AnyServerPayloadOf\<Definitions\>
+### AnyServerPayloadOf\<Protocol\>
 
-> **AnyServerPayloadOf**\<`Definitions`\>: [`ValueOf`](index.md#valueoft)\<[`ServerPayloadRecordsOf`](index.md#serverpayloadrecordsofdefinitions)\<`Definitions`\>\>
+> **AnyServerPayloadOf**\<`Protocol`\>: [`ValueOf`](index.md#valueoft)\<[`ServerPayloadRecordsOf`](index.md#serverpayloadrecordsofprotocol)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
 
 ***
 
-### ChannelCommandProtocol
+### ChannelCommandDefinition
 
-> **ChannelCommandProtocol**: `object`
-
-#### Type declaration
-
-##### params?
-
-> `optional` **params**: [`Schema`](../schema/index.md#schema-1)
-
-##### receive
-
-> **receive**: [`Schema`](../schema/index.md#schema-1)
-
-##### result?
-
-> `optional` **result**: [`Schema`](../schema/index.md#schema-1)
-
-##### send
-
-> **send**: [`Schema`](../schema/index.md#schema-1)
-
-##### type
-
-> **type**: `"channel"`
-
-***
-
-### ChannelDefinition\<Params, Send, Receive, Result, Err\>
-
-> **ChannelDefinition**\<`Params`, `Send`, `Receive`, `Result`, `Err`\>: `object`
-
-#### Type Parameters
-
-• **Params** = `unknown`
-
-• **Send** = `unknown`
-
-• **Receive** = `unknown`
-
-• **Result** = `unknown`
-
-• **Err** *extends* [`ErrorObject`](index.md#errorobjectcode-data) = [`ErrorObject`](index.md#errorobjectcode-data)
-
-#### Type declaration
-
-##### error
-
-> **error**: `Err`
-
-##### params
-
-> **params**: `Params`
-
-##### receive
-
-> **receive**: `Receive`
-
-##### result
-
-> **result**: `Result`
-
-##### send
-
-> **send**: `Send`
-
-##### type
-
-> **type**: `"channel"`
+> **ChannelCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`channelCommandDefinition`](index.md#channelcommanddefinition-1)\>
 
 ***
 
 ### ChannelPayloadOf\<Command, Definition\>
 
-> **ChannelPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`ChannelDefinition`](index.md#channeldefinitionparams-send-receive-result-err)\<infer Params\> ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"channel"`, `Command`, `Params`\> : `never`
+> **ChannelPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`ChannelCommandDefinition`](index.md#channelcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"channel"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -184,7 +108,7 @@ npm install @enkaku/protocol
 
 ### ClientPayloadOf\<Command, Definition\>
 
-> **ClientPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`EventDefinition`](index.md#eventdefinitiondata)\<infer Data\> ? [`EventCallPayload`](index.md#eventcallpayloadcommand-data)\<`Command`, `Data`\> : `Definition` *extends* [`RequestDefinition`](index.md#requestdefinitionparams-result-err)\<infer Params\> ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"request"`, `Command`, `Params`\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `Definition` *extends* [`StreamDefinition`](index.md#streamdefinitionparams-receive-result-err)\<infer Params\> ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"stream"`, `Command`, `Params`\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `Definition` *extends* [`ChannelDefinition`](index.md#channeldefinitionparams-send-receive-result-err)\<infer Params, infer Send\> ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"channel"`, `Command`, `Params`\> \| [`SendCallPayload`](index.md#sendcallpayloadvalue)\<`Send`\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `never`
+> **ClientPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`EventCommandDefinition`](index.md#eventcommanddefinition) ? [`EventCallPayload`](index.md#eventcallpayloadcommand-data)\<`Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"data"`\]\>\> : `Definition` *extends* [`RequestCommandDefinition`](index.md#requestcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"request"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `Definition` *extends* [`StreamCommandDefinition`](index.md#streamcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"stream"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `Definition` *extends* [`ChannelCommandDefinition`](index.md#channelcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"channel"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> \| [`SendCallPayload`](index.md#sendcallpayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"send"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `never`
 
 #### Type Parameters
 
@@ -194,65 +118,57 @@ npm install @enkaku/protocol
 
 ***
 
-### ClientPayloadRecordsOf\<Definitions\>
+### ClientPayloadRecordsOf\<Protocol\>
 
-> **ClientPayloadRecordsOf**\<`Definitions`\>: `{ [Command in keyof Definitions & string]: ClientPayloadOf<Command, Definitions[Command]> }`
+> **ClientPayloadRecordsOf**\<`Protocol`\>: `{ [Command in keyof Protocol & string]: ClientPayloadOf<Command, Protocol[Command]> }`
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
 
 ***
 
-### ClientTransportOf\<Definitions\>
+### ClientTransportOf\<Protocol\>
 
-> **ClientTransportOf**\<`Definitions`\>: [`TransportType`](../transport/index.md#transporttyper-w)\<[`AnyServerMessageOf`](index.md#anyservermessageofdefinitions)\<`Definitions`\>, [`AnyClientMessageOf`](index.md#anyclientmessageofdefinitions)\<`Definitions`\>\>
+> **ClientTransportOf**\<`Protocol`\>: [`TransportType`](../transport/index.md#transporttyper-w)\<[`AnyServerMessageOf`](index.md#anyservermessageofprotocol)\<`Protocol`\>, [`AnyClientMessageOf`](index.md#anyclientmessageofprotocol)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
 
 ***
 
-### CommandsRecordProtocol\<Commands\>
+### DataOf\<S\>
 
-> **CommandsRecordProtocol**\<`Commands`\>: `{ [Command in Commands]: AnyCommandProtocol }`
+> **DataOf**\<`S`\>: `S` *extends* [`Schema`](../schema/index.md#schema-1) ? [`FromSchema`](../schema/index.md#fromschemaschema-options)\<`S`\> : `never`
 
 #### Type Parameters
 
-• **Commands** *extends* `string`
+• **S**
 
 ***
 
-### ErrorObject\<Code, Data\>
+### ErrorDefinition
 
-> **ErrorObject**\<`Code`, `Data`\>: `object`
+> **ErrorDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`errorDefinition`](index.md#errordefinition-1)\>
 
-#### Type Parameters
+***
 
-• **Code** *extends* `string` = `string`
+### ErrorObject
 
-• **Data** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+> **ErrorObject**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`errorObject`](index.md#errorobject-1)\>
 
-#### Type declaration
+***
 
-##### code
+### ErrorObjectDefinition
 
-> **code**: `Code`
-
-##### data
-
-> **data**: `Data`
-
-##### message
-
-> **message**: `string`
+> **ErrorObjectDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`errorObjectDefinition`](index.md#errorobjectdefinition-1)\>
 
 ***
 
 ### ErrorPayloadOf\<Definition\>
 
-> **ErrorPayloadOf**\<`Definition`\>: `Definition` *extends* [`RequestDefinition`](index.md#requestdefinitionparams-result-err)\<infer Params, infer Result, infer Err\> ? [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`Err`\[`"code"`\], `Err`\[`"data"`\]\> : `Definition` *extends* [`StreamDefinition`](index.md#streamdefinitionparams-receive-result-err)\<infer Params, infer Receive, infer Result, infer Err\> ? [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`Err`\[`"code"`\], `Err`\[`"data"`\]\> : `Definition` *extends* [`ChannelDefinition`](index.md#channeldefinitionparams-send-receive-result-err)\<infer Params, infer Send, infer Receive, infer Result, infer Err\> ? [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`Err`\[`"code"`\], `Err`\[`"data"`\]\> : `never`
+> **ErrorPayloadOf**\<`Definition`\>: `Definition` *extends* [`AnyRequestCommandDefinition`](index.md#anyrequestcommanddefinition) ? [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -294,6 +210,16 @@ npm install @enkaku/protocol
 
 ***
 
+### ErrorReplyPayloadOf\<Error\>
+
+> **ErrorReplyPayloadOf**\<`Error`\>: `Error` *extends* [`ErrorObject`](index.md#errorobject) ? [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`Error`\[`"code"`\], `Error`\[`"data"`\]\> : [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`string`, `Record`\<`string`, `unknown`\>\>
+
+#### Type Parameters
+
+• **Error** = `unknown`
+
+***
+
 ### EventCallPayload\<Command, Data\>
 
 > **EventCallPayload**\<`Command`, `Data`\>: `object` & `Data` *extends* `undefined` ? `object` : `object`
@@ -316,45 +242,15 @@ npm install @enkaku/protocol
 
 ***
 
-### EventCommandProtocol
+### EventCommandDefinition
 
-> **EventCommandProtocol**: `object`
-
-#### Type declaration
-
-##### data?
-
-> `optional` **data**: [`Schema`](../schema/index.md#schema-1)
-
-##### type
-
-> **type**: `"event"`
-
-***
-
-### EventDefinition\<Data\>
-
-> **EventDefinition**\<`Data`\>: `object`
-
-#### Type Parameters
-
-• **Data** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
-
-#### Type declaration
-
-##### data
-
-> **data**: `Data`
-
-##### type
-
-> **type**: `"event"`
+> **EventCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`eventCommandDefinition`](index.md#eventcommanddefinition-1)\>
 
 ***
 
 ### EventPayloadOf\<Command, Definition\>
 
-> **EventPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`EventDefinition`](index.md#eventdefinitiondata)\<infer Data\> ? [`EventCallPayload`](index.md#eventcallpayloadcommand-data)\<`Command`, `Data`\> : `never`
+> **EventPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`EventCommandDefinition`](index.md#eventcommanddefinition) ? [`EventCallPayload`](index.md#eventcallpayloadcommand-data)\<`Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"data"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -446,9 +342,15 @@ npm install @enkaku/protocol
 
 ***
 
+### ProtocolDefinition
+
+> **ProtocolDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`protocolDefinition`](index.md#protocoldefinition-1)\>
+
+***
+
 ### ReceiveActionPayloadOf\<Definition\>
 
-> **ReceiveActionPayloadOf**\<`Definition`\>: `Definition` *extends* [`StreamDefinition`](index.md#streamdefinitionparams-receive-result-err)\<infer Params, infer Receive\> ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<`Receive`\> : `Definition` *extends* [`ChannelDefinition`](index.md#channeldefinitionparams-send-receive-result-err)\<infer Params, infer Send, infer Receive\> ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<`Receive`\> : `never`
+> **ReceiveActionPayloadOf**\<`Definition`\>: `Definition` *extends* [`StreamCommandDefinition`](index.md#streamcommanddefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> : `Definition` *extends* [`ChannelCommandDefinition`](index.md#channelcommanddefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -512,61 +414,15 @@ npm install @enkaku/protocol
 
 ***
 
-### RequestCommandProtocol
+### RequestCommandDefinition
 
-> **RequestCommandProtocol**: `object`
-
-#### Type declaration
-
-##### params?
-
-> `optional` **params**: [`Schema`](../schema/index.md#schema-1)
-
-##### result?
-
-> `optional` **result**: [`Schema`](../schema/index.md#schema-1)
-
-##### type
-
-> **type**: `"request"`
-
-***
-
-### RequestDefinition\<Params, Result, Err\>
-
-> **RequestDefinition**\<`Params`, `Result`, `Err`\>: `object`
-
-#### Type Parameters
-
-• **Params** = `unknown`
-
-• **Result** = `unknown`
-
-• **Err** *extends* [`ErrorObject`](index.md#errorobjectcode-data) = [`ErrorObject`](index.md#errorobjectcode-data)
-
-#### Type declaration
-
-##### error
-
-> **error**: `Err`
-
-##### params
-
-> **params**: `Params`
-
-##### result
-
-> **result**: `Result`
-
-##### type
-
-> **type**: `"request"`
+> **RequestCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`requestCommandDefinition`](index.md#requestcommanddefinition-1)\>
 
 ***
 
 ### RequestPayloadOf\<Command, Definition\>
 
-> **RequestPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`RequestDefinition`](index.md#requestdefinitionparams-result-err)\<infer Params\> ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"request"`, `Command`, `Params`\> : `never`
+> **RequestPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`RequestCommandDefinition`](index.md#requestcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"request"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -578,13 +434,13 @@ npm install @enkaku/protocol
 
 ### RequestType
 
-> **RequestType**: `"request"` \| `"stream"` \| `"channel"`
+> **RequestType**: [`AnyRequestCommandDefinition`](index.md#anyrequestcommanddefinition)\[`"type"`\]
 
 ***
 
 ### ResultPayloadOf\<Definition\>
 
-> **ResultPayloadOf**\<`Definition`\>: `Definition` *extends* [`RequestDefinition`](index.md#requestdefinitionparams-result-err)\<infer Params, infer Result\> ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<`Result`\> : `Definition` *extends* [`StreamDefinition`](index.md#streamdefinitionparams-receive-result-err)\<infer Params, infer Receive, infer Result\> ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<`Result`\> : `Definition` *extends* [`ChannelDefinition`](index.md#channeldefinitionparams-send-receive-result-err)\<infer Params, infer Send, infer Receive, infer Result\> ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<`Result`\> : `never`
+> **ResultPayloadOf**\<`Definition`\>: `Definition` *extends* [`AnyRequestCommandDefinition`](index.md#anyrequestcommanddefinition) ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -642,7 +498,7 @@ npm install @enkaku/protocol
 
 ### SendPayloadOf\<Definition\>
 
-> **SendPayloadOf**\<`Definition`\>: `Definition` *extends* [`ChannelDefinition`](index.md#channeldefinitionparams-send-receive-result-err)\<infer Params, infer Send\> ? [`SendCallPayload`](index.md#sendcallpayloadvalue)\<`Send`\> : `never`
+> **SendPayloadOf**\<`Definition`\>: `Definition` *extends* [`ChannelCommandDefinition`](index.md#channelcommanddefinition) ? [`SendCallPayload`](index.md#sendcallpayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"send"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -662,7 +518,7 @@ npm install @enkaku/protocol
 
 ### ServerPayloadOf\<Definition\>
 
-> **ServerPayloadOf**\<`Definition`\>: `Definition` *extends* [`RequestDefinition`](index.md#requestdefinitionparams-result-err)\<infer Params, infer Result, infer Err\> ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<`Result`\> \| [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`Err`\[`"code"`\], `Err`\[`"data"`\]\> : `Definition` *extends* [`StreamDefinition`](index.md#streamdefinitionparams-receive-result-err)\<infer Params, infer Receive, infer Result, infer Err\> ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<`Receive`\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<`Result`\> \| [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`Err`\[`"code"`\], `Err`\[`"data"`\]\> : `Definition` *extends* [`ChannelDefinition`](index.md#channeldefinitionparams-send-receive-result-err)\<infer Params, infer Send, infer Receive, infer Result, infer Err\> ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<`Receive`\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<`Result`\> \| [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`Err`\[`"code"`\], `Err`\[`"data"`\]\> : `never`
+> **ServerPayloadOf**\<`Definition`\>: `Definition` *extends* [`RequestCommandDefinition`](index.md#requestcommanddefinition) ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror) : `Definition` *extends* [`StreamCommandDefinition`](index.md#streamcommanddefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `Definition` *extends* [`ChannelCommandDefinition`](index.md#channelcommanddefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -670,91 +526,35 @@ npm install @enkaku/protocol
 
 ***
 
-### ServerPayloadRecordsOf\<Definitions\>
+### ServerPayloadRecordsOf\<Protocol\>
 
-> **ServerPayloadRecordsOf**\<`Definitions`\>: `{ [Command in keyof Definitions & string]: ServerPayloadOf<Definitions[Command]> }`
-
-#### Type Parameters
-
-• **Definitions** *extends* [`AnyDefinitions`](index.md#anydefinitionscommands)
-
-***
-
-### ServerTransportOf\<Definitions\>
-
-> **ServerTransportOf**\<`Definitions`\>: [`TransportType`](../transport/index.md#transporttyper-w)\<[`AnyClientMessageOf`](index.md#anyclientmessageofdefinitions)\<`Definitions`\>, [`AnyServerMessageOf`](index.md#anyservermessageofdefinitions)\<`Definitions`\>\>
+> **ServerPayloadRecordsOf**\<`Protocol`\>: `{ [Command in keyof Protocol & string]: ServerPayloadOf<Protocol[Command]> }`
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
 
 ***
 
-### StreamCommandProtocol
+### ServerTransportOf\<Protocol\>
 
-> **StreamCommandProtocol**: `object`
-
-#### Type declaration
-
-##### params?
-
-> `optional` **params**: [`Schema`](../schema/index.md#schema-1)
-
-##### receive
-
-> **receive**: [`Schema`](../schema/index.md#schema-1)
-
-##### result?
-
-> `optional` **result**: [`Schema`](../schema/index.md#schema-1)
-
-##### type
-
-> **type**: `"stream"`
-
-***
-
-### StreamDefinition\<Params, Receive, Result, Err\>
-
-> **StreamDefinition**\<`Params`, `Receive`, `Result`, `Err`\>: `object`
+> **ServerTransportOf**\<`Protocol`\>: [`TransportType`](../transport/index.md#transporttyper-w)\<[`AnyClientMessageOf`](index.md#anyclientmessageofprotocol)\<`Protocol`\>, [`AnyServerMessageOf`](index.md#anyservermessageofprotocol)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Params** = `unknown`
+• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
 
-• **Receive** = `unknown`
+***
 
-• **Result** = `unknown`
+### StreamCommandDefinition
 
-• **Err** *extends* [`ErrorObject`](index.md#errorobjectcode-data) = [`ErrorObject`](index.md#errorobjectcode-data)
-
-#### Type declaration
-
-##### error
-
-> **error**: `Err`
-
-##### params
-
-> **params**: `Params`
-
-##### receive
-
-> **receive**: `Receive`
-
-##### result
-
-> **result**: `Result`
-
-##### type
-
-> **type**: `"stream"`
+> **StreamCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`streamCommandDefinition`](index.md#streamcommanddefinition-1)\>
 
 ***
 
 ### StreamPayloadOf\<Command, Definition\>
 
-> **StreamPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`StreamDefinition`](index.md#streamdefinitionparams-receive-result-err)\<infer Params\> ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"stream"`, `Command`, `Params`\> : `never`
+> **StreamPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`StreamCommandDefinition`](index.md#streamcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"stream"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -772,7 +572,7 @@ npm install @enkaku/protocol
 
 ### UnknownReplyPayload
 
-> **UnknownReplyPayload**: [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`string`, `Record`\<`string`, `unknown`\> \| `undefined`\> \| [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<`unknown`\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<`unknown`\>
+> **UnknownReplyPayload**: [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<`unknown`\> \| [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<`unknown`\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<`unknown`\>
 
 ***
 
@@ -784,21 +584,1443 @@ npm install @enkaku/protocol
 
 • **T**
 
+## Variables
+
+### anyCommandDefinition
+
+> `const` **anyCommandDefinition**: `object`
+
+#### Type declaration
+
+##### anyOf
+
+> `readonly` **anyOf**: readonly [`object`, `object`, `object`, `object`]
+
+***
+
+### anyRequestCommandDefinition
+
+> `const` **anyRequestCommandDefinition**: `object`
+
+#### Type declaration
+
+##### anyOf
+
+> `readonly` **anyOf**: readonly [`object`, `object`, `object`]
+
+***
+
+### anyTypeDefinition
+
+> `const` **anyTypeDefinition**: `object`
+
+#### Type declaration
+
+##### additionalProperties
+
+> `readonly` **additionalProperties**: `true` = `true`
+
+##### properties
+
+> `readonly` **properties**: `object`
+
+###### properties.$id
+
+> `readonly` **properties.$id**: `object`
+
+###### properties.$id.type
+
+> `readonly` **properties.$id.type**: `"string"` = `'string'`
+
+###### properties.type
+
+> `readonly` **properties.type**: `object`
+
+###### properties.type.enum
+
+> `readonly` **properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+
+###### properties.type.type
+
+> `readonly` **properties.type.type**: `"string"` = `'string'`
+
+##### required
+
+> `readonly` **required**: readonly [`"type"`]
+
+##### type
+
+> `readonly` **type**: `"object"` = `'object'`
+
+***
+
+### channelCommandDefinition
+
+> `const` **channelCommandDefinition**: `object`
+
+#### Type declaration
+
+##### additionalProperties
+
+> `readonly` **additionalProperties**: `false` = `false`
+
+##### properties
+
+> `readonly` **properties**: `object`
+
+###### properties.description
+
+> `readonly` **properties.description**: `object`
+
+###### properties.description.type
+
+> `readonly` **properties.description.type**: `"string"` = `'string'`
+
+###### properties.error
+
+> `readonly` **properties.error**: `object` = `errorObjectDefinition`
+
+###### properties.error.properties
+
+> `readonly` **properties.error.properties**: `object`
+
+###### properties.error.properties.additionalProperties
+
+> `readonly` **properties.error.properties.additionalProperties**: `object`
+
+###### properties.error.properties.additionalProperties.const
+
+> `readonly` **properties.error.properties.additionalProperties.const**: `false` = `false`
+
+###### properties.error.properties.additionalProperties.type
+
+> `readonly` **properties.error.properties.additionalProperties.type**: `"boolean"` = `'boolean'`
+
+###### properties.error.properties.properties
+
+> `readonly` **properties.error.properties.properties**: `object`
+
+###### properties.error.properties.properties.properties
+
+> `readonly` **properties.error.properties.properties.properties**: `object`
+
+###### properties.error.properties.properties.properties.code
+
+> `readonly` **properties.error.properties.properties.properties.code**: `object`
+
+###### properties.error.properties.properties.properties.code.additionalProperties
+
+> `readonly` **properties.error.properties.properties.properties.code.additionalProperties**: `true` = `true`
+
+###### properties.error.properties.properties.properties.code.properties
+
+> `readonly` **properties.error.properties.properties.properties.code.properties**: `object`
+
+###### properties.error.properties.properties.properties.code.properties.type
+
+> `readonly` **properties.error.properties.properties.properties.code.properties.type**: `object`
+
+###### properties.error.properties.properties.properties.code.properties.type.const
+
+> `readonly` **properties.error.properties.properties.properties.code.properties.type.const**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.code.properties.type.type
+
+> `readonly` **properties.error.properties.properties.properties.code.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.code.required
+
+> `readonly` **properties.error.properties.properties.properties.code.required**: readonly [`"type"`]
+
+###### properties.error.properties.properties.properties.code.type
+
+> `readonly` **properties.error.properties.properties.properties.code.type**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.properties.data
+
+> `readonly` **properties.error.properties.properties.properties.data**: `object` = `objectTypeDefinition`
+
+###### properties.error.properties.properties.properties.data.additionalProperties
+
+> `readonly` **properties.error.properties.properties.properties.data.additionalProperties**: `true` = `true`
+
+###### properties.error.properties.properties.properties.data.properties
+
+> `readonly` **properties.error.properties.properties.properties.data.properties**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.$id
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.$id**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.$id.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.data.properties.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.type**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.type.const
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.type.const**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.properties.data.properties.type.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.data.required
+
+> `readonly` **properties.error.properties.properties.properties.data.required**: readonly [`"type"`]
+
+###### properties.error.properties.properties.properties.data.type
+
+> `readonly` **properties.error.properties.properties.properties.data.type**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.properties.message
+
+> `readonly` **properties.error.properties.properties.properties.message**: `object`
+
+###### properties.error.properties.properties.properties.message.additionalProperties
+
+> `readonly` **properties.error.properties.properties.properties.message.additionalProperties**: `true` = `true`
+
+###### properties.error.properties.properties.properties.message.properties
+
+> `readonly` **properties.error.properties.properties.properties.message.properties**: `object`
+
+###### properties.error.properties.properties.properties.message.properties.type
+
+> `readonly` **properties.error.properties.properties.properties.message.properties.type**: `object`
+
+###### properties.error.properties.properties.properties.message.properties.type.const
+
+> `readonly` **properties.error.properties.properties.properties.message.properties.type.const**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.message.properties.type.type
+
+> `readonly` **properties.error.properties.properties.properties.message.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.message.required
+
+> `readonly` **properties.error.properties.properties.properties.message.required**: readonly [`"type"`]
+
+###### properties.error.properties.properties.properties.message.type
+
+> `readonly` **properties.error.properties.properties.properties.message.type**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.type
+
+> `readonly` **properties.error.properties.properties.type**: `"object"` = `'object'`
+
+###### properties.error.properties.required
+
+> `readonly` **properties.error.properties.required**: `object`
+
+###### properties.error.properties.required.anyOf
+
+> `readonly` **properties.error.properties.required.anyOf**: readonly [`object`, `object`]
+
+###### properties.error.properties.type
+
+> `readonly` **properties.error.properties.type**: `object`
+
+###### properties.error.properties.type.const
+
+> `readonly` **properties.error.properties.type.const**: `"object"` = `'object'`
+
+###### properties.error.properties.type.type
+
+> `readonly` **properties.error.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.required
+
+> `readonly` **properties.error.required**: readonly [`"type"`, `"properties"`, `"required"`, `"additionalProperties"`]
+
+###### properties.error.type
+
+> `readonly` **properties.error.type**: `"object"` = `'object'`
+
+###### properties.params
+
+> `readonly` **properties.params**: `object` = `anyTypeDefinition`
+
+###### properties.params.additionalProperties
+
+> `readonly` **properties.params.additionalProperties**: `true` = `true`
+
+###### properties.params.properties
+
+> `readonly` **properties.params.properties**: `object`
+
+###### properties.params.properties.$id
+
+> `readonly` **properties.params.properties.$id**: `object`
+
+###### properties.params.properties.$id.type
+
+> `readonly` **properties.params.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.params.properties.type
+
+> `readonly` **properties.params.properties.type**: `object`
+
+###### properties.params.properties.type.enum
+
+> `readonly` **properties.params.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+
+###### properties.params.properties.type.type
+
+> `readonly` **properties.params.properties.type.type**: `"string"` = `'string'`
+
+###### properties.params.required
+
+> `readonly` **properties.params.required**: readonly [`"type"`]
+
+###### properties.params.type
+
+> `readonly` **properties.params.type**: `"object"` = `'object'`
+
+###### properties.receive
+
+> `readonly` **properties.receive**: `object` = `anyTypeDefinition`
+
+###### properties.receive.additionalProperties
+
+> `readonly` **properties.receive.additionalProperties**: `true` = `true`
+
+###### properties.receive.properties
+
+> `readonly` **properties.receive.properties**: `object`
+
+###### properties.receive.properties.$id
+
+> `readonly` **properties.receive.properties.$id**: `object`
+
+###### properties.receive.properties.$id.type
+
+> `readonly` **properties.receive.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.receive.properties.type
+
+> `readonly` **properties.receive.properties.type**: `object`
+
+###### properties.receive.properties.type.enum
+
+> `readonly` **properties.receive.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+
+###### properties.receive.properties.type.type
+
+> `readonly` **properties.receive.properties.type.type**: `"string"` = `'string'`
+
+###### properties.receive.required
+
+> `readonly` **properties.receive.required**: readonly [`"type"`]
+
+###### properties.receive.type
+
+> `readonly` **properties.receive.type**: `"object"` = `'object'`
+
+###### properties.result
+
+> `readonly` **properties.result**: `object` = `anyTypeDefinition`
+
+###### properties.result.additionalProperties
+
+> `readonly` **properties.result.additionalProperties**: `true` = `true`
+
+###### properties.result.properties
+
+> `readonly` **properties.result.properties**: `object`
+
+###### properties.result.properties.$id
+
+> `readonly` **properties.result.properties.$id**: `object`
+
+###### properties.result.properties.$id.type
+
+> `readonly` **properties.result.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.result.properties.type
+
+> `readonly` **properties.result.properties.type**: `object`
+
+###### properties.result.properties.type.enum
+
+> `readonly` **properties.result.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+
+###### properties.result.properties.type.type
+
+> `readonly` **properties.result.properties.type.type**: `"string"` = `'string'`
+
+###### properties.result.required
+
+> `readonly` **properties.result.required**: readonly [`"type"`]
+
+###### properties.result.type
+
+> `readonly` **properties.result.type**: `"object"` = `'object'`
+
+###### properties.send
+
+> `readonly` **properties.send**: `object` = `anyTypeDefinition`
+
+###### properties.send.additionalProperties
+
+> `readonly` **properties.send.additionalProperties**: `true` = `true`
+
+###### properties.send.properties
+
+> `readonly` **properties.send.properties**: `object`
+
+###### properties.send.properties.$id
+
+> `readonly` **properties.send.properties.$id**: `object`
+
+###### properties.send.properties.$id.type
+
+> `readonly` **properties.send.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.send.properties.type
+
+> `readonly` **properties.send.properties.type**: `object`
+
+###### properties.send.properties.type.enum
+
+> `readonly` **properties.send.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+
+###### properties.send.properties.type.type
+
+> `readonly` **properties.send.properties.type.type**: `"string"` = `'string'`
+
+###### properties.send.required
+
+> `readonly` **properties.send.required**: readonly [`"type"`]
+
+###### properties.send.type
+
+> `readonly` **properties.send.type**: `"object"` = `'object'`
+
+###### properties.type
+
+> `readonly` **properties.type**: `object`
+
+###### properties.type.const
+
+> `readonly` **properties.type.const**: `"channel"` = `'channel'`
+
+###### properties.type.type
+
+> `readonly` **properties.type.type**: `"string"` = `'string'`
+
+##### required
+
+> `readonly` **required**: readonly [`"type"`, `"send"`, `"receive"`]
+
+##### type
+
+> `readonly` **type**: `"object"` = `'object'`
+
+***
+
+### errorDefinition
+
+> `const` **errorDefinition**: `object`
+
+#### Type declaration
+
+##### anyOf
+
+> `readonly` **anyOf**: readonly [`object`, `object`]
+
+***
+
+### errorObject
+
+> `const` **errorObject**: `object`
+
+#### Type declaration
+
+##### additionalProperties
+
+> `readonly` **additionalProperties**: `false` = `false`
+
+##### properties
+
+> `readonly` **properties**: `object`
+
+###### properties.code
+
+> `readonly` **properties.code**: `object`
+
+###### properties.code.type
+
+> `readonly` **properties.code.type**: `"string"` = `'string'`
+
+###### properties.data
+
+> `readonly` **properties.data**: `object`
+
+###### properties.data.type
+
+> `readonly` **properties.data.type**: `"object"` = `'object'`
+
+###### properties.message
+
+> `readonly` **properties.message**: `object`
+
+###### properties.message.type
+
+> `readonly` **properties.message.type**: `"string"` = `'string'`
+
+##### required
+
+> `readonly` **required**: readonly [`"code"`, `"message"`]
+
+##### type
+
+> `readonly` **type**: `"object"` = `'object'`
+
+***
+
+### errorObjectDefinition
+
+> `const` **errorObjectDefinition**: `object`
+
+#### Type declaration
+
+##### properties
+
+> `readonly` **properties**: `object`
+
+###### properties.additionalProperties
+
+> `readonly` **properties.additionalProperties**: `object`
+
+###### properties.additionalProperties.const
+
+> `readonly` **properties.additionalProperties.const**: `false` = `false`
+
+###### properties.additionalProperties.type
+
+> `readonly` **properties.additionalProperties.type**: `"boolean"` = `'boolean'`
+
+###### properties.properties
+
+> `readonly` **properties.properties**: `object`
+
+###### properties.properties.properties
+
+> `readonly` **properties.properties.properties**: `object`
+
+###### properties.properties.properties.code
+
+> `readonly` **properties.properties.properties.code**: `object`
+
+###### properties.properties.properties.code.additionalProperties
+
+> `readonly` **properties.properties.properties.code.additionalProperties**: `true` = `true`
+
+###### properties.properties.properties.code.properties
+
+> `readonly` **properties.properties.properties.code.properties**: `object`
+
+###### properties.properties.properties.code.properties.type
+
+> `readonly` **properties.properties.properties.code.properties.type**: `object`
+
+###### properties.properties.properties.code.properties.type.const
+
+> `readonly` **properties.properties.properties.code.properties.type.const**: `"string"` = `'string'`
+
+###### properties.properties.properties.code.properties.type.type
+
+> `readonly` **properties.properties.properties.code.properties.type.type**: `"string"` = `'string'`
+
+###### properties.properties.properties.code.required
+
+> `readonly` **properties.properties.properties.code.required**: readonly [`"type"`]
+
+###### properties.properties.properties.code.type
+
+> `readonly` **properties.properties.properties.code.type**: `"object"` = `'object'`
+
+###### properties.properties.properties.data
+
+> `readonly` **properties.properties.properties.data**: `object` = `objectTypeDefinition`
+
+###### properties.properties.properties.data.additionalProperties
+
+> `readonly` **properties.properties.properties.data.additionalProperties**: `true` = `true`
+
+###### properties.properties.properties.data.properties
+
+> `readonly` **properties.properties.properties.data.properties**: `object`
+
+###### properties.properties.properties.data.properties.$id
+
+> `readonly` **properties.properties.properties.data.properties.$id**: `object`
+
+###### properties.properties.properties.data.properties.$id.type
+
+> `readonly` **properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.properties.properties.data.properties.type
+
+> `readonly` **properties.properties.properties.data.properties.type**: `object`
+
+###### properties.properties.properties.data.properties.type.const
+
+> `readonly` **properties.properties.properties.data.properties.type.const**: `"object"` = `'object'`
+
+###### properties.properties.properties.data.properties.type.type
+
+> `readonly` **properties.properties.properties.data.properties.type.type**: `"string"` = `'string'`
+
+###### properties.properties.properties.data.required
+
+> `readonly` **properties.properties.properties.data.required**: readonly [`"type"`]
+
+###### properties.properties.properties.data.type
+
+> `readonly` **properties.properties.properties.data.type**: `"object"` = `'object'`
+
+###### properties.properties.properties.message
+
+> `readonly` **properties.properties.properties.message**: `object`
+
+###### properties.properties.properties.message.additionalProperties
+
+> `readonly` **properties.properties.properties.message.additionalProperties**: `true` = `true`
+
+###### properties.properties.properties.message.properties
+
+> `readonly` **properties.properties.properties.message.properties**: `object`
+
+###### properties.properties.properties.message.properties.type
+
+> `readonly` **properties.properties.properties.message.properties.type**: `object`
+
+###### properties.properties.properties.message.properties.type.const
+
+> `readonly` **properties.properties.properties.message.properties.type.const**: `"string"` = `'string'`
+
+###### properties.properties.properties.message.properties.type.type
+
+> `readonly` **properties.properties.properties.message.properties.type.type**: `"string"` = `'string'`
+
+###### properties.properties.properties.message.required
+
+> `readonly` **properties.properties.properties.message.required**: readonly [`"type"`]
+
+###### properties.properties.properties.message.type
+
+> `readonly` **properties.properties.properties.message.type**: `"object"` = `'object'`
+
+###### properties.properties.type
+
+> `readonly` **properties.properties.type**: `"object"` = `'object'`
+
+###### properties.required
+
+> `readonly` **properties.required**: `object`
+
+###### properties.required.anyOf
+
+> `readonly` **properties.required.anyOf**: readonly [`object`, `object`]
+
+###### properties.type
+
+> `readonly` **properties.type**: `object`
+
+###### properties.type.const
+
+> `readonly` **properties.type.const**: `"object"` = `'object'`
+
+###### properties.type.type
+
+> `readonly` **properties.type.type**: `"string"` = `'string'`
+
+##### required
+
+> `readonly` **required**: readonly [`"type"`, `"properties"`, `"required"`, `"additionalProperties"`]
+
+##### type
+
+> `readonly` **type**: `"object"` = `'object'`
+
+***
+
+### eventCommandDefinition
+
+> `const` **eventCommandDefinition**: `object`
+
+#### Type declaration
+
+##### additionalProperties
+
+> `readonly` **additionalProperties**: `false` = `false`
+
+##### properties
+
+> `readonly` **properties**: `object`
+
+###### properties.data
+
+> `readonly` **properties.data**: `object` = `objectTypeDefinition`
+
+###### properties.data.additionalProperties
+
+> `readonly` **properties.data.additionalProperties**: `true` = `true`
+
+###### properties.data.properties
+
+> `readonly` **properties.data.properties**: `object`
+
+###### properties.data.properties.$id
+
+> `readonly` **properties.data.properties.$id**: `object`
+
+###### properties.data.properties.$id.type
+
+> `readonly` **properties.data.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.data.properties.type
+
+> `readonly` **properties.data.properties.type**: `object`
+
+###### properties.data.properties.type.const
+
+> `readonly` **properties.data.properties.type.const**: `"object"` = `'object'`
+
+###### properties.data.properties.type.type
+
+> `readonly` **properties.data.properties.type.type**: `"string"` = `'string'`
+
+###### properties.data.required
+
+> `readonly` **properties.data.required**: readonly [`"type"`]
+
+###### properties.data.type
+
+> `readonly` **properties.data.type**: `"object"` = `'object'`
+
+###### properties.description
+
+> `readonly` **properties.description**: `object`
+
+###### properties.description.type
+
+> `readonly` **properties.description.type**: `"string"` = `'string'`
+
+###### properties.type
+
+> `readonly` **properties.type**: `object`
+
+###### properties.type.const
+
+> `readonly` **properties.type.const**: `"event"` = `'event'`
+
+###### properties.type.type
+
+> `readonly` **properties.type.type**: `"string"` = `'string'`
+
+##### required
+
+> `readonly` **required**: readonly [`"type"`]
+
+##### type
+
+> `readonly` **type**: `"object"` = `'object'`
+
+***
+
+### objectTypeDefinition
+
+> `const` **objectTypeDefinition**: `object`
+
+#### Type declaration
+
+##### additionalProperties
+
+> `readonly` **additionalProperties**: `true` = `true`
+
+##### properties
+
+> `readonly` **properties**: `object`
+
+###### properties.$id
+
+> `readonly` **properties.$id**: `object`
+
+###### properties.$id.type
+
+> `readonly` **properties.$id.type**: `"string"` = `'string'`
+
+###### properties.type
+
+> `readonly` **properties.type**: `object`
+
+###### properties.type.const
+
+> `readonly` **properties.type.const**: `"object"` = `'object'`
+
+###### properties.type.type
+
+> `readonly` **properties.type.type**: `"string"` = `'string'`
+
+##### required
+
+> `readonly` **required**: readonly [`"type"`]
+
+##### type
+
+> `readonly` **type**: `"object"` = `'object'`
+
+***
+
+### protocolDefinition
+
+> `const` **protocolDefinition**: `object`
+
+#### Type declaration
+
+##### additionalProperties
+
+> `readonly` **additionalProperties**: `object` = `anyCommandDefinition`
+
+###### additionalProperties.anyOf
+
+> `readonly` **additionalProperties.anyOf**: readonly [`object`, `object`, `object`, `object`]
+
+##### type
+
+> `readonly` **type**: `"object"` = `'object'`
+
+***
+
+### requestCommandDefinition
+
+> `const` **requestCommandDefinition**: `object`
+
+#### Type declaration
+
+##### additionalProperties
+
+> `readonly` **additionalProperties**: `false` = `false`
+
+##### properties
+
+> `readonly` **properties**: `object`
+
+###### properties.description
+
+> `readonly` **properties.description**: `object`
+
+###### properties.description.type
+
+> `readonly` **properties.description.type**: `"string"` = `'string'`
+
+###### properties.error
+
+> `readonly` **properties.error**: `object` = `errorObjectDefinition`
+
+###### properties.error.properties
+
+> `readonly` **properties.error.properties**: `object`
+
+###### properties.error.properties.additionalProperties
+
+> `readonly` **properties.error.properties.additionalProperties**: `object`
+
+###### properties.error.properties.additionalProperties.const
+
+> `readonly` **properties.error.properties.additionalProperties.const**: `false` = `false`
+
+###### properties.error.properties.additionalProperties.type
+
+> `readonly` **properties.error.properties.additionalProperties.type**: `"boolean"` = `'boolean'`
+
+###### properties.error.properties.properties
+
+> `readonly` **properties.error.properties.properties**: `object`
+
+###### properties.error.properties.properties.properties
+
+> `readonly` **properties.error.properties.properties.properties**: `object`
+
+###### properties.error.properties.properties.properties.code
+
+> `readonly` **properties.error.properties.properties.properties.code**: `object`
+
+###### properties.error.properties.properties.properties.code.additionalProperties
+
+> `readonly` **properties.error.properties.properties.properties.code.additionalProperties**: `true` = `true`
+
+###### properties.error.properties.properties.properties.code.properties
+
+> `readonly` **properties.error.properties.properties.properties.code.properties**: `object`
+
+###### properties.error.properties.properties.properties.code.properties.type
+
+> `readonly` **properties.error.properties.properties.properties.code.properties.type**: `object`
+
+###### properties.error.properties.properties.properties.code.properties.type.const
+
+> `readonly` **properties.error.properties.properties.properties.code.properties.type.const**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.code.properties.type.type
+
+> `readonly` **properties.error.properties.properties.properties.code.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.code.required
+
+> `readonly` **properties.error.properties.properties.properties.code.required**: readonly [`"type"`]
+
+###### properties.error.properties.properties.properties.code.type
+
+> `readonly` **properties.error.properties.properties.properties.code.type**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.properties.data
+
+> `readonly` **properties.error.properties.properties.properties.data**: `object` = `objectTypeDefinition`
+
+###### properties.error.properties.properties.properties.data.additionalProperties
+
+> `readonly` **properties.error.properties.properties.properties.data.additionalProperties**: `true` = `true`
+
+###### properties.error.properties.properties.properties.data.properties
+
+> `readonly` **properties.error.properties.properties.properties.data.properties**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.$id
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.$id**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.$id.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.data.properties.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.type**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.type.const
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.type.const**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.properties.data.properties.type.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.data.required
+
+> `readonly` **properties.error.properties.properties.properties.data.required**: readonly [`"type"`]
+
+###### properties.error.properties.properties.properties.data.type
+
+> `readonly` **properties.error.properties.properties.properties.data.type**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.properties.message
+
+> `readonly` **properties.error.properties.properties.properties.message**: `object`
+
+###### properties.error.properties.properties.properties.message.additionalProperties
+
+> `readonly` **properties.error.properties.properties.properties.message.additionalProperties**: `true` = `true`
+
+###### properties.error.properties.properties.properties.message.properties
+
+> `readonly` **properties.error.properties.properties.properties.message.properties**: `object`
+
+###### properties.error.properties.properties.properties.message.properties.type
+
+> `readonly` **properties.error.properties.properties.properties.message.properties.type**: `object`
+
+###### properties.error.properties.properties.properties.message.properties.type.const
+
+> `readonly` **properties.error.properties.properties.properties.message.properties.type.const**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.message.properties.type.type
+
+> `readonly` **properties.error.properties.properties.properties.message.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.message.required
+
+> `readonly` **properties.error.properties.properties.properties.message.required**: readonly [`"type"`]
+
+###### properties.error.properties.properties.properties.message.type
+
+> `readonly` **properties.error.properties.properties.properties.message.type**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.type
+
+> `readonly` **properties.error.properties.properties.type**: `"object"` = `'object'`
+
+###### properties.error.properties.required
+
+> `readonly` **properties.error.properties.required**: `object`
+
+###### properties.error.properties.required.anyOf
+
+> `readonly` **properties.error.properties.required.anyOf**: readonly [`object`, `object`]
+
+###### properties.error.properties.type
+
+> `readonly` **properties.error.properties.type**: `object`
+
+###### properties.error.properties.type.const
+
+> `readonly` **properties.error.properties.type.const**: `"object"` = `'object'`
+
+###### properties.error.properties.type.type
+
+> `readonly` **properties.error.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.required
+
+> `readonly` **properties.error.required**: readonly [`"type"`, `"properties"`, `"required"`, `"additionalProperties"`]
+
+###### properties.error.type
+
+> `readonly` **properties.error.type**: `"object"` = `'object'`
+
+###### properties.params
+
+> `readonly` **properties.params**: `object` = `anyTypeDefinition`
+
+###### properties.params.additionalProperties
+
+> `readonly` **properties.params.additionalProperties**: `true` = `true`
+
+###### properties.params.properties
+
+> `readonly` **properties.params.properties**: `object`
+
+###### properties.params.properties.$id
+
+> `readonly` **properties.params.properties.$id**: `object`
+
+###### properties.params.properties.$id.type
+
+> `readonly` **properties.params.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.params.properties.type
+
+> `readonly` **properties.params.properties.type**: `object`
+
+###### properties.params.properties.type.enum
+
+> `readonly` **properties.params.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+
+###### properties.params.properties.type.type
+
+> `readonly` **properties.params.properties.type.type**: `"string"` = `'string'`
+
+###### properties.params.required
+
+> `readonly` **properties.params.required**: readonly [`"type"`]
+
+###### properties.params.type
+
+> `readonly` **properties.params.type**: `"object"` = `'object'`
+
+###### properties.result
+
+> `readonly` **properties.result**: `object` = `anyTypeDefinition`
+
+###### properties.result.additionalProperties
+
+> `readonly` **properties.result.additionalProperties**: `true` = `true`
+
+###### properties.result.properties
+
+> `readonly` **properties.result.properties**: `object`
+
+###### properties.result.properties.$id
+
+> `readonly` **properties.result.properties.$id**: `object`
+
+###### properties.result.properties.$id.type
+
+> `readonly` **properties.result.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.result.properties.type
+
+> `readonly` **properties.result.properties.type**: `object`
+
+###### properties.result.properties.type.enum
+
+> `readonly` **properties.result.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+
+###### properties.result.properties.type.type
+
+> `readonly` **properties.result.properties.type.type**: `"string"` = `'string'`
+
+###### properties.result.required
+
+> `readonly` **properties.result.required**: readonly [`"type"`]
+
+###### properties.result.type
+
+> `readonly` **properties.result.type**: `"object"` = `'object'`
+
+###### properties.type
+
+> `readonly` **properties.type**: `object`
+
+###### properties.type.const
+
+> `readonly` **properties.type.const**: `"request"` = `'request'`
+
+###### properties.type.type
+
+> `readonly` **properties.type.type**: `"string"` = `'string'`
+
+##### required
+
+> `readonly` **required**: readonly [`"type"`]
+
+##### type
+
+> `readonly` **type**: `"object"` = `'object'`
+
+***
+
+### streamCommandDefinition
+
+> `const` **streamCommandDefinition**: `object`
+
+#### Type declaration
+
+##### additionalProperties
+
+> `readonly` **additionalProperties**: `false` = `false`
+
+##### properties
+
+> `readonly` **properties**: `object`
+
+###### properties.description
+
+> `readonly` **properties.description**: `object`
+
+###### properties.description.type
+
+> `readonly` **properties.description.type**: `"string"` = `'string'`
+
+###### properties.error
+
+> `readonly` **properties.error**: `object` = `errorObjectDefinition`
+
+###### properties.error.properties
+
+> `readonly` **properties.error.properties**: `object`
+
+###### properties.error.properties.additionalProperties
+
+> `readonly` **properties.error.properties.additionalProperties**: `object`
+
+###### properties.error.properties.additionalProperties.const
+
+> `readonly` **properties.error.properties.additionalProperties.const**: `false` = `false`
+
+###### properties.error.properties.additionalProperties.type
+
+> `readonly` **properties.error.properties.additionalProperties.type**: `"boolean"` = `'boolean'`
+
+###### properties.error.properties.properties
+
+> `readonly` **properties.error.properties.properties**: `object`
+
+###### properties.error.properties.properties.properties
+
+> `readonly` **properties.error.properties.properties.properties**: `object`
+
+###### properties.error.properties.properties.properties.code
+
+> `readonly` **properties.error.properties.properties.properties.code**: `object`
+
+###### properties.error.properties.properties.properties.code.additionalProperties
+
+> `readonly` **properties.error.properties.properties.properties.code.additionalProperties**: `true` = `true`
+
+###### properties.error.properties.properties.properties.code.properties
+
+> `readonly` **properties.error.properties.properties.properties.code.properties**: `object`
+
+###### properties.error.properties.properties.properties.code.properties.type
+
+> `readonly` **properties.error.properties.properties.properties.code.properties.type**: `object`
+
+###### properties.error.properties.properties.properties.code.properties.type.const
+
+> `readonly` **properties.error.properties.properties.properties.code.properties.type.const**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.code.properties.type.type
+
+> `readonly` **properties.error.properties.properties.properties.code.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.code.required
+
+> `readonly` **properties.error.properties.properties.properties.code.required**: readonly [`"type"`]
+
+###### properties.error.properties.properties.properties.code.type
+
+> `readonly` **properties.error.properties.properties.properties.code.type**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.properties.data
+
+> `readonly` **properties.error.properties.properties.properties.data**: `object` = `objectTypeDefinition`
+
+###### properties.error.properties.properties.properties.data.additionalProperties
+
+> `readonly` **properties.error.properties.properties.properties.data.additionalProperties**: `true` = `true`
+
+###### properties.error.properties.properties.properties.data.properties
+
+> `readonly` **properties.error.properties.properties.properties.data.properties**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.$id
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.$id**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.$id.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.data.properties.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.type**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.type.const
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.type.const**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.properties.data.properties.type.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.data.required
+
+> `readonly` **properties.error.properties.properties.properties.data.required**: readonly [`"type"`]
+
+###### properties.error.properties.properties.properties.data.type
+
+> `readonly` **properties.error.properties.properties.properties.data.type**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.properties.message
+
+> `readonly` **properties.error.properties.properties.properties.message**: `object`
+
+###### properties.error.properties.properties.properties.message.additionalProperties
+
+> `readonly` **properties.error.properties.properties.properties.message.additionalProperties**: `true` = `true`
+
+###### properties.error.properties.properties.properties.message.properties
+
+> `readonly` **properties.error.properties.properties.properties.message.properties**: `object`
+
+###### properties.error.properties.properties.properties.message.properties.type
+
+> `readonly` **properties.error.properties.properties.properties.message.properties.type**: `object`
+
+###### properties.error.properties.properties.properties.message.properties.type.const
+
+> `readonly` **properties.error.properties.properties.properties.message.properties.type.const**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.message.properties.type.type
+
+> `readonly` **properties.error.properties.properties.properties.message.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.properties.properties.properties.message.required
+
+> `readonly` **properties.error.properties.properties.properties.message.required**: readonly [`"type"`]
+
+###### properties.error.properties.properties.properties.message.type
+
+> `readonly` **properties.error.properties.properties.properties.message.type**: `"object"` = `'object'`
+
+###### properties.error.properties.properties.type
+
+> `readonly` **properties.error.properties.properties.type**: `"object"` = `'object'`
+
+###### properties.error.properties.required
+
+> `readonly` **properties.error.properties.required**: `object`
+
+###### properties.error.properties.required.anyOf
+
+> `readonly` **properties.error.properties.required.anyOf**: readonly [`object`, `object`]
+
+###### properties.error.properties.type
+
+> `readonly` **properties.error.properties.type**: `object`
+
+###### properties.error.properties.type.const
+
+> `readonly` **properties.error.properties.type.const**: `"object"` = `'object'`
+
+###### properties.error.properties.type.type
+
+> `readonly` **properties.error.properties.type.type**: `"string"` = `'string'`
+
+###### properties.error.required
+
+> `readonly` **properties.error.required**: readonly [`"type"`, `"properties"`, `"required"`, `"additionalProperties"`]
+
+###### properties.error.type
+
+> `readonly` **properties.error.type**: `"object"` = `'object'`
+
+###### properties.params
+
+> `readonly` **properties.params**: `object` = `anyTypeDefinition`
+
+###### properties.params.additionalProperties
+
+> `readonly` **properties.params.additionalProperties**: `true` = `true`
+
+###### properties.params.properties
+
+> `readonly` **properties.params.properties**: `object`
+
+###### properties.params.properties.$id
+
+> `readonly` **properties.params.properties.$id**: `object`
+
+###### properties.params.properties.$id.type
+
+> `readonly` **properties.params.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.params.properties.type
+
+> `readonly` **properties.params.properties.type**: `object`
+
+###### properties.params.properties.type.enum
+
+> `readonly` **properties.params.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+
+###### properties.params.properties.type.type
+
+> `readonly` **properties.params.properties.type.type**: `"string"` = `'string'`
+
+###### properties.params.required
+
+> `readonly` **properties.params.required**: readonly [`"type"`]
+
+###### properties.params.type
+
+> `readonly` **properties.params.type**: `"object"` = `'object'`
+
+###### properties.receive
+
+> `readonly` **properties.receive**: `object` = `anyTypeDefinition`
+
+###### properties.receive.additionalProperties
+
+> `readonly` **properties.receive.additionalProperties**: `true` = `true`
+
+###### properties.receive.properties
+
+> `readonly` **properties.receive.properties**: `object`
+
+###### properties.receive.properties.$id
+
+> `readonly` **properties.receive.properties.$id**: `object`
+
+###### properties.receive.properties.$id.type
+
+> `readonly` **properties.receive.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.receive.properties.type
+
+> `readonly` **properties.receive.properties.type**: `object`
+
+###### properties.receive.properties.type.enum
+
+> `readonly` **properties.receive.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+
+###### properties.receive.properties.type.type
+
+> `readonly` **properties.receive.properties.type.type**: `"string"` = `'string'`
+
+###### properties.receive.required
+
+> `readonly` **properties.receive.required**: readonly [`"type"`]
+
+###### properties.receive.type
+
+> `readonly` **properties.receive.type**: `"object"` = `'object'`
+
+###### properties.result
+
+> `readonly` **properties.result**: `object` = `anyTypeDefinition`
+
+###### properties.result.additionalProperties
+
+> `readonly` **properties.result.additionalProperties**: `true` = `true`
+
+###### properties.result.properties
+
+> `readonly` **properties.result.properties**: `object`
+
+###### properties.result.properties.$id
+
+> `readonly` **properties.result.properties.$id**: `object`
+
+###### properties.result.properties.$id.type
+
+> `readonly` **properties.result.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.result.properties.type
+
+> `readonly` **properties.result.properties.type**: `object`
+
+###### properties.result.properties.type.enum
+
+> `readonly` **properties.result.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+
+###### properties.result.properties.type.type
+
+> `readonly` **properties.result.properties.type.type**: `"string"` = `'string'`
+
+###### properties.result.required
+
+> `readonly` **properties.result.required**: readonly [`"type"`]
+
+###### properties.result.type
+
+> `readonly` **properties.result.type**: `"object"` = `'object'`
+
+###### properties.type
+
+> `readonly` **properties.type**: `object`
+
+###### properties.type.const
+
+> `readonly` **properties.type.const**: `"stream"` = `'stream'`
+
+###### properties.type.type
+
+> `readonly` **properties.type.type**: `"string"` = `'string'`
+
+##### required
+
+> `readonly` **required**: readonly [`"type"`, `"receive"`]
+
+##### type
+
+> `readonly` **type**: `"object"` = `'object'`
+
 ## Functions
 
 ### createClientMessageSchema()
 
-> **createClientMessageSchema**\<`Commands`\>(`protocol`): [`Schema`](../schema/index.md#schema-1)
-
-#### Type Parameters
-
-• **Commands** *extends* `string`
+> **createClientMessageSchema**(`protocol`): [`Schema`](../schema/index.md#schema-1)
 
 #### Parameters
 
 ##### protocol
-
-[`CommandsRecordProtocol`](index.md#commandsrecordprotocolcommands)\<`Commands`\>
 
 #### Returns
 
@@ -808,17 +2030,11 @@ npm install @enkaku/protocol
 
 ### createServerMessageSchema()
 
-> **createServerMessageSchema**\<`Commands`\>(`protocol`): [`Schema`](../schema/index.md#schema-1)
-
-#### Type Parameters
-
-• **Commands** *extends* `string`
+> **createServerMessageSchema**(`protocol`): [`Schema`](../schema/index.md#schema-1)
 
 #### Parameters
 
 ##### protocol
-
-[`CommandsRecordProtocol`](index.md#commandsrecordprotocolcommands)\<`Commands`\>
 
 #### Returns
 

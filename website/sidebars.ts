@@ -32,6 +32,7 @@ const sidebars: SidebarsConfig = {
         'api/http-client-transport/index',
         'api/http-server-transport/index',
         'api/message-transport/index',
+        'api/node-streams-transport/index',
       ],
     },
     {

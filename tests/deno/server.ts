@@ -28,7 +28,7 @@ serve({
       })
     },
   },
-  insecure: true,
+  public: true,
   transport,
 })
 

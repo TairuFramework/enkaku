@@ -1,13 +1,13 @@
 /**
- * Node process transport for Enkaku RPC clients and servers.
+ * Node streams transport for Enkaku RPC clients and servers.
  *
  * ## Installation
  *
  * ```sh
- * npm install @enkaku/node-process-transport
+ * npm install @enkaku/node-streams-transport
  * ```
  *
- * @module node-process-transport
+ * @module node-streams-transport
  */
 
 import { Readable, Writable } from 'node:stream'
@@ -58,13 +58,13 @@ export async function createTransportStream<R, W>(
   return { readable, writable: pipe.writable }
 }
 
-export type NodeProcessTransportParams = {
+export type NodeStreamsTransportParams = {
   streams: StreamsSource
   signal?: AbortSignal
 }
 
-export class NodeProcessTransport<R, W> extends Transport<R, W> {
-  constructor(params: NodeProcessTransportParams) {
+export class NodeStreamsTransport<R, W> extends Transport<R, W> {
+  constructor(params: NodeStreamsTransportParams) {
     super({ stream: () => createTransportStream(params.streams), signal: params.signal })
   }
 }

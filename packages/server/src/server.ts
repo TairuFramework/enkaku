@@ -28,7 +28,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = {
   reject: (rejection: RejectionType) => void
   signal: AbortSignal
   transport: ServerTransportOf<Protocol>
-} & ({ insecure: true } | { insecure: false; serverID: string; access: CommandAccessRecord })
+} & ({ public: true } | { public: false; serverID: string; access: CommandAccessRecord })
 
 async function handleMessages<Protocol extends ProtocolDefinition>(
   params: HandleMessagesParams<Protocol>,
@@ -68,11 +68,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
   }
 
-  const process = params.insecure
+  const process = params.public
     ? processHandler
     : async (message: ProcessMessageOf<Protocol>, handle: () => ErrorRejection | Promise<void>) => {
         try {
-          if (!params.insecure) {
+          if (!params.public) {
             if (!isSignedToken(message as Token)) {
               throw new Error('Message is not signed')
             }
@@ -149,7 +149,7 @@ export type ServeParams<Protocol extends ProtocolDefinition> = {
   handlers: CommandHandlers<Protocol>
   signal?: AbortSignal
   transport: ServerTransportOf<Protocol>
-} & ({ insecure: true } | { insecure?: false; id: string; access?: CommandAccessRecord })
+} & ({ public: true } | { public?: false; id: string; access?: CommandAccessRecord })
 
 export type Server = Disposer & {
   rejections: ReadableStream<RejectionType>
@@ -171,9 +171,9 @@ export function serve<Protocol extends ProtocolDefinition>(params: ServeParams<P
     reject,
     signal: abortController.signal,
     transport: params.transport as ServerTransportOf<Protocol>,
-    ...(params.insecure
-      ? { insecure: true }
-      : { insecure: false, serverID: params.id, access: params.access ?? {} }),
+    ...(params.public
+      ? { public: true }
+      : { public: false, serverID: params.id, access: params.access ?? {} }),
   })
 
   const disposer = createDisposer(async () => {

@@ -69,7 +69,7 @@ const handlers = {
   },
 }
 // Serve the handlers using the transport created above
-serve({ handlers, insecure: true, transport: transports.server })
+serve({ handlers, public: true, transport: transports.server })
 
 // Create the client using the transport created above
 const client = new Client({ transport: transports.client })

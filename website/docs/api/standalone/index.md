@@ -36,17 +36,17 @@ npm install @enkaku/standalone
 
 ### standalone()
 
-> **standalone**\<`Definitions`\>(`handlers`, `options`): [`Client`](../client/index.md#clientdefinitions-clientdefinitions)\<`Definitions`\>
+> **standalone**\<`Protocol`\>(`handlers`, `options`): [`Client`](../client/index.md#clientprotocol-clientdefinitions)\<`Protocol`\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* `object`
 
 #### Parameters
 
 ##### handlers
 
-[`CommandHandlers`](../server/index.md#commandhandlersdefinitions)\<`Definitions`\>
+[`CommandHandlers`](../server/index.md#commandhandlersprotocol)\<`Protocol`\>
 
 ##### options
 
@@ -54,4 +54,4 @@ npm install @enkaku/standalone
 
 #### Returns
 
-[`Client`](../client/index.md#clientdefinitions-clientdefinitions)\<`Definitions`\>
+[`Client`](../client/index.md#clientprotocol-clientdefinitions)\<`Protocol`\>

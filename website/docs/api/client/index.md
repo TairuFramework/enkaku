@@ -10,13 +10,13 @@ npm install @enkaku/client
 
 ## Classes
 
-### Client\<Definitions, ClientDefinitions\>
+### Client\<Protocol, ClientDefinitions\>
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **ClientDefinitions** *extends* `ClientDefinitionsType`\<`Definitions`\> = `ClientDefinitionsType`\<`Definitions`\>
+• **ClientDefinitions** *extends* `ClientDefinitionsType`\<`Protocol`\> = `ClientDefinitionsType`\<`Protocol`\>
 
 #### Implements
 
@@ -26,17 +26,17 @@ npm install @enkaku/client
 
 ##### new Client()
 
-> **new Client**\<`Definitions`, `ClientDefinitions`\>(`params`): [`Client`](index.md#clientdefinitions-clientdefinitions)\<`Definitions`, `ClientDefinitions`\>
+> **new Client**\<`Protocol`, `ClientDefinitions`\>(`params`): [`Client`](index.md#clientprotocol-clientdefinitions)\<`Protocol`, `ClientDefinitions`\>
 
 ###### Parameters
 
 ###### params
 
-[`ClientParams`](index.md#clientparamsdefinitions)\<`Definitions`\>
+[`ClientParams`](index.md#clientparamsprotocol)\<`Protocol`\>
 
 ###### Returns
 
-[`Client`](index.md#clientdefinitions-clientdefinitions)\<`Definitions`, `ClientDefinitions`\>
+[`Client`](index.md#clientprotocol-clientdefinitions)\<`Protocol`, `ClientDefinitions`\>
 
 #### Accessors
 
@@ -176,13 +176,13 @@ npm install @enkaku/client
 
 ## Type Aliases
 
-### ClientParams\<Definitions\>
+### ClientParams\<Protocol\>
 
-> **ClientParams**\<`Definitions`\>: `object`
+> **ClientParams**\<`Protocol`\>: `object`
 
 #### Type Parameters
 
-• **Definitions** *extends* [`AnyDefinitions`](../protocol/index.md#anydefinitionscommands)
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Type declaration
 
@@ -204,7 +204,7 @@ npm install @enkaku/client
 
 ##### transport
 
-> **transport**: [`ClientTransportOf`](../protocol/index.md#clienttransportofdefinitions)\<`Definitions`\>
+> **transport**: [`ClientTransportOf`](../protocol/index.md#clienttransportofprotocol)\<`Protocol`\>
 
 ***
 

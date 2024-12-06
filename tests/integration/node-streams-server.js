@@ -1,10 +1,10 @@
-import { NodeProcessTransport } from '@enkaku/node-process-transport'
+import { NodeStreamsTransport } from '@enkaku/node-streams-transport'
 import { serve } from '@enkaku/server'
 
 serve({
   handlers: { test: (ctx) => `Hello ${ctx.params}` },
-  insecure: true,
-  transport: new NodeProcessTransport({
+  public: true,
+  transport: new NodeStreamsTransport({
     streams: { readable: process.stdin, writable: process.stdout },
   }),
 })

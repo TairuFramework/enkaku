@@ -35,7 +35,7 @@ describe('ServerTransport', () => {
       'test/request': testRequestHandler,
     }
     const transport = new ServerTransport<Protocol>()
-    const server = serve<Protocol>({ handlers, insecure: true, transport })
+    const server = serve<Protocol>({ handlers, public: true, transport })
 
     const headers = new Headers()
     headers.set('content-type', 'application/json')

@@ -1,16 +1,16 @@
-# @enkaku/message-transport
+# @enkaku/node-streams-transport
 
-MessagePort transport for Enkaku RPC clients and servers.
+Node streams transport for Enkaku RPC clients and servers.
 
 ## Installation
 
 ```sh
-npm install @enkaku/message-transport
+npm install @enkaku/node-streams-transport
 ```
 
 ## Classes
 
-### MessageTransport\<R, W\>
+### NodeStreamsTransport\<R, W\>
 
 Base Transport class implementing TransportType.
 
@@ -26,19 +26,19 @@ Base Transport class implementing TransportType.
 
 #### Constructors
 
-##### new MessageTransport()
+##### new NodeStreamsTransport()
 
-> **new MessageTransport**\<`R`, `W`\>(`params`): [`MessageTransport`](index.md#messagetransportr-w)\<`R`, `W`\>
+> **new NodeStreamsTransport**\<`R`, `W`\>(`params`): [`NodeStreamsTransport`](index.md#nodestreamstransportr-w)\<`R`, `W`\>
 
 ###### Parameters
 
 ###### params
 
-[`MessageTransportParams`](index.md#messagetransportparams)
+[`NodeStreamsTransportParams`](index.md#nodestreamstransportparams)
 
 ###### Returns
 
-[`MessageTransport`](index.md#messagetransportr-w)\<`R`, `W`\>
+[`NodeStreamsTransport`](index.md#nodestreamstransportr-w)\<`R`, `W`\>
 
 ###### Overrides
 
@@ -134,31 +134,47 @@ Base Transport class implementing TransportType.
 
 ## Type Aliases
 
-### MessageTransportParams
+### NodeStreamsTransportParams
 
-> **MessageTransportParams**: `object`
+> **NodeStreamsTransportParams**: `object`
 
 #### Type declaration
-
-##### port
-
-> **port**: [`PortSource`](index.md#portsource)
 
 ##### signal?
 
 > `optional` **signal**: `AbortSignal`
 
-***
+##### streams
 
-### PortOrPromise
-
-> **PortOrPromise**: `MessagePort` \| `Promise`\<`MessagePort`\>
+> **streams**: [`StreamsSource`](index.md#streamssource)
 
 ***
 
-### PortSource
+### Streams
 
-> **PortSource**: [`PortOrPromise`](index.md#portorpromise) \| () => [`PortOrPromise`](index.md#portorpromise)
+> **Streams**: `object`
+
+#### Type declaration
+
+##### readable
+
+> **readable**: `Readable`
+
+##### writable
+
+> **writable**: `Writable`
+
+***
+
+### StreamsOrPromise
+
+> **StreamsOrPromise**: [`Streams`](index.md#streams-1) \| `Promise`\<[`Streams`](index.md#streams-1)\>
+
+***
+
+### StreamsSource
+
+> **StreamsSource**: [`StreamsOrPromise`](index.md#streamsorpromise) \| () => [`StreamsOrPromise`](index.md#streamsorpromise)
 
 ## Functions
 
@@ -176,7 +192,7 @@ Base Transport class implementing TransportType.
 
 ##### source
 
-[`PortSource`](index.md#portsource)
+[`StreamsSource`](index.md#streamssource)
 
 #### Returns
 

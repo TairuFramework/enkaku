@@ -1,14 +1,14 @@
 {
-  "name": "@enkaku/node-process-transport",
+  "name": "@enkaku/node-streams-transport",
   "version": "0.6.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Node process transport for Enkaku RPC clients and servers",
-  "keywords": ["transport", "rpc", "process", "ipc"],
+  "description": "Node Streams transport for Enkaku RPC clients and servers",
+  "keywords": ["transport", "rpc", "node", "streams", "ipc"],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/node-process-transport"
+    "directory": "packages/node-streams-transport"
   },
   "type": "module",
   "main": "lib/index.js",

@@ -37,7 +37,7 @@ describe('client-server integration', () => {
       >()
 
       const client = new Client<Protocol>({ transport: transports.client })
-      serve<Protocol>({ handlers, insecure: true, transport: transports.server })
+      serve<Protocol>({ handlers, public: true, transport: transports.server })
 
       await client.sendEvent('test', { hello: 'world' })
       expect(handler).toHaveBeenCalledWith({
@@ -78,7 +78,7 @@ describe('client-server integration', () => {
       >()
 
       const client = new Client<Protocol>({ transport: transports.client })
-      serve<Protocol>({ handlers, insecure: true, transport: transports.server })
+      serve<Protocol>({ handlers, public: true, transport: transports.server })
 
       await expect(client.request('test').toValue()).resolves.toBe('OK')
 
@@ -124,7 +124,7 @@ describe('client-server integration', () => {
       >()
 
       const client = new Client<Protocol>({ transport: transports.client })
-      serve<Protocol>({ handlers, insecure: true, transport: transports.server })
+      serve<Protocol>({ handlers, public: true, transport: transports.server })
 
       const stream = await client.createStream('test', 3)
       const reader = stream.receive.getReader()
@@ -179,7 +179,7 @@ describe('client-server integration', () => {
       >()
 
       const client = new Client<Protocol>({ transport: transports.client })
-      serve<Protocol>({ handlers, insecure: true, transport: transports.server })
+      serve<Protocol>({ handlers, public: true, transport: transports.server })
       const channel = await client.createChannel('test', 5)
 
       const send = [5, 3, 10, 20]

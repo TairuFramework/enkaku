@@ -16,9 +16,10 @@ Base Transport class implementing TransportType.
 
 #### Extended by
 
-- [`ClientTransport`](../http-client-transport/index.md#clienttransportdefinitions)
-- [`ServerTransport`](../http-server-transport/index.md#servertransportdefinitions)
+- [`ClientTransport`](../http-client-transport/index.md#clienttransportprotocol)
+- [`ServerTransport`](../http-server-transport/index.md#servertransportprotocol)
 - [`MessageTransport`](../message-transport/index.md#messagetransportr-w)
+- [`NodeStreamsTransport`](../node-streams-transport/index.md#nodestreamstransportr-w)
 
 #### Type Parameters
 

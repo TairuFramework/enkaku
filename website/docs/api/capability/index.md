@@ -110,7 +110,7 @@ npm install @enkaku/capability
 
 ##### payload
 
-###### payload.exp
+###### exp
 
 `number`
 
@@ -160,31 +160,31 @@ npm install @enkaku/capability
 
 ##### payload
 
-###### payload.aud
+###### aud
 
 `string`
 
-###### payload.cap
+###### cap
 
 `string` \| `string`[]
 
-###### payload.exp
+###### exp
 
 `number`
 
-###### payload.iat
+###### iat
 
 `number`
 
-###### payload.iss
+###### iss
 
 `string`
 
-###### payload.nbf
+###### nbf
 
 `number`
 
-###### payload.sub
+###### sub
 
 `string`
 
