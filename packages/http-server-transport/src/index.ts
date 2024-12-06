@@ -15,6 +15,8 @@ import { createReadable } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
 import { type Deferred, defer } from '@enkaku/util'
 
+const encoder = new TextEncoder()
+
 export type RequestHandler = (request: Request) => Promise<Response>
 
 export type ServerBridge<Protocol extends ProtocolDefinition> = {
@@ -22,7 +24,7 @@ export type ServerBridge<Protocol extends ProtocolDefinition> = {
   stream: ReadableWritablePair<AnyClientMessageOf<Protocol>, AnyServerMessageOf<Protocol>>
 }
 
-type ActiveSession = { controller: ReadableStreamDefaultController<string> | null }
+type ActiveSession = { controller: ReadableStreamDefaultController<Uint8Array> | null }
 
 type InflightRequest<Message> =
   | ({ type: 'request' } & Deferred<Response>)
@@ -70,7 +72,7 @@ export function createServerBridge<
       }
 
       // Create SSE feed and track controller
-      const [body, controller] = createReadable<string>()
+      const [body, controller] = createReadable<Uint8Array>()
       sessions.set(sessionID, { controller })
       const response = new Response(body, { status: 200 })
       response.headers.set('content-type', 'text/event-stream')
@@ -121,7 +123,7 @@ export function createServerBridge<
           inflight.set(message.payload.rid, {
             type: 'stream',
             write: (msg) => {
-              ctrl?.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
+              ctrl?.enqueue(encoder.encode(`data: ${JSON.stringify(msg)}\n\n`))
             },
           })
           controller.enqueue(message)
