@@ -29,9 +29,10 @@ export class ValidationError extends AggregateError {
   #schema: Schema
 
   constructor(schema: Schema, data: unknown, errorObjects?: Array<ErrorObject> | null) {
+    const schemaInfo = schema.$id ?? schema.type
     super(
       (errorObjects ?? []).map((err) => new ValidationErrorObject(err)),
-      `Validation failed for schema ${schema.$id ?? schema.type}`,
+      schemaInfo ? `Validation failed for schema ${schemaInfo}` : 'Schema validation failed',
     )
     this.#data = data
     this.#schema = schema

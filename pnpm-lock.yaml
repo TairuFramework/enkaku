@@ -226,6 +226,12 @@ importers:
       '@enkaku/capability':
         specifier: workspace:^
         version: link:../capability
+      '@enkaku/protocol':
+        specifier: workspace:^
+        version: link:../protocol
+      '@enkaku/schema':
+        specifier: workspace:^
+        version: link:../schema
       '@enkaku/stream':
         specifier: workspace:^
         version: link:../stream
@@ -236,9 +242,6 @@ importers:
         specifier: workspace:^
         version: link:../util
     devDependencies:
-      '@enkaku/protocol':
-        specifier: workspace:^
-        version: link:../protocol
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport

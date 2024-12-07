@@ -21,7 +21,7 @@ export const errorMessageSchema: Schema = createMessageSchema({
     jti: { type: 'string' },
   },
   required: ['typ', 'rid', 'code', 'msg'],
-  additionalProperties: false,
+  additionalProperties: true,
 } as const satisfies Schema)
 
 /** @internal */
@@ -37,7 +37,7 @@ export function createReceiveMessageSchema(
       jti: { type: 'string' },
     },
     required: ['typ', 'rid', 'val'],
-    additionalProperties: false,
+    additionalProperties: true,
   } as const satisfies Schema
   return createMessageSchema(payloadSchema)
 }
@@ -53,7 +53,7 @@ export function createResultMessageWithValue(valueSchema: Schema): Schema {
       jti: { type: 'string' },
     },
     required: ['typ', 'rid', 'val'],
-    additionalProperties: false,
+    additionalProperties: true,
   } as const satisfies Schema)
 }
 
@@ -66,7 +66,7 @@ export const resultMessageWithoutValue: Schema = createMessageSchema({
     jti: { type: 'string' },
   },
   required: ['typ', 'rid'],
-  additionalProperties: false,
+  additionalProperties: true,
 } as const satisfies Schema)
 
 /** @internal */

@@ -8,9 +8,10 @@ export function createSignedMessageSchema(payloadSchema: Schema): Schema {
     properties: {
       header: signedHeaderSchema,
       payload: { allOf: [signedPayloadSchema, payloadSchema] },
+      signature: { type: 'string' },
     },
-    required: ['header', 'payload'],
-    additionalProperties: false,
+    required: ['header', 'payload', 'signature'],
+    additionalProperties: true,
   } as const satisfies Schema
 }
 
@@ -23,7 +24,7 @@ export function createUnsignedMessageSchema(payloadSchema: Schema): Schema {
       payload: payloadSchema,
     },
     required: ['header', 'payload'],
-    additionalProperties: false,
+    additionalProperties: true,
   } as const
 }
 

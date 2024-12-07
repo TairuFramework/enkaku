@@ -73,8 +73,6 @@ describe('protocol messages validation', () => {
     const invalidRequest = createUnsignedToken({
       typ: 'request',
       cmd: 'test/request',
-      rid: '1',
-      prm: true,
     })
     expect(isType(validator, invalidRequest)).toBe(false)
 
@@ -93,7 +91,7 @@ describe('protocol messages validation', () => {
     })
     expect(isType(validator, invalidStream)).toBe(false)
 
-    const validSend = createUnsignedToken({ typ: 'send', rid: '1', val: '1' })
+    const validSend = createUnsignedToken({ typ: 'send', cmd: 'test/channel', rid: '1', val: '1' })
     expect(isType(validator, validSend)).toBe(true)
 
     const invalidSend = createUnsignedToken({ typ: 'send', val: '1' })

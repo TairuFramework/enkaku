@@ -19,7 +19,7 @@ export const abortMessageSchema: Schema = createMessageSchema({
     jti: { type: 'string' },
   },
   required: ['typ', 'rid'],
-  additionalProperties: false,
+  additionalProperties: true,
 } as const satisfies Schema)
 
 /** @internal */
@@ -33,7 +33,7 @@ export function createEventPayloadWithData(command: string, dataSchema: Schema):
       jti: { type: 'string' },
     },
     required: ['typ', 'cmd', 'data'],
-    additionalProperties: false,
+    additionalProperties: true,
   } as const satisfies Schema
 }
 
@@ -47,7 +47,7 @@ export function createEventPayloadWithoutData(command: string): Schema {
       jti: { type: 'string' },
     },
     required: ['typ', 'cmd'],
-    additionalProperties: false,
+    additionalProperties: true,
   } as const satisfies Schema
 }
 
@@ -78,7 +78,7 @@ export function createRequestPayloadWithParams(
       jti: { type: 'string' },
     },
     required: ['typ', 'cmd', 'rid', 'prm'],
-    additionalProperties: false,
+    additionalProperties: true,
   } as const satisfies Schema
 }
 
@@ -93,7 +93,7 @@ export function createRequestPayloadWithoutParams(command: string, type: Request
       jti: { type: 'string' },
     },
     required: ['typ', 'cmd', 'rid'],
-    additionalProperties: false,
+    additionalProperties: true,
   } as const satisfies Schema
 }
 
@@ -109,17 +109,21 @@ export function createRequestMessageSchema(
 }
 
 /** @internal */
-export function createSendMessageSchema(definition: ChannelCommandDefinition): Schema {
+export function createSendMessageSchema(
+  command: string,
+  definition: ChannelCommandDefinition,
+): Schema {
   const payloadSchema = {
     type: 'object',
     properties: {
       typ: { type: 'string', const: 'send' },
+      cmd: { type: 'string', const: command },
       rid: { type: 'string' },
       val: definition.send,
       jti: { type: 'string' },
     },
-    required: ['typ', 'rid', 'val'],
-    additionalProperties: false,
+    required: ['typ', 'cmd', 'rid', 'val'],
+    additionalProperties: true,
   } as const satisfies Schema
   return createMessageSchema(payloadSchema)
 }
@@ -137,7 +141,7 @@ export function createClientMessageSchema(protocol: ProtocolDefinition): Schema 
         break
       // biome-ignore lint/suspicious/noFallthroughSwitchClause: fallthrough is intentional
       case 'channel':
-        schemasRecord[def.send.$id ?? `${command}:send`] = createSendMessageSchema(def)
+        schemasRecord[def.send.$id ?? `${command}:send`] = createSendMessageSchema(command, def)
       case 'request':
       case 'stream':
         addAbort = true

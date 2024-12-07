@@ -1,4 +1,5 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { ValidationError } from '@enkaku/schema'
 import { createUnsignedToken, randomTokenSigner } from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
 import { jest } from '@jest/globals'
@@ -6,6 +7,7 @@ import { jest } from '@jest/globals'
 import {
   type ChannelHandler,
   type CommandHandlers,
+  ErrorRejection,
   type EventHandler,
   type RequestHandler,
   type StreamHandler,
@@ -14,6 +16,54 @@ import {
 
 describe('serve()', () => {
   const expiresAt = Math.floor(Date.now() / 1000) + 300 // 5 mins from now
+
+  test('optionally validates protocol messages', async () => {
+    const protocol = {
+      test: {
+        type: 'event',
+        data: {
+          type: 'object',
+          properties: { hello: { type: 'string' } },
+          required: ['hello'],
+          additionalProperties: false,
+        },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
+
+    const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
+
+    const handlers = { test: handler } as CommandHandlers<Protocol>
+    const transports = createDirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+
+    const signer = randomTokenSigner()
+    const server = serve<Protocol>({
+      handlers,
+      id: signer.id,
+      protocol,
+      transport: transports.server,
+    })
+
+    const message = await signer.createToken({
+      typ: 'event',
+      aud: signer.id,
+      cmd: 'invalid',
+      data: { hello: 'world' },
+      exp: expiresAt,
+    } as const)
+    // @ts-expect-error: invalid message
+    await transports.client.write(message)
+    await server.dispose()
+    await transports.dispose()
+
+    expect(handler).not.toHaveBeenCalled()
+    const { value } = await server.rejections.getReader().read()
+    expect(value).toBeInstanceOf(ErrorRejection)
+    expect((value as ErrorRejection).cause).toBeInstanceOf(ValidationError)
+  })
 
   test('handles events', async () => {
     const protocol = {
@@ -38,7 +88,12 @@ describe('serve()', () => {
     >()
 
     const signer = randomTokenSigner()
-    const server = serve<Protocol>({ handlers, id: signer.id, transport: transports.server })
+    const server = serve<Protocol>({
+      handlers,
+      id: signer.id,
+      protocol,
+      transport: transports.server,
+    })
 
     const message = await signer.createToken({
       typ: 'event',
@@ -84,14 +139,13 @@ describe('serve()', () => {
       AnyClientMessageOf<Protocol>
     >()
     const signer = randomTokenSigner()
-    serve<Protocol>({ handlers, id: signer.id, transport: transports.server })
+    serve<Protocol>({ handlers, id: signer.id, protocol, transport: transports.server })
 
     const message = (await signer.createToken({
       typ: 'request',
       iss: signer.id,
       cmd: 'test',
       rid: '1',
-      prm: undefined,
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -136,7 +190,7 @@ describe('serve()', () => {
       AnyClientMessageOf<Protocol>
     >()
     const signer = randomTokenSigner()
-    serve<Protocol>({ handlers, id: signer.id, transport: transports.server })
+    serve<Protocol>({ handlers, id: signer.id, protocol, transport: transports.server })
 
     const message = await signer.createToken({
       typ: 'stream',
@@ -194,7 +248,7 @@ describe('serve()', () => {
       AnyClientMessageOf<Protocol>
     >()
     const signer = randomTokenSigner()
-    serve<Protocol>({ handlers, id: signer.id, transport: transports.server })
+    serve<Protocol>({ handlers, id: signer.id, protocol, transport: transports.server })
 
     const message = await signer.createToken({
       typ: 'channel',
@@ -209,7 +263,7 @@ describe('serve()', () => {
       const val = send.shift()
       if (val != null) {
         await transports.client.write(
-          createUnsignedToken({ typ: 'send', cmd: 'test/channel', rid: '1', val }),
+          createUnsignedToken({ typ: 'send', cmd: 'test', rid: '1', val }),
         )
       }
     }

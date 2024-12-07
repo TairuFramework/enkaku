@@ -31,12 +31,13 @@
   },
   "dependencies": {
     "@enkaku/capability": "workspace:^",
+    "@enkaku/protocol": "workspace:^",
+    "@enkaku/schema": "workspace:^",
     "@enkaku/stream": "workspace:^",
     "@enkaku/token": "workspace:^",
     "@enkaku/util": "workspace:^"
   },
   "devDependencies": {
-    "@enkaku/protocol": "workspace:^",
     "@enkaku/transport": "workspace:^"
   }
 }

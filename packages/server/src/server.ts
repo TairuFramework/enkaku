@@ -1,4 +1,11 @@
-import type { AnyServerPayloadOf, ProtocolDefinition, ServerTransportOf } from '@enkaku/protocol'
+import {
+  type AnyClientMessageOf,
+  type AnyServerPayloadOf,
+  type ProtocolDefinition,
+  type ServerTransportOf,
+  createClientMessageSchema,
+} from '@enkaku/protocol'
+import { type Validator, createValidator } from '@enkaku/schema'
 import { createPipe } from '@enkaku/stream'
 import { type SignedToken, type Token, createUnsignedToken, isSignedToken } from '@enkaku/token'
 import { type Disposer, createDisposer } from '@enkaku/util'
@@ -27,17 +34,19 @@ export type AccessControlParams =
   | { public: false; serverID: string; access: CommandAccessRecord }
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
-  controllers: Record<string, HandlerController>
   handlers: CommandHandlers<Protocol>
   reject: (rejection: RejectionType) => void
   signal: AbortSignal
   transport: ServerTransportOf<Protocol>
+  validator?: Validator<AnyClientMessageOf<Protocol>>
 }
 
 async function handleMessages<Protocol extends ProtocolDefinition>(
   params: HandleMessagesParams<Protocol>,
 ): Promise<void> {
-  const { controllers, handlers, reject, signal, transport } = params
+  const { handlers, reject, signal, transport, validator } = params
+
+  const controllers: Record<string, HandlerController> = Object.create(null)
   const context: HandlerContext<Protocol> = {
     controllers,
     handlers,
@@ -54,6 +63,21 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     // Wait until all running handlers are done
     await Promise.all(Object.values(running))
   }, signal)
+
+  const processMessage = validator
+    ? (message: unknown) => {
+        const result = validator(message)
+        if (result.isError()) {
+          reject(
+            new ErrorRejection('Invalid protocol message', {
+              cause: result.error,
+              info: { message },
+            }),
+          )
+        }
+        return result.value
+      }
+    : (message: unknown) => message as AnyClientMessageOf<Protocol>
 
   function processHandler(
     message: ProcessMessageOf<Protocol>,
@@ -110,19 +134,23 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       return
     }
 
-    const msg = next.value
+    const msg = processMessage(next.value)
+    if (msg == null) {
+      return
+    }
+
     switch (msg.payload.typ) {
       case 'abort':
         controllers[msg.payload.rid]?.abort()
         break
       case 'channel': {
-        const message = msg as unknown as ChannelMessageOf<Protocol>
+        const message = msg as ChannelMessageOf<Protocol>
         // @ts-ignore type instantiation too deep
         process(message, () => handleChannel(context, message))
         break
       }
       case 'event': {
-        const message = msg as unknown as EventMessageOf<Protocol>
+        const message = msg as EventMessageOf<Protocol>
         process(message, () => handleEvent(context, message))
         break
       }
@@ -159,6 +187,7 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   access?: CommandAccessRecord
   handlers: CommandHandlers<Protocol>
   id?: string
+  protocol?: Protocol
   public?: boolean
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
@@ -174,6 +203,7 @@ export class Server<Protocol extends ProtocolDefinition> implements Disposer {
   #handling: Array<HandlingTransport<Protocol>> = []
   #reject: (rejection: RejectionType) => void
   #rejections: ReadableStream<RejectionType>
+  #validator?: Validator<AnyClientMessageOf<Protocol>>
 
   constructor(params: ServerParams<Protocol>) {
     this.#abortController = new AbortController()
@@ -219,6 +249,10 @@ export class Server<Protocol extends ProtocolDefinition> implements Disposer {
       void rejectionsWriter.write(rejection)
     }
 
+    if (params.protocol != null) {
+      this.#validator = createValidator(createClientMessageSchema(params.protocol))
+    }
+
     for (const transport of params.transports ?? []) {
       this.handle(transport)
     }
@@ -254,11 +288,11 @@ export class Server<Protocol extends ProtocolDefinition> implements Disposer {
     }
 
     const done = handleMessages<Protocol>({
-      controllers: Object.create(null),
       handlers: this.#handlers,
       reject: this.#reject,
       signal: this.#abortController.signal,
       transport,
+      validator: this.#validator,
       ...accessControl,
     })
     this.#handling.push({ done, transport })
@@ -266,12 +300,10 @@ export class Server<Protocol extends ProtocolDefinition> implements Disposer {
   }
 }
 
-export type ServeParams<Protocol extends ProtocolDefinition> = {
-  access?: CommandAccessRecord
-  handlers: CommandHandlers<Protocol>
-  id?: string
-  public?: boolean
-  signal?: AbortSignal
+export type ServeParams<Protocol extends ProtocolDefinition> = Omit<
+  ServerParams<Protocol>,
+  'transports'
+> & {
   transport: ServerTransportOf<Protocol>
 }
 
