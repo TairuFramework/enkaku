@@ -22,13 +22,17 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
   | StreamMessageOf<Protocol>
   | ChannelMessageOf<Protocol>
 
-export type HandleMessagesParams<Protocol extends ProtocolDefinition> = {
+export type AccessControlParams =
+  | { public: true; serverID?: string; access?: CommandAccessRecord }
+  | { public: false; serverID: string; access: CommandAccessRecord }
+
+export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
   controllers: Record<string, HandlerController>
   handlers: CommandHandlers<Protocol>
   reject: (rejection: RejectionType) => void
   signal: AbortSignal
   transport: ServerTransportOf<Protocol>
-} & ({ public: true } | { public: false; serverID: string; access: CommandAccessRecord })
+}
 
 async function handleMessages<Protocol extends ProtocolDefinition>(
   params: HandleMessagesParams<Protocol>,
@@ -113,6 +117,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         break
       case 'channel': {
         const message = msg as unknown as ChannelMessageOf<Protocol>
+        // @ts-ignore type instantiation too deep
         process(message, () => handleChannel(context, message))
         break
       }
@@ -145,47 +150,134 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   return disposer.disposed
 }
 
-export type ServeParams<Protocol extends ProtocolDefinition> = {
-  handlers: CommandHandlers<Protocol>
-  signal?: AbortSignal
+type HandlingTransport<Protocol extends ProtocolDefinition> = {
+  done: Promise<void>
   transport: ServerTransportOf<Protocol>
-} & ({ public: true } | { public?: false; id: string; access?: CommandAccessRecord })
-
-export type Server = Disposer & {
-  rejections: ReadableStream<RejectionType>
 }
 
-export function serve<Protocol extends ProtocolDefinition>(params: ServeParams<Protocol>): Server {
-  const abortController = new AbortController()
-  const controllers: Record<string, HandlerController> = Object.create(null)
+export type ServerParams<Protocol extends ProtocolDefinition> = {
+  access?: CommandAccessRecord
+  handlers: CommandHandlers<Protocol>
+  id?: string
+  public?: boolean
+  signal?: AbortSignal
+  transports?: Array<ServerTransportOf<Protocol>>
+}
 
-  const rejections = createPipe<RejectionType>()
-  const rejectionsWriter = rejections.writable.getWriter()
-  function reject(rejection: RejectionType) {
-    void rejectionsWriter.write(rejection)
+export type HandleOptions = { public?: boolean; access?: CommandAccessRecord }
+
+export class Server<Protocol extends ProtocolDefinition> implements Disposer {
+  #abortController: AbortController
+  #accessControl: AccessControlParams
+  #disposer: Disposer
+  #handlers: CommandHandlers<Protocol>
+  #handling: Array<HandlingTransport<Protocol>> = []
+  #reject: (rejection: RejectionType) => void
+  #rejections: ReadableStream<RejectionType>
+
+  constructor(params: ServerParams<Protocol>) {
+    this.#abortController = new AbortController()
+    this.#handlers = params.handlers
+
+    if (params.id == null) {
+      if (params.public) {
+        this.#accessControl = { public: true, access: params.access }
+      } else {
+        throw new Error(
+          'Invalid server parameters: either the server "id" must be provided or the "public" parameter must be set to true',
+        )
+      }
+    } else {
+      this.#accessControl = {
+        public: !!params.public,
+        serverID: params.id,
+        access: params.access ?? {},
+      }
+    }
+
+    this.#disposer = createDisposer(async () => {
+      // Signal messages handler to stop execution and run cleanup logic
+      this.#abortController.abort()
+      // Dispose of all handling transports
+      await Promise.all(
+        // @ts-ignore type instantiation too deep
+        this.#handling.map(async (handling) => {
+          // Wait until all handlers are done - they might still need to flush messages to the transport
+          await handling.done
+          // Dispose transport
+          await handling.transport.dispose()
+        }),
+      )
+      // Cleanup rejections writer
+      await rejectionsWriter.close()
+    }, params.signal)
+
+    const rejections = createPipe<RejectionType>()
+    this.#rejections = rejections.readable
+    const rejectionsWriter = rejections.writable.getWriter()
+    this.#reject = (rejection: RejectionType) => {
+      void rejectionsWriter.write(rejection)
+    }
+
+    for (const transport of params.transports ?? []) {
+      this.handle(transport)
+    }
   }
 
-  const handlersDone = handleMessages({
-    controllers,
-    handlers: params.handlers as CommandHandlers<Protocol>,
-    reject,
-    signal: abortController.signal,
-    transport: params.transport as ServerTransportOf<Protocol>,
-    ...(params.public
-      ? { public: true }
-      : { public: false, serverID: params.id, access: params.access ?? {} }),
-  })
+  get disposed() {
+    return this.#disposer.disposed
+  }
 
-  const disposer = createDisposer(async () => {
-    // Signal messages handler to stop execution and run cleanup logic
-    abortController.abort()
-    // Wait until all handlers are done - they might still need to flush messages to the transport
-    await handlersDone
-    // Dispose transport
-    await params.transport.dispose()
-    // Cleanup rejections writer
-    await rejectionsWriter.close()
-  }, params.signal)
+  get rejections() {
+    return this.#rejections
+  }
 
-  return { ...disposer, rejections: rejections.readable }
+  async dispose() {
+    return await this.#disposer.dispose()
+  }
+
+  handle(transport: ServerTransportOf<Protocol>, options: HandleOptions = {}): Promise<void> {
+    const publicAccess = options.public ?? this.#accessControl.public
+    let accessControl: AccessControlParams
+    if (publicAccess) {
+      accessControl = { public: true, access: {} }
+    } else {
+      const serverID = this.#accessControl.serverID
+      if (serverID == null) {
+        return Promise.reject(new Error('Server ID is required to enable access control'))
+      }
+      accessControl = {
+        public: false,
+        serverID,
+        access: options.access ?? this.#accessControl.access ?? {},
+      }
+    }
+
+    const done = handleMessages<Protocol>({
+      controllers: Object.create(null),
+      handlers: this.#handlers,
+      reject: this.#reject,
+      signal: this.#abortController.signal,
+      transport,
+      ...accessControl,
+    })
+    this.#handling.push({ done, transport })
+    return done
+  }
+}
+
+export type ServeParams<Protocol extends ProtocolDefinition> = {
+  access?: CommandAccessRecord
+  handlers: CommandHandlers<Protocol>
+  id?: string
+  public?: boolean
+  signal?: AbortSignal
+  transport: ServerTransportOf<Protocol>
+}
+
+export function serve<Protocol extends ProtocolDefinition>(
+  params: ServeParams<Protocol>,
+): Server<Protocol> {
+  const { transport, ...rest } = params
+  return new Server<Protocol>({ ...rest, transports: [transport] })
 }

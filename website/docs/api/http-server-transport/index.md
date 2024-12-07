@@ -92,9 +92,9 @@ Base Transport class implementing TransportType.
 
 ***
 
-##### handleRequest()
+##### fetch()
 
-> **handleRequest**(`request`): `Promise`\<`Response`\>
+> **fetch**(`request`): `Promise`\<`Response`\>
 
 ###### Parameters
 

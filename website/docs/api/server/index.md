@@ -8,6 +8,100 @@ Server logic for Enkaku RPC.
 npm install @enkaku/server
 ```
 
+## Classes
+
+### Server\<Protocol\>
+
+#### Type Parameters
+
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+#### Implements
+
+- [`Disposer`](../util/index.md#disposer)
+
+#### Constructors
+
+##### new Server()
+
+> **new Server**\<`Protocol`\>(`params`): [`Server`](index.md#serverprotocol)\<`Protocol`\>
+
+###### Parameters
+
+###### params
+
+[`ServerParams`](index.md#serverparamsprotocol)\<`Protocol`\>
+
+###### Returns
+
+[`Server`](index.md#serverprotocol)\<`Protocol`\>
+
+#### Accessors
+
+##### disposed
+
+###### Get Signature
+
+> **get** **disposed**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Implementation of
+
+`Disposer.disposed`
+
+###### Defined in
+
+***
+
+##### rejections
+
+###### Get Signature
+
+> **get** **rejections**(): `ReadableStream`\<[`RejectionType`](index.md#rejectiontypereason-info)\>
+
+###### Returns
+
+`ReadableStream`\<[`RejectionType`](index.md#rejectiontypereason-info)\>
+
+###### Defined in
+
+#### Methods
+
+##### dispose()
+
+> **dispose**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Implementation of
+
+`Disposer.dispose`
+
+***
+
+##### handle()
+
+> **handle**(`transport`, `options`): `Promise`\<`void`\>
+
+###### Parameters
+
+###### transport
+
+[`ServerTransportOf`](../protocol/index.md#servertransportofprotocol)\<`Protocol`\>
+
+###### options
+
+`HandleOptions` = `{}`
+
+###### Returns
+
+`Promise`\<`void`\>
+
 ## Type Aliases
 
 ### ChannelHandler\<Protocol, Command\>
@@ -144,13 +238,29 @@ npm install @enkaku/server
 
 ### ServeParams\<Protocol\>
 
-> **ServeParams**\<`Protocol`\>: `object` & \{`public`: `true`; \} \| \{`access`: [`CommandAccessRecord`](index.md#commandaccessrecord);`id`: `string`;`public`: `false`; \}
+> **ServeParams**\<`Protocol`\>: `object`
+
+#### Type Parameters
+
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Type declaration
+
+##### access?
+
+> `optional` **access**: [`CommandAccessRecord`](index.md#commandaccessrecord)
 
 ##### handlers
 
 > **handlers**: [`CommandHandlers`](index.md#commandhandlersprotocol)\<`Protocol`\>
+
+##### id?
+
+> `optional` **id**: `string`
+
+##### public?
+
+> `optional` **public**: `boolean`
 
 ##### signal?
 
@@ -160,21 +270,41 @@ npm install @enkaku/server
 
 > **transport**: [`ServerTransportOf`](../protocol/index.md#servertransportofprotocol)\<`Protocol`\>
 
+***
+
+### ServerParams\<Protocol\>
+
+> **ServerParams**\<`Protocol`\>: `object`
+
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-***
-
-### Server
-
-> **Server**: [`Disposer`](../util/index.md#disposer) & `object`
-
 #### Type declaration
 
-##### rejections
+##### access?
 
-> **rejections**: `ReadableStream`\<[`RejectionType`](index.md#rejectiontypereason-info)\>
+> `optional` **access**: [`CommandAccessRecord`](index.md#commandaccessrecord)
+
+##### handlers
+
+> **handlers**: [`CommandHandlers`](index.md#commandhandlersprotocol)\<`Protocol`\>
+
+##### id?
+
+> `optional` **id**: `string`
+
+##### public?
+
+> `optional` **public**: `boolean`
+
+##### signal?
+
+> `optional` **signal**: `AbortSignal`
+
+##### transports?
+
+> `optional` **transports**: [`ServerTransportOf`](../protocol/index.md#servertransportofprotocol)\<`Protocol`\>[]
 
 ***
 
@@ -204,7 +334,7 @@ npm install @enkaku/server
 
 ### serve()
 
-> **serve**\<`Protocol`\>(`params`): [`Server`](index.md#server)
+> **serve**\<`Protocol`\>(`params`): [`Server`](index.md#serverprotocol)\<`Protocol`\>
 
 #### Type Parameters
 
@@ -218,4 +348,4 @@ npm install @enkaku/server
 
 #### Returns
 
-[`Server`](index.md#server)
+[`Server`](index.md#serverprotocol)\<`Protocol`\>

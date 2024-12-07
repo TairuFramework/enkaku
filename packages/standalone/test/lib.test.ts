@@ -1,9 +1,4 @@
-import type {
-  ChannelDefinition,
-  EventDefinition,
-  RequestDefinition,
-  StreamDefinition,
-} from '@enkaku/protocol'
+import type { ProtocolDefinition } from '@enkaku/protocol'
 import type { ChannelHandler, EventHandler, RequestHandler, StreamHandler } from '@enkaku/server'
 import { randomTokenSigner } from '@enkaku/token'
 import { jest } from '@jest/globals'
@@ -15,17 +10,27 @@ describe('standalone', () => {
     test('handles events', async () => {
       const signer = randomTokenSigner()
 
-      type Definitions = {
-        'test/event': EventDefinition<{ hello: string }>
-      }
-      const handler = jest.fn() as jest.Mock<EventHandler<'test/event', { hello: string }>>
-      const client = standalone<Definitions>({ 'test/event': handler }, { signer })
+      const protocol = {
+        test: {
+          type: 'event',
+          data: {
+            type: 'object',
+            properties: { hello: { type: 'string' } },
+            required: ['hello'],
+            additionalProperties: false,
+          },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
 
-      await client.sendEvent('test/event', { hello: 'world' })
+      const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
+      const client = standalone<Protocol>({ test: handler }, { signer })
+
+      await client.sendEvent('test', { hello: 'world' })
       const message = await signer.createToken({
         aud: signer.id,
         typ: 'event',
-        cmd: 'test/event',
+        cmd: 'test',
         data: { hello: 'world' },
       })
       expect(handler).toHaveBeenCalledWith({ data: { hello: 'world' }, message })
@@ -34,9 +39,13 @@ describe('standalone', () => {
 
   describe('requests', () => {
     test('handles requests', async () => {
-      type Definitions = {
-        'test/request': RequestDefinition<undefined, string>
-      }
+      const protocol = {
+        test: {
+          type: 'request',
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
 
       const handler = jest.fn((ctx) => {
         return new Promise((resolve, reject) => {
@@ -48,18 +57,24 @@ describe('standalone', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<RequestHandler<'test/request', undefined, string>>
-      const client = await standalone<Definitions>({ 'test/request': handler })
+      }) as jest.Mock<RequestHandler<Protocol, 'test'>>
+      const client = await standalone<Protocol>({ test: handler })
 
-      await expect(client.request('test/request').toValue()).resolves.toBe('OK')
+      await expect(client.request('test').toValue()).resolves.toBe('OK')
     })
   })
 
   describe('streams', () => {
     test('handles streams', async () => {
-      type Definitions = {
-        'test/stream': StreamDefinition<number, number, string>
-      }
+      const protocol = {
+        test: {
+          type: 'stream',
+          params: { type: 'number' },
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
 
       const handler = jest.fn((ctx) => {
         return new Promise((resolve, reject) => {
@@ -78,10 +93,10 @@ describe('standalone', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<StreamHandler<'test/stream', number, number, string>>
-      const client = standalone<Definitions>({ 'test/stream': handler })
+      }) as jest.Mock<StreamHandler<Protocol, 'test'>>
+      const client = standalone<Protocol>({ test: handler })
 
-      const stream = await client.createStream('test/stream', 3)
+      const stream = await client.createStream('test', 3)
       const reader = stream.receive.getReader()
       const received: Array<number> = []
       while (true) {
@@ -100,9 +115,16 @@ describe('standalone', () => {
 
   describe('channels', () => {
     test('handles channels', async () => {
-      type Definitions = {
-        'test/channel': ChannelDefinition<number, number, number, string>
-      }
+      const protocol = {
+        test: {
+          type: 'channel',
+          params: { type: 'number' },
+          send: { type: 'number' },
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
 
       const handler = jest.fn(async (ctx) => {
         const reader = ctx.readable.getReader()
@@ -116,10 +138,10 @@ describe('standalone', () => {
           writer.write(ctx.params + value)
         }
         return 'END'
-      }) as jest.Mock<ChannelHandler<'test/channel', number, number, number, string>>
-      const client = standalone<Definitions>({ 'test/channel': handler })
+      }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
+      const client = standalone<Protocol>({ test: handler })
 
-      const channel = await client.createChannel('test/channel', 5)
+      const channel = await client.createChannel('test', 5)
       const send = [5, 3, 10, 20]
       async function sendNext() {
         const val = send.shift()

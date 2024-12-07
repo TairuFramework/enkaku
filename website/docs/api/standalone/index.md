@@ -16,6 +16,10 @@ npm install @enkaku/standalone
 
 #### Type declaration
 
+##### access?
+
+> `optional` **access**: [`CommandAccessRecord`](../server/index.md#commandaccessrecord)
+
 ##### getRandomID()?
 
 > `optional` **getRandomID**: () => `string`

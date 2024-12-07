@@ -15,8 +15,6 @@ import { createReadable } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
 import { type Deferred, defer } from '@enkaku/util'
 
-const encoder = new TextEncoder()
-
 export type RequestHandler = (request: Request) => Promise<Response>
 
 export type ServerBridge<Protocol extends ProtocolDefinition> = {
@@ -24,7 +22,7 @@ export type ServerBridge<Protocol extends ProtocolDefinition> = {
   stream: ReadableWritablePair<AnyClientMessageOf<Protocol>, AnyServerMessageOf<Protocol>>
 }
 
-type ActiveSession = { controller: ReadableStreamDefaultController<Uint8Array> | null }
+type ActiveSession = { controller: ReadableStreamDefaultController<string> | null }
 
 type InflightRequest<Message> =
   | ({ type: 'request' } & Deferred<Response>)
@@ -72,18 +70,16 @@ export function createServerBridge<
       }
 
       // Create SSE feed and track controller
-      const [body, controller] = createReadable<Uint8Array>()
+      const [body, controller] = createReadable<string>()
       sessions.set(sessionID, { controller })
-      const response = new Response(body, { status: 200 })
-      response.headers.set('content-type', 'text/event-stream')
-      response.headers.set('cache-control', 'no-store')
-      return response
+      return new Response(body.pipeThrough(new TextEncoderStream()), {
+        headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-store' },
+        status: 200,
+      })
     }
 
     try {
       const message = (await request.json()) as Incoming
-      // TODO: validate message structure
-
       switch (message.payload.typ) {
         // Fire and forget messages
         case 'abort':
@@ -123,7 +119,7 @@ export function createServerBridge<
           inflight.set(message.payload.rid, {
             type: 'stream',
             write: (msg) => {
-              ctrl?.enqueue(encoder.encode(`data: ${JSON.stringify(msg)}\n\n`))
+              ctrl?.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
             },
           })
           controller.enqueue(message)
@@ -134,7 +130,6 @@ export function createServerBridge<
           return Response.json({ error: 'Invalid payload' }, { status: 400 })
       }
     } catch (err) {
-      console.log('handle request error', err)
       return Response.json({ error: (err as Error).message }, { status: 500 })
     }
   }
@@ -154,7 +149,7 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
     this.#bridge = bridge
   }
 
-  handleRequest = async (request: Request): Promise<Response> => {
+  fetch = async (request: Request): Promise<Response> => {
     return await this.#bridge.handleRequest(request)
   }
 }

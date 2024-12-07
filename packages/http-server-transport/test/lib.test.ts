@@ -45,7 +45,7 @@ describe('ServerTransport', () => {
       cmd: 'test/event',
       data: { hello: 'world' },
     })
-    await transport.handleRequest(
+    await transport.fetch(
       new Request('http://localhost/test', {
         headers,
         body: JSON.stringify(eventMessage),
@@ -59,7 +59,7 @@ describe('ServerTransport', () => {
     })
 
     const requestMessage = createUnsignedToken({ typ: 'request', cmd: 'test/request' })
-    const response = await transport.handleRequest(
+    const response = await transport.fetch(
       new Request('http://localhost/test', {
         headers,
         body: JSON.stringify(requestMessage),

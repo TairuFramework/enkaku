@@ -28,7 +28,7 @@ async function createContext<Protocol extends ProtocolDefinition>(
 
   const serverTransport = new ServerTransport<Protocol>()
   serve<Protocol>({ handlers, public: true, transport: serverTransport })
-  const httpServer = serveHTTP({ fetch: serverTransport.handleRequest, port })
+  const httpServer = serveHTTP({ fetch: serverTransport.fetch, port })
 
   const clientTransport = new ClientTransport<Protocol>({ url: `http://localhost:${port}` })
   const client = new Client<Protocol>({ transport: clientTransport })
