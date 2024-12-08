@@ -77,11 +77,11 @@ Base Transport class implementing TransportType.
 
 ###### next()
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<`R`\>; \}\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<`R`\>; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{`done`: `true`;`value`: `null` \| `NonNullable`\<`R`\>; \}\>
+`Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<`R`\>; \}\>
 
 ###### Implementation of
 

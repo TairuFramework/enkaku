@@ -1,6 +1,6 @@
 import type { Schema } from '@enkaku/schema'
 
-import { createMessageSchema } from './message.js'
+import { type MessageType, createMessageSchema } from './message.js'
 import type {
   AnyCommandDefinition,
   AnyRequestCommandDefinition,
@@ -11,7 +11,7 @@ import type {
 } from './protocol.js'
 
 /** @internal */
-export const abortMessageSchema: Schema = createMessageSchema({
+export const abortMessagePayload: Schema = {
   type: 'object',
   properties: {
     typ: { type: 'string', const: 'abort' },
@@ -20,7 +20,12 @@ export const abortMessageSchema: Schema = createMessageSchema({
   },
   required: ['typ', 'rid'],
   additionalProperties: true,
-} as const satisfies Schema)
+} as const satisfies Schema
+
+/** @internal */
+export function createAbortMessageSchema(type?: MessageType): Schema {
+  return createMessageSchema(abortMessagePayload, type)
+}
 
 /** @internal */
 export function createEventPayloadWithData(command: string, dataSchema: Schema): Schema {
@@ -55,11 +60,12 @@ export function createEventPayloadWithoutData(command: string): Schema {
 export function createEventMessageSchema(
   command: string,
   definition: EventCommandDefinition,
+  type?: MessageType,
 ): Schema {
   const payload = definition.data
     ? createEventPayloadWithData(command, definition.data)
     : createEventPayloadWithoutData(command)
-  return createMessageSchema(payload)
+  return createMessageSchema(payload, type)
 }
 
 /** @internal */
@@ -101,17 +107,19 @@ export function createRequestPayloadWithoutParams(command: string, type: Request
 export function createRequestMessageSchema(
   command: string,
   definition: AnyRequestCommandDefinition,
+  type?: MessageType,
 ): Schema {
   const payload = definition.params
     ? createRequestPayloadWithParams(command, definition.type, definition.params)
     : createRequestPayloadWithoutParams(command, definition.type)
-  return createMessageSchema(payload)
+  return createMessageSchema(payload, type)
 }
 
 /** @internal */
 export function createSendMessageSchema(
   command: string,
   definition: ChannelCommandDefinition,
+  type?: MessageType,
 ): Schema {
   const payloadSchema = {
     type: 'object',
@@ -125,10 +133,13 @@ export function createSendMessageSchema(
     required: ['typ', 'cmd', 'rid', 'val'],
     additionalProperties: true,
   } as const satisfies Schema
-  return createMessageSchema(payloadSchema)
+  return createMessageSchema(payloadSchema, type)
 }
 
-export function createClientMessageSchema(protocol: ProtocolDefinition): Schema {
+export function createClientMessageSchema(
+  protocol: ProtocolDefinition,
+  type?: MessageType,
+): Schema {
   let addAbort = false
   const schemasRecord: Record<string, Schema> = {}
   for (const [command, definition] of Object.entries(protocol)) {
@@ -136,23 +147,32 @@ export function createClientMessageSchema(protocol: ProtocolDefinition): Schema 
     switch (def.type) {
       case 'event':
         if (def.data != null) {
-          schemasRecord[def.data?.$id ?? `${command}:data`] = createEventMessageSchema(command, def)
+          schemasRecord[def.data?.$id ?? `${command}:data`] = createEventMessageSchema(
+            command,
+            def,
+            type,
+          )
         }
         break
       // biome-ignore lint/suspicious/noFallthroughSwitchClause: fallthrough is intentional
       case 'channel':
-        schemasRecord[def.send.$id ?? `${command}:send`] = createSendMessageSchema(command, def)
+        schemasRecord[def.send.$id ?? `${command}:send`] = createSendMessageSchema(
+          command,
+          def,
+          type,
+        )
       case 'request':
       case 'stream':
         addAbort = true
         schemasRecord[def.params?.$id ?? `${command}:params`] = createRequestMessageSchema(
           command,
           def,
+          type,
         )
     }
   }
   if (addAbort) {
-    schemasRecord.abort = abortMessageSchema
+    schemasRecord.abort = createAbortMessageSchema(type)
   }
   return { anyOf: Object.values(schemasRecord) } as const satisfies Schema
 }

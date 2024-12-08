@@ -13,7 +13,7 @@
 function noop() {}
 
 /**
- * Deferred objects, providing a Promise with associated resolve and reject function.
+ * Deferred object, providing a Promise with associated resolve and reject function.
  */
 export type Deferred<T, R = unknown> = {
   promise: Promise<T>
@@ -34,8 +34,6 @@ export function defer<T, R = unknown>(): Deferred<T, R> {
   return { promise, resolve, reject }
 }
 
-type DisposerState = 'pending' | 'disposing' | 'disposed'
-
 /**
  * Disposer object, providing a dispose function and a disposed Promise.
  */
@@ -49,13 +47,12 @@ export type Disposer = {
  */
 export function createDisposer(run: () => Promise<void>, signal?: AbortSignal): Disposer {
   const deferred = defer<void>()
-  let state: DisposerState = 'pending'
+  let isDisposing = false
 
   async function dispose(): Promise<void> {
-    if (state === 'pending') {
-      state = 'disposing'
+    if (!isDisposing) {
+      isDisposing = true
       await run()
-      state = 'disposed'
       deferred.resolve()
     }
     return deferred.promise
@@ -72,11 +69,7 @@ export function createDisposer(run: () => Promise<void>, signal?: AbortSignal): 
  * Converts a function returning a value or promise to a Promise.
  */
 export function toPromise<T = unknown>(execute: () => T | Promise<T>): Promise<T> {
-  try {
-    return Promise.resolve(execute())
-  } catch (err) {
-    return Promise.reject(err)
-  }
+  return Promise.resolve().then(() => execute())
 }
 
 /**

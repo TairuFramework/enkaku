@@ -140,7 +140,7 @@ npm install @enkaku/protocol
 
 ### DataOf\<S\>
 
-> **DataOf**\<`S`\>: `S` *extends* [`Schema`](../schema/index.md#schema-1) ? [`FromSchema`](../schema/index.md#fromschemaschema-options)\<`S`\> : `never`
+> **DataOf**\<`S`\>: `S` *extends* [`Schema`](../schema/index.md#schema-6) ? [`FromSchema`](../schema/index.md#fromschemaschema-options)\<`S`\> : `never`
 
 #### Type Parameters
 
@@ -339,6 +339,12 @@ npm install @enkaku/protocol
 #### Type Parameters
 
 • **Payload** *extends* `Record`\<`string`, `unknown`\>
+
+***
+
+### MessageType
+
+> **MessageType**: `"signed"` \| `"unsigned"` \| `"any"`
 
 ***
 
@@ -632,6 +638,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.$id.type**: `"string"` = `'string'`
 
+###### properties.description
+
+> `readonly` **properties.description**: `object`
+
+###### properties.description.type
+
+> `readonly` **properties.description.type**: `"string"` = `'string'`
+
 ###### properties.type
 
 > `readonly` **properties.type**: `object`
@@ -756,6 +770,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.error.properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
 
+###### properties.error.properties.properties.properties.data.properties.description
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.description**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.description.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.description.type**: `"string"` = `'string'`
+
 ###### properties.error.properties.properties.properties.data.properties.type
 
 > `readonly` **properties.error.properties.properties.properties.data.properties.type**: `object`
@@ -860,6 +882,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.params.properties.$id.type**: `"string"` = `'string'`
 
+###### properties.params.properties.description
+
+> `readonly` **properties.params.properties.description**: `object`
+
+###### properties.params.properties.description.type
+
+> `readonly` **properties.params.properties.description.type**: `"string"` = `'string'`
+
 ###### properties.params.properties.type
 
 > `readonly` **properties.params.properties.type**: `object`
@@ -899,6 +929,14 @@ npm install @enkaku/protocol
 ###### properties.receive.properties.$id.type
 
 > `readonly` **properties.receive.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.receive.properties.description
+
+> `readonly` **properties.receive.properties.description**: `object`
+
+###### properties.receive.properties.description.type
+
+> `readonly` **properties.receive.properties.description.type**: `"string"` = `'string'`
 
 ###### properties.receive.properties.type
 
@@ -940,6 +978,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.result.properties.$id.type**: `"string"` = `'string'`
 
+###### properties.result.properties.description
+
+> `readonly` **properties.result.properties.description**: `object`
+
+###### properties.result.properties.description.type
+
+> `readonly` **properties.result.properties.description.type**: `"string"` = `'string'`
+
 ###### properties.result.properties.type
 
 > `readonly` **properties.result.properties.type**: `object`
@@ -979,6 +1025,14 @@ npm install @enkaku/protocol
 ###### properties.send.properties.$id.type
 
 > `readonly` **properties.send.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.send.properties.description
+
+> `readonly` **properties.send.properties.description**: `object`
+
+###### properties.send.properties.description.type
+
+> `readonly` **properties.send.properties.description.type**: `"string"` = `'string'`
 
 ###### properties.send.properties.type
 
@@ -1164,6 +1218,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
 
+###### properties.properties.properties.data.properties.description
+
+> `readonly` **properties.properties.properties.data.properties.description**: `object`
+
+###### properties.properties.properties.data.properties.description.type
+
+> `readonly` **properties.properties.properties.data.properties.description.type**: `"string"` = `'string'`
+
 ###### properties.properties.properties.data.properties.type
 
 > `readonly` **properties.properties.properties.data.properties.type**: `object`
@@ -1284,6 +1346,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.data.properties.$id.type**: `"string"` = `'string'`
 
+###### properties.data.properties.description
+
+> `readonly` **properties.data.properties.description**: `object`
+
+###### properties.data.properties.description.type
+
+> `readonly` **properties.data.properties.description.type**: `"string"` = `'string'`
+
 ###### properties.data.properties.type
 
 > `readonly` **properties.data.properties.type**: `object`
@@ -1355,6 +1425,14 @@ npm install @enkaku/protocol
 ###### properties.$id.type
 
 > `readonly` **properties.$id.type**: `"string"` = `'string'`
+
+###### properties.description
+
+> `readonly` **properties.description**: `object`
+
+###### properties.description.type
+
+> `readonly` **properties.description.type**: `"string"` = `'string'`
 
 ###### properties.type
 
@@ -1500,6 +1578,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.error.properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
 
+###### properties.error.properties.properties.properties.data.properties.description
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.description**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.description.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.description.type**: `"string"` = `'string'`
+
 ###### properties.error.properties.properties.properties.data.properties.type
 
 > `readonly` **properties.error.properties.properties.properties.data.properties.type**: `object`
@@ -1604,6 +1690,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.params.properties.$id.type**: `"string"` = `'string'`
 
+###### properties.params.properties.description
+
+> `readonly` **properties.params.properties.description**: `object`
+
+###### properties.params.properties.description.type
+
+> `readonly` **properties.params.properties.description.type**: `"string"` = `'string'`
+
 ###### properties.params.properties.type
 
 > `readonly` **properties.params.properties.type**: `object`
@@ -1643,6 +1737,14 @@ npm install @enkaku/protocol
 ###### properties.result.properties.$id.type
 
 > `readonly` **properties.result.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.result.properties.description
+
+> `readonly` **properties.result.properties.description**: `object`
+
+###### properties.result.properties.description.type
+
+> `readonly` **properties.result.properties.description.type**: `"string"` = `'string'`
 
 ###### properties.result.properties.type
 
@@ -1788,6 +1890,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.error.properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
 
+###### properties.error.properties.properties.properties.data.properties.description
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.description**: `object`
+
+###### properties.error.properties.properties.properties.data.properties.description.type
+
+> `readonly` **properties.error.properties.properties.properties.data.properties.description.type**: `"string"` = `'string'`
+
 ###### properties.error.properties.properties.properties.data.properties.type
 
 > `readonly` **properties.error.properties.properties.properties.data.properties.type**: `object`
@@ -1892,6 +2002,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.params.properties.$id.type**: `"string"` = `'string'`
 
+###### properties.params.properties.description
+
+> `readonly` **properties.params.properties.description**: `object`
+
+###### properties.params.properties.description.type
+
+> `readonly` **properties.params.properties.description.type**: `"string"` = `'string'`
+
 ###### properties.params.properties.type
 
 > `readonly` **properties.params.properties.type**: `object`
@@ -1932,6 +2050,14 @@ npm install @enkaku/protocol
 
 > `readonly` **properties.receive.properties.$id.type**: `"string"` = `'string'`
 
+###### properties.receive.properties.description
+
+> `readonly` **properties.receive.properties.description**: `object`
+
+###### properties.receive.properties.description.type
+
+> `readonly` **properties.receive.properties.description.type**: `"string"` = `'string'`
+
 ###### properties.receive.properties.type
 
 > `readonly` **properties.receive.properties.type**: `object`
@@ -1971,6 +2097,14 @@ npm install @enkaku/protocol
 ###### properties.result.properties.$id.type
 
 > `readonly` **properties.result.properties.$id.type**: `"string"` = `'string'`
+
+###### properties.result.properties.description
+
+> `readonly` **properties.result.properties.description**: `object`
+
+###### properties.result.properties.description.type
+
+> `readonly` **properties.result.properties.description.type**: `"string"` = `'string'`
 
 ###### properties.result.properties.type
 
@@ -2016,26 +2150,34 @@ npm install @enkaku/protocol
 
 ### createClientMessageSchema()
 
-> **createClientMessageSchema**(`protocol`): [`Schema`](../schema/index.md#schema-1)
+> **createClientMessageSchema**(`protocol`, `type`?): [`Schema`](../schema/index.md#schema-6)
 
 #### Parameters
 
 ##### protocol
 
+##### type?
+
+[`MessageType`](index.md#messagetype)
+
 #### Returns
 
-[`Schema`](../schema/index.md#schema-1)
+[`Schema`](../schema/index.md#schema-6)
 
 ***
 
 ### createServerMessageSchema()
 
-> **createServerMessageSchema**(`protocol`): [`Schema`](../schema/index.md#schema-1)
+> **createServerMessageSchema**(`protocol`, `type`?): [`Schema`](../schema/index.md#schema-6)
 
 #### Parameters
 
 ##### protocol
 
+##### type?
+
+[`MessageType`](index.md#messagetype)
+
 #### Returns
 
-[`Schema`](../schema/index.md#schema-1)
+[`Schema`](../schema/index.md#schema-6)

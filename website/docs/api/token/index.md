@@ -298,7 +298,7 @@ Check if a token is signed.
 
 #### Type Parameters
 
-• **Payload** *extends* `object` = \{`[key: string]`: `unknown`; `aud`: `string`;`cap`: `string` \| `string`[];`exp`: `number`;`iat`: `number`;`iss`: `string`;`nbf`: `number`;`sub`: `string`; \}
+• **Payload** *extends* `object` = \{ `[key: string]`: `unknown`;  `aud`: `string`; `cap`: `string` \| `string`[]; `exp`: `number`; `iat`: `number`; `iss`: `string`; `nbf`: `number`; `sub`: `string`; \}
 
 #### Parameters
 

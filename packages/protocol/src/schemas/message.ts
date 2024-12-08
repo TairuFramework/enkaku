@@ -28,9 +28,21 @@ export function createUnsignedMessageSchema(payloadSchema: Schema): Schema {
   } as const
 }
 
+export type MessageType = 'signed' | 'unsigned' | 'any'
+
 /** @internal */
-export function createMessageSchema(payloadSchema: Schema): Schema {
-  return {
-    anyOf: [createSignedMessageSchema(payloadSchema), createUnsignedMessageSchema(payloadSchema)],
-  } as const
+export function createMessageSchema(payloadSchema: Schema, type: MessageType = 'any'): Schema {
+  switch (type) {
+    case 'signed':
+      return createSignedMessageSchema(payloadSchema)
+    case 'unsigned':
+      return createUnsignedMessageSchema(payloadSchema)
+    default:
+      return {
+        anyOf: [
+          createSignedMessageSchema(payloadSchema),
+          createUnsignedMessageSchema(payloadSchema),
+        ],
+      } as const
+  }
 }

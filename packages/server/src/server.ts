@@ -135,39 +135,37 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
 
     const msg = processMessage(next.value)
-    if (msg == null) {
-      return
-    }
-
-    switch (msg.payload.typ) {
-      case 'abort':
-        controllers[msg.payload.rid]?.abort()
-        break
-      case 'channel': {
-        const message = msg as ChannelMessageOf<Protocol>
-        // @ts-ignore type instantiation too deep
-        process(message, () => handleChannel(context, message))
-        break
-      }
-      case 'event': {
-        const message = msg as EventMessageOf<Protocol>
-        process(message, () => handleEvent(context, message))
-        break
-      }
-      case 'request': {
-        const message = msg as unknown as RequestMessageOf<Protocol>
-        process(message, () => handleRequest(context, message))
-        break
-      }
-      case 'send': {
-        const controller = controllers[msg.payload.rid] as ChannelController | undefined
-        controller?.writer.write(msg.payload.val)
-        break
-      }
-      case 'stream': {
-        const message = msg as unknown as StreamMessageOf<Protocol>
-        process(message, () => handleStream(context, message))
-        break
+    if (msg != null) {
+      switch (msg.payload.typ) {
+        case 'abort':
+          controllers[msg.payload.rid]?.abort()
+          break
+        case 'channel': {
+          const message = msg as ChannelMessageOf<Protocol>
+          // @ts-ignore type instantiation too deep
+          process(message, () => handleChannel(context, message))
+          break
+        }
+        case 'event': {
+          const message = msg as EventMessageOf<Protocol>
+          process(message, () => handleEvent(context, message))
+          break
+        }
+        case 'request': {
+          const message = msg as unknown as RequestMessageOf<Protocol>
+          process(message, () => handleRequest(context, message))
+          break
+        }
+        case 'send': {
+          const controller = controllers[msg.payload.rid] as ChannelController | undefined
+          controller?.writer.write(msg.payload.val)
+          break
+        }
+        case 'stream': {
+          const message = msg as unknown as StreamMessageOf<Protocol>
+          process(message, () => handleStream(context, message))
+          break
+        }
       }
     }
 

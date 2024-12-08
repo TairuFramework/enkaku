@@ -1,6 +1,6 @@
 import type { Schema } from '@enkaku/schema'
 
-import { createMessageSchema } from './message.js'
+import { type MessageType, createMessageSchema } from './message.js'
 import type {
   AnyCommandDefinition,
   ChannelCommandDefinition,
@@ -10,7 +10,7 @@ import type {
 } from './protocol.js'
 
 /** @internal */
-export const errorMessageSchema: Schema = createMessageSchema({
+export const errorMessagePayload: Schema = {
   type: 'object',
   properties: {
     typ: { type: 'string', const: 'error' },
@@ -22,11 +22,17 @@ export const errorMessageSchema: Schema = createMessageSchema({
   },
   required: ['typ', 'rid', 'code', 'msg'],
   additionalProperties: true,
-} as const satisfies Schema)
+} as const satisfies Schema
+
+/** @internal */
+export function createErrorMessageSchema(type?: MessageType): Schema {
+  return createMessageSchema(errorMessagePayload, type)
+}
 
 /** @internal */
 export function createReceiveMessageSchema(
   definition: StreamCommandDefinition | ChannelCommandDefinition,
+  type?: MessageType,
 ): Schema {
   const payloadSchema = {
     type: 'object',
@@ -39,26 +45,32 @@ export function createReceiveMessageSchema(
     required: ['typ', 'rid', 'val'],
     additionalProperties: true,
   } as const satisfies Schema
-  return createMessageSchema(payloadSchema)
+  return createMessageSchema(payloadSchema, type)
 }
 
 /** @internal */
-export function createResultMessageWithValue(valueSchema: Schema): Schema {
-  return createMessageSchema({
-    type: 'object',
-    properties: {
-      typ: { type: 'string', const: 'result' },
-      rid: { type: 'string' },
-      val: valueSchema,
-      jti: { type: 'string' },
-    },
-    required: ['typ', 'rid', 'val'],
-    additionalProperties: true,
-  } as const satisfies Schema)
+export function createResultMessageWithValueSchema(
+  valueSchema: Schema,
+  type?: MessageType,
+): Schema {
+  return createMessageSchema(
+    {
+      type: 'object',
+      properties: {
+        typ: { type: 'string', const: 'result' },
+        rid: { type: 'string' },
+        val: valueSchema,
+        jti: { type: 'string' },
+      },
+      required: ['typ', 'rid', 'val'],
+      additionalProperties: true,
+    } as const satisfies Schema,
+    type,
+  )
 }
 
 /** @internal */
-export const resultMessageWithoutValue: Schema = createMessageSchema({
+export const resultMessageWithoutValuePayload = {
   type: 'object',
   properties: {
     typ: { type: 'string', const: 'result' },
@@ -67,20 +79,29 @@ export const resultMessageWithoutValue: Schema = createMessageSchema({
   },
   required: ['typ', 'rid'],
   additionalProperties: true,
-} as const satisfies Schema)
+} as const satisfies Schema
+
+/** @internal */
+export function createResultMessageWithoutValueSchema(type?: MessageType): Schema {
+  return createMessageSchema(resultMessageWithoutValuePayload, type)
+}
 
 /** @internal */
 export function createResultMessageSchema(
   definition: RequestCommandDefinition | StreamCommandDefinition | ChannelCommandDefinition,
+  type?: MessageType,
 ): Schema {
   return definition.result
-    ? createResultMessageWithValue(definition.result)
-    : resultMessageWithoutValue
+    ? createResultMessageWithValueSchema(definition.result, type)
+    : createResultMessageWithoutValueSchema(type)
 }
 
-export function createServerMessageSchema(protocol: ProtocolDefinition): Schema {
+export function createServerMessageSchema(
+  protocol: ProtocolDefinition,
+  type?: MessageType,
+): Schema {
   const schemasRecord: Record<string, Schema> = {
-    error: errorMessageSchema,
+    error: createErrorMessageSchema(type),
   }
   for (const [command, definition] of Object.entries(protocol)) {
     const def = definition as AnyCommandDefinition
@@ -88,10 +109,16 @@ export function createServerMessageSchema(protocol: ProtocolDefinition): Schema 
       case 'channel':
       // biome-ignore lint/suspicious/noFallthroughSwitchClause: fallthrough is intentional
       case 'stream':
-        schemasRecord[def.receive.$id ?? `${command}:receive`] = createReceiveMessageSchema(def)
+        schemasRecord[def.receive.$id ?? `${command}:receive`] = createReceiveMessageSchema(
+          def,
+          type,
+        )
       case 'request':
         if (def.result != null) {
-          schemasRecord[def.result?.$id ?? `${command}:result`] = createResultMessageSchema(def)
+          schemasRecord[def.result?.$id ?? `${command}:result`] = createResultMessageSchema(
+            def,
+            type,
+          )
         }
     }
   }

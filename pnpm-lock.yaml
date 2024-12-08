@@ -45,8 +45,8 @@ importers:
         specifier: ^0.27.3
         version: 0.27.3(typescript@5.7.2)
       typedoc-plugin-markdown:
-        specifier: ^4.3.1
-        version: 4.3.1(typedoc@0.27.3(typescript@5.7.2))
+        specifier: ^4.3.2
+        version: 4.3.2(typedoc@0.27.3(typescript@5.7.2))
       typescript:
         specifier: ^5.7.2
         version: 5.7.2
@@ -365,7 +365,7 @@ importers:
         version: 2.1.1
       docusaurus-plugin-typedoc:
         specifier: ^1.1.1
-        version: 1.1.1(typedoc-plugin-markdown@4.3.1(typedoc@0.27.3(typescript@5.7.2)))
+        version: 1.1.1(typedoc-plugin-markdown@4.3.2(typedoc@0.27.3(typescript@5.7.2)))
       prism-react-renderer:
         specifier: ^2.3.0
         version: 2.4.0(react@18.3.1)
@@ -394,8 +394,8 @@ importers:
 
 packages:
 
-  '@0no-co/graphql.web@1.0.11':
-    resolution: {integrity: sha512-xuSJ9WXwTmtngWkbdEoopMo6F8NLtjy84UNAMsAr5C3/2SgAL/dEU10TMqTIsipqPQ8HA/7WzeqQ9DEQxSvPPA==}
+  '@0no-co/graphql.web@1.0.12':
+    resolution: {integrity: sha512-BTDjjsV/zSPy5fqItwm+KWUfh9CSe9tTtR6rCB72ddtkAxdcHbi4Ir4r/L1Et4lyxmL+i7Rb3m9sjLLi9tYrzA==}
     peerDependencies:
       graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
     peerDependenciesMeta:
@@ -8870,8 +8870,8 @@ packages:
   typedarray-to-buffer@3.1.5:
     resolution: {integrity: sha512-zdu8XMNEDepKKR+XYOXAVPtWui0ly0NtohUscw+UmaHiAWT8hrV1rr//H6V+0DvJ3OQ19S979M0laLfX8rm82Q==}
 
-  typedoc-plugin-markdown@4.3.1:
-    resolution: {integrity: sha512-cV0cjvNfr5keytkWUm5AXNFcW3/dd51BYFvbAVqo9AJbHZjt5SGkf2EZ0whSKCilqpwL7biPC/r1WNeW2NbV/w==}
+  typedoc-plugin-markdown@4.3.2:
+    resolution: {integrity: sha512-hCF3V0axzbzGDYFW21XigWIJQBOJ2ZRVWWs7X+e62ew/pXnvz7iKF/zVdkBm3w8Mk4bmXWp/FT0IF4Zn9uBRww==}
     engines: {node: '>= 18'}
     peerDependencies:
       typedoc: 0.27.x
@@ -9439,7 +9439,7 @@ packages:
 
 snapshots:
 
-  '@0no-co/graphql.web@1.0.11': {}
+  '@0no-co/graphql.web@1.0.12': {}
 
   '@algolia/autocomplete-core@1.17.7(@algolia/client-search@5.15.0)(algoliasearch@5.15.0)(search-insights@2.17.3)':
     dependencies:
@@ -12061,7 +12061,7 @@ snapshots:
 
   '@expo/cli@0.22.3':
     dependencies:
-      '@0no-co/graphql.web': 1.0.11
+      '@0no-co/graphql.web': 1.0.12
       '@babel/runtime': 7.26.0
       '@expo/code-signing-certificates': 0.0.5
       '@expo/config': 10.0.6
@@ -13772,7 +13772,7 @@ snapshots:
 
   '@urql/core@5.0.8':
     dependencies:
-      '@0no-co/graphql.web': 1.0.11
+      '@0no-co/graphql.web': 1.0.12
       wonka: 6.3.4
     transitivePeerDependencies:
       - graphql
@@ -15350,9 +15350,9 @@ snapshots:
     dependencies:
       '@leichtgewicht/ip-codec': 2.0.5
 
-  docusaurus-plugin-typedoc@1.1.1(typedoc-plugin-markdown@4.3.1(typedoc@0.27.3(typescript@5.7.2))):
+  docusaurus-plugin-typedoc@1.1.1(typedoc-plugin-markdown@4.3.2(typedoc@0.27.3(typescript@5.7.2))):
     dependencies:
-      typedoc-plugin-markdown: 4.3.1(typedoc@0.27.3(typescript@5.7.2))
+      typedoc-plugin-markdown: 4.3.2(typedoc@0.27.3(typescript@5.7.2))
 
   dom-converter@0.2.0:
     dependencies:
@@ -20909,7 +20909,7 @@ snapshots:
     dependencies:
       is-typedarray: 1.0.0
 
-  typedoc-plugin-markdown@4.3.1(typedoc@0.27.3(typescript@5.7.2)):
+  typedoc-plugin-markdown@4.3.2(typedoc@0.27.3(typescript@5.7.2)):
     dependencies:
       typedoc: 0.27.3(typescript@5.7.2)
 

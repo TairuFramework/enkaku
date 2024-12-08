@@ -14,7 +14,7 @@ npm install @enkaku/util
 
 > **Deferred**\<`T`, `R`\>: `object`
 
-Deferred objects, providing a Promise with associated resolve and reject function.
+Deferred object, providing a Promise with associated resolve and reject function.
 
 #### Type Parameters
 

@@ -8,6 +8,7 @@ export const anyTypeDefinition = {
       type: 'string',
       enum: ['array', 'boolean', 'integer', 'null', 'number', 'object', 'string'],
     },
+    description: { type: 'string' },
   },
   required: ['type'],
   additionalProperties: true,
@@ -18,6 +19,7 @@ export const objectTypeDefinition = {
   properties: {
     $id: { type: 'string' },
     type: { type: 'string', const: 'object' },
+    description: { type: 'string' },
   },
   required: ['type'],
   additionalProperties: true,

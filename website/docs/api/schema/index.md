@@ -28,7 +28,7 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 ###### schema
 
-`Readonly`\<`object`\>
+`Readonly`\<\{ `[$JSONSchema]`: *typeof* `$JSONSchema`; `$comment`: `string`; `$id`: `string`; `$ref`: `string`; `$schema`: `string`; `additionalItems`: `JSONSchema`; `additionalProperties`: `JSONSchema`; `allOf`: readonly `JSONSchema`[]; `anyOf`: readonly `JSONSchema`[]; `const`: `unknown`; `contains`: `JSONSchema`; `contentEncoding`: `string`; `contentMediaType`: `string`; `default`: `unknown`; `definitions`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `dependencies`: `Readonly`\<`Record`\<`string`, `JSONSchema` \| readonly `string`[]\>\>; `description`: `string`; `else`: `JSONSchema`; `enum`: `unknown`; `examples`: readonly `unknown`[]; `exclusiveMaximum`: `number`; `exclusiveMinimum`: `number`; `format`: `string`; `if`: `JSONSchema`; `items`: `JSONSchema` \| readonly `JSONSchema`[]; `maximum`: `number`; `maxItems`: `number`; `maxLength`: `number`; `maxProperties`: `number`; `minimum`: `number`; `minItems`: `number`; `minLength`: `number`; `minProperties`: `number`; `multipleOf`: `number`; `not`: `JSONSchema`; `nullable`: `boolean`; `oneOf`: readonly `JSONSchema`[]; `pattern`: `string`; `patternProperties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `properties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `propertyNames`: `JSONSchema`; `readOnly`: `boolean`; `required`: readonly `string`[]; `then`: `JSONSchema`; `title`: `string`; `type`: `JSONSchemaType` \| readonly `JSONSchemaType`[]; `unevaluatedProperties`: `JSONSchema`; `uniqueItems`: `boolean`; `writeOnly`: `boolean`; \}\>
 
 ###### data
 
@@ -116,207 +116,11 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 ###### Get Signature
 
-> **get** **schema**(): `Readonly`\<`object`\>
+> **get** **schema**(): `Readonly`\<\{ `[$JSONSchema]`: *typeof* `$JSONSchema`; `$comment`: `string`; `$id`: `string`; `$ref`: `string`; `$schema`: `string`; `additionalItems`: `JSONSchema`; `additionalProperties`: `JSONSchema`; `allOf`: readonly `JSONSchema`[]; `anyOf`: readonly `JSONSchema`[]; `const`: `unknown`; `contains`: `JSONSchema`; `contentEncoding`: `string`; `contentMediaType`: `string`; `default`: `unknown`; `definitions`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `dependencies`: `Readonly`\<`Record`\<`string`, `JSONSchema` \| readonly `string`[]\>\>; `description`: `string`; `else`: `JSONSchema`; `enum`: `unknown`; `examples`: readonly `unknown`[]; `exclusiveMaximum`: `number`; `exclusiveMinimum`: `number`; `format`: `string`; `if`: `JSONSchema`; `items`: `JSONSchema` \| readonly `JSONSchema`[]; `maximum`: `number`; `maxItems`: `number`; `maxLength`: `number`; `maxProperties`: `number`; `minimum`: `number`; `minItems`: `number`; `minLength`: `number`; `minProperties`: `number`; `multipleOf`: `number`; `not`: `JSONSchema`; `nullable`: `boolean`; `oneOf`: readonly `JSONSchema`[]; `pattern`: `string`; `patternProperties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `properties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `propertyNames`: `JSONSchema`; `readOnly`: `boolean`; `required`: readonly `string`[]; `then`: `JSONSchema`; `title`: `string`; `type`: `JSONSchemaType` \| readonly `JSONSchemaType`[]; `unevaluatedProperties`: `JSONSchema`; `uniqueItems`: `boolean`; `writeOnly`: `boolean`; \}\>
 
 ###### Returns
 
-`Readonly`\<`object`\>
-
-###### \[$JSONSchema\]?
-
-> `optional` **\[$JSONSchema\]**: *typeof* `$JSONSchema`
-
-###### $comment?
-
-> `optional` **$comment**: `string`
-
-###### $id?
-
-> `optional` **$id**: `string`
-
-###### $ref?
-
-> `optional` **$ref**: `string`
-
-###### $schema?
-
-> `optional` **$schema**: `string`
-
-###### additionalItems?
-
-> `optional` **additionalItems**: `JSONSchema`
-
-###### additionalProperties?
-
-> `optional` **additionalProperties**: `JSONSchema`
-
-###### allOf?
-
-> `optional` **allOf**: readonly `JSONSchema`[]
-
-###### anyOf?
-
-> `optional` **anyOf**: readonly `JSONSchema`[]
-
-###### const?
-
-> `optional` **const**: `unknown`
-
-###### contains?
-
-> `optional` **contains**: `JSONSchema`
-
-###### contentEncoding?
-
-> `optional` **contentEncoding**: `string`
-
-###### contentMediaType?
-
-> `optional` **contentMediaType**: `string`
-
-###### default?
-
-> `optional` **default**: `unknown`
-
-###### definitions?
-
-> `optional` **definitions**: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>
-
-###### dependencies?
-
-> `optional` **dependencies**: `Readonly`\<`Record`\<`string`, `JSONSchema` \| readonly `string`[]\>\>
-
-###### description?
-
-> `optional` **description**: `string`
-
-###### else?
-
-> `optional` **else**: `JSONSchema`
-
-###### enum?
-
-> `optional` **enum**: `unknown`
-
-###### examples?
-
-> `optional` **examples**: readonly `unknown`[]
-
-###### exclusiveMaximum?
-
-> `optional` **exclusiveMaximum**: `number`
-
-###### exclusiveMinimum?
-
-> `optional` **exclusiveMinimum**: `number`
-
-###### format?
-
-> `optional` **format**: `string`
-
-###### if?
-
-> `optional` **if**: `JSONSchema`
-
-###### items?
-
-> `optional` **items**: `JSONSchema` \| readonly `JSONSchema`[]
-
-###### maximum?
-
-> `optional` **maximum**: `number`
-
-###### maxItems?
-
-> `optional` **maxItems**: `number`
-
-###### maxLength?
-
-> `optional` **maxLength**: `number`
-
-###### maxProperties?
-
-> `optional` **maxProperties**: `number`
-
-###### minimum?
-
-> `optional` **minimum**: `number`
-
-###### minItems?
-
-> `optional` **minItems**: `number`
-
-###### minLength?
-
-> `optional` **minLength**: `number`
-
-###### minProperties?
-
-> `optional` **minProperties**: `number`
-
-###### multipleOf?
-
-> `optional` **multipleOf**: `number`
-
-###### not?
-
-> `optional` **not**: `JSONSchema`
-
-###### nullable?
-
-> `optional` **nullable**: `boolean`
-
-###### oneOf?
-
-> `optional` **oneOf**: readonly `JSONSchema`[]
-
-###### pattern?
-
-> `optional` **pattern**: `string`
-
-###### patternProperties?
-
-> `optional` **patternProperties**: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>
-
-###### properties?
-
-> `optional` **properties**: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>
-
-###### propertyNames?
-
-> `optional` **propertyNames**: `JSONSchema`
-
-###### readOnly?
-
-> `optional` **readOnly**: `boolean`
-
-###### required?
-
-> `optional` **required**: readonly `string`[]
-
-###### then?
-
-> `optional` **then**: `JSONSchema`
-
-###### title?
-
-> `optional` **title**: `string`
-
-###### type?
-
-> `optional` **type**: `JSONSchemaType` \| readonly `JSONSchemaType`[]
-
-###### unevaluatedProperties?
-
-> `optional` **unevaluatedProperties**: `JSONSchema`
-
-###### uniqueItems?
-
-> `optional` **uniqueItems**: `boolean`
-
-###### writeOnly?
-
-> `optional` **writeOnly**: `boolean`
+`Readonly`\<\{ `[$JSONSchema]`: *typeof* `$JSONSchema`; `$comment`: `string`; `$id`: `string`; `$ref`: `string`; `$schema`: `string`; `additionalItems`: `JSONSchema`; `additionalProperties`: `JSONSchema`; `allOf`: readonly `JSONSchema`[]; `anyOf`: readonly `JSONSchema`[]; `const`: `unknown`; `contains`: `JSONSchema`; `contentEncoding`: `string`; `contentMediaType`: `string`; `default`: `unknown`; `definitions`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `dependencies`: `Readonly`\<`Record`\<`string`, `JSONSchema` \| readonly `string`[]\>\>; `description`: `string`; `else`: `JSONSchema`; `enum`: `unknown`; `examples`: readonly `unknown`[]; `exclusiveMaximum`: `number`; `exclusiveMinimum`: `number`; `format`: `string`; `if`: `JSONSchema`; `items`: `JSONSchema` \| readonly `JSONSchema`[]; `maximum`: `number`; `maxItems`: `number`; `maxLength`: `number`; `maxProperties`: `number`; `minimum`: `number`; `minItems`: `number`; `minLength`: `number`; `minProperties`: `number`; `multipleOf`: `number`; `not`: `JSONSchema`; `nullable`: `boolean`; `oneOf`: readonly `JSONSchema`[]; `pattern`: `string`; `patternProperties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `properties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `propertyNames`: `JSONSchema`; `readOnly`: `boolean`; `required`: readonly `string`[]; `then`: `JSONSchema`; `title`: `string`; `type`: `JSONSchemaType` \| readonly `JSONSchemaType`[]; `unevaluatedProperties`: `JSONSchema`; `uniqueItems`: `boolean`; `writeOnly`: `boolean`; \}\>
 
 ###### Defined in
 
@@ -574,7 +378,7 @@ Validator function factory using a JSON schema.
 
 #### Type Parameters
 
-• **S** *extends* `Readonly`\<`object`\>
+• **S** *extends* `Readonly`\<\{ `[$JSONSchema]`: *typeof* `$JSONSchema`; `$comment`: `string`; `$id`: `string`; `$ref`: `string`; `$schema`: `string`; `additionalItems`: `JSONSchema`; `additionalProperties`: `JSONSchema`; `allOf`: readonly `JSONSchema`[]; `anyOf`: readonly `JSONSchema`[]; `const`: `unknown`; `contains`: `JSONSchema`; `contentEncoding`: `string`; `contentMediaType`: `string`; `default`: `unknown`; `definitions`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `dependencies`: `Readonly`\<`Record`\<`string`, `JSONSchema` \| readonly `string`[]\>\>; `description`: `string`; `else`: `JSONSchema`; `enum`: `unknown`; `examples`: readonly `unknown`[]; `exclusiveMaximum`: `number`; `exclusiveMinimum`: `number`; `format`: `string`; `if`: `JSONSchema`; `items`: `JSONSchema` \| readonly `JSONSchema`[]; `maximum`: `number`; `maxItems`: `number`; `maxLength`: `number`; `maxProperties`: `number`; `minimum`: `number`; `minItems`: `number`; `minLength`: `number`; `minProperties`: `number`; `multipleOf`: `number`; `not`: `JSONSchema`; `nullable`: `boolean`; `oneOf`: readonly `JSONSchema`[]; `pattern`: `string`; `patternProperties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `properties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `propertyNames`: `JSONSchema`; `readOnly`: `boolean`; `required`: readonly `string`[]; `then`: `JSONSchema`; `title`: `string`; `type`: `JSONSchemaType` \| readonly `JSONSchemaType`[]; `unevaluatedProperties`: `JSONSchema`; `uniqueItems`: `boolean`; `writeOnly`: `boolean`; \}\>
 
 • **T** = [`FromSchema`](index.md#fromschemaschema-options)\<`S`\>
 

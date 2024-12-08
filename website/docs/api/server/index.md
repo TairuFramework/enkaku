@@ -10,6 +10,256 @@ npm install @enkaku/server
 
 ## Classes
 
+### AbortRejection\<Info\>
+
+#### Extends
+
+- `Rejection`\<`RejectionReason.ABORT`, `Info`\>
+
+#### Type Parameters
+
+• **Info** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+#### Constructors
+
+##### new AbortRejection()
+
+> **new AbortRejection**\<`Info`\>(`info`): [`AbortRejection`](index.md#abortrejectioninfo)\<`Info`\>
+
+###### Parameters
+
+###### info
+
+`Info`
+
+###### Returns
+
+[`AbortRejection`](index.md#abortrejectioninfo)\<`Info`\>
+
+###### Overrides
+
+`Rejection<RejectionReason.ABORT, Info>.constructor`
+
+#### Accessors
+
+##### info
+
+###### Get Signature
+
+> **get** **info**(): `Info`
+
+###### Returns
+
+`Info`
+
+###### Inherited from
+
+`Rejection.info`
+
+###### Defined in
+
+***
+
+##### reason
+
+###### Get Signature
+
+> **get** **reason**(): `Reason`
+
+###### Returns
+
+`Reason`
+
+###### Inherited from
+
+`Rejection.reason`
+
+###### Defined in
+
+***
+
+### ErrorRejection\<Info\>
+
+#### Extends
+
+- `Error`
+
+#### Type Parameters
+
+• **Info** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+#### Implements
+
+- [`RejectionType`](index.md#rejectiontypereason-info)\<`RejectionReason.ERROR`, `Info`\>
+
+#### Constructors
+
+##### new ErrorRejection()
+
+> **new ErrorRejection**\<`Info`\>(`message`, `options`): [`ErrorRejection`](index.md#errorrejectioninfo)\<`Info`\>
+
+###### Parameters
+
+###### message
+
+`string`
+
+###### options
+
+`ErrorRejectionOptions`\<`Info`\> = `...`
+
+###### Returns
+
+[`ErrorRejection`](index.md#errorrejectioninfo)\<`Info`\>
+
+###### Overrides
+
+`Error.constructor`
+
+#### Properties
+
+##### cause?
+
+> `optional` **cause**: `unknown`
+
+###### Inherited from
+
+`Error.cause`
+
+***
+
+##### message
+
+> **message**: `string`
+
+###### Inherited from
+
+`Error.message`
+
+***
+
+##### name
+
+> **name**: `string`
+
+###### Inherited from
+
+`Error.name`
+
+***
+
+##### stack?
+
+> `optional` **stack**: `string`
+
+###### Inherited from
+
+`Error.stack`
+
+***
+
+##### prepareStackTrace()?
+
+> `static` `optional` **prepareStackTrace**: (`err`, `stackTraces`) => `any`
+
+Optional override for formatting stack traces
+
+###### Parameters
+
+###### err
+
+`Error`
+
+###### stackTraces
+
+`CallSite`[]
+
+###### Returns
+
+`any`
+
+###### See
+
+https://v8.dev/docs/stack-trace-api#customizing-stack-traces
+
+###### Inherited from
+
+`Error.prepareStackTrace`
+
+***
+
+##### stackTraceLimit
+
+> `static` **stackTraceLimit**: `number`
+
+###### Inherited from
+
+`Error.stackTraceLimit`
+
+#### Accessors
+
+##### info
+
+###### Get Signature
+
+> **get** **info**(): `Info`
+
+###### Returns
+
+`Info`
+
+###### Implementation of
+
+`RejectionType.info`
+
+###### Defined in
+
+***
+
+##### reason
+
+###### Get Signature
+
+> **get** **reason**(): `ERROR`
+
+###### Returns
+
+`ERROR`
+
+###### Implementation of
+
+`RejectionType.reason`
+
+###### Defined in
+
+#### Methods
+
+##### captureStackTrace()
+
+> `static` **captureStackTrace**(`targetObject`, `constructorOpt`?): `void`
+
+Create .stack property on a target object
+
+###### Parameters
+
+###### targetObject
+
+`object`
+
+###### constructorOpt?
+
+`Function`
+
+###### Returns
+
+`void`
+
+###### Inherited from
+
+`Error.captureStackTrace`
+
+***
+
 ### Server\<Protocol\>
 
 #### Type Parameters
@@ -238,37 +488,17 @@ npm install @enkaku/server
 
 ### ServeParams\<Protocol\>
 
-> **ServeParams**\<`Protocol`\>: `object`
-
-#### Type Parameters
-
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+> **ServeParams**\<`Protocol`\>: `Omit`\<[`ServerParams`](index.md#serverparamsprotocol)\<`Protocol`\>, `"transports"`\> & `object`
 
 #### Type declaration
-
-##### access?
-
-> `optional` **access**: [`CommandAccessRecord`](index.md#commandaccessrecord)
-
-##### handlers
-
-> **handlers**: [`CommandHandlers`](index.md#commandhandlersprotocol)\<`Protocol`\>
-
-##### id?
-
-> `optional` **id**: `string`
-
-##### public?
-
-> `optional` **public**: `boolean`
-
-##### signal?
-
-> `optional` **signal**: `AbortSignal`
 
 ##### transport
 
 > **transport**: [`ServerTransportOf`](../protocol/index.md#servertransportofprotocol)\<`Protocol`\>
+
+#### Type Parameters
+
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
@@ -293,6 +523,10 @@ npm install @enkaku/server
 ##### id?
 
 > `optional` **id**: `string`
+
+##### protocol?
+
+> `optional` **protocol**: `Protocol`
 
 ##### public?
 

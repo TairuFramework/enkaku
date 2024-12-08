@@ -47,7 +47,7 @@ describe('serve()', () => {
       transport: transports.server,
     })
 
-    const message = await signer.createToken({
+    const invalidMessage = await signer.createToken({
       typ: 'event',
       aud: signer.id,
       cmd: 'invalid',
@@ -55,14 +55,29 @@ describe('serve()', () => {
       exp: expiresAt,
     } as const)
     // @ts-expect-error: invalid message
-    await transports.client.write(message)
-    await server.dispose()
-    await transports.dispose()
+    await transports.client.write(invalidMessage)
 
     expect(handler).not.toHaveBeenCalled()
     const { value } = await server.rejections.getReader().read()
     expect(value).toBeInstanceOf(ErrorRejection)
     expect((value as ErrorRejection).cause).toBeInstanceOf(ValidationError)
+
+    const message = await signer.createToken({
+      typ: 'event',
+      aud: signer.id,
+      cmd: 'test',
+      data: { hello: 'world' },
+      exp: expiresAt,
+    } as const)
+    await transports.client.write(message)
+
+    await server.dispose()
+    await transports.dispose()
+
+    expect(handler).toHaveBeenCalledWith({
+      message,
+      data: { hello: 'world' },
+    })
   })
 
   test('handles events', async () => {
