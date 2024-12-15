@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/schema",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "JSON schema validation for Enkaku RPC",
