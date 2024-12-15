@@ -1,4 +1,5 @@
 import { Ajv } from 'ajv'
+import addFormats from 'ajv-formats'
 import type { FromSchema } from 'json-schema-to-ts'
 import { Result } from 'typescript-result'
 
@@ -6,6 +7,8 @@ import { ValidationError } from './errors.js'
 import type { Schema } from './types.js'
 
 const ajv = new Ajv({ allErrors: true, useDefaults: true })
+// @ts-ignore missing type definition
+addFormats(ajv)
 
 /**
  * Validator function, returning a Result of the validation.
