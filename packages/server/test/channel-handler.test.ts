@@ -34,12 +34,12 @@ describe('handleChannel()', () => {
   const clientToken = createUnsignedToken({
     typ: 'channel',
     rid: '1',
-    cmd: 'test',
+    prc: 'test',
     prm: { test: true },
   } as const)
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
-    const unknownPayload = { typ: 'channel', rid: '1', cmd: 'unknown', prm: {} } as const
+    const unknownPayload = { typ: 'channel', rid: '1', prc: 'unknown', prm: {} } as const
     // @ts-ignore type instantiation too deep
     const returned = handleChannel(
       { handlers: {} } as unknown as HandlerContext<Protocol>,
@@ -47,7 +47,7 @@ describe('handleChannel()', () => {
       { payload: unknownPayload },
     )
     expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for command: unknown')
+    expect((returned as ErrorRejection).message).toBe('No handler for procedure: unknown')
     expect((returned as ErrorRejection).info).toEqual(unknownPayload)
   })
 

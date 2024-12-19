@@ -18,23 +18,23 @@ import { consumeReader, executeHandler } from '../utils.js'
 
 export type ChannelMessageOf<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string = keyof Protocol & string,
-> = ClientMessage<ChannelPayloadOf<Command, Protocol[Command]>>
+  Procedure extends keyof Protocol & string = keyof Protocol & string,
+> = ClientMessage<ChannelPayloadOf<Procedure, Protocol[Procedure]>>
 
 export function handleChannel<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
+  Procedure extends keyof Protocol & string,
 >(
   ctx: HandlerContext<Protocol>,
-  msg: ChannelMessageOf<Protocol, Command>,
+  msg: ChannelMessageOf<Protocol, Procedure>,
 ): ErrorRejection | Promise<void> {
-  const handler = ctx.handlers[msg.payload.cmd] as unknown as ChannelHandler<Protocol, Command>
+  const handler = ctx.handlers[msg.payload.prc] as unknown as ChannelHandler<Protocol, Procedure>
   if (handler == null) {
-    return new ErrorRejection(`No handler for command: ${msg.payload.cmd}`, { info: msg.payload })
+    return new ErrorRejection(`No handler for procedure: ${msg.payload.prc}`, { info: msg.payload })
   }
 
-  const sendStream = createPipe<SendType<Protocol, Command>>()
-  const controller: ChannelController<SendType<Protocol, Command>> = Object.assign(
+  const sendStream = createPipe<SendType<Protocol, Procedure>>()
+  const controller: ChannelController<SendType<Protocol, Procedure>> = Object.assign(
     new AbortController(),
     { writer: sendStream.writable.getWriter() },
   )
@@ -43,7 +43,7 @@ export function handleChannel<
   })
   ctx.controllers[msg.payload.rid] = controller
 
-  const receiveStream = createPipe<ReceiveType<Protocol, Command>>()
+  const receiveStream = createPipe<ReceiveType<Protocol, Procedure>>()
   // @ts-ignore type instantiation too deep
   consumeReader({
     // @ts-ignore type instantiation too deep

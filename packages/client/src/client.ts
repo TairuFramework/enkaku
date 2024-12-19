@@ -1,15 +1,15 @@
 import type {
   AnyClientMessageOf,
   AnyClientPayloadOf,
-  AnyCommandDefinition,
-  AnyRequestCommandDefinition,
-  ChannelCommandDefinition,
+  AnyProcedureDefinition,
+  AnyRequestProcedureDefinition,
+  ChannelProcedureDefinition,
   ClientTransportOf,
   DataOf,
-  EventCommandDefinition,
+  EventProcedureDefinition,
   ProtocolDefinition,
-  RequestCommandDefinition,
-  StreamCommandDefinition,
+  RequestProcedureDefinition,
+  StreamProcedureDefinition,
 } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
 import { type TokenSigner, createUnsignedToken } from '@enkaku/token'
@@ -19,77 +19,77 @@ import { Result } from 'typescript-result'
 import { ABORTED } from './constants.js'
 import { RequestError } from './error.js'
 
-export type InvokeError = typeof ABORTED | RequestError
+export type CallError = typeof ABORTED | RequestError
 
-export type InvokeResult<T> = Result<T, InvokeError>
+export type CallResult<T> = Result<T, CallError>
 
-export type InvokeReturn<ResultValue> = {
+export type CallReturn<ResultValue> = {
   // biome-ignore lint/suspicious/noExplicitAny: from AbortController
   abort: (reason?: any) => void
   id: string
-  result: Promise<Result<ResultValue, InvokeError>>
+  result: Promise<Result<ResultValue, CallError>>
 }
 
-export type InvokeStreamReturn<Receive, Result> = InvokeReturn<Result> & {
+export type CallStreamReturn<Receive, Result> = CallReturn<Result> & {
   receive: ReadableStream<Receive>
 }
 
-export type InvokeChannelReturn<Send, Receive, Result> = InvokeStreamReturn<Receive, Result> & {
+export type CallChannelReturn<Send, Receive, Result> = CallStreamReturn<Receive, Result> & {
   send: (value: Send) => Promise<void>
 }
 
-export type Invocation<ResultValue, Return> = Promise<Return> & {
-  result: Promise<InvokeResult<ResultValue>>
+export type ProcedureCall<ResultValue, Return> = Promise<Return> & {
+  result: Promise<CallResult<ResultValue>>
   toValue(): Promise<ResultValue>
 }
 
 export type EventDefinitionsType<Protocol extends ProtocolDefinition> = {
-  [Command in keyof Protocol & string]: Protocol[Command] extends EventCommandDefinition
+  [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition
     ? {
-        Argument: DataOf<Protocol[Command]['data']>
+        Argument: DataOf<Protocol[Procedure]['data']>
         Return: undefined
       }
     : never
 }
 
 export type RequestDefinitionsType<Protocol extends ProtocolDefinition> = {
-  [Command in keyof Protocol & string]: Protocol[Command] extends RequestCommandDefinition
+  [Procedure in keyof Protocol & string]: Protocol[Procedure] extends RequestProcedureDefinition
     ? {
-        Argument: DataOf<Protocol[Command]['params']>
-        Result: DataOf<Protocol[Command]['result']>
-        Return: InvokeReturn<DataOf<Protocol[Command]['result']>>
+        Argument: DataOf<Protocol[Procedure]['params']>
+        Result: DataOf<Protocol[Procedure]['result']>
+        Return: CallReturn<DataOf<Protocol[Procedure]['result']>>
       }
     : never
 }
 
 export type StreamDefinitionsType<Protocol extends ProtocolDefinition> = {
-  [Command in keyof Protocol & string]: Protocol[Command] extends StreamCommandDefinition
+  [Procedure in keyof Protocol & string]: Protocol[Procedure] extends StreamProcedureDefinition
     ? {
-        Argument: Protocol[Command]['params'] extends undefined
+        Argument: Protocol[Procedure]['params'] extends undefined
           ? never
-          : DataOf<Protocol[Command]['params']>
-        Receive: DataOf<Protocol[Command]['receive']>
-        Result: DataOf<Protocol[Command]['result']>
-        Return: InvokeStreamReturn<
-          DataOf<Protocol[Command]['receive']>,
-          DataOf<Protocol[Command]['result']>
+          : DataOf<Protocol[Procedure]['params']>
+        Receive: DataOf<Protocol[Procedure]['receive']>
+        Result: DataOf<Protocol[Procedure]['result']>
+        Return: CallStreamReturn<
+          DataOf<Protocol[Procedure]['receive']>,
+          DataOf<Protocol[Procedure]['result']>
         >
       }
     : never
 }
 
 export type ChannelDefinitionsType<Protocol extends ProtocolDefinition> = {
-  [Command in keyof Protocol & string]: Protocol[Command] extends ChannelCommandDefinition
+  [Procedure in keyof Protocol & string]: Protocol[Procedure] extends ChannelProcedureDefinition
     ? {
-        Argument: DataOf<Protocol[Command]['params']>
-        Receive: DataOf<Protocol[Command]['receive']>
-        Result: DataOf<Protocol[Command]['result']>
-        Return: InvokeChannelReturn<
-          DataOf<Protocol[Command]['send']>,
-          DataOf<Protocol[Command]['receive']>,
-          DataOf<Protocol[Command]['result']>
+        Argument: DataOf<Protocol[Procedure]['params']>
+        Receive: DataOf<Protocol[Procedure]['receive']>
+        Result: DataOf<Protocol[Procedure]['result']>
+        Return: CallChannelReturn<
+          DataOf<Protocol[Procedure]['send']>,
+          DataOf<Protocol[Procedure]['receive']>,
+          DataOf<Protocol[Procedure]['result']>
         >
-        Send: DataOf<Protocol[Command]['send']>
+        Send: DataOf<Protocol[Procedure]['send']>
       }
     : never
 }
@@ -101,26 +101,26 @@ export type ClientDefinitionsType<Protocol extends ProtocolDefinition> = {
   Streams: StreamDefinitionsType<Protocol>
 }
 
-export type InvokeArgumentType<Command extends AnyCommandDefinition> =
-  Command extends EventCommandDefinition
-    ? Command['data']
-    : Command extends AnyRequestCommandDefinition
-      ? Command['params']
+export type CallArgumentType<Procedure extends AnyProcedureDefinition> =
+  Procedure extends EventProcedureDefinition
+    ? Procedure['data']
+    : Procedure extends AnyRequestProcedureDefinition
+      ? Procedure['params']
       : never
 
-export type InvokeReturnType<Command extends AnyCommandDefinition> =
-  Command extends EventCommandDefinition
+export type CallReturnType<Procedure extends AnyProcedureDefinition> =
+  Procedure extends EventProcedureDefinition
     ? undefined
-    : Command extends RequestCommandDefinition
-      ? InvokeReturn<Command['result']>
-      : Command extends StreamCommandDefinition
-        ? InvokeStreamReturn<Command['receive'], Command['result']>
-        : Command extends ChannelCommandDefinition
-          ? InvokeChannelReturn<Command['send'], Command['receive'], Command['result']>
+    : Procedure extends RequestProcedureDefinition
+      ? CallReturn<Procedure['result']>
+      : Procedure extends StreamProcedureDefinition
+        ? CallStreamReturn<Procedure['receive'], Procedure['result']>
+        : Procedure extends ChannelProcedureDefinition
+          ? CallChannelReturn<Procedure['send'], Procedure['receive'], Procedure['result']>
           : never
 
 type RequestController<ResultValue> = AbortController & {
-  result: Promise<InvokeResult<ResultValue>>
+  result: Promise<CallResult<ResultValue>>
   ok: (value: ResultValue) => void
   error: (error: RequestError) => void
   aborted: () => void
@@ -139,8 +139,8 @@ type AnyClientController =
   RequestController<any> | StreamController<any, any> | ChannelController<any, any, any>
 
 export function createController<T>(): RequestController<T> {
-  let resolve: (value: InvokeResult<T> | PromiseLike<InvokeResult<T>>) => void = () => {}
-  const result = new Promise<InvokeResult<T>>((res) => {
+  let resolve: (value: CallResult<T> | PromiseLike<CallResult<T>>) => void = () => {}
+  const result = new Promise<CallResult<T>>((res) => {
     resolve = res
   })
   return Object.assign(new AbortController(), {
@@ -151,10 +151,10 @@ export function createController<T>(): RequestController<T> {
   })
 }
 
-export function createInvocation<ResultValue, Return>(
+export function createCall<ResultValue, Return>(
   controller: RequestController<ResultValue>,
   promise: Promise<Return>,
-): Invocation<ResultValue, Return> {
+): ProcedureCall<ResultValue, Return> {
   return Object.assign(promise, {
     result: controller.result,
     toValue: (): Promise<ResultValue> => {
@@ -271,22 +271,25 @@ export class Client<
   }
 
   async sendEvent<
-    Command extends keyof ClientDefinitions['Events'] & string,
-    T extends ClientDefinitions['Events'][Command] = ClientDefinitions['Events'][Command],
-  >(command: Command, ...args: T['Argument'] extends never ? [] : [T['Argument']]): Promise<void> {
+    Procedure extends keyof ClientDefinitions['Events'] & string,
+    T extends ClientDefinitions['Events'][Procedure] = ClientDefinitions['Events'][Procedure],
+  >(
+    procedure: Procedure,
+    ...args: T['Argument'] extends never ? [] : [T['Argument']]
+  ): Promise<void> {
     const payload = args.length
-      ? { typ: 'event', cmd: command, data: args[0] }
-      : { typ: 'event', cmd: command }
+      ? { typ: 'event', prc: procedure, data: args[0] }
+      : { typ: 'event', prc: procedure }
     await this.#write(payload as unknown as AnyClientPayloadOf<Protocol>)
   }
 
   request<
-    Command extends keyof ClientDefinitions['Requests'] & string,
-    T extends ClientDefinitions['Requests'][Command] = ClientDefinitions['Requests'][Command],
+    Procedure extends keyof ClientDefinitions['Requests'] & string,
+    T extends ClientDefinitions['Requests'][Procedure] = ClientDefinitions['Requests'][Procedure],
   >(
-    command: Command,
+    procedure: Procedure,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
-  ): Invocation<T['Result'], T['Return']> {
+  ): ProcedureCall<T['Result'], T['Return']> {
     const rid = this.#getRandomID()
     const controller = createController<T['Result']>()
     this.#controllers[rid] = controller
@@ -298,8 +301,8 @@ export class Client<
     })
 
     const payload = args.length
-      ? { typ: 'request', rid, cmd: command, prm: args[0] }
-      : { typ: 'request', rid, cmd: command }
+      ? { typ: 'request', rid, prc: procedure, prm: args[0] }
+      : { typ: 'request', rid, prc: procedure }
 
     const promise = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>).then(() => {
       return {
@@ -308,16 +311,16 @@ export class Client<
         result: controller.result,
       }
     })
-    return createInvocation(controller, promise)
+    return createCall(controller, promise)
   }
 
   createStream<
-    Command extends keyof ClientDefinitions['Streams'] & string,
-    T extends ClientDefinitions['Streams'][Command] = ClientDefinitions['Streams'][Command],
+    Procedure extends keyof ClientDefinitions['Streams'] & string,
+    T extends ClientDefinitions['Streams'][Procedure] = ClientDefinitions['Streams'][Procedure],
   >(
-    command: Command,
+    procedure: Procedure,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
-  ): Invocation<T['Result'], T['Return']> {
+  ): ProcedureCall<T['Result'], T['Return']> {
     const rid = this.#getRandomID()
     const receive = createPipe<T['Receive']>()
     const controller: StreamController<T['Receive'], T['Result']> = Object.assign(
@@ -333,8 +336,8 @@ export class Client<
     })
 
     const action = args.length
-      ? { typ: 'stream', rid, cmd: command, prm: args[0] }
-      : { typ: 'stream', rid, cmd: command }
+      ? { typ: 'stream', rid, prc: procedure, prm: args[0] }
+      : { typ: 'stream', rid, prc: procedure }
     const promise = this.#write(action as unknown as AnyClientPayloadOf<Protocol>).then(() => {
       return {
         abort: () => controller.abort(),
@@ -343,16 +346,16 @@ export class Client<
         result: controller.result,
       }
     })
-    return createInvocation(controller, promise)
+    return createCall(controller, promise)
   }
 
   createChannel<
-    Command extends keyof ClientDefinitions['Channels'] & string,
-    T extends ClientDefinitions['Channels'][Command] = ClientDefinitions['Channels'][Command],
+    Procedure extends keyof ClientDefinitions['Channels'] & string,
+    T extends ClientDefinitions['Channels'][Procedure] = ClientDefinitions['Channels'][Procedure],
   >(
-    command: Command,
+    procedure: Procedure,
     ...args: T['Argument'] extends never ? [] : [T['Argument']]
-  ): Invocation<T['Result'], T['Return']> {
+  ): ProcedureCall<T['Result'], T['Return']> {
     const rid = this.#getRandomID()
     const receive = createPipe<T['Receive']>()
     const send = createPipe<T['Send']>()
@@ -369,8 +372,8 @@ export class Client<
     })
 
     const payload = args.length
-      ? { typ: 'channel', rid, cmd: command, prm: args[0] }
-      : { typ: 'channel', rid, cmd: command }
+      ? { typ: 'channel', rid, prc: procedure, prm: args[0] }
+      : { typ: 'channel', rid, prc: procedure }
     const promise = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>).then(() => {
       return {
         abort: () => controller.abort(),
@@ -382,6 +385,6 @@ export class Client<
         },
       }
     })
-    return createInvocation(controller, promise)
+    return createCall(controller, promise)
   }
 }

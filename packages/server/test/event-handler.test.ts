@@ -22,19 +22,19 @@ type Protocol = typeof protocol
 describe('handleEvent()', () => {
   const clientToken = createUnsignedToken({
     typ: 'event',
-    cmd: 'test',
+    prc: 'test',
     data: { test: true },
   } as const)
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
-    const payload = { typ: 'event', cmd: 'unknown' }
+    const payload = { typ: 'event', prc: 'unknown' }
     // @ts-ignore type instantiation too deep
     const returned = handleEvent({ handlers: {} } as unknown as HandlerContext<Protocol>, {
       // @ts-expect-error
       payload,
     })
     expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for command: unknown')
+    expect((returned as ErrorRejection).message).toBe('No handler for procedure: unknown')
     expect((returned as ErrorRejection).info).toEqual(payload)
   })
 
@@ -57,13 +57,13 @@ describe('handleEvent()', () => {
     expect(reject).toHaveBeenCalled()
     const rejection = reject.mock.calls[0][0]
     expect(rejection).toBeInstanceOf(ErrorRejection)
-    expect((rejection as ErrorRejection).message).toBe('Error handling command: test')
+    expect((rejection as ErrorRejection).message).toBe('Error handling procedure: test')
     expect((rejection as ErrorRejection).info).toBe(clientToken.payload)
     expect((rejection as ErrorRejection).cause).toBe(errorCause)
   })
 
   test('successfully calls the event handler', async () => {
-    const payload = { typ: 'event', cmd: 'test', data: { test: true } } as const
+    const payload = { typ: 'event', prc: 'test', data: { test: true } } as const
     const handler = jest.fn()
     const reject = jest.fn()
 

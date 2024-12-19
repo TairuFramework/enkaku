@@ -6,9 +6,9 @@ import { jest } from '@jest/globals'
 
 import {
   type ChannelHandler,
-  type CommandHandlers,
   ErrorRejection,
   type EventHandler,
+  type ProcedureHandlers,
   type RequestHandler,
   type StreamHandler,
   serve,
@@ -33,7 +33,7 @@ describe('serve()', () => {
 
     const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
 
-    const handlers = { test: handler } as CommandHandlers<Protocol>
+    const handlers = { test: handler } as ProcedureHandlers<Protocol>
     const transports = createDirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
@@ -50,7 +50,7 @@ describe('serve()', () => {
     const invalidMessage = await signer.createToken({
       typ: 'event',
       aud: signer.id,
-      cmd: 'invalid',
+      prc: 'invalid',
       data: { hello: 'world' },
       exp: expiresAt,
     } as const)
@@ -65,7 +65,7 @@ describe('serve()', () => {
     const message = await signer.createToken({
       typ: 'event',
       aud: signer.id,
-      cmd: 'test',
+      prc: 'test',
       data: { hello: 'world' },
       exp: expiresAt,
     } as const)
@@ -96,7 +96,7 @@ describe('serve()', () => {
 
     const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
 
-    const handlers = { test: handler } as CommandHandlers<Protocol>
+    const handlers = { test: handler } as ProcedureHandlers<Protocol>
     const transports = createDirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
@@ -113,7 +113,7 @@ describe('serve()', () => {
     const message = await signer.createToken({
       typ: 'event',
       aud: signer.id,
-      cmd: 'test',
+      prc: 'test',
       data: { hello: 'world' },
       exp: expiresAt,
     } as const)
@@ -147,7 +147,7 @@ describe('serve()', () => {
         })
       })
     }) as jest.Mock<RequestHandler<Protocol, 'test'>>
-    const handlers = { test: handler } as CommandHandlers<Protocol>
+    const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
     const transports = createDirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -159,7 +159,7 @@ describe('serve()', () => {
     const message = (await signer.createToken({
       typ: 'request',
       iss: signer.id,
-      cmd: 'test',
+      prc: 'test',
       rid: '1',
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
@@ -198,7 +198,7 @@ describe('serve()', () => {
         })
       })
     }) as jest.Mock<StreamHandler<Protocol, 'test'>>
-    const handlers = { test: handler } as CommandHandlers<Protocol>
+    const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
     const transports = createDirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -209,7 +209,7 @@ describe('serve()', () => {
 
     const message = await signer.createToken({
       typ: 'stream',
-      cmd: 'test',
+      prc: 'test',
       rid: '1',
       prm: 3,
     } as const)
@@ -256,7 +256,7 @@ describe('serve()', () => {
       }
       return 'END'
     }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
-    const handlers = { test: handler } as CommandHandlers<Protocol>
+    const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
     const transports = createDirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -267,7 +267,7 @@ describe('serve()', () => {
 
     const message = await signer.createToken({
       typ: 'channel',
-      cmd: 'test',
+      prc: 'test',
       rid: '1',
       prm: 5,
     } as const)
@@ -278,7 +278,7 @@ describe('serve()', () => {
       const val = send.shift()
       if (val != null) {
         await transports.client.write(
-          createUnsignedToken({ typ: 'send', cmd: 'test', rid: '1', val }),
+          createUnsignedToken({ typ: 'send', prc: 'test', rid: '1', val }),
         )
       }
     }

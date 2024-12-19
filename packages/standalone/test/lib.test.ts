@@ -30,7 +30,7 @@ describe('standalone', () => {
       const message = await signer.createToken({
         aud: signer.id,
         typ: 'event',
-        cmd: 'test',
+        prc: 'test',
         data: { hello: 'world' },
       })
       expect(handler).toHaveBeenCalledWith({ data: { hello: 'world' }, message })

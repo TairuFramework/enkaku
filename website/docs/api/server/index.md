@@ -354,61 +354,45 @@ Create .stack property on a target object
 
 ## Type Aliases
 
-### ChannelHandler\<Protocol, Command\>
+### ChannelHandler\<Protocol, Procedure\>
 
-> **ChannelHandler**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`ChannelCommandDefinition`](../protocol/index.md#channelcommanddefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Command`\]\[`"result"`\]\> : `never`
-
-#### Type Parameters
-
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
-
-• **Command** *extends* keyof `Protocol` & `string`
-
-***
-
-### ChannelHandlerContext\<Protocol, Command\>
-
-> **ChannelHandlerContext**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`ChannelCommandDefinition`](../protocol/index.md#channelcommanddefinition) ? [`StreamHandlerContext`](index.md#streamhandlercontextprotocol-command)\<`Protocol`, `Command`\> & `object` : `never`
+> **ChannelHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Command** *extends* keyof `Protocol` & `string`
+• **Procedure** *extends* keyof `Protocol` & `string`
 
 ***
 
-### CommandAccessRecord
+### ChannelHandlerContext\<Protocol, Procedure\>
 
-> **CommandAccessRecord**: `Record`\<`string`, `boolean` \| `string`[]\>
-
-***
-
-### CommandHandlers\<Protocol\>
-
-> **CommandHandlers**\<`Protocol`\>: `{ [Command in keyof Protocol & string]: Protocol[Command] extends EventCommandDefinition ? (context: EventHandlerContext<Protocol, Command>) => void : Protocol[Command] extends RequestCommandDefinition ? (context: RequestHandlerContext<Protocol, Command>) => HandlerReturn<Protocol[Command]["result"]> : Protocol[Command] extends StreamCommandDefinition ? (context: StreamHandlerContext<Protocol, Command>) => HandlerReturn<Protocol[Command]["result"]> : Protocol[Command] extends ChannelCommandDefinition ? (context: ChannelHandlerContext<Protocol, Command>) => HandlerReturn<Protocol[Command]["result"]> : never }`
+> **ChannelHandlerContext**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`StreamHandlerContext`](index.md#streamhandlercontextprotocol-procedure)\<`Protocol`, `Procedure`\> & `object` : `never`
 
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
+• **Procedure** *extends* keyof `Protocol` & `string`
+
 ***
 
-### EventHandler()\<Protocol, Command\>
+### EventHandler()\<Protocol, Procedure\>
 
-> **EventHandler**\<`Protocol`, `Command`\>: (`context`) => `void` \| `Promise`\<`void`\>
+> **EventHandler**\<`Protocol`, `Procedure`\>: (`context`) => `void` \| `Promise`\<`void`\>
 
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Command** *extends* keyof `Protocol` & `string`
+• **Procedure** *extends* keyof `Protocol` & `string`
 
 #### Parameters
 
 ##### context
 
-[`EventHandlerContext`](index.md#eventhandlercontextprotocol-command)\<`Protocol`, `Command`\>
+[`EventHandlerContext`](index.md#eventhandlercontextprotocol-procedure)\<`Protocol`, `Procedure`\>
 
 #### Returns
 
@@ -416,15 +400,15 @@ Create .stack property on a target object
 
 ***
 
-### EventHandlerContext\<Protocol, Command\>
+### EventHandlerContext\<Protocol, Procedure\>
 
-> **EventHandlerContext**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`EventCommandDefinition`](../protocol/index.md#eventcommanddefinition) ? `object` : `never`
+> **EventHandlerContext**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`EventProcedureDefinition`](../protocol/index.md#eventproceduredefinition) ? `object` : `never`
 
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Command** *extends* keyof `Protocol` & `string`
+• **Procedure** *extends* keyof `Protocol` & `string`
 
 ***
 
@@ -437,6 +421,22 @@ Create .stack property on a target object
 • **ResultSchema**
 
 • **Data** = [`DataOf`](../protocol/index.md#dataofs)\<`ResultSchema`\>
+
+***
+
+### ProcedureAccessRecord
+
+> **ProcedureAccessRecord**: `Record`\<`string`, `boolean` \| `string`[]\>
+
+***
+
+### ProcedureHandlers\<Protocol\>
+
+> **ProcedureHandlers**\<`Protocol`\>: `{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition ? (context: EventHandlerContext<Protocol, Procedure>) => void : Protocol[Procedure] extends RequestProcedureDefinition ? (context: RequestHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : Protocol[Procedure] extends StreamProcedureDefinition ? (context: StreamHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : Protocol[Procedure] extends ChannelProcedureDefinition ? (context: ChannelHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : never }`
+
+#### Type Parameters
+
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
@@ -462,27 +462,27 @@ Create .stack property on a target object
 
 ***
 
-### RequestHandler\<Protocol, Command\>
+### RequestHandler\<Protocol, Procedure\>
 
-> **RequestHandler**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`AnyRequestCommandDefinition`](../protocol/index.md#anyrequestcommanddefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Command`\]\[`"result"`\]\> : `never`
+> **RequestHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Command** *extends* keyof `Protocol` & `string`
+• **Procedure** *extends* keyof `Protocol` & `string`
 
 ***
 
-### RequestHandlerContext\<Protocol, Command\>
+### RequestHandlerContext\<Protocol, Procedure\>
 
-> **RequestHandlerContext**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`AnyRequestCommandDefinition`](../protocol/index.md#anyrequestcommanddefinition) ? `object` : `never`
+> **RequestHandlerContext**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? `object` : `never`
 
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Command** *extends* keyof `Protocol` & `string`
+• **Procedure** *extends* keyof `Protocol` & `string`
 
 ***
 
@@ -514,11 +514,11 @@ Create .stack property on a target object
 
 ##### access?
 
-> `optional` **access**: [`CommandAccessRecord`](index.md#commandaccessrecord)
+> `optional` **access**: [`ProcedureAccessRecord`](index.md#procedureaccessrecord)
 
 ##### handlers
 
-> **handlers**: [`CommandHandlers`](index.md#commandhandlersprotocol)\<`Protocol`\>
+> **handlers**: [`ProcedureHandlers`](index.md#procedurehandlersprotocol)\<`Protocol`\>
 
 ##### id?
 
@@ -542,27 +542,27 @@ Create .stack property on a target object
 
 ***
 
-### StreamHandler\<Protocol, Command\>
+### StreamHandler\<Protocol, Procedure\>
 
-> **StreamHandler**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`StreamCommandDefinition`](../protocol/index.md#streamcommanddefinition) \| [`ChannelCommandDefinition`](../protocol/index.md#channelcommanddefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Command`\]\[`"result"`\]\> : `never`
+> **StreamHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Command** *extends* keyof `Protocol` & `string`
+• **Procedure** *extends* keyof `Protocol` & `string`
 
 ***
 
-### StreamHandlerContext\<Protocol, Command\>
+### StreamHandlerContext\<Protocol, Procedure\>
 
-> **StreamHandlerContext**\<`Protocol`, `Command`\>: `Protocol`\[`Command`\] *extends* [`StreamCommandDefinition`](../protocol/index.md#streamcommanddefinition) \| [`ChannelCommandDefinition`](../protocol/index.md#channelcommanddefinition) ? [`RequestHandlerContext`](index.md#requesthandlercontextprotocol-command)\<`Protocol`, `Command`\> & `object` : `never`
+> **StreamHandlerContext**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`RequestHandlerContext`](index.md#requesthandlercontextprotocol-procedure)\<`Protocol`, `Procedure`\> & `object` : `never`
 
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Command** *extends* keyof `Protocol` & `string`
+• **Procedure** *extends* keyof `Protocol` & `string`
 
 ## Functions
 

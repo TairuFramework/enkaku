@@ -46,15 +46,15 @@ npm install @enkaku/protocol
 
 ***
 
-### AnyCommandDefinition
+### AnyProcedureDefinition
 
-> **AnyCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`anyCommandDefinition`](index.md#anycommanddefinition-1)\>
+> **AnyProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`anyProcedureDefinition`](index.md#anyproceduredefinition-1)\>
 
 ***
 
-### AnyRequestCommandDefinition
+### AnyRequestProcedureDefinition
 
-> **AnyRequestCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`anyRequestCommandDefinition`](index.md#anyrequestcommanddefinition-1)\>
+> **AnyRequestProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`anyRequestProcedureDefinition`](index.md#anyrequestproceduredefinition-1)\>
 
 ***
 
@@ -78,21 +78,21 @@ npm install @enkaku/protocol
 
 ***
 
-### ChannelCommandDefinition
+### ChannelPayloadOf\<Procedure, Definition\>
 
-> **ChannelCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`channelCommandDefinition`](index.md#channelcommanddefinition-1)\>
-
-***
-
-### ChannelPayloadOf\<Command, Definition\>
-
-> **ChannelPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`ChannelCommandDefinition`](index.md#channelcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"channel"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> : `never`
+> **ChannelPayloadOf**\<`Procedure`, `Definition`\>: `Definition` *extends* [`ChannelProcedureDefinition`](index.md#channelproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"channel"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
 • **Definition**
+
+***
+
+### ChannelProcedureDefinition
+
+> **ChannelProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`channelProcedureDefinition`](index.md#channelproceduredefinition-1)\>
 
 ***
 
@@ -106,13 +106,13 @@ npm install @enkaku/protocol
 
 ***
 
-### ClientPayloadOf\<Command, Definition\>
+### ClientPayloadOf\<Procedure, Definition\>
 
-> **ClientPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`EventCommandDefinition`](index.md#eventcommanddefinition) ? [`EventCallPayload`](index.md#eventcallpayloadcommand-data)\<`Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"data"`\]\>\> : `Definition` *extends* [`RequestCommandDefinition`](index.md#requestcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"request"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `Definition` *extends* [`StreamCommandDefinition`](index.md#streamcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"stream"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `Definition` *extends* [`ChannelCommandDefinition`](index.md#channelcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"channel"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> \| [`SendCallPayload`](index.md#sendcallpayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"send"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `never`
+> **ClientPayloadOf**\<`Procedure`, `Definition`\>: `Definition` *extends* [`EventProcedureDefinition`](index.md#eventproceduredefinition) ? [`EventCallPayload`](index.md#eventcallpayloadprocedure-data)\<`Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"data"`\]\>\> : `Definition` *extends* [`RequestProcedureDefinition`](index.md#requestproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"request"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `Definition` *extends* [`StreamProcedureDefinition`](index.md#streamproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"stream"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `Definition` *extends* [`ChannelProcedureDefinition`](index.md#channelproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"channel"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> \| [`SendCallPayload`](index.md#sendcallpayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"send"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `never`
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
 • **Definition**
 
@@ -120,7 +120,7 @@ npm install @enkaku/protocol
 
 ### ClientPayloadRecordsOf\<Protocol\>
 
-> **ClientPayloadRecordsOf**\<`Protocol`\>: `{ [Command in keyof Protocol & string]: ClientPayloadOf<Command, Protocol[Command]> }`
+> **ClientPayloadRecordsOf**\<`Protocol`\>: `{ [Procedure in keyof Protocol & string]: ClientPayloadOf<Procedure, Protocol[Procedure]> }`
 
 #### Type Parameters
 
@@ -168,7 +168,7 @@ npm install @enkaku/protocol
 
 ### ErrorPayloadOf\<Definition\>
 
-> **ErrorPayloadOf**\<`Definition`\>: `Definition` *extends* [`AnyRequestCommandDefinition`](index.md#anyrequestcommanddefinition) ? [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `never`
+> **ErrorPayloadOf**\<`Definition`\>: `Definition` *extends* [`AnyRequestProcedureDefinition`](index.md#anyrequestproceduredefinition) ? [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -220,15 +220,15 @@ npm install @enkaku/protocol
 
 ***
 
-### EventCallPayload\<Command, Data\>
+### EventCallPayload\<Procedure, Data\>
 
-> **EventCallPayload**\<`Command`, `Data`\>: `object` & `Data` *extends* `undefined` ? `object` : `object`
+> **EventCallPayload**\<`Procedure`, `Data`\>: `object` & `Data` *extends* `undefined` ? `object` : `object`
 
 #### Type declaration
 
-##### cmd
+##### prc
 
-> **cmd**: `Command`
+> **prc**: `Procedure`
 
 ##### typ
 
@@ -236,27 +236,27 @@ npm install @enkaku/protocol
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
 • **Data** *extends* `Record`\<`string`, `unknown`\> \| `undefined`
 
 ***
 
-### EventCommandDefinition
+### EventPayloadOf\<Procedure, Definition\>
 
-> **EventCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`eventCommandDefinition`](index.md#eventcommanddefinition-1)\>
-
-***
-
-### EventPayloadOf\<Command, Definition\>
-
-> **EventPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`EventCommandDefinition`](index.md#eventcommanddefinition) ? [`EventCallPayload`](index.md#eventcallpayloadcommand-data)\<`Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"data"`\]\>\> : `never`
+> **EventPayloadOf**\<`Procedure`, `Definition`\>: `Definition` *extends* [`EventProcedureDefinition`](index.md#eventproceduredefinition) ? [`EventCallPayload`](index.md#eventcallpayloadprocedure-data)\<`Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"data"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
 • **Definition**
+
+***
+
+### EventProcedureDefinition
+
+> **EventProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`eventProcedureDefinition`](index.md#eventproceduredefinition-1)\>
 
 ***
 
@@ -356,7 +356,7 @@ npm install @enkaku/protocol
 
 ### ReceiveActionPayloadOf\<Definition\>
 
-> **ReceiveActionPayloadOf**\<`Definition`\>: `Definition` *extends* [`StreamCommandDefinition`](index.md#streamcommanddefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> : `Definition` *extends* [`ChannelCommandDefinition`](index.md#channelcommanddefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> : `never`
+> **ReceiveActionPayloadOf**\<`Definition`\>: `Definition` *extends* [`StreamProcedureDefinition`](index.md#streamproceduredefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> : `Definition` *extends* [`ChannelProcedureDefinition`](index.md#channelproceduredefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -388,23 +388,23 @@ npm install @enkaku/protocol
 
 ***
 
-### RequestCallPayload\<Type, Command, Params\>
+### RequestCallPayload\<Type, Procedure, Params\>
 
-> **RequestCallPayload**\<`Type`, `Command`, `Params`\>: `object`
+> **RequestCallPayload**\<`Type`, `Procedure`, `Params`\>: `object`
 
 #### Type Parameters
 
 • **Type** *extends* [`RequestType`](index.md#requesttype)
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
 • **Params**
 
 #### Type declaration
 
-##### cmd
+##### prc
 
-> **cmd**: `Command`
+> **prc**: `Procedure`
 
 ##### prm
 
@@ -420,33 +420,33 @@ npm install @enkaku/protocol
 
 ***
 
-### RequestCommandDefinition
+### RequestPayloadOf\<Procedure, Definition\>
 
-> **RequestCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`requestCommandDefinition`](index.md#requestcommanddefinition-1)\>
-
-***
-
-### RequestPayloadOf\<Command, Definition\>
-
-> **RequestPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`RequestCommandDefinition`](index.md#requestcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"request"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> : `never`
+> **RequestPayloadOf**\<`Procedure`, `Definition`\>: `Definition` *extends* [`RequestProcedureDefinition`](index.md#requestproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"request"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
 • **Definition**
 
 ***
 
+### RequestProcedureDefinition
+
+> **RequestProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`requestProcedureDefinition`](index.md#requestproceduredefinition-1)\>
+
+***
+
 ### RequestType
 
-> **RequestType**: [`AnyRequestCommandDefinition`](index.md#anyrequestcommanddefinition)\[`"type"`\]
+> **RequestType**: [`AnyRequestProcedureDefinition`](index.md#anyrequestproceduredefinition)\[`"type"`\]
 
 ***
 
 ### ResultPayloadOf\<Definition\>
 
-> **ResultPayloadOf**\<`Definition`\>: `Definition` *extends* [`AnyRequestCommandDefinition`](index.md#anyrequestcommanddefinition) ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> : `never`
+> **ResultPayloadOf**\<`Definition`\>: `Definition` *extends* [`AnyRequestProcedureDefinition`](index.md#anyrequestproceduredefinition) ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -504,7 +504,7 @@ npm install @enkaku/protocol
 
 ### SendPayloadOf\<Definition\>
 
-> **SendPayloadOf**\<`Definition`\>: `Definition` *extends* [`ChannelCommandDefinition`](index.md#channelcommanddefinition) ? [`SendCallPayload`](index.md#sendcallpayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"send"`\]\>\> : `never`
+> **SendPayloadOf**\<`Definition`\>: `Definition` *extends* [`ChannelProcedureDefinition`](index.md#channelproceduredefinition) ? [`SendCallPayload`](index.md#sendcallpayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"send"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -524,7 +524,7 @@ npm install @enkaku/protocol
 
 ### ServerPayloadOf\<Definition\>
 
-> **ServerPayloadOf**\<`Definition`\>: `Definition` *extends* [`RequestCommandDefinition`](index.md#requestcommanddefinition) ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror) : `Definition` *extends* [`StreamCommandDefinition`](index.md#streamcommanddefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `Definition` *extends* [`ChannelCommandDefinition`](index.md#channelcommanddefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `never`
+> **ServerPayloadOf**\<`Definition`\>: `Definition` *extends* [`RequestProcedureDefinition`](index.md#requestproceduredefinition) ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror) : `Definition` *extends* [`StreamProcedureDefinition`](index.md#streamproceduredefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `Definition` *extends* [`ChannelProcedureDefinition`](index.md#channelproceduredefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -534,7 +534,7 @@ npm install @enkaku/protocol
 
 ### ServerPayloadRecordsOf\<Protocol\>
 
-> **ServerPayloadRecordsOf**\<`Protocol`\>: `{ [Command in keyof Protocol & string]: ServerPayloadOf<Protocol[Command]> }`
+> **ServerPayloadRecordsOf**\<`Protocol`\>: `{ [Procedure in keyof Protocol & string]: ServerPayloadOf<Protocol[Procedure]> }`
 
 #### Type Parameters
 
@@ -552,27 +552,27 @@ npm install @enkaku/protocol
 
 ***
 
-### StreamCommandDefinition
+### StreamPayloadOf\<Procedure, Definition\>
 
-> **StreamCommandDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`streamCommandDefinition`](index.md#streamcommanddefinition-1)\>
-
-***
-
-### StreamPayloadOf\<Command, Definition\>
-
-> **StreamPayloadOf**\<`Command`, `Definition`\>: `Definition` *extends* [`StreamCommandDefinition`](index.md#streamcommanddefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<`"stream"`, `Command`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> : `never`
+> **StreamPayloadOf**\<`Procedure`, `Definition`\>: `Definition` *extends* [`StreamProcedureDefinition`](index.md#streamproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"stream"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"params"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
 • **Definition**
 
 ***
 
+### StreamProcedureDefinition
+
+> **StreamProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`streamProcedureDefinition`](index.md#streamproceduredefinition-1)\>
+
+***
+
 ### UnknownCallPayload
 
-> **UnknownCallPayload**: [`AbortCallPayload`](index.md#abortcallpayload) \| [`EventCallPayload`](index.md#eventcallpayloadcommand-data)\<`string`, `Record`\<`string`, `unknown`\> \| `undefined`\> \| [`RequestCallPayload`](index.md#requestcallpayloadtype-command-params)\<[`RequestType`](index.md#requesttype), `string`, `unknown`\> \| [`SendCallPayload`](index.md#sendcallpayloadvalue)\<`unknown`\>
+> **UnknownCallPayload**: [`AbortCallPayload`](index.md#abortcallpayload) \| [`EventCallPayload`](index.md#eventcallpayloadprocedure-data)\<`string`, `Record`\<`string`, `unknown`\> \| `undefined`\> \| [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<[`RequestType`](index.md#requesttype), `string`, `unknown`\> \| [`SendCallPayload`](index.md#sendcallpayloadvalue)\<`unknown`\>
 
 ***
 
@@ -592,9 +592,9 @@ npm install @enkaku/protocol
 
 ## Variables
 
-### anyCommandDefinition
+### anyProcedureDefinition
 
-> `const` **anyCommandDefinition**: `object`
+> `const` **anyProcedureDefinition**: `object`
 
 #### Type declaration
 
@@ -604,9 +604,9 @@ npm install @enkaku/protocol
 
 ***
 
-### anyRequestCommandDefinition
+### anyRequestProcedureDefinition
 
-> `const` **anyRequestCommandDefinition**: `object`
+> `const` **anyRequestProcedureDefinition**: `object`
 
 #### Type declaration
 
@@ -668,9 +668,9 @@ npm install @enkaku/protocol
 
 ***
 
-### channelCommandDefinition
+### channelProcedureDefinition
 
-> `const` **channelCommandDefinition**: `object`
+> `const` **channelProcedureDefinition**: `object`
 
 #### Type declaration
 
@@ -1312,9 +1312,9 @@ npm install @enkaku/protocol
 
 ***
 
-### eventCommandDefinition
+### eventProcedureDefinition
 
-> `const` **eventCommandDefinition**: `object`
+> `const` **eventProcedureDefinition**: `object`
 
 #### Type declaration
 
@@ -1464,7 +1464,7 @@ npm install @enkaku/protocol
 
 ##### additionalProperties
 
-> `readonly` **additionalProperties**: `object` = `anyCommandDefinition`
+> `readonly` **additionalProperties**: `object` = `anyProcedureDefinition`
 
 ###### additionalProperties.anyOf
 
@@ -1476,9 +1476,9 @@ npm install @enkaku/protocol
 
 ***
 
-### requestCommandDefinition
+### requestProcedureDefinition
 
-> `const` **requestCommandDefinition**: `object`
+> `const` **requestProcedureDefinition**: `object`
 
 #### Type declaration
 
@@ -1788,9 +1788,9 @@ npm install @enkaku/protocol
 
 ***
 
-### streamCommandDefinition
+### streamProcedureDefinition
 
-> `const` **streamCommandDefinition**: `object`
+> `const` **streamProcedureDefinition**: `object`
 
 #### Type declaration
 

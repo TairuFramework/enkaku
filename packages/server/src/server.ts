@@ -10,7 +10,7 @@ import { createPipe } from '@enkaku/stream'
 import { type SignedToken, type Token, createUnsignedToken, isSignedToken } from '@enkaku/token'
 import { type Disposer, createDisposer } from '@enkaku/util'
 
-import { type CommandAccessRecord, checkClientToken } from './access-control.js'
+import { type ProcedureAccessRecord, checkClientToken } from './access-control.js'
 import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'
 import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { type RequestMessageOf, handleRequest } from './handlers/request.js'
@@ -18,9 +18,9 @@ import { type StreamMessageOf, handleStream } from './handlers/stream.js'
 import { ErrorRejection, type RejectionType } from './rejections.js'
 import type {
   ChannelController,
-  CommandHandlers,
   HandlerContext,
   HandlerController,
+  ProcedureHandlers,
 } from './types.js'
 
 type ProcessMessageOf<Protocol extends ProtocolDefinition> =
@@ -30,11 +30,11 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
   | ChannelMessageOf<Protocol>
 
 export type AccessControlParams =
-  | { public: true; serverID?: string; access?: CommandAccessRecord }
-  | { public: false; serverID: string; access: CommandAccessRecord }
+  | { public: true; serverID?: string; access?: ProcedureAccessRecord }
+  | { public: false; serverID: string; access: ProcedureAccessRecord }
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
-  handlers: CommandHandlers<Protocol>
+  handlers: ProcedureHandlers<Protocol>
   reject: (rejection: RejectionType) => void
   signal: AbortSignal
   transport: ServerTransportOf<Protocol>
@@ -182,8 +182,8 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
 }
 
 export type ServerParams<Protocol extends ProtocolDefinition> = {
-  access?: CommandAccessRecord
-  handlers: CommandHandlers<Protocol>
+  access?: ProcedureAccessRecord
+  handlers: ProcedureHandlers<Protocol>
   id?: string
   protocol?: Protocol
   public?: boolean
@@ -191,13 +191,13 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   transports?: Array<ServerTransportOf<Protocol>>
 }
 
-export type HandleOptions = { public?: boolean; access?: CommandAccessRecord }
+export type HandleOptions = { public?: boolean; access?: ProcedureAccessRecord }
 
 export class Server<Protocol extends ProtocolDefinition> implements Disposer {
   #abortController: AbortController
   #accessControl: AccessControlParams
   #disposer: Disposer
-  #handlers: CommandHandlers<Protocol>
+  #handlers: ProcedureHandlers<Protocol>
   #handling: Array<HandlingTransport<Protocol>> = []
   #reject: (rejection: RejectionType) => void
   #rejections: ReadableStream<RejectionType>
@@ -270,19 +270,17 @@ export class Server<Protocol extends ProtocolDefinition> implements Disposer {
 
   handle(transport: ServerTransportOf<Protocol>, options: HandleOptions = {}): Promise<void> {
     const publicAccess = options.public ?? this.#accessControl.public
+    const access = options.access ?? this.#accessControl.access ?? {}
+
     let accessControl: AccessControlParams
     if (publicAccess) {
-      accessControl = { public: true, access: {} }
+      accessControl = { public: true, access }
     } else {
       const serverID = this.#accessControl.serverID
       if (serverID == null) {
         return Promise.reject(new Error('Server ID is required to enable access control'))
       }
-      accessControl = {
-        public: false,
-        serverID,
-        access: options.access ?? this.#accessControl.access ?? {},
-      }
+      accessControl = { public: false, serverID, access }
     }
 
     const done = handleMessages<Protocol>({

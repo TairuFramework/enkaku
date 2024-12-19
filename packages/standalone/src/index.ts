@@ -12,22 +12,23 @@
 
 import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { type CommandAccessRecord, type CommandHandlers, serve } from '@enkaku/server'
+import { type ProcedureAccessRecord, type ProcedureHandlers, serve } from '@enkaku/server'
 import type { TokenSigner } from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
 
-export type StandaloneOptions = {
-  access?: CommandAccessRecord
+export type StandaloneOptions<Protocol extends ProtocolDefinition> = {
+  access?: ProcedureAccessRecord
   getRandomID?: () => string
+  protocol?: Protocol
   signal?: AbortSignal
   signer?: TokenSigner
 }
 
 export function standalone<Protocol extends ProtocolDefinition>(
-  handlers: CommandHandlers<Protocol>,
-  options: StandaloneOptions = {},
+  handlers: ProcedureHandlers<Protocol>,
+  options: StandaloneOptions<Protocol> = {},
 ): Client<Protocol> {
-  const { access, getRandomID, signal, signer } = options
+  const { access, getRandomID, protocol, signal, signer } = options
   const transports = createDirectTransports<
     AnyServerMessageOf<Protocol>,
     AnyClientMessageOf<Protocol>
@@ -38,8 +39,9 @@ export function standalone<Protocol extends ProtocolDefinition>(
     access,
     handlers,
     id: serverID,
-    signal,
+    protocol,
     public: serverID == null,
+    signal,
     transport: transports.server,
   })
   return new Client<Protocol>({ getRandomID, serverID, signer, transport: transports.client })

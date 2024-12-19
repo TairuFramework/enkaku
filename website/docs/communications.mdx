@@ -1,0 +1,38 @@
+# Communications
+
+## Message format
+
+Messages in Enkaku use the [JSON Web Token (IETF RFC 7519)](https://datatracker.ietf.org/doc/html/rfc7519) structure. As such, they have a `header`, `payload`, and possibly a `signature` in case of signed messages.
+
+Messages may be signed and verified using the [JSON Web Signature (IETF RFC 7515)](https://datatracker.ietf.org/doc/html/rfc7515) standard.
+
+## Transports
+
+Transports in Enkaku implement the [`TransportType<R, W>`](./api/transport/index.md#transporttyper-w) type from the [`@enkaku/transport` package](./api/transport/index.md), where `R` represents the type of messages being received and `W` represents the type of messages being sent.
+
+The following methods are available on a transport instance:
+
+- `read(): Promise<ReadableStreamReadResult<R>>`: returns the result of calling the [`read()` method of the `ReadableStreamDefaultReader` instance](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStreamDefaultReader/read).
+- `write(message: W): void`: calls the [`write()` method of the `WritableStreamDefaultWriter` instance](https://developer.mozilla.org/en-US/docs/Web/API/WritableStreamDefaultWriter/write) with the provided message.
+
+The [`Transport` class](./api/transport/index.md#transportr-w) is used as base class implementing the `TransportType<R, W>` type and providing a default implementation for the methods above.
+
+### HTTP transports
+
+Enkaku provides two separate packages for HTTP interactions: the [`@enkaku/http-client-transport` client package](./api/http-client-transport/index.md) package and the [`@enkaku/http-server-transport` server package](./api/http-server-transport/index.md) package.
+
+The [dedicated guide on HTTP transports](./guides/http-transports.mdx) explains how to use these packages in detail.
+
+### Message transport
+
+The [`@enkaku/message-transport`](./api/message-transport/index.md) package provides a transport using the [`MessagePort` API](https://developer.mozilla.org/en-US/docs/Web/API/MessagePort).
+
+It can be notably used to create interactions with Web Workers.
+
+### Node streams transport
+
+The [`@enkaku/node-streams-transport`](./api/node-streams-transport/index.md) package provides a transport for Node [`Readable`](https://nodejs.org/api/stream.html#class-streamreadable) and [`Writable`](https://nodejs.org/api/stream.html#class-streamwritable) streams.
+
+### Creating custom transports
+
+Creating your own transport is easy. [Read the following guide](./guides/custom-transports.mdx) to learn more.

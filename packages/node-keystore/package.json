@@ -1,14 +1,14 @@
 {
-  "name": "@enkaku/desktop-keystore",
-  "version": "0.7.0",
+  "name": "@enkaku/node-keystore",
+  "version": "0.8.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Enkaku key store for desktop",
+  "description": "Enkaku key store for Node",
   "keywords": ["cryptography", "key-management", "desktop", "storage"],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/desktop-keystore"
+    "directory": "packages/node-keystore"
   },
   "type": "module",
   "main": "lib/index.js",

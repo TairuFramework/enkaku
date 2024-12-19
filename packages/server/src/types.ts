@@ -1,15 +1,15 @@
 import type {
-  AnyRequestCommandDefinition,
+  AnyRequestProcedureDefinition,
   AnyServerPayloadOf,
-  ChannelCommandDefinition,
+  ChannelProcedureDefinition,
   DataOf,
   EventCallPayload,
-  EventCommandDefinition,
+  EventProcedureDefinition,
   Message,
   ProtocolDefinition,
   RequestCallPayload,
-  RequestCommandDefinition,
-  StreamCommandDefinition,
+  RequestProcedureDefinition,
+  StreamProcedureDefinition,
 } from '@enkaku/protocol'
 
 import type { RejectionType } from './rejections.js'
@@ -24,28 +24,32 @@ export type HandlerController<Send = unknown> = RequestController | ChannelContr
 
 export type EventHandlerContext<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends EventCommandDefinition
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends EventProcedureDefinition
   ? {
-      message: Message<EventCallPayload<Command, DataOf<Protocol[Command]['data']>>>
-      data: DataOf<Protocol[Command]['data']>
+      message: Message<EventCallPayload<Procedure, DataOf<Protocol[Procedure]['data']>>>
+      data: DataOf<Protocol[Procedure]['data']>
     }
   : never
 
 export type EventHandler<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = (context: EventHandlerContext<Protocol, Command>) => void | Promise<void>
+  Procedure extends keyof Protocol & string,
+> = (context: EventHandlerContext<Protocol, Procedure>) => void | Promise<void>
 
 export type RequestHandlerContext<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends AnyRequestCommandDefinition
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends AnyRequestProcedureDefinition
   ? {
       message: Message<
-        RequestCallPayload<Protocol[Command]['type'], Command, DataOf<Protocol[Command]['params']>>
+        RequestCallPayload<
+          Protocol[Procedure]['type'],
+          Procedure,
+          DataOf<Protocol[Procedure]['params']>
+        >
       >
-      params: DataOf<Protocol[Command]['params']>
+      params: DataOf<Protocol[Procedure]['params']>
       signal: AbortSignal
     }
   : never
@@ -54,101 +58,107 @@ export type HandlerReturn<ResultSchema, Data = DataOf<ResultSchema>> = Data | Pr
 
 export type RequestHandler<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends AnyRequestCommandDefinition
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends AnyRequestProcedureDefinition
   ? (
-      context: RequestHandlerContext<Protocol, Command>,
-    ) => HandlerReturn<Protocol[Command]['result']>
+      context: RequestHandlerContext<Protocol, Procedure>,
+    ) => HandlerReturn<Protocol[Procedure]['result']>
   : never
 
 export type StreamHandlerContext<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends StreamCommandDefinition | ChannelCommandDefinition
-  ? RequestHandlerContext<Protocol, Command> & {
-      writable: WritableStream<DataOf<Protocol[Command]['receive']>>
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends StreamProcedureDefinition | ChannelProcedureDefinition
+  ? RequestHandlerContext<Protocol, Procedure> & {
+      writable: WritableStream<DataOf<Protocol[Procedure]['receive']>>
     }
   : never
 
 export type StreamHandler<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends StreamCommandDefinition | ChannelCommandDefinition
-  ? (context: StreamHandlerContext<Protocol, Command>) => HandlerReturn<Protocol[Command]['result']>
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends StreamProcedureDefinition | ChannelProcedureDefinition
+  ? (
+      context: StreamHandlerContext<Protocol, Procedure>,
+    ) => HandlerReturn<Protocol[Procedure]['result']>
   : never
 
 export type ChannelHandlerContext<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends ChannelCommandDefinition
-  ? StreamHandlerContext<Protocol, Command> & {
-      readable: ReadableStream<DataOf<Protocol[Command]['send']>>
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends ChannelProcedureDefinition
+  ? StreamHandlerContext<Protocol, Procedure> & {
+      readable: ReadableStream<DataOf<Protocol[Procedure]['send']>>
     }
   : never
 
 export type ChannelHandler<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends ChannelCommandDefinition
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends ChannelProcedureDefinition
   ? (
-      context: ChannelHandlerContext<Protocol, Command>,
-    ) => HandlerReturn<Protocol[Command]['result']>
+      context: ChannelHandlerContext<Protocol, Procedure>,
+    ) => HandlerReturn<Protocol[Procedure]['result']>
   : never
 
-export type CommandHandlers<Protocol extends ProtocolDefinition> = {
-  [Command in keyof Protocol & string]: Protocol[Command] extends EventCommandDefinition
-    ? (context: EventHandlerContext<Protocol, Command>) => void
-    : Protocol[Command] extends RequestCommandDefinition
+export type ProcedureHandlers<Protocol extends ProtocolDefinition> = {
+  [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition
+    ? (context: EventHandlerContext<Protocol, Procedure>) => void
+    : Protocol[Procedure] extends RequestProcedureDefinition
       ? (
-          context: RequestHandlerContext<Protocol, Command>,
-        ) => HandlerReturn<Protocol[Command]['result']>
-      : Protocol[Command] extends StreamCommandDefinition
+          context: RequestHandlerContext<Protocol, Procedure>,
+        ) => HandlerReturn<Protocol[Procedure]['result']>
+      : Protocol[Procedure] extends StreamProcedureDefinition
         ? (
-            context: StreamHandlerContext<Protocol, Command>,
-          ) => HandlerReturn<Protocol[Command]['result']>
-        : Protocol[Command] extends ChannelCommandDefinition
+            context: StreamHandlerContext<Protocol, Procedure>,
+          ) => HandlerReturn<Protocol[Procedure]['result']>
+        : Protocol[Procedure] extends ChannelProcedureDefinition
           ? (
-              context: ChannelHandlerContext<Protocol, Command>,
-            ) => HandlerReturn<Protocol[Command]['result']>
+              context: ChannelHandlerContext<Protocol, Procedure>,
+            ) => HandlerReturn<Protocol[Procedure]['result']>
           : never
 }
 
 export type EventDataType<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends EventCommandDefinition ? DataOf<Protocol[Command]['data']> : never
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends EventProcedureDefinition
+  ? DataOf<Protocol[Procedure]['data']>
+  : never
 
 export type ParamsType<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends AnyRequestCommandDefinition
-  ? DataOf<Protocol[Command]['params']>
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends AnyRequestProcedureDefinition
+  ? DataOf<Protocol[Procedure]['params']>
   : never
 
 export type ReceiveType<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends StreamCommandDefinition
-  ? DataOf<Protocol[Command]['receive']>
-  : Protocol[Command] extends ChannelCommandDefinition
-    ? DataOf<Protocol[Command]['receive']>
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends StreamProcedureDefinition
+  ? DataOf<Protocol[Procedure]['receive']>
+  : Protocol[Procedure] extends ChannelProcedureDefinition
+    ? DataOf<Protocol[Procedure]['receive']>
     : never
 
 export type ResultType<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends AnyRequestCommandDefinition
-  ? DataOf<Protocol[Command]['result']>
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends AnyRequestProcedureDefinition
+  ? DataOf<Protocol[Procedure]['result']>
   : never
 
 export type SendType<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-> = Protocol[Command] extends ChannelCommandDefinition ? DataOf<Protocol[Command]['send']> : never
+  Procedure extends keyof Protocol & string,
+> = Protocol[Procedure] extends ChannelProcedureDefinition
+  ? DataOf<Protocol[Procedure]['send']>
+  : never
 
 export type HandlerContext<Protocol extends ProtocolDefinition> = {
   controllers: Record<string, HandlerController>
-  handlers: CommandHandlers<Protocol>
+  handlers: ProcedureHandlers<Protocol>
   reject: (rejection: RejectionType) => void
   send: (payload: AnyServerPayloadOf<Protocol>) => Promise<void>
 }

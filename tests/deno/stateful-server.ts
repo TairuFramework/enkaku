@@ -1,5 +1,5 @@
-import { ServerTransport } from 'https://esm.sh/@enkaku/http-server-transport@0.6.2'
-import { serve } from 'https://esm.sh/@enkaku/server@0.6'
+import { ServerTransport } from 'https://esm.sh/@enkaku/http-server-transport@0.8'
+import { serve } from 'https://esm.sh/@enkaku/server@0.8'
 
 const transport = new ServerTransport()
 serve({
@@ -8,8 +8,8 @@ serve({
       console.log('received request')
       return { test: true }
     },
-    'example:channel': (ctx) => {
-      console.log('received channel', ctx)
+    'example:stream': (ctx) => {
+      console.log('received stream', ctx)
       return new Promise((resolve, reject) => {
         const writer = ctx.writable.getWriter()
         let count = 0
@@ -32,4 +32,4 @@ serve({
   transport,
 })
 
-export default { fetch: transport.handleRequest }
+export default transport

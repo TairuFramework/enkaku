@@ -1,0 +1,21 @@
+# Key management
+
+## Creating keys and signers
+
+The [`@enkaku/token` package](../api/token/index.md) provides APIs to create private keys and signers, notably:
+
+- [`randomPrivateKey()`](../api/token/index.md#randomprivatekey) to create a random private key of 32 bytes.
+- [`getTokenSigner()`](../api/token/index.md#gettokensigner) to create [`TokenSigner`](../api/token/index.md#tokensigner) object from a private key.
+- [`randomTokenSigner()`](../api/token/index.md#randomtokensigner) to create an [`OwnTokenSigner`](../api/token/index.md#owntokensigner) object containing the private key.
+
+## Encoding and decoding keys
+
+The [`@enkaku/token` package](../api/token/index.md) provides the [`encodePrivateKey()`](../api/token/index.md#encodeprivatekey) function to encode a private key as a base64 string, and the [`decodePrivateKey()`](../api/token/index.md#decodeprivatekey) function to decode it back.
+
+## Securely storing keys
+
+The [`@enkaku/protocol` package](../api/protocol/index.md) exports the [`KeyEntry`](../api/protocol/index.md#keyentry) and [`KeyStore`](../api/protocol/index.md#keystore) types implemented by the following key management packages:
+
+- [`@enkaku/browser-keystore`](../api/browser-keystore/index.md) for Web browsers environments.
+- [`@enkaku/expo-keystore`](../api/expo-keystore/index.md) for Expo (React Native) environments.
+- [`@enkaku/node-keystore`](../api/node-keystore/index.md) for Node environments.

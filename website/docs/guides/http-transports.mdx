@@ -1,0 +1,62 @@
+# HTTP transports
+
+Enkaku provides two different packages to be used by the client and server for HTTP communications.
+
+## Client transport
+
+The [`@enkaku/http-client-transport` package](../api/http-client-transport/index.md) provides a transport over HTTP using the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) and if needed an [`EventSource`](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) for stateful interactions.
+
+## Server transport
+
+The [`@enkaku/http-server-transport` package](../api/http-server-transport/index.md) provides a transport serving HTTP requests and forwarding them to the attached Enkaku server.
+
+The HTTP server transport provides a [`fetch` method](../api/http-server-transport/index.md#fetch) compliant with the [WinterCG Fetch specification](https://fetch.spec.whatwg.org/), which is supported by various JS runtimes.
+
+The following example shows how to use it in Deno:
+
+```ts
+import { ServerTransport } from 'https://esm.sh/@enkaku/http-server-transport'
+import { serve } from 'https://esm.sh/@enkaku/server'
+
+const transport = new ServerTransport()
+serve({
+  handlers: {
+    'example:request': () => {
+      return { test: true }
+    },
+  },
+  public: true,
+  // The transport must be passed to the Enkaku server
+  transport,
+})
+
+// The transport can be used as default export, Deno using its `fetch` method
+export default transport
+```
+
+Using the server transport in Val Town is similar, only exposing the `fetch` method as default export, as [presented in this example](https://www.val.town/v/paul_lecam/EnkakuServerExample).
+
+### Usage with NodeJS
+
+NodeJS needs an adapter such as [Hono's node server](https://github.com/honojs/node-server) to adapt the requests and responses:
+
+```ts
+import { ServerTransport } from '@enkaku/http-server-transport'
+import { serve } from '@enkaku/server'
+import { serve as serveHTTP } from '@hono/node-server'
+
+const transport = new ServerTransport()
+serve({
+  handlers: {
+    'example:request': () => {
+      return { test: true }
+    },
+  },
+  public: true,
+  // The transport must be passed to the Enkaku server
+  transport,
+})
+
+// Provide the transport's `fetch` method as a handler for Hono's adapter
+const httpServer = serveHTTP({ fetch: transport.fetch })
+```

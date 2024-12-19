@@ -45,7 +45,7 @@ describe('Client', () => {
     const signedMessage = await clientSigner.createToken({
       aud: serverSigner.id,
       typ: 'event',
-      cmd: 'test/event',
+      prc: 'test/event',
       data: { hello: 'world' },
     })
 
@@ -77,7 +77,7 @@ describe('Client', () => {
         'test/request',
         Protocol['test/request']
       >
-      expect(payload.cmd).toBe('test/request')
+      expect(payload.prc).toBe('test/request')
       await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
       const result = await request.result
       expect(result).toBeInstanceOf(Result)

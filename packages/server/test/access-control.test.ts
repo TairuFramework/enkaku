@@ -8,9 +8,9 @@ type Payload = AnyClientPayloadOf<ProtocolDefinition>
 
 describe('access control', () => {
   describe('using server signer', () => {
-    test('server signer can access all commands', async () => {
+    test('server signer can access all procedures', async () => {
       const signer = randomTokenSigner()
-      const token = await signer.createToken({ cmd: 'kubun:test/test' } as Payload)
+      const token = await signer.createToken({ prc: 'enkaku:test/test' } as Payload)
       await expect(checkClientToken(signer.id, { '*': false }, token)).resolves.toBeUndefined()
     })
 
@@ -20,11 +20,11 @@ describe('access control', () => {
       const delegation = await createCapability(serverSigner, {
         aud: clientSigner.id,
         sub: serverSigner.id,
-        act: 'kubun:graph/*',
+        act: 'enkaku:graph/*',
         res: serverSigner.id,
       })
       const token = await clientSigner.createToken({
-        cmd: 'kubun:graph/test',
+        prc: 'enkaku:graph/test',
         aud: serverSigner.id,
         sub: serverSigner.id,
         cap: stringifyToken(delegation),
@@ -37,7 +37,7 @@ describe('access control', () => {
     test('audience check', async () => {
       const signer = randomTokenSigner()
       const token = await signer.createToken({
-        cmd: 'kubun:test/test',
+        prc: 'enkaku:test/test',
         aud: 'did:test:123',
       } as unknown as Payload)
       await expect(async () => {
@@ -48,7 +48,7 @@ describe('access control', () => {
     test('expiration check', async () => {
       const signer = randomTokenSigner()
       const token = await signer.createToken({
-        cmd: 'kubun:test/test',
+        prc: 'enkaku:test/test',
         exp: 1000,
       } as unknown as Payload)
       await expect(async () => {
@@ -58,31 +58,31 @@ describe('access control', () => {
   })
 
   describe('public access', () => {
-    test('can execute allowed commands', async () => {
+    test('can execute allowed procedures', async () => {
       const serverSigner = randomTokenSigner()
       const clientSigner = randomTokenSigner()
       const token = await clientSigner.createToken({
-        cmd: 'kubun:graph/test',
+        prc: 'enkaku:graph/test',
         aud: serverSigner.id,
       } as unknown as Payload)
       await expect(
-        checkClientToken(serverSigner.id, { '*': false, 'kubun:graph/test': true }, token),
+        checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': true }, token),
       ).resolves.toBeUndefined()
     })
   })
 
   describe('allow-list access', () => {
-    test('can execute allowed commands', async () => {
+    test('can execute allowed procedures', async () => {
       const serverSigner = randomTokenSigner()
       const clientSigner = randomTokenSigner()
       const token = await clientSigner.createToken({
-        cmd: 'kubun:graph/test',
+        prc: 'enkaku:graph/test',
         aud: serverSigner.id,
       } as unknown as Payload)
       await expect(
         checkClientToken(
           serverSigner.id,
-          { '*': false, 'kubun:graph/test': [clientSigner.id] },
+          { '*': false, 'enkaku:graph/test': [clientSigner.id] },
           token,
         ),
       ).resolves.toBeUndefined()
@@ -96,11 +96,11 @@ describe('access control', () => {
       const delegation = await createCapability(delegationSigner, {
         aud: clientSigner.id,
         sub: delegationSigner.id,
-        act: 'kubun:graph/*',
+        act: 'enkaku:graph/*',
         res: serverSigner.id,
       })
       const token = await clientSigner.createToken({
-        cmd: 'kubun:graph/test',
+        prc: 'enkaku:graph/test',
         aud: serverSigner.id,
         sub: delegationSigner.id,
         cap: stringifyToken(delegation),
@@ -108,7 +108,7 @@ describe('access control', () => {
       await expect(
         checkClientToken(
           serverSigner.id,
-          { '*': false, 'kubun:graph/test': [delegationSigner.id] },
+          { '*': false, 'enkaku:graph/test': [delegationSigner.id] },
           token,
         ),
       ).resolves.toBeUndefined()

@@ -375,7 +375,7 @@ describe('checkCapability()', () => {
     })
     const token = await signerD.createToken({
       sub: signerA.id,
-      cmd: 'test/call',
+      prc: 'test/call',
       cap: [stringifyToken(delegateToD), stringifyToken(delegateToC), stringifyToken(delegateToB)],
     })
     await expect(

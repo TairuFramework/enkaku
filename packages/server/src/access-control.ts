@@ -1,35 +1,35 @@
 import { assertNonExpired, checkCapability, hasPartsMatch } from '@enkaku/capability'
 import type { SignedToken } from '@enkaku/token'
 
-export type CommandAccessRecord = Record<string, boolean | Array<string>>
+export type ProcedureAccessRecord = Record<string, boolean | Array<string>>
 
-export type CommandAccessPayload = {
+export type ProcedureAccessPayload = {
   iss: string
   sub?: string
   aud?: string
-  cmd?: string
+  prc?: string
   exp?: number
 }
 
-export async function checkCommandAccess(
+export async function checkProcedureAccess(
   serverID: string,
-  record: CommandAccessRecord,
-  token: SignedToken<CommandAccessPayload>,
+  record: ProcedureAccessRecord,
+  token: SignedToken<ProcedureAccessPayload>,
   atTime?: number,
 ): Promise<void> {
   const payload = token.payload
-  if (payload.cmd == null) {
-    throw new Error('No command to check')
+  if (payload.prc == null) {
+    throw new Error('No procedure to check')
   }
 
-  for (const [command, access] of Object.entries(record)) {
-    if (hasPartsMatch(payload.cmd, command)) {
+  for (const [procedure, access] of Object.entries(record)) {
+    if (hasPartsMatch(payload.prc, procedure)) {
       if (access === true) {
-        // Command can be publicly accessed
+        // Procedure can be publicly accessed
         return
       }
       if (access === false) {
-        // Command cannot be accessed
+        // Procedure cannot be accessed
         continue
       }
       if (access.includes(payload.iss)) {
@@ -37,12 +37,12 @@ export async function checkCommandAccess(
         return
       }
       if (payload.sub == null || !access.includes(payload.sub)) {
-        // Subject is not allowed to access this command
+        // Subject is not allowed to access this procedure
         continue
       }
       try {
         // Check delegation from subject
-        await checkCapability({ act: payload.cmd, res: serverID }, payload, atTime)
+        await checkCapability({ act: payload.prc, res: serverID }, payload, atTime)
         return
       } catch {}
     }
@@ -53,14 +53,14 @@ export async function checkCommandAccess(
 
 export async function checkClientToken(
   serverID: string,
-  record: CommandAccessRecord,
+  record: ProcedureAccessRecord,
   token: SignedToken,
   atTime?: number,
 ): Promise<void> {
   const payload = token.payload
-  const command = (payload as CommandAccessPayload).cmd
-  if (command == null) {
-    throw new Error('No command to check')
+  const procedure = (payload as ProcedureAccessPayload).prc
+  if (procedure == null) {
+    throw new Error('No procedure to check')
   }
 
   if (payload.iss === serverID) {
@@ -76,12 +76,12 @@ export async function checkClientToken(
 
   if (payload.sub === serverID) {
     // If subject is the server, check capability directly
-    await checkCapability({ act: command, res: serverID }, payload, atTime)
+    await checkCapability({ act: procedure, res: serverID }, payload, atTime)
     return
   }
 
   if (payload.aud !== serverID) {
     throw new Error('Invalid audience')
   }
-  await checkCommandAccess(serverID, record, token as SignedToken<CommandAccessPayload>, atTime)
+  await checkProcedureAccess(serverID, record, token as SignedToken<ProcedureAccessPayload>, atTime)
 }

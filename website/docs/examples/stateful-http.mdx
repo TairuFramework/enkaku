@@ -1,0 +1,43 @@
+# Stateless HTTP server
+
+The following example presents a stateful HTTP server handling a stream:
+
+```ts
+import { ServerTransport } from "https://esm.sh/@enkaku/http-server-transport";
+import { serve } from "https://esm.sh/@enkaku/server";
+
+const transport = new ServerTransport();
+
+serve({
+  public: true,
+  transport,
+  handlers: {
+    "example:stream": ctx => {
+      console.log("stream request");
+      return new Promise((resolve, reject) => {
+        const writer = ctx.writable.getWriter();
+        let count = 0;
+        const timer = setInterval(() => {
+          if (count === 3) {
+            clearInterval(timer);
+            resolve("END");
+          } else {
+            console.log("write to transport", count);
+            writer.write(ctx.params + count++);
+          }
+        }, 50);
+        ctx.signal.addEventListener("abort", () => {
+          clearTimeout(timer);
+          reject(new Error("aborted"));
+        });
+      });
+    },
+  },
+});
+
+export default transport;
+```
+
+This example is made for Deno and similar runtimes. For more information about how to use the HTTP transport in various runtimes, [read the dedicated guide](../guides/http-transports.mdx#http-server-transport).
+
+This example can be [run directly on Val Town](https://www.val.town/v/paul_lecam/EnkakuStatefulHTTPExample) with [the associated client](https://www.val.town/v/paul_lecam/EnkakuStatefulHTTPExampleClient).

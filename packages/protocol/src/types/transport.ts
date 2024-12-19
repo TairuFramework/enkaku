@@ -2,7 +2,7 @@ import type { SignedPayload, SignedToken, UnsignedToken } from '@enkaku/token'
 import type { TransportType } from '@enkaku/transport'
 
 import type { ProtocolDefinition } from '../schemas/protocol.js'
-import type { UnknownCallPayload, UnknownReplyPayload } from './invocations.js'
+import type { UnknownCallPayload, UnknownReplyPayload } from './calls.js'
 import type { ClientPayloadRecordsOf, ServerPayloadRecordsOf } from './payloads.js'
 import type { ValueOf } from './utils.js'
 

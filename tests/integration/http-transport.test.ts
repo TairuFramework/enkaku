@@ -5,8 +5,8 @@ import { ServerTransport } from '@enkaku/http-server-transport'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import {
   type ChannelHandler,
-  type CommandHandlers,
   type EventHandler,
+  type ProcedureHandlers,
   type RequestHandler,
   type StreamHandler,
   serve,
@@ -22,7 +22,7 @@ type TestContext<Protocol extends ProtocolDefinition> = {
 }
 
 async function createContext<Protocol extends ProtocolDefinition>(
-  handlers: CommandHandlers<Protocol>,
+  handlers: ProcedureHandlers<Protocol>,
 ): Promise<TestContext<Protocol>> {
   const port = await getPort()
 
@@ -65,7 +65,7 @@ describe('HTTP transports', () => {
       await setTimeout(100)
       expect(handler).toHaveBeenCalledWith({
         data: { hello: 'world' },
-        message: createUnsignedToken({ typ: 'event', cmd: 'test', data: { hello: 'world' } }),
+        message: createUnsignedToken({ typ: 'event', prc: 'test', data: { hello: 'world' } }),
       })
 
       await dispose()

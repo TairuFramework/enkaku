@@ -1,9 +1,5 @@
 import type { ErrorObject } from '../schemas/error.js'
-import type {
-  AnyRequestCommandDefinition,
-  ProtocolDefinition,
-  RequestType,
-} from '../schemas/protocol.js'
+import type { RequestType } from '../schemas/protocol.js'
 
 // Call payloads: from client to server
 
@@ -13,16 +9,16 @@ export type AbortCallPayload = {
 }
 
 export type EventCallPayload<
-  Command extends string,
+  Procedure extends string,
   Data extends Record<string, unknown> | undefined,
 > = {
   typ: 'event'
-  cmd: Command
+  prc: Procedure
 } & (Data extends undefined ? { data?: never } : { data: Data })
 
-export type RequestCallPayload<Type extends RequestType, Command extends string, Params> = {
+export type RequestCallPayload<Type extends RequestType, Procedure extends string, Params> = {
   typ: Type
-  cmd: Command
+  prc: Procedure
   rid: string
   prm: Params
 }

@@ -27,12 +27,12 @@ describe('handleStream()', () => {
   const clientToken = createUnsignedToken({
     typ: 'stream',
     rid: '1',
-    cmd: 'test',
+    prc: 'test',
     prm: { test: true },
   } as const)
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
-    const unknownPayload = { typ: 'stream', rid: '1', cmd: 'unknown' }
+    const unknownPayload = { typ: 'stream', rid: '1', prc: 'unknown' }
     // @ts-ignore type instantiation too deep
     const returned = handleStream(
       { handlers: {} } as unknown as HandlerContext<Protocol>,
@@ -40,7 +40,7 @@ describe('handleStream()', () => {
       { payload: unknownPayload },
     )
     expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for command: unknown')
+    expect((returned as ErrorRejection).message).toBe('No handler for procedure: unknown')
     expect((returned as ErrorRejection).info).toEqual(unknownPayload)
   })
 

@@ -1,11 +1,11 @@
-import { Client } from 'https://esm.sh/@enkaku/client@0.6'
-import { ClientTransport } from 'https://esm.sh/@enkaku/http-client-transport@0.6'
+import { Client } from 'https://esm.sh/@enkaku/client@0.8'
+import { ClientTransport } from 'https://esm.sh/@enkaku/http-client-transport@0.8'
 
 const client = new Client({
   transport: new ClientTransport({ url: 'http://localhost:8000' }),
 })
 
-const stream = await client.createChannel('example:channel', 3)
+const stream = await client.createStream('example:stream', 3)
 const reader = stream.receive.getReader()
 const received: Array<number> = []
 while (true) {
@@ -17,4 +17,6 @@ while (true) {
 }
 
 const result = await stream.result
-console.log('stream ended', received, result)
+console.log('stream ended', received, result.value)
+
+await client.dispose()

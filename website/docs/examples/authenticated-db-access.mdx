@@ -1,0 +1,54 @@
+# Authenticated HTTP API
+
+The following example presents how to use Enkaku's built-in access control to create a simple API interating with a database.
+
+## API server
+
+The main requirements to enable access control are to provide the server `id` matching the server signer and the `access` record to grant or deny access to specific procedures. The `*` character can be used as wildcard matching any procedure.
+
+The signer specified by the `id` always has access to the API, so even procedures not listed in the `access` record or having restricted access are accessible to it.
+
+The [full example code is available on Val Town](https://www.val.town/v/paul_lecam/EnkakuAuthenticatedAPI), using its SQLite implementation to store data. The following code presents the main parameters to use for the server:
+
+```ts
+// ... previous code omitted for brevity
+
+serve({
+  // The server ID needs to be specified to check access control
+  id: Deno.env.get("ENKAKU_SERVER_ID")!,
+  access: {
+    // Deny access to all signers other than the one matching the server ID
+    "*": false,
+    // Allow access to the following endpoint using any signer
+    "kv:get": true,
+    "kv:set": true,
+  },
+  transport,
+  handlers: {
+    "kv:get": async (ctx) => {
+      const value = await getValue(ctx.message.payload.iss);
+      console.log("get value", ctx.message.payload.iss, value);
+      return value;
+    },
+    "kv:list": async () => {
+      return await listEntries();
+    },
+    "kv:set": async (ctx) => {
+      console.log("set value", ctx.message.payload.iss, ctx.params);
+      await setValue(ctx.message.payload.iss, ctx.params);
+    },
+  },
+});
+```
+
+## Public client
+
+A public client can interact with the `kv:get` and `kv:set` procedures, only accessing the data associated to its own signer.
+
+The [full example code is available on Val Town](https://www.val.town/v/paul_lecam/EnkakuAuthenticatedAPIClient).
+
+## Admin client
+
+An "admin" client uses the server's private key to sign messages. It allows the client to execute any procedure made available by the server, independently of access control settings.
+
+The [full example code is available on Val Town](https://www.val.town/v/paul_lecam/EnkakuAuthenticatedAPIAdmin).

@@ -1,16 +1,16 @@
-# @enkaku/desktop-keystore
+# @enkaku/node-keystore
 
-Enkaku key store for desktop.
+Enkaku key store for Node.
 
 ## Installation
 
 ```sh
-npm install @enkaku/desktop-keystore
+npm install @enkaku/node-keystore
 ```
 
 ## Classes
 
-### DesktopKeyEntry
+### NodeKeyEntry
 
 #### Implements
 
@@ -18,9 +18,9 @@ npm install @enkaku/desktop-keystore
 
 #### Constructors
 
-##### new DesktopKeyEntry()
+##### new NodeKeyEntry()
 
-> **new DesktopKeyEntry**(`service`, `keyID`, `key`?): [`DesktopKeyEntry`](index.md#desktopkeyentry)
+> **new NodeKeyEntry**(`service`, `keyID`, `key`?): [`NodeKeyEntry`](index.md#nodekeyentry)
 
 ###### Parameters
 
@@ -38,7 +38,7 @@ npm install @enkaku/desktop-keystore
 
 ###### Returns
 
-[`DesktopKeyEntry`](index.md#desktopkeyentry)
+[`NodeKeyEntry`](index.md#nodekeyentry)
 
 #### Accessors
 
@@ -168,17 +168,17 @@ npm install @enkaku/desktop-keystore
 
 ***
 
-### DesktopKeyStore
+### NodeKeyStore
 
 #### Implements
 
-- [`KeyStore`](../protocol/index.md#keystoreprivatekeytype-entrytype)\<`Uint8Array`, [`DesktopKeyEntry`](index.md#desktopkeyentry)\>
+- [`KeyStore`](../protocol/index.md#keystoreprivatekeytype-entrytype)\<`Uint8Array`, [`NodeKeyEntry`](index.md#nodekeyentry)\>
 
 #### Constructors
 
-##### new DesktopKeyStore()
+##### new NodeKeyStore()
 
-> **new DesktopKeyStore**(`service`): [`DesktopKeyStore`](index.md#desktopkeystore)
+> **new NodeKeyStore**(`service`): [`NodeKeyStore`](index.md#nodekeystore)
 
 ###### Parameters
 
@@ -188,13 +188,13 @@ npm install @enkaku/desktop-keystore
 
 ###### Returns
 
-[`DesktopKeyStore`](index.md#desktopkeystore)
+[`NodeKeyStore`](index.md#nodekeystore)
 
 #### Methods
 
 ##### entry()
 
-> **entry**(`keyID`): [`DesktopKeyEntry`](index.md#desktopkeyentry)
+> **entry**(`keyID`): [`NodeKeyEntry`](index.md#nodekeyentry)
 
 ###### Parameters
 
@@ -204,7 +204,7 @@ npm install @enkaku/desktop-keystore
 
 ###### Returns
 
-[`DesktopKeyEntry`](index.md#desktopkeyentry)
+[`NodeKeyEntry`](index.md#nodekeyentry)
 
 ###### Implementation of
 
@@ -214,27 +214,27 @@ npm install @enkaku/desktop-keystore
 
 ##### list()
 
-> **list**(): [`DesktopKeyEntry`](index.md#desktopkeyentry)[]
+> **list**(): [`NodeKeyEntry`](index.md#nodekeyentry)[]
 
 ###### Returns
 
-[`DesktopKeyEntry`](index.md#desktopkeyentry)[]
+[`NodeKeyEntry`](index.md#nodekeyentry)[]
 
 ***
 
 ##### listAsync()
 
-> **listAsync**(): `Promise`\<[`DesktopKeyEntry`](index.md#desktopkeyentry)[]\>
+> **listAsync**(): `Promise`\<[`NodeKeyEntry`](index.md#nodekeyentry)[]\>
 
 ###### Returns
 
-`Promise`\<[`DesktopKeyEntry`](index.md#desktopkeyentry)[]\>
+`Promise`\<[`NodeKeyEntry`](index.md#nodekeyentry)[]\>
 
 ***
 
 ##### open()
 
-> `static` **open**(`service`): [`DesktopKeyStore`](index.md#desktopkeystore)
+> `static` **open**(`service`): [`NodeKeyStore`](index.md#nodekeystore)
 
 ###### Parameters
 
@@ -244,7 +244,7 @@ npm install @enkaku/desktop-keystore
 
 ###### Returns
 
-[`DesktopKeyStore`](index.md#desktopkeystore)
+[`NodeKeyStore`](index.md#nodekeystore)
 
 ## Functions
 
@@ -256,7 +256,7 @@ npm install @enkaku/desktop-keystore
 
 ##### store
 
-`string` | [`DesktopKeyStore`](index.md#desktopkeystore)
+`string` | [`NodeKeyStore`](index.md#nodekeystore)
 
 ##### keyID
 
@@ -276,7 +276,7 @@ npm install @enkaku/desktop-keystore
 
 ##### store
 
-`string` | [`DesktopKeyStore`](index.md#desktopkeystore)
+`string` | [`NodeKeyStore`](index.md#nodekeystore)
 
 ##### keyID
 

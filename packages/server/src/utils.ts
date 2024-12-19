@@ -37,11 +37,11 @@ export async function consumeReader<T>(params: ConsumeReaderParams<T>): Promise<
 // @ts-ignore type instantiation too deep
 export async function executeHandler<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
-  Result extends ResultType<Protocol, Command> = ResultType<Protocol, Command>,
+  Procedure extends keyof Protocol & string,
+  Result extends ResultType<Protocol, Procedure> = ResultType<Protocol, Procedure>,
 >(
   context: HandlerContext<Protocol>,
-  payload: RequestPayloadOf<Command, Protocol[Command]>,
+  payload: RequestPayloadOf<Procedure, Protocol[Procedure]>,
   execute: () => Result | Promise<Result>,
 ): Promise<void> {
   const controller = context.controllers[payload.rid]
@@ -65,7 +65,7 @@ export async function executeHandler<
     }
 
     context.reject(
-      new ErrorRejection(`Error handling command: ${payload.cmd}`, { info: payload, cause }),
+      new ErrorRejection(`Error handling procedure: ${payload.prc}`, { info: payload, cause }),
     )
   } finally {
     delete context.controllers[payload.rid]

@@ -6,19 +6,19 @@ import { executeHandler } from '../utils.js'
 
 export type RequestMessageOf<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string = keyof Protocol & string,
-> = ClientMessage<RequestPayloadOf<Command, Protocol[Command]>>
+  Procedure extends keyof Protocol & string = keyof Protocol & string,
+> = ClientMessage<RequestPayloadOf<Procedure, Protocol[Procedure]>>
 
 export function handleRequest<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
+  Procedure extends keyof Protocol & string,
 >(
   ctx: HandlerContext<Protocol>,
-  msg: RequestMessageOf<Protocol, Command>,
+  msg: RequestMessageOf<Protocol, Procedure>,
 ): ErrorRejection | Promise<void> {
-  const handler = ctx.handlers[msg.payload.cmd] as unknown as RequestHandler<Protocol, Command>
+  const handler = ctx.handlers[msg.payload.prc] as unknown as RequestHandler<Protocol, Procedure>
   if (handler == null) {
-    return new ErrorRejection(`No handler for command: ${msg.payload.cmd}`, { info: msg.payload })
+    return new ErrorRejection(`No handler for procedure: ${msg.payload.prc}`, { info: msg.payload })
   }
 
   const controller = new AbortController()

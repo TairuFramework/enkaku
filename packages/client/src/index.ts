@@ -13,8 +13,9 @@
 export {
   Client,
   type ClientParams,
-  type InvokeChannelReturn,
-  type InvokeReturn,
-  type InvokeStreamReturn,
+  type CallChannelReturn,
+  type CallReturn,
+  type CallStreamReturn,
+  type ProcedureCall,
 } from './client.js'
 export { ABORTED } from './constants.js'

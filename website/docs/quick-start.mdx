@@ -6,44 +6,84 @@ All Enkaku packages are available on npm. See the [API documentation](./api.mdx)
 
 ## Your first RPC system using Enkaku
 
-### 1. Create handlers
+### 1. Defining a protocol
 
-First, let's create an object of handlers where keys are the command names and values are functions that get a context object as an argument containing information about the request and return the response as needed.
+A protocol is a mapping of procedure names to a supported [procedure definition](./procedures.mdx#defining-procedures).
 
-The following handler expects a request with parameters being an optional object containing a `name` field:
+```ts
+import type { ProtocolDefinition } from '@enkaku/protocol'
+
+const protocol = {
+  'example:hello': {
+    type: 'request',
+    description: 'Say hello!',
+    params: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'The name to say hello to.' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+  },
+} as const satisfies ProtocolDefinition
+
+```
+
+### 2. Implementing handlers for a protocol
+
+Let's create an object of handlers where keys are the procedure names and values are functions that get a context object as an argument containing information about the request and return the response as needed.
+
+The following handler expects a request with parameters being an object containing a `name` field:
 
 ```ts
 const handlers = {
   'example:hello': (ctx) => {
-    return { hello: ctx.params?.name ?? 'world' }
+    return `Hello ${ctx.params.name}`
   },
 }
 ```
 
-### 2. Run it!
+### 3. Running a server
 
 The simplest way to run handlers is to use the [`@enkaku/standalone`](./api/standalone/index.md) package that creates an in-process server and return a client to call handlers.
 
 ```ts
+import type { ProtocolDefinition } from '@enkaku/protocol'
 import { standalone } from '@enkaku/standalone'
+
+const protocol = {
+  'example:hello': {
+    type: 'request',
+    description: 'Say hello!',
+    params: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'The name to say hello to.' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+  },
+} as const satisfies ProtocolDefinition
 
 const handlers = {
   'example:hello': (ctx) => {
-    return { hello: ctx.params?.name ?? 'world' }
+    return `Hello ${ctx.params.name}`
   },
 }
-const client = standalone(handlers)
+const client = standalone<typeof protocol>(handlers)
 
 // Send the request to the server, this returns an object allowing to get the result of the request or cancel it
-const request = await client.request('example:hello')
+const request = await client.request('example:hello', { name: 'stranger' })
 // Wait for the result
-const response = await request.result // { hello: 'world' }
+const response = await request.result // 'Hello stranger'
 
 // We can also provide the expected parameters to the request and get the result directly
-const result = await client.request('example:hello', { name: 'stranger' }).toValue() // { hello: 'stranger' }
+const result = await client.request('example:hello', { name: 'stranger' }).toValue() // 'Hello stranger'
 ```
 
-### 3. Add a transport
+### 4. Configuring the transport
 
 The `standalone` package is useful for testing, but in most cases the client and server will run in different processes, so we need to attach a transport between them.
 
@@ -57,22 +97,42 @@ This example is for demonstration purposes only, it only works when both the ser
 
 ```ts
 import { Client } from '@enkaku/client'
+import type { ProtocolDefinition } from '@enkaku/protocol'
 import { serve } from '@enkaku/server'
 import { createDirectTransports } from '@enkaku/transport'
+
+const protocol = {
+  'example:hello': {
+    type: 'request',
+    description: 'Say hello!',
+    params: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'The name to say hello to.' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    },
+  },
+} as const satisfies ProtocolDefinition
+type Protocol = typeof protocol
 
 // Create the client and server transports running in the same process
 const transports = createDirectTransports()
 
 const handlers = {
   'example:hello': (ctx) => {
-    return { hello: ctx.params?.name ?? 'world' }
+    return `Hello ${ctx.params.name}`
   },
 }
 // Serve the handlers using the transport created above
-serve({ handlers, public: true, transport: transports.server })
+serve<Protocol>({ handlers, public: true, transport: transports.server })
 
 // Create the client using the transport created above
-const client = new Client({ transport: transports.client })
-const result = await client.request('example:hello', { name: 'stranger' }).toValue() // { hello: 'stranger' }
+const client = new Client<Protocol>({ transport: transports.client })
+const result = await client.request('example:hello', { name: 'stranger' }).toValue() // 'Hello stranger'
 ```
 
+### 5. Going further
+
+Learn more about how to [define and handle procedures](./procedures.mdx), [handle communications between clients and servers](./communications.mdx), [configure data validation](./validation.mdx) and [understand the security options](./security.mdx) in the following pages of this documentation.

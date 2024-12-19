@@ -66,7 +66,7 @@ export const errorDefinition = {
 } as const satisfies Schema
 export type ErrorDefinition = FromSchema<typeof errorDefinition>
 
-export const eventCommandDefinition = {
+export const eventProcedureDefinition = {
   type: 'object',
   properties: {
     type: { type: 'string', const: 'event' },
@@ -76,9 +76,9 @@ export const eventCommandDefinition = {
   required: ['type'],
   additionalProperties: false,
 } as const satisfies Schema
-export type EventCommandDefinition = FromSchema<typeof eventCommandDefinition>
+export type EventProcedureDefinition = FromSchema<typeof eventProcedureDefinition>
 
-export const requestCommandDefinition = {
+export const requestProcedureDefinition = {
   type: 'object',
   properties: {
     type: { type: 'string', const: 'request' },
@@ -90,9 +90,9 @@ export const requestCommandDefinition = {
   required: ['type'],
   additionalProperties: false,
 } as const satisfies Schema
-export type RequestCommandDefinition = FromSchema<typeof requestCommandDefinition>
+export type RequestProcedureDefinition = FromSchema<typeof requestProcedureDefinition>
 
-export const streamCommandDefinition = {
+export const streamProcedureDefinition = {
   type: 'object',
   properties: {
     type: { type: 'string', const: 'stream' },
@@ -105,9 +105,9 @@ export const streamCommandDefinition = {
   required: ['type', 'receive'],
   additionalProperties: false,
 } as const satisfies Schema
-export type StreamCommandDefinition = FromSchema<typeof streamCommandDefinition>
+export type StreamProcedureDefinition = FromSchema<typeof streamProcedureDefinition>
 
-export const channelCommandDefinition = {
+export const channelProcedureDefinition = {
   type: 'object',
   properties: {
     type: { type: 'string', const: 'channel' },
@@ -121,27 +121,27 @@ export const channelCommandDefinition = {
   required: ['type', 'send', 'receive'],
   additionalProperties: false,
 } as const satisfies Schema
-export type ChannelCommandDefinition = FromSchema<typeof channelCommandDefinition>
+export type ChannelProcedureDefinition = FromSchema<typeof channelProcedureDefinition>
 
-export const anyRequestCommandDefinition = {
-  anyOf: [requestCommandDefinition, streamCommandDefinition, channelCommandDefinition],
+export const anyRequestProcedureDefinition = {
+  anyOf: [requestProcedureDefinition, streamProcedureDefinition, channelProcedureDefinition],
 } as const satisfies Schema
-export type AnyRequestCommandDefinition = FromSchema<typeof anyRequestCommandDefinition>
+export type AnyRequestProcedureDefinition = FromSchema<typeof anyRequestProcedureDefinition>
 
-export type RequestType = AnyRequestCommandDefinition['type']
+export type RequestType = AnyRequestProcedureDefinition['type']
 
-export const anyCommandDefinition = {
+export const anyProcedureDefinition = {
   anyOf: [
-    eventCommandDefinition,
-    requestCommandDefinition,
-    streamCommandDefinition,
-    channelCommandDefinition,
+    eventProcedureDefinition,
+    requestProcedureDefinition,
+    streamProcedureDefinition,
+    channelProcedureDefinition,
   ],
 } as const satisfies Schema
-export type AnyCommandDefinition = FromSchema<typeof anyCommandDefinition>
+export type AnyProcedureDefinition = FromSchema<typeof anyProcedureDefinition>
 
 export const protocolDefinition = {
   type: 'object',
-  additionalProperties: anyCommandDefinition,
+  additionalProperties: anyProcedureDefinition,
 } as const satisfies Schema
 export type ProtocolDefinition = FromSchema<typeof protocolDefinition>

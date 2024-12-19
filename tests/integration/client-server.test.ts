@@ -2,8 +2,8 @@ import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import {
   type ChannelHandler,
-  type CommandHandlers,
   type EventHandler,
+  type ProcedureHandlers,
   type RequestHandler,
   type StreamHandler,
   serve,
@@ -29,7 +29,7 @@ describe('client-server integration', () => {
       type Protocol = typeof protocol
 
       const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
-      const handlers = { test: handler } as CommandHandlers<Protocol>
+      const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
       const transports = createDirectTransports<
         AnyServerMessageOf<Protocol>,
@@ -42,7 +42,7 @@ describe('client-server integration', () => {
       await client.sendEvent('test', { hello: 'world' })
       expect(handler).toHaveBeenCalledWith({
         data: { hello: 'world' },
-        message: createUnsignedToken({ typ: 'event', cmd: 'test', data: { hello: 'world' } }),
+        message: createUnsignedToken({ typ: 'event', prc: 'test', data: { hello: 'world' } }),
       })
 
       await transports.dispose()
@@ -70,7 +70,7 @@ describe('client-server integration', () => {
           })
         })
       }) as jest.Mock<RequestHandler<Protocol, 'test'>>
-      const handlers = { test: handler } as CommandHandlers<Protocol>
+      const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
       const transports = createDirectTransports<
         AnyServerMessageOf<Protocol>,
@@ -116,7 +116,7 @@ describe('client-server integration', () => {
           })
         })
       }) as jest.Mock<StreamHandler<Protocol, 'test'>>
-      const handlers = { test: handler } as CommandHandlers<Protocol>
+      const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
       const transports = createDirectTransports<
         AnyServerMessageOf<Protocol>,
@@ -171,7 +171,7 @@ describe('client-server integration', () => {
         }
         return 'END'
       }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
-      const handlers = { test: handler } as CommandHandlers<Protocol>
+      const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
       const transports = createDirectTransports<
         AnyServerMessageOf<Protocol>,

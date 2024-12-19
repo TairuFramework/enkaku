@@ -1,0 +1,30 @@
+# Stateless HTTP server
+
+The following example presents a simple stateless HTTP server, only handling events and requests:
+
+```ts
+import { ServerTransport } from "https://esm.sh/@enkaku/http-server-transport";
+import { serve } from "https://esm.sh/@enkaku/server";
+
+const transport = new ServerTransport();
+
+serve({
+  public: true,
+  transport,
+  handlers: {
+    "example:event": (ctx) => {
+      console.log("received event:", ctx.data);
+    },
+    "example:request": () => {
+      console.log("received request");
+      return { test: true };
+    },
+  },
+});
+
+export default transport;
+```
+
+This example is made for Deno and similar runtimes. For more information about how to use the HTTP transport in various runtimes, [read the dedicated guide](../guides/http-transports.mdx#http-server-transport).
+
+This example can be [run directly on Val Town](https://www.val.town/v/paul_lecam/EnkakuStatelessHTTPExample) with [the associated client](https://www.val.town/v/paul_lecam/EnkakuStatelessHTTPExampleClient).

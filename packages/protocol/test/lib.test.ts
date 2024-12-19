@@ -1,4 +1,4 @@
-import { type FromSchema, createValidator, isType } from '@enkaku/schema'
+import { createValidator, isType } from '@enkaku/schema'
 import { createUnsignedToken } from '@enkaku/token'
 
 import {
@@ -51,34 +51,34 @@ describe('protocol messages validation', () => {
 
     const validEvent = createUnsignedToken({
       typ: 'event',
-      cmd: 'test/event',
+      prc: 'test/event',
       data: { foo: 'bar' },
     })
     expect(isType(validator, validEvent)).toBe(true)
 
     const invalidEvent = createUnsignedToken({
       typ: 'event',
-      cmd: 'test/event',
+      prc: 'test/event',
       data: { foo: 'bar', invalid: true },
     })
     expect(isType(validator, invalidEvent)).toBe(false)
 
     const validRequest = createUnsignedToken({
       typ: 'request',
-      cmd: 'test/request',
+      prc: 'test/request',
       rid: '1',
     })
     expect(isType(validator, validRequest)).toBe(true)
 
     const invalidRequest = createUnsignedToken({
       typ: 'request',
-      cmd: 'test/request',
+      prc: 'test/request',
     })
     expect(isType(validator, invalidRequest)).toBe(false)
 
     const validStream = createUnsignedToken({
       typ: 'stream',
-      cmd: 'test/stream',
+      prc: 'test/stream',
       rid: '1',
       prm: 1,
     })
@@ -86,12 +86,12 @@ describe('protocol messages validation', () => {
 
     const invalidStream = createUnsignedToken({
       typ: 'stream',
-      cmd: 'test/other',
+      prc: 'test/other',
       rid: '1',
     })
     expect(isType(validator, invalidStream)).toBe(false)
 
-    const validSend = createUnsignedToken({ typ: 'send', cmd: 'test/channel', rid: '1', val: '1' })
+    const validSend = createUnsignedToken({ typ: 'send', prc: 'test/channel', rid: '1', val: '1' })
     expect(isType(validator, validSend)).toBe(true)
 
     const invalidSend = createUnsignedToken({ typ: 'send', val: '1' })

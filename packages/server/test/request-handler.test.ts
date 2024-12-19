@@ -20,7 +20,7 @@ type Protocol = typeof protocol
 
 describe('handleRequest()', () => {
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
-    const payload = { typ: 'request', rid: '1', cmd: 'unknown' }
+    const payload = { typ: 'request', rid: '1', prc: 'unknown' }
     // @ts-ignore type instantiation too deep
     const returned = handleRequest(
       { handlers: {} } as unknown as HandlerContext<Protocol>,
@@ -28,7 +28,7 @@ describe('handleRequest()', () => {
       { payload },
     )
     expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for command: unknown')
+    expect((returned as ErrorRejection).message).toBe('No handler for procedure: unknown')
     expect((returned as ErrorRejection).info).toEqual(payload)
   })
 })

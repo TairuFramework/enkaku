@@ -2,11 +2,11 @@ import type { Schema } from '@enkaku/schema'
 
 import { type MessageType, createMessageSchema } from './message.js'
 import type {
-  AnyCommandDefinition,
-  ChannelCommandDefinition,
+  AnyProcedureDefinition,
+  ChannelProcedureDefinition,
   ProtocolDefinition,
-  RequestCommandDefinition,
-  StreamCommandDefinition,
+  RequestProcedureDefinition,
+  StreamProcedureDefinition,
 } from './protocol.js'
 
 /** @internal */
@@ -31,7 +31,7 @@ export function createErrorMessageSchema(type?: MessageType): Schema {
 
 /** @internal */
 export function createReceiveMessageSchema(
-  definition: StreamCommandDefinition | ChannelCommandDefinition,
+  definition: StreamProcedureDefinition | ChannelProcedureDefinition,
   type?: MessageType,
 ): Schema {
   const payloadSchema = {
@@ -88,7 +88,7 @@ export function createResultMessageWithoutValueSchema(type?: MessageType): Schem
 
 /** @internal */
 export function createResultMessageSchema(
-  definition: RequestCommandDefinition | StreamCommandDefinition | ChannelCommandDefinition,
+  definition: RequestProcedureDefinition | StreamProcedureDefinition | ChannelProcedureDefinition,
   type?: MessageType,
 ): Schema {
   return definition.result
@@ -103,19 +103,19 @@ export function createServerMessageSchema(
   const schemasRecord: Record<string, Schema> = {
     error: createErrorMessageSchema(type),
   }
-  for (const [command, definition] of Object.entries(protocol)) {
-    const def = definition as AnyCommandDefinition
+  for (const [procedure, definition] of Object.entries(protocol)) {
+    const def = definition as AnyProcedureDefinition
     switch (def.type) {
       case 'channel':
       // biome-ignore lint/suspicious/noFallthroughSwitchClause: fallthrough is intentional
       case 'stream':
-        schemasRecord[def.receive.$id ?? `${command}:receive`] = createReceiveMessageSchema(
+        schemasRecord[def.receive.$id ?? `${procedure}:receive`] = createReceiveMessageSchema(
           def,
           type,
         )
       case 'request':
         if (def.result != null) {
-          schemasRecord[def.result?.$id ?? `${command}:result`] = createResultMessageSchema(
+          schemasRecord[def.result?.$id ?? `${procedure}:result`] = createResultMessageSchema(
             def,
             type,
           )

@@ -3,7 +3,7 @@ import type { KeyEntry } from '@enkaku/protocol'
 import { randomPrivateKey } from '@enkaku/token'
 import { AsyncEntry, Entry } from '@napi-rs/keyring'
 
-export class DesktopKeyEntry implements KeyEntry<Uint8Array> {
+export class NodeKeyEntry implements KeyEntry<Uint8Array> {
   #async?: AsyncEntry
   #keyID: string
   #key?: Uint8Array

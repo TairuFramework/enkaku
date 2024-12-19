@@ -10,15 +10,19 @@ npm install @enkaku/standalone
 
 ## Type Aliases
 
-### StandaloneOptions
+### StandaloneOptions\<Protocol\>
 
-> **StandaloneOptions**: `object`
+> **StandaloneOptions**\<`Protocol`\>: `object`
+
+#### Type Parameters
+
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Type declaration
 
 ##### access?
 
-> `optional` **access**: [`CommandAccessRecord`](../server/index.md#commandaccessrecord)
+> `optional` **access**: [`ProcedureAccessRecord`](../server/index.md#procedureaccessrecord)
 
 ##### getRandomID()?
 
@@ -27,6 +31,10 @@ npm install @enkaku/standalone
 ###### Returns
 
 `string`
+
+##### protocol?
+
+> `optional` **protocol**: `Protocol`
 
 ##### signal?
 
@@ -50,11 +58,11 @@ npm install @enkaku/standalone
 
 ##### handlers
 
-[`CommandHandlers`](../server/index.md#commandhandlersprotocol)\<`Protocol`\>
+[`ProcedureHandlers`](../server/index.md#procedurehandlersprotocol)\<`Protocol`\>
 
 ##### options
 
-[`StandaloneOptions`](index.md#standaloneoptions) = `{}`
+[`StandaloneOptions`](index.md#standaloneoptionsprotocol)\<`Protocol`\> = `{}`
 
 #### Returns
 

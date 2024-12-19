@@ -2,10 +2,10 @@ import type { Schema } from '@enkaku/schema'
 
 import { type MessageType, createMessageSchema } from './message.js'
 import type {
-  AnyCommandDefinition,
-  AnyRequestCommandDefinition,
-  ChannelCommandDefinition,
-  EventCommandDefinition,
+  AnyProcedureDefinition,
+  AnyRequestProcedureDefinition,
+  ChannelProcedureDefinition,
+  EventProcedureDefinition,
   ProtocolDefinition,
   RequestType,
 } from './protocol.js'
@@ -28,49 +28,49 @@ export function createAbortMessageSchema(type?: MessageType): Schema {
 }
 
 /** @internal */
-export function createEventPayloadWithData(command: string, dataSchema: Schema): Schema {
+export function createEventPayloadWithData(procedure: string, dataSchema: Schema): Schema {
   return {
     type: 'object',
     properties: {
       typ: { type: 'string', const: 'event' },
-      cmd: { type: 'string', const: command },
+      prc: { type: 'string', const: procedure },
       data: dataSchema,
       jti: { type: 'string' },
     },
-    required: ['typ', 'cmd', 'data'],
+    required: ['typ', 'prc', 'data'],
     additionalProperties: true,
   } as const satisfies Schema
 }
 
 /** @internal */
-export function createEventPayloadWithoutData(command: string): Schema {
+export function createEventPayloadWithoutData(procedure: string): Schema {
   return {
     type: 'object',
     properties: {
       typ: { type: 'string', const: 'event' },
-      cmd: { type: 'string', const: command },
+      prc: { type: 'string', const: procedure },
       jti: { type: 'string' },
     },
-    required: ['typ', 'cmd'],
+    required: ['typ', 'prc'],
     additionalProperties: true,
   } as const satisfies Schema
 }
 
 /** @internal */
 export function createEventMessageSchema(
-  command: string,
-  definition: EventCommandDefinition,
+  procedure: string,
+  definition: EventProcedureDefinition,
   type?: MessageType,
 ): Schema {
   const payload = definition.data
-    ? createEventPayloadWithData(command, definition.data)
-    : createEventPayloadWithoutData(command)
+    ? createEventPayloadWithData(procedure, definition.data)
+    : createEventPayloadWithoutData(procedure)
   return createMessageSchema(payload, type)
 }
 
 /** @internal */
 export function createRequestPayloadWithParams(
-  command: string,
+  procedure: string,
   type: RequestType,
   paramsSchema: Schema,
 ): Schema {
@@ -78,59 +78,59 @@ export function createRequestPayloadWithParams(
     type: 'object',
     properties: {
       typ: { type: 'string', const: type },
-      cmd: { type: 'string', const: command },
+      prc: { type: 'string', const: procedure },
       rid: { type: 'string' },
       prm: paramsSchema,
       jti: { type: 'string' },
     },
-    required: ['typ', 'cmd', 'rid', 'prm'],
+    required: ['typ', 'prc', 'rid', 'prm'],
     additionalProperties: true,
   } as const satisfies Schema
 }
 
 /** @internal */
-export function createRequestPayloadWithoutParams(command: string, type: RequestType): Schema {
+export function createRequestPayloadWithoutParams(procedure: string, type: RequestType): Schema {
   return {
     type: 'object',
     properties: {
       typ: { type: 'string', const: type },
-      cmd: { type: 'string', const: command },
+      prc: { type: 'string', const: procedure },
       rid: { type: 'string' },
       jti: { type: 'string' },
     },
-    required: ['typ', 'cmd', 'rid'],
+    required: ['typ', 'prc', 'rid'],
     additionalProperties: true,
   } as const satisfies Schema
 }
 
 /** @internal */
 export function createRequestMessageSchema(
-  command: string,
-  definition: AnyRequestCommandDefinition,
+  procedure: string,
+  definition: AnyRequestProcedureDefinition,
   type?: MessageType,
 ): Schema {
   const payload = definition.params
-    ? createRequestPayloadWithParams(command, definition.type, definition.params)
-    : createRequestPayloadWithoutParams(command, definition.type)
+    ? createRequestPayloadWithParams(procedure, definition.type, definition.params)
+    : createRequestPayloadWithoutParams(procedure, definition.type)
   return createMessageSchema(payload, type)
 }
 
 /** @internal */
 export function createSendMessageSchema(
-  command: string,
-  definition: ChannelCommandDefinition,
+  procedure: string,
+  definition: ChannelProcedureDefinition,
   type?: MessageType,
 ): Schema {
   const payloadSchema = {
     type: 'object',
     properties: {
       typ: { type: 'string', const: 'send' },
-      cmd: { type: 'string', const: command },
+      prc: { type: 'string', const: procedure },
       rid: { type: 'string' },
       val: definition.send,
       jti: { type: 'string' },
     },
-    required: ['typ', 'cmd', 'rid', 'val'],
+    required: ['typ', 'prc', 'rid', 'val'],
     additionalProperties: true,
   } as const satisfies Schema
   return createMessageSchema(payloadSchema, type)
@@ -142,13 +142,13 @@ export function createClientMessageSchema(
 ): Schema {
   let addAbort = false
   const schemasRecord: Record<string, Schema> = {}
-  for (const [command, definition] of Object.entries(protocol)) {
-    const def = definition as AnyCommandDefinition
+  for (const [procedure, definition] of Object.entries(protocol)) {
+    const def = definition as AnyProcedureDefinition
     switch (def.type) {
       case 'event':
         if (def.data != null) {
-          schemasRecord[def.data?.$id ?? `${command}:data`] = createEventMessageSchema(
-            command,
+          schemasRecord[def.data?.$id ?? `${procedure}:data`] = createEventMessageSchema(
+            procedure,
             def,
             type,
           )
@@ -156,16 +156,16 @@ export function createClientMessageSchema(
         break
       // biome-ignore lint/suspicious/noFallthroughSwitchClause: fallthrough is intentional
       case 'channel':
-        schemasRecord[def.send.$id ?? `${command}:send`] = createSendMessageSchema(
-          command,
+        schemasRecord[def.send.$id ?? `${procedure}:send`] = createSendMessageSchema(
+          procedure,
           def,
           type,
         )
       case 'request':
       case 'stream':
         addAbort = true
-        schemasRecord[def.params?.$id ?? `${command}:params`] = createRequestMessageSchema(
-          command,
+        schemasRecord[def.params?.$id ?? `${procedure}:params`] = createRequestMessageSchema(
+          procedure,
           def,
           type,
         )

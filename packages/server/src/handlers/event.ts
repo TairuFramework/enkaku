@@ -6,27 +6,27 @@ import type { EventHandler, EventHandlerContext, HandlerContext } from '../types
 
 export type EventMessageOf<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string = keyof Protocol & string,
-> = ClientMessage<EventPayloadOf<Command, Protocol[Command]>>
+  Procedure extends keyof Protocol & string = keyof Protocol & string,
+> = ClientMessage<EventPayloadOf<Procedure, Protocol[Procedure]>>
 
 export function handleEvent<
   Protocol extends ProtocolDefinition,
-  Command extends keyof Protocol & string,
+  Procedure extends keyof Protocol & string,
 >(
   ctx: HandlerContext<Protocol>,
-  msg: EventMessageOf<Protocol, Command>,
+  msg: EventMessageOf<Protocol, Procedure>,
 ): ErrorRejection | Promise<void> {
-  const handler = ctx.handlers[msg.payload.cmd] as EventHandler<Protocol, Command>
+  const handler = ctx.handlers[msg.payload.prc] as EventHandler<Protocol, Procedure>
   if (handler == null) {
-    return new ErrorRejection(`No handler for command: ${msg.payload.cmd}`, { info: msg.payload })
+    return new ErrorRejection(`No handler for procedure: ${msg.payload.prc}`, { info: msg.payload })
   }
 
   const handlerContext = {
     message: msg,
     data: msg.payload.data,
-  } as unknown as EventHandlerContext<Protocol, Command>
+  } as unknown as EventHandlerContext<Protocol, Procedure>
   return toPromise(() => handler(handlerContext)).catch((cause) => {
-    const err = new ErrorRejection(`Error handling command: ${msg.payload.cmd}`, {
+    const err = new ErrorRejection(`Error handling procedure: ${msg.payload.prc}`, {
       info: msg.payload,
       cause,
     })

@@ -60,19 +60,19 @@ npm install @enkaku/client
 
 ##### createChannel()
 
-> **createChannel**\<`Command`, `T`\>(`command`, ...`args`): `Invocation`\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+> **createChannel**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
 
 ###### Type Parameters
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
-• **T** *extends* `object` = `ClientDefinitions`\[`"Channels"`\]\[`Command`\]
+• **T** *extends* `object` = `ClientDefinitions`\[`"Channels"`\]\[`Procedure`\]
 
 ###### Parameters
 
-###### command
+###### procedure
 
-`Command`
+`Procedure`
 
 ###### args
 
@@ -80,25 +80,25 @@ npm install @enkaku/client
 
 ###### Returns
 
-`Invocation`\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+[`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
 
 ***
 
 ##### createStream()
 
-> **createStream**\<`Command`, `T`\>(`command`, ...`args`): `Invocation`\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+> **createStream**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
 
 ###### Type Parameters
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
-• **T** *extends* `object` = `ClientDefinitions`\[`"Streams"`\]\[`Command`\]
+• **T** *extends* `object` = `ClientDefinitions`\[`"Streams"`\]\[`Procedure`\]
 
 ###### Parameters
 
-###### command
+###### procedure
 
-`Command`
+`Procedure`
 
 ###### args
 
@@ -106,7 +106,7 @@ npm install @enkaku/client
 
 ###### Returns
 
-`Invocation`\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+[`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
 
 ***
 
@@ -126,19 +126,19 @@ npm install @enkaku/client
 
 ##### request()
 
-> **request**\<`Command`, `T`\>(`command`, ...`args`): `Invocation`\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+> **request**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
 
 ###### Type Parameters
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
-• **T** *extends* `object` = `ClientDefinitions`\[`"Requests"`\]\[`Command`\]
+• **T** *extends* `object` = `ClientDefinitions`\[`"Requests"`\]\[`Procedure`\]
 
 ###### Parameters
 
-###### command
+###### procedure
 
-`Command`
+`Procedure`
 
 ###### args
 
@@ -146,25 +146,25 @@ npm install @enkaku/client
 
 ###### Returns
 
-`Invocation`\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+[`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
 
 ***
 
 ##### sendEvent()
 
-> **sendEvent**\<`Command`, `T`\>(`command`, ...`args`): `Promise`\<`void`\>
+> **sendEvent**\<`Procedure`, `T`\>(`procedure`, ...`args`): `Promise`\<`void`\>
 
 ###### Type Parameters
 
-• **Command** *extends* `string`
+• **Procedure** *extends* `string`
 
-• **T** *extends* `object` = `ClientDefinitions`\[`"Events"`\]\[`Command`\]
+• **T** *extends* `object` = `ClientDefinitions`\[`"Events"`\]\[`Procedure`\]
 
 ###### Parameters
 
-###### command
+###### procedure
 
-`Command`
+`Procedure`
 
 ###### args
 
@@ -175,6 +175,88 @@ npm install @enkaku/client
 `Promise`\<`void`\>
 
 ## Type Aliases
+
+### CallChannelReturn\<Send, Receive, Result\>
+
+> **CallChannelReturn**\<`Send`, `Receive`, `Result`\>: [`CallStreamReturn`](index.md#callstreamreturnreceive-result)\<`Receive`, `Result`\> & `object`
+
+#### Type declaration
+
+##### send()
+
+> **send**: (`value`) => `Promise`\<`void`\>
+
+###### Parameters
+
+###### value
+
+`Send`
+
+###### Returns
+
+`Promise`\<`void`\>
+
+#### Type Parameters
+
+• **Send**
+
+• **Receive**
+
+• **Result**
+
+***
+
+### CallReturn\<ResultValue\>
+
+> **CallReturn**\<`ResultValue`\>: `object`
+
+#### Type Parameters
+
+• **ResultValue**
+
+#### Type declaration
+
+##### abort()
+
+> **abort**: (`reason`?) => `void`
+
+###### Parameters
+
+###### reason?
+
+`any`
+
+###### Returns
+
+`void`
+
+##### id
+
+> **id**: `string`
+
+##### result
+
+> **result**: `Promise`\<`Result`\<`ResultValue`, `CallError`\>\>
+
+***
+
+### CallStreamReturn\<Receive, Result\>
+
+> **CallStreamReturn**\<`Receive`, `Result`\>: [`CallReturn`](index.md#callreturnresultvalue)\<`Result`\> & `object`
+
+#### Type declaration
+
+##### receive
+
+> **receive**: `ReadableStream`\<`Receive`\>
+
+#### Type Parameters
+
+• **Receive**
+
+• **Result**
+
+***
 
 ### ClientParams\<Protocol\>
 
@@ -208,85 +290,27 @@ npm install @enkaku/client
 
 ***
 
-### InvokeChannelReturn\<Send, Receive, Result\>
+### ProcedureCall\<ResultValue, Return\>
 
-> **InvokeChannelReturn**\<`Send`, `Receive`, `Result`\>: [`InvokeStreamReturn`](index.md#invokestreamreturnreceive-result)\<`Receive`, `Result`\> & `object`
+> **ProcedureCall**\<`ResultValue`, `Return`\>: `Promise`\<`Return`\> & `object`
 
 #### Type declaration
 
-##### send()
+##### result
 
-> **send**: (`value`) => `Promise`\<`void`\>
+> **result**: `Promise`\<`CallResult`\<`ResultValue`\>\>
 
-###### Parameters
-
-###### value
-
-`Send`
+##### toValue()
 
 ###### Returns
 
-`Promise`\<`void`\>
-
-#### Type Parameters
-
-• **Send**
-
-• **Receive**
-
-• **Result**
-
-***
-
-### InvokeReturn\<ResultValue\>
-
-> **InvokeReturn**\<`ResultValue`\>: `object`
+`Promise`\<`ResultValue`\>
 
 #### Type Parameters
 
 • **ResultValue**
 
-#### Type declaration
-
-##### abort()
-
-> **abort**: (`reason`?) => `void`
-
-###### Parameters
-
-###### reason?
-
-`any`
-
-###### Returns
-
-`void`
-
-##### id
-
-> **id**: `string`
-
-##### result
-
-> **result**: `Promise`\<`Result`\<`ResultValue`, `InvokeError`\>\>
-
-***
-
-### InvokeStreamReturn\<Receive, Result\>
-
-> **InvokeStreamReturn**\<`Receive`, `Result`\>: [`InvokeReturn`](index.md#invokereturnresultvalue)\<`Result`\> & `object`
-
-#### Type declaration
-
-##### receive
-
-> **receive**: `ReadableStream`\<`Receive`\>
-
-#### Type Parameters
-
-• **Receive**
-
-• **Result**
+• **Return**
 
 ## Variables
 

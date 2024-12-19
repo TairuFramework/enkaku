@@ -1,0 +1,137 @@
+# Data validation
+
+Enkaku uses [JSON Schema](https://json-schema.org/) for validation via the [Ajv library](https://ajv.js.org/).
+
+The [`@enkaku/schema` package](./api/schema/index.md) provides a set of APIs and types for creating validators based on JSON schemas.
+
+## Using validation
+
+### Defining the schema
+
+First, we define a JSON schema using the `Schema` type to validate the schema definition using TypeScript:
+
+```ts
+import type { Schema } from '@enkaku/schema'
+
+export const mySchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    age: { type: 'number', minimum: 18, maximum: 65 },
+  },
+  required: ['name'],
+  additionalProperties: false,
+} satisfies Schema
+```
+
+We can also export the type inferred from the schema by importing and using `FromSchema`:
+
+```ts {1,11,13} showLineNumbers
+import type { FromSchema, Schema } from '@enkaku/schema'
+
+export const mySchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    age: { type: 'number', minimum: 18, maximum: 65 },
+  },
+  required: ['name'],
+  additionalProperties: false,
+} as const satisfies Schema
+
+export type MySchema = FromSchema<typeof mySchema>
+```
+
+Notice how line 11 changed to include the `as const` assertion, which is required for TypeScript to infer the correct type from the schema.
+
+### Creating the validator
+
+To create a validator from a schema, we use the [`createValidator()` function](./api/schema/index.md#createvalidator):
+
+```ts {1,15} showLineNumbers
+import { type FromSchema, type Schema, createValidator } from '@enkaku/schema'
+
+export const mySchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    age: { type: 'number', minimum: 18, maximum: 65 },
+  },
+  required: ['name'],
+  additionalProperties: false,
+} as const satisfies Schema
+
+export type MySchema = FromSchema<typeof mySchema>
+
+export const mySchemaValidator = createValidator(mySchema)
+```
+
+### Validating data
+
+The created validator can be used directly to validate data:
+
+```ts
+// ... see rest of the code in previous sections
+
+const mySchemaValidator = createValidator(mySchema)
+
+const validated = mySchemaValidator({ name: 'John', age: 30 })
+console.log(validated.isOk()) // true
+```
+
+Running a validator returns a [`Result` type from the `typescript-result` package](https://github.com/everweij/typescript-result?tab=readme-ov-file#result), which can be used to check if the validation was successful or not.
+
+The [`@enkaku/schema` package](./api/schema/index.md) provides additional APIs using the validators, notably the [`assertType()`](./api/schema/index.md#asserttype) and [`isType()`](./api/schema/index.md#istype) functions:
+
+```ts {1,17,19} showLineNumbers
+import { type FromSchema, type Schema, createValidator, assertType, isType } from '@enkaku/schema'
+
+export const mySchema = {
+  type: 'object',
+  properties: {
+    name: { type: 'string' },
+    age: { type: 'number', minimum: 18, maximum: 65 },
+  },
+  required: ['name'],
+  additionalProperties: false,
+} as const satisfies Schema
+
+export type MySchema = FromSchema<typeof mySchema>
+
+const mySchemaValidator = createValidator(mySchema)
+
+const isValid = isType(mySchemaValidator, { name: 'John', age: 25 }) // true
+
+assertType(mySchemaValidator, { name: 'Bob', age: 5 }) // throws an error
+```
+
+## Validation in server
+
+When using the [`@enkaku/server` package](./api/server/index.md), the [`protocol`](./api/server/index.md#protocol) value can be provided when creating a server instance to validate that incoming messages from the transport match the expected protocol.
+
+```ts
+import type { ProtocolDefinition } from '@enkaku/protocol'
+import { serve } from '@enkaku/server'
+
+const protocol = {
+  test: {
+    type: 'event',
+    data: {
+      type: 'object',
+      properties: { hello: { type: 'string' } },
+      required: ['hello'],
+      additionalProperties: false,
+    },
+  },
+} as const satisfies ProtocolDefinition
+
+serve({
+  protocol,
+  handlers: {
+    test: (ctx) => {
+      console.log('Received test event:', ctx.data.hello)
+    },
+  },
+  // ... other parameters omitted for brevity
+})
+```

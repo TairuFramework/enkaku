@@ -21,7 +21,7 @@ const protocol = {
 type Protocol = typeof protocol
 
 describe('executeHandler()', () => {
-  const payload = { typ: 'request', rid: '1', cmd: 'test', prm: { test: true } } as const
+  const payload = { typ: 'request', rid: '1', prc: 'test', prm: { test: true } } as const
 
   test('sends an error response and a rejection in case of error', async () => {
     const error = new HandlerError({ code: 'TEST123', message: 'Request failed' })
@@ -52,7 +52,7 @@ describe('executeHandler()', () => {
     expect(reject).toHaveBeenCalled()
     const rejection = reject.mock.calls[0][0]
     expect(rejection).toBeInstanceOf(ErrorRejection)
-    expect((rejection as ErrorRejection).message).toBe('Error handling command: test')
+    expect((rejection as ErrorRejection).message).toBe('Error handling procedure: test')
     expect((rejection as ErrorRejection).info).toBe(payload)
     expect((rejection as ErrorRejection).cause).toBe(error)
     expect(controllers).toEqual({})
@@ -89,7 +89,7 @@ describe('executeHandler()', () => {
     expect(reject).toHaveBeenCalled()
     const rejection = reject.mock.calls[0][0]
     expect(rejection).toBeInstanceOf(ErrorRejection)
-    expect((rejection as ErrorRejection).message).toBe('Error handling command: test')
+    expect((rejection as ErrorRejection).message).toBe('Error handling procedure: test')
     expect((rejection as ErrorRejection).info).toBe(payload)
     expect((rejection as ErrorRejection).cause).toBe(error)
     expect(controllers).toEqual({})

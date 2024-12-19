@@ -1,0 +1,50 @@
+# Custom transports
+
+The simplest way to create custom transports for Enkaku is providing a [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and a [`WritableStream`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) to a [`Transport` instance](../api/transport/index.md#transportr-w).
+
+## Example: MessagePort transport
+
+The following example shows how to create a custom transport communicating over a [`MessagePort`](https://developer.mozilla.org/en-US/docs/Web/API/MessagePort).
+
+```ts
+import { Transport } from '@enkaku/transport'
+
+// Create the readable and writable streams using the provided message port.
+export async function createTransportStream<R, W>(
+  port: MessagePort,
+): ReadableWritablePair<R, W> {
+  const readable = new ReadableStream({
+    start(controller) {
+      // Listen to messages from the port
+      port.onmessage = (msg) => {
+        // Add the message data to the stream
+        controller.enqueue(msg.data)
+      }
+      // Start listening to the port
+      port.start()
+    },
+  })
+
+  const writable = new WritableStream({
+    write(msg) {
+      // Post the message to the port
+      port.postMessage(msg)
+    },
+  })
+
+  return { readable, writable }
+}
+
+// Create the transport using the streams creation function
+export class MessageTransport<R, W> extends Transport<R, W> {
+  constructor(port: MessagePort, signal?: AbortSignal) {
+    super({ stream: createTransportStream(port), signal })
+  }
+}
+```
+
+The [`@enkaku/message-transport` package](../api/message-transport/index.md) provides a similar implementation.
+
+## Web streams utilities
+
+The [`@enkaku/stream` package](../api/stream/index.md) contains utility functions for working with Web streams that can help with the implementation of custom transports.

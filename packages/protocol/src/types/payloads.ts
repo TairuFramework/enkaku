@@ -1,10 +1,10 @@
 import type {
-  AnyRequestCommandDefinition,
-  ChannelCommandDefinition,
-  EventCommandDefinition,
+  AnyRequestProcedureDefinition,
+  ChannelProcedureDefinition,
+  EventProcedureDefinition,
   ProtocolDefinition,
-  RequestCommandDefinition,
-  StreamCommandDefinition,
+  RequestProcedureDefinition,
+  StreamProcedureDefinition,
 } from '../schemas/protocol.js'
 import type {
   AbortCallPayload,
@@ -14,87 +14,87 @@ import type {
   RequestCallPayload,
   ResultReplyPayload,
   SendCallPayload,
-} from './invocations.js'
+} from './calls.js'
 import type { DataOf } from './utils.js'
 
 // Client payloads
 
 export type EventPayloadOf<
-  Command extends string,
+  Procedure extends string,
   Definition,
-> = Definition extends EventCommandDefinition
-  ? EventCallPayload<Command, DataOf<Definition['data']>>
+> = Definition extends EventProcedureDefinition
+  ? EventCallPayload<Procedure, DataOf<Definition['data']>>
   : never
 
 export type RequestPayloadOf<
-  Command extends string,
+  Procedure extends string,
   Definition,
-> = Definition extends RequestCommandDefinition
-  ? RequestCallPayload<'request', Command, DataOf<Definition['params']>>
+> = Definition extends RequestProcedureDefinition
+  ? RequestCallPayload<'request', Procedure, DataOf<Definition['params']>>
   : never
 
 export type StreamPayloadOf<
-  Command extends string,
+  Procedure extends string,
   Definition,
-> = Definition extends StreamCommandDefinition
-  ? RequestCallPayload<'stream', Command, DataOf<Definition['params']>>
+> = Definition extends StreamProcedureDefinition
+  ? RequestCallPayload<'stream', Procedure, DataOf<Definition['params']>>
   : never
 
 export type ChannelPayloadOf<
-  Command extends string,
+  Procedure extends string,
   Definition,
-> = Definition extends ChannelCommandDefinition
-  ? RequestCallPayload<'channel', Command, DataOf<Definition['params']>>
+> = Definition extends ChannelProcedureDefinition
+  ? RequestCallPayload<'channel', Procedure, DataOf<Definition['params']>>
   : never
 
-export type SendPayloadOf<Definition> = Definition extends ChannelCommandDefinition
+export type SendPayloadOf<Definition> = Definition extends ChannelProcedureDefinition
   ? SendCallPayload<DataOf<Definition['send']>>
   : never
 
 export type ClientPayloadOf<
-  Command extends string,
+  Procedure extends string,
   Definition,
-> = Definition extends EventCommandDefinition
-  ? EventCallPayload<Command, DataOf<Definition['data']>>
-  : Definition extends RequestCommandDefinition
-    ? RequestCallPayload<'request', Command, DataOf<Definition['params']>> | AbortCallPayload
-    : Definition extends StreamCommandDefinition
-      ? RequestCallPayload<'stream', Command, DataOf<Definition['params']>> | AbortCallPayload
-      : Definition extends ChannelCommandDefinition
+> = Definition extends EventProcedureDefinition
+  ? EventCallPayload<Procedure, DataOf<Definition['data']>>
+  : Definition extends RequestProcedureDefinition
+    ? RequestCallPayload<'request', Procedure, DataOf<Definition['params']>> | AbortCallPayload
+    : Definition extends StreamProcedureDefinition
+      ? RequestCallPayload<'stream', Procedure, DataOf<Definition['params']>> | AbortCallPayload
+      : Definition extends ChannelProcedureDefinition
         ?
-            | RequestCallPayload<'channel', Command, DataOf<Definition['params']>>
+            | RequestCallPayload<'channel', Procedure, DataOf<Definition['params']>>
             | SendCallPayload<DataOf<Definition['send']>>
             | AbortCallPayload
         : never
 
 export type ClientPayloadRecordsOf<Protocol extends ProtocolDefinition> = {
-  [Command in keyof Protocol & string]: ClientPayloadOf<Command, Protocol[Command]>
+  [Procedure in keyof Protocol & string]: ClientPayloadOf<Procedure, Protocol[Procedure]>
 }
 
 // Server payloads
 
-export type ErrorPayloadOf<Definition> = Definition extends AnyRequestCommandDefinition
+export type ErrorPayloadOf<Definition> = Definition extends AnyRequestProcedureDefinition
   ? ErrorReplyPayloadOf<DataOf<Definition['error']>>
   : never
 
-export type ResultPayloadOf<Definition> = Definition extends AnyRequestCommandDefinition
+export type ResultPayloadOf<Definition> = Definition extends AnyRequestProcedureDefinition
   ? ResultReplyPayload<DataOf<Definition['result']>>
   : never
 
-export type ReceiveActionPayloadOf<Definition> = Definition extends StreamCommandDefinition
+export type ReceiveActionPayloadOf<Definition> = Definition extends StreamProcedureDefinition
   ? ReceiveReplyPayload<DataOf<Definition['receive']>>
-  : Definition extends ChannelCommandDefinition
+  : Definition extends ChannelProcedureDefinition
     ? ReceiveReplyPayload<DataOf<Definition['receive']>>
     : never
 
-export type ServerPayloadOf<Definition> = Definition extends RequestCommandDefinition
+export type ServerPayloadOf<Definition> = Definition extends RequestProcedureDefinition
   ? ResultReplyPayload<DataOf<Definition['result']>> | ErrorReplyPayloadOf
-  : Definition extends StreamCommandDefinition
+  : Definition extends StreamProcedureDefinition
     ?
         | ReceiveReplyPayload<DataOf<Definition['receive']>>
         | ResultReplyPayload<DataOf<Definition['result']>>
         | ErrorReplyPayloadOf<DataOf<Definition['error']>>
-    : Definition extends ChannelCommandDefinition
+    : Definition extends ChannelProcedureDefinition
       ?
           | ReceiveReplyPayload<DataOf<Definition['receive']>>
           | ResultReplyPayload<DataOf<Definition['result']>>
@@ -102,5 +102,5 @@ export type ServerPayloadOf<Definition> = Definition extends RequestCommandDefin
       : never
 
 export type ServerPayloadRecordsOf<Protocol extends ProtocolDefinition> = {
-  [Command in keyof Protocol & string]: ServerPayloadOf<Protocol[Command]>
+  [Procedure in keyof Protocol & string]: ServerPayloadOf<Protocol[Procedure]>
 }
