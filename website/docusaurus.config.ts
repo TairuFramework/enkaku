@@ -105,11 +105,21 @@ const config: Config = {
       links: [
         {
           title: 'Documentation',
-          items: [{ label: 'Overview', to: '/docs/overview' }],
+          items: [
+            { label: 'Introduction', to: '/docs/introduction' },
+            { label: 'Procedures', to: '/docs/procedures' },
+            { label: 'Communications', to: '/docs/communications' },
+            { label: 'Validation', to: '/docs/validation' },
+            { label: 'Security', to: '/docs/security' },
+          ],
         },
         {
           title: 'APIs',
-          items: [{ label: 'Overview', to: '/docs/api' }],
+          items: [
+            { label: 'Overview', to: '/docs/api' },
+            { label: 'Server', to: '/docs/api/server' },
+            { label: 'Client', to: '/docs/api/client' },
+          ],
         },
         {
           title: 'More',

@@ -32,7 +32,7 @@
   },
   "dependencies": {
     "@enkaku/schema": "workspace:^",
-    "typescript-result": "^3.0.0"
+    "typescript-result": "^3.1.1"
   },
   "devDependencies": {
     "@enkaku/token": "workspace:^",

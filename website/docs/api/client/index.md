@@ -54,8 +54,6 @@ npm install @enkaku/client
 
 `Disposer.disposed`
 
-###### Defined in
-
 #### Methods
 
 ##### createChannel()
@@ -76,7 +74,7 @@ npm install @enkaku/client
 
 ###### args
 
-...`T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
+...`T`\[`"Argument"`\] *extends* `never` ? \[\] : \[`T`\[`"Argument"`\]\]
 
 ###### Returns
 
@@ -102,7 +100,7 @@ npm install @enkaku/client
 
 ###### args
 
-...`T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
+...`T`\[`"Argument"`\] *extends* `never` ? \[\] : \[`T`\[`"Argument"`\]\]
 
 ###### Returns
 
@@ -142,7 +140,7 @@ npm install @enkaku/client
 
 ###### args
 
-...`T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
+...`T`\[`"Argument"`\] *extends* `never` ? \[\] : \[`T`\[`"Argument"`\]\]
 
 ###### Returns
 
@@ -168,7 +166,7 @@ npm install @enkaku/client
 
 ###### args
 
-...`T`\[`"Argument"`\] *extends* `never` ? [] : [`T`\[`"Argument"`\]]
+...`T`\[`"Argument"`\] *extends* `never` ? \[\] : \[`T`\[`"Argument"`\]\]
 
 ###### Returns
 

@@ -56,8 +56,6 @@ npm install @enkaku/server
 
 `Rejection.info`
 
-###### Defined in
-
 ***
 
 ##### reason
@@ -73,8 +71,6 @@ npm install @enkaku/server
 ###### Inherited from
 
 `Rejection.reason`
-
-###### Defined in
 
 ***
 
@@ -212,8 +208,6 @@ https://v8.dev/docs/stack-trace-api#customizing-stack-traces
 
 `RejectionType.info`
 
-###### Defined in
-
 ***
 
 ##### reason
@@ -229,8 +223,6 @@ https://v8.dev/docs/stack-trace-api#customizing-stack-traces
 ###### Implementation of
 
 `RejectionType.reason`
-
-###### Defined in
 
 #### Methods
 
@@ -302,8 +294,6 @@ Create .stack property on a target object
 
 `Disposer.disposed`
 
-###### Defined in
-
 ***
 
 ##### rejections
@@ -315,8 +305,6 @@ Create .stack property on a target object
 ###### Returns
 
 `ReadableStream`\<[`RejectionType`](index.md#rejectiontypereason-info)\>
-
-###### Defined in
 
 #### Methods
 

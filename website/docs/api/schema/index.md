@@ -36,7 +36,7 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 ###### errorObjects?
 
-`null` | `ErrorObject`\<`string`, `Record`\<`string`, `any`\>, `unknown`\>[]
+`null` | `ErrorObject`[]
 
 ###### Returns
 
@@ -108,8 +108,6 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 `unknown`
 
-###### Defined in
-
 ***
 
 ##### schema
@@ -121,8 +119,6 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 ###### Returns
 
 `Readonly`\<\{ `[$JSONSchema]`: *typeof* `$JSONSchema`; `$comment`: `string`; `$id`: `string`; `$ref`: `string`; `$schema`: `string`; `additionalItems`: `JSONSchema`; `additionalProperties`: `JSONSchema`; `allOf`: readonly `JSONSchema`[]; `anyOf`: readonly `JSONSchema`[]; `const`: `unknown`; `contains`: `JSONSchema`; `contentEncoding`: `string`; `contentMediaType`: `string`; `default`: `unknown`; `definitions`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `dependencies`: `Readonly`\<`Record`\<`string`, `JSONSchema` \| readonly `string`[]\>\>; `description`: `string`; `else`: `JSONSchema`; `enum`: `unknown`; `examples`: readonly `unknown`[]; `exclusiveMaximum`: `number`; `exclusiveMinimum`: `number`; `format`: `string`; `if`: `JSONSchema`; `items`: `JSONSchema` \| readonly `JSONSchema`[]; `maximum`: `number`; `maxItems`: `number`; `maxLength`: `number`; `maxProperties`: `number`; `minimum`: `number`; `minItems`: `number`; `minLength`: `number`; `minProperties`: `number`; `multipleOf`: `number`; `not`: `JSONSchema`; `nullable`: `boolean`; `oneOf`: readonly `JSONSchema`[]; `pattern`: `string`; `patternProperties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `properties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `propertyNames`: `JSONSchema`; `readOnly`: `boolean`; `required`: readonly `string`[]; `then`: `JSONSchema`; `title`: `string`; `type`: `JSONSchemaType` \| readonly `JSONSchemaType`[]; `unevaluatedProperties`: `JSONSchema`; `uniqueItems`: `boolean`; `writeOnly`: `boolean`; \}\>
-
-###### Defined in
 
 ***
 
@@ -144,7 +140,7 @@ JSON schema validation error for a specified input.
 
 ###### errorObject
 
-`ErrorObject`\<`string`, `Record`\<`string`, `any`\>, `unknown`\>
+`ErrorObject`
 
 ###### Returns
 
@@ -240,13 +236,11 @@ https://v8.dev/docs/stack-trace-api#customizing-stack-traces
 
 ###### Get Signature
 
-> **get** **details**(): `ErrorObject`\<`string`, `Record`\<`string`, `any`\>, `unknown`\>
+> **get** **details**(): `ErrorObject`
 
 ###### Returns
 
-`ErrorObject`\<`string`, `Record`\<`string`, `any`\>, `unknown`\>
-
-###### Defined in
+`ErrorObject`
 
 #### Methods
 

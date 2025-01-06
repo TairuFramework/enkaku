@@ -246,7 +246,7 @@ Convert a Uint8Array to a base64-encoded string.
 
 ##### bytes
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 #### Returns
 
@@ -264,7 +264,7 @@ Create a generic signer object for the given private key.
 
 ##### privateKey
 
-`string` | `Uint8Array`\<`ArrayBufferLike`\>
+`string` | `Uint8Array`
 
 #### Returns
 
@@ -282,7 +282,7 @@ Create a token signer object for the given private key.
 
 ##### privateKey
 
-`string` | `Uint8Array`\<`ArrayBufferLike`\>
+`string` | `Uint8Array`
 
 #### Returns
 
@@ -358,13 +358,13 @@ Check if a token is verified.
 
 ### randomPrivateKey()
 
-> **randomPrivateKey**(): `Uint8Array`\<`ArrayBufferLike`\>
+> **randomPrivateKey**(): `Uint8Array`
 
 Generate a random private key.
 
 #### Returns
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 ***
 

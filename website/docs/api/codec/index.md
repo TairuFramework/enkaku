@@ -110,7 +110,7 @@ Convert a base64-encoded string to a Uint8Array.
 
 ### fromB64U()
 
-> **fromB64U**(`base64url`): `Uint8Array`\<`ArrayBufferLike`\>
+> **fromB64U**(`base64url`): `Uint8Array`
 
 Convert a base64url-encoded string to a Uint8Array.
 
@@ -122,7 +122,7 @@ Convert a base64url-encoded string to a Uint8Array.
 
 #### Returns
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 ***
 
@@ -154,7 +154,7 @@ Convert a Uint8Array to a base64-encoded string.
 
 ##### bytes
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 #### Returns
 
@@ -172,7 +172,7 @@ Convert a Uint8Array to a base64url-encoded string.
 
 ##### bytes
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 #### Returns
 
@@ -190,7 +190,7 @@ Convert a Uint8Array to a UTF string.
 
 ##### bytes
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 #### Returns
 

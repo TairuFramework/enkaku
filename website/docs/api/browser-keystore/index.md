@@ -52,8 +52,6 @@ npm install @enkaku/browser-keystore
 
 `KeyEntry.keyID`
 
-###### Defined in
-
 #### Methods
 
 ##### getAsync()

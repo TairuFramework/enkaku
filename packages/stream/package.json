@@ -30,6 +30,6 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "typescript-result": "^3.0.0"
+    "typescript-result": "^3.1.1"
   }
 }

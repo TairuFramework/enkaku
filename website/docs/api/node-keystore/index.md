@@ -34,7 +34,7 @@ npm install @enkaku/node-keystore
 
 ###### key?
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 ###### Returns
 
@@ -56,27 +56,25 @@ npm install @enkaku/node-keystore
 
 `KeyEntry.keyID`
 
-###### Defined in
-
 #### Methods
 
 ##### get()
 
-> **get**(): `null` \| `Uint8Array`\<`ArrayBufferLike`\>
+> **get**(): `null` \| `Uint8Array`
 
 ###### Returns
 
-`null` \| `Uint8Array`\<`ArrayBufferLike`\>
+`null` \| `Uint8Array`
 
 ***
 
 ##### getAsync()
 
-> **getAsync**(): `Promise`\<`null` \| `Uint8Array`\<`ArrayBufferLike`\>\>
+> **getAsync**(): `Promise`\<`null` \| `Uint8Array`\>
 
 ###### Returns
 
-`Promise`\<`null` \| `Uint8Array`\<`ArrayBufferLike`\>\>
+`Promise`\<`null` \| `Uint8Array`\>
 
 ###### Implementation of
 
@@ -86,21 +84,21 @@ npm install @enkaku/node-keystore
 
 ##### provide()
 
-> **provide**(): `Uint8Array`\<`ArrayBufferLike`\>
+> **provide**(): `Uint8Array`
 
 ###### Returns
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 ***
 
 ##### provideAsync()
 
-> **provideAsync**(): `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
+> **provideAsync**(): `Promise`\<`Uint8Array`\>
 
 ###### Returns
 
-`Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
+`Promise`\<`Uint8Array`\>
 
 ###### Implementation of
 
@@ -140,7 +138,7 @@ npm install @enkaku/node-keystore
 
 ###### key
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 ###### Returns
 
@@ -156,7 +154,7 @@ npm install @enkaku/node-keystore
 
 ###### key
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 ###### Returns
 

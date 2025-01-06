@@ -63,8 +63,6 @@ Base Transport class implementing TransportType.
 
 `TransportType.disposed`
 
-###### Defined in
-
 #### Methods
 
 ##### \[asyncIterator\]()
@@ -265,7 +263,7 @@ Generic Transport object type implementing read and write functions.
 
 ###### Returns
 
-`AsyncIterator`\<`R`, `null` \| `R`, `any`\>
+`AsyncIterator`\<`R`, `null` \| `R`\>
 
 #### Type Parameters
 

@@ -52,8 +52,6 @@ Base Transport class implementing TransportType.
 
 [`Transport`](../transport/index.md#transportr-w).[`disposed`](../transport/index.md#disposed-2)
 
-###### Defined in
-
 #### Methods
 
 ##### \[asyncIterator\]()
@@ -74,7 +72,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`[asyncIterator]`](../transport/index.md#%5Basynciterator%5D-2)
+[`Transport`](../transport/index.md#transportr-w).[`[asyncIterator]`](../transport/index.md#asynciterator-2)
 
 ***
 

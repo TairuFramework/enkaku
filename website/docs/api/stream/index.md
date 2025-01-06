@@ -12,7 +12,7 @@ npm install @enkaku/stream
 
 ### createConnection()
 
-> **createConnection**\<`AtoB`, `BtoA`\>(): [`ReadableWritablePair`\<`BtoA`, `AtoB`\>, `ReadableWritablePair`\<`AtoB`, `BtoA`\>]
+> **createConnection**\<`AtoB`, `BtoA`\>(): \[`ReadableWritablePair`\<`BtoA`, `AtoB`\>, `ReadableWritablePair`\<`AtoB`, `BtoA`\>\]
 
 Create a tuple of `ReadableWritablePair` streams connected to each other.
 
@@ -24,7 +24,7 @@ Create a tuple of `ReadableWritablePair` streams connected to each other.
 
 #### Returns
 
-[`ReadableWritablePair`\<`BtoA`, `AtoB`\>, `ReadableWritablePair`\<`AtoB`, `BtoA`\>]
+\[`ReadableWritablePair`\<`BtoA`, `AtoB`\>, `ReadableWritablePair`\<`AtoB`, `BtoA`\>\]
 
 ***
 
@@ -46,7 +46,7 @@ Create a `ReadableWritablePair` stream queuing written messages until they are r
 
 ### createReadable()
 
-> **createReadable**\<`T`\>(): [`ReadableStream`\<`T`\>, `ReadableStreamDefaultController`\<`T`\>]
+> **createReadable**\<`T`\>(): \[`ReadableStream`\<`T`\>, `ReadableStreamDefaultController`\<`T`\>\]
 
 Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and associated [ReadableStreamDefaultController](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStreamDefaultController).
 
@@ -56,4 +56,4 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Returns
 
-[`ReadableStream`\<`T`\>, `ReadableStreamDefaultController`\<`T`\>]
+\[`ReadableStream`\<`T`\>, `ReadableStreamDefaultController`\<`T`\>\]

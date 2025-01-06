@@ -23,14 +23,15 @@ export type StreamsSource = StreamsOrPromise | (() => StreamsOrPromise)
 export async function createTransportStream<R, W>(
   source: StreamsSource,
 ): Promise<ReadableWritablePair<R, W>> {
+  const decoder = new TextDecoder()
   const streams = await Promise.resolve(typeof source === 'function' ? source() : source)
 
   let buffered = ''
-  const input = Readable.toWeb(streams.readable) as ReadableStream<Uint8Array>
-  const readable = input.pipeThrough(new TextDecoderStream()).pipeThrough(
-    new TransformStream<string, R>({
+  const input = Readable.toWeb(streams.readable) as ReadableStream<Uint8Array | string>
+  const readable = input.pipeThrough(
+    new TransformStream<Uint8Array | string, R>({
       transform: (chunk, controller) => {
-        buffered += chunk
+        buffered += typeof chunk === 'string' ? chunk : decoder.decode(chunk)
         let index = buffered.indexOf(SEPARATOR)
         while (index !== -1) {
           const value = buffered.slice(0, index)

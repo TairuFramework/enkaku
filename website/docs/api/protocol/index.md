@@ -600,7 +600,7 @@ npm install @enkaku/protocol
 
 ##### anyOf
 
-> `readonly` **anyOf**: readonly [`object`, `object`, `object`, `object`]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `false`; `properties`: \{ `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"event"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `params`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `result`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: \{ `const`: `"request"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `params`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `receive`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `result`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: \{ `const`: `"stream"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"receive"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `params`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `receive`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `result`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `send`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: \{ `const`: `"channel"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"send"`, `"receive"`\]; `type`: `"object"`; \}\]
 
 ***
 
@@ -612,7 +612,7 @@ npm install @enkaku/protocol
 
 ##### anyOf
 
-> `readonly` **anyOf**: readonly [`object`, `object`, `object`]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `params`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `result`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: \{ `const`: `"request"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `params`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `receive`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `result`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: \{ `const`: `"stream"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"receive"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `params`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `receive`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `result`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `send`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: \{ `const`: `"channel"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"send"`, `"receive"`\]; `type`: `"object"`; \}\]
 
 ***
 
@@ -652,7 +652,7 @@ npm install @enkaku/protocol
 
 ###### properties.type.enum
 
-> `readonly` **properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+> `readonly` **properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.type.type
 
@@ -660,7 +660,7 @@ npm install @enkaku/protocol
 
 ##### required
 
-> `readonly` **required**: readonly [`"type"`]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ##### type
 
@@ -744,7 +744,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.properties.properties.code.required
 
-> `readonly` **properties.error.properties.properties.properties.code.required**: readonly [`"type"`]
+> `readonly` **properties.error.properties.properties.properties.code.required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.code.type
 
@@ -792,7 +792,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.properties.properties.data.required
 
-> `readonly` **properties.error.properties.properties.properties.data.required**: readonly [`"type"`]
+> `readonly` **properties.error.properties.properties.properties.data.required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.data.type
 
@@ -824,7 +824,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.properties.properties.message.required
 
-> `readonly` **properties.error.properties.properties.properties.message.required**: readonly [`"type"`]
+> `readonly` **properties.error.properties.properties.properties.message.required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.message.type
 
@@ -840,7 +840,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.required.anyOf
 
-> `readonly` **properties.error.properties.required.anyOf**: readonly [`object`, `object`]
+> `readonly` **properties.error.properties.required.anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
 
 ###### properties.error.properties.type
 
@@ -856,7 +856,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.required
 
-> `readonly` **properties.error.required**: readonly [`"type"`, `"properties"`, `"required"`, `"additionalProperties"`]
+> `readonly` **properties.error.required**: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]
 
 ###### properties.error.type
 
@@ -896,7 +896,7 @@ npm install @enkaku/protocol
 
 ###### properties.params.properties.type.enum
 
-> `readonly` **properties.params.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+> `readonly` **properties.params.properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.params.properties.type.type
 
@@ -904,7 +904,7 @@ npm install @enkaku/protocol
 
 ###### properties.params.required
 
-> `readonly` **properties.params.required**: readonly [`"type"`]
+> `readonly` **properties.params.required**: readonly \[`"type"`\]
 
 ###### properties.params.type
 
@@ -944,7 +944,7 @@ npm install @enkaku/protocol
 
 ###### properties.receive.properties.type.enum
 
-> `readonly` **properties.receive.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+> `readonly` **properties.receive.properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.receive.properties.type.type
 
@@ -952,7 +952,7 @@ npm install @enkaku/protocol
 
 ###### properties.receive.required
 
-> `readonly` **properties.receive.required**: readonly [`"type"`]
+> `readonly` **properties.receive.required**: readonly \[`"type"`\]
 
 ###### properties.receive.type
 
@@ -992,7 +992,7 @@ npm install @enkaku/protocol
 
 ###### properties.result.properties.type.enum
 
-> `readonly` **properties.result.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+> `readonly` **properties.result.properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.result.properties.type.type
 
@@ -1000,7 +1000,7 @@ npm install @enkaku/protocol
 
 ###### properties.result.required
 
-> `readonly` **properties.result.required**: readonly [`"type"`]
+> `readonly` **properties.result.required**: readonly \[`"type"`\]
 
 ###### properties.result.type
 
@@ -1040,7 +1040,7 @@ npm install @enkaku/protocol
 
 ###### properties.send.properties.type.enum
 
-> `readonly` **properties.send.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+> `readonly` **properties.send.properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.send.properties.type.type
 
@@ -1048,7 +1048,7 @@ npm install @enkaku/protocol
 
 ###### properties.send.required
 
-> `readonly` **properties.send.required**: readonly [`"type"`]
+> `readonly` **properties.send.required**: readonly \[`"type"`\]
 
 ###### properties.send.type
 
@@ -1068,7 +1068,7 @@ npm install @enkaku/protocol
 
 ##### required
 
-> `readonly` **required**: readonly [`"type"`, `"send"`, `"receive"`]
+> `readonly` **required**: readonly \[`"type"`, `"send"`, `"receive"`\]
 
 ##### type
 
@@ -1084,7 +1084,7 @@ npm install @enkaku/protocol
 
 ##### anyOf
 
-> `readonly` **anyOf**: readonly [`object`, `object`]
+> `readonly` **anyOf**: readonly \[\{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: `"string"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: `"string"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}, \{ `properties`: \{ `anyOf`: \{ `items`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `minItems`: `1`; `type`: `"array"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
 ***
 
@@ -1128,7 +1128,7 @@ npm install @enkaku/protocol
 
 ##### required
 
-> `readonly` **required**: readonly [`"code"`, `"message"`]
+> `readonly` **required**: readonly \[`"code"`, `"message"`\]
 
 ##### type
 
@@ -1192,7 +1192,7 @@ npm install @enkaku/protocol
 
 ###### properties.properties.properties.code.required
 
-> `readonly` **properties.properties.properties.code.required**: readonly [`"type"`]
+> `readonly` **properties.properties.properties.code.required**: readonly \[`"type"`\]
 
 ###### properties.properties.properties.code.type
 
@@ -1240,7 +1240,7 @@ npm install @enkaku/protocol
 
 ###### properties.properties.properties.data.required
 
-> `readonly` **properties.properties.properties.data.required**: readonly [`"type"`]
+> `readonly` **properties.properties.properties.data.required**: readonly \[`"type"`\]
 
 ###### properties.properties.properties.data.type
 
@@ -1272,7 +1272,7 @@ npm install @enkaku/protocol
 
 ###### properties.properties.properties.message.required
 
-> `readonly` **properties.properties.properties.message.required**: readonly [`"type"`]
+> `readonly` **properties.properties.properties.message.required**: readonly \[`"type"`\]
 
 ###### properties.properties.properties.message.type
 
@@ -1288,7 +1288,7 @@ npm install @enkaku/protocol
 
 ###### properties.required.anyOf
 
-> `readonly` **properties.required.anyOf**: readonly [`object`, `object`]
+> `readonly` **properties.required.anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
 
 ###### properties.type
 
@@ -1304,7 +1304,7 @@ npm install @enkaku/protocol
 
 ##### required
 
-> `readonly` **required**: readonly [`"type"`, `"properties"`, `"required"`, `"additionalProperties"`]
+> `readonly` **required**: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]
 
 ##### type
 
@@ -1368,7 +1368,7 @@ npm install @enkaku/protocol
 
 ###### properties.data.required
 
-> `readonly` **properties.data.required**: readonly [`"type"`]
+> `readonly` **properties.data.required**: readonly \[`"type"`\]
 
 ###### properties.data.type
 
@@ -1396,7 +1396,7 @@ npm install @enkaku/protocol
 
 ##### required
 
-> `readonly` **required**: readonly [`"type"`]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ##### type
 
@@ -1448,7 +1448,7 @@ npm install @enkaku/protocol
 
 ##### required
 
-> `readonly` **required**: readonly [`"type"`]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ##### type
 
@@ -1468,7 +1468,7 @@ npm install @enkaku/protocol
 
 ###### additionalProperties.anyOf
 
-> `readonly` **additionalProperties.anyOf**: readonly [`object`, `object`, `object`, `object`]
+> `readonly` **additionalProperties.anyOf**: readonly \[\{ `additionalProperties`: `false`; `properties`: \{ `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"event"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `params`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `result`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: \{ `const`: `"request"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `params`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `receive`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `result`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: \{ `const`: `"stream"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"receive"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `params`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `receive`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `result`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `send`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: \{ `const`: `"channel"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"send"`, `"receive"`\]; `type`: `"object"`; \}\]
 
 ##### type
 
@@ -1552,7 +1552,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.properties.properties.code.required
 
-> `readonly` **properties.error.properties.properties.properties.code.required**: readonly [`"type"`]
+> `readonly` **properties.error.properties.properties.properties.code.required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.code.type
 
@@ -1600,7 +1600,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.properties.properties.data.required
 
-> `readonly` **properties.error.properties.properties.properties.data.required**: readonly [`"type"`]
+> `readonly` **properties.error.properties.properties.properties.data.required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.data.type
 
@@ -1632,7 +1632,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.properties.properties.message.required
 
-> `readonly` **properties.error.properties.properties.properties.message.required**: readonly [`"type"`]
+> `readonly` **properties.error.properties.properties.properties.message.required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.message.type
 
@@ -1648,7 +1648,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.required.anyOf
 
-> `readonly` **properties.error.properties.required.anyOf**: readonly [`object`, `object`]
+> `readonly` **properties.error.properties.required.anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
 
 ###### properties.error.properties.type
 
@@ -1664,7 +1664,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.required
 
-> `readonly` **properties.error.required**: readonly [`"type"`, `"properties"`, `"required"`, `"additionalProperties"`]
+> `readonly` **properties.error.required**: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]
 
 ###### properties.error.type
 
@@ -1704,7 +1704,7 @@ npm install @enkaku/protocol
 
 ###### properties.params.properties.type.enum
 
-> `readonly` **properties.params.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+> `readonly` **properties.params.properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.params.properties.type.type
 
@@ -1712,7 +1712,7 @@ npm install @enkaku/protocol
 
 ###### properties.params.required
 
-> `readonly` **properties.params.required**: readonly [`"type"`]
+> `readonly` **properties.params.required**: readonly \[`"type"`\]
 
 ###### properties.params.type
 
@@ -1752,7 +1752,7 @@ npm install @enkaku/protocol
 
 ###### properties.result.properties.type.enum
 
-> `readonly` **properties.result.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+> `readonly` **properties.result.properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.result.properties.type.type
 
@@ -1760,7 +1760,7 @@ npm install @enkaku/protocol
 
 ###### properties.result.required
 
-> `readonly` **properties.result.required**: readonly [`"type"`]
+> `readonly` **properties.result.required**: readonly \[`"type"`\]
 
 ###### properties.result.type
 
@@ -1780,7 +1780,7 @@ npm install @enkaku/protocol
 
 ##### required
 
-> `readonly` **required**: readonly [`"type"`]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ##### type
 
@@ -1864,7 +1864,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.properties.properties.code.required
 
-> `readonly` **properties.error.properties.properties.properties.code.required**: readonly [`"type"`]
+> `readonly` **properties.error.properties.properties.properties.code.required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.code.type
 
@@ -1912,7 +1912,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.properties.properties.data.required
 
-> `readonly` **properties.error.properties.properties.properties.data.required**: readonly [`"type"`]
+> `readonly` **properties.error.properties.properties.properties.data.required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.data.type
 
@@ -1944,7 +1944,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.properties.properties.message.required
 
-> `readonly` **properties.error.properties.properties.properties.message.required**: readonly [`"type"`]
+> `readonly` **properties.error.properties.properties.properties.message.required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.message.type
 
@@ -1960,7 +1960,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.properties.required.anyOf
 
-> `readonly` **properties.error.properties.required.anyOf**: readonly [`object`, `object`]
+> `readonly` **properties.error.properties.required.anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
 
 ###### properties.error.properties.type
 
@@ -1976,7 +1976,7 @@ npm install @enkaku/protocol
 
 ###### properties.error.required
 
-> `readonly` **properties.error.required**: readonly [`"type"`, `"properties"`, `"required"`, `"additionalProperties"`]
+> `readonly` **properties.error.required**: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]
 
 ###### properties.error.type
 
@@ -2016,7 +2016,7 @@ npm install @enkaku/protocol
 
 ###### properties.params.properties.type.enum
 
-> `readonly` **properties.params.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+> `readonly` **properties.params.properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.params.properties.type.type
 
@@ -2024,7 +2024,7 @@ npm install @enkaku/protocol
 
 ###### properties.params.required
 
-> `readonly` **properties.params.required**: readonly [`"type"`]
+> `readonly` **properties.params.required**: readonly \[`"type"`\]
 
 ###### properties.params.type
 
@@ -2064,7 +2064,7 @@ npm install @enkaku/protocol
 
 ###### properties.receive.properties.type.enum
 
-> `readonly` **properties.receive.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+> `readonly` **properties.receive.properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.receive.properties.type.type
 
@@ -2072,7 +2072,7 @@ npm install @enkaku/protocol
 
 ###### properties.receive.required
 
-> `readonly` **properties.receive.required**: readonly [`"type"`]
+> `readonly` **properties.receive.required**: readonly \[`"type"`\]
 
 ###### properties.receive.type
 
@@ -2112,7 +2112,7 @@ npm install @enkaku/protocol
 
 ###### properties.result.properties.type.enum
 
-> `readonly` **properties.result.properties.type.enum**: readonly [`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`]
+> `readonly` **properties.result.properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.result.properties.type.type
 
@@ -2120,7 +2120,7 @@ npm install @enkaku/protocol
 
 ###### properties.result.required
 
-> `readonly` **properties.result.required**: readonly [`"type"`]
+> `readonly` **properties.result.required**: readonly \[`"type"`\]
 
 ###### properties.result.type
 
@@ -2140,7 +2140,7 @@ npm install @enkaku/protocol
 
 ##### required
 
-> `readonly` **required**: readonly [`"type"`, `"receive"`]
+> `readonly` **required**: readonly \[`"type"`, `"receive"`\]
 
 ##### type
 
