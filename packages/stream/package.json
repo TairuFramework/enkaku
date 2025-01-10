@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/stream",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Web streams utilities for Enkaku transports",
@@ -31,5 +31,8 @@
   },
   "dependencies": {
     "typescript-result": "^3.1.1"
+  },
+  "devDependencies": {
+    "@enkaku/util": "workspace:^"
   }
 }
