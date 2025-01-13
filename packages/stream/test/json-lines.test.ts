@@ -1,51 +1,28 @@
-import { defer } from '@enkaku/util'
-
 import { fromJSONLines, toJSONLines } from '../src/json-lines.js'
 import { createReadable } from '../src/readable.js'
+import { createArraySink } from '../src/writable.js'
 
-test('fromJSONLines()', async () => {
-  const done = defer<void>()
+test('fromJSONLines() parses JSON lines to individual values', async () => {
   const [source, controller] = createReadable()
-  const sink: Array<unknown> = []
-  source.pipeThrough(fromJSONLines()).pipeTo(
-    new WritableStream({
-      write(value) {
-        sink.push(value)
-      },
-      close() {
-        done.resolve()
-      },
-    }),
-  )
+  const [sink, result] = createArraySink()
+  source.pipeThrough(fromJSONLines()).pipeTo(sink)
 
   controller.enqueue(JSON.stringify({ foo: 'bar' }))
   controller.enqueue(new TextEncoder().encode('\n{"test":'))
   controller.enqueue('"other"}\n')
   controller.close()
 
-  await done.promise
-  expect(sink).toEqual([{ foo: 'bar' }, { test: 'other' }])
+  await expect(result).resolves.toEqual([{ foo: 'bar' }, { test: 'other' }])
 })
 
-test('toJSONLines()', async () => {
-  const done = defer<void>()
+test('toJSONLines() encodes values to JSON lines', async () => {
   const [source, controller] = createReadable()
-  const sink: Array<string> = []
-
-  const writable = new WritableStream({
-    write(value) {
-      sink.push(value)
-    },
-    close() {
-      done.resolve()
-    },
-  })
-  source.pipeThrough(toJSONLines()).pipeTo(writable)
+  const [sink, result] = createArraySink()
+  source.pipeThrough(toJSONLines()).pipeTo(sink)
 
   controller.enqueue({ foo: 'foo' })
   controller.enqueue({ bar: 'bar' })
   controller.close()
 
-  await done.promise
-  expect(sink).toEqual(['{"foo":"foo"}\n', '{"bar":"bar"}\n'])
+  await expect(result).resolves.toEqual(['{"foo":"foo"}\n', '{"bar":"bar"}\n'])
 })

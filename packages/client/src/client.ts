@@ -9,6 +9,7 @@ import type {
   EventProcedureDefinition,
   ProtocolDefinition,
   RequestProcedureDefinition,
+  ReturnOf,
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
@@ -56,8 +57,8 @@ export type RequestDefinitionsType<Protocol extends ProtocolDefinition> = {
   [Procedure in keyof Protocol & string]: Protocol[Procedure] extends RequestProcedureDefinition
     ? {
         Argument: DataOf<Protocol[Procedure]['params']>
-        Result: DataOf<Protocol[Procedure]['result']>
-        Return: CallReturn<DataOf<Protocol[Procedure]['result']>>
+        Result: ReturnOf<Protocol[Procedure]['result']>
+        Return: CallReturn<ReturnOf<Protocol[Procedure]['result']>>
       }
     : never
 }
@@ -69,10 +70,10 @@ export type StreamDefinitionsType<Protocol extends ProtocolDefinition> = {
           ? never
           : DataOf<Protocol[Procedure]['params']>
         Receive: DataOf<Protocol[Procedure]['receive']>
-        Result: DataOf<Protocol[Procedure]['result']>
+        Result: ReturnOf<Protocol[Procedure]['result']>
         Return: CallStreamReturn<
           DataOf<Protocol[Procedure]['receive']>,
-          DataOf<Protocol[Procedure]['result']>
+          ReturnOf<Protocol[Procedure]['result']>
         >
       }
     : never
@@ -83,11 +84,11 @@ export type ChannelDefinitionsType<Protocol extends ProtocolDefinition> = {
     ? {
         Argument: DataOf<Protocol[Procedure]['params']>
         Receive: DataOf<Protocol[Procedure]['receive']>
-        Result: DataOf<Protocol[Procedure]['result']>
+        Result: ReturnOf<Protocol[Procedure]['result']>
         Return: CallChannelReturn<
           DataOf<Protocol[Procedure]['send']>,
           DataOf<Protocol[Procedure]['receive']>,
-          DataOf<Protocol[Procedure]['result']>
+          ReturnOf<Protocol[Procedure]['result']>
         >
         Send: DataOf<Protocol[Procedure]['send']>
       }

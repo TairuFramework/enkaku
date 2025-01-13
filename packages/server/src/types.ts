@@ -9,6 +9,7 @@ import type {
   ProtocolDefinition,
   RequestCallPayload,
   RequestProcedureDefinition,
+  ReturnOf,
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
 
@@ -54,7 +55,7 @@ export type RequestHandlerContext<
     }
   : never
 
-export type HandlerReturn<ResultSchema, Data = DataOf<ResultSchema>> = Data | Promise<Data>
+export type HandlerReturn<ResultSchema, Result = ReturnOf<ResultSchema>> = Result | Promise<Result>
 
 export type RequestHandler<
   Protocol extends ProtocolDefinition,

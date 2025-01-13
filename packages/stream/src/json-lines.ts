@@ -1,3 +1,5 @@
+import { map } from './map.js'
+
 const SEPARATOR = '\n'
 
 const decoder = new TextDecoder()
@@ -29,9 +31,5 @@ export type EncodeJSON<T = unknown> = (value: T) => string
 export function toJSONLines<T = unknown>(
   encode: EncodeJSON<T> = JSON.stringify,
 ): TransformStream<T, string> {
-  return new TransformStream({
-    transform: (chunk, controller) => {
-      controller.enqueue(encode(chunk) + SEPARATOR)
-    },
-  })
+  return map((value) => encode(value) + SEPARATOR)
 }
