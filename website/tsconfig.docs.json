@@ -23,6 +23,7 @@
       "../packages/protocol",
       "../packages/schema",
       "../packages/server",
+      "../packages/socket-transport",
       "../packages/standalone",
       "../packages/stream",
       "../packages/token",

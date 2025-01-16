@@ -1,14 +1,14 @@
 {
-  "name": "@enkaku/stream",
-  "version": "0.8.3",
+  "name": "@enkaku/socket-transport",
+  "version": "0.8.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Web streams utilities for Enkaku transports",
-  "keywords": ["web", "stream", "transport"],
+  "description": "Socket transport for Enkaku RPC clients and servers",
+  "keywords": ["transport", "rpc", "node", "socket", "ipc"],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/stream"
+    "directory": "packages/socket-transport"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -30,7 +30,6 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/util": "workspace:^",
-    "typescript-result": "^3.1.1"
+    "@enkaku/transport": "workspace:^"
   }
 }

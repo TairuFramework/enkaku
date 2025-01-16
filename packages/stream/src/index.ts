@@ -10,6 +10,7 @@
  * @module stream
  */
 
+export * from './async-iterator.js'
 export * from './connection.js'
 export * from './json-lines.js'
 export * from './map.js'

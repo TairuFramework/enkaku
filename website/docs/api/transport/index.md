@@ -20,6 +20,7 @@ Base Transport class implementing TransportType.
 - [`ServerTransport`](../http-server-transport/index.md#servertransportprotocol)
 - [`MessageTransport`](../message-transport/index.md#messagetransportr-w)
 - [`NodeStreamsTransport`](../node-streams-transport/index.md#nodestreamstransportr-w)
+- [`SocketTransport`](../socket-transport/index.md#sockettransportr-w)
 
 #### Type Parameters
 

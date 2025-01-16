@@ -15,6 +15,7 @@
 - [@enkaku/protocol](protocol/index.md)
 - [@enkaku/schema](schema/index.md)
 - [@enkaku/server](server/index.md)
+- [@enkaku/socket-transport](socket-transport/index.md)
 - [@enkaku/standalone](standalone/index.md)
 - [@enkaku/stream](stream/index.md)
 - [@enkaku/token](token/index.md)

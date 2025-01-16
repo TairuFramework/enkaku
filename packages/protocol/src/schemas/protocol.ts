@@ -1,17 +1,33 @@
 import type { FromSchema, Schema } from '@enkaku/schema'
 
-export const anyTypeDefinition = {
+export const singleTypeDefinition = {
   type: 'object',
   properties: {
     $id: { type: 'string' },
+    description: { type: 'string' },
     type: {
       type: 'string',
       enum: ['array', 'boolean', 'integer', 'null', 'number', 'object', 'string'],
     },
-    description: { type: 'string' },
   },
   required: ['type'],
   additionalProperties: true,
+} as const satisfies Schema
+
+export const anyTypeDefinition = {
+  anyOf: [
+    singleTypeDefinition,
+    {
+      type: 'object',
+      properties: {
+        $id: { type: 'string' },
+        description: { type: 'string' },
+        anyOf: { type: 'array', items: singleTypeDefinition },
+      },
+      required: ['anyOf'],
+      additionalProperties: true,
+    },
+  ],
 } as const satisfies Schema
 
 export const objectTypeDefinition = {

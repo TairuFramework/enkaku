@@ -344,7 +344,7 @@ Create .stack property on a target object
 
 ### ChannelHandler\<Protocol, Procedure\>
 
-> **ChannelHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
+> **ChannelHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-result)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
@@ -400,15 +400,15 @@ Create .stack property on a target object
 
 ***
 
-### HandlerReturn\<ResultSchema, Data\>
+### HandlerReturn\<ResultSchema, Result\>
 
-> **HandlerReturn**\<`ResultSchema`, `Data`\>: `Data` \| `Promise`\<`Data`\>
+> **HandlerReturn**\<`ResultSchema`, `Result`\>: `Result` \| `Promise`\<`Result`\>
 
 #### Type Parameters
 
 • **ResultSchema**
 
-• **Data** = [`DataOf`](../protocol/index.md#dataofs)\<`ResultSchema`\>
+• **Result** = [`ReturnOf`](../protocol/index.md#returnofs)\<`ResultSchema`\>
 
 ***
 
@@ -452,7 +452,7 @@ Create .stack property on a target object
 
 ### RequestHandler\<Protocol, Procedure\>
 
-> **RequestHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
+> **RequestHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-result)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
@@ -532,7 +532,7 @@ Create .stack property on a target object
 
 ### StreamHandler\<Protocol, Procedure\>
 
-> **StreamHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-data)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
+> **StreamHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-result)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
