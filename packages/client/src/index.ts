@@ -10,12 +10,17 @@
  * @module client
  */
 
-export {
-  Client,
-  type ClientParams,
-  type CallChannelReturn,
-  type CallReturn,
-  type CallStreamReturn,
-  type ProcedureCall,
+export { Client } from './client.js'
+export type {
+  CallChannelReturn,
+  CallReturn,
+  CallStreamReturn,
+  ChannelDefinitionsType,
+  ClientDefinitionsType,
+  ClientParams,
+  EventDefinitionsType,
+  ProcedureCall,
+  RequestDefinitionsType,
+  StreamDefinitionsType,
 } from './client.js'
 export { ABORTED } from './constants.js'

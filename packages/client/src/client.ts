@@ -20,6 +20,8 @@ import { Result } from 'typescript-result'
 import { ABORTED } from './constants.js'
 import { RequestError } from './error.js'
 
+type FilterNever<T> = { [K in keyof T as T[K] extends never ? never : K]: T[K] }
+
 export type CallError = typeof ABORTED | RequestError
 
 export type CallResult<T> = Result<T, CallError>
@@ -44,16 +46,16 @@ export type ProcedureCall<ResultValue, Return> = Promise<Return> & {
   toValue(): Promise<ResultValue>
 }
 
-export type EventDefinitionsType<Protocol extends ProtocolDefinition> = {
+export type EventDefinitionsType<Protocol extends ProtocolDefinition> = FilterNever<{
   [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition
     ? {
         Argument: DataOf<Protocol[Procedure]['data']>
         Return: undefined
       }
     : never
-}
+}>
 
-export type RequestDefinitionsType<Protocol extends ProtocolDefinition> = {
+export type RequestDefinitionsType<Protocol extends ProtocolDefinition> = FilterNever<{
   [Procedure in keyof Protocol & string]: Protocol[Procedure] extends RequestProcedureDefinition
     ? {
         Argument: DataOf<Protocol[Procedure]['params']>
@@ -61,9 +63,9 @@ export type RequestDefinitionsType<Protocol extends ProtocolDefinition> = {
         Return: CallReturn<ReturnOf<Protocol[Procedure]['result']>>
       }
     : never
-}
+}>
 
-export type StreamDefinitionsType<Protocol extends ProtocolDefinition> = {
+export type StreamDefinitionsType<Protocol extends ProtocolDefinition> = FilterNever<{
   [Procedure in keyof Protocol & string]: Protocol[Procedure] extends StreamProcedureDefinition
     ? {
         Argument: Protocol[Procedure]['params'] extends undefined
@@ -77,9 +79,9 @@ export type StreamDefinitionsType<Protocol extends ProtocolDefinition> = {
         >
       }
     : never
-}
+}>
 
-export type ChannelDefinitionsType<Protocol extends ProtocolDefinition> = {
+export type ChannelDefinitionsType<Protocol extends ProtocolDefinition> = FilterNever<{
   [Procedure in keyof Protocol & string]: Protocol[Procedure] extends ChannelProcedureDefinition
     ? {
         Argument: DataOf<Protocol[Procedure]['params']>
@@ -93,7 +95,7 @@ export type ChannelDefinitionsType<Protocol extends ProtocolDefinition> = {
         Send: DataOf<Protocol[Procedure]['send']>
       }
     : never
-}
+}>
 
 export type ClientDefinitionsType<Protocol extends ProtocolDefinition> = {
   Channels: ChannelDefinitionsType<Protocol>

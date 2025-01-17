@@ -4,12 +4,7 @@
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "HTTP transport for Enkaku RPC clients",
-  "keywords": [
-    "http",
-    "client",
-    "transport",
-    "rpc"
-  ],
+  "keywords": ["http", "client", "transport", "rpc"],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
@@ -21,9 +16,7 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": [
-    "lib/*"
-  ],
+  "files": ["lib/*"],
   "sideEffects": false,
   "scripts": {
     "build:clean": "del lib",
