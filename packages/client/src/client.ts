@@ -30,7 +30,7 @@ export type CallReturn<ResultValue> = {
   // biome-ignore lint/suspicious/noExplicitAny: from AbortController
   abort: (reason?: any) => void
   id: string
-  result: Promise<Result<ResultValue, CallError>>
+  result: Promise<CallResult<ResultValue>>
 }
 
 export type CallStreamReturn<Receive, Result> = CallReturn<Result> & {

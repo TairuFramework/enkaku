@@ -13,6 +13,7 @@
 export { Client } from './client.js'
 export type {
   CallChannelReturn,
+  CallResult,
   CallReturn,
   CallStreamReturn,
   ChannelDefinitionsType,
@@ -24,3 +25,4 @@ export type {
   StreamDefinitionsType,
 } from './client.js'
 export { ABORTED } from './constants.js'
+export { type ErrorObjectType, RequestError, type RequestErrorParams } from './error.js'
