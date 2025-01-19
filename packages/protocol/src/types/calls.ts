@@ -6,6 +6,7 @@ import type { RequestType } from '../schemas/protocol.js'
 export type AbortCallPayload = {
   typ: 'abort'
   rid: string
+  rsn?: string
 }
 
 export type EventCallPayload<

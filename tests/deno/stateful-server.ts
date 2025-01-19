@@ -1,5 +1,5 @@
-import { ServerTransport } from 'https://esm.sh/@enkaku/http-server-transport@0.8'
-import { serve } from 'https://esm.sh/@enkaku/server@0.8'
+import { ServerTransport } from 'https://esm.sh/@enkaku/http-server-transport@0.9.0'
+import { serve } from 'https://esm.sh/@enkaku/server@0.9.0'
 
 const transport = new ServerTransport()
 serve({
@@ -18,7 +18,7 @@ serve({
             clearInterval(timer)
             resolve('END')
           } else {
-            writer.write(ctx.params + count++)
+            writer.write(ctx.param + count++)
           }
         }, 50)
         ctx.signal.addEventListener('abort', () => {

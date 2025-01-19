@@ -16,7 +16,7 @@ npm install @enkaku/client
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **ClientDefinitions** *extends* `ClientDefinitionsType`\<`Protocol`\> = `ClientDefinitionsType`\<`Protocol`\>
+• **ClientDefinitions** *extends* [`ClientDefinitionsType`](index.md#clientdefinitionstypeprotocol)\<`Protocol`\> = [`ClientDefinitionsType`](index.md#clientdefinitionstypeprotocol)\<`Protocol`\>
 
 #### Implements
 
@@ -58,7 +58,7 @@ npm install @enkaku/client
 
 ##### createChannel()
 
-> **createChannel**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+> **createChannel**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`ChannelCall`](index.md#channelcallreceive-send-result)\<`T`\[`"Receive"`\], `T`\[`"Send"`\], `T`\[`"Result"`\]\>
 
 ###### Type Parameters
 
@@ -74,17 +74,17 @@ npm install @enkaku/client
 
 ###### args
 
-...`T`\[`"Argument"`\] *extends* `never` ? \[\] : \[`T`\[`"Argument"`\]\]
+...`T`\[`"Param"`\] *extends* `never` ? \[`object`\] : \[`object`\]
 
 ###### Returns
 
-[`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+[`ChannelCall`](index.md#channelcallreceive-send-result)\<`T`\[`"Receive"`\], `T`\[`"Send"`\], `T`\[`"Result"`\]\>
 
 ***
 
 ##### createStream()
 
-> **createStream**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+> **createStream**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`StreamCall`](index.md#streamcallreceive-result)\<`T`\[`"Receive"`\], `T`\[`"Result"`\]\>
 
 ###### Type Parameters
 
@@ -100,11 +100,11 @@ npm install @enkaku/client
 
 ###### args
 
-...`T`\[`"Argument"`\] *extends* `never` ? \[\] : \[`T`\[`"Argument"`\]\]
+...`T`\[`"Param"`\] *extends* `never` ? \[`object`\] : \[`object`\]
 
 ###### Returns
 
-[`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+[`StreamCall`](index.md#streamcallreceive-result)\<`T`\[`"Receive"`\], `T`\[`"Result"`\]\>
 
 ***
 
@@ -124,7 +124,7 @@ npm install @enkaku/client
 
 ##### request()
 
-> **request**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+> **request**\<`Procedure`, `T`\>(`procedure`, ...`args`): `Promise`\<`T`\[`"Result"`\]\> & `object`
 
 ###### Type Parameters
 
@@ -140,11 +140,11 @@ npm install @enkaku/client
 
 ###### args
 
-...`T`\[`"Argument"`\] *extends* `never` ? \[\] : \[`T`\[`"Argument"`\]\]
+...`T`\[`"Param"`\] *extends* `never` ? \[`object`\] : \[`object`\]
 
 ###### Returns
 
-[`ProcedureCall`](index.md#procedurecallresultvalue-return)\<`T`\[`"Result"`\], `T`\[`"Return"`\]\>
+`Promise`\<`T`\[`"Result"`\]\> & `object`
 
 ***
 
@@ -166,17 +166,219 @@ npm install @enkaku/client
 
 ###### args
 
-...`T`\[`"Argument"`\] *extends* `never` ? \[\] : \[`T`\[`"Argument"`\]\]
+...`T`\[`"Data"`\] *extends* `never` ? \[\] : \[`T`\[`"Data"`\]\]
 
 ###### Returns
 
 `Promise`\<`void`\>
 
+***
+
+### RequestError\<Code, Data\>
+
+#### Extends
+
+- `Error`
+
+#### Type Parameters
+
+• **Code** *extends* `string` = `string`
+
+• **Data** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+#### Implements
+
+- [`ErrorObjectType`](index.md#errorobjecttypecode-data)\<`Code`, `Data`\>
+
+#### Constructors
+
+##### new RequestError()
+
+> **new RequestError**\<`Code`, `Data`\>(`params`): [`RequestError`](index.md#requesterrorcode-data)\<`Code`, `Data`\>
+
+###### Parameters
+
+###### params
+
+[`RequestErrorParams`](index.md#requesterrorparamscode-data)\<`Code`, `Data`\>
+
+###### Returns
+
+[`RequestError`](index.md#requesterrorcode-data)\<`Code`, `Data`\>
+
+###### Overrides
+
+`Error.constructor`
+
+#### Properties
+
+##### cause?
+
+> `optional` **cause**: `unknown`
+
+###### Inherited from
+
+`Error.cause`
+
+***
+
+##### message
+
+> **message**: `string`
+
+###### Implementation of
+
+`ErrorObjectType.message`
+
+###### Inherited from
+
+`Error.message`
+
+***
+
+##### name
+
+> **name**: `string`
+
+###### Inherited from
+
+`Error.name`
+
+***
+
+##### stack?
+
+> `optional` **stack**: `string`
+
+###### Inherited from
+
+`Error.stack`
+
+***
+
+##### prepareStackTrace()?
+
+> `static` `optional` **prepareStackTrace**: (`err`, `stackTraces`) => `any`
+
+Optional override for formatting stack traces
+
+###### Parameters
+
+###### err
+
+`Error`
+
+###### stackTraces
+
+`CallSite`[]
+
+###### Returns
+
+`any`
+
+###### See
+
+https://v8.dev/docs/stack-trace-api#customizing-stack-traces
+
+###### Inherited from
+
+`Error.prepareStackTrace`
+
+***
+
+##### stackTraceLimit
+
+> `static` **stackTraceLimit**: `number`
+
+###### Inherited from
+
+`Error.stackTraceLimit`
+
+#### Accessors
+
+##### code
+
+###### Get Signature
+
+> **get** **code**(): `Code`
+
+###### Returns
+
+`Code`
+
+###### Implementation of
+
+`ErrorObjectType.code`
+
+***
+
+##### data
+
+###### Get Signature
+
+> **get** **data**(): `Data`
+
+###### Returns
+
+`Data`
+
+###### Implementation of
+
+`ErrorObjectType.data`
+
+#### Methods
+
+##### captureStackTrace()
+
+> `static` **captureStackTrace**(`targetObject`, `constructorOpt`?): `void`
+
+Create .stack property on a target object
+
+###### Parameters
+
+###### targetObject
+
+`object`
+
+###### constructorOpt?
+
+`Function`
+
+###### Returns
+
+`void`
+
+###### Inherited from
+
+`Error.captureStackTrace`
+
+***
+
+##### fromPayload()
+
+> `static` **fromPayload**\<`Code`, `Data`\>(`payload`): [`RequestError`](index.md#requesterrorcode-data)\<`Code`, `Data`\>
+
+###### Type Parameters
+
+• **Code** *extends* `string` = `string`
+
+• **Data** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+###### Parameters
+
+###### payload
+
+[`ErrorReplyPayload`](../protocol/index.md#errorreplypayloadcode-data)\<`Code`, `Data`\>
+
+###### Returns
+
+[`RequestError`](index.md#requesterrorcode-data)\<`Code`, `Data`\>
+
 ## Type Aliases
 
-### CallChannelReturn\<Send, Receive, Result\>
+### ChannelCall\<Receive, Send, Result\>
 
-> **CallChannelReturn**\<`Send`, `Receive`, `Result`\>: [`CallStreamReturn`](index.md#callstreamreturnreceive-result)\<`Receive`, `Result`\> & `object`
+> **ChannelCall**\<`Receive`, `Send`, `Result`\>: [`StreamCall`](index.md#streamcallreceive-result)\<`Receive`, `Result`\> & `object`
 
 #### Type declaration
 
@@ -194,65 +396,55 @@ npm install @enkaku/client
 
 `Promise`\<`void`\>
 
+##### writable
+
+> **writable**: `WritableStream`\<`Send`\>
+
 #### Type Parameters
+
+• **Receive**
 
 • **Send**
 
-• **Receive**
-
 • **Result**
 
 ***
 
-### CallReturn\<ResultValue\>
+### ChannelDefinitionsType\<Protocol\>
 
-> **CallReturn**\<`ResultValue`\>: `object`
+> **ChannelDefinitionsType**\<`Protocol`\>: `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends ChannelProcedureDefinition ? { Param: DataOf<Protocol[Procedure]["param"]>; Receive: DataOf<Protocol[Procedure]["receive"]>; Result: ReturnOf<Protocol[Procedure]["result"]>; Send: DataOf<Protocol[Procedure]["send"]> } : never }`\>
 
 #### Type Parameters
 
-• **ResultValue**
-
-#### Type declaration
-
-##### abort()
-
-> **abort**: (`reason`?) => `void`
-
-###### Parameters
-
-###### reason?
-
-`any`
-
-###### Returns
-
-`void`
-
-##### id
-
-> **id**: `string`
-
-##### result
-
-> **result**: `Promise`\<`Result`\<`ResultValue`, `CallError`\>\>
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
-### CallStreamReturn\<Receive, Result\>
+### ClientDefinitionsType\<Protocol\>
 
-> **CallStreamReturn**\<`Receive`, `Result`\>: [`CallReturn`](index.md#callreturnresultvalue)\<`Result`\> & `object`
-
-#### Type declaration
-
-##### receive
-
-> **receive**: `ReadableStream`\<`Receive`\>
+> **ClientDefinitionsType**\<`Protocol`\>: `object`
 
 #### Type Parameters
 
-• **Receive**
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-• **Result**
+#### Type declaration
+
+##### Channels
+
+> **Channels**: [`ChannelDefinitionsType`](index.md#channeldefinitionstypeprotocol)\<`Protocol`\>
+
+##### Events
+
+> **Events**: [`EventDefinitionsType`](index.md#eventdefinitionstypeprotocol)\<`Protocol`\>
+
+##### Requests
+
+> **Requests**: [`RequestDefinitionsType`](index.md#requestdefinitionstypeprotocol)\<`Protocol`\>
+
+##### Streams
+
+> **Streams**: [`StreamDefinitionsType`](index.md#streamdefinitionstypeprotocol)\<`Protocol`\>
 
 ***
 
@@ -288,30 +480,124 @@ npm install @enkaku/client
 
 ***
 
-### ProcedureCall\<ResultValue, Return\>
+### ErrorObjectType\<Code, Data\>
 
-> **ProcedureCall**\<`ResultValue`, `Return`\>: `Promise`\<`Return`\> & `object`
-
-#### Type declaration
-
-##### result
-
-> **result**: `Promise`\<`CallResult`\<`ResultValue`\>\>
-
-##### toValue()
-
-###### Returns
-
-`Promise`\<`ResultValue`\>
+> **ErrorObjectType**\<`Code`, `Data`\>: `object`
 
 #### Type Parameters
 
-• **ResultValue**
+• **Code** *extends* `string` = `string`
 
-• **Return**
+• **Data** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
-## Variables
+#### Type declaration
 
-### ABORTED
+##### code
 
-> `const` **ABORTED**: *typeof* [`ABORTED`](index.md#aborted)
+> **code**: `Code`
+
+##### data?
+
+> `optional` **data**: `Data`
+
+##### message
+
+> **message**: `string`
+
+***
+
+### EventDefinitionsType\<Protocol\>
+
+> **EventDefinitionsType**\<`Protocol`\>: `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition ? { Data: DataOf<Protocol[Procedure]["data"]> } : never }`\>
+
+#### Type Parameters
+
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+***
+
+### RequestCall\<Result\>
+
+> **RequestCall**\<`Result`\>: `Promise`\<`Result`\> & `object`
+
+#### Type declaration
+
+##### abort()
+
+> **abort**: (`reason`?) => `void`
+
+###### Parameters
+
+###### reason?
+
+`string`
+
+###### Returns
+
+`void`
+
+##### signal
+
+> **signal**: `AbortSignal`
+
+#### Type Parameters
+
+• **Result**
+
+***
+
+### RequestDefinitionsType\<Protocol\>
+
+> **RequestDefinitionsType**\<`Protocol`\>: `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends RequestProcedureDefinition ? { Param: DataOf<Protocol[Procedure]["param"]>; Result: ReturnOf<Protocol[Procedure]["result"]> } : never }`\>
+
+#### Type Parameters
+
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+***
+
+### RequestErrorParams\<Code, Data\>
+
+> **RequestErrorParams**\<`Code`, `Data`\>: `ErrorOptions` & [`ErrorObjectType`](index.md#errorobjecttypecode-data)\<`Code`, `Data`\>
+
+#### Type Parameters
+
+• **Code** *extends* `string` = `string`
+
+• **Data** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+***
+
+### StreamCall\<Receive, Result\>
+
+> **StreamCall**\<`Receive`, `Result`\>: [`RequestCall`](index.md#requestcallresult)\<`Result`\> & `object`
+
+#### Type declaration
+
+##### close()
+
+> **close**: () => `void`
+
+###### Returns
+
+`void`
+
+##### readable
+
+> **readable**: `ReadableStream`\<`Receive`\>
+
+#### Type Parameters
+
+• **Receive**
+
+• **Result**
+
+***
+
+### StreamDefinitionsType\<Protocol\>
+
+> **StreamDefinitionsType**\<`Protocol`\>: `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends StreamProcedureDefinition ? { Param: Protocol[Procedure]["param"] extends undefined ? never : DataOf<Protocol[Procedure]["param"]>; Receive: DataOf<Protocol[Procedure]["receive"]>; Result: ReturnOf<Protocol[Procedure]["result"]> } : never }`\>
+
+#### Type Parameters
+
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)

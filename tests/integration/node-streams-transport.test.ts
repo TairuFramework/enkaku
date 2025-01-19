@@ -8,7 +8,7 @@ import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from 
 const protocol = {
   test: {
     type: 'request',
-    params: { type: 'string' },
+    param: { type: 'string' },
     result: { type: 'string' },
   },
 } satisfies ProtocolDefinition
@@ -25,8 +25,7 @@ describe('Node streams transport', () => {
     >({ streams: { readable: process.stdout, writable: process.stdin } })
 
     const client = new Client<Protocol>({ transport })
-    const result = await client.request('test', 'stranger').toValue()
-    expect(result).toBe('Hello stranger')
+    await expect(client.request('test', { param: 'stranger' })).resolves.toBe('Hello stranger')
 
     await transport.dispose()
     process.kill()

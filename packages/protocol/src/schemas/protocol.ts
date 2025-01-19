@@ -99,7 +99,7 @@ export const requestProcedureDefinition = {
   properties: {
     type: { type: 'string', const: 'request' },
     description: { type: 'string' },
-    params: anyTypeDefinition,
+    param: anyTypeDefinition,
     result: anyTypeDefinition,
     error: errorObjectDefinition,
   },
@@ -113,7 +113,7 @@ export const streamProcedureDefinition = {
   properties: {
     type: { type: 'string', const: 'stream' },
     description: { type: 'string' },
-    params: anyTypeDefinition,
+    param: anyTypeDefinition,
     receive: anyTypeDefinition,
     result: anyTypeDefinition,
     error: errorObjectDefinition,
@@ -128,7 +128,7 @@ export const channelProcedureDefinition = {
   properties: {
     type: { type: 'string', const: 'channel' },
     description: { type: 'string' },
-    params: anyTypeDefinition,
+    param: anyTypeDefinition,
     send: anyTypeDefinition,
     receive: anyTypeDefinition,
     result: anyTypeDefinition,

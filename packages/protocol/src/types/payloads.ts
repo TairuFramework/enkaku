@@ -30,21 +30,21 @@ export type RequestPayloadOf<
   Procedure extends string,
   Definition,
 > = Definition extends RequestProcedureDefinition
-  ? RequestCallPayload<'request', Procedure, DataOf<Definition['params']>>
+  ? RequestCallPayload<'request', Procedure, DataOf<Definition['param']>>
   : never
 
 export type StreamPayloadOf<
   Procedure extends string,
   Definition,
 > = Definition extends StreamProcedureDefinition
-  ? RequestCallPayload<'stream', Procedure, DataOf<Definition['params']>>
+  ? RequestCallPayload<'stream', Procedure, DataOf<Definition['param']>>
   : never
 
 export type ChannelPayloadOf<
   Procedure extends string,
   Definition,
 > = Definition extends ChannelProcedureDefinition
-  ? RequestCallPayload<'channel', Procedure, DataOf<Definition['params']>>
+  ? RequestCallPayload<'channel', Procedure, DataOf<Definition['param']>>
   : never
 
 export type SendPayloadOf<Definition> = Definition extends ChannelProcedureDefinition
@@ -57,12 +57,12 @@ export type ClientPayloadOf<
 > = Definition extends EventProcedureDefinition
   ? EventCallPayload<Procedure, DataOf<Definition['data']>>
   : Definition extends RequestProcedureDefinition
-    ? RequestCallPayload<'request', Procedure, DataOf<Definition['params']>> | AbortCallPayload
+    ? RequestCallPayload<'request', Procedure, DataOf<Definition['param']>> | AbortCallPayload
     : Definition extends StreamProcedureDefinition
-      ? RequestCallPayload<'stream', Procedure, DataOf<Definition['params']>> | AbortCallPayload
+      ? RequestCallPayload<'stream', Procedure, DataOf<Definition['param']>> | AbortCallPayload
       : Definition extends ChannelProcedureDefinition
         ?
-            | RequestCallPayload<'channel', Procedure, DataOf<Definition['params']>>
+            | RequestCallPayload<'channel', Procedure, DataOf<Definition['param']>>
             | SendCallPayload<DataOf<Definition['send']>>
             | AbortCallPayload
         : never

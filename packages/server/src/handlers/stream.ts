@@ -47,7 +47,7 @@ export function handleStream<
 
   const handlerContext = {
     message: msg,
-    params: msg.payload.prm,
+    param: msg.payload.prm,
     signal: controller.signal,
     writable: receiveStream.writable,
   }

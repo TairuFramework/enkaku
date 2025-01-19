@@ -26,7 +26,7 @@ export function handleRequest<
 
   const handlerContext = {
     message: msg,
-    params: msg.payload.prm,
+    param: msg.payload.prm,
     signal: controller.signal,
   }
   // @ts-ignore context and handler types

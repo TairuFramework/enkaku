@@ -9,7 +9,7 @@ import type { HandlerContext, HandlerController, StreamHandlerContext } from '..
 const protocol = {
   test: {
     type: 'stream',
-    params: {
+    param: {
       type: 'object',
       properties: { test: { type: 'boolean' } },
       required: ['test'],

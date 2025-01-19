@@ -60,7 +60,7 @@ describe('standalone', () => {
       }) as jest.Mock<RequestHandler<Protocol, 'test'>>
       const client = await standalone<Protocol>({ test: handler })
 
-      await expect(client.request('test').toValue()).resolves.toBe('OK')
+      await expect(client.request('test')).resolves.toBe('OK')
     })
   })
 
@@ -69,7 +69,7 @@ describe('standalone', () => {
       const protocol = {
         test: {
           type: 'stream',
-          params: { type: 'number' },
+          param: { type: 'number' },
           receive: { type: 'number' },
           result: { type: 'string' },
         },
@@ -85,7 +85,7 @@ describe('standalone', () => {
               clearInterval(timer)
               resolve('END')
             } else {
-              writer.write(ctx.params + count++)
+              writer.write(ctx.param + count++)
             }
           }, 50)
           ctx.signal.addEventListener('abort', () => {
@@ -96,8 +96,8 @@ describe('standalone', () => {
       }) as jest.Mock<StreamHandler<Protocol, 'test'>>
       const client = standalone<Protocol>({ test: handler })
 
-      const stream = await client.createStream('test', 3)
-      const reader = stream.receive.getReader()
+      const stream = client.createStream('test', { param: 3 })
+      const reader = stream.readable.getReader()
       const received: Array<number> = []
       while (true) {
         const { done, value } = await reader.read()
@@ -108,8 +108,7 @@ describe('standalone', () => {
       }
 
       expect(received).toEqual([3, 4, 5])
-      const result = await stream.result
-      expect(result.value).toBe('END')
+      await expect(stream).resolves.toBe('END')
     })
   })
 
@@ -118,7 +117,7 @@ describe('standalone', () => {
       const protocol = {
         test: {
           type: 'channel',
-          params: { type: 'number' },
+          param: { type: 'number' },
           send: { type: 'number' },
           receive: { type: 'number' },
           result: { type: 'string' },
@@ -135,13 +134,13 @@ describe('standalone', () => {
           if (done || count++ === 3) {
             break
           }
-          writer.write(ctx.params + value)
+          writer.write(ctx.param + value)
         }
         return 'END'
       }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
       const client = standalone<Protocol>({ test: handler })
 
-      const channel = await client.createChannel('test', 5)
+      const channel = client.createChannel('test', { param: 5 })
       const send = [5, 3, 10, 20]
       async function sendNext() {
         const val = send.shift()
@@ -151,7 +150,7 @@ describe('standalone', () => {
       }
       sendNext()
 
-      const reader = channel.receive.getReader()
+      const reader = channel.readable.getReader()
       const received: Array<number> = []
       while (true) {
         const { done, value } = await reader.read()
@@ -163,8 +162,7 @@ describe('standalone', () => {
       }
 
       expect(received).toEqual([10, 8, 15])
-      const result = await channel.result
-      await expect(result.value).toBe('END')
+      await expect(channel).resolves.toBe('END')
     })
   })
 })

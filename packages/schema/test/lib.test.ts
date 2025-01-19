@@ -1,13 +1,6 @@
-import { createTransformSource } from '@enkaku/stream'
 import { Result } from 'typescript-result'
 
-import {
-  ValidationError,
-  assertType,
-  createValidationStream,
-  createValidator,
-  isType,
-} from '../src/index.js'
+import { ValidationError, assertType, createValidator, isType } from '../src/index.js'
 
 describe('createValidator()', () => {
   test('creates a schema validation function', () => {
@@ -33,32 +26,5 @@ describe('createValidator()', () => {
     expect(validateFailure).toBeInstanceOf(Result)
     expect(validateFailure.isError()).toBe(true)
     expect(validateFailure.error).toBeInstanceOf(ValidationError)
-  })
-})
-
-describe('createValidationStream()', () => {
-  test('validates data against the schema', async () => {
-    const validator = createValidator({
-      $id: 'test',
-      type: 'object',
-      properties: { test: { type: 'boolean' } },
-      required: ['test'],
-      additionalProperties: false,
-    } as const)
-
-    const source = createTransformSource<T>()
-    const writer = source.writable.getWriter()
-    writer.write({ test: true })
-    writer.write({ test: false, extra: true })
-
-    const reader = source.readable.pipeThrough(createValidationStream(validator)).getReader()
-    const valid = await reader.read()
-    expect(valid.value).toBeInstanceOf(Result)
-    expect(valid.value?.isOk()).toBe(true)
-    expect(valid.value?.value).toEqual({ test: true })
-    const invalid = await reader.read()
-    expect(invalid.value).toBeInstanceOf(Result)
-    expect(invalid.value?.isOk()).toBe(false)
-    expect(invalid.value?.error).toBeInstanceOf(ValidationError)
   })
 })

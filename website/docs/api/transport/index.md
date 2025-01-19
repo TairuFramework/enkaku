@@ -102,6 +102,20 @@ Base Transport class implementing TransportType.
 
 ***
 
+##### getWritable()
+
+> **getWritable**(): `WritableStream`\<`W`\>
+
+###### Returns
+
+`WritableStream`\<`W`\>
+
+###### Implementation of
+
+`TransportType.getWritable`
+
+***
+
 ##### read()
 
 > **read**(): `Promise`\<`ReadableStreamReadResult`\<`R`\>\>
@@ -237,6 +251,14 @@ Couple of Transports for communication between a client and server in the same p
 Generic Transport object type implementing read and write functions.
 
 #### Type declaration
+
+##### getWritable()
+
+> **getWritable**: () => `WritableStream`\<`W`\>
+
+###### Returns
+
+`WritableStream`\<`W`\>
 
 ##### read()
 

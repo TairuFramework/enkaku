@@ -58,7 +58,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   const disposer = createDisposer(async () => {
     // Abort all currently running handlers
     for (const controller of Object.values(controllers)) {
-      controller.abort()
+      controller.abort('Dispose')
     }
     // Wait until all running handlers are done
     await Promise.all(Object.values(running))
@@ -138,7 +138,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     if (msg != null) {
       switch (msg.payload.typ) {
         case 'abort':
-          controllers[msg.payload.rid]?.abort()
+          controllers[msg.payload.rid]?.abort(msg.payload.rsn)
           break
         case 'channel': {
           const message = msg as ChannelMessageOf<Protocol>

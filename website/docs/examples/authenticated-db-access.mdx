@@ -34,8 +34,8 @@ serve({
       return await listEntries();
     },
     "kv:set": async (ctx) => {
-      console.log("set value", ctx.message.payload.iss, ctx.params);
-      await setValue(ctx.message.payload.iss, ctx.params);
+      console.log("set value", ctx.message.payload.iss, ctx.param);
+      await setValue(ctx.message.payload.iss, ctx.param);
     },
   },
 });

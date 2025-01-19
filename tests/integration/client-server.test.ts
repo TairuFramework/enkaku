@@ -80,7 +80,7 @@ describe('client-server integration', () => {
       const client = new Client<Protocol>({ transport: transports.client })
       serve<Protocol>({ handlers, public: true, transport: transports.server })
 
-      await expect(client.request('test').toValue()).resolves.toBe('OK')
+      await expect(client.request('test')).resolves.toBe('OK')
 
       await transports.dispose()
     })
@@ -91,7 +91,7 @@ describe('client-server integration', () => {
       const protocol = {
         test: {
           type: 'stream',
-          params: { type: 'number' },
+          param: { type: 'number' },
           receive: { type: 'number' },
           result: { type: 'string' },
         },
@@ -107,7 +107,7 @@ describe('client-server integration', () => {
               clearInterval(timer)
               resolve('END')
             } else {
-              writer.write(ctx.params + count++)
+              writer.write(ctx.param + count++)
             }
           }, 50)
           ctx.signal.addEventListener('abort', () => {
@@ -126,8 +126,8 @@ describe('client-server integration', () => {
       const client = new Client<Protocol>({ transport: transports.client })
       serve<Protocol>({ handlers, public: true, transport: transports.server })
 
-      const stream = await client.createStream('test', 3)
-      const reader = stream.receive.getReader()
+      const stream = client.createStream('test', { param: 3 })
+      const reader = stream.readable.getReader()
       const received: Array<number> = []
       while (true) {
         const { done, value } = await reader.read()
@@ -138,8 +138,7 @@ describe('client-server integration', () => {
       }
 
       expect(received).toEqual([3, 4, 5])
-      const result = await stream.result
-      expect(result.value).toBe('END')
+      await expect(stream).resolves.toBe('END')
 
       await transports.dispose()
     })
@@ -150,7 +149,7 @@ describe('client-server integration', () => {
       const protocol = {
         test: {
           type: 'channel',
-          params: { type: 'number' },
+          param: { type: 'number' },
           send: { type: 'number' },
           receive: { type: 'number' },
           result: { type: 'string' },
@@ -167,7 +166,7 @@ describe('client-server integration', () => {
           if (done || count++ === 3) {
             break
           }
-          writer.write(ctx.params + value)
+          writer.write(ctx.param + value)
         }
         return 'END'
       }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
@@ -180,7 +179,7 @@ describe('client-server integration', () => {
 
       const client = new Client<Protocol>({ transport: transports.client })
       serve<Protocol>({ handlers, public: true, transport: transports.server })
-      const channel = await client.createChannel('test', 5)
+      const channel = client.createChannel('test', { param: 5 })
 
       const send = [5, 3, 10, 20]
       async function sendNext() {
@@ -191,7 +190,7 @@ describe('client-server integration', () => {
       }
       sendNext()
 
-      const reader = channel.receive.getReader()
+      const reader = channel.readable.getReader()
       const received: Array<number> = []
       while (true) {
         const { done, value } = await reader.read()
@@ -203,8 +202,7 @@ describe('client-server integration', () => {
       }
 
       expect(received).toEqual([10, 8, 15])
-      const result = await channel.result
-      await expect(result.value).toBe('END')
+      await expect(channel).resolves.toBe('END')
 
       await transports.dispose()
     })

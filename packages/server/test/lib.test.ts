@@ -173,7 +173,7 @@ describe('serve()', () => {
     const protocol = {
       test: {
         type: 'stream',
-        params: { type: 'number' },
+        param: { type: 'number' },
         receive: { type: 'number' },
         result: { type: 'string' },
       },
@@ -189,7 +189,7 @@ describe('serve()', () => {
             clearInterval(timer)
             resolve('END')
           } else {
-            writer.write(ctx.params + count++)
+            writer.write(ctx.param + count++)
           }
         }, 50)
         ctx.signal.addEventListener('abort', () => {
@@ -235,7 +235,7 @@ describe('serve()', () => {
     const protocol = {
       test: {
         type: 'channel',
-        params: { type: 'number' },
+        param: { type: 'number' },
         send: { type: 'number' },
         receive: { type: 'number' },
         result: { type: 'string' },
@@ -252,7 +252,7 @@ describe('serve()', () => {
         if (done || count++ === 3) {
           break
         }
-        writer.write(ctx.params + value)
+        writer.write(ctx.param + value)
       }
       return 'END'
     }) as jest.Mock<ChannelHandler<Protocol, 'test'>>

@@ -7,7 +7,7 @@ import type { HandlerContext } from '../src/types.js'
 const protocol = {
   test: {
     type: 'request',
-    params: {
+    param: {
       type: 'object',
       properties: { test: { type: 'boolean' } },
       required: ['test'],

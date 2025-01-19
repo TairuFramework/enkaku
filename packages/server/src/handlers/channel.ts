@@ -60,7 +60,7 @@ export function handleChannel<
 
   const handlerContext = {
     message: msg,
-    params: msg.payload.prm,
+    param: msg.payload.prm,
     readable: sendStream.readable,
     signal: controller.signal,
     writable: receiveStream.writable,

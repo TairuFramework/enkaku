@@ -15,7 +15,7 @@ import { consumeReader } from '../src/utils.js'
 const protocol = {
   test: {
     type: 'channel',
-    params: {
+    param: {
       type: 'object',
       properties: { test: { type: 'boolean' } },
       required: ['test'],

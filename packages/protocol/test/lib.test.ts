@@ -27,12 +27,12 @@ const protocol = {
   },
   'test/stream': {
     type: 'stream',
-    params: { type: 'number' },
+    param: { type: 'number' },
     receive: { type: 'number' },
   },
   'test/channel': {
     type: 'channel',
-    params: { type: 'number' },
+    param: { type: 'number' },
     send: { type: 'string' },
     receive: { type: 'number' },
   },

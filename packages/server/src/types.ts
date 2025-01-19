@@ -47,10 +47,10 @@ export type RequestHandlerContext<
         RequestCallPayload<
           Protocol[Procedure]['type'],
           Procedure,
-          DataOf<Protocol[Procedure]['params']>
+          DataOf<Protocol[Procedure]['param']>
         >
       >
-      params: DataOf<Protocol[Procedure]['params']>
+      param: DataOf<Protocol[Procedure]['param']>
       signal: AbortSignal
     }
   : never
@@ -127,11 +127,11 @@ export type EventDataType<
   ? DataOf<Protocol[Procedure]['data']>
   : never
 
-export type ParamsType<
+export type ParamType<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
 > = Protocol[Procedure] extends AnyRequestProcedureDefinition
-  ? DataOf<Protocol[Procedure]['params']>
+  ? DataOf<Protocol[Procedure]['param']>
   : never
 
 export type ReceiveType<

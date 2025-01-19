@@ -6,12 +6,11 @@ import type {
   RequestPayloadOf,
   StreamPayloadOf,
 } from '@enkaku/protocol'
+import { createArraySink } from '@enkaku/stream'
 import { randomTokenSigner, createUnsignedToken as unsignedToken } from '@enkaku/token'
 import { createDirectTransports } from '@enkaku/transport'
-import { Result } from 'typescript-result'
 
 import { Client } from '../src/client.js'
-import { ABORTED } from '../src/constants.js'
 
 describe('Client', () => {
   test('sendEvent()', async () => {
@@ -71,7 +70,7 @@ describe('Client', () => {
       >()
       const client = new Client<Protocol>({ transport: transports.client })
 
-      const request = await client.request('test/request')
+      const request = client.request('test/request')
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as RequestPayloadOf<
         'test/request',
@@ -79,10 +78,7 @@ describe('Client', () => {
       >
       expect(payload.prc).toBe('test/request')
       await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
-      const result = await request.result
-      expect(result).toBeInstanceOf(Result)
-      expect(result.isOk()).toBe(true)
-      expect(result.value).toBe('OK')
+      await expect(request).resolves.toBe('OK')
 
       await transports.dispose()
     })
@@ -94,7 +90,7 @@ describe('Client', () => {
       >()
       const client = new Client<Protocol>({ transport: transports.client })
 
-      const request = await client.request('test/request')
+      const request = client.request('test/request')
       request.abort()
 
       const requestRead = await transports.server.read()
@@ -103,9 +99,12 @@ describe('Client', () => {
         Protocol['test/request']
       >
       const abortRead = await transports.server.read()
-      expect(abortRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid })
-      const result = await request.result
-      expect(result.error).toBe(ABORTED)
+      expect(abortRead.value?.payload).toEqual({
+        typ: 'abort',
+        rid: payload.rid,
+        rsn: 'AbortError',
+      })
+      await expect(request).rejects.toBeInstanceOf(AbortSignal)
 
       await transports.dispose()
     })
@@ -128,7 +127,7 @@ describe('Client', () => {
       >()
       const client = new Client<Protocol>({ transport: transports.client })
 
-      const stream = await client.createStream('test/stream')
+      const stream = client.createStream('test/stream')
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as StreamPayloadOf<
         'test/stream',
@@ -139,19 +138,11 @@ describe('Client', () => {
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 3 }))
       await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
-      const result = await stream.result
-      expect(result.value).toBe('OK')
+      await expect(stream).resolves.toBe('OK')
 
-      const reader = stream.receive.getReader()
-      const received: Array<number> = []
-      while (true) {
-        const next = await reader.read()
-        if (next.done) {
-          break
-        }
-        received.push(next.value)
-      }
-      expect(received).toEqual([1, 2, 3])
+      const [writable, received] = createArraySink<number>()
+      stream.readable.pipeTo(writable)
+      await expect(received).resolves.toEqual([1, 2, 3])
 
       await transports.dispose()
     })
@@ -163,7 +154,7 @@ describe('Client', () => {
       >()
       const client = new Client<Protocol>({ transport: transports.client })
 
-      const stream = await client.createStream('test/stream')
+      const stream = client.createStream('test/stream')
       stream.abort()
 
       const requestRead = await transports.server.read()
@@ -172,9 +163,44 @@ describe('Client', () => {
         Protocol['test/stream']
       >
       const abortRead = await transports.server.read()
-      expect(abortRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid })
-      const result = await stream.result
-      expect(result.error).toBe(ABORTED)
+      expect(abortRead.value?.payload).toEqual({
+        typ: 'abort',
+        rid: payload.rid,
+        rsn: 'AbortError',
+      })
+      await expect(stream).rejects.toBeInstanceOf(AbortSignal)
+
+      await transports.dispose()
+    })
+
+    test('closes the stream', async () => {
+      const transports = createDirectTransports<
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
+      >()
+      const client = new Client<Protocol>({ transport: transports.client })
+
+      const stream = client.createStream('test/stream')
+      const requestRead = await transports.server.read()
+      const payload = requestRead.value?.payload as StreamPayloadOf<
+        'test/stream',
+        Protocol['test/stream']
+      >
+
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 1 }))
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
+
+      stream.close()
+      const closeRead = await transports.server.read()
+      expect(closeRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid, rsn: 'Close' })
+
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 3 }))
+      await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
+      await expect(stream).resolves.toBe('OK')
+
+      const [writable, received] = createArraySink<number>()
+      stream.readable.pipeTo(writable)
+      await expect(received).resolves.toEqual([1, 2, 3])
 
       await transports.dispose()
     })
@@ -198,7 +224,7 @@ describe('Client', () => {
       >()
       const client = new Client<Protocol>({ transport: transports.client })
 
-      const channel = await client.createChannel('test/channel')
+      const channel = client.createChannel('test/channel')
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as ChannelPayloadOf<
         'test/channel',
@@ -225,19 +251,11 @@ describe('Client', () => {
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 3 }))
       await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
-      const result = await channel.result
-      expect(result.value).toBe('OK')
+      await expect(channel).resolves.toBe('OK')
 
-      const reader = channel.receive.getReader()
-      const received: Array<number> = []
-      while (true) {
-        const next = await reader.read()
-        if (next.done) {
-          break
-        }
-        received.push(next.value)
-      }
-      expect(received).toEqual([1, 2, 3])
+      const [writable, received] = createArraySink<number>()
+      channel.readable.pipeTo(writable)
+      await expect(received).resolves.toEqual([1, 2, 3])
 
       await transports.dispose()
     })
@@ -249,7 +267,7 @@ describe('Client', () => {
       >()
       const client = new Client<Protocol>({ transport: transports.client })
 
-      const channel = await client.createChannel('test/channel')
+      const channel = client.createChannel('test/channel')
       channel.abort()
 
       const requestRead = await transports.server.read()
@@ -258,9 +276,60 @@ describe('Client', () => {
         Protocol['test/channel']
       >
       const abortRead = await transports.server.read()
-      expect(abortRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid })
-      const result = await channel.result
-      expect(result.error).toBe(ABORTED)
+      expect(abortRead.value?.payload).toEqual({
+        typ: 'abort',
+        rid: payload.rid,
+        rsn: 'AbortError',
+      })
+      await expect(channel).rejects.toBeInstanceOf(AbortSignal)
+
+      await transports.dispose()
+    })
+
+    test('closes the channel', async () => {
+      const transports = createDirectTransports<
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
+      >()
+      const client = new Client<Protocol>({ transport: transports.client })
+
+      const channel = client.createChannel('test/channel')
+      const requestRead = await transports.server.read()
+      const payload = requestRead.value?.payload as ChannelPayloadOf<
+        'test/channel',
+        Protocol['test/channel']
+      >
+
+      await channel.send(1)
+      const sentRead1 = await transports.server.read()
+      const sent1 = sentRead1.value?.payload as ChannelPayloadOf<
+        'test/channel',
+        Protocol['test/channel']
+      >
+      await expect(sent1).toEqual({ typ: 'send', rid: payload.rid, val: 1 })
+
+      await channel.send(2)
+      const sentRead2 = await transports.server.read()
+      const sent2 = sentRead2.value?.payload as ChannelPayloadOf<
+        'test/channel',
+        Protocol['test/channel']
+      >
+      await expect(sent2).toEqual({ typ: 'send', rid: payload.rid, val: 2 })
+
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 1 }))
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
+
+      channel.close()
+      const closeRead = await transports.server.read()
+      expect(closeRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid, rsn: 'Close' })
+
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 3 }))
+      await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
+      await expect(channel).resolves.toBe('OK')
+
+      const [writable, received] = createArraySink<number>()
+      channel.readable.pipeTo(writable)
+      await expect(received).resolves.toEqual([1, 2, 3])
 
       await transports.dispose()
     })

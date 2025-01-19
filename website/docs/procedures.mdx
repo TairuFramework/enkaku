@@ -94,7 +94,7 @@ sequenceDiagram
   Server->>-Client: Response
 ```
 
-Requests may have parameters associated to them using the `params` property and a `result` property representing the type of a successful response, as in the example below: 
+Requests may have parameters associated to them using the `param` property and a `result` property representing the type of a successful response, as in the example below: 
 
 ```ts
 import type { ProtocolDefinition } from '@enkaku/protocol'
@@ -103,7 +103,7 @@ const protocol = {
   'myapp:users/exists': {
     type: 'request',
     description: 'An example request procedure with parameters and result'
-    params: {
+    param: {
       type: 'string',
       description: 'user ID',
     },
@@ -112,7 +112,7 @@ const protocol = {
 } as const satisfies ProtocolDefinition
 ```
 
-Requests may also not define any `params` or `result`, for example:
+Requests may also not define any `param` or `result`, for example:
 
 ```ts
 import type { ProtocolDefinition } from '@enkaku/protocol'
@@ -138,7 +138,7 @@ sequenceDiagram
   Server->>-Client: Response
 ```
 
-Like requests, streams can have optional parameters associated to them using the `params` property and a `result` property defining the type of data that is sent back from the server once the stream is ended.
+Like requests, streams can have optional parameters associated to them using the `param` property and a `result` property defining the type of data that is sent back from the server once the stream is ended.
 
 Stream definions must provide a `receive` property that represents the type of data sent by the server while the client is connected to it.
 
@@ -149,7 +149,7 @@ const protocol = {
   'myapp:stream-numbers': {
     type: 'stream',
     description: 'An example stream procedure sending numbers',
-    params: {
+    param: {
       type: 'number',
       description: 'The number to start from',
     },
@@ -177,7 +177,7 @@ sequenceDiagram
   Server->>-Client: Response
 ```
 
-Like requests and streams, channels can have optional parameters associated to them using the `params` property and a `result` property defining the type of data that is sent back from the server once the channel is closed by the server.
+Like requests and streams, channels can have optional parameters associated to them using the `param` property and a `result` property defining the type of data that is sent back from the server once the channel is closed by the server.
 
 Similar to stream definions, channel definitions must provide a `receive` property that represents the type of data sent by the server while the client is connected to it.
 
@@ -190,7 +190,7 @@ const protocol = {
   'myapp:live-presence': {
     type: 'channel',
     description: 'An example channel procedure tracking present users',
-    params: {
+    param: {
       type: 'object',
       properties: {
         room_id: { type: 'string', description: 'The ID of the room' },
@@ -217,9 +217,9 @@ In addition to the `message` object, the following properties will be present ba
 
 - `data` for event procedures having defined a `data` property, an object containing the data passed by the client.
 - `signal` for all cancellable (non-event) procedures, an [AbortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal) triggered when the client cancels the procedure.
-- `params` for all non-event procedures having defined a `params` property, an object containing the parameters passed by the client.
-- `writer` for all stream and channel procedures, a [`WritableStreamDefaultWriter`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStreamDefaultWriter) used to write data back to the client matching the `receive` property of the procedure definition.
-- `reader` for all channel procedures, a [`WritableStreamDefaultReader`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStreamDefaultReader) used to read data sent by the client matching the `send` property of the procedure definition.
+- `param` for all non-event procedures having defined a `param` property, an object containing the parameters passed by the client.
+- `writable` for all stream and channel procedures, a [`WritableStream`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) used to write data back to the client matching the `receive` property of the procedure definition.
+- `readable` for all channel procedures, a [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) used to read data sent by the client matching the `send` property of the procedure definition.
 
 Handler functions for non-event procedures should return a value or promise according to the `result` property of the procedure definition, which will be sent back to the client.
 
@@ -235,7 +235,7 @@ const protocol = {
   'myapp:users/exists': {
     type: 'request',
     description: 'An example request procedure with parameters and result'
-    params: {
+    param: {
       type: 'string',
       description: 'user ID',
     },
@@ -249,7 +249,7 @@ serve({
   handlers: {
     'myapp:users/exists': async (ctx) => {
       // Get the user ID, defined as string in the protocol definition
-      const id = ctx.params 
+      const id = ctx.param
       // Return the result matching the protocol definition
       return await myDB.users.exists(id)
     }
@@ -271,7 +271,7 @@ const protocol = {
   'myapp:stream-numbers': {
     type: 'stream',
     description: 'An example stream procedure sending numbers',
-    params: {
+    param: {
       type: 'number',
       description: 'The number to start from',
     },
@@ -291,8 +291,9 @@ serve({
   protocol,
   handlers: {
     'myapp:stream-numbers': async (ctx) => {
+      const writer = ctx.writable.getWriter()
       // Get the first number from the client
-      let value = ctx.params
+      let value = ctx.param
       let sum = value
       // Execute as long as the client does not close the stream
       while (!ctx.signal.aborted) {
@@ -305,7 +306,7 @@ serve({
         // Add the new value to the sum
         sum += value
         // Write the next number to the stream
-        ctx.writer.write(value)
+        writer.write(value)
       }
       
     }
@@ -324,40 +325,33 @@ The client exposes the following methods to invoke procedures:
 - [`createStream()`](./api/client/index.md#createstream) to create a [`stream`](#streams).
 - [`createChannel()`](./api/client/index.md#createchannel) to create a [`channel`](#channels).
 
-All these methods return a `Promise` that resolves when the message is **successfully written** to the transport, or rejects if the message cannot be sent.
+### Sending events
 
-### Procedure call state
+[Events](#events) can be sent using the [`sendEvent()` method](./api/client/index.md#sendevent) of the client, which returns as `Promise<void>` resolving when successfully writing to the transport.
 
-While the `sendEvent()` method returns a `Promise<void>` as no further interaction is expected, the other three methods synchronously return a [`ProcedureCall` object](./api/client/index.md#procedurecallresultvalue-return) containing the following properties:
+### Sending requests
 
-- `result`: a `Promise` or a [`Result` type from the `typescript-result` package](https://github.com/everweij/typescript-result?tab=readme-ov-file#result) containing the result of the procedure call or error.
-- `toValue()`: a `Promise` of the result value of the procedure call, or throwing an error if the call fails.
+[Requests](#requests) can be sent using the [`request()` method](./api/client/index.md#request) of the client, which returns as `Promise<Result>` resolving the `Result` sent by the server. The returned `Promise` is augmented with the following properties:
 
-In addition to the properties above, the `ProcedureCall` object is itself a `Promise` resolving to an object with the following values:
+- `abort: (reason?: string) => void`: abort the call, rejecting the promise with an `AbortSignal`
+- `signal: AbortSignal`: abort signal for the call
 
-- `abort()`: function to call to abort the procedure call.
-- `id`: unique identifier of the procedure call.
-- `result`: a `Promise` or a [`Result` type from the `typescript-result` package](https://github.com/everweij/typescript-result?tab=readme-ov-file#result) containing the result of the procedure call or error.
+### Creating streams
 
-When calling the `createStream()` or `createChannel()` method, the object returned by the `Promise` also contain a `receive` property being a [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) containing the stream data sent by the server.
-A `send(data): Promise<void>` function is also present to send data to the server when using the `createChannel()` method.
+[Streams](#streams) can be sent using the [`createStream()` method](./api/client/index.md#createstream) of the client, which returns as `Promise<Result>` resolving the `Result` sent by the server once the stream is closed. The returned `Promise` is augmented with the following properties:
 
-```ts 
-import { Client } from '@enkaku/client'
+- `abort: (reason?: string) => void`: abort the call, rejecting the promise with an `AbortSignal`
+- `close: () => void`: abort the call with the `Close` reason, allowing the server to still send a `Result`
+- `signal: AbortSignal`: abort signal for the call
+- `readable: ReadableStream<Receive>`: [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) of `Receive` values sent by the server
 
-const client = new Client({
-  // ... params omitted for brevity
-})
+### Creating channels
 
-const request = client.request('example:request')
+[Channels](#channels) can be sent using the [`createChannel()` method](./api/client/index.md#createchannel) of the client, which returns as `Promise<Result>` resolving the `Result` sent by the server once the channel is closed. The returned `Promise` is augmented with the following properties:
 
-const valuePromise = request.toValue() // Promise resolving to the result value or rejecting with an error
-const resultPromise = request.result // Promise of a Result object
-
-const requestState = await request // state object available after the message has been written to the transport
-const requestID = requestState.id // unique ID for this request
-
-requestState.abort() // aborts the request if it hasn't already completed
-
-const sameResultPromise = requestState.result // same as request.result 
-```
+- `abort: (reason?: string) => void`: abort the call, rejecting the promise with an `AbortSignal`
+- `close: () => void`: abort the call with the `Close` reason, allowing the server to still send a `Result`
+- `signal: AbortSignal`: abort signal for the call
+- `readable: ReadableStream<Receive>`: [`ReadableStream`](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) of `Receive` values sent by the server
+- `writable: WritableStream<Receive>`: [`WritableStream`](https://developer.mozilla.org/en-US/docs/Web/API/WritableStream) of `Send` values sent by the client
+- `send: (value: Send) => Promise<void>`: send a `Send` value to the server

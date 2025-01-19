@@ -23,7 +23,7 @@ serve({
             resolve("END");
           } else {
             console.log("write to transport", count);
-            writer.write(ctx.params + count++);
+            writer.write(ctx.param + count++);
           }
         }, 50);
         ctx.signal.addEventListener("abort", () => {

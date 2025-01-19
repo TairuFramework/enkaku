@@ -17,7 +17,7 @@ const protocol = {
   'example:hello': {
     type: 'request',
     description: 'Say hello!',
-    params: {
+    param: {
       type: 'object',
       properties: {
         name: { type: 'string', description: 'The name to say hello to.' },
@@ -39,7 +39,7 @@ The following handler expects a request with parameters being an object containi
 ```ts
 const handlers = {
   'example:hello': (ctx) => {
-    return `Hello ${ctx.params.name}`
+    return `Hello ${ctx.param.name}`
   },
 }
 ```
@@ -56,7 +56,7 @@ const protocol = {
   'example:hello': {
     type: 'request',
     description: 'Say hello!',
-    params: {
+    param: {
       type: 'object',
       properties: {
         name: { type: 'string', description: 'The name to say hello to.' },
@@ -69,18 +69,13 @@ const protocol = {
 
 const handlers = {
   'example:hello': (ctx) => {
-    return `Hello ${ctx.params.name}`
+    return `Hello ${ctx.param.name}`
   },
 }
 const client = standalone<typeof protocol>(handlers)
 
-// Send the request to the server, this returns an object allowing to get the result of the request or cancel it
-const request = await client.request('example:hello', { name: 'stranger' })
-// Wait for the result
-const response = await request.result // 'Hello stranger'
-
-// We can also provide the expected parameters to the request and get the result directly
-const result = await client.request('example:hello', { name: 'stranger' }).toValue() // 'Hello stranger'
+// Send the request to the server and wait for the result
+const result = await client.request('example:hello', { param: { name: 'stranger' } }) // 'Hello stranger'
 ```
 
 ### 4. Configuring the transport
@@ -105,7 +100,7 @@ const protocol = {
   'example:hello': {
     type: 'request',
     description: 'Say hello!',
-    params: {
+    param: {
       type: 'object',
       properties: {
         name: { type: 'string', description: 'The name to say hello to.' },
@@ -122,7 +117,7 @@ const transports = createDirectTransports()
 
 const handlers = {
   'example:hello': (ctx) => {
-    return `Hello ${ctx.params.name}`
+    return `Hello ${ctx.param.name}`
   },
 }
 // Serve the handlers using the transport created above
@@ -130,7 +125,7 @@ serve<Protocol>({ handlers, public: true, transport: transports.server })
 
 // Create the client using the transport created above
 const client = new Client<Protocol>({ transport: transports.client })
-const result = await client.request('example:hello', { name: 'stranger' }).toValue() // 'Hello stranger'
+const result = await client.request('example:hello', { param: { name: 'stranger' } }) // 'Hello stranger'
 ```
 
 ### 5. Going further

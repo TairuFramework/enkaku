@@ -34,6 +34,10 @@ export async function consumeReader<T>(params: ConsumeReaderParams<T>): Promise<
   handle()
 }
 
+function canSend(signal: AbortSignal): boolean {
+  return !signal.aborted || signal.reason === 'Close'
+}
+
 // @ts-ignore type instantiation too deep
 export async function executeHandler<
   Protocol extends ProtocolDefinition,
@@ -47,7 +51,7 @@ export async function executeHandler<
   const controller = context.controllers[payload.rid]
   try {
     const val = await toPromise(execute)
-    if (!controller.signal.aborted) {
+    if (canSend(controller.signal)) {
       await context.send({
         typ: 'result',
         rid: payload.rid,
@@ -55,7 +59,7 @@ export async function executeHandler<
       } as unknown as AnyServerPayloadOf<Protocol>)
     }
   } catch (cause) {
-    if (!controller.signal.aborted) {
+    if (canSend(controller.signal)) {
       context.send(
         HandlerError.from(cause, {
           code: 'EK01',
@@ -65,6 +69,7 @@ export async function executeHandler<
     }
 
     context.reject(
+      // @ts-ignore type instantiation too deep
       new ErrorRejection(`Error handling procedure: ${payload.prc}`, { info: payload, cause }),
     )
   } finally {

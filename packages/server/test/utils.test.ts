@@ -9,7 +9,7 @@ import { executeHandler } from '../src/utils.js'
 const protocol = {
   test: {
     type: 'request',
-    params: {
+    param: {
       type: 'object',
       properties: { test: { type: 'boolean' } },
       required: ['test'],
@@ -32,6 +32,7 @@ describe('executeHandler()', () => {
     const reject = jest.fn()
     const send = jest.fn()
 
+    // @ts-ignore type instantiation too deep
     await executeHandler(
       {
         controllers,
@@ -58,7 +59,50 @@ describe('executeHandler()', () => {
     expect(controllers).toEqual({})
   })
 
-  test('does not send an error response if the abort signal is triggered', async () => {
+  test('sends an error response if the abort signal is triggered with the "Close" reason', async () => {
+    const error = new HandlerError({ code: 'TEST123', message: 'Request failed' })
+    const controllers = { '1': new AbortController() }
+    const handler = jest.fn(() => {
+      return new Promise<string>((_, reject) => {
+        setTimeout(() => {
+          reject(error)
+        }, 100)
+      })
+    })
+    const reject = jest.fn()
+    const send = jest.fn()
+
+    // @ts-ignore type instantiation too deep
+    const requestPromise = executeHandler(
+      {
+        controllers,
+        handlers: { test: handler },
+        reject,
+        send,
+      } as unknown as HandlerContext<Protocol>,
+      payload,
+      () => handler(),
+    )
+    controllers['1']?.abort('Close')
+    await requestPromise
+
+    expect(send).toHaveBeenCalledWith({
+      typ: 'error',
+      rid: '1',
+      code: error.code,
+      data: {},
+      msg: 'Request failed',
+    })
+    expect(reject).toHaveBeenCalled()
+    const rejection = reject.mock.calls[0][0]
+    expect(rejection).toBeInstanceOf(ErrorRejection)
+    expect((rejection as ErrorRejection).message).toBe('Error handling procedure: test')
+    expect((rejection as ErrorRejection).info).toBe(payload)
+    expect((rejection as ErrorRejection).cause).toBe(error)
+    expect(controllers).toEqual({})
+  })
+
+  test('does not send an error response if the abort signal is triggered with a reason other than "Close"', async () => {
     const error = new HandlerError({ code: 'TEST123', message: 'Request failed' })
     const controllers = { '1': new AbortController() }
     const handler = jest.fn(() => {
@@ -116,7 +160,38 @@ describe('executeHandler()', () => {
     expect(controllers).toEqual({})
   })
 
-  test('does not send a result response if the abort signal is triggered', async () => {
+  test('sends a result response if the abort signal is triggered with the "Close" reason', async () => {
+    const controllers = { '1': new AbortController() }
+    const handler = jest.fn(() => {
+      return new Promise<string>((resolve) => {
+        setTimeout(() => {
+          resolve('OK')
+        }, 100)
+      })
+    })
+    const reject = jest.fn()
+    const send = jest.fn()
+
+    // @ts-ignore type instantiation too deep
+    const requestPromise = executeHandler(
+      {
+        controllers,
+        handlers: { test: handler },
+        reject,
+        send,
+      } as unknown as HandlerContext<Protocol>,
+      payload,
+      () => handler(),
+    )
+    controllers['1']?.abort('Close')
+    await requestPromise
+
+    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
+    expect(reject).not.toHaveBeenCalled()
+    expect(controllers).toEqual({})
+  })
+
+  test('does not send a result response if the abort signal is triggered with a reason other than "Close"', async () => {
     const controllers = { '1': new AbortController() }
     const handler = jest.fn(() => {
       return new Promise<string>((resolve) => {

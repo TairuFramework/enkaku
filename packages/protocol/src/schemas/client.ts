@@ -17,6 +17,7 @@ export const abortMessagePayload: Schema = {
     typ: { type: 'string', const: 'abort' },
     rid: { type: 'string' },
     jti: { type: 'string' },
+    rsn: { type: 'string' },
   },
   required: ['typ', 'rid'],
   additionalProperties: true,
@@ -69,10 +70,10 @@ export function createEventMessageSchema(
 }
 
 /** @internal */
-export function createRequestPayloadWithParams(
+export function createRequestPayloadWithParam(
   procedure: string,
   type: RequestType,
-  paramsSchema: Schema,
+  paramSchema: Schema,
 ): Schema {
   return {
     type: 'object',
@@ -80,7 +81,7 @@ export function createRequestPayloadWithParams(
       typ: { type: 'string', const: type },
       prc: { type: 'string', const: procedure },
       rid: { type: 'string' },
-      prm: paramsSchema,
+      prm: paramSchema,
       jti: { type: 'string' },
     },
     required: ['typ', 'prc', 'rid', 'prm'],
@@ -89,7 +90,7 @@ export function createRequestPayloadWithParams(
 }
 
 /** @internal */
-export function createRequestPayloadWithoutParams(procedure: string, type: RequestType): Schema {
+export function createRequestPayloadWithoutParam(procedure: string, type: RequestType): Schema {
   return {
     type: 'object',
     properties: {
@@ -109,9 +110,9 @@ export function createRequestMessageSchema(
   definition: AnyRequestProcedureDefinition,
   type?: MessageType,
 ): Schema {
-  const payload = definition.params
-    ? createRequestPayloadWithParams(procedure, definition.type, definition.params)
-    : createRequestPayloadWithoutParams(procedure, definition.type)
+  const payload = definition.param
+    ? createRequestPayloadWithParam(procedure, definition.type, definition.param)
+    : createRequestPayloadWithoutParam(procedure, definition.type)
   return createMessageSchema(payload, type)
 }
 
@@ -164,7 +165,7 @@ export function createClientMessageSchema(
       case 'request':
       case 'stream':
         addAbort = true
-        schemasRecord[def.params?.$id ?? `${procedure}:params`] = createRequestMessageSchema(
+        schemasRecord[def.param?.$id ?? `${procedure}:param`] = createRequestMessageSchema(
           procedure,
           def,
           type,

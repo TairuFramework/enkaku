@@ -22,6 +22,7 @@ export type TransportInput<R, W> = TransportStream<R, W> | (() => TransportStrea
  */
 export type TransportType<R, W> = Disposer & {
   [Symbol.asyncIterator](): AsyncIterator<R, R | null>
+  getWritable: () => WritableStream<W>
   read: () => Promise<ReadableStreamReadResult<R>>
   write: (value: W) => Promise<void>
 }
@@ -83,6 +84,14 @@ export class Transport<R, W> implements TransportType<R, W> {
 
   async dispose() {
     await this.#disposer.dispose()
+  }
+
+  getWritable(): WritableStream<W> {
+    return new WritableStream({
+      write: async (value) => {
+        await this.write(value)
+      },
+    })
   }
 
   async read(): Promise<ReadableStreamReadResult<R>> {

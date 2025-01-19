@@ -98,6 +98,20 @@ Base Transport class implementing TransportType.
 
 ***
 
+##### getWritable()
+
+> **getWritable**(): `WritableStream`\<`W`\>
+
+###### Returns
+
+`WritableStream`\<`W`\>
+
+###### Inherited from
+
+[`Transport`](../transport/index.md#transportr-w).[`getWritable`](../transport/index.md#getwritable-2)
+
+***
+
 ##### read()
 
 > **read**(): `Promise`\<`ReadableStreamReadResult`\<`R`\>\>
