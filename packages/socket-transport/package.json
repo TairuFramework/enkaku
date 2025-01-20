@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/socket-transport",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Socket transport for Enkaku RPC clients and servers",
@@ -30,6 +30,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/stream": "workspace:^",
     "@enkaku/transport": "workspace:^"
   }
 }

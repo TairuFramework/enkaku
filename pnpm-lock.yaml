@@ -242,6 +242,9 @@ importers:
 
   packages/socket-transport:
     dependencies:
+      '@enkaku/stream':
+        specifier: workspace:^
+        version: link:../stream
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
@@ -358,8 +361,8 @@ importers:
         specifier: ^3.0.0
         version: 3.1.0(@types/react@19.0.7)(react@19.0.0)
       '@orama/plugin-docusaurus-v3':
-        specifier: ^3.0.4
-        version: 3.0.4(ryeydyvr37bhgozi2b3pdyfpqy)
+        specifier: ^3.0.5
+        version: 3.0.5(ryeydyvr37bhgozi2b3pdyfpqy)
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
@@ -2393,15 +2396,15 @@ packages:
     resolution: {integrity: sha512-euTV/2kya290SNkl5m8e/H1na8iDygk74nNtl4E0YZNyYIrEMwE1JwamoroMKGZw2Uz+in/8gH3m1+2YfP0j1w==}
     engines: {node: '>= 16.0.0'}
 
-  '@orama/orama@3.0.4':
-    resolution: {integrity: sha512-ziYjwoxUty8WEvgnUZNeJlCHkYplxWFxjNVXWaNIh1wvQ37tl/qkM0kyLXiwHgSxrIPjuv6A2TwgKjjtwhP3jg==}
+  '@orama/orama@3.0.5':
+    resolution: {integrity: sha512-0cQT/yzRrGCYemggH9Hz2gs7spdWJOqbKCdIRY/f4YkLEyodLMs0B9UXkikoFfLX3Gf2Pcduktlolv34cw79Yw==}
     engines: {node: '>= 16.0.0'}
 
-  '@orama/plugin-analytics@3.0.4':
-    resolution: {integrity: sha512-mKQagNc/Iha+ejjU9c5ZMBQQaZMCNGVaR48j/L8heVgCVhkbr9b3G0cA8D4Nh3RIPaByxnSz8aOKnu6EULKiAw==}
+  '@orama/plugin-analytics@3.0.5':
+    resolution: {integrity: sha512-POCGgEl5lYfFTzWf+3isjJ4RGTdXZZ0ij/NzDp7N/6wN2WKulA4cPqz/xzmTHfyoEXk1Q1CMAa260QrVAmbplw==}
 
-  '@orama/plugin-docusaurus-v3@3.0.4':
-    resolution: {integrity: sha512-tXewxZAK7R62HHE+1D66zWz5o1D41lAzKtiWHN7S8PfTNWSLgTZD5EktqRH4ChM09nvJ4h93bVe+b1YAX+vP3w==}
+  '@orama/plugin-docusaurus-v3@3.0.5':
+    resolution: {integrity: sha512-+bAkqZZAUrrtTg4p5+Co0/zZh/fkpfqC4D/qO/mVely6CYCZ0VnPRxAb+91WGnAidDkT4MuIORJ7+xSeNkuiTQ==}
     peerDependencies:
       '@docusaurus/plugin-content-docs': '>= 3.2.0'
       '@docusaurus/theme-common': '>= 3.2.0'
@@ -2410,8 +2413,8 @@ packages:
       react: '>= 18.0.0'
       react-dom: '>= 18.0.0'
 
-  '@orama/plugin-parsedoc@3.0.4':
-    resolution: {integrity: sha512-nk/FEuFsGe0tQhF7rpLJko2qFjEdYdpy/UOdDT90Jxy8zR7a0GoiFz81s9fSy85PyFoOzhZYN0U5s8i+wFrF+Q==}
+  '@orama/plugin-parsedoc@3.0.5':
+    resolution: {integrity: sha512-JvWGEeaHeWcT0/+wPtJhwyYQ6s6fJYiJ3eW11hM6ohYc6+ZYf7ClZlN81KJ3rKsqKHvLesVachVEU9pvabF+hg==}
 
   '@orama/react-components@0.0.28':
     resolution: {integrity: sha512-zd4j5zEOLOLQgqHipprUnh0cSMWryOX562m6oeVcqm6ckEX72F0gI3MK6nPo0Zc5rrm5nJKqqqteKK1dCLRd4w==}
@@ -2419,10 +2422,10 @@ packages:
       react: ^17.0.0 || ^18.3.1
       react-dom: ^17.0.0 || ^18.3.1
 
-  '@orama/switch@3.0.4':
-    resolution: {integrity: sha512-naS+Sel2M2y5RIQ0HlALf52zK7VjTXWSSUrmvBxaC/3kG9nrAI+8kon6HiTM2OmNAxrIEgitH0RJXLawSliyVw==}
+  '@orama/switch@3.0.5':
+    resolution: {integrity: sha512-nJYD3KJaxjSxw1rqahalvJHY+yemrsJLfD60dOzRrlNkVxcH3ifu14LLi8WYUNvVOt5nJl1OvF/VjaObKXHUQQ==}
     peerDependencies:
-      '@orama/orama': 3.0.4
+      '@orama/orama': 3.0.5
       '@oramacloud/client': ^2.1.1
 
   '@orama/wc-components@0.0.28':
@@ -2594,23 +2597,29 @@ packages:
   '@segment/loosely-validate-event@2.0.0':
     resolution: {integrity: sha512-ZMCSfztDBqwotkl848ODgVcAmN4OItEWDCkshcKz0/W6gGSQayuuCtWV/MlodFivAZD793d6UgANd6wCXUfrIw==}
 
-  '@shikijs/core@1.27.2':
-    resolution: {integrity: sha512-ns1dokDr0KE1lQ9mWd4rqaBkhSApk0qGCK1+lOqwnkQSkVZ08UGqXj1Ef8dAcTMZNFkN6PSNjkL5TYNX7pyPbQ==}
+  '@shikijs/core@1.29.1':
+    resolution: {integrity: sha512-Mo1gGGkuOYjDu5H8YwzmOuly9vNr8KDVkqj9xiKhhhFS8jisAtDSEWB9hzqRHLVQgFdA310e8XRJcW4tYhRB2A==}
 
-  '@shikijs/engine-javascript@1.27.2':
-    resolution: {integrity: sha512-0JB7U5vJc16NShBdxv9hSSJYSKX79+32O7F4oXIxJLdYfomyFvx4B982ackUI9ftO9T3WwagkiiD3nOxOOLiGA==}
+  '@shikijs/engine-javascript@1.29.1':
+    resolution: {integrity: sha512-Hpi8k9x77rCQ7F/7zxIOUruNkNidMyBnP5qAGbLFqg4kRrg1HZhkB8btib5EXbQWTtLb5gBHOdBwshk20njD7Q==}
 
   '@shikijs/engine-oniguruma@1.27.2':
     resolution: {integrity: sha512-FZYKD1KN7srvpkz4lbGLOYWlyDU4Rd+2RtuKfABTkafAPOFr+J6umfIwY/TzOQqfNtWjL7SAwPAO0dcOraRLaQ==}
 
-  '@shikijs/langs@1.27.2':
-    resolution: {integrity: sha512-MSrknKL0DbeXvhtSigMLIzjPOOQfvK7fsbcRv2NUUB0EvuTTomY8/U+lAkczYrXY2+dygKOapJKk8ScFYbtoNw==}
+  '@shikijs/engine-oniguruma@1.29.1':
+    resolution: {integrity: sha512-gSt2WhLNgEeLstcweQOSp+C+MhOpTsgdNXRqr3zP6M+BUBZ8Md9OU2BYwUYsALBxHza7hwaIWtFHjQ/aOOychw==}
 
-  '@shikijs/themes@1.27.2':
-    resolution: {integrity: sha512-Yw/uV7EijjWavIIZLoWneTAohcbBqEKj6XMX1bfMqO3llqTKsyXukPp1evf8qPqzUHY7ibauqEaQchhfi857mg==}
+  '@shikijs/langs@1.29.1':
+    resolution: {integrity: sha512-iERn4HlyuT044/FgrvLOaZgKVKf3PozjKjyV/RZ5GnlyYEAZFcgwHGkYboeBv2IybQG1KVS/e7VGgiAU4JY2Gw==}
+
+  '@shikijs/themes@1.29.1':
+    resolution: {integrity: sha512-lb11zf72Vc9uxkl+aec2oW1HVTHJ2LtgZgumb4Rr6By3y/96VmlU44bkxEb8WBWH3RUtbqAJEN0jljD9cF7H7g==}
 
   '@shikijs/types@1.27.2':
     resolution: {integrity: sha512-DM9OWUyjmdYdnKDpaGB/GEn9XkToyK1tqxuqbmc5PV+5K8WjjwfygL3+cIvbkSw2v1ySwHDgqATq/+98pJ4Kyg==}
+
+  '@shikijs/types@1.29.1':
+    resolution: {integrity: sha512-aBqAuhYRp5vSir3Pc9+QPu9WESBOjUo03ao0IHLC4TyTioSsp/SkbAZSrIH4ghYYC1T1KTEpRSBa83bas4RnPA==}
 
   '@shikijs/vscode-textmate@10.0.1':
     resolution: {integrity: sha512-fTIQwLF+Qhuws31iw7Ncl1R3HUDtGwIipiJ9iU+UsDUwMhegFcQKQHd51nZjb7CArq0MvON8rbgCGQYWHUKAdg==}
@@ -7039,8 +7048,8 @@ packages:
     resolution: {integrity: sha512-kbpaSSGJTWdAY5KPVeMOKXSrPtr8C8C7wodJbcsd51jRnmD+GZu8Y0VoU6Dm5Z4vWr0Ig/1NKuWRKf7j5aaYSg==}
     engines: {node: '>=6'}
 
-  oniguruma-to-es@2.1.0:
-    resolution: {integrity: sha512-Iq/949c5IueVC5gQR7OYXs0uHsDIePcgZFlVRIVGfQcWwbKG+nsyWfthswdytShlRdkZADY+bWSi+BRyUL81gA==}
+  oniguruma-to-es@2.2.0:
+    resolution: {integrity: sha512-EEsso27ri0sf+t4uRFEj5C5gvXQj0d0w1Y2qq06b+hDLBnvzO1rWTwEW4C7ytan6nhg4WPwE26eLoiPhHUbvKg==}
 
   open@7.4.2:
     resolution: {integrity: sha512-MVHddDVweXZF3awtlAS+6pgKLlm/JgxZ90+/NBurBoQctVOOB/zDdVjcyPzQ+0laDGbsWgrRkflI65sQeOgT9Q==}
@@ -8389,8 +8398,8 @@ packages:
     engines: {node: '>=4'}
     hasBin: true
 
-  shiki@1.27.2:
-    resolution: {integrity: sha512-QtA1C41oEVixKog+V8I3ia7jjGls7oCZ8Yul8vdHrVBga5uPoyTtMvFF4lMMXIyAZo5A5QbXq91bot2vA6Q+eQ==}
+  shiki@1.29.1:
+    resolution: {integrity: sha512-TghWKV9pJTd/N+IgAIVJtr0qZkB7FfFCUrrEJc0aRmZupo3D1OCVRknQWVRVA7AX/M0Ld7QfoAruPzr3CnUJuw==}
 
   side-channel-list@1.0.0:
     resolution: {integrity: sha512-FCLHtRD/gnpCiCHEiJLOwdmFP+wzCmDEkc9y7NsYxeF4u7Btsn1ZuwgwJGxImImHicJArLP4R0yX4c2KCrMrTA==}
@@ -12777,24 +12786,24 @@ snapshots:
 
   '@orama/orama@2.1.1': {}
 
-  '@orama/orama@3.0.4': {}
+  '@orama/orama@3.0.5': {}
 
-  '@orama/plugin-analytics@3.0.4':
+  '@orama/plugin-analytics@3.0.5':
     dependencies:
-      '@orama/orama': 3.0.4
+      '@orama/orama': 3.0.5
 
-  '@orama/plugin-docusaurus-v3@3.0.4(ryeydyvr37bhgozi2b3pdyfpqy)':
+  '@orama/plugin-docusaurus-v3@3.0.5(ryeydyvr37bhgozi2b3pdyfpqy)':
     dependencies:
       '@docusaurus/plugin-content-docs': 3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.10.8)(acorn@8.14.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)))(@mdx-js/react@3.1.0(@types/react@19.0.7)(react@19.0.0))(@swc/core@1.10.8)(acorn@8.14.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)
       '@docusaurus/theme-common': 3.7.0(@docusaurus/plugin-content-docs@3.7.0(@docusaurus/faster@3.7.0(@docusaurus/types@3.7.0(@swc/core@1.10.8)(acorn@8.14.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)))(@mdx-js/react@3.1.0(@types/react@19.0.7)(react@19.0.0))(@swc/core@1.10.8)(acorn@8.14.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3))(@swc/core@1.10.8)(acorn@8.14.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@docusaurus/types': 3.7.0(@swc/core@1.10.8)(acorn@8.14.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@docusaurus/utils': 3.7.0(@swc/core@1.10.8)(acorn@8.14.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@orama/highlight': 0.1.8
-      '@orama/orama': 3.0.4
-      '@orama/plugin-analytics': 3.0.4
-      '@orama/plugin-parsedoc': 3.0.4
+      '@orama/orama': 3.0.5
+      '@orama/plugin-analytics': 3.0.5
+      '@orama/plugin-parsedoc': 3.0.5
       '@orama/react-components': 0.0.28(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.7.3)(ws@8.18.0)
-      '@orama/switch': 3.0.4(@orama/orama@3.0.4)(@oramacloud/client@1.3.20(typescript@5.7.3)(ws@8.18.0))
+      '@orama/switch': 3.0.5(@orama/orama@3.0.5)(@oramacloud/client@1.3.20(typescript@5.7.3)(ws@8.18.0))
       '@oramacloud/client': 1.3.20(typescript@5.7.3)(ws@8.18.0)
       github-slugger: 2.0.0
       gray-matter: 4.0.3
@@ -12815,9 +12824,9 @@ snapshots:
       - ws
       - zod
 
-  '@orama/plugin-parsedoc@3.0.4':
+  '@orama/plugin-parsedoc@3.0.5':
     dependencies:
-      '@orama/orama': 3.0.4
+      '@orama/orama': 3.0.5
       glob: 8.1.0
       hast-util-from-html: 1.0.2
       hast-util-from-string: 2.0.0
@@ -12844,9 +12853,9 @@ snapshots:
       - ws
       - zod
 
-  '@orama/switch@3.0.4(@orama/orama@3.0.4)(@oramacloud/client@1.3.20(typescript@5.7.3)(ws@8.18.0))':
+  '@orama/switch@3.0.5(@orama/orama@3.0.5)(@oramacloud/client@1.3.20(typescript@5.7.3)(ws@8.18.0))':
     dependencies:
-      '@orama/orama': 3.0.4
+      '@orama/orama': 3.0.5
       '@oramacloud/client': 1.3.20(typescript@5.7.3)(ws@8.18.0)
 
   '@orama/wc-components@0.0.28(typescript@5.7.3)(ws@8.18.0)':
@@ -12861,7 +12870,7 @@ snapshots:
       markdown-it: 14.1.0
       marked: 13.0.3
       marked-highlight: 2.2.1(marked@13.0.3)
-      shiki: 1.27.2
+      shiki: 1.29.1
       sse.js: 2.5.0
     transitivePeerDependencies:
       - encoding
@@ -13117,35 +13126,45 @@ snapshots:
       component-type: 1.2.2
       join-component: 1.1.0
 
-  '@shikijs/core@1.27.2':
+  '@shikijs/core@1.29.1':
     dependencies:
-      '@shikijs/engine-javascript': 1.27.2
-      '@shikijs/engine-oniguruma': 1.27.2
-      '@shikijs/types': 1.27.2
+      '@shikijs/engine-javascript': 1.29.1
+      '@shikijs/engine-oniguruma': 1.29.1
+      '@shikijs/types': 1.29.1
       '@shikijs/vscode-textmate': 10.0.1
       '@types/hast': 3.0.4
       hast-util-to-html: 9.0.4
 
-  '@shikijs/engine-javascript@1.27.2':
+  '@shikijs/engine-javascript@1.29.1':
     dependencies:
-      '@shikijs/types': 1.27.2
+      '@shikijs/types': 1.29.1
       '@shikijs/vscode-textmate': 10.0.1
-      oniguruma-to-es: 2.1.0
+      oniguruma-to-es: 2.2.0
 
   '@shikijs/engine-oniguruma@1.27.2':
     dependencies:
       '@shikijs/types': 1.27.2
       '@shikijs/vscode-textmate': 10.0.1
 
-  '@shikijs/langs@1.27.2':
+  '@shikijs/engine-oniguruma@1.29.1':
     dependencies:
-      '@shikijs/types': 1.27.2
+      '@shikijs/types': 1.29.1
+      '@shikijs/vscode-textmate': 10.0.1
 
-  '@shikijs/themes@1.27.2':
+  '@shikijs/langs@1.29.1':
     dependencies:
-      '@shikijs/types': 1.27.2
+      '@shikijs/types': 1.29.1
+
+  '@shikijs/themes@1.29.1':
+    dependencies:
+      '@shikijs/types': 1.29.1
 
   '@shikijs/types@1.27.2':
+    dependencies:
+      '@shikijs/vscode-textmate': 10.0.1
+      '@types/hast': 3.0.4
+
+  '@shikijs/types@1.29.1':
     dependencies:
       '@shikijs/vscode-textmate': 10.0.1
       '@types/hast': 3.0.4
@@ -13678,7 +13697,7 @@ snapshots:
 
   '@types/node-fetch@2.6.12':
     dependencies:
-      '@types/node': 22.10.7
+      '@types/node': 18.19.71
       form-data: 4.0.1
 
   '@types/node-forge@1.3.11':
@@ -18702,7 +18721,7 @@ snapshots:
     dependencies:
       mimic-fn: 2.1.0
 
-  oniguruma-to-es@2.1.0:
+  oniguruma-to-es@2.2.0:
     dependencies:
       emoji-regex-xs: 1.0.0
       regex: 5.1.1
@@ -20428,14 +20447,14 @@ snapshots:
       interpret: 1.4.0
       rechoir: 0.6.2
 
-  shiki@1.27.2:
+  shiki@1.29.1:
     dependencies:
-      '@shikijs/core': 1.27.2
-      '@shikijs/engine-javascript': 1.27.2
-      '@shikijs/engine-oniguruma': 1.27.2
-      '@shikijs/langs': 1.27.2
-      '@shikijs/themes': 1.27.2
-      '@shikijs/types': 1.27.2
+      '@shikijs/core': 1.29.1
+      '@shikijs/engine-javascript': 1.29.1
+      '@shikijs/engine-oniguruma': 1.29.1
+      '@shikijs/langs': 1.29.1
+      '@shikijs/themes': 1.29.1
+      '@shikijs/types': 1.29.1
       '@shikijs/vscode-textmate': 10.0.1
       '@types/hast': 3.0.4
 
