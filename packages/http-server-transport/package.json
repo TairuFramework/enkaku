@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/http-server-transport",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "HTTP transport for Enkaku RPC servers",
@@ -30,10 +30,10 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/async": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/stream": "workspace:^",
-    "@enkaku/transport": "workspace:^",
-    "@enkaku/util": "workspace:^"
+    "@enkaku/transport": "workspace:^"
   },
   "devDependencies": {
     "@enkaku/token": "workspace:^",

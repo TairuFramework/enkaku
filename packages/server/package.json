@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/server",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Server logic for Enkaku RPC",
@@ -30,12 +30,12 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/async": "workspace:^",
     "@enkaku/capability": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/schema": "workspace:^",
     "@enkaku/stream": "workspace:^",
-    "@enkaku/token": "workspace:^",
-    "@enkaku/util": "workspace:^"
+    "@enkaku/token": "workspace:^"
   },
   "devDependencies": {
     "@enkaku/transport": "workspace:^"

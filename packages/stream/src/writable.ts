@@ -1,4 +1,4 @@
-import { defer } from '@enkaku/util'
+import { defer } from '@enkaku/async'
 
 export function createArraySink<T>(): [WritableStream<T>, Promise<Array<T>>] {
   const done = defer<Array<T>>()

@@ -34,7 +34,7 @@ Base Transport class implementing TransportType.
 
 ###### params
 
-[`SocketTransportParams`](index.md#sockettransportparams)
+[`SocketTransportParams`](index.md#sockettransportparamsr)\<`R`\>
 
 ###### Returns
 
@@ -158,11 +158,19 @@ Base Transport class implementing TransportType.
 
 ***
 
-### SocketTransportParams
+### SocketTransportParams\<R\>
 
-> **SocketTransportParams**: `object`
+> **SocketTransportParams**\<`R`\>: `object`
+
+#### Type Parameters
+
+• **R**
 
 #### Type declaration
+
+##### decode?
+
+> `optional` **decode**: [`DecodeJSON`](../stream/index.md#decodejsont)\<`R`\>
 
 ##### signal?
 
@@ -192,7 +200,7 @@ Base Transport class implementing TransportType.
 
 ### createTransportStream()
 
-> **createTransportStream**\<`R`, `W`\>(`source`): `Promise`\<`ReadableWritablePair`\<`R`, `W`\>\>
+> **createTransportStream**\<`R`, `W`\>(`source`, `decode`?): `Promise`\<`ReadableWritablePair`\<`R`, `W`\>\>
 
 #### Type Parameters
 
@@ -205,6 +213,10 @@ Base Transport class implementing TransportType.
 ##### source
 
 [`SocketSource`](index.md#socketsource)
+
+##### decode?
+
+[`DecodeJSON`](../stream/index.md#decodejsont)\<`R`\>
 
 #### Returns
 

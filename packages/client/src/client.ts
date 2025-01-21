@@ -1,3 +1,4 @@
+import { type Disposer, defer } from '@enkaku/async'
 import type {
   AnyClientMessageOf,
   AnyClientPayloadOf,
@@ -14,7 +15,6 @@ import type {
 } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
 import { type TokenSigner, createUnsignedToken } from '@enkaku/token'
-import { type Disposer, defer } from '@enkaku/util'
 
 import { RequestError } from './error.js'
 

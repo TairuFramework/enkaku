@@ -10,6 +10,7 @@
   "typedocOptions": {
     "name": "Enkaku APIs",
     "entryPoints": [
+      "../packages/async",
       "../packages/browser-keystore",
       "../packages/capability",
       "../packages/client",
@@ -27,8 +28,7 @@
       "../packages/standalone",
       "../packages/stream",
       "../packages/token",
-      "../packages/transport",
-      "../packages/util"
+      "../packages/transport"
     ],
     "entryPointStrategy": "packages",
     "packageOptions": {

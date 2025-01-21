@@ -1,5 +1,5 @@
+import { defer } from '@enkaku/async'
 import type { KeyStore } from '@enkaku/protocol'
-import { defer } from '@enkaku/util'
 
 import { BrowserKeyEntry, type GetStore } from './entry.js'
 

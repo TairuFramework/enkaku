@@ -1,14 +1,14 @@
 {
-  "name": "@enkaku/util",
+  "name": "@enkaku/async",
   "version": "0.9.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Enkaku utilities",
+  "description": "Enkaku async utilities",
   "keywords": [],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/util"
+    "directory": "packages/async"
   },
   "type": "module",
   "main": "lib/index.js",

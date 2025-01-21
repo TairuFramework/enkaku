@@ -1,13 +1,13 @@
 /**
- * Enkaku utilities.
+ * Enkaku async utilities.
  *
  * ## Installation
  *
  * ```sh
- * npm install @enkaku/util
+ * npm install @enkaku/async
  * ```
  *
- * @module util
+ * @module async
  */
 
 function noop() {}

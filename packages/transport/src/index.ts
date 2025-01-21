@@ -10,8 +10,8 @@
  * @module transport
  */
 
+import { type Disposer, createDisposer } from '@enkaku/async'
 import { createConnection } from '@enkaku/stream'
-import { type Disposer, createDisposer } from '@enkaku/util'
 
 export type TransportStream<R, W> = ReadableWritablePair<R, W> | Promise<ReadableWritablePair<R, W>>
 

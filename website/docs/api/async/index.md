@@ -1,11 +1,11 @@
-# @enkaku/util
+# @enkaku/async
 
-Enkaku utilities.
+Enkaku async utilities.
 
 ## Installation
 
 ```sh
-npm install @enkaku/util
+npm install @enkaku/async
 ```
 
 ## Type Aliases

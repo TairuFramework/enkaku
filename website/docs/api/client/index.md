@@ -20,7 +20,7 @@ npm install @enkaku/client
 
 #### Implements
 
-- [`Disposer`](../util/index.md#disposer)
+- [`Disposer`](../async/index.md#disposer)
 
 #### Constructors
 

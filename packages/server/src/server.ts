@@ -1,3 +1,4 @@
+import { type Disposer, createDisposer } from '@enkaku/async'
 import {
   type AnyClientMessageOf,
   type AnyServerPayloadOf,
@@ -8,7 +9,6 @@ import {
 import { type Validator, createValidator } from '@enkaku/schema'
 import { createPipe } from '@enkaku/stream'
 import { type SignedToken, type Token, createUnsignedToken, isSignedToken } from '@enkaku/token'
-import { type Disposer, createDisposer } from '@enkaku/util'
 
 import { type ProcedureAccessRecord, checkClientToken } from './access-control.js'
 import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'

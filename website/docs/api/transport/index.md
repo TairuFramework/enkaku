@@ -246,7 +246,7 @@ Couple of Transports for communication between a client and server in the same p
 
 ### TransportType\<R, W\>
 
-> **TransportType**\<`R`, `W`\>: [`Disposer`](../util/index.md#disposer) & `object`
+> **TransportType**\<`R`, `W`\>: [`Disposer`](../async/index.md#disposer) & `object`
 
 Generic Transport object type implementing read and write functions.
 

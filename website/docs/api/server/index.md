@@ -260,7 +260,7 @@ Create .stack property on a target object
 
 #### Implements
 
-- [`Disposer`](../util/index.md#disposer)
+- [`Disposer`](../async/index.md#disposer)
 
 #### Constructors
 

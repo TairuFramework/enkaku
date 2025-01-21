@@ -2,6 +2,7 @@
 
 ## Packages
 
+- [@enkaku/async](async/index.md)
 - [@enkaku/browser-keystore](browser-keystore/index.md)
 - [@enkaku/capability](capability/index.md)
 - [@enkaku/client](client/index.md)
@@ -20,4 +21,3 @@
 - [@enkaku/stream](stream/index.md)
 - [@enkaku/token](token/index.md)
 - [@enkaku/transport](transport/index.md)
-- [@enkaku/util](util/index.md)

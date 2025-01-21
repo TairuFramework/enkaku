@@ -10,10 +10,10 @@
  * @module http-server-transport
  */
 
+import { type Deferred, defer } from '@enkaku/async'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createReadable } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
-import { type Deferred, defer } from '@enkaku/util'
 
 export type RequestHandler = (request: Request) => Promise<Response>
 

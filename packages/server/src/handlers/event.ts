@@ -1,5 +1,5 @@
+import { toPromise } from '@enkaku/async'
 import type { ClientMessage, EventPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
-import { toPromise } from '@enkaku/util'
 
 import { ErrorRejection } from '../rejections.js'
 import type { EventHandler, EventHandlerContext, HandlerContext } from '../types.js'

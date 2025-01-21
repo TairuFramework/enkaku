@@ -63,7 +63,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Miscellaneous',
-      items: ['api/codec/index', 'api/util/index'],
+      items: ['api/async/index', 'api/codec/index'],
     },
   ],
 }

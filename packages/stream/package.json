@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/stream",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Web streams utilities for Enkaku transports",
@@ -30,6 +30,6 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/util": "workspace:^"
+    "@enkaku/async": "workspace:^"
   }
 }

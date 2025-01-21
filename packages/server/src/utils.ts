@@ -1,5 +1,5 @@
+import { toPromise } from '@enkaku/async'
 import type { AnyServerPayloadOf, ProtocolDefinition, RequestPayloadOf } from '@enkaku/protocol'
-import { toPromise } from '@enkaku/util'
 
 import { HandlerError } from './error.js'
 import { ErrorRejection } from './rejections.js'

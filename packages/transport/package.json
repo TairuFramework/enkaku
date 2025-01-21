@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/transport",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Generic transport for Enkaku RPC clients and servers",
@@ -30,8 +30,8 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/stream": "workspace:^",
-    "@enkaku/util": "workspace:^"
+    "@enkaku/async": "workspace:^",
+    "@enkaku/stream": "workspace:^"
   },
   "devDependencies": {}
 }
