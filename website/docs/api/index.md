@@ -7,6 +7,7 @@
 - [@enkaku/capability](capability/index.md)
 - [@enkaku/client](client/index.md)
 - [@enkaku/codec](codec/index.md)
+- [@enkaku/event](event/index.md)
 - [@enkaku/expo-keystore](expo-keystore/index.md)
 - [@enkaku/http-client-transport](http-client-transport/index.md)
 - [@enkaku/http-server-transport](http-server-transport/index.md)

@@ -19,6 +19,7 @@ const HEADERS = { accept: 'application/json', 'content-type': 'application/json'
 export type EventStream = {
   id: string
   close: () => void
+  source: EventSource
 }
 
 export async function createEventStream<Protocol extends ProtocolDefinition>(
@@ -42,6 +43,7 @@ export async function createEventStream<Protocol extends ProtocolDefinition>(
     close: () => {
       source.close()
     },
+    source,
   }
 }
 

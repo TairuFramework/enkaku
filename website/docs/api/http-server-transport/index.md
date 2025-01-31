@@ -26,7 +26,13 @@ Base Transport class implementing TransportType.
 
 ##### new ServerTransport()
 
-> **new ServerTransport**\<`Protocol`\>(): [`ServerTransport`](index.md#servertransportprotocol)\<`Protocol`\>
+> **new ServerTransport**\<`Protocol`\>(`options`?): [`ServerTransport`](index.md#servertransportprotocol)\<`Protocol`\>
+
+###### Parameters
+
+###### options?
+
+[`ServerBridgeOptions`](index.md#serverbridgeoptions)
 
 ###### Returns
 
@@ -188,11 +194,33 @@ Base Transport class implementing TransportType.
 
 > **stream**: `ReadableWritablePair`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>, [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>
 
+***
+
+### ServerBridgeOptions
+
+> **ServerBridgeOptions**: `object`
+
+#### Type declaration
+
+##### onWriteError()?
+
+> `optional` **onWriteError**: (`error`) => `void`
+
+###### Parameters
+
+###### error
+
+`Error`
+
+###### Returns
+
+`void`
+
 ## Functions
 
 ### createServerBridge()
 
-> **createServerBridge**\<`Protocol`, `Incoming`, `Outgoing`\>(): [`ServerBridge`](index.md#serverbridgeprotocol)\<`Protocol`\>
+> **createServerBridge**\<`Protocol`, `Incoming`, `Outgoing`\>(`options`): [`ServerBridge`](index.md#serverbridgeprotocol)\<`Protocol`\>
 
 #### Type Parameters
 
@@ -201,6 +229,12 @@ Base Transport class implementing TransportType.
 • **Incoming** *extends* [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\> = [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>
 
 • **Outgoing** *extends* [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\> = [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>
+
+#### Parameters
+
+##### options
+
+[`ServerBridgeOptions`](index.md#serverbridgeoptions) = `{}`
 
 #### Returns
 

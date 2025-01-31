@@ -34,7 +34,8 @@ describe('ServerTransport', () => {
       'test/event': testEventHandler,
       'test/request': testRequestHandler,
     }
-    const transport = new ServerTransport<Protocol>()
+    const onWriteError = jest.fn()
+    const transport = new ServerTransport<Protocol>({ onWriteError })
     const server = serve<Protocol>({ handlers, public: true, transport })
 
     const headers = new Headers()
@@ -71,5 +72,6 @@ describe('ServerTransport', () => {
     )
 
     await server.dispose()
+    expect(onWriteError).not.toHaveBeenCalled()
   })
 })

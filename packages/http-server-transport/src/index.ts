@@ -24,30 +24,51 @@ export type ServerBridge<Protocol extends ProtocolDefinition> = {
 
 type ActiveSession = { controller: ReadableStreamDefaultController<string> | null }
 
-type InflightRequest<Message> =
+type InflightRequest =
   | ({ type: 'request' } & Deferred<Response>)
-  | { type: 'stream'; write: (msg: Message) => void }
+  | { type: 'stream'; sessionID: string }
+
+export type ServerBridgeOptions = {
+  onWriteError?: (error: Error) => void
+}
 
 export function createServerBridge<
   Protocol extends ProtocolDefinition,
   Incoming extends AnyClientMessageOf<Protocol> = AnyClientMessageOf<Protocol>,
   Outgoing extends AnyServerMessageOf<Protocol> = AnyServerMessageOf<Protocol>,
->(): ServerBridge<Protocol> {
+>(options: ServerBridgeOptions = {}): ServerBridge<Protocol> {
   const sessions: Map<string, ActiveSession> = new Map()
-  const inflight: Map<string, InflightRequest<Outgoing>> = new Map()
+  const inflight: Map<string, InflightRequest> = new Map()
 
   const [readable, controller] = createReadable<Incoming>()
   const writable = new WritableStream<Outgoing>({
     write(msg) {
       const request = inflight.get(msg.payload.rid)
       if (request == null) {
+        options.onWriteError?.(new Error(`Request not found: ${msg.payload.rid}`))
         return
       }
       if (request.type === 'request') {
         request.resolve(Response.json(msg))
         inflight.delete(msg.payload.rid)
       } else {
-        request.write(msg)
+        const session = sessions.get(request.sessionID)
+        if (session == null) {
+          options.onWriteError?.(new Error(`Session not found: ${request.sessionID}`))
+          return
+        }
+        if (session.controller == null) {
+          options.onWriteError?.(new Error(`No controller for session: ${request.sessionID}`))
+          return
+        }
+        try {
+          session.controller.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
+        } catch (cause) {
+          options.onWriteError?.(
+            new Error(`Error writing to SSE feed for session: ${request.sessionID}`, { cause }),
+          )
+          sessions.delete(request.sessionID)
+        }
       }
     },
   })
@@ -72,6 +93,12 @@ export function createServerBridge<
       // Create SSE feed and track controller
       const [body, controller] = createReadable<string>()
       sessions.set(sessionID, { controller })
+
+      request.signal.addEventListener('abort', () => {
+        controller.close()
+        sessions.delete(sessionID)
+      })
+
       return new Response(body.pipeThrough(new TextEncoderStream()), {
         headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-store' },
         status: 200,
@@ -116,12 +143,7 @@ export function createServerBridge<
           }
 
           // Client is ready to receive replies, keep track of request and provide sink to the SSE stream
-          inflight.set(message.payload.rid, {
-            type: 'stream',
-            write: (msg) => {
-              ctrl?.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
-            },
-          })
+          inflight.set(message.payload.rid, { type: 'stream', sessionID: sid })
           controller.enqueue(message)
           // Replies will be send to the SSE stream, no content is returned here
           return new Response(null, { status: 204 })
@@ -143,8 +165,8 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
 > {
   #bridge: ServerBridge<Protocol>
 
-  constructor() {
-    const bridge = createServerBridge<Protocol>()
+  constructor(options?: ServerBridgeOptions) {
+    const bridge = createServerBridge<Protocol>(options)
     super({ stream: bridge.stream })
     this.#bridge = bridge
   }

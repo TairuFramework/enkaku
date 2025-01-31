@@ -15,6 +15,7 @@
       "../packages/capability",
       "../packages/client",
       "../packages/codec",
+      "../packages/event",
       "../packages/expo-keystore",
       "../packages/http-client-transport",
       "../packages/http-server-transport",

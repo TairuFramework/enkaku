@@ -188,6 +188,10 @@ Base Transport class implementing TransportType.
 
 > **id**: `string`
 
+##### source
+
+> **source**: `EventSource`
+
 ## Functions
 
 ### createEventStream()

@@ -1,14 +1,14 @@
 {
-  "name": "@enkaku/http-client-transport",
+  "name": "@enkaku/event",
   "version": "0.9.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "HTTP transport for Enkaku RPC clients",
-  "keywords": ["http", "client", "transport", "rpc"],
+  "description": "Simple events emitter based on EventTarget",
+  "keywords": ["event", "eventtarget", "promise", "stream"],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/http-client-transport"
+    "directory": "packages/event"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -25,15 +25,11 @@
     "build:types:ci": "tsc --emitDeclarationOnly --skipLibCheck --declarationMap false",
     "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
     "test:types": "tsc --noEmit",
+    "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
     "test": "pnpm run test:types && pnpm run test:unit",
     "prepublishOnly": "pnpm run build"
   },
-  "dependencies": {
-    "@enkaku/protocol": "workspace:^",
-    "@enkaku/stream": "workspace:^",
-    "@enkaku/transport": "workspace:^"
-  },
   "devDependencies": {
-    "undici": "^7.3.0"
+    "@enkaku/stream": "workspace:^"
   }
 }
