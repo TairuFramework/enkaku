@@ -8,6 +8,7 @@ import {
   type EventHandler,
   type ProcedureHandlers,
   type RequestHandler,
+  type ServerEmitter,
   type StreamHandler,
   serve,
 } from '@enkaku/server'
@@ -19,6 +20,7 @@ import getPort from 'get-port'
 type TestContext<Protocol extends ProtocolDefinition> = {
   client: Client<Protocol>
   dispose: () => Promise<void>
+  events: ServerEmitter
 }
 
 async function createContext<Protocol extends ProtocolDefinition>(
@@ -27,7 +29,7 @@ async function createContext<Protocol extends ProtocolDefinition>(
   const port = await getPort()
 
   const serverTransport = new ServerTransport<Protocol>()
-  serve<Protocol>({ handlers, public: true, transport: serverTransport })
+  const server = serve<Protocol>({ handlers, public: true, transport: serverTransport })
   const httpServer = serveHTTP({ fetch: serverTransport.fetch, port })
 
   const clientTransport = new ClientTransport<Protocol>({ url: `http://localhost:${port}` })
@@ -39,6 +41,7 @@ async function createContext<Protocol extends ProtocolDefinition>(
       httpServer.close()
       await Promise.all([clientTransport.dispose(), serverTransport.dispose()])
     },
+    events: server.events,
   }
 }
 
@@ -120,7 +123,7 @@ describe('HTTP transports', () => {
           })
         })
       }) as jest.Mock<StreamHandler<Protocol, 'test'>>
-      const { client, dispose } = await createContext<Protocol>({ test: handler })
+      const { client, dispose, events } = await createContext<Protocol>({ test: handler })
 
       const stream = client.createStream('test', { param: 3 })
       const reader = stream.readable.getReader()

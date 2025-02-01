@@ -11,7 +11,6 @@
  */
 
 export type { ProcedureAccessRecord } from './access-control.js'
-export { AbortRejection, ErrorRejection, type RejectionType } from './rejections.js'
 export { type ServeParams, Server, type ServerParams, serve } from './server.js'
 export type {
   ChannelHandler,
@@ -22,6 +21,8 @@ export type {
   HandlerReturn,
   RequestHandler,
   RequestHandlerContext,
+  ServerEmitter,
+  ServerEvents,
   StreamHandler,
   StreamHandlerContext,
 } from './types.js'

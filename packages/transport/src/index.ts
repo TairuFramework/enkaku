@@ -10,18 +10,24 @@
  * @module transport
  */
 
-import { type Disposer, createDisposer } from '@enkaku/async'
+import { Disposer } from '@enkaku/async'
+import { EventEmitter } from '@enkaku/event'
 import { createConnection } from '@enkaku/stream'
 
 export type TransportStream<R, W> = ReadableWritablePair<R, W> | Promise<ReadableWritablePair<R, W>>
 
 export type TransportInput<R, W> = TransportStream<R, W> | (() => TransportStream<R, W>)
 
+export type TransportEvents = {
+  writeFailed: { error: Error; rid: string }
+}
+
 /**
  * Generic Transport object type implementing read and write functions.
  */
 export type TransportType<R, W> = Disposer & {
   [Symbol.asyncIterator](): AsyncIterator<R, R | null>
+  get events(): EventEmitter<TransportEvents>
   getWritable: () => WritableStream<W>
   read: () => Promise<ReadableStreamReadResult<R>>
   write: (value: W) => Promise<void>
@@ -35,21 +41,21 @@ export type TransportParams<R, W> = {
 /**
  * Base Transport class implementing TransportType.
  */
-export class Transport<R, W> implements TransportType<R, W> {
-  #disposer: Disposer
+export class Transport<R, W> extends Disposer implements TransportType<R, W> {
+  #events: EventEmitter<TransportEvents>
   #params: TransportParams<R, W>
   #reader: Promise<ReadableStreamDefaultReader<R>> | undefined
   #stream: Promise<ReadableWritablePair<R, W>> | undefined
   #writer: Promise<WritableStreamDefaultWriter<W>> | undefined
 
   constructor(params: TransportParams<R, W>) {
+    super()
+    this.#events = new EventEmitter<TransportEvents>()
     this.#params = params
-    this.#disposer = createDisposer(async () => {
-      if (this.#stream != null) {
-        const writer = await this.#getWriter()
-        await writer.close()
-      }
-    })
+  }
+
+  get events(): EventEmitter<TransportEvents> {
+    return this.#events
   }
 
   #getStream(): Promise<ReadableWritablePair<R, W>> {
@@ -78,20 +84,15 @@ export class Transport<R, W> implements TransportType<R, W> {
     return this.#writer
   }
 
-  get disposed(): Promise<void> {
-    return this.#disposer.disposed
-  }
-
-  async dispose() {
-    await this.#disposer.dispose()
+  async _dispose(): Promise<void> {
+    if (this.#stream != null) {
+      const writer = await this.#getWriter()
+      await writer.close()
+    }
   }
 
   getWritable(): WritableStream<W> {
-    return new WritableStream({
-      write: async (value) => {
-        await this.write(value)
-      },
-    })
+    return new WritableStream({ write: async (value) => await this.write(value) })
   }
 
   async read(): Promise<ReadableStreamReadResult<R>> {
@@ -120,34 +121,28 @@ export type DirectTransportsOptions = {
 }
 
 /**
- * Couple of Transports for communication between a client and server in the same process.
- */
-export type DirectTransports<ToClient, ToServer> = AsyncDisposable & {
-  client: TransportType<ToClient, ToServer>
-  server: TransportType<ToServer, ToClient>
-  dispose: () => Promise<void>
-  disposed: Promise<void>
-}
-
-/**
  * Create direct Transports for communication between a client and server in the same process.
  */
-export function createDirectTransports<ToClient, ToServer>(
-  options: DirectTransportsOptions = {},
-): DirectTransports<ToClient, ToServer> {
-  const [serverStream, clientStream] = createConnection<ToClient, ToServer>()
-  const client = new Transport({ stream: clientStream, signal: options.signal })
-  const server = new Transport({ stream: serverStream, signal: options.signal })
+export class DirectTransports<ToClient, ToServer> extends Disposer {
+  #client: TransportType<ToClient, ToServer>
+  #server: TransportType<ToServer, ToClient>
 
-  const disposed = Promise.all([client.disposed, server.disposed]).then(() => {})
-  let disposing = false
-  async function dispose() {
-    if (!disposing) {
-      disposing = true
-      await Promise.all([client.dispose(), server.dispose()])
-    }
-    return disposed
+  constructor(options: DirectTransportsOptions = {}) {
+    super(options)
+    const [serverStream, clientStream] = createConnection<ToClient, ToServer>()
+    this.#client = new Transport({ stream: clientStream })
+    this.#server = new Transport({ stream: serverStream })
   }
 
-  return { client, server, dispose, disposed, [Symbol.asyncDispose]: dispose }
+  async _dispose(): Promise<void> {
+    await Promise.all([this.#client.dispose(), this.#server.dispose()])
+  }
+
+  get client(): TransportType<ToClient, ToServer> {
+    return this.#client
+  }
+
+  get server(): TransportType<ToServer, ToClient> {
+    return this.#server
+  }
 }

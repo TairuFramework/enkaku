@@ -11,9 +11,15 @@
  */
 
 import { type Deferred, defer } from '@enkaku/async'
-import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import type {
+  AnyClientMessageOf,
+  AnyServerMessageOf,
+  ProtocolDefinition,
+  TransportMessage,
+  TransportMessagePayload,
+} from '@enkaku/protocol'
 import { createReadable } from '@enkaku/stream'
-import { Transport } from '@enkaku/transport'
+import { Transport, type TransportEvents } from '@enkaku/transport'
 
 export type RequestHandler = (request: Request) => Promise<Response>
 
@@ -29,23 +35,25 @@ type InflightRequest =
   | { type: 'stream'; sessionID: string }
 
 export type ServerBridgeOptions = {
-  onWriteError?: (error: Error) => void
+  onWriteError?: (event: TransportEvents['writeFailed']) => void
 }
 
-export function createServerBridge<
-  Protocol extends ProtocolDefinition,
-  Incoming extends AnyClientMessageOf<Protocol> = AnyClientMessageOf<Protocol>,
-  Outgoing extends AnyServerMessageOf<Protocol> = AnyServerMessageOf<Protocol>,
->(options: ServerBridgeOptions = {}): ServerBridge<Protocol> {
+export function createServerBridge<Protocol extends ProtocolDefinition>(
+  options: ServerBridgeOptions = {},
+): ServerBridge<Protocol> {
+  type Incoming = AnyClientMessageOf<Protocol>
+  type Outgoing = AnyServerMessageOf<Protocol>
+
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
 
   const [readable, controller] = createReadable<Incoming>()
   const writable = new WritableStream<Outgoing>({
     write(msg) {
-      const request = inflight.get(msg.payload.rid)
+      const { rid } = msg.payload
+      const request = inflight.get(rid)
       if (request == null) {
-        options.onWriteError?.(new Error(`Request not found: ${msg.payload.rid}`))
+        options.onWriteError?.({ error: new Error('Request not found'), rid })
         return
       }
       if (request.type === 'request') {
@@ -54,24 +62,52 @@ export function createServerBridge<
       } else {
         const session = sessions.get(request.sessionID)
         if (session == null) {
-          options.onWriteError?.(new Error(`Session not found: ${request.sessionID}`))
+          options.onWriteError?.({
+            error: new Error(`Session not found: ${request.sessionID}`),
+            rid,
+          })
           return
         }
         if (session.controller == null) {
-          options.onWriteError?.(new Error(`No controller for session: ${request.sessionID}`))
+          options.onWriteError?.({
+            error: new Error(`No controller for session: ${request.sessionID}`),
+            rid,
+          })
           return
         }
         try {
           session.controller.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
         } catch (cause) {
-          options.onWriteError?.(
-            new Error(`Error writing to SSE feed for session: ${request.sessionID}`, { cause }),
-          )
+          options.onWriteError?.({
+            error: new Error(`Error writing to SSE feed for session: ${request.sessionID}`, {
+              cause,
+            }),
+            rid,
+          })
           sessions.delete(request.sessionID)
         }
       }
     },
   })
+
+  function getRequestSessionController(
+    request: Request,
+  ): [string, ReadableStreamDefaultController<string>] {
+    const sid = request.headers.get('enkaku-session-id')
+    if (!sid) {
+      throw new Error('Missing session ID header for stateful request')
+    }
+    const session = sessions.get(sid)
+    if (session == null) {
+      throw new Error('Invalid session ID')
+    }
+    const ctrl = session.controller
+    if (ctrl == null) {
+      // The client hasn't connected to the SSE stream yet
+      throw new Error('Inactive session')
+    }
+    return [sid, ctrl]
+  }
 
   async function handleRequest(request: Request): Promise<Response> {
     if (request.method === 'GET') {
@@ -106,7 +142,23 @@ export function createServerBridge<
     }
 
     try {
-      const message = (await request.json()) as Incoming
+      const msg = (await request.json()) as Incoming | TransportMessage
+      if (msg.header.src === 'transport') {
+        // Handle transport messages
+        const payload = msg.payload as TransportMessagePayload
+        if (payload.type === 'ping') {
+          // When receiving a ping message, reply with a pong on the SSE feed to keep it active
+          const [_sid, ctrl] = getRequestSessionController(request)
+          const message: TransportMessage = {
+            header: { typ: 'JWT', alg: 'none', src: 'transport' },
+            payload: { type: 'pong', id: payload.id },
+          }
+          ctrl.enqueue(JSON.stringify(message))
+        }
+        return new Response(null, { status: 204 })
+      }
+
+      const message = msg as AnyClientMessageOf<Protocol>
       switch (message.payload.typ) {
         // Fire and forget messages
         case 'abort':
@@ -125,23 +177,7 @@ export function createServerBridge<
         // Stateful response message
         case 'channel':
         case 'stream': {
-          const sid = request.headers.get('enkaku-session-id')
-          if (!sid) {
-            return Response.json(
-              { error: 'Missing session ID header for stateful request' },
-              { status: 400 },
-            )
-          }
-          const session = sessions.get(sid)
-          if (session == null) {
-            return Response.json({ error: 'Invalid session ID' }, { status: 400 })
-          }
-          const ctrl = session.controller
-          if (ctrl == null) {
-            // The client hasn't connected to the SSE stream yet
-            return Response.json({ error: 'Inactive session' }, { status: 400 })
-          }
-
+          const [sid] = getRequestSessionController(request)
           // Client is ready to receive replies, keep track of request and provide sink to the SSE stream
           inflight.set(message.payload.rid, { type: 'stream', sessionID: sid })
           controller.enqueue(message)
@@ -149,7 +185,7 @@ export function createServerBridge<
           return new Response(null, { status: 204 })
         }
         default:
-          return Response.json({ error: 'Invalid payload' }, { status: 400 })
+          throw new Error('Invalid payload')
       }
     } catch (err) {
       return Response.json({ error: (err as Error).message }, { status: 500 })
@@ -165,8 +201,12 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
 > {
   #bridge: ServerBridge<Protocol>
 
-  constructor(options?: ServerBridgeOptions) {
-    const bridge = createServerBridge<Protocol>(options)
+  constructor() {
+    const bridge = createServerBridge<Protocol>({
+      onWriteError: (event) => {
+        this.events.emit('writeFailed', event)
+      },
+    })
     super({ stream: bridge.stream })
     this.#bridge = bridge
   }

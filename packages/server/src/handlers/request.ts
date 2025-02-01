@@ -1,6 +1,5 @@
 import type { ClientMessage, ProtocolDefinition, RequestPayloadOf } from '@enkaku/protocol'
 
-import { ErrorRejection } from '../rejections.js'
 import type { HandlerContext, RequestHandler } from '../types.js'
 import { executeHandler } from '../utils.js'
 
@@ -15,10 +14,10 @@ export function handleRequest<
 >(
   ctx: HandlerContext<Protocol>,
   msg: RequestMessageOf<Protocol, Procedure>,
-): ErrorRejection | Promise<void> {
+): Error | Promise<void> {
   const handler = ctx.handlers[msg.payload.prc] as unknown as RequestHandler<Protocol, Procedure>
   if (handler == null) {
-    return new ErrorRejection(`No handler for procedure: ${msg.payload.prc}`, { info: msg.payload })
+    return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
   const controller = new AbortController()

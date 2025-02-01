@@ -61,6 +61,17 @@ describe('EventEmitter', () => {
       emitter.emit('test', 2)
       expect(listener).not.toHaveBeenCalled()
     })
+
+    test('uses the provided target', () => {
+      const target = new EventTarget()
+      const emitter = new EventEmitter<{ test: number }>({ target })
+      const listener = jest.fn()
+
+      emitter.once('test', listener)
+      const event = new CustomEvent('test', { detail: 1 })
+      target.dispatchEvent(event)
+      expect(listener).toHaveBeenCalledWith(event)
+    })
   })
 
   describe('single event handling', () => {

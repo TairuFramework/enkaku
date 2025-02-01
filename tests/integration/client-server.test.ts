@@ -9,7 +9,7 @@ import {
   serve,
 } from '@enkaku/server'
 import { createUnsignedToken } from '@enkaku/token'
-import { createDirectTransports } from '@enkaku/transport'
+import { DirectTransports } from '@enkaku/transport'
 import { jest } from '@jest/globals'
 
 describe('client-server integration', () => {
@@ -31,7 +31,7 @@ describe('client-server integration', () => {
       const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
       const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
@@ -72,7 +72,7 @@ describe('client-server integration', () => {
       }) as jest.Mock<RequestHandler<Protocol, 'test'>>
       const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
@@ -118,7 +118,7 @@ describe('client-server integration', () => {
       }) as jest.Mock<StreamHandler<Protocol, 'test'>>
       const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
@@ -172,7 +172,7 @@ describe('client-server integration', () => {
       }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
       const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()

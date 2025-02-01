@@ -1,10 +1,10 @@
+import { EventEmitter } from '@enkaku/event'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import { createUnsignedToken } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
 import { handleEvent } from '../src/handlers/event.js'
-import { ErrorRejection } from '../src/rejections.js'
-import type { HandlerContext } from '../src/types.js'
+import type { HandlerContext, ServerEvents } from '../src/types.js'
 
 const protocol = {
   test: {
@@ -33,43 +33,45 @@ describe('handleEvent()', () => {
       // @ts-expect-error
       payload,
     })
-    expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for procedure: unknown')
-    expect((returned as ErrorRejection).info).toEqual(payload)
+    expect(returned).toBeInstanceOf(Error)
+    expect((returned as Error).message).toBe('No handler for procedure: unknown')
   })
 
   test('sends an ErrorRejection if the handler fails but resolves the returned promise', async () => {
     const errorCause = new Error('Failed!')
+    const events = new EventEmitter<ServerEvents>()
     const handler = jest.fn(() => {
       throw errorCause
     })
-    const reject = jest.fn()
+    const handlerError = events.next('handlerError')
 
     // Handler promise should always resolve
     await expect(
       handleEvent(
-        { handlers: { test: handler }, reject } as unknown as HandlerContext<Protocol>,
+        // @ts-ignore type instantiation too deep
+        { events, handlers: { test: handler } } as unknown as HandlerContext<Protocol>,
         clientToken,
       ),
     ).resolves.toBeUndefined()
 
-    // Handler failure should cause a reject() call
-    expect(reject).toHaveBeenCalled()
-    const rejection = reject.mock.calls[0][0]
-    expect(rejection).toBeInstanceOf(ErrorRejection)
-    expect((rejection as ErrorRejection).message).toBe('Error handling procedure: test')
-    expect((rejection as ErrorRejection).info).toBe(clientToken.payload)
-    expect((rejection as ErrorRejection).cause).toBe(errorCause)
+    // Handler failure should emit an handlerError
+    const emittedError = await handlerError
+    expect(emittedError.error.message).toBe('Error handling procedure: test')
+    expect(emittedError.error.cause).toBe(errorCause)
+    expect(emittedError.payload).toEqual(clientToken.payload)
   })
 
   test('successfully calls the event handler', async () => {
     const payload = { typ: 'event', prc: 'test', data: { test: true } } as const
+    const events = new EventEmitter<ServerEvents>()
     const handler = jest.fn()
-    const reject = jest.fn()
+    const handlerErrorListener = jest.fn()
+    events.once('handlerError', handlerErrorListener)
 
     await expect(
       handleEvent(
-        { handlers: { test: handler }, reject } as unknown as HandlerContext<Protocol>,
+        // @ts-ignore type instantiation too deep
+        { events, handlers: { test: handler } } as unknown as HandlerContext<Protocol>,
         clientToken,
       ),
     ).resolves.toBeUndefined()
@@ -77,6 +79,6 @@ describe('handleEvent()', () => {
       message: createUnsignedToken(payload),
       data: { test: true },
     })
-    expect(reject).not.toHaveBeenCalled()
+    expect(handlerErrorListener).not.toHaveBeenCalled()
   })
 })

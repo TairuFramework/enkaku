@@ -34,35 +34,55 @@ export function defer<T, R = unknown>(): Deferred<T, R> {
   return { promise, resolve, reject }
 }
 
-/**
- * Disposer object, providing a dispose function and a disposed Promise.
- */
-export type Disposer = {
-  dispose: () => Promise<void>
-  disposed: Promise<void>
+export type DisposerParams = {
+  dispose?: () => Promise<void>
+  signal?: AbortSignal
 }
 
 /**
- * Create a Disposer object from a function to execute on disposal and an optional AbortSignal.
+ * Disposer class, providing a dispose function and a disposed Promise.
  */
-export function createDisposer(run: () => Promise<void>, signal?: AbortSignal): Disposer {
-  const deferred = defer<void>()
-  let isDisposing = false
+export class Disposer extends AbortController implements AsyncDisposable {
+  #deferred = defer<void>()
+  #dispose?: () => Promise<void>
 
-  async function dispose(): Promise<void> {
-    if (!isDisposing) {
-      isDisposing = true
-      await run()
-      deferred.resolve()
-    }
-    return deferred.promise
+  constructor(params: DisposerParams = {}) {
+    super()
+    this.#dispose = params.dispose
+
+    let disposing = false
+    this.signal.addEventListener(
+      'abort',
+      () => {
+        if (!disposing) {
+          disposing = true
+          this._dispose().then(() => this.#deferred.resolve())
+        }
+      },
+      { once: true },
+    )
+
+    params.signal?.addEventListener('abort', () => this.dispose(), { once: true })
   }
 
-  signal?.addEventListener('abort', () => {
-    dispose()
-  })
+  async _dispose(): Promise<void> {
+    if (this.#dispose != null) {
+      await this.#dispose()
+    }
+  }
 
-  return { dispose, disposed: deferred.promise }
+  get disposed(): Promise<void> {
+    return this.#deferred.promise
+  }
+
+  dispose(): Promise<void> {
+    this.abort('Dispose')
+    return this.#deferred.promise
+  }
+
+  [Symbol.asyncDispose](): Promise<void> {
+    return this.dispose()
+  }
 }
 
 /**

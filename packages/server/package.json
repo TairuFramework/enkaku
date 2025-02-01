@@ -32,6 +32,7 @@
   "dependencies": {
     "@enkaku/async": "workspace:^",
     "@enkaku/capability": "workspace:^",
+    "@enkaku/event": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/schema": "workspace:^",
     "@enkaku/stream": "workspace:^",

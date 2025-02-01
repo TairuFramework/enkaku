@@ -1,6 +1,18 @@
 import { jest } from '@jest/globals'
 
-import { lazy, toPromise } from '../src/index.js'
+import { Disposer, lazy, toPromise } from '../src/index.js'
+
+describe('Disposer', () => {
+  test('only disposes once', async () => {
+    const disposeFn = jest.fn(() => Promise.resolve())
+    const disposer = new Disposer({ dispose: disposeFn })
+
+    await expect(disposer.dispose()).resolves.toBeUndefined()
+    await expect(disposer.dispose()).resolves.toBeUndefined()
+
+    expect(disposeFn).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe('lazy', () => {
   test('only calls the execute function if needed', () => {

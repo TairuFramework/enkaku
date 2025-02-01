@@ -1,9 +1,9 @@
+import { EventEmitter } from '@enkaku/event'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import { jest } from '@jest/globals'
 
 import { HandlerError } from '../src/error.js'
-import { ErrorRejection } from '../src/rejections.js'
-import type { HandlerContext } from '../src/types.js'
+import type { HandlerContext, ServerEvents } from '../src/types.js'
 import { executeHandler } from '../src/utils.js'
 
 const protocol = {
@@ -23,21 +23,22 @@ type Protocol = typeof protocol
 describe('executeHandler()', () => {
   const payload = { typ: 'request', rid: '1', prc: 'test', prm: { test: true } } as const
 
-  test('sends an error response and a rejection in case of error', async () => {
+  test('sends an error response and emits in case of error', async () => {
     const error = new HandlerError({ code: 'TEST123', message: 'Request failed' })
     const controllers = { '1': new AbortController() }
+    const events = new EventEmitter<ServerEvents>()
     const handler = jest.fn(() => {
       throw error
     })
-    const reject = jest.fn()
     const send = jest.fn()
+    const handlerError = events.next('handlerError')
 
     // @ts-ignore type instantiation too deep
     await executeHandler(
       {
         controllers,
+        events,
         handlers: { test: handler },
-        reject,
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
@@ -50,18 +51,18 @@ describe('executeHandler()', () => {
       data: {},
       msg: 'Request failed',
     })
-    expect(reject).toHaveBeenCalled()
-    const rejection = reject.mock.calls[0][0]
-    expect(rejection).toBeInstanceOf(ErrorRejection)
-    expect((rejection as ErrorRejection).message).toBe('Error handling procedure: test')
-    expect((rejection as ErrorRejection).info).toBe(payload)
-    expect((rejection as ErrorRejection).cause).toBe(error)
+
+    const emittedError = await handlerError
+    expect(emittedError.error.message).toBe('Error handling procedure: test')
+    expect(emittedError.error.cause).toBe(error)
+    expect(emittedError.payload).toEqual(payload)
     expect(controllers).toEqual({})
   })
 
   test('sends an error response if the abort signal is triggered with the "Close" reason', async () => {
     const error = new HandlerError({ code: 'TEST123', message: 'Request failed' })
     const controllers = { '1': new AbortController() }
+    const events = new EventEmitter<ServerEvents>()
     const handler = jest.fn(() => {
       return new Promise<string>((_, reject) => {
         setTimeout(() => {
@@ -69,15 +70,15 @@ describe('executeHandler()', () => {
         }, 100)
       })
     })
-    const reject = jest.fn()
     const send = jest.fn()
+    const handlerError = events.next('handlerError')
 
     // @ts-ignore type instantiation too deep
     const requestPromise = executeHandler(
       {
         controllers,
+        events,
         handlers: { test: handler },
-        reject,
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
@@ -93,18 +94,18 @@ describe('executeHandler()', () => {
       data: {},
       msg: 'Request failed',
     })
-    expect(reject).toHaveBeenCalled()
-    const rejection = reject.mock.calls[0][0]
-    expect(rejection).toBeInstanceOf(ErrorRejection)
-    expect((rejection as ErrorRejection).message).toBe('Error handling procedure: test')
-    expect((rejection as ErrorRejection).info).toBe(payload)
-    expect((rejection as ErrorRejection).cause).toBe(error)
+
+    const emittedError = await handlerError
+    expect(emittedError.error.message).toBe('Error handling procedure: test')
+    expect(emittedError.error.cause).toBe(error)
+    expect(emittedError.payload).toEqual(payload)
     expect(controllers).toEqual({})
   })
 
   test('does not send an error response if the abort signal is triggered with a reason other than "Close"', async () => {
     const error = new HandlerError({ code: 'TEST123', message: 'Request failed' })
     const controllers = { '1': new AbortController() }
+    const events = new EventEmitter<ServerEvents>()
     const handler = jest.fn(() => {
       return new Promise<string>((_, reject) => {
         setTimeout(() => {
@@ -112,15 +113,15 @@ describe('executeHandler()', () => {
         }, 100)
       })
     })
-    const reject = jest.fn()
     const send = jest.fn()
+    const handlerError = events.next('handlerError')
 
     // @ts-ignore type instantiation too deep
     const requestPromise = executeHandler(
       {
         controllers,
+        events,
         handlers: { test: handler },
-        reject,
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
@@ -130,12 +131,10 @@ describe('executeHandler()', () => {
     await requestPromise
 
     expect(send).not.toHaveBeenCalled()
-    expect(reject).toHaveBeenCalled()
-    const rejection = reject.mock.calls[0][0]
-    expect(rejection).toBeInstanceOf(ErrorRejection)
-    expect((rejection as ErrorRejection).message).toBe('Error handling procedure: test')
-    expect((rejection as ErrorRejection).info).toBe(payload)
-    expect((rejection as ErrorRejection).cause).toBe(error)
+    const emittedError = await handlerError
+    expect(emittedError.error.message).toBe('Error handling procedure: test')
+    expect(emittedError.error.cause).toBe(error)
+    expect(emittedError.payload).toEqual(payload)
     expect(controllers).toEqual({})
   })
 

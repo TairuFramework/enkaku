@@ -3,7 +3,6 @@ import { createUnsignedToken } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
 import { handleStream } from '../src/handlers/stream.js'
-import { ErrorRejection } from '../src/rejections.js'
 import type { HandlerContext, HandlerController, StreamHandlerContext } from '../src/types.js'
 
 const protocol = {
@@ -39,9 +38,8 @@ describe('handleStream()', () => {
       // @ts-expect-error
       { payload: unknownPayload },
     )
-    expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for procedure: unknown')
-    expect((returned as ErrorRejection).info).toEqual(unknownPayload)
+    expect(returned).toBeInstanceOf(Error)
+    expect((returned as Error).message).toBe('No handler for procedure: unknown')
   })
 
   test('sends receive messages', async () => {

@@ -1,12 +1,10 @@
 import type { ErrorReplyPayload } from '@enkaku/protocol'
 
-import { ErrorRejection, type ErrorRejectionOptions } from './rejections.js'
-
 export type HandlerErrorParams<
   Code extends string = string,
   Data extends Record<string, unknown> = Record<string, unknown>,
-  Info extends Record<string, unknown> = Record<string, unknown>,
-> = Partial<ErrorRejectionOptions<Info>> & {
+> = {
+  cause?: unknown
   code: Code
   data?: Data
   message?: string
@@ -15,13 +13,11 @@ export type HandlerErrorParams<
 export class HandlerError<
   Code extends string,
   Data extends Record<string, unknown> = Record<string, unknown>,
-  Info extends Record<string, unknown> = Record<string, unknown>,
-> extends ErrorRejection<Info> {
-  static from<
-    Code extends string,
-    Data extends Record<string, unknown> = Record<string, unknown>,
-    Info extends Record<string, unknown> = Record<string, unknown>,
-  >(cause: unknown, params: HandlerErrorParams<Code, Data, Info>): HandlerError<Code, Data, Info> {
+> extends Error {
+  static from<Code extends string, Data extends Record<string, unknown> = Record<string, unknown>>(
+    cause: unknown,
+    params: HandlerErrorParams<Code, Data>,
+  ): HandlerError<Code, Data> {
     return cause instanceof HandlerError
       ? cause
       : cause instanceof Error
@@ -32,9 +28,9 @@ export class HandlerError<
   #code: Code
   #data: Data
 
-  constructor(params: HandlerErrorParams<Code, Data, Info>) {
-    const { code, data, message, ...options } = params
-    super(message ?? `Handler error code: ${code}`, options as ErrorRejectionOptions<Info>)
+  constructor(params: HandlerErrorParams<Code, Data>) {
+    const { cause, code, data, message } = params
+    super(message ?? `Handler error code: ${code}`, { cause })
     this.#code = code
     this.#data = data ?? ({} as Data)
   }

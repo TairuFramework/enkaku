@@ -1,3 +1,4 @@
+import type { EventEmitter } from '@enkaku/event'
 import type {
   AnyRequestProcedureDefinition,
   AnyServerPayloadOf,
@@ -12,8 +13,6 @@ import type {
   ReturnOf,
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
-
-import type { RejectionType } from './rejections.js'
 
 export type RequestController = AbortController
 
@@ -157,9 +156,18 @@ export type SendType<
   ? DataOf<Protocol[Procedure]['send']>
   : never
 
+export type ServerEvents = {
+  handlerAbort: { rid: string }
+  handlerError: { error: Error; payload: Record<string, unknown>; rid?: string }
+  handlerTimeout: { rid: string }
+  invalidMessage: { error: Error; message: unknown }
+}
+
+export type ServerEmitter = EventEmitter<ServerEvents>
+
 export type HandlerContext<Protocol extends ProtocolDefinition> = {
   controllers: Record<string, HandlerController>
+  events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
-  reject: (rejection: RejectionType) => void
   send: (payload: AnyServerPayloadOf<Protocol>) => Promise<void>
 }

@@ -1,7 +1,6 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
 
 import { handleRequest } from '../src/handlers/request.js'
-import { ErrorRejection } from '../src/rejections.js'
 import type { HandlerContext } from '../src/types.js'
 
 const protocol = {
@@ -27,8 +26,7 @@ describe('handleRequest()', () => {
       // @ts-expect-error
       { payload },
     )
-    expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for procedure: unknown')
-    expect((returned as ErrorRejection).info).toEqual(payload)
+    expect(returned).toBeInstanceOf(Error)
+    expect((returned as Error).message).toBe('No handler for procedure: unknown')
   })
 })

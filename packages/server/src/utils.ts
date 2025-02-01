@@ -2,37 +2,7 @@ import { toPromise } from '@enkaku/async'
 import type { AnyServerPayloadOf, ProtocolDefinition, RequestPayloadOf } from '@enkaku/protocol'
 
 import { HandlerError } from './error.js'
-import { ErrorRejection } from './rejections.js'
 import type { HandlerContext, ResultType } from './types.js'
-
-export type ConsumeReaderParams<T> = {
-  onDone?: () => void
-  onValue: (value: T) => Promise<void>
-  reader: ReadableStreamDefaultReader<T>
-  signal: AbortSignal
-}
-
-export async function consumeReader<T>(params: ConsumeReaderParams<T>): Promise<void> {
-  async function handle() {
-    if (params.signal.aborted) {
-      return
-    }
-
-    const next = await params.reader.read()
-    if (next.done) {
-      params.onDone?.()
-      return
-    }
-    if (params.signal.aborted) {
-      return
-    }
-
-    await params.onValue(next.value)
-    handle()
-  }
-
-  handle()
-}
 
 function canSend(signal: AbortSignal): boolean {
   return !signal.aborted || signal.reason === 'Close'
@@ -67,11 +37,11 @@ export async function executeHandler<
         }).toPayload(payload.rid) as AnyServerPayloadOf<Protocol>,
       )
     }
-
-    context.reject(
-      // @ts-ignore type instantiation too deep
-      new ErrorRejection(`Error handling procedure: ${payload.prc}`, { info: payload, cause }),
-    )
+    context.events.emit('handlerError', {
+      error: new Error(`Error handling procedure: ${payload.prc}`, { cause }),
+      rid: payload.rid,
+      payload,
+    })
   } finally {
     delete context.controllers[payload.rid]
   }

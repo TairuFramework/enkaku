@@ -1,6 +1,6 @@
 import { createPipe } from '@enkaku/stream'
 
-import { Transport, createDirectTransports } from '../src/index.js'
+import { DirectTransports, Transport } from '../src/index.js'
 
 describe('Transport', () => {
   test('reads and writes', async () => {
@@ -29,9 +29,9 @@ describe('Transport', () => {
   })
 })
 
-describe('createDirectTransports()', () => {
+describe('DirectTransports class', () => {
   test('sends messages between client and server', async () => {
-    const transports = createDirectTransports<string, string>()
+    const transports = new DirectTransports<string, string>()
 
     await transports.client.write('c1')
     await transports.client.write('c2')

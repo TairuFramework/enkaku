@@ -1,16 +1,15 @@
 import type { AnyServerPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
+import { map } from '@enkaku/stream'
 import { createUnsignedToken } from '@enkaku/token'
 import { jest } from '@jest/globals'
 
 import { handleChannel } from '../src/handlers/channel.js'
-import { ErrorRejection } from '../src/rejections.js'
 import type {
   ChannelController,
   ChannelHandlerContext,
   HandlerContext,
   HandlerController,
 } from '../src/types.js'
-import { consumeReader } from '../src/utils.js'
 
 const protocol = {
   test: {
@@ -46,9 +45,8 @@ describe('handleChannel()', () => {
       // @ts-expect-error
       { payload: unknownPayload },
     )
-    expect(returned).toBeInstanceOf(ErrorRejection)
-    expect((returned as ErrorRejection).message).toBe('No handler for procedure: unknown')
-    expect((returned as ErrorRejection).info).toEqual(unknownPayload)
+    expect(returned).toBeInstanceOf(Error)
+    expect((returned as Error).message).toBe('No handler for procedure: unknown')
   })
 
   test('sends receive messages', async () => {
@@ -130,14 +128,7 @@ describe('handleChannel()', () => {
   test('receives sent messages', async () => {
     const controllers: Record<string, ChannelController> = {}
     const handler = jest.fn((ctx: ChannelContext) => {
-      const writer = ctx.writable.getWriter()
-
-      consumeReader({
-        onValue: (value) => writer.write(value * 2),
-        reader: ctx.readable.getReader(),
-        signal: ctx.signal,
-      })
-
+      ctx.readable.pipeThrough(map((value) => value * 2)).pipeTo(ctx.writable)
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve('OK')

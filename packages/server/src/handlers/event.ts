@@ -1,7 +1,6 @@
 import { toPromise } from '@enkaku/async'
 import type { ClientMessage, EventPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 
-import { ErrorRejection } from '../rejections.js'
 import type { EventHandler, EventHandlerContext, HandlerContext } from '../types.js'
 
 export type EventMessageOf<
@@ -12,24 +11,21 @@ export type EventMessageOf<
 export function handleEvent<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
->(
-  ctx: HandlerContext<Protocol>,
-  msg: EventMessageOf<Protocol, Procedure>,
-): ErrorRejection | Promise<void> {
+>(ctx: HandlerContext<Protocol>, msg: EventMessageOf<Protocol, Procedure>): Error | Promise<void> {
   const handler = ctx.handlers[msg.payload.prc] as EventHandler<Protocol, Procedure>
   if (handler == null) {
-    return new ErrorRejection(`No handler for procedure: ${msg.payload.prc}`, { info: msg.payload })
+    return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
   const handlerContext = {
     message: msg,
     data: msg.payload.data,
   } as unknown as EventHandlerContext<Protocol, Procedure>
+  // @ts-ignore type instantiation too deep
   return toPromise(() => handler(handlerContext)).catch((cause) => {
-    const err = new ErrorRejection(`Error handling procedure: ${msg.payload.prc}`, {
-      info: msg.payload,
-      cause,
+    ctx.events.emit('handlerError', {
+      error: new Error(`Error handling procedure: ${msg.payload.prc}`, { cause }),
+      payload: msg.payload,
     })
-    ctx.reject(err)
   })
 }

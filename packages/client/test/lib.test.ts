@@ -8,7 +8,7 @@ import type {
 } from '@enkaku/protocol'
 import { createArraySink } from '@enkaku/stream'
 import { randomTokenSigner, createUnsignedToken as unsignedToken } from '@enkaku/token'
-import { createDirectTransports } from '@enkaku/transport'
+import { DirectTransports } from '@enkaku/transport'
 
 import { Client } from '../src/client.js'
 
@@ -30,7 +30,7 @@ describe('Client', () => {
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
-    const transports = createDirectTransports<
+    const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
@@ -64,7 +64,7 @@ describe('Client', () => {
     type Protocol = typeof protocol
 
     test('sends request and gets result', async () => {
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
@@ -84,7 +84,7 @@ describe('Client', () => {
     })
 
     test('aborts request', async () => {
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
@@ -121,7 +121,7 @@ describe('Client', () => {
     type Protocol = typeof protocol
 
     test('sends request and gets receive stream and result', async () => {
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
@@ -148,7 +148,7 @@ describe('Client', () => {
     })
 
     test('aborts request', async () => {
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
@@ -174,7 +174,7 @@ describe('Client', () => {
     })
 
     test('closes the stream', async () => {
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
@@ -218,7 +218,7 @@ describe('Client', () => {
     type Protocol = typeof protocol
 
     test('sends request and channel values and gets receive stream and result', async () => {
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
@@ -261,7 +261,7 @@ describe('Client', () => {
     })
 
     test('aborts request', async () => {
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
@@ -287,7 +287,7 @@ describe('Client', () => {
     })
 
     test('closes the channel', async () => {
-      const transports = createDirectTransports<
+      const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()

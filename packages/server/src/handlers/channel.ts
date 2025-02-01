@@ -6,7 +6,6 @@ import type {
 } from '@enkaku/protocol'
 import { createPipe } from '@enkaku/stream'
 
-import { ErrorRejection } from '../rejections.js'
 import type {
   ChannelController,
   ChannelHandler,
@@ -14,7 +13,7 @@ import type {
   ReceiveType,
   SendType,
 } from '../types.js'
-import { consumeReader, executeHandler } from '../utils.js'
+import { executeHandler } from '../utils.js'
 
 export type ChannelMessageOf<
   Protocol extends ProtocolDefinition,
@@ -27,10 +26,10 @@ export function handleChannel<
 >(
   ctx: HandlerContext<Protocol>,
   msg: ChannelMessageOf<Protocol, Procedure>,
-): ErrorRejection | Promise<void> {
+): Error | Promise<void> {
   const handler = ctx.handlers[msg.payload.prc] as unknown as ChannelHandler<Protocol, Procedure>
   if (handler == null) {
-    return new ErrorRejection(`No handler for procedure: ${msg.payload.prc}`, { info: msg.payload })
+    return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
   const sendStream = createPipe<SendType<Protocol, Procedure>>()
@@ -44,19 +43,21 @@ export function handleChannel<
   ctx.controllers[msg.payload.rid] = controller
 
   const receiveStream = createPipe<ReceiveType<Protocol, Procedure>>()
-  // @ts-ignore type instantiation too deep
-  consumeReader({
+  receiveStream.readable.pipeTo(
     // @ts-ignore type instantiation too deep
-    onValue: async (val) => {
-      await ctx.send({
-        typ: 'receive',
-        rid: msg.payload.rid,
-        val,
-      } as unknown as AnyServerPayloadOf<Protocol>)
-    },
-    reader: receiveStream.readable.getReader(),
-    signal: controller.signal,
-  })
+    new WritableStream({
+      async write(val) {
+        if (controller.signal.aborted) {
+          return
+        }
+        await ctx.send({
+          typ: 'receive',
+          rid: msg.payload.rid,
+          val,
+        } as unknown as AnyServerPayloadOf<Protocol>)
+      },
+    }),
+  )
 
   const handlerContext = {
     message: msg,

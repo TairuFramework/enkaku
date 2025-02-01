@@ -1,4 +1,4 @@
-import { type Disposer, defer } from '@enkaku/async'
+import { Disposer, defer } from '@enkaku/async'
 import type {
   AnyClientMessageOf,
   AnyClientPayloadOf,
@@ -180,25 +180,28 @@ export type ClientParams<Protocol extends ProtocolDefinition> = {
 export class Client<
   Protocol extends ProtocolDefinition,
   ClientDefinitions extends ClientDefinitionsType<Protocol> = ClientDefinitionsType<Protocol>,
-> implements Disposer
-{
+> extends Disposer {
   #controllers: Record<string, AnyClientController> = {}
   #createMessage: CreateMessage<Protocol>
   #getRandomID: () => string
   #transport: ClientTransportOf<Protocol>
 
   constructor(params: ClientParams<Protocol>) {
+    super()
     this.#createMessage = getCreateMessage<Protocol>(params.signer, params.serverID)
     this.#getRandomID = params.getRandomID ?? defaultRandomID
     this.#transport = params.transport
-    // Abort all controllers on disconnect
-    this.#transport.disposed.then(() => {
-      for (const controller of Object.values(this.#controllers)) {
-        controller.abort()
-      }
-    })
     // Start reading from transport
     this.#read()
+  }
+
+  async _dispose(): Promise<void> {
+    // Dispose of transport
+    await this.#transport.dispose()
+    // Abort all controllers
+    for (const controller of Object.values(this.#controllers)) {
+      controller.abort()
+    }
   }
 
   async #read() {
@@ -263,14 +266,6 @@ export class Client<
       { once: true },
     )
     return signal
-  }
-
-  get disposed() {
-    return this.#transport.disposed
-  }
-
-  async dispose() {
-    await this.#transport.dispose()
   }
 
   async sendEvent<

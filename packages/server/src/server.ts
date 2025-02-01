@@ -1,4 +1,5 @@
-import { type Disposer, createDisposer } from '@enkaku/async'
+import { Disposer } from '@enkaku/async'
+import { EventEmitter } from '@enkaku/event'
 import {
   type AnyClientMessageOf,
   type AnyServerPayloadOf,
@@ -7,7 +8,6 @@ import {
   createClientMessageSchema,
 } from '@enkaku/protocol'
 import { type Validator, createValidator } from '@enkaku/schema'
-import { createPipe } from '@enkaku/stream'
 import { type SignedToken, type Token, createUnsignedToken, isSignedToken } from '@enkaku/token'
 
 import { type ProcedureAccessRecord, checkClientToken } from './access-control.js'
@@ -15,12 +15,13 @@ import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'
 import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { type RequestMessageOf, handleRequest } from './handlers/request.js'
 import { type StreamMessageOf, handleStream } from './handlers/stream.js'
-import { ErrorRejection, type RejectionType } from './rejections.js'
 import type {
   ChannelController,
   HandlerContext,
   HandlerController,
   ProcedureHandlers,
+  ServerEmitter,
+  ServerEvents,
 } from './types.js'
 
 type ProcessMessageOf<Protocol extends ProtocolDefinition> =
@@ -34,8 +35,8 @@ export type AccessControlParams =
   | { public: false; serverID: string; access: ProcedureAccessRecord }
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
+  events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
-  reject: (rejection: RejectionType) => void
   signal: AbortSignal
   transport: ServerTransportOf<Protocol>
   validator?: Validator<AnyClientMessageOf<Protocol>>
@@ -44,36 +45,42 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
 async function handleMessages<Protocol extends ProtocolDefinition>(
   params: HandleMessagesParams<Protocol>,
 ): Promise<void> {
-  const { handlers, reject, signal, transport, validator } = params
+  const { events, handlers, signal, transport, validator } = params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
   const context: HandlerContext<Protocol> = {
     controllers,
+    events,
     handlers,
-    reject,
     send: (payload) => transport.write(createUnsignedToken(payload)),
   }
   const running: Record<string, Promise<void>> = Object.create(null)
 
-  const disposer = createDisposer(async () => {
-    // Abort all currently running handlers
-    for (const controller of Object.values(controllers)) {
-      controller.abort('Dispose')
-    }
-    // Wait until all running handlers are done
-    await Promise.all(Object.values(running))
-  }, signal)
+  const disposer = new Disposer({
+    dispose: async () => {
+      // Abort all currently running handlers
+      for (const controller of Object.values(controllers)) {
+        controller.abort('Dispose')
+      }
+      // Wait until all running handlers are done
+      await Promise.all(Object.values(running))
+    },
+    signal,
+  })
+
+  // Abort inflight handlers when the transport fails to write
+  transport.events.on('writeFailed', (event) => {
+    controllers[event.detail.rid]?.abort('Transport')
+  })
 
   const processMessage = validator
     ? (message: unknown) => {
         const result = validator(message)
         if (result.isError()) {
-          reject(
-            new ErrorRejection('Invalid protocol message', {
-              cause: result.error,
-              info: { message },
-            }),
-          )
+          events.emit('invalidMessage', {
+            error: new Error('Invalid protocol message', { cause: result.error }),
+            message,
+          })
         }
         return result.value
       }
@@ -81,11 +88,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
   function processHandler(
     message: ProcessMessageOf<Protocol>,
-    handle: () => ErrorRejection | Promise<void>,
+    handle: () => Error | Promise<void>,
   ) {
     const returned = handle()
-    if (returned instanceof ErrorRejection) {
-      reject(returned)
+    if (returned instanceof Error) {
+      const rid = message.payload.typ === 'event' ? undefined : message.payload.rid
+      events.emit('handlerError', { error: returned, payload: message.payload, rid })
     } else {
       const id =
         message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
@@ -98,7 +106,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
   const process = params.public
     ? processHandler
-    : async (message: ProcessMessageOf<Protocol>, handle: () => ErrorRejection | Promise<void>) => {
+    : async (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
         try {
           if (!params.public) {
             if (!isSignedToken(message as Token)) {
@@ -113,7 +121,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         } catch (err) {
           const errorMessage = (err as Error).message ?? 'Access denied'
           if (message.payload.typ === 'event') {
-            reject(new ErrorRejection(errorMessage, { cause: err, info: message }))
+            events.emit('handlerError', {
+              error: new Error(errorMessage, { cause: err }),
+              payload: message.payload,
+            })
           } else {
             context.send({
               typ: 'error',
@@ -193,18 +204,34 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
 
 export type HandleOptions = { public?: boolean; access?: ProcedureAccessRecord }
 
-export class Server<Protocol extends ProtocolDefinition> implements Disposer {
+export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #abortController: AbortController
   #accessControl: AccessControlParams
-  #disposer: Disposer
+  #events: ServerEmitter
   #handlers: ProcedureHandlers<Protocol>
   #handling: Array<HandlingTransport<Protocol>> = []
-  #reject: (rejection: RejectionType) => void
-  #rejections: ReadableStream<RejectionType>
   #validator?: Validator<AnyClientMessageOf<Protocol>>
 
   constructor(params: ServerParams<Protocol>) {
+    super({
+      dispose: async () => {
+        // Signal messages handler to stop execution and run cleanup logic
+        this.#abortController.abort()
+        // Dispose of all handling transports
+        await Promise.all(
+          // @ts-ignore type instantiation too deep
+          this.#handling.map(async (handling) => {
+            // Wait until all handlers are done - they might still need to flush messages to the transport
+            await handling.done
+            // Dispose transport
+            await handling.transport.dispose()
+          }),
+        )
+      },
+      signal: params.signal,
+    })
     this.#abortController = new AbortController()
+    this.#events = new EventEmitter<ServerEvents>()
     this.#handlers = params.handlers
 
     if (params.id == null) {
@@ -223,30 +250,6 @@ export class Server<Protocol extends ProtocolDefinition> implements Disposer {
       }
     }
 
-    this.#disposer = createDisposer(async () => {
-      // Signal messages handler to stop execution and run cleanup logic
-      this.#abortController.abort()
-      // Dispose of all handling transports
-      await Promise.all(
-        // @ts-ignore type instantiation too deep
-        this.#handling.map(async (handling) => {
-          // Wait until all handlers are done - they might still need to flush messages to the transport
-          await handling.done
-          // Dispose transport
-          await handling.transport.dispose()
-        }),
-      )
-      // Cleanup rejections writer
-      await rejectionsWriter.close()
-    }, params.signal)
-
-    const rejections = createPipe<RejectionType>()
-    this.#rejections = rejections.readable
-    const rejectionsWriter = rejections.writable.getWriter()
-    this.#reject = (rejection: RejectionType) => {
-      void rejectionsWriter.write(rejection)
-    }
-
     if (params.protocol != null) {
       this.#validator = createValidator(createClientMessageSchema(params.protocol))
     }
@@ -256,16 +259,8 @@ export class Server<Protocol extends ProtocolDefinition> implements Disposer {
     }
   }
 
-  get disposed() {
-    return this.#disposer.disposed
-  }
-
-  get rejections() {
-    return this.#rejections
-  }
-
-  async dispose() {
-    return await this.#disposer.dispose()
+  get events(): ServerEmitter {
+    return this.#events
   }
 
   handle(transport: ServerTransportOf<Protocol>, options: HandleOptions = {}): Promise<void> {
@@ -284,8 +279,8 @@ export class Server<Protocol extends ProtocolDefinition> implements Disposer {
     }
 
     const done = handleMessages<Protocol>({
+      events: this.#events,
       handlers: this.#handlers,
-      reject: this.#reject,
       signal: this.#abortController.signal,
       transport,
       validator: this.#validator,

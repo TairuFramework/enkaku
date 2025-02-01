@@ -41,3 +41,13 @@ export type ServerTransportOf<Protocol extends ProtocolDefinition> = TransportTy
   AnyClientMessageOf<Protocol>,
   AnyServerMessageOf<Protocol>
 >
+
+export type TransportPingPayload = { type: 'ping'; id?: string }
+export type TransportPongPayload = { type: 'pong'; id?: string }
+
+export type TransportMessageHeader = { src: 'transport' }
+export type TransportMessagePayload = TransportPingPayload | TransportPongPayload
+
+export type TransportMessage =
+  | SignedToken<SignedPayload & TransportMessagePayload, TransportMessageHeader>
+  | UnsignedToken<TransportMessagePayload, TransportMessageHeader>

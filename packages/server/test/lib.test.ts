@@ -1,12 +1,11 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { ValidationError } from '@enkaku/schema'
 import { createUnsignedToken, randomTokenSigner } from '@enkaku/token'
-import { createDirectTransports } from '@enkaku/transport'
+import { DirectTransports } from '@enkaku/transport'
 import { jest } from '@jest/globals'
 
 import {
   type ChannelHandler,
-  ErrorRejection,
   type EventHandler,
   type ProcedureHandlers,
   type RequestHandler,
@@ -34,7 +33,7 @@ describe('serve()', () => {
     const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
 
     const handlers = { test: handler } as ProcedureHandlers<Protocol>
-    const transports = createDirectTransports<
+    const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
@@ -46,6 +45,7 @@ describe('serve()', () => {
       protocol,
       transport: transports.server,
     })
+    const invalidMessageEventPromise = server.events.next('invalidMessage')
 
     const invalidMessage = await signer.createToken({
       typ: 'event',
@@ -58,9 +58,9 @@ describe('serve()', () => {
     await transports.client.write(invalidMessage)
 
     expect(handler).not.toHaveBeenCalled()
-    const { value } = await server.rejections.getReader().read()
-    expect(value).toBeInstanceOf(ErrorRejection)
-    expect((value as ErrorRejection).cause).toBeInstanceOf(ValidationError)
+    const emittedError = await invalidMessageEventPromise
+    expect(emittedError.error.message).toBe('Invalid protocol message')
+    expect(emittedError.error.cause).toBeInstanceOf(ValidationError)
 
     const message = await signer.createToken({
       typ: 'event',
@@ -97,7 +97,7 @@ describe('serve()', () => {
     const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
 
     const handlers = { test: handler } as ProcedureHandlers<Protocol>
-    const transports = createDirectTransports<
+    const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
@@ -149,7 +149,7 @@ describe('serve()', () => {
     }) as jest.Mock<RequestHandler<Protocol, 'test'>>
     const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
-    const transports = createDirectTransports<
+    const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
@@ -200,7 +200,7 @@ describe('serve()', () => {
     }) as jest.Mock<StreamHandler<Protocol, 'test'>>
     const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
-    const transports = createDirectTransports<
+    const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
@@ -258,7 +258,7 @@ describe('serve()', () => {
     }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
     const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
-    const transports = createDirectTransports<
+    const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
