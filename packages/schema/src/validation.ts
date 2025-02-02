@@ -1,7 +1,7 @@
+import type { StandardSchemaV1 } from '@standard-schema/spec'
 import { Ajv } from 'ajv'
 import addFormats from 'ajv-formats'
 import type { FromSchema } from 'json-schema-to-ts'
-import { Result } from 'typescript-result'
 
 import { ValidationError } from './errors.js'
 import type { Schema } from './types.js'
@@ -13,7 +13,7 @@ addFormats(ajv)
 /**
  * Validator function, returning a Result of the validation.
  */
-export type Validator<T> = (data: unknown) => Result<T, ValidationError>
+export type Validator<T> = (value: unknown) => StandardSchemaV1.Result<T>
 
 /**
  * Validator function factory using a JSON schema.
@@ -23,34 +23,54 @@ export function createValidator<S extends Schema, T = FromSchema<S>>(schema: S):
   // Remove from AJV's internal cache
   ajv.removeSchema(schema.$id)
 
-  return (data: unknown) => {
-    return check(data)
-      ? Result.ok(data as T)
-      : Result.error(new ValidationError(schema, data, check.errors))
+  return (value: unknown) => {
+    return check(value) ? { value: value as T } : new ValidationError(schema, value, check.errors)
   }
 }
 
 /**
- * Asserts the type of the given `data` using the `validator`.
+ * Asserts the type of the given `value` using the `validator`.
  */
-export function assertType<T>(validator: Validator<T>, data: unknown): asserts data is T {
-  const result = validator(data)
-  if (result.isError()) {
-    throw result.error
+export function assertType<T>(validator: Validator<T>, value: unknown): asserts value is T {
+  const result = validator(value)
+  if (result instanceof ValidationError) {
+    throw result
   }
 }
 
 /**
- * Asserts the type of the given `data` using the `validator` and returns it.
+ * Asserts the type of the given `value` using the `validator` and returns it.
  */
-export function asType<T>(validator: Validator<T>, data: unknown): T {
-  assertType(validator, data)
-  return data
+export function asType<T>(validator: Validator<T>, value: unknown): T {
+  assertType(validator, value)
+  return value
 }
 
 /**
- * Checks the type of the given `data` using the `validator`.
+ * Checks the type of the given `value` using the `validator`.
  */
-export function isType<T>(validator: Validator<T>, data: unknown): data is T {
-  return validator(data).isOk()
+export function isType<T>(validator: Validator<T>, value: unknown): value is T {
+  return !(validator(value) instanceof ValidationError)
+}
+
+/**
+ * Turn a `Validator` function into a standard schema validator.
+ */
+export function toStandardValidator<T>(validator: Validator<T>): StandardSchemaV1<T> {
+  return {
+    '~standard': {
+      version: 1,
+      vendor: 'enkaku',
+      validate: validator,
+    },
+  }
+}
+
+/**
+ * Create a standard schema validator.
+ */
+export function createStandardValidator<S extends Schema, T = FromSchema<S>>(
+  schema: S,
+): StandardSchemaV1<T> {
+  return toStandardValidator(createValidator(schema))
 }

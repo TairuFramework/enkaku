@@ -5,34 +5,19 @@ import { EventEmitter } from '../src/index.js'
 
 describe('EventEmitter', () => {
   describe('core functionalities', () => {
-    test('adds and removes listener using dedicated methods', () => {
+    test('adds and removes listener', () => {
       const emitter = new EventEmitter<{ test: number }>()
       const listener = jest.fn()
 
-      emitter.on('test', listener)
+      const off = emitter.on('test', listener)
       emitter.emit('test', 1)
       emitter.emit('test', 2)
       expect(listener).toHaveBeenCalledTimes(2)
 
       const emitted = listener.mock.calls[0][0]
-      expect(emitted).toBeInstanceOf(CustomEvent)
-      expect((emitted as CustomEvent).detail).toBe(1)
+      expect(emitted).toBe(1)
 
-      emitter.off('test', listener)
-      emitter.emit('test', 3)
-      expect(listener).toHaveBeenCalledTimes(2)
-    })
-
-    test('removes listener using returned function', () => {
-      const emitter = new EventEmitter<{ test: number }>()
-      const listener = jest.fn()
-
-      const remove = emitter.on('test', listener)
-      emitter.emit('test', 1)
-      emitter.emit('test', 2)
-      expect(listener).toHaveBeenCalledTimes(2)
-
-      remove()
+      off()
       emitter.emit('test', 3)
       expect(listener).toHaveBeenCalledTimes(2)
     })
@@ -70,7 +55,7 @@ describe('EventEmitter', () => {
       emitter.once('test', listener)
       const event = new CustomEvent('test', { detail: 1 })
       target.dispatchEvent(event)
-      expect(listener).toHaveBeenCalledWith(event)
+      expect(listener).toHaveBeenCalledWith(1)
     })
   })
 
@@ -89,8 +74,8 @@ describe('EventEmitter', () => {
       const emitter = new EventEmitter<{ test: number }>()
       const listener = jest.fn()
 
-      const remove = emitter.once('test', listener)
-      remove()
+      const off = emitter.once('test', listener)
+      off()
       emitter.emit('test', 1)
       expect(listener).not.toHaveBeenCalled()
     })

@@ -32,27 +32,21 @@ export class EventEmitter<
 
   on<Type extends EventType>(
     type: Type,
-    listener: (event: CustomEvent<Events[Type]>) => void,
-    options?: AddEventListenerOptions,
+    callback: (data: Events[Type]) => void,
+    options: AddEventListenerOptions = {},
   ): () => void {
-    this.#target.addEventListener(type, listener as EventListener, options)
-    return () => this.#target.removeEventListener(type, listener as EventListener, options)
-  }
-
-  off<Type extends EventType>(
-    type: Type,
-    listener: (event: CustomEvent<Events[Type]>) => void,
-    options?: EventListenerOptions,
-  ): void {
-    this.#target.removeEventListener(type, listener as EventListener, options)
+    const listener = (event: CustomEvent<Events[Type]>) => callback(event.detail)
+    const opts: AddEventListenerOptions = { passive: true, ...options }
+    this.#target.addEventListener(type, listener as EventListener, opts)
+    return () => this.#target.removeEventListener(type, listener as EventListener, opts)
   }
 
   once<Type extends EventType>(
     type: Type,
-    listener: (event: CustomEvent<Events[Type]>) => void,
+    callback: (data: Events[Type]) => void,
     options: AddEventListenerOptions = {},
   ): () => void {
-    return this.on(type, listener, { ...options, once: true })
+    return this.on(type, callback, { ...options, once: true })
   }
 
   next<Type extends EventType>(
@@ -64,18 +58,12 @@ export class EventEmitter<
       if (signal?.aborted) {
         reject(signal.reason)
       } else {
-        const remove = this.once(
-          type,
-          (event) => {
-            resolve((event as CustomEvent<Events[Type]>).detail)
-          },
-          options,
-        )
+        const off = this.once(type, resolve, options)
         if (signal != null) {
           signal.addEventListener(
             'abort',
             () => {
-              remove()
+              off()
               reject(signal.reason)
             },
             { once: true },
@@ -98,15 +86,9 @@ export class EventEmitter<
     return new ReadableStream({
       start: (controller) => {
         if (!signal.aborted) {
-          const remove = this.on(
-            type,
-            (event) => {
-              controller.enqueue((event as CustomEvent<Events[Type]>).detail)
-            },
-            { ...options, signal },
-          )
+          const off = this.on(type, (data) => controller.enqueue(data), { ...options, signal })
           signal.addEventListener('abort', () => {
-            remove()
+            off()
             if (!isClosed) {
               isClosed = true
               controller.close()

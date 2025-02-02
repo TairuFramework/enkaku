@@ -7,7 +7,12 @@ import {
   type ServerTransportOf,
   createClientMessageSchema,
 } from '@enkaku/protocol'
-import { type Validator, createValidator } from '@enkaku/schema'
+import {
+  type StandardSchemaV1,
+  ValidationError,
+  type Validator,
+  createValidator,
+} from '@enkaku/schema'
 import { type SignedToken, type Token, createUnsignedToken, isSignedToken } from '@enkaku/token'
 
 import { type ProcedureAccessRecord, checkClientToken } from './access-control.js'
@@ -70,19 +75,20 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
   // Abort inflight handlers when the transport fails to write
   transport.events.on('writeFailed', (event) => {
-    controllers[event.detail.rid]?.abort('Transport')
+    controllers[event.rid]?.abort('Transport')
   })
 
   const processMessage = validator
     ? (message: unknown) => {
         const result = validator(message)
-        if (result.isError()) {
+        if (result instanceof ValidationError) {
           events.emit('invalidMessage', {
-            error: new Error('Invalid protocol message', { cause: result.error }),
+            error: new Error('Invalid protocol message', { cause: result }),
             message,
           })
+          return null
         }
-        return result.value
+        return (result as StandardSchemaV1.SuccessResult<AnyClientMessageOf<Protocol>>).value
       }
     : (message: unknown) => message as AnyClientMessageOf<Protocol>
 

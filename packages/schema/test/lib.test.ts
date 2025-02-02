@@ -1,5 +1,3 @@
-import { Result } from 'typescript-result'
-
 import { ValidationError, assertType, createValidator, isType } from '../src/index.js'
 
 describe('createValidator()', () => {
@@ -18,13 +16,9 @@ describe('createValidator()', () => {
     expect(isType(validator, { test: false, extra: true })).toBe(false)
 
     const validateSuccess = validator({ test: true })
-    expect(validateSuccess).toBeInstanceOf(Result)
-    expect(validateSuccess.isOk()).toBe(true)
-    expect(validateSuccess.value).toEqual({ test: true })
+    expect(validateSuccess).toEqual({ value: { test: true } })
 
     const validateFailure = validator({ test: false, extra: true })
-    expect(validateFailure).toBeInstanceOf(Result)
-    expect(validateFailure.isError()).toBe(true)
-    expect(validateFailure.error).toBeInstanceOf(ValidationError)
+    expect(validateFailure).toBeInstanceOf(ValidationError)
   })
 })
