@@ -195,6 +195,7 @@ export class Client<
     this.#read()
   }
 
+  /** @internal */
   async _dispose(): Promise<void> {
     // Dispose of transport
     await this.#transport.dispose()

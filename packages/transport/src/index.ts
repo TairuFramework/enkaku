@@ -44,9 +44,12 @@ export type TransportParams<R, W> = {
 export class Transport<R, W> extends Disposer implements TransportType<R, W> {
   #events: EventEmitter<TransportEvents>
   #params: TransportParams<R, W>
-  #reader: Promise<ReadableStreamDefaultReader<R>> | undefined
-  #stream: Promise<ReadableWritablePair<R, W>> | undefined
-  #writer: Promise<WritableStreamDefaultWriter<W>> | undefined
+  /** @internal */
+  _reader: Promise<ReadableStreamDefaultReader<R>> | undefined
+  /** @internal */
+  _stream: Promise<ReadableWritablePair<R, W>> | undefined
+  /** @internal */
+  _writer: Promise<WritableStreamDefaultWriter<W>> | undefined
 
   constructor(params: TransportParams<R, W>) {
     super()
@@ -58,35 +61,39 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
     return this.#events
   }
 
-  #getStream(): Promise<ReadableWritablePair<R, W>> {
-    if (this.#stream == null) {
+  /** @internal */
+  _getStream(): Promise<ReadableWritablePair<R, W>> {
+    if (this._stream == null) {
       const { stream } = this.#params
-      this.#stream = Promise.resolve(typeof stream === 'function' ? stream() : stream)
+      this._stream = Promise.resolve(typeof stream === 'function' ? stream() : stream)
     }
-    return this.#stream
+    return this._stream
   }
 
-  #getReader(): Promise<ReadableStreamDefaultReader<R>> {
-    if (this.#reader == null) {
-      this.#reader = this.#getStream().then(({ readable }) => {
+  /** @internal */
+  _getReader(): Promise<ReadableStreamDefaultReader<R>> {
+    if (this._reader == null) {
+      this._reader = this._getStream().then(({ readable }) => {
         return readable.getReader()
       })
     }
-    return this.#reader
+    return this._reader
   }
 
-  #getWriter(): Promise<WritableStreamDefaultWriter<W>> {
-    if (this.#writer == null) {
-      this.#writer = this.#getStream().then(({ writable }) => {
+  /** @internal */
+  _getWriter(): Promise<WritableStreamDefaultWriter<W>> {
+    if (this._writer == null) {
+      this._writer = this._getStream().then(({ writable }) => {
         return writable.getWriter()
       })
     }
-    return this.#writer
+    return this._writer
   }
 
+  /** @internal */
   async _dispose(): Promise<void> {
-    if (this.#stream != null) {
-      const writer = await this.#getWriter()
+    if (this._stream != null) {
+      const writer = await this._getWriter()
       await writer.close()
     }
   }
@@ -96,20 +103,19 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
   }
 
   async read(): Promise<ReadableStreamReadResult<R>> {
-    const reader = await this.#getReader()
+    const reader = await this._getReader()
     return await reader.read()
   }
 
   async write(value: W): Promise<void> {
-    const writer = await this.#getWriter()
+    const writer = await this._getWriter()
     await writer.write(value)
   }
 
   [Symbol.asyncIterator]() {
     return {
       next: async () => {
-        const reader = await this.#getReader()
-        const next = await reader.read()
+        const next = await this.read()
         return next.done ? { done: true as const, value: next.value ?? null } : next
       },
     }
@@ -134,6 +140,7 @@ export class DirectTransports<ToClient, ToServer> extends Disposer {
     this.#server = new Transport({ stream: serverStream })
   }
 
+  /** @internal */
   async _dispose(): Promise<void> {
     await Promise.all([this.#client.dispose(), this.#server.dispose()])
   }

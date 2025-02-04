@@ -8,6 +8,83 @@ Enkaku async utilities.
 npm install @enkaku/async
 ```
 
+## Classes
+
+### Disposer
+
+Disposer class, providing a dispose function and a disposed Promise.
+
+#### Extends
+
+- `AbortController`
+
+#### Extended by
+
+- [`Client`](../client/index.md#clientprotocol-clientdefinitions)
+- [`Server`](../server/index.md#serverprotocol)
+- [`DirectTransports`](../transport/index.md#directtransportstoclient-toserver)
+- [`Transport`](../transport/index.md#transportr-w)
+
+#### Implements
+
+- `AsyncDisposable`
+
+#### Constructors
+
+##### new Disposer()
+
+> **new Disposer**(`params`): [`Disposer`](index.md#disposer)
+
+###### Parameters
+
+###### params
+
+[`DisposerParams`](index.md#disposerparams) = `{}`
+
+###### Returns
+
+[`Disposer`](index.md#disposer)
+
+###### Overrides
+
+`AbortController.constructor`
+
+#### Accessors
+
+##### disposed
+
+###### Get Signature
+
+> **get** **disposed**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+#### Methods
+
+##### \[asyncDispose\]()
+
+> **\[asyncDispose\]**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Implementation of
+
+`AsyncDisposable.[asyncDispose]`
+
+***
+
+##### dispose()
+
+> **dispose**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
 ## Type Aliases
 
 ### Deferred\<T, R\>
@@ -58,49 +135,25 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 ***
 
-### Disposer
+### DisposerParams
 
-> **Disposer**: `object`
-
-Disposer object, providing a dispose function and a disposed Promise.
+> **DisposerParams**: `object`
 
 #### Type declaration
 
-##### dispose()
+##### dispose()?
 
-> **dispose**: () => `Promise`\<`void`\>
+> `optional` **dispose**: () => `Promise`\<`void`\>
 
 ###### Returns
 
 `Promise`\<`void`\>
 
-##### disposed
-
-> **disposed**: `Promise`\<`void`\>
-
-## Functions
-
-### createDisposer()
-
-> **createDisposer**(`run`, `signal`?): [`Disposer`](index.md#disposer)
-
-Create a Disposer object from a function to execute on disposal and an optional AbortSignal.
-
-#### Parameters
-
-##### run
-
-() => `Promise`\<`void`\>
-
 ##### signal?
 
-`AbortSignal`
+> `optional` **signal**: `AbortSignal`
 
-#### Returns
-
-[`Disposer`](index.md#disposer)
-
-***
+## Functions
 
 ### defer()
 

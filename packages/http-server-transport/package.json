@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/http-server-transport",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "HTTP transport for Enkaku RPC servers",

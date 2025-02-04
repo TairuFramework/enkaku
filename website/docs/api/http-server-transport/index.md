@@ -26,13 +26,7 @@ Base Transport class implementing TransportType.
 
 ##### new ServerTransport()
 
-> **new ServerTransport**\<`Protocol`\>(`options`?): [`ServerTransport`](index.md#servertransportprotocol)\<`Protocol`\>
-
-###### Parameters
-
-###### options?
-
-[`ServerBridgeOptions`](index.md#serverbridgeoptions)
+> **new ServerTransport**\<`Protocol`\>(): [`ServerTransport`](index.md#servertransportprotocol)\<`Protocol`\>
 
 ###### Returns
 
@@ -40,7 +34,7 @@ Base Transport class implementing TransportType.
 
 ###### Overrides
 
-[`Transport`](../transport/index.md#transportr-w).[`constructor`](../transport/index.md#constructors-1)
+[`Transport`](../transport/index.md#transportr-w).[`constructor`](../transport/index.md#constructors-3)
 
 #### Accessors
 
@@ -56,9 +50,39 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`disposed`](../transport/index.md#disposed-2)
+[`Transport`](../transport/index.md#transportr-w).[`disposed`](../transport/index.md#disposed-6)
+
+***
+
+##### events
+
+###### Get Signature
+
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+
+###### Returns
+
+[`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+
+###### Inherited from
+
+[`Transport`](../transport/index.md#transportr-w).[`events`](../transport/index.md#events-2)
 
 #### Methods
+
+##### \[asyncDispose\]()
+
+> **\[asyncDispose\]**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Inherited from
+
+[`Transport`](../transport/index.md#transportr-w).[`[asyncDispose]`](../transport/index.md#asyncdispose-6)
+
+***
 
 ##### \[asyncIterator\]()
 
@@ -92,7 +116,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`dispose`](../transport/index.md#dispose-2)
+[`Transport`](../transport/index.md#transportr-w).[`dispose`](../transport/index.md#dispose-6)
 
 ***
 
@@ -204,13 +228,13 @@ Base Transport class implementing TransportType.
 
 ##### onWriteError()?
 
-> `optional` **onWriteError**: (`error`) => `void`
+> `optional` **onWriteError**: (`event`) => `void`
 
 ###### Parameters
 
-###### error
+###### event
 
-`Error`
+[`TransportEvents`](../transport/index.md#transportevents)\[`"writeFailed"`\]
 
 ###### Returns
 
@@ -220,15 +244,11 @@ Base Transport class implementing TransportType.
 
 ### createServerBridge()
 
-> **createServerBridge**\<`Protocol`, `Incoming`, `Outgoing`\>(`options`): [`ServerBridge`](index.md#serverbridgeprotocol)\<`Protocol`\>
+> **createServerBridge**\<`Protocol`\>(`options`): [`ServerBridge`](index.md#serverbridgeprotocol)\<`Protocol`\>
 
 #### Type Parameters
 
 • **Protocol** *extends* `object`
-
-• **Incoming** *extends* [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\> = [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>
-
-• **Outgoing** *extends* [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\> = [`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>
 
 #### Parameters
 

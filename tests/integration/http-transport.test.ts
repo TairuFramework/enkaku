@@ -123,7 +123,7 @@ describe('HTTP transports', () => {
           })
         })
       }) as jest.Mock<StreamHandler<Protocol, 'test'>>
-      const { client, dispose, events } = await createContext<Protocol>({ test: handler })
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
 
       const stream = client.createStream('test', { param: 3 })
       const reader = stream.readable.getReader()

@@ -52,13 +52,13 @@ npm install @enkaku/protocol
 
 ### AnyProcedureDefinition
 
-> **AnyProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`anyProcedureDefinition`](index.md#anyproceduredefinition-1)\>
+> **AnyProcedureDefinition**: `FromSchema`\<*typeof* [`anyProcedureDefinition`](index.md#anyproceduredefinition-1)\>
 
 ***
 
 ### AnyRequestProcedureDefinition
 
-> **AnyRequestProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`anyRequestProcedureDefinition`](index.md#anyrequestproceduredefinition-1)\>
+> **AnyRequestProcedureDefinition**: `FromSchema`\<*typeof* [`anyRequestProcedureDefinition`](index.md#anyrequestproceduredefinition-1)\>
 
 ***
 
@@ -96,7 +96,7 @@ npm install @enkaku/protocol
 
 ### ChannelProcedureDefinition
 
-> **ChannelProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`channelProcedureDefinition`](index.md#channelproceduredefinition-1)\>
+> **ChannelProcedureDefinition**: `FromSchema`\<*typeof* [`channelProcedureDefinition`](index.md#channelproceduredefinition-1)\>
 
 ***
 
@@ -144,7 +144,7 @@ npm install @enkaku/protocol
 
 ### DataOf\<S\>
 
-> **DataOf**\<`S`\>: `S` *extends* [`Schema`](../schema/index.md#schema-6) ? [`FromSchema`](../schema/index.md#fromschemaschema-options)\<`S`\> : `never`
+> **DataOf**\<`S`\>: `S` *extends* [`Schema`](../schema/index.md#schema-6) ? `FromSchema`\<`S`\> : `never`
 
 #### Type Parameters
 
@@ -154,19 +154,19 @@ npm install @enkaku/protocol
 
 ### ErrorDefinition
 
-> **ErrorDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`errorDefinition`](index.md#errordefinition-1)\>
+> **ErrorDefinition**: `FromSchema`\<*typeof* [`errorDefinition`](index.md#errordefinition-1)\>
 
 ***
 
 ### ErrorObject
 
-> **ErrorObject**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`errorObject`](index.md#errorobject-1)\>
+> **ErrorObject**: `FromSchema`\<*typeof* [`errorObject`](index.md#errorobject-1)\>
 
 ***
 
 ### ErrorObjectDefinition
 
-> **ErrorObjectDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`errorObjectDefinition`](index.md#errorobjectdefinition-1)\>
+> **ErrorObjectDefinition**: `FromSchema`\<*typeof* [`errorObjectDefinition`](index.md#errorobjectdefinition-1)\>
 
 ***
 
@@ -260,7 +260,7 @@ npm install @enkaku/protocol
 
 ### EventProcedureDefinition
 
-> **EventProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`eventProcedureDefinition`](index.md#eventproceduredefinition-1)\>
+> **EventProcedureDefinition**: `FromSchema`\<*typeof* [`eventProcedureDefinition`](index.md#eventproceduredefinition-1)\>
 
 ***
 
@@ -354,7 +354,7 @@ npm install @enkaku/protocol
 
 ### ProtocolDefinition
 
-> **ProtocolDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`protocolDefinition`](index.md#protocoldefinition-1)\>
+> **ProtocolDefinition**: `FromSchema`\<*typeof* [`protocolDefinition`](index.md#protocoldefinition-1)\>
 
 ***
 
@@ -438,7 +438,7 @@ npm install @enkaku/protocol
 
 ### RequestProcedureDefinition
 
-> **RequestProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`requestProcedureDefinition`](index.md#requestproceduredefinition-1)\>
+> **RequestProcedureDefinition**: `FromSchema`\<*typeof* [`requestProcedureDefinition`](index.md#requestproceduredefinition-1)\>
 
 ***
 
@@ -484,7 +484,7 @@ npm install @enkaku/protocol
 
 ### ReturnOf\<S\>
 
-> **ReturnOf**\<`S`\>: `S` *extends* [`Schema`](../schema/index.md#schema-6) ? [`FromSchema`](../schema/index.md#fromschemaschema-options)\<`S`\> : `void`
+> **ReturnOf**\<`S`\>: `S` *extends* [`Schema`](../schema/index.md#schema-6) ? `FromSchema`\<`S`\> : `void`
 
 #### Type Parameters
 
@@ -580,7 +580,63 @@ npm install @enkaku/protocol
 
 ### StreamProcedureDefinition
 
-> **StreamProcedureDefinition**: [`FromSchema`](../schema/index.md#fromschemaschema-options)\<*typeof* [`streamProcedureDefinition`](index.md#streamproceduredefinition-1)\>
+> **StreamProcedureDefinition**: `FromSchema`\<*typeof* [`streamProcedureDefinition`](index.md#streamproceduredefinition-1)\>
+
+***
+
+### TransportMessage
+
+> **TransportMessage**: [`SignedToken`](../token/index.md#signedtokenpayload-header)\<`SignedPayload` & [`TransportMessagePayload`](index.md#transportmessagepayload), [`TransportMessageHeader`](index.md#transportmessageheader)\> \| [`UnsignedToken`](../token/index.md#unsignedtokenpayload-header)\<[`TransportMessagePayload`](index.md#transportmessagepayload), [`TransportMessageHeader`](index.md#transportmessageheader)\>
+
+***
+
+### TransportMessageHeader
+
+> **TransportMessageHeader**: `object`
+
+#### Type declaration
+
+##### src
+
+> **src**: `"transport"`
+
+***
+
+### TransportMessagePayload
+
+> **TransportMessagePayload**: [`TransportPingPayload`](index.md#transportpingpayload) \| [`TransportPongPayload`](index.md#transportpongpayload)
+
+***
+
+### TransportPingPayload
+
+> **TransportPingPayload**: `object`
+
+#### Type declaration
+
+##### id?
+
+> `optional` **id**: `string`
+
+##### type
+
+> **type**: `"ping"`
+
+***
+
+### TransportPongPayload
+
+> **TransportPongPayload**: `object`
+
+#### Type declaration
+
+##### id?
+
+> `optional` **id**: `string`
+
+##### type
+
+> **type**: `"pong"`
 
 ***
 

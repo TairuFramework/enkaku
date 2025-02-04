@@ -10,257 +10,17 @@ npm install @enkaku/server
 
 ## Classes
 
-### AbortRejection\<Info\>
-
-#### Extends
-
-- `Rejection`\<`RejectionReason.ABORT`, `Info`\>
-
-#### Type Parameters
-
-• **Info** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
-
-#### Constructors
-
-##### new AbortRejection()
-
-> **new AbortRejection**\<`Info`\>(`info`): [`AbortRejection`](index.md#abortrejectioninfo)\<`Info`\>
-
-###### Parameters
-
-###### info
-
-`Info`
-
-###### Returns
-
-[`AbortRejection`](index.md#abortrejectioninfo)\<`Info`\>
-
-###### Overrides
-
-`Rejection<RejectionReason.ABORT, Info>.constructor`
-
-#### Accessors
-
-##### info
-
-###### Get Signature
-
-> **get** **info**(): `Info`
-
-###### Returns
-
-`Info`
-
-###### Inherited from
-
-`Rejection.info`
-
-***
-
-##### reason
-
-###### Get Signature
-
-> **get** **reason**(): `Reason`
-
-###### Returns
-
-`Reason`
-
-###### Inherited from
-
-`Rejection.reason`
-
-***
-
-### ErrorRejection\<Info\>
-
-#### Extends
-
-- `Error`
-
-#### Type Parameters
-
-• **Info** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
-
-#### Implements
-
-- [`RejectionType`](index.md#rejectiontypereason-info)\<`RejectionReason.ERROR`, `Info`\>
-
-#### Constructors
-
-##### new ErrorRejection()
-
-> **new ErrorRejection**\<`Info`\>(`message`, `options`): [`ErrorRejection`](index.md#errorrejectioninfo)\<`Info`\>
-
-###### Parameters
-
-###### message
-
-`string`
-
-###### options
-
-`ErrorRejectionOptions`\<`Info`\> = `...`
-
-###### Returns
-
-[`ErrorRejection`](index.md#errorrejectioninfo)\<`Info`\>
-
-###### Overrides
-
-`Error.constructor`
-
-#### Properties
-
-##### cause?
-
-> `optional` **cause**: `unknown`
-
-###### Inherited from
-
-`Error.cause`
-
-***
-
-##### message
-
-> **message**: `string`
-
-###### Inherited from
-
-`Error.message`
-
-***
-
-##### name
-
-> **name**: `string`
-
-###### Inherited from
-
-`Error.name`
-
-***
-
-##### stack?
-
-> `optional` **stack**: `string`
-
-###### Inherited from
-
-`Error.stack`
-
-***
-
-##### prepareStackTrace()?
-
-> `static` `optional` **prepareStackTrace**: (`err`, `stackTraces`) => `any`
-
-Optional override for formatting stack traces
-
-###### Parameters
-
-###### err
-
-`Error`
-
-###### stackTraces
-
-`CallSite`[]
-
-###### Returns
-
-`any`
-
-###### See
-
-https://v8.dev/docs/stack-trace-api#customizing-stack-traces
-
-###### Inherited from
-
-`Error.prepareStackTrace`
-
-***
-
-##### stackTraceLimit
-
-> `static` **stackTraceLimit**: `number`
-
-###### Inherited from
-
-`Error.stackTraceLimit`
-
-#### Accessors
-
-##### info
-
-###### Get Signature
-
-> **get** **info**(): `Info`
-
-###### Returns
-
-`Info`
-
-###### Implementation of
-
-`RejectionType.info`
-
-***
-
-##### reason
-
-###### Get Signature
-
-> **get** **reason**(): `ERROR`
-
-###### Returns
-
-`ERROR`
-
-###### Implementation of
-
-`RejectionType.reason`
-
-#### Methods
-
-##### captureStackTrace()
-
-> `static` **captureStackTrace**(`targetObject`, `constructorOpt`?): `void`
-
-Create .stack property on a target object
-
-###### Parameters
-
-###### targetObject
-
-`object`
-
-###### constructorOpt?
-
-`Function`
-
-###### Returns
-
-`void`
-
-###### Inherited from
-
-`Error.captureStackTrace`
-
-***
-
 ### Server\<Protocol\>
+
+Disposer class, providing a dispose function and a disposed Promise.
+
+#### Extends
+
+- [`Disposer`](../async/index.md#disposer)
 
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
-
-#### Implements
-
-- [`Disposer`](../async/index.md#disposer)
 
 #### Constructors
 
@@ -278,6 +38,10 @@ Create .stack property on a target object
 
 [`Server`](index.md#serverprotocol)\<`Protocol`\>
 
+###### Overrides
+
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructors-1)
+
 #### Accessors
 
 ##### disposed
@@ -290,23 +54,37 @@ Create .stack property on a target object
 
 `Promise`\<`void`\>
 
-###### Implementation of
+###### Inherited from
 
-`Disposer.disposed`
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed-2)
 
 ***
 
-##### rejections
+##### events
 
 ###### Get Signature
 
-> **get** **rejections**(): `ReadableStream`\<[`RejectionType`](index.md#rejectiontypereason-info)\>
+> **get** **events**(): [`ServerEmitter`](index.md#serveremitter)
 
 ###### Returns
 
-`ReadableStream`\<[`RejectionType`](index.md#rejectiontypereason-info)\>
+[`ServerEmitter`](index.md#serveremitter)
 
 #### Methods
+
+##### \[asyncDispose\]()
+
+> **\[asyncDispose\]**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Inherited from
+
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose-2)
+
+***
 
 ##### dispose()
 
@@ -316,9 +94,9 @@ Create .stack property on a target object
 
 `Promise`\<`void`\>
 
-###### Implementation of
+###### Inherited from
 
-`Disposer.dispose`
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose-2)
 
 ***
 
@@ -428,28 +206,6 @@ Create .stack property on a target object
 
 ***
 
-### RejectionType\<Reason, Info\>
-
-> **RejectionType**\<`Reason`, `Info`\>: `object`
-
-#### Type Parameters
-
-• **Reason** *extends* `RejectionReason` = `RejectionReason`
-
-• **Info** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
-
-#### Type declaration
-
-##### info
-
-> `readonly` **info**: `Info`
-
-##### reason
-
-> `readonly` **reason**: `Reason`
-
-***
-
 ### RequestHandler\<Protocol, Procedure\>
 
 > **RequestHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-result)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
@@ -487,6 +243,64 @@ Create .stack property on a target object
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+***
+
+### ServerEmitter
+
+> **ServerEmitter**: [`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`ServerEvents`](index.md#serverevents)\>
+
+***
+
+### ServerEvents
+
+> **ServerEvents**: `object`
+
+#### Type declaration
+
+##### handlerAbort
+
+> **handlerAbort**: `object`
+
+###### handlerAbort.rid
+
+> **handlerAbort.rid**: `string`
+
+##### handlerError
+
+> **handlerError**: `object`
+
+###### handlerError.error
+
+> **handlerError.error**: `Error`
+
+###### handlerError.payload
+
+> **handlerError.payload**: `Record`\<`string`, `unknown`\>
+
+###### handlerError.rid?
+
+> `optional` **handlerError.rid**: `string`
+
+##### handlerTimeout
+
+> **handlerTimeout**: `object`
+
+###### handlerTimeout.rid
+
+> **handlerTimeout.rid**: `string`
+
+##### invalidMessage
+
+> **invalidMessage**: `object`
+
+###### invalidMessage.error
+
+> **invalidMessage.error**: `Error`
+
+###### invalidMessage.message
+
+> **invalidMessage.message**: `unknown`
 
 ***
 

@@ -65,6 +65,7 @@ export class Disposer extends AbortController implements AsyncDisposable {
     params.signal?.addEventListener('abort', () => this.dispose(), { once: true })
   }
 
+  /** @internal */
   async _dispose(): Promise<void> {
     if (this.#dispose != null) {
       await this.#dispose()

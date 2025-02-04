@@ -20,7 +20,7 @@ export {
   asType,
   assertType,
   isType,
-  createSchemaValidator,
+  createStandardValidator,
   createValidator,
-  toSchemaValidator,
+  toStandardValidator,
 } from './validation.js'

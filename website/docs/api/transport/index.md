@@ -10,9 +10,117 @@ npm install @enkaku/transport
 
 ## Classes
 
+### DirectTransports\<ToClient, ToServer\>
+
+Create direct Transports for communication between a client and server in the same process.
+
+#### Extends
+
+- [`Disposer`](../async/index.md#disposer)
+
+#### Type Parameters
+
+• **ToClient**
+
+• **ToServer**
+
+#### Constructors
+
+##### new DirectTransports()
+
+> **new DirectTransports**\<`ToClient`, `ToServer`\>(`options`): [`DirectTransports`](index.md#directtransportstoclient-toserver)\<`ToClient`, `ToServer`\>
+
+###### Parameters
+
+###### options
+
+[`DirectTransportsOptions`](index.md#directtransportsoptions) = `{}`
+
+###### Returns
+
+[`DirectTransports`](index.md#directtransportstoclient-toserver)\<`ToClient`, `ToServer`\>
+
+###### Overrides
+
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructors-1)
+
+#### Accessors
+
+##### client
+
+###### Get Signature
+
+> **get** **client**(): [`TransportType`](index.md#transporttyper-w)\<`ToClient`, `ToServer`\>
+
+###### Returns
+
+[`TransportType`](index.md#transporttyper-w)\<`ToClient`, `ToServer`\>
+
+***
+
+##### disposed
+
+###### Get Signature
+
+> **get** **disposed**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Inherited from
+
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed-2)
+
+***
+
+##### server
+
+###### Get Signature
+
+> **get** **server**(): [`TransportType`](index.md#transporttyper-w)\<`ToServer`, `ToClient`\>
+
+###### Returns
+
+[`TransportType`](index.md#transporttyper-w)\<`ToServer`, `ToClient`\>
+
+#### Methods
+
+##### \[asyncDispose\]()
+
+> **\[asyncDispose\]**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Inherited from
+
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose-2)
+
+***
+
+##### dispose()
+
+> **dispose**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Inherited from
+
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose-2)
+
+***
+
 ### Transport\<R, W\>
 
 Base Transport class implementing TransportType.
+
+#### Extends
+
+- [`Disposer`](../async/index.md#disposer)
 
 #### Extended by
 
@@ -48,6 +156,10 @@ Base Transport class implementing TransportType.
 
 [`Transport`](index.md#transportr-w)\<`R`, `W`\>
 
+###### Overrides
+
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructors-1)
+
 #### Accessors
 
 ##### disposed
@@ -64,7 +176,45 @@ Base Transport class implementing TransportType.
 
 `TransportType.disposed`
 
+###### Inherited from
+
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed-2)
+
+***
+
+##### events
+
+###### Get Signature
+
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+
+###### Returns
+
+[`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+
+###### Implementation of
+
+`TransportType.events`
+
 #### Methods
+
+##### \[asyncDispose\]()
+
+> **\[asyncDispose\]**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Implementation of
+
+`TransportType.[asyncDispose]`
+
+###### Inherited from
+
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose-2)
+
+***
 
 ##### \[asyncIterator\]()
 
@@ -99,6 +249,10 @@ Base Transport class implementing TransportType.
 ###### Implementation of
 
 `TransportType.dispose`
+
+###### Inherited from
+
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose-2)
 
 ***
 
@@ -150,42 +304,6 @@ Base Transport class implementing TransportType.
 
 ## Type Aliases
 
-### DirectTransports\<ToClient, ToServer\>
-
-> **DirectTransports**\<`ToClient`, `ToServer`\>: `AsyncDisposable` & `object`
-
-Couple of Transports for communication between a client and server in the same process.
-
-#### Type declaration
-
-##### client
-
-> **client**: [`TransportType`](index.md#transporttyper-w)\<`ToClient`, `ToServer`\>
-
-##### dispose()
-
-> **dispose**: () => `Promise`\<`void`\>
-
-###### Returns
-
-`Promise`\<`void`\>
-
-##### disposed
-
-> **disposed**: `Promise`\<`void`\>
-
-##### server
-
-> **server**: [`TransportType`](index.md#transporttyper-w)\<`ToServer`, `ToClient`\>
-
-#### Type Parameters
-
-• **ToClient**
-
-• **ToServer**
-
-***
-
 ### DirectTransportsOptions
 
 > **DirectTransportsOptions**: `object`
@@ -195,6 +313,26 @@ Couple of Transports for communication between a client and server in the same p
 ##### signal?
 
 > `optional` **signal**: `AbortSignal`
+
+***
+
+### TransportEvents
+
+> **TransportEvents**: `object`
+
+#### Type declaration
+
+##### writeFailed
+
+> **writeFailed**: `object`
+
+###### writeFailed.error
+
+> **writeFailed.error**: `Error`
+
+###### writeFailed.rid
+
+> **writeFailed.rid**: `string`
 
 ***
 
@@ -282,6 +420,16 @@ Generic Transport object type implementing read and write functions.
 
 `Promise`\<`void`\>
 
+##### events
+
+###### Get Signature
+
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+
+###### Returns
+
+[`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+
 ##### \[asyncIterator\]()
 
 ###### Returns
@@ -293,27 +441,3 @@ Generic Transport object type implementing read and write functions.
 • **R**
 
 • **W**
-
-## Functions
-
-### createDirectTransports()
-
-> **createDirectTransports**\<`ToClient`, `ToServer`\>(`options`): [`DirectTransports`](index.md#directtransportstoclient-toserver)\<`ToClient`, `ToServer`\>
-
-Create direct Transports for communication between a client and server in the same process.
-
-#### Type Parameters
-
-• **ToClient**
-
-• **ToServer**
-
-#### Parameters
-
-##### options
-
-[`DirectTransportsOptions`](index.md#directtransportsoptions) = `{}`
-
-#### Returns
-
-[`DirectTransports`](index.md#directtransportstoclient-toserver)\<`ToClient`, `ToServer`\>

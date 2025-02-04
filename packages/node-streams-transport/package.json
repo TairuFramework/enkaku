@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/node-streams-transport",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Node Streams transport for Enkaku RPC clients and servers",

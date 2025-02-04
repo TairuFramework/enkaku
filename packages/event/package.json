@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/event",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Simple events emitter based on EventTarget",

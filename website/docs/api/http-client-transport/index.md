@@ -40,7 +40,7 @@ Base Transport class implementing TransportType.
 
 ###### Overrides
 
-[`Transport`](../transport/index.md#transportr-w).[`constructor`](../transport/index.md#constructors-1)
+[`Transport`](../transport/index.md#transportr-w).[`constructor`](../transport/index.md#constructors-3)
 
 #### Accessors
 
@@ -56,9 +56,39 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`disposed`](../transport/index.md#disposed-2)
+[`Transport`](../transport/index.md#transportr-w).[`disposed`](../transport/index.md#disposed-6)
+
+***
+
+##### events
+
+###### Get Signature
+
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+
+###### Returns
+
+[`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+
+###### Inherited from
+
+[`Transport`](../transport/index.md#transportr-w).[`events`](../transport/index.md#events-2)
 
 #### Methods
+
+##### \[asyncDispose\]()
+
+> **\[asyncDispose\]**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Inherited from
+
+[`Transport`](../transport/index.md#transportr-w).[`[asyncDispose]`](../transport/index.md#asyncdispose-6)
+
+***
 
 ##### \[asyncIterator\]()
 
@@ -92,7 +122,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`dispose`](../transport/index.md#dispose-2)
+[`Transport`](../transport/index.md#transportr-w).[`dispose`](../transport/index.md#dispose-6)
 
 ***
 
@@ -142,17 +172,19 @@ Base Transport class implementing TransportType.
 
 [`Transport`](../transport/index.md#transportr-w).[`write`](../transport/index.md#write-2)
 
-## Type Aliases
+***
 
-### ClientTransportParams
+### ResponseError
 
-> **ClientTransportParams**: `object`
+#### Extends
 
-#### Type declaration
+- `Error`
 
-##### onErrorResponse()?
+#### Constructors
 
-> `optional` **onErrorResponse**: (`response`) => `void`
+##### new ResponseError()
+
+> **new ResponseError**(`response`): [`ResponseError`](index.md#responseerror)
 
 ###### Parameters
 
@@ -162,7 +194,31 @@ Base Transport class implementing TransportType.
 
 ###### Returns
 
-`void`
+[`ResponseError`](index.md#responseerror)
+
+###### Overrides
+
+`Error.constructor`
+
+#### Accessors
+
+##### response
+
+###### Get Signature
+
+> **get** **response**(): `Response`
+
+###### Returns
+
+`Response`
+
+## Type Aliases
+
+### ClientTransportParams
+
+> **ClientTransportParams**: `object`
+
+#### Type declaration
 
 ##### url
 
@@ -176,14 +232,6 @@ Base Transport class implementing TransportType.
 
 #### Type declaration
 
-##### close()
-
-> **close**: () => `void`
-
-###### Returns
-
-`void`
-
 ##### id
 
 > **id**: `string`
@@ -192,25 +240,45 @@ Base Transport class implementing TransportType.
 
 > **source**: `EventSource`
 
+***
+
+### TransportStream\<Protocol\>
+
+> **TransportStream**\<`Protocol`\>: `ReadableWritablePair`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\> & `object`
+
+#### Type declaration
+
+##### controller
+
+> **controller**: `ReadableStreamDefaultController`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>
+
+#### Type Parameters
+
+• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+***
+
+### TransportStreamParams
+
+> **TransportStreamParams**: `object`
+
+#### Type declaration
+
+##### url
+
+> **url**: `string`
+
 ## Functions
 
 ### createEventStream()
 
-> **createEventStream**\<`Protocol`\>(`url`, `onMessage`): `Promise`\<[`EventStream`](index.md#eventstream)\>
-
-#### Type Parameters
-
-• **Protocol** *extends* `object`
+> **createEventStream**(`url`): `Promise`\<[`EventStream`](index.md#eventstream)\>
 
 #### Parameters
 
 ##### url
 
 `string`
-
-##### onMessage
-
-(`msg`) => `void`
 
 #### Returns
 
@@ -220,7 +288,7 @@ Base Transport class implementing TransportType.
 
 ### createTransportStream()
 
-> **createTransportStream**\<`Protocol`\>(`url`, `onErrorResponse`?): `TransportStream`\<`Protocol`\>
+> **createTransportStream**\<`Protocol`\>(`params`): [`TransportStream`](index.md#transportstreamprotocol)\<`Protocol`\>
 
 #### Type Parameters
 
@@ -228,14 +296,10 @@ Base Transport class implementing TransportType.
 
 #### Parameters
 
-##### url
+##### params
 
-`string`
-
-##### onErrorResponse?
-
-(`response`) => `void`
+[`TransportStreamParams`](index.md#transportstreamparams)
 
 #### Returns
 
-`TransportStream`\<`Protocol`\>
+[`TransportStream`](index.md#transportstreamprotocol)\<`Protocol`\>

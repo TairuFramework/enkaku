@@ -42,7 +42,7 @@ Base Transport class implementing TransportType.
 
 ###### Overrides
 
-[`Transport`](../transport/index.md#transportr-w).[`constructor`](../transport/index.md#constructors-1)
+[`Transport`](../transport/index.md#transportr-w).[`constructor`](../transport/index.md#constructors-3)
 
 #### Accessors
 
@@ -58,9 +58,39 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`disposed`](../transport/index.md#disposed-2)
+[`Transport`](../transport/index.md#transportr-w).[`disposed`](../transport/index.md#disposed-6)
+
+***
+
+##### events
+
+###### Get Signature
+
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+
+###### Returns
+
+[`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+
+###### Inherited from
+
+[`Transport`](../transport/index.md#transportr-w).[`events`](../transport/index.md#events-2)
 
 #### Methods
+
+##### \[asyncDispose\]()
+
+> **\[asyncDispose\]**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Inherited from
+
+[`Transport`](../transport/index.md#transportr-w).[`[asyncDispose]`](../transport/index.md#asyncdispose-6)
+
+***
 
 ##### \[asyncIterator\]()
 
@@ -94,7 +124,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`dispose`](../transport/index.md#dispose-2)
+[`Transport`](../transport/index.md#transportr-w).[`dispose`](../transport/index.md#dispose-6)
 
 ***
 

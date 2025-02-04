@@ -12,15 +12,17 @@ npm install @enkaku/client
 
 ### Client\<Protocol, ClientDefinitions\>
 
+Disposer class, providing a dispose function and a disposed Promise.
+
+#### Extends
+
+- [`Disposer`](../async/index.md#disposer)
+
 #### Type Parameters
 
 • **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 • **ClientDefinitions** *extends* [`ClientDefinitionsType`](index.md#clientdefinitionstypeprotocol)\<`Protocol`\> = [`ClientDefinitionsType`](index.md#clientdefinitionstypeprotocol)\<`Protocol`\>
-
-#### Implements
-
-- [`Disposer`](../async/index.md#disposer)
 
 #### Constructors
 
@@ -38,6 +40,10 @@ npm install @enkaku/client
 
 [`Client`](index.md#clientprotocol-clientdefinitions)\<`Protocol`, `ClientDefinitions`\>
 
+###### Overrides
+
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructors-1)
+
 #### Accessors
 
 ##### disposed
@@ -50,11 +56,25 @@ npm install @enkaku/client
 
 `Promise`\<`void`\>
 
-###### Implementation of
+###### Inherited from
 
-`Disposer.disposed`
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed-2)
 
 #### Methods
+
+##### \[asyncDispose\]()
+
+> **\[asyncDispose\]**(): `Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+###### Inherited from
+
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose-2)
+
+***
 
 ##### createChannel()
 
@@ -116,9 +136,9 @@ npm install @enkaku/client
 
 `Promise`\<`void`\>
 
-###### Implementation of
+###### Inherited from
 
-`Disposer.dispose`
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose-2)
 
 ***
 
@@ -210,90 +230,6 @@ npm install @enkaku/client
 
 `Error.constructor`
 
-#### Properties
-
-##### cause?
-
-> `optional` **cause**: `unknown`
-
-###### Inherited from
-
-`Error.cause`
-
-***
-
-##### message
-
-> **message**: `string`
-
-###### Implementation of
-
-`ErrorObjectType.message`
-
-###### Inherited from
-
-`Error.message`
-
-***
-
-##### name
-
-> **name**: `string`
-
-###### Inherited from
-
-`Error.name`
-
-***
-
-##### stack?
-
-> `optional` **stack**: `string`
-
-###### Inherited from
-
-`Error.stack`
-
-***
-
-##### prepareStackTrace()?
-
-> `static` `optional` **prepareStackTrace**: (`err`, `stackTraces`) => `any`
-
-Optional override for formatting stack traces
-
-###### Parameters
-
-###### err
-
-`Error`
-
-###### stackTraces
-
-`CallSite`[]
-
-###### Returns
-
-`any`
-
-###### See
-
-https://v8.dev/docs/stack-trace-api#customizing-stack-traces
-
-###### Inherited from
-
-`Error.prepareStackTrace`
-
-***
-
-##### stackTraceLimit
-
-> `static` **stackTraceLimit**: `number`
-
-###### Inherited from
-
-`Error.stackTraceLimit`
-
 #### Accessors
 
 ##### code
@@ -327,32 +263,6 @@ https://v8.dev/docs/stack-trace-api#customizing-stack-traces
 `ErrorObjectType.data`
 
 #### Methods
-
-##### captureStackTrace()
-
-> `static` **captureStackTrace**(`targetObject`, `constructorOpt`?): `void`
-
-Create .stack property on a target object
-
-###### Parameters
-
-###### targetObject
-
-`object`
-
-###### constructorOpt?
-
-`Function`
-
-###### Returns
-
-`void`
-
-###### Inherited from
-
-`Error.captureStackTrace`
-
-***
 
 ##### fromPayload()
 

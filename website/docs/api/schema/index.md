@@ -18,19 +18,23 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 - `AggregateError`
 
+#### Implements
+
+- `FailureResult`
+
 #### Constructors
 
 ##### new ValidationError()
 
-> **new ValidationError**(`schema`, `data`, `errorObjects`?): [`ValidationError`](index.md#validationerror)
+> **new ValidationError**(`schema`, `value`, `errorObjects`?): [`ValidationError`](index.md#validationerror)
 
 ###### Parameters
 
 ###### schema
 
-`Readonly`\<\{ `[$JSONSchema]`: *typeof* `$JSONSchema`; `$comment`: `string`; `$id`: `string`; `$ref`: `string`; `$schema`: `string`; `additionalItems`: `JSONSchema`; `additionalProperties`: `JSONSchema`; `allOf`: readonly `JSONSchema`[]; `anyOf`: readonly `JSONSchema`[]; `const`: `unknown`; `contains`: `JSONSchema`; `contentEncoding`: `string`; `contentMediaType`: `string`; `default`: `unknown`; `definitions`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `dependencies`: `Readonly`\<`Record`\<`string`, `JSONSchema` \| readonly `string`[]\>\>; `description`: `string`; `else`: `JSONSchema`; `enum`: `unknown`; `examples`: readonly `unknown`[]; `exclusiveMaximum`: `number`; `exclusiveMinimum`: `number`; `format`: `string`; `if`: `JSONSchema`; `items`: `JSONSchema` \| readonly `JSONSchema`[]; `maximum`: `number`; `maxItems`: `number`; `maxLength`: `number`; `maxProperties`: `number`; `minimum`: `number`; `minItems`: `number`; `minLength`: `number`; `minProperties`: `number`; `multipleOf`: `number`; `not`: `JSONSchema`; `nullable`: `boolean`; `oneOf`: readonly `JSONSchema`[]; `pattern`: `string`; `patternProperties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `properties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `propertyNames`: `JSONSchema`; `readOnly`: `boolean`; `required`: readonly `string`[]; `then`: `JSONSchema`; `title`: `string`; `type`: `JSONSchemaType` \| readonly `JSONSchemaType`[]; `unevaluatedProperties`: `JSONSchema`; `uniqueItems`: `boolean`; `writeOnly`: `boolean`; \}\>
+`Readonly`\<\{\}\>
 
-###### data
+###### value
 
 `unknown`
 
@@ -46,67 +50,23 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 `AggregateError.constructor`
 
-#### Properties
-
-##### cause?
-
-> `optional` **cause**: `unknown`
-
-###### Inherited from
-
-`AggregateError.cause`
-
-***
-
-##### errors
-
-> **errors**: `any`[]
-
-###### Inherited from
-
-`AggregateError.errors`
-
-***
-
-##### message
-
-> **message**: `string`
-
-###### Inherited from
-
-`AggregateError.message`
-
-***
-
-##### name
-
-> **name**: `string`
-
-###### Inherited from
-
-`AggregateError.name`
-
-***
-
-##### stack?
-
-> `optional` **stack**: `string`
-
-###### Inherited from
-
-`AggregateError.stack`
-
 #### Accessors
 
-##### data
+##### issues
 
 ###### Get Signature
 
-> **get** **data**(): `unknown`
+> **get** **issues**(): readonly [`ValidationErrorObject`](index.md#validationerrorobject)[]
+
+The issues of failed validation.
 
 ###### Returns
 
-`unknown`
+readonly [`ValidationErrorObject`](index.md#validationerrorobject)[]
+
+###### Implementation of
+
+`StandardSchemaV1.FailureResult.issues`
 
 ***
 
@@ -114,11 +74,23 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 ###### Get Signature
 
-> **get** **schema**(): `Readonly`\<\{ `[$JSONSchema]`: *typeof* `$JSONSchema`; `$comment`: `string`; `$id`: `string`; `$ref`: `string`; `$schema`: `string`; `additionalItems`: `JSONSchema`; `additionalProperties`: `JSONSchema`; `allOf`: readonly `JSONSchema`[]; `anyOf`: readonly `JSONSchema`[]; `const`: `unknown`; `contains`: `JSONSchema`; `contentEncoding`: `string`; `contentMediaType`: `string`; `default`: `unknown`; `definitions`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `dependencies`: `Readonly`\<`Record`\<`string`, `JSONSchema` \| readonly `string`[]\>\>; `description`: `string`; `else`: `JSONSchema`; `enum`: `unknown`; `examples`: readonly `unknown`[]; `exclusiveMaximum`: `number`; `exclusiveMinimum`: `number`; `format`: `string`; `if`: `JSONSchema`; `items`: `JSONSchema` \| readonly `JSONSchema`[]; `maximum`: `number`; `maxItems`: `number`; `maxLength`: `number`; `maxProperties`: `number`; `minimum`: `number`; `minItems`: `number`; `minLength`: `number`; `minProperties`: `number`; `multipleOf`: `number`; `not`: `JSONSchema`; `nullable`: `boolean`; `oneOf`: readonly `JSONSchema`[]; `pattern`: `string`; `patternProperties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `properties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `propertyNames`: `JSONSchema`; `readOnly`: `boolean`; `required`: readonly `string`[]; `then`: `JSONSchema`; `title`: `string`; `type`: `JSONSchemaType` \| readonly `JSONSchemaType`[]; `unevaluatedProperties`: `JSONSchema`; `uniqueItems`: `boolean`; `writeOnly`: `boolean`; \}\>
+> **get** **schema**(): `Readonly`\<\{\}\>
 
 ###### Returns
 
-`Readonly`\<\{ `[$JSONSchema]`: *typeof* `$JSONSchema`; `$comment`: `string`; `$id`: `string`; `$ref`: `string`; `$schema`: `string`; `additionalItems`: `JSONSchema`; `additionalProperties`: `JSONSchema`; `allOf`: readonly `JSONSchema`[]; `anyOf`: readonly `JSONSchema`[]; `const`: `unknown`; `contains`: `JSONSchema`; `contentEncoding`: `string`; `contentMediaType`: `string`; `default`: `unknown`; `definitions`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `dependencies`: `Readonly`\<`Record`\<`string`, `JSONSchema` \| readonly `string`[]\>\>; `description`: `string`; `else`: `JSONSchema`; `enum`: `unknown`; `examples`: readonly `unknown`[]; `exclusiveMaximum`: `number`; `exclusiveMinimum`: `number`; `format`: `string`; `if`: `JSONSchema`; `items`: `JSONSchema` \| readonly `JSONSchema`[]; `maximum`: `number`; `maxItems`: `number`; `maxLength`: `number`; `maxProperties`: `number`; `minimum`: `number`; `minItems`: `number`; `minLength`: `number`; `minProperties`: `number`; `multipleOf`: `number`; `not`: `JSONSchema`; `nullable`: `boolean`; `oneOf`: readonly `JSONSchema`[]; `pattern`: `string`; `patternProperties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `properties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `propertyNames`: `JSONSchema`; `readOnly`: `boolean`; `required`: readonly `string`[]; `then`: `JSONSchema`; `title`: `string`; `type`: `JSONSchemaType` \| readonly `JSONSchemaType`[]; `unevaluatedProperties`: `JSONSchema`; `uniqueItems`: `boolean`; `writeOnly`: `boolean`; \}\>
+`Readonly`\<\{\}\>
+
+***
+
+##### value
+
+###### Get Signature
+
+> **get** **value**(): `unknown`
+
+###### Returns
+
+`unknown`
 
 ***
 
@@ -129,6 +101,10 @@ JSON schema validation error for a specified input.
 #### Extends
 
 - `Error`
+
+#### Implements
+
+- `Issue`
 
 #### Constructors
 
@@ -150,86 +126,6 @@ JSON schema validation error for a specified input.
 
 `Error.constructor`
 
-#### Properties
-
-##### cause?
-
-> `optional` **cause**: `unknown`
-
-###### Inherited from
-
-`Error.cause`
-
-***
-
-##### message
-
-> **message**: `string`
-
-###### Inherited from
-
-`Error.message`
-
-***
-
-##### name
-
-> **name**: `string`
-
-###### Inherited from
-
-`Error.name`
-
-***
-
-##### stack?
-
-> `optional` **stack**: `string`
-
-###### Inherited from
-
-`Error.stack`
-
-***
-
-##### prepareStackTrace()?
-
-> `static` `optional` **prepareStackTrace**: (`err`, `stackTraces`) => `any`
-
-Optional override for formatting stack traces
-
-###### Parameters
-
-###### err
-
-`Error`
-
-###### stackTraces
-
-`CallSite`[]
-
-###### Returns
-
-`any`
-
-###### See
-
-https://v8.dev/docs/stack-trace-api#customizing-stack-traces
-
-###### Inherited from
-
-`Error.prepareStackTrace`
-
-***
-
-##### stackTraceLimit
-
-> `static` **stackTraceLimit**: `number`
-
-###### Inherited from
-
-`Error.stackTraceLimit`
-
 #### Accessors
 
 ##### details
@@ -242,45 +138,25 @@ https://v8.dev/docs/stack-trace-api#customizing-stack-traces
 
 `ErrorObject`
 
-#### Methods
+***
 
-##### captureStackTrace()
+##### path
 
-> `static` **captureStackTrace**(`targetObject`, `constructorOpt`?): `void`
+###### Get Signature
 
-Create .stack property on a target object
+> **get** **path**(): readonly `string`[]
 
-###### Parameters
-
-###### targetObject
-
-`object`
-
-###### constructorOpt?
-
-`Function`
+The path of the issue, if any.
 
 ###### Returns
 
-`void`
+readonly `string`[]
 
-###### Inherited from
+###### Implementation of
 
-`Error.captureStackTrace`
+`StandardSchemaV1.Issue.path`
 
 ## Type Aliases
-
-### FromSchema\<SCHEMA, OPTIONS\>
-
-> **FromSchema**\<`SCHEMA`, `OPTIONS`\>: `M.$Resolve`\<`ParseSchema`\<`SCHEMA`, `ParseOptions`\<`SCHEMA`, `OPTIONS`\>\>\>
-
-#### Type Parameters
-
-• **SCHEMA** *extends* `JSONSchema`
-
-• **OPTIONS** *extends* `FromSchemaOptions` = `FromSchemaDefaultOptions`
-
-***
 
 ### Schema
 
@@ -292,7 +168,7 @@ JSON schema type used by the library.
 
 ### Validator()\<T\>
 
-> **Validator**\<`T`\>: (`data`) => `Result`\<`T`, [`ValidationError`](index.md#validationerror)\>
+> **Validator**\<`T`\>: (`value`) => `StandardSchemaV1.Result`\<`T`\>
 
 Validator function, returning a Result of the validation.
 
@@ -302,21 +178,21 @@ Validator function, returning a Result of the validation.
 
 #### Parameters
 
-##### data
+##### value
 
 `unknown`
 
 #### Returns
 
-`Result`\<`T`, [`ValidationError`](index.md#validationerror)\>
+`StandardSchemaV1.Result`\<`T`\>
 
 ## Functions
 
 ### assertType()
 
-> **assertType**\<`T`\>(`validator`, `data`): `asserts data is T`
+> **assertType**\<`T`\>(`validator`, `value`): `asserts value is T`
 
-Asserts the type of the given `data` using the `validator`.
+Asserts the type of the given `value` using the `validator`.
 
 #### Type Parameters
 
@@ -328,21 +204,21 @@ Asserts the type of the given `data` using the `validator`.
 
 [`Validator`](index.md#validatort)\<`T`\>
 
-##### data
+##### value
 
 `unknown`
 
 #### Returns
 
-`asserts data is T`
+`asserts value is T`
 
 ***
 
 ### asType()
 
-> **asType**\<`T`\>(`validator`, `data`): `T`
+> **asType**\<`T`\>(`validator`, `value`): `T`
 
-Asserts the type of the given `data` using the `validator` and returns it.
+Asserts the type of the given `value` using the `validator` and returns it.
 
 #### Type Parameters
 
@@ -354,13 +230,37 @@ Asserts the type of the given `data` using the `validator` and returns it.
 
 [`Validator`](index.md#validatort)\<`T`\>
 
-##### data
+##### value
 
 `unknown`
 
 #### Returns
 
 `T`
+
+***
+
+### createStandardValidator()
+
+> **createStandardValidator**\<`S`, `T`\>(`schema`): `StandardSchemaV1`\<`T`\>
+
+Create a standard schema validator.
+
+#### Type Parameters
+
+• **S** *extends* `Readonly`\<\{\}\>
+
+• **T** = `FromSchema`\<`S`\>
+
+#### Parameters
+
+##### schema
+
+`S`
+
+#### Returns
+
+`StandardSchemaV1`\<`T`\>
 
 ***
 
@@ -372,9 +272,9 @@ Validator function factory using a JSON schema.
 
 #### Type Parameters
 
-• **S** *extends* `Readonly`\<\{ `[$JSONSchema]`: *typeof* `$JSONSchema`; `$comment`: `string`; `$id`: `string`; `$ref`: `string`; `$schema`: `string`; `additionalItems`: `JSONSchema`; `additionalProperties`: `JSONSchema`; `allOf`: readonly `JSONSchema`[]; `anyOf`: readonly `JSONSchema`[]; `const`: `unknown`; `contains`: `JSONSchema`; `contentEncoding`: `string`; `contentMediaType`: `string`; `default`: `unknown`; `definitions`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `dependencies`: `Readonly`\<`Record`\<`string`, `JSONSchema` \| readonly `string`[]\>\>; `description`: `string`; `else`: `JSONSchema`; `enum`: `unknown`; `examples`: readonly `unknown`[]; `exclusiveMaximum`: `number`; `exclusiveMinimum`: `number`; `format`: `string`; `if`: `JSONSchema`; `items`: `JSONSchema` \| readonly `JSONSchema`[]; `maximum`: `number`; `maxItems`: `number`; `maxLength`: `number`; `maxProperties`: `number`; `minimum`: `number`; `minItems`: `number`; `minLength`: `number`; `minProperties`: `number`; `multipleOf`: `number`; `not`: `JSONSchema`; `nullable`: `boolean`; `oneOf`: readonly `JSONSchema`[]; `pattern`: `string`; `patternProperties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `properties`: `Readonly`\<`Record`\<`string`, `JSONSchema`\>\>; `propertyNames`: `JSONSchema`; `readOnly`: `boolean`; `required`: readonly `string`[]; `then`: `JSONSchema`; `title`: `string`; `type`: `JSONSchemaType` \| readonly `JSONSchemaType`[]; `unevaluatedProperties`: `JSONSchema`; `uniqueItems`: `boolean`; `writeOnly`: `boolean`; \}\>
+• **S** *extends* `Readonly`\<\{\}\>
 
-• **T** = [`FromSchema`](index.md#fromschemaschema-options)\<`S`\>
+• **T** = `FromSchema`\<`S`\>
 
 #### Parameters
 
@@ -390,9 +290,9 @@ Validator function factory using a JSON schema.
 
 ### isType()
 
-> **isType**\<`T`\>(`validator`, `data`): `data is T`
+> **isType**\<`T`\>(`validator`, `value`): `value is T`
 
-Checks the type of the given `data` using the `validator`.
+Checks the type of the given `value` using the `validator`.
 
 #### Type Parameters
 
@@ -404,10 +304,32 @@ Checks the type of the given `data` using the `validator`.
 
 [`Validator`](index.md#validatort)\<`T`\>
 
-##### data
+##### value
 
 `unknown`
 
 #### Returns
 
-`data is T`
+`value is T`
+
+***
+
+### toStandardValidator()
+
+> **toStandardValidator**\<`T`\>(`validator`): `StandardSchemaV1`\<`T`\>
+
+Turn a `Validator` function into a standard schema validator.
+
+#### Type Parameters
+
+• **T**
+
+#### Parameters
+
+##### validator
+
+[`Validator`](index.md#validatort)\<`T`\>
+
+#### Returns
+
+`StandardSchemaV1`\<`T`\>

@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/browser-keystore",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Enkaku key store for browser",

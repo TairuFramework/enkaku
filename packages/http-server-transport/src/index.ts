@@ -142,23 +142,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
 
     try {
-      const msg = (await request.json()) as Incoming | TransportMessage
-      if (msg.header.src === 'transport') {
-        // Handle transport messages
-        const payload = msg.payload as TransportMessagePayload
-        if (payload.type === 'ping') {
-          // When receiving a ping message, reply with a pong on the SSE feed to keep it active
-          const [_sid, ctrl] = getRequestSessionController(request)
-          const message: TransportMessage = {
-            header: { typ: 'JWT', alg: 'none', src: 'transport' },
-            payload: { type: 'pong', id: payload.id },
-          }
-          ctrl.enqueue(JSON.stringify(message))
-        }
-        return new Response(null, { status: 204 })
-      }
-
-      const message = msg as AnyClientMessageOf<Protocol>
+      const message = (await request.json()) as Incoming
       switch (message.payload.typ) {
         // Fire and forget messages
         case 'abort':

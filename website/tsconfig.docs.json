@@ -37,7 +37,7 @@
       "skipErrorChecking": true,
       "entryFileName": "index",
       "entryPoints": ["src/index.ts"],
-      "excludeExternals": false,
+      "excludeExternals": true,
       "excludeInternal": true,
       "readme": "none"
     },

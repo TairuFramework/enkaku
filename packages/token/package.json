@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/token",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "JWT signing and verification for Enkaku RPC",
