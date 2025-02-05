@@ -2,17 +2,235 @@ import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
   ChannelPayloadOf,
+  ClientTransportOf,
   ProtocolDefinition,
   RequestPayloadOf,
   StreamPayloadOf,
 } from '@enkaku/protocol'
 import { createArraySink } from '@enkaku/stream'
 import { randomTokenSigner, createUnsignedToken as unsignedToken } from '@enkaku/token'
-import { DirectTransports } from '@enkaku/transport'
+import { DirectTransports, Transport } from '@enkaku/transport'
+import { jest } from '@jest/globals'
 
 import { Client } from '../src/client.js'
 
 describe('Client', () => {
+  describe('handles transport disposed', () => {
+    const protocol = {
+      'test/event': {
+        type: 'event',
+        data: {
+          type: 'object',
+          properties: { hello: { type: 'string' } },
+          required: ['hello'],
+          additionalProperties: false,
+        },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
+
+    test('uses the new transport provided', async () => {
+      const replacementStart = jest.fn(() => null)
+      const handleTransportDisposed = jest.fn(() => {
+        return new Transport({
+          stream: {
+            readable: new ReadableStream({ start: replacementStart }),
+            writable: new WritableStream(),
+          },
+        })
+      })
+
+      const transports = new DirectTransports<
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
+      >()
+      const client = new Client<Protocol>({
+        handleTransportDisposed,
+        transport: transports.client,
+      })
+
+      await transports.client.dispose()
+      expect(handleTransportDisposed).toHaveBeenCalled()
+      expect(replacementStart).toHaveBeenCalled()
+      expect(client.signal.aborted).toBe(false)
+    })
+
+    test('aborts the client if no new transport is provided', async () => {
+      const handleTransportDisposed = jest.fn(() => {})
+
+      const transports = new DirectTransports<
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
+      >()
+      const client = new Client<Protocol>({
+        handleTransportDisposed,
+        transport: transports.client,
+      })
+
+      await transports.client.dispose()
+      expect(handleTransportDisposed).toHaveBeenCalled()
+      expect(client.signal.aborted).toBe(true)
+      expect(client.signal.reason).toBe('TransportDisposed')
+    })
+
+    test('aborts the client if no handler provided', async () => {
+      const transports = new DirectTransports<
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
+      >()
+      const client = new Client<Protocol>({ transport: transports.client })
+
+      await transports.client.dispose()
+      expect(client.signal.aborted).toBe(true)
+      expect(client.signal.reason).toBe('TransportDisposed')
+    })
+
+    test('does not call the handler if the client itself is aborted', async () => {
+      const handleTransportDisposed = jest.fn(() => {})
+
+      const transports = new DirectTransports<
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
+      >()
+      const client = new Client<Protocol>({
+        handleTransportDisposed,
+        transport: transports.client,
+      })
+
+      await client.dispose()
+      expect(handleTransportDisposed).not.toHaveBeenCalled()
+      expect(client.signal.aborted).toBe(true)
+      expect(client.signal.reason).toBe('Dispose')
+    })
+  })
+
+  describe('handles transport error', () => {
+    const protocol = {
+      'test/event': {
+        type: 'event',
+        data: {
+          type: 'object',
+          properties: { hello: { type: 'string' } },
+          required: ['hello'],
+          additionalProperties: false,
+        },
+      },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
+
+    test('uses the new transport provided', async () => {
+      const cause = new Error('Transport error')
+      const replacementStart = jest.fn()
+      const handleTransportError = jest.fn((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect((error as Error).message).toBe('Transport read failed')
+        expect((error as Error).cause).toBe(cause)
+
+        return new Transport({
+          stream: {
+            readable: new ReadableStream({ start: replacementStart }),
+            writable: new WritableStream(),
+          },
+        })
+      })
+
+      const client = new Client<Protocol>({
+        handleTransportError,
+        transport: new Transport({
+          stream: {
+            readable: new ReadableStream({
+              pull(controller) {
+                controller.error(cause)
+              },
+            }),
+            writable: new WritableStream(),
+          },
+        }) as ClientTransportOf<Protocol>,
+      })
+      await client.sendEvent('test/event', { hello: 'test' })
+
+      expect(handleTransportError).toHaveBeenCalled()
+      expect(replacementStart).toHaveBeenCalled()
+      expect(client.signal.aborted).toBe(false)
+    })
+
+    test('aborts the client if no new transport is provided', async () => {
+      const cause = new Error('Transport error')
+      const handleTransportError = jest.fn((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect((error as Error).message).toBe('Transport read failed')
+        expect((error as Error).cause).toBe(cause)
+      })
+
+      const client = new Client<Protocol>({
+        handleTransportError,
+        transport: new Transport({
+          stream: {
+            readable: new ReadableStream({
+              pull(controller) {
+                controller.error(cause)
+              },
+            }),
+            writable: new WritableStream(),
+          },
+        }) as ClientTransportOf<Protocol>,
+      })
+      await client.sendEvent('test/event', { hello: 'test' })
+
+      expect(handleTransportError).toHaveBeenCalled()
+      expect(client.signal.aborted).toBe(true)
+      expect((client.signal.reason as Error).message).toBe('Transport read failed')
+    })
+
+    test('aborts the client if no handler provided', async () => {
+      const cause = new Error('Transport error')
+      const client = new Client<Protocol>({
+        transport: new Transport({
+          stream: {
+            readable: new ReadableStream({
+              pull(controller) {
+                controller.error(cause)
+              },
+            }),
+            writable: new WritableStream(),
+          },
+        }) as ClientTransportOf<Protocol>,
+      })
+      await client.sendEvent('test/event', { hello: 'test' })
+
+      expect(client.signal.aborted).toBe(true)
+      expect((client.signal.reason as Error).message).toBe('Transport read failed')
+      expect((client.signal.reason as Error).cause).toBe(cause)
+    })
+
+    test('does not call the handler if the client itself is aborted', async () => {
+      const cause = new Error('Transport error')
+      const handleTransportError = jest.fn(() => {})
+
+      const client = new Client<Protocol>({
+        handleTransportError,
+        transport: new Transport({
+          stream: {
+            readable: new ReadableStream({
+              pull(controller) {
+                controller.error(cause)
+              },
+            }),
+            writable: new WritableStream(),
+          },
+        }) as ClientTransportOf<Protocol>,
+      })
+      await client.dispose()
+      await expect(client.sendEvent('test/event', { hello: 'test' })).rejects.toThrow(
+        'Client aborted',
+      )
+
+      expect(handleTransportError).not.toHaveBeenCalled()
+      expect(client.signal.aborted).toBe(true)
+      expect(client.signal.reason).toBe('Dispose')
+    })
+  })
+
   test('sendEvent()', async () => {
     const serverSigner = randomTokenSigner()
     const clientSigner = randomTokenSigner()

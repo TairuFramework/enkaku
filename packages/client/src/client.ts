@@ -4,6 +4,7 @@ import type {
   AnyClientPayloadOf,
   AnyProcedureDefinition,
   AnyRequestProcedureDefinition,
+  AnyServerMessageOf,
   ChannelProcedureDefinition,
   ClientTransportOf,
   DataOf,
@@ -172,6 +173,10 @@ function defaultRandomID(): string {
 
 export type ClientParams<Protocol extends ProtocolDefinition> = {
   getRandomID?: () => string
+  // biome-ignore lint/suspicious/noConfusingVoidType: return type
+  handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
+  // biome-ignore lint/suspicious/noConfusingVoidType: return type
+  handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
   transport: ClientTransportOf<Protocol>
   serverID?: string
   signer?: TokenSigner | Promise<TokenSigner>
@@ -184,35 +189,81 @@ export class Client<
   #controllers: Record<string, AnyClientController> = {}
   #createMessage: CreateMessage<Protocol>
   #getRandomID: () => string
+  // biome-ignore lint/suspicious/noConfusingVoidType: return type
+  #handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
+  // biome-ignore lint/suspicious/noConfusingVoidType: return type
+  #handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
   #transport: ClientTransportOf<Protocol>
 
   constructor(params: ClientParams<Protocol>) {
     super()
     this.#createMessage = getCreateMessage<Protocol>(params.signer, params.serverID)
     this.#getRandomID = params.getRandomID ?? defaultRandomID
+    this.#handleTransportDisposed = params.handleTransportDisposed
+    this.#handleTransportError = params.handleTransportError
     this.#transport = params.transport
     // Start reading from transport
-    this.#read()
+    this.#setupTransport()
   }
 
   /** @internal */
-  async _dispose(): Promise<void> {
-    // Dispose of transport
+  async _dispose(reason?: unknown): Promise<void> {
+    this.#abortControllers(reason)
     await this.#transport.dispose()
-    // Abort all controllers
+  }
+
+  #abortControllers(reason?: unknown): void {
     for (const controller of Object.values(this.#controllers)) {
-      controller.abort()
+      controller.abort(reason)
     }
+  }
+
+  #setupTransport(): void {
+    this.#transport.disposed.then(() => {
+      if (this.signal.aborted) {
+        return
+      }
+      const newTransport = this.#handleTransportDisposed?.(this.#transport.signal)
+      if (newTransport == null) {
+        // Abort client if no new transport is provided
+        this.abort('TransportDisposed')
+      } else {
+        // Abort running procedures and start using new transport
+        this.#abortControllers('TransportDisposed')
+        this.#transport = newTransport
+        this.#setupTransport()
+      }
+    })
+    this.#read()
   }
 
   async #read() {
     while (true) {
-      const next = await this.#transport.read()
-      if (next.done) {
-        break
+      let msg: AnyServerMessageOf<Protocol>
+      try {
+        const next = await this.#transport.read()
+        if (next.done) {
+          return
+        }
+        msg = next.value
+      } catch (cause) {
+        if (this.signal.aborted) {
+          return
+        }
+        const error = new Error('Transport read failed', { cause })
+        const newTransport = this.#handleTransportError?.(error)
+        if (newTransport == null) {
+          // Abort client if no new transport is provided
+          this.abort(error)
+        } else {
+          // Abort running procedures and start using new transport
+          this.#abortControllers(error)
+          this.#transport = newTransport
+          this.#setupTransport()
+        }
+        return
       }
 
-      const msg = next.value
       const controller = this.#controllers[msg.payload.rid]
       if (controller == null) {
         console.warn(`No controller for request ${msg.payload.rid}`)
@@ -238,6 +289,9 @@ export class Client<
   }
 
   async #write(payload: AnyClientPayloadOf<Protocol>): Promise<void> {
+    if (this.signal.aborted) {
+      throw new Error('Client aborted', { cause: this.signal.reason })
+    }
     const message = await this.#createMessage(payload)
     await this.#transport.write(message)
   }

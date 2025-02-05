@@ -101,10 +101,9 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
             streamState = { status: 'connected', stream: eventStream }
 
             eventStream.source.addEventListener('error', (event) => {
-              streamState = {
-                status: 'error',
-                error: new Error('EventSource error', { cause: event }),
-              }
+              const error = new Error('EventSource error', { cause: event })
+              streamState = { status: 'error', error }
+              controller.error(error)
             })
 
             eventStream.source.addEventListener('message', (event) => {
@@ -116,10 +115,9 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
             })
           })
           .catch((cause) => {
-            streamState = {
-              status: 'error',
-              error: new Error('EventSource error', { cause }),
-            }
+            const error = new Error('Failed to create EventSource', { cause })
+            streamState = { status: 'error', error }
+            controller.error(error)
           })
         return promise
       }

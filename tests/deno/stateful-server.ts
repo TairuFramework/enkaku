@@ -1,5 +1,5 @@
-import { ServerTransport } from 'https://esm.sh/@enkaku/http-server-transport@0.9.0'
-import { serve } from 'https://esm.sh/@enkaku/server@0.9.0'
+import { ServerTransport } from 'https://esm.sh/@enkaku/http-server-transport@0.10.0'
+import { serve } from 'https://esm.sh/@enkaku/server@0.10.0'
 
 const transport = new ServerTransport()
 serve({

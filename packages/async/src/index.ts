@@ -44,7 +44,7 @@ export type DisposerParams = {
  */
 export class Disposer extends AbortController implements AsyncDisposable {
   #deferred = defer<void>()
-  #dispose?: () => Promise<void>
+  #dispose?: (reason?: unknown) => Promise<void>
 
   constructor(params: DisposerParams = {}) {
     super()
@@ -56,19 +56,21 @@ export class Disposer extends AbortController implements AsyncDisposable {
       () => {
         if (!disposing) {
           disposing = true
-          this._dispose().then(() => this.#deferred.resolve())
+          this._dispose(this.signal.reason).then(() => this.#deferred.resolve())
         }
       },
       { once: true },
     )
 
-    params.signal?.addEventListener('abort', () => this.dispose(), { once: true })
+    params.signal?.addEventListener('abort', () => this.dispose(params.signal?.reason), {
+      once: true,
+    })
   }
 
   /** @internal */
-  async _dispose(): Promise<void> {
+  async _dispose(reason?: unknown): Promise<void> {
     if (this.#dispose != null) {
-      await this.#dispose()
+      await this.#dispose(reason)
     }
   }
 
@@ -76,8 +78,8 @@ export class Disposer extends AbortController implements AsyncDisposable {
     return this.#deferred.promise
   }
 
-  dispose(): Promise<void> {
-    this.abort('Dispose')
+  dispose(reason?: unknown): Promise<void> {
+    this.abort(reason ?? 'Dispose')
     return this.#deferred.promise
   }
 
