@@ -209,13 +209,16 @@ export class Client<
   /** @internal */
   async _dispose(reason?: unknown): Promise<void> {
     this.#abortControllers(reason)
-    await this.#transport.dispose()
+    await this.#transport.dispose(reason)
   }
 
   #abortControllers(reason?: unknown): void {
-    for (const controller of Object.values(this.#controllers)) {
-      controller.abort(reason)
+    if (!this.signal.aborted) {
+      for (const controller of Object.values(this.#controllers)) {
+        controller.abort(reason)
+      }
     }
+    this.#controllers = {}
   }
 
   #setupTransport(): void {
