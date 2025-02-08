@@ -45,7 +45,7 @@ describe('serve()', () => {
       protocol,
       transport: transports.server,
     })
-    const invalidMessageEventPromise = server.events.next('invalidMessage')
+    const invalidMessageEventPromise = server.events.once('invalidMessage')
 
     const invalidMessage = await signer.createToken({
       typ: 'event',

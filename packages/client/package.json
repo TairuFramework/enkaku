@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/client",
-  "version": "0.10.2",
+  "version": "0.11.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Enkaku RPC client",

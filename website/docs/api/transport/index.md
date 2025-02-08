@@ -102,7 +102,13 @@ Create direct Transports for communication between a client and server in the sa
 
 ##### dispose()
 
-> **dispose**(): `Promise`\<`void`\>
+> **dispose**(`reason`?): `Promise`\<`void`\>
+
+###### Parameters
+
+###### reason?
+
+`unknown`
 
 ###### Returns
 
@@ -186,11 +192,11 @@ Base Transport class implementing TransportType.
 
 ###### Get Signature
 
-> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
 
 ###### Returns
 
-[`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+[`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
 
 ###### Implementation of
 
@@ -240,7 +246,13 @@ Base Transport class implementing TransportType.
 
 ##### dispose()
 
-> **dispose**(): `Promise`\<`void`\>
+> **dispose**(`reason`?): `Promise`\<`void`\>
+
+###### Parameters
+
+###### reason?
+
+`unknown`
 
 ###### Returns
 
@@ -424,11 +436,11 @@ Generic Transport object type implementing read and write functions.
 
 ###### Get Signature
 
-> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
 
 ###### Returns
 
-[`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+[`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
 
 ##### \[asyncIterator\]()
 

@@ -4,7 +4,7 @@
   "author": "Paul Le Cam",
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@10.2.0",
+  "packageManager": "pnpm@10.2.1",
   "scripts": {
     "lint": "biome check --write ./packages ./tests",
     "test": "node --experimental-eventsource --experimental-vm-modules ./node_modules/jest/bin/jest.js",
@@ -19,7 +19,7 @@
     "@biomejs/biome": "^1.9.4",
     "@jest/globals": "^29.7.0",
     "@swc/cli": "^0.6.0",
-    "@swc/core": "1.10.14",
+    "@swc/core": "1.10.15",
     "@swc/jest": "^0.2.37",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.1",
@@ -32,6 +32,12 @@
     "typescript": "^5.7.3"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["@biomejs/biome", "@swc/core", "core-js", "core-js-pure", "esbuild"]
+    "onlyBuiltDependencies": [
+      "@biomejs/biome",
+      "@swc/core",
+      "core-js",
+      "core-js-pure",
+      "esbuild"
+    ]
   }
 }

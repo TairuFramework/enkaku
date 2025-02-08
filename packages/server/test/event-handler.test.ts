@@ -43,7 +43,7 @@ describe('handleEvent()', () => {
     const handler = jest.fn(() => {
       throw errorCause
     })
-    const handlerError = events.next('handlerError')
+    const handlerError = events.once('handlerError')
 
     // Handler promise should always resolve
     await expect(

@@ -1,10 +1,10 @@
 {
   "name": "@enkaku/event",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Simple events emitter based on EventTarget",
-  "keywords": ["event", "eventtarget", "promise", "stream"],
+  "description": "Simple events emitter based on Emittery",
+  "keywords": ["event", "promise", "stream"],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
@@ -28,6 +28,9 @@
     "test:unit": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
     "test": "pnpm run test:types && pnpm run test:unit",
     "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "emittery": "^1.1.0"
   },
   "devDependencies": {
     "@enkaku/stream": "workspace:^"

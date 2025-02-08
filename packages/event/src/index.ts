@@ -1,7 +1,7 @@
 /**
  *
  *
- * Simple events emitter based on EventTarget.
+ * Simple events emitter based on Emittery.
  *
  * ## Installation
  *
@@ -12,71 +12,18 @@
  * @module event
  */
 
-export type EventEmitterParams = {
-  target?: EventTarget
-}
+import Emittery from 'emittery'
+
+export type { Options } from 'emittery'
 
 export class EventEmitter<
   Events extends Record<string, unknown>,
-  EventType extends keyof Events & string = keyof Events & string,
-> {
-  #target: EventTarget
-
-  constructor(params: EventEmitterParams = {}) {
-    this.#target = params.target ?? new EventTarget()
-  }
-
-  emit(type: EventType, detail: Events[EventType]): void {
-    this.#target.dispatchEvent(new CustomEvent(type, { detail }))
-  }
-
-  on<Type extends EventType>(
-    type: Type,
-    callback: (data: Events[Type]) => void,
-    options: AddEventListenerOptions = {},
-  ): () => void {
-    const listener = (event: CustomEvent<Events[Type]>) => callback(event.detail)
-    const opts: AddEventListenerOptions = { passive: true, ...options }
-    this.#target.addEventListener(type, listener as EventListener, opts)
-    return () => this.#target.removeEventListener(type, listener as EventListener, opts)
-  }
-
-  once<Type extends EventType>(
-    type: Type,
-    callback: (data: Events[Type]) => void,
-    options: AddEventListenerOptions = {},
-  ): () => void {
-    return this.on(type, callback, { ...options, once: true })
-  }
-
-  next<Type extends EventType>(
-    type: Type,
-    options: AddEventListenerOptions = {},
-  ): Promise<Events[Type]> {
-    return new Promise((resolve, reject) => {
-      const { signal } = options
-      if (signal?.aborted) {
-        reject(signal.reason)
-      } else {
-        const off = this.once(type, resolve, options)
-        if (signal != null) {
-          signal.addEventListener(
-            'abort',
-            () => {
-              off()
-              reject(signal.reason)
-            },
-            { once: true },
-          )
-        }
-      }
-    })
-  }
-
-  readable<Type extends EventType>(
-    type: Type,
-    options: AddEventListenerOptions = {},
-  ): ReadableStream<Events[Type]> {
+  EventName extends keyof Events & string = keyof Events & string,
+> extends Emittery<Events> {
+  readable<Name extends EventName>(
+    name: Name,
+    options: { signal?: AbortSignal } = {},
+  ): ReadableStream<Events[Name]> {
     const abortController = new AbortController()
     const signal = options.signal
       ? AbortSignal.any([options.signal, abortController.signal])
@@ -86,7 +33,7 @@ export class EventEmitter<
     return new ReadableStream({
       start: (controller) => {
         if (!signal.aborted) {
-          const off = this.on(type, (data) => controller.enqueue(data), { ...options, signal })
+          const off = this.on(name, (data) => controller.enqueue(data), { signal })
           signal.addEventListener('abort', () => {
             off()
             if (!isClosed) {
@@ -103,10 +50,10 @@ export class EventEmitter<
     })
   }
 
-  writable(type: EventType): WritableStream<Events[EventType]> {
+  writable<Name extends EventName>(name: Name): WritableStream<Events[Name]> {
     return new WritableStream({
-      write: (detail) => {
-        this.emit(type, detail)
+      write: async (detail) => {
+        await this.emit(name, detail)
       },
     })
   }

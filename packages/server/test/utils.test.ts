@@ -31,7 +31,7 @@ describe('executeHandler()', () => {
       throw error
     })
     const send = jest.fn()
-    const handlerError = events.next('handlerError')
+    const handlerError = events.once('handlerError')
 
     // @ts-ignore type instantiation too deep
     await executeHandler(
@@ -71,7 +71,7 @@ describe('executeHandler()', () => {
       })
     })
     const send = jest.fn()
-    const handlerError = events.next('handlerError')
+    const handlerError = events.once('handlerError')
 
     // @ts-ignore type instantiation too deep
     const requestPromise = executeHandler(
@@ -114,7 +114,7 @@ describe('executeHandler()', () => {
       })
     })
     const send = jest.fn()
-    const handlerError = events.next('handlerError')
+    const handlerError = events.once('handlerError')
 
     // @ts-ignore type instantiation too deep
     const requestPromise = executeHandler(

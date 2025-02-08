@@ -79,7 +79,13 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### dispose()
 
-> **dispose**(): `Promise`\<`void`\>
+> **dispose**(`reason`?): `Promise`\<`void`\>
+
+###### Parameters
+
+###### reason?
+
+`unknown`
 
 ###### Returns
 

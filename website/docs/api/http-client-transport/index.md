@@ -64,11 +64,11 @@ Base Transport class implementing TransportType.
 
 ###### Get Signature
 
-> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
 
 ###### Returns
 
-[`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+[`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
 
 ###### Inherited from
 
@@ -114,7 +114,13 @@ Base Transport class implementing TransportType.
 
 ##### dispose()
 
-> **dispose**(): `Promise`\<`void`\>
+> **dispose**(`reason`?): `Promise`\<`void`\>
+
+###### Parameters
+
+###### reason?
+
+`unknown`
 
 ###### Returns
 

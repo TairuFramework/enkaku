@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/socket-transport",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Socket transport for Enkaku RPC clients and servers",

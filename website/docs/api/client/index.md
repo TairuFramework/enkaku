@@ -130,7 +130,13 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### dispose()
 
-> **dispose**(): `Promise`\<`void`\>
+> **dispose**(`reason`?): `Promise`\<`void`\>
+
+###### Parameters
+
+###### reason?
+
+`unknown`
 
 ###### Returns
 
@@ -375,6 +381,34 @@ Disposer class, providing a dispose function and a disposed Promise.
 ###### Returns
 
 `string`
+
+##### handleTransportDisposed()?
+
+> `optional` **handleTransportDisposed**: (`signal`) => [`ClientTransportOf`](../protocol/index.md#clienttransportofprotocol)\<`Protocol`\> \| `void`
+
+###### Parameters
+
+###### signal
+
+`AbortSignal`
+
+###### Returns
+
+[`ClientTransportOf`](../protocol/index.md#clienttransportofprotocol)\<`Protocol`\> \| `void`
+
+##### handleTransportError()?
+
+> `optional` **handleTransportError**: (`error`) => [`ClientTransportOf`](../protocol/index.md#clienttransportofprotocol)\<`Protocol`\> \| `void`
+
+###### Parameters
+
+###### error
+
+`Error`
+
+###### Returns
+
+[`ClientTransportOf`](../protocol/index.md#clienttransportofprotocol)\<`Protocol`\> \| `void`
 
 ##### serverID?
 

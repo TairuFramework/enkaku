@@ -88,7 +88,13 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### dispose()
 
-> **dispose**(): `Promise`\<`void`\>
+> **dispose**(`reason`?): `Promise`\<`void`\>
+
+###### Parameters
+
+###### reason?
+
+`unknown`
 
 ###### Returns
 
@@ -248,7 +254,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ### ServerEmitter
 
-> **ServerEmitter**: [`EventEmitter`](../event/index.md#eventemitterevents-eventtype)\<[`ServerEvents`](index.md#serverevents)\>
+> **ServerEmitter**: [`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`ServerEvents`](index.md#serverevents)\>
 
 ***
 

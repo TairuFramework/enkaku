@@ -1,6 +1,6 @@
 # @enkaku/event
 
-Simple events emitter based on EventTarget.
+Simple events emitter based on Emittery.
 
 ## Installation
 
@@ -10,186 +10,84 @@ npm install @enkaku/event
 
 ## Classes
 
-### EventEmitter\<Events, EventType\>
+### EventEmitter\<Events, EventName\>
+
+#### Extends
+
+- `default`\<`Events`\>
 
 #### Type Parameters
 
 • **Events** *extends* `Record`\<`string`, `unknown`\>
 
-• **EventType** *extends* keyof `Events` & `string` = keyof `Events` & `string`
+• **EventName** *extends* keyof `Events` & `string` = keyof `Events` & `string`
 
 #### Constructors
 
 ##### new EventEmitter()
 
-> **new EventEmitter**\<`Events`, `EventType`\>(`params`): [`EventEmitter`](index.md#eventemitterevents-eventtype)\<`Events`, `EventType`\>
+> **new EventEmitter**\<`Events`, `EventName`\>(`options`?): [`EventEmitter`](index.md#eventemitterevents-eventname)\<`Events`, `EventName`\>
+
+Create a new Emittery instance with the specified options.
 
 ###### Parameters
 
-###### params
+###### options?
 
-[`EventEmitterParams`](index.md#eventemitterparams) = `{}`
+`Options`\<`Events`\>
 
 ###### Returns
 
-[`EventEmitter`](index.md#eventemitterevents-eventtype)\<`Events`, `EventType`\>
+[`EventEmitter`](index.md#eventemitterevents-eventname)\<`Events`, `EventName`\>
+
+An instance of Emittery that you can use to listen for and emit events.
+
+###### Inherited from
+
+`Emittery<Events>.constructor`
 
 #### Methods
 
-##### emit()
-
-> **emit**(`type`, `detail`): `void`
-
-###### Parameters
-
-###### type
-
-`EventType`
-
-###### detail
-
-`Events`\[`EventType`\]
-
-###### Returns
-
-`void`
-
-***
-
-##### next()
-
-> **next**\<`Type`\>(`type`, `options`): `Promise`\<`Events`\[`Type`\]\>
-
-###### Type Parameters
-
-• **Type** *extends* `string`
-
-###### Parameters
-
-###### type
-
-`Type`
-
-###### options
-
-`AddEventListenerOptions` = `{}`
-
-###### Returns
-
-`Promise`\<`Events`\[`Type`\]\>
-
-***
-
-##### on()
-
-> **on**\<`Type`\>(`type`, `callback`, `options`): () => `void`
-
-###### Type Parameters
-
-• **Type** *extends* `string`
-
-###### Parameters
-
-###### type
-
-`Type`
-
-###### callback
-
-(`data`) => `void`
-
-###### options
-
-`AddEventListenerOptions` = `{}`
-
-###### Returns
-
-`Function`
-
-###### Returns
-
-`void`
-
-***
-
-##### once()
-
-> **once**\<`Type`\>(`type`, `callback`, `options`): () => `void`
-
-###### Type Parameters
-
-• **Type** *extends* `string`
-
-###### Parameters
-
-###### type
-
-`Type`
-
-###### callback
-
-(`data`) => `void`
-
-###### options
-
-`AddEventListenerOptions` = `{}`
-
-###### Returns
-
-`Function`
-
-###### Returns
-
-`void`
-
-***
-
 ##### readable()
 
-> **readable**\<`Type`\>(`type`, `options`): `ReadableStream`\<`Events`\[`Type`\]\>
+> **readable**\<`Name`\>(`name`, `options`): `ReadableStream`\<`Events`\[`Name`\]\>
 
 ###### Type Parameters
 
-• **Type** *extends* `string`
+• **Name** *extends* `string`
 
 ###### Parameters
 
-###### type
+###### name
 
-`Type`
+`Name`
 
 ###### options
 
-`AddEventListenerOptions` = `{}`
+###### signal
+
+`AbortSignal`
 
 ###### Returns
 
-`ReadableStream`\<`Events`\[`Type`\]\>
+`ReadableStream`\<`Events`\[`Name`\]\>
 
 ***
 
 ##### writable()
 
-> **writable**(`type`): `WritableStream`\<`Events`\[`EventType`\]\>
+> **writable**\<`Name`\>(`name`): `WritableStream`\<`Events`\[`Name`\]\>
+
+###### Type Parameters
+
+• **Name** *extends* `string`
 
 ###### Parameters
 
-###### type
+###### name
 
-`EventType`
+`Name`
 
 ###### Returns
 
-`WritableStream`\<`Events`\[`EventType`\]\>
-
-## Type Aliases
-
-### EventEmitterParams
-
-> **EventEmitterParams**: `object`
-
-#### Type declaration
-
-##### target?
-
-> `optional` **target**: `EventTarget`
+`WritableStream`\<`Events`\[`Name`\]\>

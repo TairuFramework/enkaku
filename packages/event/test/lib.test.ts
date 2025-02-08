@@ -4,125 +4,6 @@ import { jest } from '@jest/globals'
 import { EventEmitter } from '../src/index.js'
 
 describe('EventEmitter', () => {
-  describe('core functionalities', () => {
-    test('adds and removes listener', () => {
-      const emitter = new EventEmitter<{ test: number }>()
-      const listener = jest.fn()
-
-      const off = emitter.on('test', listener)
-      emitter.emit('test', 1)
-      emitter.emit('test', 2)
-      expect(listener).toHaveBeenCalledTimes(2)
-
-      const emitted = listener.mock.calls[0][0]
-      expect(emitted).toBe(1)
-
-      off()
-      emitter.emit('test', 3)
-      expect(listener).toHaveBeenCalledTimes(2)
-    })
-
-    test('removes listener using abort signal', () => {
-      const emitter = new EventEmitter<{ test: number }>()
-      const listener = jest.fn()
-      const controller = new AbortController()
-
-      emitter.on('test', listener, { signal: controller.signal })
-      emitter.emit('test', 1)
-      emitter.emit('test', 2)
-      expect(listener).toHaveBeenCalledTimes(2)
-
-      controller.abort()
-      emitter.emit('test', 3)
-      expect(listener).toHaveBeenCalledTimes(2)
-    })
-
-    test('does not trigger listener if signal is aborted', () => {
-      const emitter = new EventEmitter<{ test: number }>()
-      const listener = jest.fn()
-
-      emitter.on('test', listener, { signal: AbortSignal.abort() })
-      emitter.emit('test', 1)
-      emitter.emit('test', 2)
-      expect(listener).not.toHaveBeenCalled()
-    })
-
-    test('uses the provided target', () => {
-      const target = new EventTarget()
-      const emitter = new EventEmitter<{ test: number }>({ target })
-      const listener = jest.fn()
-
-      emitter.once('test', listener)
-      const event = new CustomEvent('test', { detail: 1 })
-      target.dispatchEvent(event)
-      expect(listener).toHaveBeenCalledWith(1)
-    })
-  })
-
-  describe('single event handling', () => {
-    test('once() only triggers the listener once', () => {
-      const emitter = new EventEmitter<{ test: number }>()
-      const listener = jest.fn()
-
-      emitter.once('test', listener)
-      emitter.emit('test', 1)
-      emitter.emit('test', 2)
-      expect(listener).toHaveBeenCalledTimes(1)
-    })
-
-    test('removes listener using returned function', () => {
-      const emitter = new EventEmitter<{ test: number }>()
-      const listener = jest.fn()
-
-      const off = emitter.once('test', listener)
-      off()
-      emitter.emit('test', 1)
-      expect(listener).not.toHaveBeenCalled()
-    })
-
-    test('next() resolves with the next event', async () => {
-      const emitter = new EventEmitter<{ test: number }>()
-      const next = new Promise((resolve) => {
-        emitter.next('test').then(resolve)
-        emitter.emit('test', 1)
-      })
-      await expect(next).resolves.toBe(1)
-    })
-
-    test('next() rejects on abort signal', async () => {
-      const emitter = new EventEmitter<{ test: number }>()
-      const controller = new AbortController()
-
-      const next = new Promise((resolve, reject) => {
-        emitter.next('test', { signal: controller.signal }).then(resolve, reject)
-        controller.abort()
-      })
-
-      await expect(next).rejects.toBeInstanceOf(DOMException)
-    })
-
-    test('next() rejects on abort signal with a custom reason', async () => {
-      const emitter = new EventEmitter<{ test: number }>()
-      const controller = new AbortController()
-
-      const next = new Promise((resolve, reject) => {
-        emitter.next('test', { signal: controller.signal }).then(resolve, reject)
-        controller.abort('foo')
-      })
-
-      await expect(next).rejects.toBe('foo')
-    })
-
-    test('next() rejects immediately if the signal is already aborted', async () => {
-      const emitter = new EventEmitter<{ test: number }>()
-      const next = new Promise((resolve, reject) => {
-        emitter.next('test', { signal: AbortSignal.abort('done') }).then(resolve, reject)
-        emitter.emit('test', 1)
-      })
-      await expect(next).rejects.toBe('done')
-    })
-  })
-
   describe('event streams', () => {
     test('events can be listened to using a readable stream', async () => {
       const emitter = new EventEmitter<{ test: number }>()
@@ -131,27 +12,27 @@ describe('EventEmitter', () => {
 
       const readable = emitter.readable('test', { signal: controller.signal })
       readable.pipeTo(writable)
-      emitter.emit('test', 1)
-      emitter.emit('test', 2)
-      emitter.emit('test', 3)
+      await emitter.emit('test', 1)
+      await emitter.emit('test', 2)
+      await emitter.emit('test', 3)
 
       controller.abort()
-      emitter.emit('test', 4)
+      await emitter.emit('test', 4)
       await expect(items).resolves.toEqual([1, 2, 3])
     })
 
     test('events readable stream can be cancelled', async () => {
       const emitter = new EventEmitter<{ test: number }>()
       const reader = emitter.readable('test').getReader()
-      emitter.emit('test', 1)
-      emitter.emit('test', 2)
-      emitter.emit('test', 3)
+      await emitter.emit('test', 1)
+      await emitter.emit('test', 2)
+      await emitter.emit('test', 3)
 
       await expect(reader.read()).resolves.toEqual({ done: false, value: 1 })
       await expect(reader.read()).resolves.toEqual({ done: false, value: 2 })
 
       await reader.cancel()
-      emitter.emit('test', 4)
+      await emitter.emit('test', 4)
       await expect(reader.closed).resolves.toBeUndefined()
     })
 
