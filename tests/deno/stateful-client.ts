@@ -1,6 +1,6 @@
-import { Client } from 'https://esm.sh/@enkaku/client@0.10.0'
-import { ClientTransport } from 'https://esm.sh/@enkaku/http-client-transport@0.10.0'
-import { createArraySink } from 'https://esm.sh/@enkaku/stream@0.10.0'
+import { Client } from 'https://esm.sh/@enkaku/client'
+import { ClientTransport } from 'https://esm.sh/@enkaku/http-client-transport'
+import { createArraySink } from 'https://esm.sh/@enkaku/stream'
 
 const client = new Client({
   transport: new ClientTransport({ url: 'http://localhost:8000' }),

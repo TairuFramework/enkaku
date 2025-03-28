@@ -18,15 +18,19 @@ npm install @enkaku/event
 
 #### Type Parameters
 
-• **Events** *extends* `Record`\<`string`, `unknown`\>
+##### Events
 
-• **EventName** *extends* keyof `Events` & `string` = keyof `Events` & `string`
+`Events` *extends* `Record`\<`string`, `unknown`\>
+
+##### EventName
+
+`EventName` *extends* keyof `Events` & `string` = keyof `Events` & `string`
 
 #### Constructors
 
-##### new EventEmitter()
+##### Constructor
 
-> **new EventEmitter**\<`Events`, `EventName`\>(`options`?): [`EventEmitter`](index.md#eventemitterevents-eventname)\<`Events`, `EventName`\>
+> **new EventEmitter**\<`Events`, `EventName`\>(`options`?): [`EventEmitter`](#eventemitter)\<`Events`, `EventName`\>
 
 Create a new Emittery instance with the specified options.
 
@@ -38,7 +42,7 @@ Create a new Emittery instance with the specified options.
 
 ###### Returns
 
-[`EventEmitter`](index.md#eventemitterevents-eventname)\<`Events`, `EventName`\>
+[`EventEmitter`](#eventemitter)\<`Events`, `EventName`\>
 
 An instance of Emittery that you can use to listen for and emit events.
 
@@ -54,7 +58,9 @@ An instance of Emittery that you can use to listen for and emit events.
 
 ###### Type Parameters
 
-• **Name** *extends* `string`
+###### Name
+
+`Name` *extends* `string`
 
 ###### Parameters
 
@@ -64,7 +70,7 @@ An instance of Emittery that you can use to listen for and emit events.
 
 ###### options
 
-###### signal
+###### signal?
 
 `AbortSignal`
 
@@ -72,15 +78,15 @@ An instance of Emittery that you can use to listen for and emit events.
 
 `ReadableStream`\<`Events`\[`Name`\]\>
 
-***
-
 ##### writable()
 
 > **writable**\<`Name`\>(`name`): `WritableStream`\<`Events`\[`Name`\]\>
 
 ###### Type Parameters
 
-• **Name** *extends* `string`
+###### Name
+
+`Name` *extends* `string`
 
 ###### Parameters
 

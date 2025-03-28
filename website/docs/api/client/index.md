@@ -20,29 +20,33 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-• **ClientDefinitions** *extends* [`ClientDefinitionsType`](index.md#clientdefinitionstypeprotocol)\<`Protocol`\> = [`ClientDefinitionsType`](index.md#clientdefinitionstypeprotocol)\<`Protocol`\>
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+##### ClientDefinitions
+
+`ClientDefinitions` *extends* [`ClientDefinitionsType`](#clientdefinitionstype)\<`Protocol`\> = [`ClientDefinitionsType`](#clientdefinitionstype)\<`Protocol`\>
 
 #### Constructors
 
-##### new Client()
+##### Constructor
 
-> **new Client**\<`Protocol`, `ClientDefinitions`\>(`params`): [`Client`](index.md#clientprotocol-clientdefinitions)\<`Protocol`, `ClientDefinitions`\>
+> **new Client**\<`Protocol`, `ClientDefinitions`\>(`params`): [`Client`](#client)\<`Protocol`, `ClientDefinitions`\>
 
 ###### Parameters
 
 ###### params
 
-[`ClientParams`](index.md#clientparamsprotocol)\<`Protocol`\>
+[`ClientParams`](#clientparams)\<`Protocol`\>
 
 ###### Returns
 
-[`Client`](index.md#clientprotocol-clientdefinitions)\<`Protocol`, `ClientDefinitions`\>
+[`Client`](#client)\<`Protocol`, `ClientDefinitions`\>
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructors-1)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor)
 
 #### Accessors
 
@@ -58,7 +62,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed-2)
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposer#disposed)
 
 #### Methods
 
@@ -72,19 +76,21 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose-2)
-
-***
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#disposer#asyncdispose)
 
 ##### createChannel()
 
-> **createChannel**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`ChannelCall`](index.md#channelcallreceive-send-result)\<`T`\[`"Receive"`\], `T`\[`"Send"`\], `T`\[`"Result"`\]\>
+> **createChannel**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`ChannelCall`](#channelcall)\<`T`\[`"Receive"`\], `T`\[`"Send"`\], `T`\[`"Result"`\]\>
 
 ###### Type Parameters
 
-• **Procedure** *extends* `string`
+###### Procedure
 
-• **T** *extends* `object` = `ClientDefinitions`\[`"Channels"`\]\[`Procedure`\]
+`Procedure` *extends* `string`
+
+###### T
+
+`T` *extends* `object` = `ClientDefinitions`\[`"Channels"`\]\[`Procedure`\]
 
 ###### Parameters
 
@@ -98,19 +104,21 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Returns
 
-[`ChannelCall`](index.md#channelcallreceive-send-result)\<`T`\[`"Receive"`\], `T`\[`"Send"`\], `T`\[`"Result"`\]\>
-
-***
+[`ChannelCall`](#channelcall)\<`T`\[`"Receive"`\], `T`\[`"Send"`\], `T`\[`"Result"`\]\>
 
 ##### createStream()
 
-> **createStream**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`StreamCall`](index.md#streamcallreceive-result)\<`T`\[`"Receive"`\], `T`\[`"Result"`\]\>
+> **createStream**\<`Procedure`, `T`\>(`procedure`, ...`args`): [`StreamCall`](#streamcall)\<`T`\[`"Receive"`\], `T`\[`"Result"`\]\>
 
 ###### Type Parameters
 
-• **Procedure** *extends* `string`
+###### Procedure
 
-• **T** *extends* `object` = `ClientDefinitions`\[`"Streams"`\]\[`Procedure`\]
+`Procedure` *extends* `string`
+
+###### T
+
+`T` *extends* `object` = `ClientDefinitions`\[`"Streams"`\]\[`Procedure`\]
 
 ###### Parameters
 
@@ -124,9 +132,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Returns
 
-[`StreamCall`](index.md#streamcallreceive-result)\<`T`\[`"Receive"`\], `T`\[`"Result"`\]\>
-
-***
+[`StreamCall`](#streamcall)\<`T`\[`"Receive"`\], `T`\[`"Result"`\]\>
 
 ##### dispose()
 
@@ -144,9 +150,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose-2)
-
-***
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#disposer#dispose)
 
 ##### request()
 
@@ -154,9 +158,13 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Type Parameters
 
-• **Procedure** *extends* `string`
+###### Procedure
 
-• **T** *extends* `object` = `ClientDefinitions`\[`"Requests"`\]\[`Procedure`\]
+`Procedure` *extends* `string`
+
+###### T
+
+`T` *extends* `object` = `ClientDefinitions`\[`"Requests"`\]\[`Procedure`\]
 
 ###### Parameters
 
@@ -172,17 +180,19 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 `Promise`\<`T`\[`"Result"`\]\> & `object`
 
-***
-
 ##### sendEvent()
 
 > **sendEvent**\<`Procedure`, `T`\>(`procedure`, ...`args`): `Promise`\<`void`\>
 
 ###### Type Parameters
 
-• **Procedure** *extends* `string`
+###### Procedure
 
-• **T** *extends* `object` = `ClientDefinitions`\[`"Events"`\]\[`Procedure`\]
+`Procedure` *extends* `string`
+
+###### T
+
+`T` *extends* `object` = `ClientDefinitions`\[`"Events"`\]\[`Procedure`\]
 
 ###### Parameters
 
@@ -208,29 +218,33 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Type Parameters
 
-• **Code** *extends* `string` = `string`
+##### Code
 
-• **Data** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Code` *extends* `string` = `string`
+
+##### Data
+
+`Data` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Implements
 
-- [`ErrorObjectType`](index.md#errorobjecttypecode-data)\<`Code`, `Data`\>
+- [`ErrorObjectType`](#errorobjecttype)\<`Code`, `Data`\>
 
 #### Constructors
 
-##### new RequestError()
+##### Constructor
 
-> **new RequestError**\<`Code`, `Data`\>(`params`): [`RequestError`](index.md#requesterrorcode-data)\<`Code`, `Data`\>
+> **new RequestError**\<`Code`, `Data`\>(`params`): [`RequestError`](#requesterror)\<`Code`, `Data`\>
 
 ###### Parameters
 
 ###### params
 
-[`RequestErrorParams`](index.md#requesterrorparamscode-data)\<`Code`, `Data`\>
+[`RequestErrorParams`](#requesterrorparams)\<`Code`, `Data`\>
 
 ###### Returns
 
-[`RequestError`](index.md#requesterrorcode-data)\<`Code`, `Data`\>
+[`RequestError`](#requesterror)\<`Code`, `Data`\>
 
 ###### Overrides
 
@@ -252,8 +266,6 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 `ErrorObjectType.code`
 
-***
-
 ##### data
 
 ###### Get Signature
@@ -272,29 +284,33 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### fromPayload()
 
-> `static` **fromPayload**\<`Code`, `Data`\>(`payload`): [`RequestError`](index.md#requesterrorcode-data)\<`Code`, `Data`\>
+> `static` **fromPayload**\<`Code`, `Data`\>(`payload`): [`RequestError`](#requesterror)\<`Code`, `Data`\>
 
 ###### Type Parameters
 
-• **Code** *extends* `string` = `string`
+###### Code
 
-• **Data** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Code` *extends* `string` = `string`
+
+###### Data
+
+`Data` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ###### Parameters
 
 ###### payload
 
-[`ErrorReplyPayload`](../protocol/index.md#errorreplypayloadcode-data)\<`Code`, `Data`\>
+[`ErrorReplyPayload`](../protocol/index.md#errorreplypayload)\<`Code`, `Data`\>
 
 ###### Returns
 
-[`RequestError`](index.md#requesterrorcode-data)\<`Code`, `Data`\>
+[`RequestError`](#requesterror)\<`Code`, `Data`\>
 
 ## Type Aliases
 
 ### ChannelCall\<Receive, Send, Result\>
 
-> **ChannelCall**\<`Receive`, `Send`, `Result`\>: [`StreamCall`](index.md#streamcallreceive-result)\<`Receive`, `Result`\> & `object`
+> **ChannelCall**\<`Receive`, `Send`, `Result`\> = [`StreamCall`](#streamcall)\<`Receive`, `Result`\> & `object`
 
 #### Type declaration
 
@@ -318,61 +334,73 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Type Parameters
 
-• **Receive**
+##### Receive
 
-• **Send**
+`Receive`
 
-• **Result**
+##### Send
+
+`Send`
+
+##### Result
+
+`Result`
 
 ***
 
 ### ChannelDefinitionsType\<Protocol\>
 
-> **ChannelDefinitionsType**\<`Protocol`\>: `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends ChannelProcedureDefinition ? { Param: DataOf<Protocol[Procedure]["param"]>; Receive: DataOf<Protocol[Procedure]["receive"]>; Result: ReturnOf<Protocol[Procedure]["result"]>; Send: DataOf<Protocol[Procedure]["send"]> } : never }`\>
+> **ChannelDefinitionsType**\<`Protocol`\> = `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends ChannelProcedureDefinition ? { Param: DataOf<Protocol[Procedure]["param"]>; Receive: DataOf<Protocol[Procedure]["receive"]>; Result: ReturnOf<Protocol[Procedure]["result"]>; Send: DataOf<Protocol[Procedure]["send"]> } : never }`\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
 ### ClientDefinitionsType\<Protocol\>
 
-> **ClientDefinitionsType**\<`Protocol`\>: `object`
+> **ClientDefinitionsType**\<`Protocol`\> = `object`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-#### Type declaration
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+#### Properties
 
 ##### Channels
 
-> **Channels**: [`ChannelDefinitionsType`](index.md#channeldefinitionstypeprotocol)\<`Protocol`\>
+> **Channels**: [`ChannelDefinitionsType`](#channeldefinitionstype)\<`Protocol`\>
 
 ##### Events
 
-> **Events**: [`EventDefinitionsType`](index.md#eventdefinitionstypeprotocol)\<`Protocol`\>
+> **Events**: [`EventDefinitionsType`](#eventdefinitionstype)\<`Protocol`\>
 
 ##### Requests
 
-> **Requests**: [`RequestDefinitionsType`](index.md#requestdefinitionstypeprotocol)\<`Protocol`\>
+> **Requests**: [`RequestDefinitionsType`](#requestdefinitionstype)\<`Protocol`\>
 
 ##### Streams
 
-> **Streams**: [`StreamDefinitionsType`](index.md#streamdefinitionstypeprotocol)\<`Protocol`\>
+> **Streams**: [`StreamDefinitionsType`](#streamdefinitionstype)\<`Protocol`\>
 
 ***
 
 ### ClientParams\<Protocol\>
 
-> **ClientParams**\<`Protocol`\>: `object`
+> **ClientParams**\<`Protocol`\> = `object`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-#### Type declaration
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+#### Properties
 
 ##### getRandomID()?
 
@@ -384,7 +412,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### handleTransportDisposed()?
 
-> `optional` **handleTransportDisposed**: (`signal`) => [`ClientTransportOf`](../protocol/index.md#clienttransportofprotocol)\<`Protocol`\> \| `void`
+> `optional` **handleTransportDisposed**: (`signal`) => [`ClientTransportOf`](../protocol/index.md#clienttransportof)\<`Protocol`\> \| `void`
 
 ###### Parameters
 
@@ -394,11 +422,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Returns
 
-[`ClientTransportOf`](../protocol/index.md#clienttransportofprotocol)\<`Protocol`\> \| `void`
+[`ClientTransportOf`](../protocol/index.md#clienttransportof)\<`Protocol`\> \| `void`
 
 ##### handleTransportError()?
 
-> `optional` **handleTransportError**: (`error`) => [`ClientTransportOf`](../protocol/index.md#clienttransportofprotocol)\<`Protocol`\> \| `void`
+> `optional` **handleTransportError**: (`error`) => [`ClientTransportOf`](../protocol/index.md#clienttransportof)\<`Protocol`\> \| `void`
 
 ###### Parameters
 
@@ -408,7 +436,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Returns
 
-[`ClientTransportOf`](../protocol/index.md#clienttransportofprotocol)\<`Protocol`\> \| `void`
+[`ClientTransportOf`](../protocol/index.md#clienttransportof)\<`Protocol`\> \| `void`
 
 ##### serverID?
 
@@ -420,21 +448,25 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### transport
 
-> **transport**: [`ClientTransportOf`](../protocol/index.md#clienttransportofprotocol)\<`Protocol`\>
+> **transport**: [`ClientTransportOf`](../protocol/index.md#clienttransportof)\<`Protocol`\>
 
 ***
 
 ### ErrorObjectType\<Code, Data\>
 
-> **ErrorObjectType**\<`Code`, `Data`\>: `object`
+> **ErrorObjectType**\<`Code`, `Data`\> = `object`
 
 #### Type Parameters
 
-• **Code** *extends* `string` = `string`
+##### Code
 
-• **Data** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Code` *extends* `string` = `string`
 
-#### Type declaration
+##### Data
+
+`Data` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+#### Properties
 
 ##### code
 
@@ -452,17 +484,19 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ### EventDefinitionsType\<Protocol\>
 
-> **EventDefinitionsType**\<`Protocol`\>: `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition ? { Data: DataOf<Protocol[Procedure]["data"]> } : never }`\>
+> **EventDefinitionsType**\<`Protocol`\> = `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition ? { Data: DataOf<Protocol[Procedure]["data"]> } : never }`\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
 ### RequestCall\<Result\>
 
-> **RequestCall**\<`Result`\>: `Promise`\<`Result`\> & `object`
+> **RequestCall**\<`Result`\> = `Promise`\<`Result`\> & `object`
 
 #### Type declaration
 
@@ -486,35 +520,43 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Type Parameters
 
-• **Result**
+##### Result
+
+`Result`
 
 ***
 
 ### RequestDefinitionsType\<Protocol\>
 
-> **RequestDefinitionsType**\<`Protocol`\>: `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends RequestProcedureDefinition ? { Param: DataOf<Protocol[Procedure]["param"]>; Result: ReturnOf<Protocol[Procedure]["result"]> } : never }`\>
+> **RequestDefinitionsType**\<`Protocol`\> = `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends RequestProcedureDefinition ? { Param: DataOf<Protocol[Procedure]["param"]>; Result: ReturnOf<Protocol[Procedure]["result"]> } : never }`\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
 ### RequestErrorParams\<Code, Data\>
 
-> **RequestErrorParams**\<`Code`, `Data`\>: `ErrorOptions` & [`ErrorObjectType`](index.md#errorobjecttypecode-data)\<`Code`, `Data`\>
+> **RequestErrorParams**\<`Code`, `Data`\> = `ErrorOptions` & [`ErrorObjectType`](#errorobjecttype)\<`Code`, `Data`\>
 
 #### Type Parameters
 
-• **Code** *extends* `string` = `string`
+##### Code
 
-• **Data** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Code` *extends* `string` = `string`
+
+##### Data
+
+`Data` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ***
 
 ### StreamCall\<Receive, Result\>
 
-> **StreamCall**\<`Receive`, `Result`\>: [`RequestCall`](index.md#requestcallresult)\<`Result`\> & `object`
+> **StreamCall**\<`Receive`, `Result`\> = [`RequestCall`](#requestcall)\<`Result`\> & `object`
 
 #### Type declaration
 
@@ -532,16 +574,22 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Type Parameters
 
-• **Receive**
+##### Receive
 
-• **Result**
+`Receive`
+
+##### Result
+
+`Result`
 
 ***
 
 ### StreamDefinitionsType\<Protocol\>
 
-> **StreamDefinitionsType**\<`Protocol`\>: `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends StreamProcedureDefinition ? { Param: Protocol[Procedure]["param"] extends undefined ? never : DataOf<Protocol[Procedure]["param"]>; Receive: DataOf<Protocol[Procedure]["receive"]>; Result: ReturnOf<Protocol[Procedure]["result"]> } : never }`\>
+> **StreamDefinitionsType**\<`Protocol`\> = `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends StreamProcedureDefinition ? { Param: Protocol[Procedure]["param"] extends undefined ? never : DataOf<Protocol[Procedure]["param"]>; Receive: DataOf<Protocol[Procedure]["receive"]>; Result: ReturnOf<Protocol[Procedure]["result"]> } : never }`\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)

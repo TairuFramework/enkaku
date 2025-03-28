@@ -12,11 +12,13 @@ npm install @enkaku/stream
 
 ### DecodeJSON()\<T\>
 
-> **DecodeJSON**\<`T`\>: (`value`) => `T`
+> **DecodeJSON**\<`T`\> = (`value`) => `T`
 
 #### Type Parameters
 
-• **T** = `unknown`
+##### T
+
+`T` = `unknown`
 
 #### Parameters
 
@@ -32,11 +34,13 @@ npm install @enkaku/stream
 
 ### EncodeJSON()\<T\>
 
-> **EncodeJSON**\<`T`\>: (`value`) => `string`
+> **EncodeJSON**\<`T`\> = (`value`) => `string`
 
 #### Type Parameters
 
-• **T** = `unknown`
+##### T
+
+`T` = `unknown`
 
 #### Parameters
 
@@ -56,7 +60,9 @@ npm install @enkaku/stream
 
 #### Type Parameters
 
-• **T**
+##### T
+
+`T`
 
 #### Returns
 
@@ -72,9 +78,13 @@ Create a tuple of `ReadableWritablePair` streams connected to each other.
 
 #### Type Parameters
 
-• **AtoB**
+##### AtoB
 
-• **BtoA** = `AtoB`
+`AtoB`
+
+##### BtoA
+
+`BtoA` = `AtoB`
 
 #### Returns
 
@@ -90,7 +100,9 @@ Create a `ReadableWritablePair` stream queuing written messages until they are r
 
 #### Type Parameters
 
-• **T**
+##### T
+
+`T`
 
 #### Returns
 
@@ -106,7 +118,9 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Type Parameters
 
-• **T**
+##### T
+
+`T`
 
 #### Returns
 
@@ -116,21 +130,23 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 ### fromJSONLines()
 
-> **fromJSONLines**\<`T`\>(`decode`): `TransformStream`\<`Uint8Array` \| `string`, `T`\>
+> **fromJSONLines**\<`T`\>(`decode`): `TransformStream`\<`string` \| `Uint8Array`\<`ArrayBufferLike`\>, `T`\>
 
 #### Type Parameters
 
-• **T** = `unknown`
+##### T
+
+`T` = `unknown`
 
 #### Parameters
 
 ##### decode
 
-[`DecodeJSON`](index.md#decodejsont)\<`T`\> = `JSON.parse`
+[`DecodeJSON`](#decodejson)\<`T`\> = `JSON.parse`
 
 #### Returns
 
-`TransformStream`\<`Uint8Array` \| `string`, `T`\>
+`TransformStream`\<`string` \| `Uint8Array`\<`ArrayBufferLike`\>, `T`\>
 
 ***
 
@@ -140,9 +156,13 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Type Parameters
 
-• **I**
+##### I
 
-• **O**
+`I`
+
+##### O
+
+`O`
 
 #### Parameters
 
@@ -162,9 +182,13 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Type Parameters
 
-• **I**
+##### I
 
-• **O**
+`I`
+
+##### O
+
+`O`
 
 #### Parameters
 
@@ -184,7 +208,9 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Type Parameters
 
-• **T**
+##### T
+
+`T`
 
 #### Parameters
 
@@ -204,7 +230,9 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Type Parameters
 
-• **T**
+##### T
+
+`T`
 
 #### Parameters
 
@@ -224,13 +252,15 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Type Parameters
 
-• **T** = `unknown`
+##### T
+
+`T` = `unknown`
 
 #### Parameters
 
 ##### encode
 
-[`EncodeJSON`](index.md#encodejsont)\<`T`\> = `JSON.stringify`
+[`EncodeJSON`](#encodejson)\<`T`\> = `JSON.stringify`
 
 #### Returns
 

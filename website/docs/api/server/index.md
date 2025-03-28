@@ -20,27 +20,29 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Constructors
 
-##### new Server()
+##### Constructor
 
-> **new Server**\<`Protocol`\>(`params`): [`Server`](index.md#serverprotocol)\<`Protocol`\>
+> **new Server**\<`Protocol`\>(`params`): [`Server`](#server)\<`Protocol`\>
 
 ###### Parameters
 
 ###### params
 
-[`ServerParams`](index.md#serverparamsprotocol)\<`Protocol`\>
+[`ServerParams`](#serverparams)\<`Protocol`\>
 
 ###### Returns
 
-[`Server`](index.md#serverprotocol)\<`Protocol`\>
+[`Server`](#server)\<`Protocol`\>
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructors-1)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor)
 
 #### Accessors
 
@@ -56,19 +58,17 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed-2)
-
-***
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposer#disposed)
 
 ##### events
 
 ###### Get Signature
 
-> **get** **events**(): [`ServerEmitter`](index.md#serveremitter)
+> **get** **events**(): [`ServerEmitter`](#serveremitter)
 
 ###### Returns
 
-[`ServerEmitter`](index.md#serveremitter)
+[`ServerEmitter`](#serveremitter)
 
 #### Methods
 
@@ -82,9 +82,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose-2)
-
-***
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#disposer#asyncdispose)
 
 ##### dispose()
 
@@ -102,9 +100,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose-2)
-
-***
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#disposer#dispose)
 
 ##### handle()
 
@@ -114,7 +110,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### transport
 
-[`ServerTransportOf`](../protocol/index.md#servertransportofprotocol)\<`Protocol`\>
+[`ServerTransportOf`](../protocol/index.md#servertransportof)\<`Protocol`\>
 
 ###### options
 
@@ -128,43 +124,55 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ### ChannelHandler\<Protocol, Procedure\>
 
-> **ChannelHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-result)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
+> **ChannelHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-• **Procedure** *extends* keyof `Protocol` & `string`
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+##### Procedure
+
+`Procedure` *extends* keyof `Protocol` & `string`
 
 ***
 
 ### ChannelHandlerContext\<Protocol, Procedure\>
 
-> **ChannelHandlerContext**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`StreamHandlerContext`](index.md#streamhandlercontextprotocol-procedure)\<`Protocol`, `Procedure`\> & `object` : `never`
+> **ChannelHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`StreamHandlerContext`](#streamhandlercontext)\<`Protocol`, `Procedure`\> & `object` : `never`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-• **Procedure** *extends* keyof `Protocol` & `string`
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+##### Procedure
+
+`Procedure` *extends* keyof `Protocol` & `string`
 
 ***
 
 ### EventHandler()\<Protocol, Procedure\>
 
-> **EventHandler**\<`Protocol`, `Procedure`\>: (`context`) => `void` \| `Promise`\<`void`\>
+> **EventHandler**\<`Protocol`, `Procedure`\> = (`context`) => `void` \| `Promise`\<`void`\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-• **Procedure** *extends* keyof `Protocol` & `string`
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+##### Procedure
+
+`Procedure` *extends* keyof `Protocol` & `string`
 
 #### Parameters
 
 ##### context
 
-[`EventHandlerContext`](index.md#eventhandlercontextprotocol-procedure)\<`Protocol`, `Procedure`\>
+[`EventHandlerContext`](#eventhandlercontext)\<`Protocol`, `Procedure`\>
 
 #### Returns
 
@@ -174,159 +182,181 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ### EventHandlerContext\<Protocol, Procedure\>
 
-> **EventHandlerContext**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`EventProcedureDefinition`](../protocol/index.md#eventproceduredefinition) ? `object` : `never`
+> **EventHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`EventProcedureDefinition`](../protocol/index.md#eventproceduredefinition) ? `object` : `never`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-• **Procedure** *extends* keyof `Protocol` & `string`
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+##### Procedure
+
+`Procedure` *extends* keyof `Protocol` & `string`
 
 ***
 
 ### HandlerReturn\<ResultSchema, Result\>
 
-> **HandlerReturn**\<`ResultSchema`, `Result`\>: `Result` \| `Promise`\<`Result`\>
+> **HandlerReturn**\<`ResultSchema`, `Result`\> = `Result` \| `Promise`\<`Result`\>
 
 #### Type Parameters
 
-• **ResultSchema**
+##### ResultSchema
 
-• **Result** = [`ReturnOf`](../protocol/index.md#returnofs)\<`ResultSchema`\>
+`ResultSchema`
+
+##### Result
+
+`Result` = [`ReturnOf`](../protocol/index.md#returnof)\<`ResultSchema`\>
 
 ***
 
 ### ProcedureAccessRecord
 
-> **ProcedureAccessRecord**: `Record`\<`string`, `boolean` \| `string`[]\>
+> **ProcedureAccessRecord** = `Record`\<`string`, `boolean` \| `string`[]\>
 
 ***
 
 ### ProcedureHandlers\<Protocol\>
 
-> **ProcedureHandlers**\<`Protocol`\>: `{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition ? (context: EventHandlerContext<Protocol, Procedure>) => void : Protocol[Procedure] extends RequestProcedureDefinition ? (context: RequestHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : Protocol[Procedure] extends StreamProcedureDefinition ? (context: StreamHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : Protocol[Procedure] extends ChannelProcedureDefinition ? (context: ChannelHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : never }`
+> **ProcedureHandlers**\<`Protocol`\> = `{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition ? (context: EventHandlerContext<Protocol, Procedure>) => void : Protocol[Procedure] extends RequestProcedureDefinition ? (context: RequestHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : Protocol[Procedure] extends StreamProcedureDefinition ? (context: StreamHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : Protocol[Procedure] extends ChannelProcedureDefinition ? (context: ChannelHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : never }`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
 ### RequestHandler\<Protocol, Procedure\>
 
-> **RequestHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-result)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
+> **RequestHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-• **Procedure** *extends* keyof `Protocol` & `string`
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+##### Procedure
+
+`Procedure` *extends* keyof `Protocol` & `string`
 
 ***
 
 ### RequestHandlerContext\<Protocol, Procedure\>
 
-> **RequestHandlerContext**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? `object` : `never`
+> **RequestHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? `object` : `never`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-• **Procedure** *extends* keyof `Protocol` & `string`
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+##### Procedure
+
+`Procedure` *extends* keyof `Protocol` & `string`
 
 ***
 
 ### ServeParams\<Protocol\>
 
-> **ServeParams**\<`Protocol`\>: `Omit`\<[`ServerParams`](index.md#serverparamsprotocol)\<`Protocol`\>, `"transports"`\> & `object`
+> **ServeParams**\<`Protocol`\> = `Omit`\<[`ServerParams`](#serverparams)\<`Protocol`\>, `"transports"`\> & `object`
 
 #### Type declaration
 
 ##### transport
 
-> **transport**: [`ServerTransportOf`](../protocol/index.md#servertransportofprotocol)\<`Protocol`\>
+> **transport**: [`ServerTransportOf`](../protocol/index.md#servertransportof)\<`Protocol`\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
 ### ServerEmitter
 
-> **ServerEmitter**: [`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`ServerEvents`](index.md#serverevents)\>
+> **ServerEmitter** = [`EventEmitter`](../event/index.md#eventemitter)\<[`ServerEvents`](#serverevents-1)\>
 
 ***
 
 ### ServerEvents
 
-> **ServerEvents**: `object`
+> **ServerEvents** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### handlerAbort
 
 > **handlerAbort**: `object`
 
-###### handlerAbort.rid
+###### rid
 
-> **handlerAbort.rid**: `string`
+> **rid**: `string`
 
 ##### handlerError
 
 > **handlerError**: `object`
 
-###### handlerError.error
+###### error
 
-> **handlerError.error**: `Error`
+> **error**: `Error`
 
-###### handlerError.payload
+###### payload
 
-> **handlerError.payload**: `Record`\<`string`, `unknown`\>
+> **payload**: `Record`\<`string`, `unknown`\>
 
-###### handlerError.rid?
+###### rid?
 
-> `optional` **handlerError.rid**: `string`
+> `optional` **rid**: `string`
 
 ##### handlerTimeout
 
 > **handlerTimeout**: `object`
 
-###### handlerTimeout.rid
+###### rid
 
-> **handlerTimeout.rid**: `string`
+> **rid**: `string`
 
 ##### invalidMessage
 
 > **invalidMessage**: `object`
 
-###### invalidMessage.error
+###### error
 
-> **invalidMessage.error**: `Error`
+> **error**: `Error`
 
-###### invalidMessage.message
+###### message
 
-> **invalidMessage.message**: `unknown`
+> **message**: `unknown`
 
 ***
 
 ### ServerParams\<Protocol\>
 
-> **ServerParams**\<`Protocol`\>: `object`
+> **ServerParams**\<`Protocol`\> = `object`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-#### Type declaration
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+#### Properties
 
 ##### access?
 
-> `optional` **access**: [`ProcedureAccessRecord`](index.md#procedureaccessrecord)
+> `optional` **access**: [`ProcedureAccessRecord`](#procedureaccessrecord)
 
 ##### handlers
 
-> **handlers**: [`ProcedureHandlers`](index.md#procedurehandlersprotocol)\<`Protocol`\>
+> **handlers**: [`ProcedureHandlers`](#procedurehandlers)\<`Protocol`\>
 
 ##### id?
 
@@ -346,48 +376,58 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### transports?
 
-> `optional` **transports**: [`ServerTransportOf`](../protocol/index.md#servertransportofprotocol)\<`Protocol`\>[]
+> `optional` **transports**: [`ServerTransportOf`](../protocol/index.md#servertransportof)\<`Protocol`\>[]
 
 ***
 
 ### StreamHandler\<Protocol, Procedure\>
 
-> **StreamHandler**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](index.md#handlerreturnresultschema-result)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
+> **StreamHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-• **Procedure** *extends* keyof `Protocol` & `string`
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+##### Procedure
+
+`Procedure` *extends* keyof `Protocol` & `string`
 
 ***
 
 ### StreamHandlerContext\<Protocol, Procedure\>
 
-> **StreamHandlerContext**\<`Protocol`, `Procedure`\>: `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`RequestHandlerContext`](index.md#requesthandlercontextprotocol-procedure)\<`Protocol`, `Procedure`\> & `object` : `never`
+> **StreamHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`RequestHandlerContext`](#requesthandlercontext)\<`Protocol`, `Procedure`\> & `object` : `never`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-• **Procedure** *extends* keyof `Protocol` & `string`
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+##### Procedure
+
+`Procedure` *extends* keyof `Protocol` & `string`
 
 ## Functions
 
 ### serve()
 
-> **serve**\<`Protocol`\>(`params`): [`Server`](index.md#serverprotocol)\<`Protocol`\>
+> **serve**\<`Protocol`\>(`params`): [`Server`](#server)\<`Protocol`\>
 
 #### Type Parameters
 
-• **Protocol** *extends* `object`
+##### Protocol
+
+`Protocol` *extends* `object`
 
 #### Parameters
 
 ##### params
 
-[`ServeParams`](index.md#serveparamsprotocol)\<`Protocol`\>
+[`ServeParams`](#serveparams)\<`Protocol`\>
 
 #### Returns
 
-[`Server`](index.md#serverprotocol)\<`Protocol`\>
+[`Server`](#server)\<`Protocol`\>

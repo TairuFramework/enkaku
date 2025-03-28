@@ -14,13 +14,13 @@ npm install @enkaku/expo-keystore
 
 #### Implements
 
-- [`KeyEntry`](../protocol/index.md#keyentryprivatekeytype)\<`Uint8Array`\>
+- [`KeyEntry`](../protocol/index.md#keyentry)\<`Uint8Array`\>
 
 #### Constructors
 
-##### new ExpoKeyEntry()
+##### Constructor
 
-> **new ExpoKeyEntry**(`keyID`): [`ExpoKeyEntry`](index.md#expokeyentry)
+> **new ExpoKeyEntry**(`keyID`): [`ExpoKeyEntry`](#expokeyentry)
 
 ###### Parameters
 
@@ -30,7 +30,7 @@ npm install @enkaku/expo-keystore
 
 ###### Returns
 
-[`ExpoKeyEntry`](index.md#expokeyentry)
+[`ExpoKeyEntry`](#expokeyentry)
 
 #### Accessors
 
@@ -52,27 +52,23 @@ npm install @enkaku/expo-keystore
 
 ##### get()
 
-> **get**(): `null` \| `Uint8Array`
+> **get**(): `null` \| `Uint8Array`\<`ArrayBufferLike`\>
 
 ###### Returns
 
-`null` \| `Uint8Array`
-
-***
+`null` \| `Uint8Array`\<`ArrayBufferLike`\>
 
 ##### getAsync()
 
-> **getAsync**(): `Promise`\<`null` \| `Uint8Array`\>
+> **getAsync**(): `Promise`\<`null` \| `Uint8Array`\<`ArrayBufferLike`\>\>
 
 ###### Returns
 
-`Promise`\<`null` \| `Uint8Array`\>
+`Promise`\<`null` \| `Uint8Array`\<`ArrayBufferLike`\>\>
 
 ###### Implementation of
 
 `KeyEntry.getAsync`
-
-***
 
 ##### provide()
 
@@ -82,21 +78,17 @@ npm install @enkaku/expo-keystore
 
 `Uint8Array`
 
-***
-
 ##### provideAsync()
 
-> **provideAsync**(): `Promise`\<`Uint8Array`\>
+> **provideAsync**(): `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
 ###### Returns
 
-`Promise`\<`Uint8Array`\>
+`Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
 ###### Implementation of
 
 `KeyEntry.provideAsync`
-
-***
 
 ##### removeAsync()
 
@@ -109,8 +101,6 @@ npm install @enkaku/expo-keystore
 ###### Implementation of
 
 `KeyEntry.removeAsync`
-
-***
 
 ##### set()
 
@@ -125,8 +115,6 @@ npm install @enkaku/expo-keystore
 ###### Returns
 
 `void`
-
-***
 
 ##### setAsync()
 
@@ -150,7 +138,7 @@ npm install @enkaku/expo-keystore
 
 ### ExpoKeyStore
 
-> `const` **ExpoKeyStore**: [`KeyStore`](../protocol/index.md#keystoreprivatekeytype-entrytype)\<`Uint8Array`, [`ExpoKeyEntry`](index.md#expokeyentry)\>
+> `const` **ExpoKeyStore**: [`KeyStore`](../protocol/index.md#keystore)\<`Uint8Array`, [`ExpoKeyEntry`](#expokeyentry)\>
 
 ## Functions
 
@@ -198,8 +186,8 @@ npm install @enkaku/expo-keystore
 
 ### randomPrivateKeyAsync()
 
-> **randomPrivateKeyAsync**(): `Promise`\<`Uint8Array`\>
+> **randomPrivateKeyAsync**(): `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
 #### Returns
 
-`Promise`\<`Uint8Array`\>
+`Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>

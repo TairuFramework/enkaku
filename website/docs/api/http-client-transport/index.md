@@ -16,31 +16,33 @@ Base Transport class implementing TransportType.
 
 #### Extends
 
-- [`Transport`](../transport/index.md#transportr-w)\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\>
+- [`Transport`](../transport/index.md#transport)\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Constructors
 
-##### new ClientTransport()
+##### Constructor
 
-> **new ClientTransport**\<`Protocol`\>(`params`): [`ClientTransport`](index.md#clienttransportprotocol)\<`Protocol`\>
+> **new ClientTransport**\<`Protocol`\>(`params`): [`ClientTransport`](#clienttransport)\<`Protocol`\>
 
 ###### Parameters
 
 ###### params
 
-[`ClientTransportParams`](index.md#clienttransportparams)
+[`ClientTransportParams`](#clienttransportparams)
 
 ###### Returns
 
-[`ClientTransport`](index.md#clienttransportprotocol)\<`Protocol`\>
+[`ClientTransport`](#clienttransport)\<`Protocol`\>
 
 ###### Overrides
 
-[`Transport`](../transport/index.md#transportr-w).[`constructor`](../transport/index.md#constructors-3)
+[`Transport`](../transport/index.md#transport).[`constructor`](../transport/index.md#transport#constructor-1)
 
 #### Accessors
 
@@ -56,23 +58,21 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`disposed`](../transport/index.md#disposed-6)
-
-***
+[`Transport`](../transport/index.md#transport).[`disposed`](../transport/index.md#transport#disposed-1)
 
 ##### events
 
 ###### Get Signature
 
-> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](../transport/index.md#transportevents-1)\>
 
 ###### Returns
 
-[`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+[`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](../transport/index.md#transportevents-1)\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`events`](../transport/index.md#events-2)
+[`Transport`](../transport/index.md#transport).[`events`](../transport/index.md#transport#events)
 
 #### Methods
 
@@ -86,9 +86,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`[asyncDispose]`](../transport/index.md#asyncdispose-6)
-
-***
+[`Transport`](../transport/index.md#transport).[`[asyncDispose]`](../transport/index.md#transport#asyncdispose-2)
 
 ##### \[asyncIterator\]()
 
@@ -100,17 +98,15 @@ Base Transport class implementing TransportType.
 
 ###### next()
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>; \}\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\>; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>; \}\>
+`Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\>; \}\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`[asyncIterator]`](../transport/index.md#asynciterator-2)
-
-***
+[`Transport`](../transport/index.md#transport).[`[asyncIterator]`](../transport/index.md#transport#asynciterator)
 
 ##### dispose()
 
@@ -128,37 +124,31 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`dispose`](../transport/index.md#dispose-6)
-
-***
+[`Transport`](../transport/index.md#transport).[`dispose`](../transport/index.md#transport#dispose-2)
 
 ##### getWritable()
 
-> **getWritable**(): `WritableStream`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\>
+> **getWritable**(): `WritableStream`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)\<`Protocol`\>\>
 
 ###### Returns
 
-`WritableStream`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\>
+`WritableStream`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)\<`Protocol`\>\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`getWritable`](../transport/index.md#getwritable-2)
-
-***
+[`Transport`](../transport/index.md#transport).[`getWritable`](../transport/index.md#transport#getwritable)
 
 ##### read()
 
-> **read**(): `Promise`\<`ReadableStreamReadResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>\>
+> **read**(): `Promise`\<`ReadableStreamReadResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\>\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>\>
+`Promise`\<`ReadableStreamReadResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\>\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`read`](../transport/index.md#read-2)
-
-***
+[`Transport`](../transport/index.md#transport).[`read`](../transport/index.md#transport#read)
 
 ##### write()
 
@@ -168,7 +158,7 @@ Base Transport class implementing TransportType.
 
 ###### value
 
-[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>
+[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)
 
 ###### Returns
 
@@ -176,7 +166,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`write`](../transport/index.md#write-2)
+[`Transport`](../transport/index.md#transport).[`write`](../transport/index.md#transport#write)
 
 ***
 
@@ -188,9 +178,9 @@ Base Transport class implementing TransportType.
 
 #### Constructors
 
-##### new ResponseError()
+##### Constructor
 
-> **new ResponseError**(`response`): [`ResponseError`](index.md#responseerror)
+> **new ResponseError**(`response`): [`ResponseError`](#responseerror)
 
 ###### Parameters
 
@@ -200,7 +190,7 @@ Base Transport class implementing TransportType.
 
 ###### Returns
 
-[`ResponseError`](index.md#responseerror)
+[`ResponseError`](#responseerror)
 
 ###### Overrides
 
@@ -222,9 +212,9 @@ Base Transport class implementing TransportType.
 
 ### ClientTransportParams
 
-> **ClientTransportParams**: `object`
+> **ClientTransportParams** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### url
 
@@ -234,9 +224,9 @@ Base Transport class implementing TransportType.
 
 ### EventStream
 
-> **EventStream**: `object`
+> **EventStream** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### id
 
@@ -250,25 +240,27 @@ Base Transport class implementing TransportType.
 
 ### TransportStream\<Protocol\>
 
-> **TransportStream**\<`Protocol`\>: `ReadableWritablePair`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageofprotocol)\<`Protocol`\>\> & `object`
+> **TransportStream**\<`Protocol`\> = `ReadableWritablePair`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)\<`Protocol`\>\> & `object`
 
 #### Type declaration
 
 ##### controller
 
-> **controller**: `ReadableStreamDefaultController`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageofprotocol)\<`Protocol`\>\>
+> **controller**: `ReadableStreamDefaultController`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ***
 
 ### TransportStreamParams
 
-> **TransportStreamParams**: `object`
+> **TransportStreamParams** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### url
 
@@ -278,7 +270,7 @@ Base Transport class implementing TransportType.
 
 ### createEventStream()
 
-> **createEventStream**(`url`): `Promise`\<[`EventStream`](index.md#eventstream)\>
+> **createEventStream**(`url`): `Promise`\<[`EventStream`](#eventstream)\>
 
 #### Parameters
 
@@ -288,24 +280,26 @@ Base Transport class implementing TransportType.
 
 #### Returns
 
-`Promise`\<[`EventStream`](index.md#eventstream)\>
+`Promise`\<[`EventStream`](#eventstream)\>
 
 ***
 
 ### createTransportStream()
 
-> **createTransportStream**\<`Protocol`\>(`params`): [`TransportStream`](index.md#transportstreamprotocol)\<`Protocol`\>
+> **createTransportStream**\<`Protocol`\>(`params`): [`TransportStream`](#transportstream)\<`Protocol`\>
 
 #### Type Parameters
 
-• **Protocol** *extends* `object`
+##### Protocol
+
+`Protocol` *extends* `object`
 
 #### Parameters
 
 ##### params
 
-[`TransportStreamParams`](index.md#transportstreamparams)
+[`TransportStreamParams`](#transportstreamparams)
 
 #### Returns
 
-[`TransportStream`](index.md#transportstreamprotocol)\<`Protocol`\>
+[`TransportStream`](#transportstream)\<`Protocol`\>

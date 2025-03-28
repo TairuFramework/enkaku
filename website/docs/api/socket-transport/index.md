@@ -16,33 +16,37 @@ Base Transport class implementing TransportType.
 
 #### Extends
 
-- [`Transport`](../transport/index.md#transportr-w)\<`R`, `W`\>
+- [`Transport`](../transport/index.md#transport)\<`R`, `W`\>
 
 #### Type Parameters
 
-• **R**
+##### R
 
-• **W**
+`R`
+
+##### W
+
+`W`
 
 #### Constructors
 
-##### new SocketTransport()
+##### Constructor
 
-> **new SocketTransport**\<`R`, `W`\>(`params`): [`SocketTransport`](index.md#sockettransportr-w)\<`R`, `W`\>
+> **new SocketTransport**\<`R`, `W`\>(`params`): [`SocketTransport`](#sockettransport)\<`R`, `W`\>
 
 ###### Parameters
 
 ###### params
 
-[`SocketTransportParams`](index.md#sockettransportparamsr)\<`R`\>
+[`SocketTransportParams`](#sockettransportparams)\<`R`\>
 
 ###### Returns
 
-[`SocketTransport`](index.md#sockettransportr-w)\<`R`, `W`\>
+[`SocketTransport`](#sockettransport)\<`R`, `W`\>
 
 ###### Overrides
 
-[`Transport`](../transport/index.md#transportr-w).[`constructor`](../transport/index.md#constructors-3)
+[`Transport`](../transport/index.md#transport).[`constructor`](../transport/index.md#transport#constructor-1)
 
 #### Accessors
 
@@ -58,23 +62,21 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`disposed`](../transport/index.md#disposed-6)
-
-***
+[`Transport`](../transport/index.md#transport).[`disposed`](../transport/index.md#transport#disposed-1)
 
 ##### events
 
 ###### Get Signature
 
-> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](../transport/index.md#transportevents-1)\>
 
 ###### Returns
 
-[`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](../transport/index.md#transportevents), `"writeFailed"`\>
+[`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](../transport/index.md#transportevents-1)\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`events`](../transport/index.md#events-2)
+[`Transport`](../transport/index.md#transport).[`events`](../transport/index.md#transport#events)
 
 #### Methods
 
@@ -88,9 +90,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`[asyncDispose]`](../transport/index.md#asyncdispose-6)
-
-***
+[`Transport`](../transport/index.md#transport).[`[asyncDispose]`](../transport/index.md#transport#asyncdispose-2)
 
 ##### \[asyncIterator\]()
 
@@ -110,9 +110,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`[asyncIterator]`](../transport/index.md#asynciterator-2)
-
-***
+[`Transport`](../transport/index.md#transport).[`[asyncIterator]`](../transport/index.md#transport#asynciterator)
 
 ##### dispose()
 
@@ -130,9 +128,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`dispose`](../transport/index.md#dispose-6)
-
-***
+[`Transport`](../transport/index.md#transport).[`dispose`](../transport/index.md#transport#dispose-2)
 
 ##### getWritable()
 
@@ -144,9 +140,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`getWritable`](../transport/index.md#getwritable-2)
-
-***
+[`Transport`](../transport/index.md#transport).[`getWritable`](../transport/index.md#transport#getwritable)
 
 ##### read()
 
@@ -158,9 +152,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`read`](../transport/index.md#read-2)
-
-***
+[`Transport`](../transport/index.md#transport).[`read`](../transport/index.md#transport#read)
 
 ##### write()
 
@@ -178,35 +170,37 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transportr-w).[`write`](../transport/index.md#write-2)
+[`Transport`](../transport/index.md#transport).[`write`](../transport/index.md#transport#write)
 
 ## Type Aliases
 
 ### SocketOrPromise
 
-> **SocketOrPromise**: `Socket` \| `Promise`\<`Socket`\>
+> **SocketOrPromise** = `Socket` \| `Promise`\<`Socket`\>
 
 ***
 
 ### SocketSource
 
-> **SocketSource**: [`SocketOrPromise`](index.md#socketorpromise) \| () => [`SocketOrPromise`](index.md#socketorpromise)
+> **SocketSource** = [`SocketOrPromise`](#socketorpromise) \| () => [`SocketOrPromise`](#socketorpromise)
 
 ***
 
 ### SocketTransportParams\<R\>
 
-> **SocketTransportParams**\<`R`\>: `object`
+> **SocketTransportParams**\<`R`\> = `object`
 
 #### Type Parameters
 
-• **R**
+##### R
 
-#### Type declaration
+`R`
+
+#### Properties
 
 ##### decode?
 
-> `optional` **decode**: [`DecodeJSON`](../stream/index.md#decodejsont)\<`R`\>
+> `optional` **decode**: [`DecodeJSON`](../stream/index.md#decodejson)\<`R`\>
 
 ##### signal?
 
@@ -214,7 +208,7 @@ Base Transport class implementing TransportType.
 
 ##### socket
 
-> **socket**: [`SocketSource`](index.md#socketsource) \| `string`
+> **socket**: [`SocketSource`](#socketsource) \| `string`
 
 ## Functions
 
@@ -240,19 +234,23 @@ Base Transport class implementing TransportType.
 
 #### Type Parameters
 
-• **R**
+##### R
 
-• **W**
+`R`
+
+##### W
+
+`W`
 
 #### Parameters
 
 ##### source
 
-[`SocketSource`](index.md#socketsource)
+[`SocketSource`](#socketsource)
 
 ##### decode?
 
-[`DecodeJSON`](../stream/index.md#decodejsont)\<`R`\>
+[`DecodeJSON`](../stream/index.md#decodejson)\<`R`\>
 
 #### Returns
 

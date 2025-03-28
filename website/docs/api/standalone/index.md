@@ -12,13 +12,15 @@ npm install @enkaku/standalone
 
 ### StandaloneOptions\<Protocol\>
 
-> **StandaloneOptions**\<`Protocol`\>: `object`
+> **StandaloneOptions**\<`Protocol`\> = `object`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+##### Protocol
 
-#### Type declaration
+`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+
+#### Properties
 
 ##### access?
 
@@ -48,22 +50,24 @@ npm install @enkaku/standalone
 
 ### standalone()
 
-> **standalone**\<`Protocol`\>(`handlers`, `options`): [`Client`](../client/index.md#clientprotocol-clientdefinitions)\<`Protocol`\>
+> **standalone**\<`Protocol`\>(`handlers`, `options`): [`Client`](../client/index.md#client)\<`Protocol`\>
 
 #### Type Parameters
 
-• **Protocol** *extends* `object`
+##### Protocol
+
+`Protocol` *extends* `object`
 
 #### Parameters
 
 ##### handlers
 
-[`ProcedureHandlers`](../server/index.md#procedurehandlersprotocol)\<`Protocol`\>
+[`ProcedureHandlers`](../server/index.md#procedurehandlers)\<`Protocol`\>
 
 ##### options
 
-[`StandaloneOptions`](index.md#standaloneoptionsprotocol)\<`Protocol`\> = `{}`
+[`StandaloneOptions`](#standaloneoptions)\<`Protocol`\> = `{}`
 
 #### Returns
 
-[`Client`](../client/index.md#clientprotocol-clientdefinitions)\<`Protocol`\>
+[`Client`](../client/index.md#client)\<`Protocol`\>

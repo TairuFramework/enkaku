@@ -20,10 +20,10 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Extended by
 
-- [`Client`](../client/index.md#clientprotocol-clientdefinitions)
-- [`Server`](../server/index.md#serverprotocol)
-- [`DirectTransports`](../transport/index.md#directtransportstoclient-toserver)
-- [`Transport`](../transport/index.md#transportr-w)
+- [`Client`](../client/index.md#client)
+- [`Server`](../server/index.md#server)
+- [`DirectTransports`](../transport/index.md#directtransports)
+- [`Transport`](../transport/index.md#transport)
 
 #### Implements
 
@@ -31,19 +31,19 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Constructors
 
-##### new Disposer()
+##### Constructor
 
-> **new Disposer**(`params`): [`Disposer`](index.md#disposer)
+> **new Disposer**(`params`): [`Disposer`](#disposer)
 
 ###### Parameters
 
 ###### params
 
-[`DisposerParams`](index.md#disposerparams) = `{}`
+[`DisposerParams`](#disposerparams) = `{}`
 
 ###### Returns
 
-[`Disposer`](index.md#disposer)
+[`Disposer`](#disposer)
 
 ###### Overrides
 
@@ -75,8 +75,6 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 `AsyncDisposable.[asyncDispose]`
 
-***
-
 ##### dispose()
 
 > **dispose**(`reason`?): `Promise`\<`void`\>
@@ -95,17 +93,21 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ### Deferred\<T, R\>
 
-> **Deferred**\<`T`, `R`\>: `object`
+> **Deferred**\<`T`, `R`\> = `object`
 
 Deferred object, providing a Promise with associated resolve and reject function.
 
 #### Type Parameters
 
-• **T**
+##### T
 
-• **R** = `unknown`
+`T`
 
-#### Type declaration
+##### R
+
+`R` = `unknown`
+
+#### Properties
 
 ##### promise
 
@@ -143,9 +145,9 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 ### DisposerParams
 
-> **DisposerParams**: `object`
+> **DisposerParams** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### dispose()?
 
@@ -163,19 +165,23 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 ### defer()
 
-> **defer**\<`T`, `R`\>(): [`Deferred`](index.md#deferredt-r)\<`T`, `R`\>
+> **defer**\<`T`, `R`\>(): [`Deferred`](#deferred)\<`T`, `R`\>
 
 Create a Deferred object.
 
 #### Type Parameters
 
-• **T**
+##### T
 
-• **R** = `unknown`
+`T`
+
+##### R
+
+`R` = `unknown`
 
 #### Returns
 
-[`Deferred`](index.md#deferredt-r)\<`T`, `R`\>
+[`Deferred`](#deferred)\<`T`, `R`\>
 
 ***
 
@@ -187,7 +193,9 @@ Lazily run the `execute` function at most once when awaited.
 
 #### Type Parameters
 
-• **T**
+##### T
+
+`T`
 
 #### Parameters
 
@@ -209,7 +217,9 @@ Converts a function returning a value or promise to a Promise.
 
 #### Type Parameters
 
-• **T** = `unknown`
+##### T
+
+`T` = `unknown`
 
 #### Parameters
 

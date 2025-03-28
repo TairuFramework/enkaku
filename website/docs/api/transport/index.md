@@ -20,29 +20,33 @@ Create direct Transports for communication between a client and server in the sa
 
 #### Type Parameters
 
-• **ToClient**
+##### ToClient
 
-• **ToServer**
+`ToClient`
+
+##### ToServer
+
+`ToServer`
 
 #### Constructors
 
-##### new DirectTransports()
+##### Constructor
 
-> **new DirectTransports**\<`ToClient`, `ToServer`\>(`options`): [`DirectTransports`](index.md#directtransportstoclient-toserver)\<`ToClient`, `ToServer`\>
+> **new DirectTransports**\<`ToClient`, `ToServer`\>(`options`): [`DirectTransports`](#directtransports)\<`ToClient`, `ToServer`\>
 
 ###### Parameters
 
 ###### options
 
-[`DirectTransportsOptions`](index.md#directtransportsoptions) = `{}`
+[`DirectTransportsOptions`](#directtransportsoptions) = `{}`
 
 ###### Returns
 
-[`DirectTransports`](index.md#directtransportstoclient-toserver)\<`ToClient`, `ToServer`\>
+[`DirectTransports`](#directtransports)\<`ToClient`, `ToServer`\>
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructors-1)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor)
 
 #### Accessors
 
@@ -50,13 +54,11 @@ Create direct Transports for communication between a client and server in the sa
 
 ###### Get Signature
 
-> **get** **client**(): [`TransportType`](index.md#transporttyper-w)\<`ToClient`, `ToServer`\>
+> **get** **client**(): [`TransportType`](#transporttype)\<`ToClient`, `ToServer`\>
 
 ###### Returns
 
-[`TransportType`](index.md#transporttyper-w)\<`ToClient`, `ToServer`\>
-
-***
+[`TransportType`](#transporttype)\<`ToClient`, `ToServer`\>
 
 ##### disposed
 
@@ -70,19 +72,17 @@ Create direct Transports for communication between a client and server in the sa
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed-2)
-
-***
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposer#disposed)
 
 ##### server
 
 ###### Get Signature
 
-> **get** **server**(): [`TransportType`](index.md#transporttyper-w)\<`ToServer`, `ToClient`\>
+> **get** **server**(): [`TransportType`](#transporttype)\<`ToServer`, `ToClient`\>
 
 ###### Returns
 
-[`TransportType`](index.md#transporttyper-w)\<`ToServer`, `ToClient`\>
+[`TransportType`](#transporttype)\<`ToServer`, `ToClient`\>
 
 #### Methods
 
@@ -96,9 +96,7 @@ Create direct Transports for communication between a client and server in the sa
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose-2)
-
-***
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#disposer#asyncdispose)
 
 ##### dispose()
 
@@ -116,7 +114,7 @@ Create direct Transports for communication between a client and server in the sa
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose-2)
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#disposer#dispose)
 
 ***
 
@@ -130,41 +128,45 @@ Base Transport class implementing TransportType.
 
 #### Extended by
 
-- [`ClientTransport`](../http-client-transport/index.md#clienttransportprotocol)
-- [`ServerTransport`](../http-server-transport/index.md#servertransportprotocol)
-- [`MessageTransport`](../message-transport/index.md#messagetransportr-w)
-- [`NodeStreamsTransport`](../node-streams-transport/index.md#nodestreamstransportr-w)
-- [`SocketTransport`](../socket-transport/index.md#sockettransportr-w)
+- [`ClientTransport`](../http-client-transport/index.md#clienttransport)
+- [`ServerTransport`](../http-server-transport/index.md#servertransport)
+- [`MessageTransport`](../message-transport/index.md#messagetransport)
+- [`NodeStreamsTransport`](../node-streams-transport/index.md#nodestreamstransport)
+- [`SocketTransport`](../socket-transport/index.md#sockettransport)
 
 #### Type Parameters
 
-• **R**
+##### R
 
-• **W**
+`R`
+
+##### W
+
+`W`
 
 #### Implements
 
-- [`TransportType`](index.md#transporttyper-w)\<`R`, `W`\>
+- [`TransportType`](#transporttype)\<`R`, `W`\>
 
 #### Constructors
 
-##### new Transport()
+##### Constructor
 
-> **new Transport**\<`R`, `W`\>(`params`): [`Transport`](index.md#transportr-w)\<`R`, `W`\>
+> **new Transport**\<`R`, `W`\>(`params`): [`Transport`](#transport)\<`R`, `W`\>
 
 ###### Parameters
 
 ###### params
 
-[`TransportParams`](index.md#transportparamsr-w)\<`R`, `W`\>
+[`TransportParams`](#transportparams)\<`R`, `W`\>
 
 ###### Returns
 
-[`Transport`](index.md#transportr-w)\<`R`, `W`\>
+[`Transport`](#transport)\<`R`, `W`\>
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructors-1)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor)
 
 #### Accessors
 
@@ -184,19 +186,17 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed-2)
-
-***
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposer#disposed)
 
 ##### events
 
 ###### Get Signature
 
-> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](#transportevents-1)\>
 
 ###### Returns
 
-[`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+[`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](#transportevents-1)\>
 
 ###### Implementation of
 
@@ -218,9 +218,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose-2)
-
-***
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#disposer#asyncdispose)
 
 ##### \[asyncIterator\]()
 
@@ -242,8 +240,6 @@ Base Transport class implementing TransportType.
 
 `TransportType.[asyncIterator]`
 
-***
-
 ##### dispose()
 
 > **dispose**(`reason`?): `Promise`\<`void`\>
@@ -264,9 +260,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose-2)
-
-***
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#disposer#dispose)
 
 ##### getWritable()
 
@@ -280,8 +274,6 @@ Base Transport class implementing TransportType.
 
 `TransportType.getWritable`
 
-***
-
 ##### read()
 
 > **read**(): `Promise`\<`ReadableStreamReadResult`\<`R`\>\>
@@ -293,8 +285,6 @@ Base Transport class implementing TransportType.
 ###### Implementation of
 
 `TransportType.read`
-
-***
 
 ##### write()
 
@@ -318,9 +308,9 @@ Base Transport class implementing TransportType.
 
 ### DirectTransportsOptions
 
-> **DirectTransportsOptions**: `object`
+> **DirectTransportsOptions** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### signal?
 
@@ -330,47 +320,55 @@ Base Transport class implementing TransportType.
 
 ### TransportEvents
 
-> **TransportEvents**: `object`
+> **TransportEvents** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### writeFailed
 
 > **writeFailed**: `object`
 
-###### writeFailed.error
+###### error
 
-> **writeFailed.error**: `Error`
+> **error**: `Error`
 
-###### writeFailed.rid
+###### rid
 
-> **writeFailed.rid**: `string`
+> **rid**: `string`
 
 ***
 
 ### TransportInput\<R, W\>
 
-> **TransportInput**\<`R`, `W`\>: [`TransportStream`](index.md#transportstreamr-w)\<`R`, `W`\> \| () => [`TransportStream`](index.md#transportstreamr-w)\<`R`, `W`\>
+> **TransportInput**\<`R`, `W`\> = [`TransportStream`](#transportstream)\<`R`, `W`\> \| () => [`TransportStream`](#transportstream)\<`R`, `W`\>
 
 #### Type Parameters
 
-• **R**
+##### R
 
-• **W**
+`R`
+
+##### W
+
+`W`
 
 ***
 
 ### TransportParams\<R, W\>
 
-> **TransportParams**\<`R`, `W`\>: `object`
+> **TransportParams**\<`R`, `W`\> = `object`
 
 #### Type Parameters
 
-• **R**
+##### R
 
-• **W**
+`R`
 
-#### Type declaration
+##### W
+
+`W`
+
+#### Properties
 
 ##### signal?
 
@@ -378,25 +376,29 @@ Base Transport class implementing TransportType.
 
 ##### stream
 
-> **stream**: [`TransportInput`](index.md#transportinputr-w)\<`R`, `W`\>
+> **stream**: [`TransportInput`](#transportinput)\<`R`, `W`\>
 
 ***
 
 ### TransportStream\<R, W\>
 
-> **TransportStream**\<`R`, `W`\>: `ReadableWritablePair`\<`R`, `W`\> \| `Promise`\<`ReadableWritablePair`\<`R`, `W`\>\>
+> **TransportStream**\<`R`, `W`\> = `ReadableWritablePair`\<`R`, `W`\> \| `Promise`\<`ReadableWritablePair`\<`R`, `W`\>\>
 
 #### Type Parameters
 
-• **R**
+##### R
 
-• **W**
+`R`
+
+##### W
+
+`W`
 
 ***
 
 ### TransportType\<R, W\>
 
-> **TransportType**\<`R`, `W`\>: [`Disposer`](../async/index.md#disposer) & `object`
+> **TransportType**\<`R`, `W`\> = [`Disposer`](../async/index.md#disposer) & `object`
 
 Generic Transport object type implementing read and write functions.
 
@@ -436,11 +438,11 @@ Generic Transport object type implementing read and write functions.
 
 ###### Get Signature
 
-> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](#transportevents-1)\>
 
 ###### Returns
 
-[`EventEmitter`](../event/index.md#eventemitterevents-eventname)\<[`TransportEvents`](index.md#transportevents), `"writeFailed"`\>
+[`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](#transportevents-1)\>
 
 ##### \[asyncIterator\]()
 
@@ -450,6 +452,10 @@ Generic Transport object type implementing read and write functions.
 
 #### Type Parameters
 
-• **R**
+##### R
 
-• **W**
+`R`
+
+##### W
+
+`W`

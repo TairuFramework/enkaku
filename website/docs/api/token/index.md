@@ -12,9 +12,9 @@ npm install @enkaku/token
 
 ### GenericSigner
 
-> **GenericSigner**: `object`
+> **GenericSigner** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### algorithm
 
@@ -42,7 +42,7 @@ npm install @enkaku/token
 
 ### OwnSigner
 
-> **OwnSigner**: [`GenericSigner`](index.md#genericsigner) & `object`
+> **OwnSigner** = [`GenericSigner`](#genericsigner) & `object`
 
 #### Type declaration
 
@@ -54,7 +54,7 @@ npm install @enkaku/token
 
 ### OwnTokenSigner
 
-> **OwnTokenSigner**: [`TokenSigner`](index.md#tokensigner) & `object`
+> **OwnTokenSigner** = [`TokenSigner`](#tokensigner) & `object`
 
 #### Type declaration
 
@@ -66,15 +66,19 @@ npm install @enkaku/token
 
 ### SignedToken\<Payload, Header\>
 
-> **SignedToken**\<`Payload`, `Header`\>: `object`
+> **SignedToken**\<`Payload`, `Header`\> = `object`
 
 #### Type Parameters
 
-• **Payload** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+##### Payload
 
-• **Header** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
-#### Type declaration
+##### Header
+
+`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+#### Properties
 
 ##### data
 
@@ -96,31 +100,39 @@ npm install @enkaku/token
 
 ### Token\<Payload, Header\>
 
-> **Token**\<`Payload`, `Header`\>: [`UnsignedToken`](index.md#unsignedtokenpayload-header)\<`Payload`, `Header`\> \| [`SignedToken`](index.md#signedtokenpayload-header)\<`Payload`, `Header`\> \| [`VerifiedToken`](index.md#verifiedtokenpayload-header)\<`Payload`, `Header`\>
+> **Token**\<`Payload`, `Header`\> = [`UnsignedToken`](#unsignedtoken)\<`Payload`, `Header`\> \| [`SignedToken`](#signedtoken)\<`Payload`, `Header`\> \| [`VerifiedToken`](#verifiedtoken)\<`Payload`, `Header`\>
 
 #### Type Parameters
 
-• **Payload** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+##### Payload
 
-• **Header** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+##### Header
+
+`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ***
 
 ### TokenSigner
 
-> **TokenSigner**: `object`
+> **TokenSigner** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### createToken()
 
-> **createToken**: \<`Payload`, `Header`\>(`payload`, `header`?) => `Promise`\<[`SignedToken`](index.md#signedtokenpayload-header)\<`Payload`, `Header`\>\>
+> **createToken**: \<`Payload`, `Header`\>(`payload`, `header`?) => `Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
 
 ###### Type Parameters
 
-• **Payload** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+###### Payload
 
-• **Header** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+###### Header
+
+`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ###### Parameters
 
@@ -134,7 +146,7 @@ npm install @enkaku/token
 
 ###### Returns
 
-`Promise`\<[`SignedToken`](index.md#signedtokenpayload-header)\<`Payload`, `Header`\>\>
+`Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
 
 ##### id
 
@@ -144,15 +156,19 @@ npm install @enkaku/token
 
 ### UnsignedToken\<Payload, Header\>
 
-> **UnsignedToken**\<`Payload`, `Header`\>: `object`
+> **UnsignedToken**\<`Payload`, `Header`\> = `object`
 
 #### Type Parameters
 
-• **Payload** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+##### Payload
 
-• **Header** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
-#### Type declaration
+##### Header
+
+`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+#### Properties
 
 ##### data?
 
@@ -174,7 +190,7 @@ npm install @enkaku/token
 
 ### VerifiedToken\<Payload, Header\>
 
-> **VerifiedToken**\<`Payload`, `Header`\>: [`SignedToken`](index.md#signedtokenpayload-header)\<`Payload`, `Header`\> & `object`
+> **VerifiedToken**\<`Payload`, `Header`\> = [`SignedToken`](#signedtoken)\<`Payload`, `Header`\> & `object`
 
 #### Type declaration
 
@@ -184,23 +200,43 @@ npm install @enkaku/token
 
 #### Type Parameters
 
-• **Payload** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+##### Payload
 
-• **Header** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+##### Header
+
+`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+## Variables
+
+### randomPrivateKey()
+
+> `const` **randomPrivateKey**: () => `Uint8Array` = `ed25519.utils.randomPrivateKey`
+
+Generate a random private key.
+
+#### Returns
+
+`Uint8Array`
 
 ## Functions
 
 ### createUnsignedToken()
 
-> **createUnsignedToken**\<`Payload`, `Header`\>(`payload`, `header`?): [`UnsignedToken`](index.md#unsignedtokenpayload-header)\<`Payload`, `Header`\>
+> **createUnsignedToken**\<`Payload`, `Header`\>(`payload`, `header`?): [`UnsignedToken`](#unsignedtoken)\<`Payload`, `Header`\>
 
 Create an unsigned token object.
 
 #### Type Parameters
 
-• **Payload** *extends* `Record`\<`string`, `unknown`\>
+##### Payload
 
-• **Header** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` *extends* `Record`\<`string`, `unknown`\>
+
+##### Header
+
+`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
@@ -214,7 +250,7 @@ Create an unsigned token object.
 
 #### Returns
 
-[`UnsignedToken`](index.md#unsignedtokenpayload-header)\<`Payload`, `Header`\>
+[`UnsignedToken`](#unsignedtoken)\<`Payload`, `Header`\>
 
 ***
 
@@ -256,7 +292,7 @@ Convert a Uint8Array to a base64-encoded string.
 
 ### getSigner()
 
-> **getSigner**(`privateKey`): [`GenericSigner`](index.md#genericsigner)
+> **getSigner**(`privateKey`): [`GenericSigner`](#genericsigner)
 
 Create a generic signer object for the given private key.
 
@@ -264,17 +300,17 @@ Create a generic signer object for the given private key.
 
 ##### privateKey
 
-`string` | `Uint8Array`
+`string` | `Uint8Array`\<`ArrayBufferLike`\>
 
 #### Returns
 
-[`GenericSigner`](index.md#genericsigner)
+[`GenericSigner`](#genericsigner)
 
 ***
 
 ### getTokenSigner()
 
-> **getTokenSigner**(`privateKey`): [`TokenSigner`](index.md#tokensigner)
+> **getTokenSigner**(`privateKey`): [`TokenSigner`](#tokensigner)
 
 Create a token signer object for the given private key.
 
@@ -282,11 +318,11 @@ Create a token signer object for the given private key.
 
 ##### privateKey
 
-`string` | `Uint8Array`
+`string` | `Uint8Array`\<`ArrayBufferLike`\>
 
 #### Returns
 
-[`TokenSigner`](index.md#tokensigner)
+[`TokenSigner`](#tokensigner)
 
 ***
 
@@ -298,7 +334,9 @@ Check if a token is signed.
 
 #### Type Parameters
 
-• **Payload** *extends* `object` = \{ `[key: string]`: `unknown`;  `aud`: `string`; `cap`: `string` \| `string`[]; `exp`: `number`; `iat`: `number`; `iss`: `string`; `nbf`: `number`; `sub`: `string`; \}
+##### Payload
+
+`Payload` *extends* `object` = \{ `[key: string]`: `unknown`;  `aud`: `string`; `cap`: `string` \| `string`[]; `exp`: `number`; `iat`: `number`; `iss`: `string`; `nbf`: `number`; `sub`: `string`; \}
 
 #### Parameters
 
@@ -320,13 +358,15 @@ Check if a token is unsigned.
 
 #### Type Parameters
 
-• **Payload** *extends* `Record`\<`string`, `unknown`\>
+##### Payload
+
+`Payload` *extends* `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
 ##### token
 
-[`Token`](index.md#tokenpayload-header)\<`Payload`\>
+[`Token`](#token)\<`Payload`\>
 
 #### Returns
 
@@ -342,7 +382,9 @@ Check if a token is verified.
 
 #### Type Parameters
 
-• **Payload** *extends* `object`
+##### Payload
+
+`Payload` *extends* `object`
 
 #### Parameters
 
@@ -356,67 +398,59 @@ Check if a token is verified.
 
 ***
 
-### randomPrivateKey()
-
-> **randomPrivateKey**(): `Uint8Array`
-
-Generate a random private key.
-
-#### Returns
-
-`Uint8Array`
-
-***
-
 ### randomSigner()
 
-> **randomSigner**(): [`OwnSigner`](index.md#ownsigner)
+> **randomSigner**(): [`OwnSigner`](#ownsigner)
 
 Generate a generic signer object with a random private key.
 
 #### Returns
 
-[`OwnSigner`](index.md#ownsigner)
+[`OwnSigner`](#ownsigner)
 
 ***
 
 ### randomTokenSigner()
 
-> **randomTokenSigner**(): [`OwnTokenSigner`](index.md#owntokensigner)
+> **randomTokenSigner**(): [`OwnTokenSigner`](#owntokensigner)
 
 Generate a token signer object with a random private key.
 
 #### Returns
 
-[`OwnTokenSigner`](index.md#owntokensigner)
+[`OwnTokenSigner`](#owntokensigner)
 
 ***
 
 ### signToken()
 
-> **signToken**\<`Payload`, `Header`\>(`signer`, `token`): `Promise`\<[`SignedToken`](index.md#signedtokenpayload-header)\<`Payload`, `Header`\>\>
+> **signToken**\<`Payload`, `Header`\>(`signer`, `token`): `Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
 
 Sign a token object if not already signed.
 
 #### Type Parameters
 
-• **Payload** *extends* `Record`\<`string`, `unknown`\>
+##### Payload
 
-• **Header** *extends* `Record`\<`string`, `unknown`\>
+`Payload` *extends* `Record`\<`string`, `unknown`\>
+
+##### Header
+
+`Header` *extends* `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
 ##### signer
 
-[`TokenSigner`](index.md#tokensigner)
+[`TokenSigner`](#tokensigner)
 
 ##### token
 
-[`Token`](index.md#tokenpayload-header)\<`Payload`, `Header`\>
+[`Token`](#token)\<`Payload`, `Header`\>
 
 #### Returns
 
-`Promise`\<[`SignedToken`](index.md#signedtokenpayload-header)\<`Payload`, `Header`\>\>
+`Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
 
 ***
 
@@ -430,7 +464,7 @@ Convert a Token object to its JWT string representation.
 
 ##### token
 
-[`Token`](index.md#tokenpayload-header)
+[`Token`](#token)
 
 #### Returns
 
@@ -440,7 +474,7 @@ Convert a Token object to its JWT string representation.
 
 ### toTokenSigner()
 
-> **toTokenSigner**(`signer`): [`TokenSigner`](index.md#tokensigner)
+> **toTokenSigner**(`signer`): [`TokenSigner`](#tokensigner)
 
 Create a token signer from a generic signer.
 
@@ -448,29 +482,31 @@ Create a token signer from a generic signer.
 
 ##### signer
 
-[`GenericSigner`](index.md#genericsigner)
+[`GenericSigner`](#genericsigner)
 
 #### Returns
 
-[`TokenSigner`](index.md#tokensigner)
+[`TokenSigner`](#tokensigner)
 
 ***
 
 ### verifyToken()
 
-> **verifyToken**\<`Payload`\>(`token`, `verifiers`?): `Promise`\<[`Token`](index.md#tokenpayload-header)\<`Payload`\>\>
+> **verifyToken**\<`Payload`\>(`token`, `verifiers`?): `Promise`\<[`Token`](#token)\<`Payload`\>\>
 
 Verify a token is either unsigned or signed with a valid signature.
 
 #### Type Parameters
 
-• **Payload** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+##### Payload
+
+`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
 ##### token
 
-`string` | [`Token`](index.md#tokenpayload-header)\<`Payload`\>
+`string` | [`Token`](#token)\<`Payload`\>
 
 ##### verifiers?
 
@@ -478,4 +514,4 @@ Verify a token is either unsigned or signed with a valid signature.
 
 #### Returns
 
-`Promise`\<[`Token`](index.md#tokenpayload-header)\<`Payload`\>\>
+`Promise`\<[`Token`](#token)\<`Payload`\>\>

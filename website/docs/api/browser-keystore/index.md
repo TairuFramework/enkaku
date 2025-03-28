@@ -14,13 +14,13 @@ npm install @enkaku/browser-keystore
 
 #### Implements
 
-- [`KeyEntry`](../protocol/index.md#keyentryprivatekeytype)\<`CryptoKeyPair`\>
+- [`KeyEntry`](../protocol/index.md#keyentry)\<`CryptoKeyPair`\>
 
 #### Constructors
 
-##### new BrowserKeyEntry()
+##### Constructor
 
-> **new BrowserKeyEntry**(`keyID`, `getStore`): [`BrowserKeyEntry`](index.md#browserkeyentry)
+> **new BrowserKeyEntry**(`keyID`, `getStore`): [`BrowserKeyEntry`](#browserkeyentry)
 
 ###### Parameters
 
@@ -34,7 +34,7 @@ npm install @enkaku/browser-keystore
 
 ###### Returns
 
-[`BrowserKeyEntry`](index.md#browserkeyentry)
+[`BrowserKeyEntry`](#browserkeyentry)
 
 #### Accessors
 
@@ -66,8 +66,6 @@ npm install @enkaku/browser-keystore
 
 `KeyEntry.getAsync`
 
-***
-
 ##### provideAsync()
 
 > **provideAsync**(): `Promise`\<`CryptoKeyPair`\>
@@ -80,8 +78,6 @@ npm install @enkaku/browser-keystore
 
 `KeyEntry.provideAsync`
 
-***
-
 ##### removeAsync()
 
 > **removeAsync**(): `Promise`\<`void`\>
@@ -93,8 +89,6 @@ npm install @enkaku/browser-keystore
 ###### Implementation of
 
 `KeyEntry.removeAsync`
-
-***
 
 ##### setAsync()
 
@@ -120,13 +114,13 @@ npm install @enkaku/browser-keystore
 
 #### Implements
 
-- [`KeyStore`](../protocol/index.md#keystoreprivatekeytype-entrytype)\<`CryptoKeyPair`, [`BrowserKeyEntry`](index.md#browserkeyentry)\>
+- [`KeyStore`](../protocol/index.md#keystore)\<`CryptoKeyPair`, [`BrowserKeyEntry`](#browserkeyentry)\>
 
 #### Constructors
 
-##### new BrowserKeyStore()
+##### Constructor
 
-> **new BrowserKeyStore**(`db`): [`BrowserKeyStore`](index.md#browserkeystore)
+> **new BrowserKeyStore**(`db`): [`BrowserKeyStore`](#browserkeystore)
 
 ###### Parameters
 
@@ -136,13 +130,13 @@ npm install @enkaku/browser-keystore
 
 ###### Returns
 
-[`BrowserKeyStore`](index.md#browserkeystore)
+[`BrowserKeyStore`](#browserkeystore)
 
 #### Methods
 
 ##### entry()
 
-> **entry**(`keyID`): [`BrowserKeyEntry`](index.md#browserkeyentry)
+> **entry**(`keyID`): [`BrowserKeyEntry`](#browserkeyentry)
 
 ###### Parameters
 
@@ -152,17 +146,15 @@ npm install @enkaku/browser-keystore
 
 ###### Returns
 
-[`BrowserKeyEntry`](index.md#browserkeyentry)
+[`BrowserKeyEntry`](#browserkeyentry)
 
 ###### Implementation of
 
 `KeyStore.entry`
 
-***
-
 ##### open()
 
-> `static` **open**(`name`): `Promise`\<[`BrowserKeyStore`](index.md#browserkeystore)\>
+> `static` **open**(`name`): `Promise`\<[`BrowserKeyStore`](#browserkeystore)\>
 
 ###### Parameters
 
@@ -172,13 +164,13 @@ npm install @enkaku/browser-keystore
 
 ###### Returns
 
-`Promise`\<[`BrowserKeyStore`](index.md#browserkeystore)\>
+`Promise`\<[`BrowserKeyStore`](#browserkeystore)\>
 
 ## Functions
 
 ### getPublicKey()
 
-> **getPublicKey**(`keyPair`): `Promise`\<`Uint8Array`\>
+> **getPublicKey**(`keyPair`): `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
 #### Parameters
 
@@ -188,7 +180,7 @@ npm install @enkaku/browser-keystore
 
 #### Returns
 
-`Promise`\<`Uint8Array`\>
+`Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
 ***
 
@@ -220,7 +212,7 @@ npm install @enkaku/browser-keystore
 
 ##### useStore?
 
-`string` | [`BrowserKeyStore`](index.md#browserkeystore) | `Promise`\<[`BrowserKeyStore`](index.md#browserkeystore)\>
+`string` | [`BrowserKeyStore`](#browserkeystore) | `Promise`\<[`BrowserKeyStore`](#browserkeystore)\>
 
 #### Returns
 

@@ -58,7 +58,9 @@ Convert a base64url-encoded string to a JSON object.
 
 #### Type Parameters
 
-• **T** = `Record`\<`string`, `unknown`\>
+##### T
+
+`T` = `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
@@ -110,7 +112,7 @@ Convert a base64-encoded string to a Uint8Array.
 
 ### fromB64U()
 
-> **fromB64U**(`base64url`): `Uint8Array`
+> **fromB64U**(`base64url`): `Uint8Array`\<`ArrayBufferLike`\>
 
 Convert a base64url-encoded string to a Uint8Array.
 
@@ -122,7 +124,7 @@ Convert a base64url-encoded string to a Uint8Array.
 
 #### Returns
 
-`Uint8Array`
+`Uint8Array`\<`ArrayBufferLike`\>
 
 ***
 

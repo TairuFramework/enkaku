@@ -12,9 +12,9 @@ npm install @enkaku/protocol
 
 ### AbortCallPayload
 
-> **AbortCallPayload**: `object`
+> **AbortCallPayload** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### rid
 
@@ -32,165 +32,195 @@ npm install @enkaku/protocol
 
 ### AnyClientMessageOf\<Protocol\>
 
-> **AnyClientMessageOf**\<`Protocol`\>: [`Message`](index.md#messagepayload)\<[`AnyClientPayloadOf`](index.md#anyclientpayloadofprotocol)\<`Protocol`\>\>
+> **AnyClientMessageOf**\<`Protocol`\> = [`Message`](#message)\<[`AnyClientPayloadOf`](#anyclientpayloadof)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
 
 ***
 
 ### AnyClientPayloadOf\<Protocol\>
 
-> **AnyClientPayloadOf**\<`Protocol`\>: [`ValueOf`](index.md#valueoft)\<[`ClientPayloadRecordsOf`](index.md#clientpayloadrecordsofprotocol)\<`Protocol`\>\>
+> **AnyClientPayloadOf**\<`Protocol`\> = [`ValueOf`](#valueof)\<[`ClientPayloadRecordsOf`](#clientpayloadrecordsof)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
 
 ***
 
 ### AnyProcedureDefinition
 
-> **AnyProcedureDefinition**: `FromSchema`\<*typeof* [`anyProcedureDefinition`](index.md#anyproceduredefinition-1)\>
+> **AnyProcedureDefinition** = `FromSchema`\<*typeof* [`anyProcedureDefinition`](#anyproceduredefinition-1)\>
 
 ***
 
 ### AnyRequestProcedureDefinition
 
-> **AnyRequestProcedureDefinition**: `FromSchema`\<*typeof* [`anyRequestProcedureDefinition`](index.md#anyrequestproceduredefinition-1)\>
+> **AnyRequestProcedureDefinition** = `FromSchema`\<*typeof* [`anyRequestProcedureDefinition`](#anyrequestproceduredefinition-1)\>
 
 ***
 
 ### AnyServerMessageOf\<Protocol\>
 
-> **AnyServerMessageOf**\<`Protocol`\>: [`Message`](index.md#messagepayload)\<[`AnyServerPayloadOf`](index.md#anyserverpayloadofprotocol)\<`Protocol`\>\>
+> **AnyServerMessageOf**\<`Protocol`\> = [`Message`](#message)\<[`AnyServerPayloadOf`](#anyserverpayloadof)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
 
 ***
 
 ### AnyServerPayloadOf\<Protocol\>
 
-> **AnyServerPayloadOf**\<`Protocol`\>: [`ValueOf`](index.md#valueoft)\<[`ServerPayloadRecordsOf`](index.md#serverpayloadrecordsofprotocol)\<`Protocol`\>\>
+> **AnyServerPayloadOf**\<`Protocol`\> = [`ValueOf`](#valueof)\<[`ServerPayloadRecordsOf`](#serverpayloadrecordsof)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
 
 ***
 
 ### ChannelPayloadOf\<Procedure, Definition\>
 
-> **ChannelPayloadOf**\<`Procedure`, `Definition`\>: `Definition` *extends* [`ChannelProcedureDefinition`](index.md#channelproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"channel"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"param"`\]\>\> : `never`
+> **ChannelPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"channel"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Procedure** *extends* `string`
+##### Procedure
 
-• **Definition**
+`Procedure` *extends* `string`
+
+##### Definition
+
+`Definition`
 
 ***
 
 ### ChannelProcedureDefinition
 
-> **ChannelProcedureDefinition**: `FromSchema`\<*typeof* [`channelProcedureDefinition`](index.md#channelproceduredefinition-1)\>
+> **ChannelProcedureDefinition** = `FromSchema`\<*typeof* [`channelProcedureDefinition`](#channelproceduredefinition-1)\>
 
 ***
 
 ### ClientMessage\<Payload\>
 
-> **ClientMessage**\<`Payload`\>: [`Message`](index.md#messagepayload)\<`Payload`\>
+> **ClientMessage**\<`Payload`\> = [`Message`](#message)\<`Payload`\>
 
 #### Type Parameters
 
-• **Payload** *extends* [`UnknownCallPayload`](index.md#unknowncallpayload) = [`UnknownCallPayload`](index.md#unknowncallpayload)
+##### Payload
+
+`Payload` *extends* [`UnknownCallPayload`](#unknowncallpayload) = [`UnknownCallPayload`](#unknowncallpayload)
 
 ***
 
 ### ClientPayloadOf\<Procedure, Definition\>
 
-> **ClientPayloadOf**\<`Procedure`, `Definition`\>: `Definition` *extends* [`EventProcedureDefinition`](index.md#eventproceduredefinition) ? [`EventCallPayload`](index.md#eventcallpayloadprocedure-data)\<`Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"data"`\]\>\> : `Definition` *extends* [`RequestProcedureDefinition`](index.md#requestproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"request"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"param"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `Definition` *extends* [`StreamProcedureDefinition`](index.md#streamproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"stream"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"param"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `Definition` *extends* [`ChannelProcedureDefinition`](index.md#channelproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"channel"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"param"`\]\>\> \| [`SendCallPayload`](index.md#sendcallpayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"send"`\]\>\> \| [`AbortCallPayload`](index.md#abortcallpayload) : `never`
+> **ClientPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`EventProcedureDefinition`](#eventproceduredefinition) ? [`EventCallPayload`](#eventcallpayload)\<`Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"data"`\]\>\> : `Definition` *extends* [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"request"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"stream"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"channel"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`SendCallPayload`](#sendcallpayload)\<[`DataOf`](#dataof)\<`Definition`\[`"send"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `never`
 
 #### Type Parameters
 
-• **Procedure** *extends* `string`
+##### Procedure
 
-• **Definition**
+`Procedure` *extends* `string`
+
+##### Definition
+
+`Definition`
 
 ***
 
 ### ClientPayloadRecordsOf\<Protocol\>
 
-> **ClientPayloadRecordsOf**\<`Protocol`\>: `{ [Procedure in keyof Protocol & string]: ClientPayloadOf<Procedure, Protocol[Procedure]> }`
+> **ClientPayloadRecordsOf**\<`Protocol`\> = `{ [Procedure in keyof Protocol & string]: ClientPayloadOf<Procedure, Protocol[Procedure]> }`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
 
 ***
 
 ### ClientTransportOf\<Protocol\>
 
-> **ClientTransportOf**\<`Protocol`\>: [`TransportType`](../transport/index.md#transporttyper-w)\<[`AnyServerMessageOf`](index.md#anyservermessageofprotocol)\<`Protocol`\>, [`AnyClientMessageOf`](index.md#anyclientmessageofprotocol)\<`Protocol`\>\>
+> **ClientTransportOf**\<`Protocol`\> = [`TransportType`](../transport/index.md#transporttype)\<[`AnyServerMessageOf`](#anyservermessageof)\<`Protocol`\>, [`AnyClientMessageOf`](#anyclientmessageof)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
 
 ***
 
 ### DataOf\<S\>
 
-> **DataOf**\<`S`\>: `S` *extends* [`Schema`](../schema/index.md#schema-6) ? `FromSchema`\<`S`\> : `never`
+> **DataOf**\<`S`\> = `S` *extends* [`Schema`](../schema/index.md#schema-1) ? `FromSchema`\<`S`\> : `never`
 
 #### Type Parameters
 
-• **S**
+##### S
+
+`S`
 
 ***
 
 ### ErrorDefinition
 
-> **ErrorDefinition**: `FromSchema`\<*typeof* [`errorDefinition`](index.md#errordefinition-1)\>
+> **ErrorDefinition** = `FromSchema`\<*typeof* [`errorDefinition`](#errordefinition-1)\>
 
 ***
 
 ### ErrorObject
 
-> **ErrorObject**: `FromSchema`\<*typeof* [`errorObject`](index.md#errorobject-1)\>
+> **ErrorObject** = `FromSchema`\<*typeof* [`errorObject`](#errorobject-1)\>
 
 ***
 
 ### ErrorObjectDefinition
 
-> **ErrorObjectDefinition**: `FromSchema`\<*typeof* [`errorObjectDefinition`](index.md#errorobjectdefinition-1)\>
+> **ErrorObjectDefinition** = `FromSchema`\<*typeof* [`errorObjectDefinition`](#errorobjectdefinition-1)\>
 
 ***
 
 ### ErrorPayloadOf\<Definition\>
 
-> **ErrorPayloadOf**\<`Definition`\>: `Definition` *extends* [`AnyRequestProcedureDefinition`](index.md#anyrequestproceduredefinition) ? [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `never`
+> **ErrorPayloadOf**\<`Definition`\> = `Definition` *extends* [`AnyRequestProcedureDefinition`](#anyrequestproceduredefinition) ? [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Definition**
+##### Definition
+
+`Definition`
 
 ***
 
 ### ErrorReplyPayload\<Code, Data\>
 
-> **ErrorReplyPayload**\<`Code`, `Data`\>: `object`
+> **ErrorReplyPayload**\<`Code`, `Data`\> = `object`
 
 #### Type Parameters
 
-• **Code** *extends* `string`
+##### Code
 
-• **Data** *extends* `Record`\<`string`, `unknown`\> \| `undefined`
+`Code` *extends* `string`
 
-#### Type declaration
+##### Data
+
+`Data` *extends* `Record`\<`string`, `unknown`\> \| `undefined`
+
+#### Properties
 
 ##### code
 
@@ -216,17 +246,19 @@ npm install @enkaku/protocol
 
 ### ErrorReplyPayloadOf\<Error\>
 
-> **ErrorReplyPayloadOf**\<`Error`\>: `Error` *extends* [`ErrorObject`](index.md#errorobject) ? [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`Error`\[`"code"`\], `Error`\[`"data"`\]\> : [`ErrorReplyPayload`](index.md#errorreplypayloadcode-data)\<`string`, `Record`\<`string`, `unknown`\>\>
+> **ErrorReplyPayloadOf**\<`Error`\> = `Error` *extends* [`ErrorObject`](#errorobject) ? [`ErrorReplyPayload`](#errorreplypayload)\<`Error`\[`"code"`\], `Error`\[`"data"`\]\> : [`ErrorReplyPayload`](#errorreplypayload)\<`string`, `Record`\<`string`, `unknown`\>\>
 
 #### Type Parameters
 
-• **Error** = `unknown`
+##### Error
+
+`Error` = `unknown`
 
 ***
 
 ### EventCallPayload\<Procedure, Data\>
 
-> **EventCallPayload**\<`Procedure`, `Data`\>: `object` & `Data` *extends* `undefined` ? `object` : `object`
+> **EventCallPayload**\<`Procedure`, `Data`\> = `object` & `Data` *extends* `undefined` ? `object` : `object`
 
 #### Type declaration
 
@@ -240,45 +272,59 @@ npm install @enkaku/protocol
 
 #### Type Parameters
 
-• **Procedure** *extends* `string`
+##### Procedure
 
-• **Data** *extends* `Record`\<`string`, `unknown`\> \| `undefined`
+`Procedure` *extends* `string`
+
+##### Data
+
+`Data` *extends* `Record`\<`string`, `unknown`\> \| `undefined`
 
 ***
 
 ### EventPayloadOf\<Procedure, Definition\>
 
-> **EventPayloadOf**\<`Procedure`, `Definition`\>: `Definition` *extends* [`EventProcedureDefinition`](index.md#eventproceduredefinition) ? [`EventCallPayload`](index.md#eventcallpayloadprocedure-data)\<`Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"data"`\]\>\> : `never`
+> **EventPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`EventProcedureDefinition`](#eventproceduredefinition) ? [`EventCallPayload`](#eventcallpayload)\<`Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"data"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Procedure** *extends* `string`
+##### Procedure
 
-• **Definition**
+`Procedure` *extends* `string`
+
+##### Definition
+
+`Definition`
 
 ***
 
 ### EventProcedureDefinition
 
-> **EventProcedureDefinition**: `FromSchema`\<*typeof* [`eventProcedureDefinition`](index.md#eventproceduredefinition-1)\>
+> **EventProcedureDefinition** = `FromSchema`\<*typeof* [`eventProcedureDefinition`](#eventproceduredefinition-1)\>
 
 ***
 
 ### KeyEntry\<PrivateKeyType\>
 
-> **KeyEntry**\<`PrivateKeyType`\>: `object`
+> **KeyEntry**\<`PrivateKeyType`\> = `object`
 
 #### Type Parameters
 
-• **PrivateKeyType**
+##### PrivateKeyType
 
-#### Type declaration
+`PrivateKeyType`
+
+#### Properties
 
 ##### keyID
 
 > `readonly` **keyID**: `string`
 
+#### Methods
+
 ##### getAsync()
+
+> **getAsync**(): `Promise`\<`null` \| `PrivateKeyType`\>
 
 ###### Returns
 
@@ -286,17 +332,23 @@ npm install @enkaku/protocol
 
 ##### provideAsync()
 
+> **provideAsync**(): `Promise`\<`PrivateKeyType`\>
+
 ###### Returns
 
 `Promise`\<`PrivateKeyType`\>
 
 ##### removeAsync()
 
+> **removeAsync**(): `Promise`\<`void`\>
+
 ###### Returns
 
 `Promise`\<`void`\>
 
 ##### setAsync()
+
+> **setAsync**(`privateKey`): `Promise`\<`void`\>
 
 ###### Parameters
 
@@ -312,17 +364,23 @@ npm install @enkaku/protocol
 
 ### KeyStore\<PrivateKeyType, EntryType\>
 
-> **KeyStore**\<`PrivateKeyType`, `EntryType`\>: `object`
+> **KeyStore**\<`PrivateKeyType`, `EntryType`\> = `object`
 
 #### Type Parameters
 
-• **PrivateKeyType**
+##### PrivateKeyType
 
-• **EntryType** *extends* [`KeyEntry`](index.md#keyentryprivatekeytype)\<`PrivateKeyType`\> = [`KeyEntry`](index.md#keyentryprivatekeytype)\<`PrivateKeyType`\>
+`PrivateKeyType`
 
-#### Type declaration
+##### EntryType
+
+`EntryType` *extends* [`KeyEntry`](#keyentry)\<`PrivateKeyType`\> = [`KeyEntry`](#keyentry)\<`PrivateKeyType`\>
+
+#### Methods
 
 ##### entry()
+
+> **entry**(`keyID`): `EntryType`
 
 ###### Parameters
 
@@ -338,45 +396,51 @@ npm install @enkaku/protocol
 
 ### Message\<Payload\>
 
-> **Message**\<`Payload`\>: [`SignedToken`](../token/index.md#signedtokenpayload-header)\<`SignedPayload` & `Payload`\> \| [`UnsignedToken`](../token/index.md#unsignedtokenpayload-header)\<`Payload`\>
+> **Message**\<`Payload`\> = [`SignedToken`](../token/index.md#signedtoken)\<`SignedPayload` & `Payload`\> \| [`UnsignedToken`](../token/index.md#unsignedtoken)\<`Payload`\>
 
 #### Type Parameters
 
-• **Payload** *extends* `Record`\<`string`, `unknown`\>
+##### Payload
+
+`Payload` *extends* `Record`\<`string`, `unknown`\>
 
 ***
 
 ### MessageType
 
-> **MessageType**: `"signed"` \| `"unsigned"` \| `"any"`
+> **MessageType** = `"signed"` \| `"unsigned"` \| `"any"`
 
 ***
 
 ### ProtocolDefinition
 
-> **ProtocolDefinition**: `FromSchema`\<*typeof* [`protocolDefinition`](index.md#protocoldefinition-1)\>
+> **ProtocolDefinition** = `FromSchema`\<*typeof* [`protocolDefinition`](#protocoldefinition-1)\>
 
 ***
 
 ### ReceiveActionPayloadOf\<Definition\>
 
-> **ReceiveActionPayloadOf**\<`Definition`\>: `Definition` *extends* [`StreamProcedureDefinition`](index.md#streamproceduredefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> : `Definition` *extends* [`ChannelProcedureDefinition`](index.md#channelproceduredefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> : `never`
+> **ReceiveActionPayloadOf**\<`Definition`\> = `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> : `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Definition**
+##### Definition
+
+`Definition`
 
 ***
 
 ### ReceiveReplyPayload\<Value\>
 
-> **ReceiveReplyPayload**\<`Value`\>: `object`
+> **ReceiveReplyPayload**\<`Value`\> = `object`
 
 #### Type Parameters
 
-• **Value**
+##### Value
 
-#### Type declaration
+`Value`
+
+#### Properties
 
 ##### rid
 
@@ -394,17 +458,23 @@ npm install @enkaku/protocol
 
 ### RequestCallPayload\<Type, Procedure, Params\>
 
-> **RequestCallPayload**\<`Type`, `Procedure`, `Params`\>: `object`
+> **RequestCallPayload**\<`Type`, `Procedure`, `Params`\> = `object`
 
 #### Type Parameters
 
-• **Type** *extends* [`RequestType`](index.md#requesttype)
+##### Type
 
-• **Procedure** *extends* `string`
+`Type` *extends* [`RequestType`](#requesttype)
 
-• **Params**
+##### Procedure
 
-#### Type declaration
+`Procedure` *extends* `string`
+
+##### Params
+
+`Params`
+
+#### Properties
 
 ##### prc
 
@@ -426,47 +496,55 @@ npm install @enkaku/protocol
 
 ### RequestPayloadOf\<Procedure, Definition\>
 
-> **RequestPayloadOf**\<`Procedure`, `Definition`\>: `Definition` *extends* [`RequestProcedureDefinition`](index.md#requestproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"request"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"param"`\]\>\> : `never`
+> **RequestPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"request"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Procedure** *extends* `string`
+##### Procedure
 
-• **Definition**
+`Procedure` *extends* `string`
+
+##### Definition
+
+`Definition`
 
 ***
 
 ### RequestProcedureDefinition
 
-> **RequestProcedureDefinition**: `FromSchema`\<*typeof* [`requestProcedureDefinition`](index.md#requestproceduredefinition-1)\>
+> **RequestProcedureDefinition** = `FromSchema`\<*typeof* [`requestProcedureDefinition`](#requestproceduredefinition-1)\>
 
 ***
 
 ### RequestType
 
-> **RequestType**: [`AnyRequestProcedureDefinition`](index.md#anyrequestproceduredefinition)\[`"type"`\]
+> **RequestType** = [`AnyRequestProcedureDefinition`](#anyrequestproceduredefinition)\[`"type"`\]
 
 ***
 
 ### ResultPayloadOf\<Definition\>
 
-> **ResultPayloadOf**\<`Definition`\>: `Definition` *extends* [`AnyRequestProcedureDefinition`](index.md#anyrequestproceduredefinition) ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> : `never`
+> **ResultPayloadOf**\<`Definition`\> = `Definition` *extends* [`AnyRequestProcedureDefinition`](#anyrequestproceduredefinition) ? [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Definition**
+##### Definition
+
+`Definition`
 
 ***
 
 ### ResultReplyPayload\<Value\>
 
-> **ResultReplyPayload**\<`Value`\>: `object`
+> **ResultReplyPayload**\<`Value`\> = `object`
 
 #### Type Parameters
 
-• **Value**
+##### Value
 
-#### Type declaration
+`Value`
+
+#### Properties
 
 ##### rid
 
@@ -484,23 +562,27 @@ npm install @enkaku/protocol
 
 ### ReturnOf\<S\>
 
-> **ReturnOf**\<`S`\>: `S` *extends* [`Schema`](../schema/index.md#schema-6) ? `FromSchema`\<`S`\> : `void`
+> **ReturnOf**\<`S`\> = `S` *extends* [`Schema`](../schema/index.md#schema-1) ? `FromSchema`\<`S`\> : `void`
 
 #### Type Parameters
 
-• **S**
+##### S
+
+`S`
 
 ***
 
 ### SendCallPayload\<Value\>
 
-> **SendCallPayload**\<`Value`\>: `object`
+> **SendCallPayload**\<`Value`\> = `object`
 
 #### Type Parameters
 
-• **Value**
+##### Value
 
-#### Type declaration
+`Value`
+
+#### Properties
 
 ##### rid
 
@@ -518,83 +600,97 @@ npm install @enkaku/protocol
 
 ### SendPayloadOf\<Definition\>
 
-> **SendPayloadOf**\<`Definition`\>: `Definition` *extends* [`ChannelProcedureDefinition`](index.md#channelproceduredefinition) ? [`SendCallPayload`](index.md#sendcallpayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"send"`\]\>\> : `never`
+> **SendPayloadOf**\<`Definition`\> = `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`SendCallPayload`](#sendcallpayload)\<[`DataOf`](#dataof)\<`Definition`\[`"send"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Definition**
+##### Definition
+
+`Definition`
 
 ***
 
 ### ServerMessage\<Payload\>
 
-> **ServerMessage**\<`Payload`\>: [`Message`](index.md#messagepayload)\<`Payload`\>
+> **ServerMessage**\<`Payload`\> = [`Message`](#message)\<`Payload`\>
 
 #### Type Parameters
 
-• **Payload** *extends* [`UnknownReplyPayload`](index.md#unknownreplypayload) = [`UnknownReplyPayload`](index.md#unknownreplypayload)
+##### Payload
+
+`Payload` *extends* [`UnknownReplyPayload`](#unknownreplypayload) = [`UnknownReplyPayload`](#unknownreplypayload)
 
 ***
 
 ### ServerPayloadOf\<Definition\>
 
-> **ServerPayloadOf**\<`Definition`\>: `Definition` *extends* [`RequestProcedureDefinition`](index.md#requestproceduredefinition) ? [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror) : `Definition` *extends* [`StreamProcedureDefinition`](index.md#streamproceduredefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `Definition` *extends* [`ChannelProcedureDefinition`](index.md#channelproceduredefinition) ? [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<[`DataOf`](index.md#dataofs)\<`Definition`\[`"error"`\]\>\> : `never`
+> **ServerPayloadOf**\<`Definition`\> = `Definition` *extends* [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof) : `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Definition**
+##### Definition
+
+`Definition`
 
 ***
 
 ### ServerPayloadRecordsOf\<Protocol\>
 
-> **ServerPayloadRecordsOf**\<`Protocol`\>: `{ [Procedure in keyof Protocol & string]: ServerPayloadOf<Protocol[Procedure]> }`
+> **ServerPayloadRecordsOf**\<`Protocol`\> = `{ [Procedure in keyof Protocol & string]: ServerPayloadOf<Protocol[Procedure]> }`
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
 
 ***
 
 ### ServerTransportOf\<Protocol\>
 
-> **ServerTransportOf**\<`Protocol`\>: [`TransportType`](../transport/index.md#transporttyper-w)\<[`AnyClientMessageOf`](index.md#anyclientmessageofprotocol)\<`Protocol`\>, [`AnyServerMessageOf`](index.md#anyservermessageofprotocol)\<`Protocol`\>\>
+> **ServerTransportOf**\<`Protocol`\> = [`TransportType`](../transport/index.md#transporttype)\<[`AnyClientMessageOf`](#anyclientmessageof)\<`Protocol`\>, [`AnyServerMessageOf`](#anyservermessageof)\<`Protocol`\>\>
 
 #### Type Parameters
 
-• **Protocol** *extends* [`ProtocolDefinition`](index.md#protocoldefinition)
+##### Protocol
+
+`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
 
 ***
 
 ### StreamPayloadOf\<Procedure, Definition\>
 
-> **StreamPayloadOf**\<`Procedure`, `Definition`\>: `Definition` *extends* [`StreamProcedureDefinition`](index.md#streamproceduredefinition) ? [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<`"stream"`, `Procedure`, [`DataOf`](index.md#dataofs)\<`Definition`\[`"param"`\]\>\> : `never`
+> **StreamPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"stream"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
 
 #### Type Parameters
 
-• **Procedure** *extends* `string`
+##### Procedure
 
-• **Definition**
+`Procedure` *extends* `string`
+
+##### Definition
+
+`Definition`
 
 ***
 
 ### StreamProcedureDefinition
 
-> **StreamProcedureDefinition**: `FromSchema`\<*typeof* [`streamProcedureDefinition`](index.md#streamproceduredefinition-1)\>
+> **StreamProcedureDefinition** = `FromSchema`\<*typeof* [`streamProcedureDefinition`](#streamproceduredefinition-1)\>
 
 ***
 
 ### TransportMessage
 
-> **TransportMessage**: [`SignedToken`](../token/index.md#signedtokenpayload-header)\<`SignedPayload` & [`TransportMessagePayload`](index.md#transportmessagepayload), [`TransportMessageHeader`](index.md#transportmessageheader)\> \| [`UnsignedToken`](../token/index.md#unsignedtokenpayload-header)\<[`TransportMessagePayload`](index.md#transportmessagepayload), [`TransportMessageHeader`](index.md#transportmessageheader)\>
+> **TransportMessage** = [`SignedToken`](../token/index.md#signedtoken)\<`SignedPayload` & [`TransportMessagePayload`](#transportmessagepayload), [`TransportMessageHeader`](#transportmessageheader)\> \| [`UnsignedToken`](../token/index.md#unsignedtoken)\<[`TransportMessagePayload`](#transportmessagepayload), [`TransportMessageHeader`](#transportmessageheader)\>
 
 ***
 
 ### TransportMessageHeader
 
-> **TransportMessageHeader**: `object`
+> **TransportMessageHeader** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### src
 
@@ -604,15 +700,15 @@ npm install @enkaku/protocol
 
 ### TransportMessagePayload
 
-> **TransportMessagePayload**: [`TransportPingPayload`](index.md#transportpingpayload) \| [`TransportPongPayload`](index.md#transportpongpayload)
+> **TransportMessagePayload** = [`TransportPingPayload`](#transportpingpayload) \| [`TransportPongPayload`](#transportpongpayload)
 
 ***
 
 ### TransportPingPayload
 
-> **TransportPingPayload**: `object`
+> **TransportPingPayload** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### id?
 
@@ -626,9 +722,9 @@ npm install @enkaku/protocol
 
 ### TransportPongPayload
 
-> **TransportPongPayload**: `object`
+> **TransportPongPayload** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### id?
 
@@ -642,23 +738,25 @@ npm install @enkaku/protocol
 
 ### UnknownCallPayload
 
-> **UnknownCallPayload**: [`AbortCallPayload`](index.md#abortcallpayload) \| [`EventCallPayload`](index.md#eventcallpayloadprocedure-data)\<`string`, `Record`\<`string`, `unknown`\> \| `undefined`\> \| [`RequestCallPayload`](index.md#requestcallpayloadtype-procedure-params)\<[`RequestType`](index.md#requesttype), `string`, `unknown`\> \| [`SendCallPayload`](index.md#sendcallpayloadvalue)\<`unknown`\>
+> **UnknownCallPayload** = [`AbortCallPayload`](#abortcallpayload) \| [`EventCallPayload`](#eventcallpayload)\<`string`, `Record`\<`string`, `unknown`\> \| `undefined`\> \| [`RequestCallPayload`](#requestcallpayload)\<[`RequestType`](#requesttype), `string`, `unknown`\> \| [`SendCallPayload`](#sendcallpayload)\<`unknown`\>
 
 ***
 
 ### UnknownReplyPayload
 
-> **UnknownReplyPayload**: [`ErrorReplyPayloadOf`](index.md#errorreplypayloadoferror)\<`unknown`\> \| [`ReceiveReplyPayload`](index.md#receivereplypayloadvalue)\<`unknown`\> \| [`ResultReplyPayload`](index.md#resultreplypayloadvalue)\<`unknown`\>
+> **UnknownReplyPayload** = [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<`unknown`\> \| [`ReceiveReplyPayload`](#receivereplypayload)\<`unknown`\> \| [`ResultReplyPayload`](#resultreplypayload)\<`unknown`\>
 
 ***
 
 ### ValueOf\<T\>
 
-> **ValueOf**\<`T`\>: `T`\[keyof `T`\]
+> **ValueOf**\<`T`\> = `T`\[keyof `T`\]
 
 #### Type Parameters
 
-• **T**
+##### T
+
+`T`
 
 ## Variables
 
@@ -1872,7 +1970,7 @@ npm install @enkaku/protocol
 
 ### createClientMessageSchema()
 
-> **createClientMessageSchema**(`protocol`, `type`?): [`Schema`](../schema/index.md#schema-6)
+> **createClientMessageSchema**(`protocol`, `type`?): `Readonly`
 
 #### Parameters
 
@@ -1880,17 +1978,17 @@ npm install @enkaku/protocol
 
 ##### type?
 
-[`MessageType`](index.md#messagetype)
+[`MessageType`](#messagetype)
 
 #### Returns
 
-[`Schema`](../schema/index.md#schema-6)
+`Readonly`
 
 ***
 
 ### createServerMessageSchema()
 
-> **createServerMessageSchema**(`protocol`, `type`?): [`Schema`](../schema/index.md#schema-6)
+> **createServerMessageSchema**(`protocol`, `type`?): `Readonly`
 
 #### Parameters
 
@@ -1898,8 +1996,8 @@ npm install @enkaku/protocol
 
 ##### type?
 
-[`MessageType`](index.md#messagetype)
+[`MessageType`](#messagetype)
 
 #### Returns
 
-[`Schema`](../schema/index.md#schema-6)
+`Readonly`

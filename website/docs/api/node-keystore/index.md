@@ -14,13 +14,13 @@ npm install @enkaku/node-keystore
 
 #### Implements
 
-- [`KeyEntry`](../protocol/index.md#keyentryprivatekeytype)\<`Uint8Array`\>
+- [`KeyEntry`](../protocol/index.md#keyentry)\<`Uint8Array`\>
 
 #### Constructors
 
-##### new NodeKeyEntry()
+##### Constructor
 
-> **new NodeKeyEntry**(`service`, `keyID`, `key`?): [`NodeKeyEntry`](index.md#nodekeyentry)
+> **new NodeKeyEntry**(`service`, `keyID`, `key`?): [`NodeKeyEntry`](#nodekeyentry)
 
 ###### Parameters
 
@@ -34,11 +34,11 @@ npm install @enkaku/node-keystore
 
 ###### key?
 
-`Uint8Array`
+`Uint8Array`\<`ArrayBufferLike`\>
 
 ###### Returns
 
-[`NodeKeyEntry`](index.md#nodekeyentry)
+[`NodeKeyEntry`](#nodekeyentry)
 
 #### Accessors
 
@@ -60,27 +60,23 @@ npm install @enkaku/node-keystore
 
 ##### get()
 
-> **get**(): `null` \| `Uint8Array`
+> **get**(): `null` \| `Uint8Array`\<`ArrayBufferLike`\>
 
 ###### Returns
 
-`null` \| `Uint8Array`
-
-***
+`null` \| `Uint8Array`\<`ArrayBufferLike`\>
 
 ##### getAsync()
 
-> **getAsync**(): `Promise`\<`null` \| `Uint8Array`\>
+> **getAsync**(): `Promise`\<`null` \| `Uint8Array`\<`ArrayBufferLike`\>\>
 
 ###### Returns
 
-`Promise`\<`null` \| `Uint8Array`\>
+`Promise`\<`null` \| `Uint8Array`\<`ArrayBufferLike`\>\>
 
 ###### Implementation of
 
 `KeyEntry.getAsync`
-
-***
 
 ##### provide()
 
@@ -90,21 +86,17 @@ npm install @enkaku/node-keystore
 
 `Uint8Array`
 
-***
-
 ##### provideAsync()
 
-> **provideAsync**(): `Promise`\<`Uint8Array`\>
+> **provideAsync**(): `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
 ###### Returns
 
-`Promise`\<`Uint8Array`\>
+`Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
 ###### Implementation of
 
 `KeyEntry.provideAsync`
-
-***
 
 ##### remove()
 
@@ -113,8 +105,6 @@ npm install @enkaku/node-keystore
 ###### Returns
 
 `void`
-
-***
 
 ##### removeAsync()
 
@@ -127,8 +117,6 @@ npm install @enkaku/node-keystore
 ###### Implementation of
 
 `KeyEntry.removeAsync`
-
-***
 
 ##### set()
 
@@ -143,8 +131,6 @@ npm install @enkaku/node-keystore
 ###### Returns
 
 `void`
-
-***
 
 ##### setAsync()
 
@@ -170,13 +156,13 @@ npm install @enkaku/node-keystore
 
 #### Implements
 
-- [`KeyStore`](../protocol/index.md#keystoreprivatekeytype-entrytype)\<`Uint8Array`, [`NodeKeyEntry`](index.md#nodekeyentry)\>
+- [`KeyStore`](../protocol/index.md#keystore)\<`Uint8Array`, [`NodeKeyEntry`](#nodekeyentry)\>
 
 #### Constructors
 
-##### new NodeKeyStore()
+##### Constructor
 
-> **new NodeKeyStore**(`service`): [`NodeKeyStore`](index.md#nodekeystore)
+> **new NodeKeyStore**(`service`): [`NodeKeyStore`](#nodekeystore)
 
 ###### Parameters
 
@@ -186,13 +172,13 @@ npm install @enkaku/node-keystore
 
 ###### Returns
 
-[`NodeKeyStore`](index.md#nodekeystore)
+[`NodeKeyStore`](#nodekeystore)
 
 #### Methods
 
 ##### entry()
 
-> **entry**(`keyID`): [`NodeKeyEntry`](index.md#nodekeyentry)
+> **entry**(`keyID`): [`NodeKeyEntry`](#nodekeyentry)
 
 ###### Parameters
 
@@ -202,37 +188,31 @@ npm install @enkaku/node-keystore
 
 ###### Returns
 
-[`NodeKeyEntry`](index.md#nodekeyentry)
+[`NodeKeyEntry`](#nodekeyentry)
 
 ###### Implementation of
 
 `KeyStore.entry`
 
-***
-
 ##### list()
 
-> **list**(): [`NodeKeyEntry`](index.md#nodekeyentry)[]
+> **list**(): [`NodeKeyEntry`](#nodekeyentry)[]
 
 ###### Returns
 
-[`NodeKeyEntry`](index.md#nodekeyentry)[]
-
-***
+[`NodeKeyEntry`](#nodekeyentry)[]
 
 ##### listAsync()
 
-> **listAsync**(): `Promise`\<[`NodeKeyEntry`](index.md#nodekeyentry)[]\>
+> **listAsync**(): `Promise`\<[`NodeKeyEntry`](#nodekeyentry)[]\>
 
 ###### Returns
 
-`Promise`\<[`NodeKeyEntry`](index.md#nodekeyentry)[]\>
-
-***
+`Promise`\<[`NodeKeyEntry`](#nodekeyentry)[]\>
 
 ##### open()
 
-> `static` **open**(`service`): [`NodeKeyStore`](index.md#nodekeystore)
+> `static` **open**(`service`): [`NodeKeyStore`](#nodekeystore)
 
 ###### Parameters
 
@@ -242,7 +222,7 @@ npm install @enkaku/node-keystore
 
 ###### Returns
 
-[`NodeKeyStore`](index.md#nodekeystore)
+[`NodeKeyStore`](#nodekeystore)
 
 ## Functions
 
@@ -254,7 +234,7 @@ npm install @enkaku/node-keystore
 
 ##### store
 
-`string` | [`NodeKeyStore`](index.md#nodekeystore)
+`string` | [`NodeKeyStore`](#nodekeystore)
 
 ##### keyID
 
@@ -274,7 +254,7 @@ npm install @enkaku/node-keystore
 
 ##### store
 
-`string` | [`NodeKeyStore`](index.md#nodekeystore)
+`string` | [`NodeKeyStore`](#nodekeystore)
 
 ##### keyID
 

@@ -12,7 +12,7 @@ npm install @enkaku/capability
 
 ### CapabilityPayload
 
-> **CapabilityPayload**: [`Permission`](index.md#permission) & `object`
+> **CapabilityPayload** = [`Permission`](#permission) & `object`
 
 #### Type declaration
 
@@ -44,21 +44,25 @@ npm install @enkaku/capability
 
 ### CapabilityToken\<Payload, Header\>
 
-> **CapabilityToken**\<`Payload`, `Header`\>: [`SignedToken`](../token/index.md#signedtokenpayload-header)\<`Payload`, `Header`\>
+> **CapabilityToken**\<`Payload`, `Header`\> = [`SignedToken`](../token/index.md#signedtoken)\<`Payload`, `Header`\>
 
 #### Type Parameters
 
-• **Payload** *extends* [`CapabilityPayload`](index.md#capabilitypayload) = [`CapabilityPayload`](index.md#capabilitypayload)
+##### Payload
 
-• **Header** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` *extends* [`CapabilityPayload`](#capabilitypayload) = [`CapabilityPayload`](#capabilitypayload)
+
+##### Header
+
+`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ***
 
 ### Permission
 
-> **Permission**: `object`
+> **Permission** = `object`
 
-#### Type declaration
+#### Properties
 
 ##### act
 
@@ -72,7 +76,7 @@ npm install @enkaku/capability
 
 ### SignCapabilityPayload
 
-> **SignCapabilityPayload**: `Omit`\<[`CapabilityPayload`](index.md#capabilitypayload), `"iss"`\> & `object`
+> **SignCapabilityPayload** = `Omit`\<[`CapabilityPayload`](#capabilitypayload), `"iss"`\> & `object`
 
 #### Type declaration
 
@@ -88,7 +92,9 @@ npm install @enkaku/capability
 
 #### Type Parameters
 
-• **Payload** *extends* [`CapabilityPayload`](index.md#capabilitypayload)
+##### Payload
+
+`Payload` *extends* [`CapabilityPayload`](#capabilitypayload)
 
 #### Parameters
 
@@ -110,7 +116,7 @@ npm install @enkaku/capability
 
 ##### payload
 
-###### exp
+###### exp?
 
 `number`
 
@@ -132,11 +138,11 @@ npm install @enkaku/capability
 
 ##### from
 
-[`CapabilityPayload`](index.md#capabilitypayload)
+[`CapabilityPayload`](#capabilitypayload)
 
 ##### to
 
-[`CapabilityPayload`](index.md#capabilitypayload)
+[`CapabilityPayload`](#capabilitypayload)
 
 ##### atTime?
 
@@ -156,23 +162,23 @@ npm install @enkaku/capability
 
 ##### permission
 
-[`Permission`](index.md#permission)
+[`Permission`](#permission)
 
 ##### payload
 
-###### aud
+###### aud?
 
 `string`
 
-###### cap
+###### cap?
 
 `string` \| `string`[]
 
-###### exp
+###### exp?
 
 `number`
 
-###### iat
+###### iat?
 
 `number`
 
@@ -180,11 +186,11 @@ npm install @enkaku/capability
 
 `string`
 
-###### nbf
+###### nbf?
 
 `number`
 
-###### sub
+###### sub?
 
 `string`
 
@@ -206,7 +212,7 @@ npm install @enkaku/capability
 
 ##### payload
 
-[`CapabilityPayload`](index.md#capabilitypayload)
+[`CapabilityPayload`](#capabilitypayload)
 
 ##### capabilities
 
@@ -224,13 +230,17 @@ npm install @enkaku/capability
 
 ### createCapability()
 
-> **createCapability**\<`Payload`, `HeaderParams`\>(`signer`, `payload`, `header`?): `Promise`\<[`CapabilityToken`](index.md#capabilitytokenpayload-header)\<`Payload` & `object`, `SignedHeader`\>\>
+> **createCapability**\<`Payload`, `HeaderParams`\>(`signer`, `payload`, `header`?): `Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{ `[key: string]`: `unknown`;  `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
 
 #### Type Parameters
 
-• **Payload** *extends* [`SignCapabilityPayload`](index.md#signcapabilitypayload) = [`SignCapabilityPayload`](index.md#signcapabilitypayload)
+##### Payload
 
-• **HeaderParams** *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` *extends* [`SignCapabilityPayload`](#signcapabilitypayload) = [`SignCapabilityPayload`](#signcapabilitypayload)
+
+##### HeaderParams
+
+`HeaderParams` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
@@ -248,7 +258,7 @@ npm install @enkaku/capability
 
 #### Returns
 
-`Promise`\<[`CapabilityToken`](index.md#capabilitytokenpayload-header)\<`Payload` & `object`, `SignedHeader`\>\>
+`Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{ `[key: string]`: `unknown`;  `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
 
 ***
 
@@ -280,11 +290,11 @@ npm install @enkaku/capability
 
 ##### expected
 
-[`Permission`](index.md#permission)
+[`Permission`](#permission)
 
 ##### granted
 
-[`Permission`](index.md#permission)
+[`Permission`](#permission)
 
 #### Returns
 
@@ -298,7 +308,9 @@ npm install @enkaku/capability
 
 #### Type Parameters
 
-• **Payload** *extends* [`CapabilityPayload`](index.md#capabilitypayload)
+##### Payload
+
+`Payload` *extends* [`CapabilityPayload`](#capabilitypayload)
 
 #### Parameters
 
