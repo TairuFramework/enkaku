@@ -1,14 +1,14 @@
 {
-  "name": "@enkaku/socket-transport",
+  "name": "@enkaku/generator",
   "version": "0.12.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Socket transport for Enkaku RPC clients and servers",
-  "keywords": ["transport", "rpc", "node", "socket", "ipc"],
+  "description": "Enkaku generator utilities",
+  "keywords": [],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/socket-transport"
+    "directory": "packages/generator"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -30,7 +30,10 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/stream": "workspace:^",
-    "@enkaku/transport": "workspace:^"
+    "@enkaku/async": "workspace:^"
+  },
+  "devDependencies": {
+    "@enkaku/event": "workspace:^",
+    "@enkaku/stream": "workspace:^"
   }
 }

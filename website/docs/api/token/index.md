@@ -336,7 +336,7 @@ Check if a token is signed.
 
 ##### Payload
 
-`Payload` *extends* `object` = \{ `[key: string]`: `unknown`;  `aud`: `string`; `cap`: `string` \| `string`[]; `exp`: `number`; `iat`: `number`; `iss`: `string`; `nbf`: `number`; `sub`: `string`; \}
+`Payload` *extends* `object` = \{[`key`: `string`]: `unknown`; `aud`: `string`; `cap`: `string` \| `string`[]; `exp`: `number`; `iat`: `number`; `iss`: `string`; `nbf`: `number`; `sub`: `string`; \}
 
 #### Parameters
 

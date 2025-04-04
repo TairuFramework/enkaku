@@ -514,6 +514,10 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 `void`
 
+##### id
+
+> **id**: `string`
+
 ##### signal
 
 > **signal**: `AbortSignal`

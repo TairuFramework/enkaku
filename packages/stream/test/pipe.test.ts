@@ -1,4 +1,4 @@
-import { createPipe, toIterator } from '../src/index.js'
+import { createPipe } from '../src/index.js'
 
 describe('createPipe()', () => {
   test('reads after writes', async () => {
@@ -9,8 +9,13 @@ describe('createPipe()', () => {
     await writer.write('two')
     await writer.close()
 
+    const reader = readable.getReader()
     const values: Array<string> = []
-    for await (const value of toIterator(readable)) {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
       values.push(value)
     }
     expect(values).toEqual(['one', 'two'])

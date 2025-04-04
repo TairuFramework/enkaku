@@ -17,6 +17,7 @@
       "../packages/codec",
       "../packages/event",
       "../packages/expo-keystore",
+      "../packages/generator",
       "../packages/http-client-transport",
       "../packages/http-server-transport",
       "../packages/message-transport",

@@ -446,6 +446,8 @@ Generic Transport object type implementing read and write functions.
 
 ##### \[asyncIterator\]()
 
+> **\[asyncIterator\]**(): `AsyncIterator`\<`R`, `null` \| `R`\>
+
 ###### Returns
 
 `AsyncIterator`\<`R`, `null` \| `R`\>

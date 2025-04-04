@@ -230,7 +230,7 @@ npm install @enkaku/capability
 
 ### createCapability()
 
-> **createCapability**\<`Payload`, `HeaderParams`\>(`signer`, `payload`, `header`?): `Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{ `[key: string]`: `unknown`;  `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
+> **createCapability**\<`Payload`, `HeaderParams`\>(`signer`, `payload`, `header`?): `Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{[`key`: `string`]: `unknown`; `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
 
 #### Type Parameters
 
@@ -258,7 +258,7 @@ npm install @enkaku/capability
 
 #### Returns
 
-`Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{ `[key: string]`: `unknown`;  `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
+`Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{[`key`: `string`]: `unknown`; `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
 
 ***
 

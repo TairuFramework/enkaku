@@ -391,6 +391,32 @@ describe('Client', () => {
       await transports.dispose()
     })
 
+    test('aborting the stream closes the readable', async () => {
+      const transports = new DirectTransports<
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
+      >()
+      const client = new Client<Protocol>({ transport: transports.client })
+
+      const [writable, receivedPromise] = createArraySink<number>()
+      const stream = client.createStream('test/stream')
+      const pipeDone = stream.readable.pipeTo(writable)
+
+      await transports.server.read()
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 1 }))
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 2 }))
+
+      stream.abort()
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 3 }))
+      await pipeDone
+      await expect(receivedPromise).resolves.toEqual([1, 2])
+      stream.catch((reason) => {
+        expect(reason).toBeInstanceOf(AbortSignal)
+      })
+
+      await transports.dispose()
+    })
+
     test('closes the stream', async () => {
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
@@ -419,6 +445,32 @@ describe('Client', () => {
       const [writable, received] = createArraySink<number>()
       stream.readable.pipeTo(writable)
       await expect(received).resolves.toEqual([1, 2, 3])
+
+      await transports.dispose()
+    })
+
+    test('closing the stream closes the readable', async () => {
+      const transports = new DirectTransports<
+        AnyServerMessageOf<Protocol>,
+        AnyClientMessageOf<Protocol>
+      >()
+      const client = new Client<Protocol>({ transport: transports.client })
+
+      const [writable, receivedPromise] = createArraySink<number>()
+      const stream = client.createStream('test/stream')
+      const pipeDone = stream.readable.pipeTo(writable)
+
+      await transports.server.read()
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 1 }))
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 2 }))
+
+      stream.close()
+      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 3 }))
+      await transports.server.write(unsignedToken({ typ: 'result', rid: stream.id, val: 'OK' }))
+
+      await pipeDone
+      await expect(receivedPromise).resolves.toEqual([1, 2, 3])
+      await expect(stream).resolves.toBe('OK')
 
       await transports.dispose()
     })

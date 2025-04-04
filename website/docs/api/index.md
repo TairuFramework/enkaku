@@ -9,6 +9,7 @@
 - [@enkaku/codec](codec/index.md)
 - [@enkaku/event](event/index.md)
 - [@enkaku/expo-keystore](expo-keystore/index.md)
+- [@enkaku/generator](generator/index.md)
 - [@enkaku/http-client-transport](http-client-transport/index.md)
 - [@enkaku/http-server-transport](http-server-transport/index.md)
 - [@enkaku/message-transport](message-transport/index.md)

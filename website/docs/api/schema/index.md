@@ -250,7 +250,7 @@ Create a standard schema validator.
 
 ##### S
 
-`S` *extends* `Readonly`\<\{\}\>
+`S` *extends* `Readonly`\<\{ \}\>
 
 ##### T
 
@@ -278,7 +278,7 @@ Validator function factory using a JSON schema.
 
 ##### S
 
-`S` *extends* `Readonly`\<\{\}\>
+`S` *extends* `Readonly`\<\{ \}\>
 
 ##### T
 

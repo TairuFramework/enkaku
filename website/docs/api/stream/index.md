@@ -224,28 +224,6 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 ***
 
-### toIterator()
-
-> **toIterator**\<`T`\>(`stream`): `AsyncGenerator`\<`T`\>
-
-#### Type Parameters
-
-##### T
-
-`T`
-
-#### Parameters
-
-##### stream
-
-`ReadableStream`\<`T`\>
-
-#### Returns
-
-`AsyncGenerator`\<`T`\>
-
-***
-
 ### toJSONLines()
 
 > **toJSONLines**\<`T`\>(`encode`): `TransformStream`\<`T`, `string`\>
