@@ -104,7 +104,7 @@ Base Transport class implementing TransportType.
 
 ##### dispose()
 
-> **dispose**(`reason`?): `Promise`\<`void`\>
+> **dispose**(`reason?`): `Promise`\<`void`\>
 
 ###### Parameters
 

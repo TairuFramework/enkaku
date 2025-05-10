@@ -122,7 +122,7 @@ npm install @enkaku/token
 
 ##### createToken()
 
-> **createToken**: \<`Payload`, `Header`\>(`payload`, `header`?) => `Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
+> **createToken**: \<`Payload`, `Header`\>(`payload`, `header?`) => `Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
 
 ###### Type Parameters
 
@@ -224,7 +224,7 @@ Generate a random private key.
 
 ### createUnsignedToken()
 
-> **createUnsignedToken**\<`Payload`, `Header`\>(`payload`, `header`?): [`UnsignedToken`](#unsignedtoken)\<`Payload`, `Header`\>
+> **createUnsignedToken**\<`Payload`, `Header`\>(`payload`, `header?`): [`UnsignedToken`](#unsignedtoken)\<`Payload`, `Header`\>
 
 Create an unsigned token object.
 
@@ -336,7 +336,7 @@ Check if a token is signed.
 
 ##### Payload
 
-`Payload` *extends* `object` = \{[`key`: `string`]: `unknown`; `aud`: `string`; `cap`: `string` \| `string`[]; `exp`: `number`; `iat`: `number`; `iss`: `string`; `nbf`: `number`; `sub`: `string`; \}
+`Payload` *extends* `object` = \{[`key`: `string`]: `unknown`; `aud?`: `string`; `cap?`: `string` \| `string`[]; `exp?`: `number`; `iat?`: `number`; `iss`: `string`; `nbf?`: `number`; `sub?`: `string`; \}
 
 #### Parameters
 
@@ -492,7 +492,7 @@ Create a token signer from a generic signer.
 
 ### verifyToken()
 
-> **verifyToken**\<`Payload`\>(`token`, `verifiers`?): `Promise`\<[`Token`](#token)\<`Payload`\>\>
+> **verifyToken**\<`Payload`\>(`token`, `verifiers?`): `Promise`\<[`Token`](#token)\<`Payload`\>\>
 
 Verify a token is either unsigned or signed with a valid signature.
 

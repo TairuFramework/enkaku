@@ -23,6 +23,7 @@
       "../packages/message-transport",
       "../packages/node-keystore",
       "../packages/node-streams-transport",
+      "../packages/patch",
       "../packages/protocol",
       "../packages/schema",
       "../packages/server",

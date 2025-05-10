@@ -114,7 +114,7 @@ Base Transport class implementing TransportType.
 
 ##### dispose()
 
-> **dispose**(`reason`?): `Promise`\<`void`\>
+> **dispose**(`reason?`): `Promise`\<`void`\>
 
 ###### Parameters
 
@@ -230,7 +230,7 @@ Base Transport class implementing TransportType.
 
 ### createTransportStream()
 
-> **createTransportStream**\<`R`, `W`\>(`source`, `decode`?): `Promise`\<`ReadableWritablePair`\<`R`, `W`\>\>
+> **createTransportStream**\<`R`, `W`\>(`source`, `decode?`): `Promise`\<`ReadableWritablePair`\<`R`, `W`\>\>
 
 #### Type Parameters
 

@@ -12,7 +12,7 @@ npm install @enkaku/generator
 
 ### consume()
 
-> **consume**\<`T`, `TReturn`\>(`iterator`, `callback`, `signal`?): `Promise`\<`TReturn`\>
+> **consume**\<`T`, `TReturn`\>(`iterator`, `callback`, `signal?`): `Promise`\<`TReturn`\>
 
 #### Type Parameters
 
@@ -46,7 +46,7 @@ npm install @enkaku/generator
 
 ### fromEmitter()
 
-> **fromEmitter**\<`Events`, `EventName`\>(`emitter`, `name`, `signal`?): `AsyncGenerator`\<`Events`\[`EventName`\], `void`, `void`\>
+> **fromEmitter**\<`Events`, `EventName`\>(`emitter`, `name`, `signal?`): `AsyncGenerator`\<`Events`\[`EventName`\], `void`, `void`\>
 
 #### Type Parameters
 

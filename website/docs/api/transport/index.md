@@ -100,7 +100,7 @@ Create direct Transports for communication between a client and server in the sa
 
 ##### dispose()
 
-> **dispose**(`reason`?): `Promise`\<`void`\>
+> **dispose**(`reason?`): `Promise`\<`void`\>
 
 ###### Parameters
 
@@ -242,7 +242,7 @@ Base Transport class implementing TransportType.
 
 ##### dispose()
 
-> **dispose**(`reason`?): `Promise`\<`void`\>
+> **dispose**(`reason?`): `Promise`\<`void`\>
 
 ###### Parameters
 

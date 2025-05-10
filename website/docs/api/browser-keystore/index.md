@@ -202,7 +202,7 @@ npm install @enkaku/browser-keystore
 
 ### provideTokenSigner()
 
-> **provideTokenSigner**(`keyID`, `useStore`?): `Promise`\<[`TokenSigner`](../token/index.md#tokensigner)\>
+> **provideTokenSigner**(`keyID`, `useStore?`): `Promise`\<[`TokenSigner`](../token/index.md#tokensigner)\>
 
 #### Parameters
 

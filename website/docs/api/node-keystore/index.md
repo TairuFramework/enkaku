@@ -20,7 +20,7 @@ npm install @enkaku/node-keystore
 
 ##### Constructor
 
-> **new NodeKeyEntry**(`service`, `keyID`, `key`?): [`NodeKeyEntry`](#nodekeyentry)
+> **new NodeKeyEntry**(`service`, `keyID`, `key?`): [`NodeKeyEntry`](#nodekeyentry)
 
 ###### Parameters
 

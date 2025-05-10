@@ -136,7 +136,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### dispose()
 
-> **dispose**(`reason`?): `Promise`\<`void`\>
+> **dispose**(`reason?`): `Promise`\<`void`\>
 
 ###### Parameters
 
@@ -502,7 +502,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### abort()
 
-> **abort**: (`reason`?) => `void`
+> **abort**: (`reason?`) => `void`
 
 ###### Parameters
 

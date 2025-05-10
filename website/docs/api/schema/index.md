@@ -26,7 +26,7 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 ##### Constructor
 
-> **new ValidationError**(`schema`, `value`, `errorObjects`?): [`ValidationError`](#validationerror)
+> **new ValidationError**(`schema`, `value`, `errorObjects?`): [`ValidationError`](#validationerror)
 
 ###### Parameters
 

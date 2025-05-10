@@ -32,7 +32,7 @@
   "dependencies": {
     "@enkaku/codec": "workspace:^",
     "@enkaku/token": "workspace:^",
-    "@napi-rs/keyring": "^1.1.6"
+    "@napi-rs/keyring": "^1.1.7"
   },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^"

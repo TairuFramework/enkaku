@@ -110,7 +110,7 @@ npm install @enkaku/capability
 
 ### assertNonExpired()
 
-> **assertNonExpired**(`payload`, `atTime`?): `void`
+> **assertNonExpired**(`payload`, `atTime?`): `void`
 
 #### Parameters
 
@@ -132,7 +132,7 @@ npm install @enkaku/capability
 
 ### assertValidDelegation()
 
-> **assertValidDelegation**(`from`, `to`, `atTime`?): `void`
+> **assertValidDelegation**(`from`, `to`, `atTime?`): `void`
 
 #### Parameters
 
@@ -156,7 +156,7 @@ npm install @enkaku/capability
 
 ### checkCapability()
 
-> **checkCapability**(`permission`, `payload`, `atTime`?): `Promise`\<`void`\>
+> **checkCapability**(`permission`, `payload`, `atTime?`): `Promise`\<`void`\>
 
 #### Parameters
 
@@ -206,7 +206,7 @@ npm install @enkaku/capability
 
 ### checkDelegationChain()
 
-> **checkDelegationChain**(`payload`, `capabilities`, `atTime`?): `Promise`\<`void`\>
+> **checkDelegationChain**(`payload`, `capabilities`, `atTime?`): `Promise`\<`void`\>
 
 #### Parameters
 
@@ -230,7 +230,7 @@ npm install @enkaku/capability
 
 ### createCapability()
 
-> **createCapability**\<`Payload`, `HeaderParams`\>(`signer`, `payload`, `header`?): `Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{[`key`: `string`]: `unknown`; `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
+> **createCapability**\<`Payload`, `HeaderParams`\>(`signer`, `payload`, `header?`): `Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{[`key`: `string`]: `unknown`; `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
 
 #### Type Parameters
 

@@ -30,7 +30,7 @@ npm install @enkaku/event
 
 ##### Constructor
 
-> **new EventEmitter**\<`Events`, `EventName`\>(`options`?): [`EventEmitter`](#eventemitter)\<`Events`, `EventName`\>
+> **new EventEmitter**\<`Events`, `EventName`\>(`options?`): [`EventEmitter`](#eventemitter)\<`Events`, `EventName`\>
 
 Create a new Emittery instance with the specified options.
 

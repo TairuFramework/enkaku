@@ -15,6 +15,7 @@
 - [@enkaku/message-transport](message-transport/index.md)
 - [@enkaku/node-keystore](node-keystore/index.md)
 - [@enkaku/node-streams-transport](node-streams-transport/index.md)
+- [@enkaku/patch](patch/index.md)
 - [@enkaku/protocol](protocol/index.md)
 - [@enkaku/schema](schema/index.md)
 - [@enkaku/server](server/index.md)
