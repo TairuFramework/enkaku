@@ -15,6 +15,17 @@ test('fromJSONLines() parses JSON lines to individual values', async () => {
   await expect(result).resolves.toEqual([{ foo: 'bar' }, { test: 'other' }])
 })
 
+test('fromJSONLines() flushes buffered value when source is closed', async () => {
+  const [source, controller] = createReadable()
+  const [sink, result] = createArraySink()
+  source.pipeThrough(fromJSONLines()).pipeTo(sink)
+
+  controller.enqueue('{"partial": "json"}')
+  controller.close()
+
+  await expect(result).resolves.toEqual([{ partial: 'json' }])
+})
+
 test('toJSONLines() encodes values to JSON lines', async () => {
   const [source, controller] = createReadable()
   const [sink, result] = createArraySink()
