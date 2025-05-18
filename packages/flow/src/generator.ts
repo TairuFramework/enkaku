@@ -12,18 +12,18 @@ import type {
 export class MissingHandlerError extends Error {
   name = 'MissingHandler'
 
-  constructor(taskName: string) {
-    super(`Handler for task ${taskName} not found`)
+  constructor(action: string) {
+    super(`Handler for action ${action} not found`)
   }
 }
 
-export type FlowTask<
+export type FlowAction<
   State,
   Handlers extends HandlersRecord<State>,
-  Task extends keyof Handlers = keyof Handlers,
+  Action extends keyof Handlers = keyof Handlers,
 > = {
-  name: Task & string
-  params: Handlers[Task] extends Handler<State, infer P, Record<string, unknown>> ? P : never
+  name: Action & string
+  params: Handlers[Action] extends Handler<State, infer P, Record<string, unknown>> ? P : never
 }
 
 export type CreateFlowParams<State, Handlers extends HandlersRecord<State>> = {
@@ -34,7 +34,7 @@ export type CreateFlowParams<State, Handlers extends HandlersRecord<State>> = {
 export type GenerateFlowParams<State, Handlers extends HandlersRecord<State>> = {
   signal?: AbortSignal
   state: State
-  task?: FlowTask<State, Handlers>
+  action?: FlowAction<State, Handlers>
 }
 
 export type CreateGeneratorParams<State, Handlers extends HandlersRecord<State>> = CreateFlowParams<
@@ -44,8 +44,9 @@ export type CreateGeneratorParams<State, Handlers extends HandlersRecord<State>>
   GenerateFlowParams<State, Handlers>
 
 export type GenerateNext<State, Handlers extends HandlersRecord<State>> = {
+  action?: FlowAction<State, Handlers>
+  signal?: AbortSignal
   state?: State
-  task: FlowTask<State, Handlers>
 }
 
 export type FlowGenerator<State, Handlers extends HandlersRecord<State>> = AsyncGenerator<
@@ -57,13 +58,18 @@ export type FlowGenerator<State, Handlers extends HandlersRecord<State>> = Async
 export function createGenerator<State, Handlers extends HandlersRecord<State>>(
   params: CreateGeneratorParams<State, Handlers>,
 ): FlowGenerator<State, Handlers> {
-  const { handlers, signal, state: initialState, stateValidator, task: initialTask } = params
+  const {
+    handlers,
+    signal: flowSignal,
+    state: initialState,
+    stateValidator,
+    action: initialAction,
+  } = params
 
   const events = new EventEmitter<HandlersEvents<State, Handlers>>()
   const emit = events.emit.bind(events)
 
-  let currentState = initialState
-  let output: HandlerOutput<State> | null = null
+  let output: HandlerOutput<State> = { status: 'state', state: initialState }
 
   return {
     [Symbol.asyncIterator]() {
@@ -72,12 +78,17 @@ export function createGenerator<State, Handlers extends HandlersRecord<State>>(
     events,
     next: async (step?: GenerateNext<State, Handlers>) => {
       // Check the flow is not already ended
-      if (output != null && output.status !== 'next') {
-        return { value: output, done: true }
+      if (['aborted', 'end', 'error'].includes(output.status)) {
+        return { value: output as HandlerReturnOutput<State>, done: true }
+      }
+
+      // Check the step is not aborted
+      if (step?.signal?.aborted) {
+        return { value: output, done: false }
       }
 
       // Validate the state
-      const state = step?.state ?? currentState
+      const state = step?.state ?? output.state
       const validatedState = stateValidator(state)
       if (validatedState instanceof ValidationError) {
         output = { status: 'error', state, error: validatedState }
@@ -85,37 +96,58 @@ export function createGenerator<State, Handlers extends HandlersRecord<State>>(
       }
 
       // Check the flow is not aborted
-      if (signal?.aborted) {
-        output = { status: 'aborted', state, reason: signal.reason }
+      if (flowSignal?.aborted) {
+        output = { status: 'aborted', state, reason: flowSignal.reason }
         return { value: output, done: true }
       }
 
-      const task =
-        step?.task ?? (output ? { name: output.task, params: output.params } : initialTask)
-      if (task == null) {
-        output = { status: 'ended', state }
+      if (step?.state != null && step?.action == null) {
+        output = { status: 'state', state: step.state }
+        return { value: output, done: false }
+      }
+
+      const outputAction =
+        output?.status === 'action' ? { name: output.action, params: output.params } : null
+      const action = step?.action ?? outputAction ?? initialAction
+      if (action == null) {
+        output = { status: 'end', state }
         return { value: output, done: true }
       }
 
-      const handler = handlers[task.name]
+      const handler = handlers[action.name]
       if (handler == null) {
         output = {
           status: 'error',
           state,
-          error: new MissingHandlerError(task.name),
+          error: new MissingHandlerError(action.name),
         }
         return { value: output, done: true }
       }
 
       try {
-        output = await handler({ state, params: task.params, signal, emit })
+        const nextOutput = await handler({
+          state,
+          params: action.params,
+          signal: AbortSignal.any([flowSignal, step?.signal].filter((s) => s != null)),
+          emit,
+        })
+        // Don't update the state if the action is aborted
+        if (step?.signal?.aborted) {
+          return { value: output as HandlerReturnOutput<State>, done: false }
+        }
+
+        output = nextOutput
         const validatedOutputState = stateValidator(output.state)
         if (validatedOutputState instanceof ValidationError) {
           output = { status: 'error', state: output.state, error: validatedOutputState }
           return { value: output, done: true }
         }
-        currentState = output.state
       } catch (cause) {
+        // Don't update the state if the action is aborted
+        if (step?.signal?.aborted) {
+          return { value: output as HandlerReturnOutput<State>, done: false }
+        }
+
         const error =
           cause instanceof Error ? cause : new Error('Handler execution failed', { cause })
         output = { status: 'error', state, error }
@@ -123,24 +155,24 @@ export function createGenerator<State, Handlers extends HandlersRecord<State>>(
       }
 
       // Check the flow is not aborted
-      if (signal?.aborted) {
-        output = { status: 'aborted', state: output.state, reason: signal.reason }
+      if (flowSignal?.aborted) {
+        output = { status: 'aborted', state: output.state, reason: flowSignal.reason }
         return { value: output, done: true }
       }
 
-      return output.status === 'next'
+      return output.status === 'action' || output.status === 'state'
         ? { value: output, done: false }
         : { value: output, done: true }
     },
     return: async (
       returnOutput?: HandlerReturnOutput<State> | PromiseLike<HandlerReturnOutput<State>>,
     ) => {
-      output = returnOutput ? await returnOutput : { status: 'ended', state: currentState }
+      output = returnOutput ? await returnOutput : { status: 'end', state: output.state }
       return { value: output, done: true }
     },
     throw: async (cause?: unknown) => {
       const error = cause instanceof Error ? cause : new Error('Flow execution failed', { cause })
-      output = { status: 'error', state: currentState, error }
+      output = { status: 'error', state: output.state, error }
       return { value: output, done: true }
     },
   }

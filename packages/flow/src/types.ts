@@ -17,12 +17,13 @@ export type HandlerExecutionContext<
 
 export type HandlerReturnOutput<State> =
   | { status: 'aborted'; state: State; reason: string }
-  | { status: 'ended'; state: State }
+  | { status: 'end'; state: State }
   | { status: 'error'; state: State; error: Error }
 
 export type HandlerOutput<State, Params = unknown> =
   | HandlerReturnOutput<State>
-  | { status: 'next'; state: State; task: string; params: Params }
+  | { status: 'action'; state: State; action: string; params: Params }
+  | { status: 'state'; state: State }
 
 export type Handler<
   State,

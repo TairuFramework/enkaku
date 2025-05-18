@@ -87,11 +87,13 @@ export class NodeKeyEntry implements KeyEntry<Uint8Array> {
   }
 
   remove(): void {
+    // @ts-ignore - deletePassword is not typed in CI somehow
     this.#syncEntry.deletePassword()
     this.#key = undefined
   }
 
   async removeAsync(): Promise<void> {
+    // @ts-ignore - deletePassword is not typed in CI somehow
     await this.#asyncEntry.deletePassword()
     this.#key = undefined
   }

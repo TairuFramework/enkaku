@@ -20,11 +20,11 @@ npm install @enkaku/flow
 
 ##### Constructor
 
-> **new MissingHandlerError**(`taskName`): [`MissingHandlerError`](#missinghandlererror)
+> **new MissingHandlerError**(`action`): [`MissingHandlerError`](#missinghandlererror)
 
 ###### Parameters
 
-###### taskName
+###### action
 
 `string`
 
@@ -90,6 +90,36 @@ npm install @enkaku/flow
 
 ***
 
+### FlowAction\<State, Handlers, Action\>
+
+> **FlowAction**\<`State`, `Handlers`, `Action`\> = `object`
+
+#### Type Parameters
+
+##### State
+
+`State`
+
+##### Handlers
+
+`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
+
+##### Action
+
+`Action` *extends* keyof `Handlers` = keyof `Handlers`
+
+#### Properties
+
+##### name
+
+> **name**: `Action` & `string`
+
+##### params
+
+> **params**: `Handlers`\[`Action`\] *extends* [`Handler`](#handler)\<`State`, infer P, `Record`\<`string`, `unknown`\>\> ? `P` : `never`
+
+***
+
 ### FlowGenerator\<State, Handlers\>
 
 > **FlowGenerator**\<`State`, `Handlers`\> = `AsyncGenerator`\<[`HandlerOutput`](#handleroutput)\<`State`\>, [`HandlerReturnOutput`](#handlerreturnoutput)\<`State`\>, [`GenerateNext`](#generatenext)\<`State`, `Handlers`\>\> & `object`
@@ -112,36 +142,6 @@ npm install @enkaku/flow
 
 ***
 
-### FlowTask\<State, Handlers, Task\>
-
-> **FlowTask**\<`State`, `Handlers`, `Task`\> = `object`
-
-#### Type Parameters
-
-##### State
-
-`State`
-
-##### Handlers
-
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
-
-##### Task
-
-`Task` *extends* keyof `Handlers` = keyof `Handlers`
-
-#### Properties
-
-##### name
-
-> **name**: `Task` & `string`
-
-##### params
-
-> **params**: `Handlers`\[`Task`\] *extends* [`Handler`](#handler)\<`State`, infer P, `Record`\<`string`, `unknown`\>\> ? `P` : `never`
-
-***
-
 ### GenerateFlowParams\<State, Handlers\>
 
 > **GenerateFlowParams**\<`State`, `Handlers`\> = `object`
@@ -158,6 +158,10 @@ npm install @enkaku/flow
 
 #### Properties
 
+##### action?
+
+> `optional` **action**: [`FlowAction`](#flowaction)\<`State`, `Handlers`\>
+
 ##### signal?
 
 > `optional` **signal**: `AbortSignal`
@@ -165,10 +169,6 @@ npm install @enkaku/flow
 ##### state
 
 > **state**: `State`
-
-##### task?
-
-> `optional` **task**: [`FlowTask`](#flowtask)\<`State`, `Handlers`\>
 
 ***
 
@@ -188,13 +188,17 @@ npm install @enkaku/flow
 
 #### Properties
 
+##### action?
+
+> `optional` **action**: [`FlowAction`](#flowaction)\<`State`, `Handlers`\>
+
+##### signal?
+
+> `optional` **signal**: `AbortSignal`
+
 ##### state?
 
 > `optional` **state**: `State`
-
-##### task
-
-> **task**: [`FlowTask`](#flowtask)\<`State`, `Handlers`\>
 
 ***
 
@@ -294,7 +298,7 @@ npm install @enkaku/flow
 
 ### HandlerOutput\<State, Params\>
 
-> **HandlerOutput**\<`State`, `Params`\> = [`HandlerReturnOutput`](#handlerreturnoutput)\<`State`\> \| \{ `params`: `Params`; `state`: `State`; `status`: `"next"`; `task`: `string`; \}
+> **HandlerOutput**\<`State`, `Params`\> = [`HandlerReturnOutput`](#handlerreturnoutput)\<`State`\> \| \{ `action`: `string`; `params`: `Params`; `state`: `State`; `status`: `"action"`; \} \| \{ `state`: `State`; `status`: `"state"`; \}
 
 #### Type Parameters
 
@@ -310,7 +314,7 @@ npm install @enkaku/flow
 
 ### HandlerReturnOutput\<State\>
 
-> **HandlerReturnOutput**\<`State`\> = \{ `reason`: `string`; `state`: `State`; `status`: `"aborted"`; \} \| \{ `state`: `State`; `status`: `"ended"`; \} \| \{ `error`: `Error`; `state`: `State`; `status`: `"error"`; \}
+> **HandlerReturnOutput**\<`State`\> = \{ `reason`: `string`; `state`: `State`; `status`: `"aborted"`; \} \| \{ `state`: `State`; `status`: `"end"`; \} \| \{ `error`: `Error`; `state`: `State`; `status`: `"error"`; \}
 
 #### Type Parameters
 
