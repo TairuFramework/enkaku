@@ -245,3 +245,107 @@ describe('createFlow()', () => {
     })
   })
 })
+
+describe('events support', () => {
+  type TestEvents = {
+    'add:started': { value: number }
+    'add:completed': { result: number }
+    'subtract:started': { value: number }
+    'subtract:completed': { result: number }
+  }
+
+  const handlersWithEvents = {
+    add: async ({ state, params, emit }: HandlerExecutionContext<number, number, TestEvents>) => {
+      const result = state + params
+      emit('add:started', { value: state })
+      emit('add:completed', { result })
+      return { status: 'next', state: result, task: 'subtract', params: 3 }
+    },
+    subtract: async ({
+      state,
+      params,
+      emit,
+    }: HandlerExecutionContext<number, number, TestEvents>) => {
+      const result = state - params
+      emit('subtract:started', { value: state })
+      emit('subtract:completed', { result })
+      return { status: 'ended', state: result }
+    },
+  } satisfies HandlersRecord<number, TestEvents>
+
+  test('emits events from handlers', async () => {
+    const generator = createGenerator<number, typeof handlersWithEvents>({
+      stateValidator,
+      handlers: handlersWithEvents,
+      state: 1,
+      task: { name: 'add', params: 2 },
+    })
+
+    const events: Array<{ type: keyof TestEvents; data: TestEvents[keyof TestEvents] }> = []
+    generator.events.on('add:started', (data) => {
+      events.push({ type: 'add:started', data })
+    })
+    generator.events.on('add:completed', (data) => {
+      events.push({ type: 'add:completed', data })
+    })
+    generator.events.on('subtract:started', (data) => {
+      events.push({ type: 'subtract:started', data })
+    })
+    generator.events.on('subtract:completed', (data) => {
+      events.push({ type: 'subtract:completed', data })
+    })
+
+    // Run the flow
+    await generator.next()
+    await generator.next()
+
+    expect(events).toEqual([
+      { type: 'add:started', data: { value: 1 } },
+      { type: 'add:completed', data: { result: 3 } },
+      { type: 'subtract:started', data: { value: 3 } },
+      { type: 'subtract:completed', data: { result: 0 } },
+    ])
+  })
+
+  test('events are emitted in correct order with state changes', async () => {
+    const generator = createGenerator<number, typeof handlersWithEvents>({
+      stateValidator,
+      handlers: handlersWithEvents,
+      state: 1,
+      task: { name: 'add', params: 2 },
+    })
+
+    const events: Array<{ type: keyof TestEvents; data: TestEvents[keyof TestEvents] }> = []
+    generator.events.on('add:started', (data) => {
+      events.push({ type: 'add:started', data })
+    })
+    generator.events.on('add:completed', (data) => {
+      events.push({ type: 'add:completed', data })
+    })
+
+    // Run first step
+    const firstStep = await generator.next()
+    expect(firstStep.value).toEqual({ status: 'next', state: 3, task: 'subtract', params: 3 })
+    expect(events).toEqual([
+      { type: 'add:started', data: { value: 1 } },
+      { type: 'add:completed', data: { result: 3 } },
+    ])
+
+    // Clear events and listen for subtract events
+    events.length = 0
+    generator.events.on('subtract:started', (data) => {
+      events.push({ type: 'subtract:started', data })
+    })
+    generator.events.on('subtract:completed', (data) => {
+      events.push({ type: 'subtract:completed', data })
+    })
+
+    // Run second step
+    const secondStep = await generator.next()
+    expect(secondStep.value).toEqual({ status: 'ended', state: 0 })
+    expect(events).toEqual([
+      { type: 'subtract:started', data: { value: 3 } },
+      { type: 'subtract:completed', data: { result: 0 } },
+    ])
+  })
+})

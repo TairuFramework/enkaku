@@ -8,6 +8,56 @@ Web streams utilities for Enkaku transports.
 npm install @enkaku/stream
 ```
 
+## Classes
+
+### JSONLinesError
+
+#### Extends
+
+- `Error`
+
+#### Constructors
+
+##### Constructor
+
+> **new JSONLinesError**(`message?`): [`JSONLinesError`](#jsonlineserror)
+
+###### Parameters
+
+###### message?
+
+`string`
+
+###### Returns
+
+[`JSONLinesError`](#jsonlineserror)
+
+###### Inherited from
+
+`Error.constructor`
+
+##### Constructor
+
+> **new JSONLinesError**(`message?`, `options?`): [`JSONLinesError`](#jsonlineserror)
+
+###### Parameters
+
+###### message?
+
+`string`
+
+###### options?
+
+`ErrorOptions`
+
+###### Returns
+
+[`JSONLinesError`](#jsonlineserror)
+
+###### Inherited from
+
+`Error.constructor`
+
 ## Type Aliases
 
 ### DecodeJSON()\<T\>
@@ -238,7 +288,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 ##### encode
 
-[`EncodeJSON`](#encodejson)\<`T`\> = `JSON.stringify`
+[`EncodeJSON`](#encodejson)\<`T`\> = `safeStringify`
 
 #### Returns
 
