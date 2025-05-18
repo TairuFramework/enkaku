@@ -10,5 +10,5 @@
  * @module flow
  */
 
-export * from './generator.js'
+export * from './flow.js'
 export * from './types.js'

@@ -122,13 +122,21 @@ npm install @enkaku/flow
 
 ### FlowGenerator\<State, Handlers\>
 
-> **FlowGenerator**\<`State`, `Handlers`\> = `AsyncGenerator`\<[`HandlerOutput`](#handleroutput)\<`State`\>, [`HandlerReturnOutput`](#handlerreturnoutput)\<`State`\>, [`GenerateNext`](#generatenext)\<`State`, `Handlers`\>\> & `object`
+> **FlowGenerator**\<`State`, `Handlers`\> = `AsyncGenerator`\<[`GeneratorValue`](#generatorvalue)\<`State`\>, [`GeneratorDoneValue`](#generatordonevalue)\<`State`\>, [`GenerateNext`](#generatenext)\<`State`, `Handlers`\>\> & `object`
 
 #### Type declaration
 
 ##### events
 
 > **events**: [`EventEmitter`](../event/index.md#eventemitter)\<[`HandlersEvents`](#handlersevents)\<`State`, `Handlers`\>\>
+
+##### getState()
+
+> **getState**(): `Readonly`\<`State`\>
+
+###### Returns
+
+`Readonly`\<`State`\>
 
 #### Type Parameters
 
@@ -202,6 +210,34 @@ npm install @enkaku/flow
 
 ***
 
+### GeneratorDoneValue\<State\>
+
+> **GeneratorDoneValue**\<`State`\> = \{ `reason`: `string`; `state`: `State`; `status`: `"aborted"`; \} \| \{ `state`: `State`; `status`: `"end"`; \} \| \{ `error`: `Error`; `state`: `State`; `status`: `"error"`; \}
+
+#### Type Parameters
+
+##### State
+
+`State`
+
+***
+
+### GeneratorValue\<State, Params\>
+
+> **GeneratorValue**\<`State`, `Params`\> = [`GeneratorDoneValue`](#generatordonevalue)\<`State`\> \| \{ `action`: `string`; `params`: `Params`; `state`: `State`; `status`: `"action"`; \} \| \{ `state`: `State`; `status`: `"state"`; \}
+
+#### Type Parameters
+
+##### State
+
+`State`
+
+##### Params
+
+`Params` = `unknown`
+
+***
+
 ### GenericHandlerContext\<Events\>
 
 > **GenericHandlerContext**\<`Events`\> = `object`
@@ -226,7 +262,7 @@ npm install @enkaku/flow
 
 ### Handler()\<State, Params, Events\>
 
-> **Handler**\<`State`, `Params`, `Events`\> = (`context`) => [`HandlerOutput`](#handleroutput)\<`State`\> \| `Promise`\<[`HandlerOutput`](#handleroutput)\<`State`\>\>
+> **Handler**\<`State`, `Params`, `Events`\> = (`context`) => [`GeneratorValue`](#generatorvalue)\<`State`\> \| `Promise`\<[`GeneratorValue`](#generatorvalue)\<`State`\>\>
 
 #### Type Parameters
 
@@ -250,7 +286,7 @@ npm install @enkaku/flow
 
 #### Returns
 
-[`HandlerOutput`](#handleroutput)\<`State`\> \| `Promise`\<[`HandlerOutput`](#handleroutput)\<`State`\>\>
+[`GeneratorValue`](#generatorvalue)\<`State`\> \| `Promise`\<[`GeneratorValue`](#generatorvalue)\<`State`\>\>
 
 ***
 
@@ -293,34 +329,6 @@ npm install @enkaku/flow
 ##### Events
 
 `Events` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `never`\>
-
-***
-
-### HandlerOutput\<State, Params\>
-
-> **HandlerOutput**\<`State`, `Params`\> = [`HandlerReturnOutput`](#handlerreturnoutput)\<`State`\> \| \{ `action`: `string`; `params`: `Params`; `state`: `State`; `status`: `"action"`; \} \| \{ `state`: `State`; `status`: `"state"`; \}
-
-#### Type Parameters
-
-##### State
-
-`State`
-
-##### Params
-
-`Params` = `unknown`
-
-***
-
-### HandlerReturnOutput\<State\>
-
-> **HandlerReturnOutput**\<`State`\> = \{ `reason`: `string`; `state`: `State`; `status`: `"aborted"`; \} \| \{ `state`: `State`; `status`: `"end"`; \} \| \{ `error`: `Error`; `state`: `State`; `status`: `"error"`; \}
-
-#### Type Parameters
-
-##### State
-
-`State`
 
 ***
 

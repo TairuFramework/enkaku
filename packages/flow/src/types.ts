@@ -1,5 +1,22 @@
 import type { EventEmitter } from '@enkaku/event'
 
+export type GeneratorDoneValue<State> =
+  | { status: 'aborted'; state: State; reason: string }
+  | { status: 'end'; state: State }
+  | { status: 'error'; state: State; error: Error }
+
+export type GeneratorValue<State, Params = unknown> =
+  | GeneratorDoneValue<State>
+  | { status: 'action'; state: State; action: string; params: Params }
+  | { status: 'state'; state: State }
+
+/** @internal */
+export function isDoneValue<State>(
+  value: GeneratorValue<State>,
+): value is GeneratorDoneValue<State> {
+  return value.status === 'aborted' || value.status === 'end' || value.status === 'error'
+}
+
 export type GenericHandlerContext<Events extends Record<string, unknown> = Record<string, never>> =
   {
     emit: EventEmitter<Events>['emit']
@@ -15,23 +32,13 @@ export type HandlerExecutionContext<
   params: Params
 }
 
-export type HandlerReturnOutput<State> =
-  | { status: 'aborted'; state: State; reason: string }
-  | { status: 'end'; state: State }
-  | { status: 'error'; state: State; error: Error }
-
-export type HandlerOutput<State, Params = unknown> =
-  | HandlerReturnOutput<State>
-  | { status: 'action'; state: State; action: string; params: Params }
-  | { status: 'state'; state: State }
-
 export type Handler<
   State,
   Params,
   Events extends Record<string, unknown> = Record<string, never>,
 > = (
   context: HandlerExecutionContext<State, Params, Events>,
-) => HandlerOutput<State> | Promise<HandlerOutput<State>>
+) => GeneratorValue<State> | Promise<GeneratorValue<State>>
 
 export type HandlersRecord<
   State,
