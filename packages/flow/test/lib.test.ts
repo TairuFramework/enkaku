@@ -7,49 +7,72 @@ import {
   createGenerator,
 } from '../src/index.js'
 
-const stateSchema = { type: 'number' } as const satisfies Schema
+type State = {
+  value: number
+}
+
+type Params = {
+  amount: number
+}
+
+const stateSchema = {
+  type: 'object',
+  properties: {
+    value: { type: 'number' },
+  },
+  required: ['value'],
+} as const satisfies Schema
+
 const stateValidator = createValidator(stateSchema)
 
 const handlers = {
-  add: ({ state, params }: HandlerExecutionContext<number, number>) => {
-    return { status: 'action', state: state + params, action: 'subtract', params: 3 }
+  add: ({ state, params }: HandlerExecutionContext<State, Params>) => {
+    return {
+      status: 'action' as const,
+      state: { value: state.value + params.amount },
+      action: 'subtract',
+      params: { amount: 3 },
+    }
   },
-  subtract: ({ state, params }: HandlerExecutionContext<number, number>) => {
-    return { status: 'end', state: state - params }
+  subtract: ({ state, params }: HandlerExecutionContext<State, Params>) => {
+    return {
+      status: 'end' as const,
+      state: { value: state.value - params.amount },
+    }
   },
-} satisfies HandlersRecord<number>
+} satisfies HandlersRecord<State>
 
 describe('createGenerator()', () => {
   test('returns a generator', async () => {
-    const generator = createGenerator<number, typeof handlers>({
+    const generator = createGenerator<State, typeof handlers>({
       stateValidator,
       handlers,
-      state: 1,
-      action: { name: 'add', params: 2 },
+      state: { value: 1 },
+      action: { name: 'add', params: { amount: 2 } },
     })
 
     await expect(generator.next()).resolves.toEqual({
-      value: { status: 'action', state: 3, action: 'subtract', params: 3 },
+      value: { status: 'action', state: { value: 3 }, action: 'subtract', params: { amount: 3 } },
       done: false,
     })
     await expect(generator.next()).resolves.toEqual({
-      value: { status: 'end', state: 0 },
+      value: { status: 'end', state: { value: 0 } },
       done: true,
     })
   })
 
   test('returns error when handler for initial action is missing', async () => {
-    const generator = createGenerator<number, typeof handlers>({
+    const generator = createGenerator<State, typeof handlers>({
       stateValidator,
       handlers,
-      state: 1,
-      action: { name: 'multiply' as keyof typeof handlers, params: 2 },
+      state: { value: 1 },
+      action: { name: 'multiply' as keyof typeof handlers, params: { amount: 2 } },
     })
 
     await expect(generator.next()).resolves.toEqual({
       value: {
         status: 'error',
-        state: 1,
+        state: { value: 1 },
         error: expect.objectContaining({
           name: 'MissingHandler',
           message: 'Handler for action multiply not found',
@@ -62,31 +85,31 @@ describe('createGenerator()', () => {
   test('returns error when handler for subsequent action is missing', async () => {
     const handlersWithInvalidNext = {
       ...handlers,
-      add: ({ state, params }: HandlerExecutionContext<number, number>) => {
+      add: ({ state, params }: HandlerExecutionContext<State, Params>) => {
         return {
           status: 'action' as const,
-          state: state + params,
+          state: { value: state.value + params.amount },
           action: 'multiply' as keyof typeof handlers,
-          params: 3,
+          params: { amount: 3 },
         }
       },
     } satisfies typeof handlers
 
-    const generator = createGenerator<number, typeof handlers>({
+    const generator = createGenerator<State, typeof handlers>({
       stateValidator,
       handlers: handlersWithInvalidNext,
-      state: 1,
-      action: { name: 'add', params: 2 },
+      state: { value: 1 },
+      action: { name: 'add', params: { amount: 2 } },
     })
 
     await expect(generator.next()).resolves.toEqual({
-      value: { status: 'action', state: 3, action: 'multiply', params: 3 },
+      value: { status: 'action', state: { value: 3 }, action: 'multiply', params: { amount: 3 } },
       done: false,
     })
     await expect(generator.next()).resolves.toEqual({
       value: {
         status: 'error',
-        state: 3,
+        state: { value: 3 },
         error: expect.objectContaining({
           name: 'MissingHandler',
           message: 'Handler for action multiply not found',
@@ -99,11 +122,11 @@ describe('createGenerator()', () => {
   test('handles abort signal', async () => {
     const abortController = new AbortController()
 
-    const generator = createGenerator<number, typeof handlers>({
+    const generator = createGenerator<State, typeof handlers>({
       stateValidator,
       handlers,
-      state: 1,
-      action: { name: 'add', params: 2 },
+      state: { value: 1 },
+      action: { name: 'add', params: { amount: 2 } },
       signal: abortController.signal,
     })
 
@@ -113,7 +136,7 @@ describe('createGenerator()', () => {
     await expect(firstStep).resolves.toEqual({
       value: {
         status: 'aborted',
-        state: 3,
+        state: { value: 3 },
         reason: 'reason',
       },
       done: true,
@@ -121,17 +144,17 @@ describe('createGenerator()', () => {
   })
 
   test('returns error when initial state fails validation', async () => {
-    const generator = createGenerator<number, typeof handlers>({
+    const generator = createGenerator<State, typeof handlers>({
       stateValidator,
       handlers,
-      state: 'invalid' as unknown as number, // Type assertion to test invalid state
-      action: { name: 'add', params: 2 },
+      state: { invalid: 'state' } as unknown as State,
+      action: { name: 'add', params: { amount: 2 } },
     })
 
     await expect(generator.next()).resolves.toEqual({
       value: {
         status: 'error',
-        state: 'invalid',
+        state: { invalid: 'state' },
         error: expect.any(ValidationError),
       },
       done: true,
@@ -144,24 +167,24 @@ describe('createGenerator()', () => {
       add: () => {
         return {
           status: 'action' as const,
-          state: 'invalid' as unknown as number,
+          state: { invalid: 'state' } as unknown as State,
           action: 'subtract',
-          params: 3,
+          params: { amount: 3 },
         }
       },
     } satisfies typeof handlers
 
-    const generator = createGenerator<number, typeof handlers>({
+    const generator = createGenerator<State, typeof handlers>({
       stateValidator,
       handlers: handlersWithInvalidOutput,
-      state: 1,
-      action: { name: 'add', params: 2 },
+      state: { value: 1 },
+      action: { name: 'add', params: { amount: 2 } },
     })
 
     await expect(generator.next()).resolves.toEqual({
       value: {
         status: 'error',
-        state: 'invalid',
+        state: { invalid: 'state' },
         error: expect.any(ValidationError),
       },
       done: true,
@@ -169,13 +192,15 @@ describe('createGenerator()', () => {
   })
 
   test('can be provided an action when calling next()', async () => {
-    const generator = createGenerator({ handlers, stateValidator, state: 1 })
-    await expect(generator.next({ action: { name: 'add', params: 2 } })).resolves.toEqual({
-      value: { status: 'action', state: 3, action: 'subtract', params: 3 },
+    const generator = createGenerator({ handlers, stateValidator, state: { value: 1 } })
+    await expect(
+      generator.next({ action: { name: 'add', params: { amount: 2 } } }),
+    ).resolves.toEqual({
+      value: { status: 'action', state: { value: 3 }, action: 'subtract', params: { amount: 3 } },
       done: false,
     })
     await expect(generator.next()).resolves.toEqual({
-      value: { status: 'end', state: 0 },
+      value: { status: 'end', state: { value: 0 } },
       done: true,
     })
   })
@@ -183,48 +208,51 @@ describe('createGenerator()', () => {
   test('ignore the step execution if the provided signal is aborted', async () => {
     const abortController = new AbortController()
     abortController.abort()
-    const generator = createGenerator({ handlers, stateValidator, state: 1 })
+    const generator = createGenerator({ handlers, stateValidator, state: { value: 1 } })
     await expect(
-      generator.next({ action: { name: 'add', params: 2 }, signal: abortController.signal }),
+      generator.next({
+        action: { name: 'add', params: { amount: 2 } },
+        signal: abortController.signal,
+      }),
     ).resolves.toEqual({
-      value: { status: 'state', state: 1 },
+      value: { status: 'state', state: { value: 1 } },
       done: false,
     })
   })
 
   test('can be provided state when calling next()', async () => {
-    const generator = createGenerator({ handlers, stateValidator, state: 1 })
-    await expect(generator.next({ state: 2, action: { name: 'add', params: 2 } })).resolves.toEqual(
-      {
-        value: { status: 'action', state: 4, action: 'subtract', params: 3 },
-        done: false,
-      },
-    )
+    const generator = createGenerator({ handlers, stateValidator, state: { value: 1 } })
+    await expect(
+      generator.next({ state: { value: 2 }, action: { name: 'add', params: { amount: 2 } } }),
+    ).resolves.toEqual({
+      value: { status: 'action', state: { value: 4 }, action: 'subtract', params: { amount: 3 } },
+      done: false,
+    })
     await expect(generator.next()).resolves.toEqual({
-      value: { status: 'end', state: 1 },
+      value: { status: 'end', state: { value: 1 } },
       done: true,
     })
   })
 
   test('can be provided only state when calling next()', async () => {
-    const generator = createGenerator({ handlers, stateValidator, state: 1 })
-    await expect(generator.next({ state: 2 })).resolves.toEqual({
-      value: { status: 'state', state: 2 },
+    const generator = createGenerator({ handlers, stateValidator, state: { value: 1 } })
+    await expect(generator.next({ state: { value: 2 } })).resolves.toEqual({
+      value: { status: 'state', state: { value: 2 } },
       done: false,
     })
   })
 
   test('ends when calling next() with no action or state', async () => {
-    const generator = createGenerator({ handlers, stateValidator, state: 1 })
+    const generator = createGenerator({ handlers, stateValidator, state: { value: 1 } })
     await expect(generator.next()).resolves.toEqual({
-      value: { status: 'end', state: 1 },
+      value: { status: 'end', state: { value: 1 } },
       done: true,
     })
   })
 
   test('handles return() with final value', async () => {
-    const generator = createGenerator({ handlers, stateValidator, state: 1 })
-    const value = { status: 'end', state: 42 } as const
+    const generator = createGenerator({ handlers, stateValidator, state: { value: 1 } })
+    const value = { status: 'end' as const, state: { value: 42 } }
     await expect(generator.return(value)).resolves.toEqual({
       value,
       done: true,
@@ -237,9 +265,9 @@ describe('createGenerator()', () => {
   })
 
   test('handles throw() with error', async () => {
-    const generator = createGenerator({ handlers, stateValidator, state: 1 })
+    const generator = createGenerator({ handlers, stateValidator, state: { value: 1 } })
     const error = new Error('Test error')
-    const value = { status: 'error', state: 1, error }
+    const value = { status: 'error' as const, state: { value: 1 }, error }
     await expect(generator.throw(error)).resolves.toEqual({
       value,
       done: true,
@@ -255,14 +283,14 @@ describe('createGenerator()', () => {
 describe('createFlow()', () => {
   test('returns a generate function returning a generator', async () => {
     const flow = createFlow({ handlers, stateValidator })
-    const generator = flow({ state: 1, action: { name: 'add', params: 2 } })
+    const generator = flow({ state: { value: 1 }, action: { name: 'add', params: { amount: 2 } } })
 
     await expect(generator.next()).resolves.toEqual({
-      value: { status: 'action', state: 3, action: 'subtract', params: 3 },
+      value: { status: 'action', state: { value: 3 }, action: 'subtract', params: { amount: 3 } },
       done: false,
     })
     await expect(generator.next()).resolves.toEqual({
-      value: { status: 'end', state: 0 },
+      value: { status: 'end', state: { value: 0 } },
       done: true,
     })
   })
@@ -277,30 +305,35 @@ describe('events support', () => {
   }
 
   const handlersWithEvents = {
-    add: async ({ state, params, emit }: HandlerExecutionContext<number, number, TestEvents>) => {
-      const result = state + params
-      emit('add:started', { value: state })
+    add: async ({ state, params, emit }: HandlerExecutionContext<State, Params, TestEvents>) => {
+      const result = state.value + params.amount
+      emit('add:started', { value: state.value })
       emit('add:completed', { result })
-      return { status: 'action', state: result, action: 'subtract', params: 3 }
+      return {
+        status: 'action' as const,
+        state: { value: result },
+        action: 'subtract',
+        params: { amount: 3 },
+      }
     },
     subtract: async ({
       state,
       params,
       emit,
-    }: HandlerExecutionContext<number, number, TestEvents>) => {
-      const result = state - params
-      emit('subtract:started', { value: state })
+    }: HandlerExecutionContext<State, Params, TestEvents>) => {
+      const result = state.value - params.amount
+      emit('subtract:started', { value: state.value })
       emit('subtract:completed', { result })
-      return { status: 'end', state: result }
+      return { status: 'end' as const, state: { value: result } }
     },
-  } satisfies HandlersRecord<number, TestEvents>
+  } satisfies HandlersRecord<State, TestEvents>
 
   test('emits events from handlers', async () => {
-    const generator = createGenerator<number, typeof handlersWithEvents>({
+    const generator = createGenerator<State, typeof handlersWithEvents>({
       stateValidator,
       handlers: handlersWithEvents,
-      state: 1,
-      action: { name: 'add', params: 2 },
+      state: { value: 1 },
+      action: { name: 'add', params: { amount: 2 } },
     })
 
     const events: Array<{ type: keyof TestEvents; data: TestEvents[keyof TestEvents] }> = []
@@ -330,11 +363,11 @@ describe('events support', () => {
   })
 
   test('events are emitted in correct order with state changes', async () => {
-    const generator = createGenerator<number, typeof handlersWithEvents>({
+    const generator = createGenerator<State, typeof handlersWithEvents>({
       stateValidator,
       handlers: handlersWithEvents,
-      state: 1,
-      action: { name: 'add', params: 2 },
+      state: { value: 1 },
+      action: { name: 'add', params: { amount: 2 } },
     })
 
     const events: Array<{ type: keyof TestEvents; data: TestEvents[keyof TestEvents] }> = []
@@ -347,7 +380,12 @@ describe('events support', () => {
 
     // Run first step
     const firstStep = await generator.next()
-    expect(firstStep.value).toEqual({ status: 'action', state: 3, action: 'subtract', params: 3 })
+    expect(firstStep.value).toEqual({
+      status: 'action',
+      state: { value: 3 },
+      action: 'subtract',
+      params: { amount: 3 },
+    })
     expect(events).toEqual([
       { type: 'add:started', data: { value: 1 } },
       { type: 'add:completed', data: { result: 3 } },
@@ -364,7 +402,7 @@ describe('events support', () => {
 
     // Run second step
     const secondStep = await generator.next()
-    expect(secondStep.value).toEqual({ status: 'end', state: 0 })
+    expect(secondStep.value).toEqual({ status: 'end', state: { value: 0 } })
     expect(events).toEqual([
       { type: 'subtract:started', data: { value: 3 } },
       { type: 'subtract:completed', data: { result: 0 } },

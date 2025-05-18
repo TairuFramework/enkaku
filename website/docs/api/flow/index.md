@@ -56,7 +56,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
@@ -82,7 +82,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
@@ -98,7 +98,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
@@ -142,7 +142,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
@@ -158,7 +158,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
@@ -188,7 +188,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
@@ -218,7 +218,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ***
 
@@ -230,7 +230,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Params
 
@@ -268,11 +268,11 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Params
 
-`Params`
+`Params` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Events
 
@@ -292,7 +292,7 @@ npm install @enkaku/flow
 
 ### HandlerEvents\<H\>
 
-> **HandlerEvents**\<`H`\> = `H` *extends* [`Handler`](#handler)\<`unknown`, `unknown`, infer Events\> ? `Events` : `never`
+> **HandlerEvents**\<`H`\> = `H` *extends* [`Handler`](#handler)\<`Record`\<`string`, `unknown`\>, `Record`\<`string`, `unknown`\>, infer Events\> ? `Events` : `never`
 
 #### Type Parameters
 
@@ -320,11 +320,11 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Params
 
-`Params`
+`Params` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Events
 
@@ -340,7 +340,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
@@ -356,7 +356,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Events
 
@@ -376,7 +376,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
@@ -412,7 +412,7 @@ npm install @enkaku/flow
 
 ##### State
 
-`State`
+`State` *extends* `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 

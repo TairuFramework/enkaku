@@ -23,7 +23,7 @@ export class MissingHandlerError extends Error {
 }
 
 export type FlowAction<
-  State,
+  State extends Record<string, unknown>,
   Handlers extends HandlersRecord<State>,
   Action extends keyof Handlers = keyof Handlers,
 > = {
@@ -31,30 +31,41 @@ export type FlowAction<
   params: Handlers[Action] extends Handler<State, infer P, Record<string, unknown>> ? P : never
 }
 
-export type CreateFlowParams<State, Handlers extends HandlersRecord<State>> = {
+export type CreateFlowParams<
+  State extends Record<string, unknown>,
+  Handlers extends HandlersRecord<State>,
+> = {
   handlers: Handlers
   stateValidator: Validator<State>
 }
 
-export type GenerateFlowParams<State, Handlers extends HandlersRecord<State>> = {
+export type GenerateFlowParams<
+  State extends Record<string, unknown>,
+  Handlers extends HandlersRecord<State>,
+> = {
   signal?: AbortSignal
   state: State
   action?: FlowAction<State, Handlers>
 }
 
-export type CreateGeneratorParams<State, Handlers extends HandlersRecord<State>> = CreateFlowParams<
-  State,
-  Handlers
-> &
-  GenerateFlowParams<State, Handlers>
+export type CreateGeneratorParams<
+  State extends Record<string, unknown>,
+  Handlers extends HandlersRecord<State>,
+> = CreateFlowParams<State, Handlers> & GenerateFlowParams<State, Handlers>
 
-export type GenerateNext<State, Handlers extends HandlersRecord<State>> = {
+export type GenerateNext<
+  State extends Record<string, unknown>,
+  Handlers extends HandlersRecord<State>,
+> = {
   action?: FlowAction<State, Handlers>
   signal?: AbortSignal
   state?: State
 }
 
-export type FlowGenerator<State, Handlers extends HandlersRecord<State>> = AsyncGenerator<
+export type FlowGenerator<
+  State extends Record<string, unknown>,
+  Handlers extends HandlersRecord<State>,
+> = AsyncGenerator<
   GeneratorValue<State>,
   GeneratorDoneValue<State> | undefined,
   GenerateNext<State, Handlers> | undefined
@@ -63,15 +74,16 @@ export type FlowGenerator<State, Handlers extends HandlersRecord<State>> = Async
   getState(): Readonly<State>
 }
 
-export function createGenerator<State, Handlers extends HandlersRecord<State>>(
-  params: CreateGeneratorParams<State, Handlers>,
-): FlowGenerator<State, Handlers> {
+export function createGenerator<
+  State extends Record<string, unknown>,
+  Handlers extends HandlersRecord<State>,
+>(params: CreateGeneratorParams<State, Handlers>): FlowGenerator<State, Handlers> {
   const {
     handlers,
     signal: flowSignal,
     state: initialState,
     stateValidator,
-    action: initialAction,
+    action: defaultAction,
   } = params
 
   const events = new EventEmitter<HandlersEvents<State, Handlers>>()
@@ -117,7 +129,7 @@ export function createGenerator<State, Handlers extends HandlersRecord<State>>(
 
       const nextAction =
         value?.status === 'action' ? { name: value.action, params: value.params } : null
-      const action = step?.action ?? nextAction ?? initialAction
+      const action = step?.action ?? nextAction ?? defaultAction
       if (action == null) {
         value = { status: 'end', state }
         return { value, done: true }
@@ -186,9 +198,10 @@ export function createGenerator<State, Handlers extends HandlersRecord<State>>(
   }
 }
 
-export function createFlow<State, Handlers extends HandlersRecord<State>>(
-  flowParams: CreateFlowParams<State, Handlers>,
-) {
+export function createFlow<
+  State extends Record<string, unknown>,
+  Handlers extends HandlersRecord<State>,
+>(flowParams: CreateFlowParams<State, Handlers>) {
   return function generateFlow(params: GenerateFlowParams<State, Handlers>) {
     return createGenerator({ ...flowParams, ...params })
   }
