@@ -1,4 +1,4 @@
-import { PatchError, applyPatches } from '../src/apply.js'
+import { PatchError, applyPatches } from '../src/index.js'
 
 describe('applyPatches()', () => {
   it('should apply add operations', () => {

@@ -1,14 +1,14 @@
 {
-  "name": "@enkaku/token",
+  "name": "@enkaku/flow",
   "version": "0.12.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "JWT signing and verification for Enkaku RPC",
-  "keywords": ["json", "web", "token", "jwt", "signature"],
+  "description": "Stateful flow execution",
+  "keywords": ["flow", "generator"],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/token"
+    "directory": "packages/flow"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -19,7 +19,6 @@
   "files": ["lib/*"],
   "sideEffects": false,
   "scripts": {
-    "start": "tsx ./src/run.ts",
     "build:clean": "del lib",
     "build:js": "swc src -d ./lib --config-file ../../swc.json --strip-leading-paths",
     "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
@@ -31,13 +30,9 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/codec": "workspace:^",
-    "@enkaku/schema": "workspace:^",
-    "@noble/curves": "^1.9.1",
-    "@noble/hashes": "^1.8.0",
-    "@scure/base": "^1.2.5"
+    "@enkaku/schema": "workspace:^"
   },
   "devDependencies": {
-    "uint8arrays": "^5.1.0"
+    "@enkaku/event": "workspace:^"
   }
 }
