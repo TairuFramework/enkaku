@@ -56,8 +56,8 @@ export type GenerateNext<State, Handlers extends HandlersRecord<State>> = {
 
 export type FlowGenerator<State, Handlers extends HandlersRecord<State>> = AsyncGenerator<
   GeneratorValue<State>,
-  GeneratorDoneValue<State>,
-  GenerateNext<State, Handlers>
+  GeneratorDoneValue<State> | undefined,
+  GenerateNext<State, Handlers> | undefined
 > & {
   events: EventEmitter<HandlersEvents<State, Handlers>>
   getState(): Readonly<State>

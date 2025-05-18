@@ -122,7 +122,7 @@ npm install @enkaku/flow
 
 ### FlowGenerator\<State, Handlers\>
 
-> **FlowGenerator**\<`State`, `Handlers`\> = `AsyncGenerator`\<[`GeneratorValue`](#generatorvalue)\<`State`\>, [`GeneratorDoneValue`](#generatordonevalue)\<`State`\>, [`GenerateNext`](#generatenext)\<`State`, `Handlers`\>\> & `object`
+> **FlowGenerator**\<`State`, `Handlers`\> = `AsyncGenerator`\<[`GeneratorValue`](#generatorvalue)\<`State`\>, [`GeneratorDoneValue`](#generatordonevalue)\<`State`\> \| `undefined`, [`GenerateNext`](#generatenext)\<`State`, `Handlers`\> \| `undefined`\> & `object`
 
 #### Type declaration
 
