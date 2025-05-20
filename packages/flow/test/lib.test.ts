@@ -305,7 +305,7 @@ describe('events support', () => {
   }
 
   const handlersWithEvents = {
-    add: async ({ state, params, emit }: HandlerExecutionContext<State, Params, TestEvents>) => {
+    add: ({ state, params, emit }: HandlerExecutionContext<State, Params, TestEvents>) => {
       const result = state.value + params.amount
       emit('add:started', { value: state.value })
       emit('add:completed', { result })
@@ -316,11 +316,7 @@ describe('events support', () => {
         params: { amount: 3 },
       }
     },
-    subtract: async ({
-      state,
-      params,
-      emit,
-    }: HandlerExecutionContext<State, Params, TestEvents>) => {
+    subtract: ({ state, params, emit }: HandlerExecutionContext<State, Params, TestEvents>) => {
       const result = state.value - params.amount
       emit('subtract:started', { value: state.value })
       emit('subtract:completed', { result })
@@ -330,7 +326,6 @@ describe('events support', () => {
 
   test('emits events from handlers', async () => {
     const generator = createGenerator<State, typeof handlersWithEvents>({
-      stateValidator,
       handlers: handlersWithEvents,
       state: { value: 1 },
       action: { name: 'add', params: { amount: 2 } },
@@ -364,7 +359,6 @@ describe('events support', () => {
 
   test('events are emitted in correct order with state changes', async () => {
     const generator = createGenerator<State, typeof handlersWithEvents>({
-      stateValidator,
       handlers: handlersWithEvents,
       state: { value: 1 },
       action: { name: 'add', params: { amount: 2 } },

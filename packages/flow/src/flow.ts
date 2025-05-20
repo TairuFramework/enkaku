@@ -1,13 +1,7 @@
 import { EventEmitter } from '@enkaku/event'
 import { ValidationError, type Validator } from '@enkaku/schema'
 
-import type {
-  GeneratorDoneValue,
-  GeneratorValue,
-  Handler,
-  HandlersEvents,
-  HandlersRecord,
-} from './types.js'
+import type { GeneratorDoneValue, GeneratorValue, HandlersEvents, HandlersRecord } from './types.js'
 import { isDoneValue } from './types.js'
 
 function toError(cause: unknown, message: string): Error {
@@ -28,7 +22,7 @@ export type FlowAction<
   Action extends keyof Handlers = keyof Handlers,
 > = {
   name: Action & string
-  params: Handlers[Action] extends Handler<State, infer P, Record<string, unknown>> ? P : never
+  params: Parameters<Handlers[Action]>[0]['params']
 }
 
 export type CreateFlowParams<
@@ -36,7 +30,7 @@ export type CreateFlowParams<
   Handlers extends HandlersRecord<State>,
 > = {
   handlers: Handlers
-  stateValidator: Validator<State>
+  stateValidator?: Validator<State>
 }
 
 export type GenerateFlowParams<
@@ -110,10 +104,12 @@ export function createGenerator<
 
       // Validate the state
       const state = step?.state ?? value.state
-      const validatedState = stateValidator(state)
-      if (validatedState instanceof ValidationError) {
-        value = { status: 'error', state, error: validatedState }
-        return { value, done: true }
+      if (stateValidator != null) {
+        const validatedState = stateValidator(state)
+        if (validatedState instanceof ValidationError) {
+          value = { status: 'error', state, error: validatedState }
+          return { value, done: true }
+        }
       }
 
       // Check the flow is not aborted
@@ -158,10 +154,12 @@ export function createGenerator<
         }
 
         value = nextValue
-        const validatedOutputState = stateValidator(value.state)
-        if (validatedOutputState instanceof ValidationError) {
-          value = { status: 'error', state: value.state, error: validatedOutputState }
-          return { value, done: true }
+        if (stateValidator != null) {
+          const validatedOutputState = stateValidator(value.state)
+          if (validatedOutputState instanceof ValidationError) {
+            value = { status: 'error', state: value.state, error: validatedOutputState }
+            return { value, done: true }
+          }
         }
       } catch (cause) {
         // Don't update the state if the action is aborted

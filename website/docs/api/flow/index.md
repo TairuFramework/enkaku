@@ -68,9 +68,9 @@ npm install @enkaku/flow
 
 > **handlers**: `Handlers`
 
-##### stateValidator
+##### stateValidator?
 
-> **stateValidator**: [`Validator`](../schema/index.md#validator)\<`State`\>
+> `optional` **stateValidator**: [`Validator`](../schema/index.md#validator)\<`State`\>
 
 ***
 
@@ -116,7 +116,7 @@ npm install @enkaku/flow
 
 ##### params
 
-> **params**: `Handlers`\[`Action`\] *extends* [`Handler`](#handler)\<`State`, infer P, `Record`\<`string`, `unknown`\>\> ? `P` : `never`
+> **params**: `Parameters`\<`Handlers`\[`Action`\]\>\[`0`\]\[`"params"`\]
 
 ***
 
