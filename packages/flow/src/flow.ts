@@ -27,7 +27,7 @@ export type FlowAction<
 
 export type CreateFlowParams<
   State extends Record<string, unknown>,
-  Handlers extends HandlersRecord<State>,
+  Handlers extends HandlersRecord<State, Record<string, unknown>> = HandlersRecord<State>,
 > = {
   handlers: Handlers
   stateValidator?: Validator<State>
@@ -35,7 +35,7 @@ export type CreateFlowParams<
 
 export type GenerateFlowParams<
   State extends Record<string, unknown>,
-  Handlers extends HandlersRecord<State>,
+  Handlers extends HandlersRecord<State, Record<string, unknown>> = HandlersRecord<State>,
 > = {
   signal?: AbortSignal
   state: State
@@ -44,12 +44,12 @@ export type GenerateFlowParams<
 
 export type CreateGeneratorParams<
   State extends Record<string, unknown>,
-  Handlers extends HandlersRecord<State>,
+  Handlers extends HandlersRecord<State, Record<string, unknown>> = HandlersRecord<State>,
 > = CreateFlowParams<State, Handlers> & GenerateFlowParams<State, Handlers>
 
 export type GenerateNext<
   State extends Record<string, unknown>,
-  Handlers extends HandlersRecord<State>,
+  Handlers extends HandlersRecord<State, Record<string, unknown>> = HandlersRecord<State>,
 > = {
   action?: FlowAction<State, Handlers>
   signal?: AbortSignal
@@ -58,7 +58,7 @@ export type GenerateNext<
 
 export type FlowGenerator<
   State extends Record<string, unknown>,
-  Handlers extends HandlersRecord<State>,
+  Handlers extends HandlersRecord<State, Record<string, unknown>> = HandlersRecord<State>,
 > = AsyncGenerator<
   GeneratorValue<State>,
   GeneratorDoneValue<State> | undefined,
@@ -70,7 +70,7 @@ export type FlowGenerator<
 
 export function createGenerator<
   State extends Record<string, unknown>,
-  Handlers extends HandlersRecord<State>,
+  Handlers extends HandlersRecord<State, Record<string, unknown>> = HandlersRecord<State>,
 >(params: CreateGeneratorParams<State, Handlers>): FlowGenerator<State, Handlers> {
   const {
     handlers,

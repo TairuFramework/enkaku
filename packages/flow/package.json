@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/flow",
-  "version": "0.12.6",
+  "version": "0.12.7",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Stateful flow execution",
