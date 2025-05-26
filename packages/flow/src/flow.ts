@@ -198,7 +198,7 @@ export function createGenerator<
 
 export function createFlow<
   State extends Record<string, unknown>,
-  Handlers extends HandlersRecord<State>,
+  Handlers extends HandlersRecord<State, Record<string, unknown>> = HandlersRecord<State>,
 >(flowParams: CreateFlowParams<State, Handlers>) {
   return function generateFlow(params: GenerateFlowParams<State, Handlers>) {
     return createGenerator({ ...flowParams, ...params })
