@@ -1,4 +1,5 @@
 import { createReadable } from './readable.js'
+import { writeTo } from './writable.js'
 
 /**
  * Create a `ReadableWritablePair` stream queuing written messages until they are read from the other end.
@@ -6,14 +7,14 @@ import { createReadable } from './readable.js'
 export function createPipe<T>(): ReadableWritablePair<T, T> {
   const [readable, controller] = createReadable<T>()
 
-  const writable = new WritableStream<T>({
-    write(msg) {
+  const writable = writeTo<T>(
+    (msg) => {
       controller.enqueue(msg)
     },
-    close() {
+    () => {
       controller.close()
     },
-  })
+  )
 
   return { readable, writable }
 }

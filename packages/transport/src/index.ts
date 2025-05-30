@@ -12,7 +12,7 @@
 
 import { Disposer } from '@enkaku/async'
 import { EventEmitter } from '@enkaku/event'
-import { createConnection } from '@enkaku/stream'
+import { createConnection, writeTo } from '@enkaku/stream'
 
 export type TransportStream<R, W> = ReadableWritablePair<R, W> | Promise<ReadableWritablePair<R, W>>
 
@@ -99,7 +99,7 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
   }
 
   getWritable(): WritableStream<W> {
-    return new WritableStream({ write: async (value) => await this.write(value) })
+    return writeTo<W>(async (value) => await this.write(value))
   }
 
   async read(): Promise<ReadableStreamReadResult<R>> {

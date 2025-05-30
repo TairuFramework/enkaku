@@ -11,7 +11,7 @@
  */
 
 import { type Socket, createConnection } from 'node:net'
-import { type DecodeJSON, fromJSONLines } from '@enkaku/stream'
+import { type DecodeJSON, fromJSONLines, writeTo } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
 
 export type SocketOrPromise = Socket | Promise<Socket>
@@ -45,14 +45,14 @@ export async function createTransportStream<R, W>(
     },
   }).pipeThrough(fromJSONLines<R>(decode))
 
-  const writable = new WritableStream<W>({
-    write(msg) {
+  const writable = writeTo<W>(
+    (msg) => {
       socket.write(`${JSON.stringify(msg)}\n`)
     },
-    close() {
+    () => {
       socket.end()
     },
-  })
+  )
 
   return { readable, writable }
 }

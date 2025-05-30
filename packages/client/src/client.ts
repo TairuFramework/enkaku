@@ -14,7 +14,7 @@ import type {
   ReturnOf,
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
-import { createPipe } from '@enkaku/stream'
+import { createPipe, writeTo } from '@enkaku/stream'
 import { type TokenSigner, createUnsignedToken } from '@enkaku/token'
 
 import { RequestError } from './error.js'
@@ -435,7 +435,6 @@ export class Client<
     if (providedSignal?.aborted) {
       // no-op
       const send = async (val: T['Send']) => {}
-      const writable = new WritableStream({ write: send })
       return Object.assign(
         createStream(
           rid,
@@ -444,7 +443,7 @@ export class Client<
           Promise.reject(providedSignal),
           receive.readable,
         ),
-        { send, writable },
+        { send, writable: writeTo(send) },
       )
     }
 
@@ -459,11 +458,10 @@ export class Client<
     const send = async (val: T['Send']) => {
       await this.#write({ typ: 'send', rid, val } as unknown as AnyClientPayloadOf<Protocol>)
     }
-    const writable = new WritableStream({ write: send })
 
     return Object.assign(createStream(rid, controller, signal, sent, receive.readable), {
       send,
-      writable,
+      writable: writeTo(send),
     })
   }
 }

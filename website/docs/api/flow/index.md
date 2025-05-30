@@ -60,7 +60,7 @@ npm install @enkaku/flow
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 #### Properties
 
@@ -86,7 +86,7 @@ npm install @enkaku/flow
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 ***
 
@@ -146,7 +146,7 @@ npm install @enkaku/flow
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 ***
 
@@ -162,7 +162,7 @@ npm install @enkaku/flow
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 #### Properties
 
@@ -192,7 +192,7 @@ npm install @enkaku/flow
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 #### Properties
 
@@ -380,7 +380,7 @@ npm install @enkaku/flow
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 #### Parameters
 
@@ -416,7 +416,7 @@ npm install @enkaku/flow
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 #### Parameters
 

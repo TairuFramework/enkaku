@@ -16,7 +16,7 @@ import type {
   ProtocolDefinition,
   TransportMessage,
 } from '@enkaku/protocol'
-import { createReadable } from '@enkaku/stream'
+import { createReadable, writeTo } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
 
 const HEADERS = { accept: 'application/json', 'content-type': 'application/json' }
@@ -140,8 +140,8 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     }
   }
 
-  const writable = new WritableStream<AnyClientMessageOf<Protocol>>({
-    async write(msg) {
+  const writable = writeTo<AnyClientMessageOf<Protocol>>(
+    async (msg) => {
       try {
         if (msg.payload.typ === 'channel' || msg.payload.typ === 'stream') {
           const session = await getEventStream()
@@ -154,7 +154,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       }
     },
     // The transport will call this method when disposing
-    async close() {
+    async () => {
       // Close the SSE stream if active
       if (streamState.status === 'connecting') {
         const eventStream = await streamState.promise
@@ -163,7 +163,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
         streamState.stream.source.close()
       }
     },
-  })
+  )
 
   return { controller, readable, writable }
 }

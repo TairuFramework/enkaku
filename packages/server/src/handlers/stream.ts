@@ -4,7 +4,7 @@ import type {
   ProtocolDefinition,
   StreamPayloadOf,
 } from '@enkaku/protocol'
-import { createPipe } from '@enkaku/stream'
+import { createPipe, writeTo } from '@enkaku/stream'
 
 import type { HandlerContext, ReceiveType, StreamHandler } from '../types.js'
 import { executeHandler } from '../utils.js'
@@ -28,18 +28,15 @@ export function handleStream<
 
   const receiveStream = createPipe<ReceiveType<Protocol, Procedure>>()
   receiveStream.readable.pipeTo(
-    // @ts-ignore type instantiation too deep
-    new WritableStream({
-      async write(val) {
-        if (controller.signal.aborted) {
-          return
-        }
-        await ctx.send({
-          typ: 'receive',
-          rid: msg.payload.rid,
-          val,
-        } as unknown as AnyServerPayloadOf<Protocol>)
-      },
+    writeTo<ReceiveType<Protocol, Procedure>>(async (val) => {
+      if (controller.signal.aborted) {
+        return
+      }
+      await ctx.send({
+        typ: 'receive',
+        rid: msg.payload.rid,
+        val,
+      } as unknown as AnyServerPayloadOf<Protocol>)
     }),
   )
 

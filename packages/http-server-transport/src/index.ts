@@ -11,14 +11,8 @@
  */
 
 import { type Deferred, defer } from '@enkaku/async'
-import type {
-  AnyClientMessageOf,
-  AnyServerMessageOf,
-  ProtocolDefinition,
-  TransportMessage,
-  TransportMessagePayload,
-} from '@enkaku/protocol'
-import { createReadable } from '@enkaku/stream'
+import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { createReadable, writeTo } from '@enkaku/stream'
 import { Transport, type TransportEvents } from '@enkaku/transport'
 
 export type RequestHandler = (request: Request) => Promise<Response>
@@ -48,46 +42,44 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const inflight: Map<string, InflightRequest> = new Map()
 
   const [readable, controller] = createReadable<Incoming>()
-  const writable = new WritableStream<Outgoing>({
-    write(msg) {
-      const { rid } = msg.payload
-      const request = inflight.get(rid)
-      if (request == null) {
-        options.onWriteError?.({ error: new Error('Request not found'), rid })
+  const writable = writeTo<Outgoing>((msg) => {
+    const { rid } = msg.payload
+    const request = inflight.get(rid)
+    if (request == null) {
+      options.onWriteError?.({ error: new Error('Request not found'), rid })
+      return
+    }
+    if (request.type === 'request') {
+      request.resolve(Response.json(msg))
+      inflight.delete(msg.payload.rid)
+    } else {
+      const session = sessions.get(request.sessionID)
+      if (session == null) {
+        options.onWriteError?.({
+          error: new Error(`Session not found: ${request.sessionID}`),
+          rid,
+        })
         return
       }
-      if (request.type === 'request') {
-        request.resolve(Response.json(msg))
-        inflight.delete(msg.payload.rid)
-      } else {
-        const session = sessions.get(request.sessionID)
-        if (session == null) {
-          options.onWriteError?.({
-            error: new Error(`Session not found: ${request.sessionID}`),
-            rid,
-          })
-          return
-        }
-        if (session.controller == null) {
-          options.onWriteError?.({
-            error: new Error(`No controller for session: ${request.sessionID}`),
-            rid,
-          })
-          return
-        }
-        try {
-          session.controller.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
-        } catch (cause) {
-          options.onWriteError?.({
-            error: new Error(`Error writing to SSE feed for session: ${request.sessionID}`, {
-              cause,
-            }),
-            rid,
-          })
-          sessions.delete(request.sessionID)
-        }
+      if (session.controller == null) {
+        options.onWriteError?.({
+          error: new Error(`No controller for session: ${request.sessionID}`),
+          rid,
+        })
+        return
       }
-    },
+      try {
+        session.controller.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
+      } catch (cause) {
+        options.onWriteError?.({
+          error: new Error(`Error writing to SSE feed for session: ${request.sessionID}`, {
+            cause,
+          }),
+          rid,
+        })
+        sessions.delete(request.sessionID)
+      }
+    }
   })
 
   function getRequestSessionController(

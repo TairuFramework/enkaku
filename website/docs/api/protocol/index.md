@@ -1970,7 +1970,7 @@ npm install @enkaku/protocol
 
 ### createClientMessageSchema()
 
-> **createClientMessageSchema**(`protocol`, `type?`): `Readonly`
+> **createClientMessageSchema**(`protocol`, `type?`): [`Schema`](../schema/index.md#schema-1)
 
 #### Parameters
 
@@ -1982,13 +1982,13 @@ npm install @enkaku/protocol
 
 #### Returns
 
-`Readonly`
+[`Schema`](../schema/index.md#schema-1)
 
 ***
 
 ### createServerMessageSchema()
 
-> **createServerMessageSchema**(`protocol`, `type?`): `Readonly`
+> **createServerMessageSchema**(`protocol`, `type?`): [`Schema`](../schema/index.md#schema-1)
 
 #### Parameters
 
@@ -2000,4 +2000,4 @@ npm install @enkaku/protocol
 
 #### Returns
 
-`Readonly`
+[`Schema`](../schema/index.md#schema-1)

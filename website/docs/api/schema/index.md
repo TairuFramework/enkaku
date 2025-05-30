@@ -32,7 +32,7 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 ###### schema
 
-`Readonly`
+[`Schema`](#schema-1)
 
 ###### value
 
@@ -72,11 +72,11 @@ readonly [`ValidationErrorObject`](#validationerrorobject)[]
 
 ###### Get Signature
 
-> **get** **schema**(): `Readonly`
+> **get** **schema**(): [`Schema`](#schema-1)
 
 ###### Returns
 
-`Readonly`
+[`Schema`](#schema-1)
 
 ##### value
 

@@ -202,7 +202,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 ### map()
 
-> **map**\<`I`, `O`\>(`transform`): `TransformStream`\<`I`, `O`\>
+> **map**\<`I`, `O`\>(`handler`): `TransformStream`\<`I`, `O`\>
 
 #### Type Parameters
 
@@ -216,35 +216,9 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Parameters
 
-##### transform
+##### handler
 
-(`input`) => `O`
-
-#### Returns
-
-`TransformStream`\<`I`, `O`\>
-
-***
-
-### mapAsync()
-
-> **mapAsync**\<`I`, `O`\>(`transform`): `TransformStream`\<`I`, `O`\>
-
-#### Type Parameters
-
-##### I
-
-`I`
-
-##### O
-
-`O`
-
-#### Parameters
-
-##### transform
-
-(`input`) => `Promise`\<`O`\>
+(`input`) => `O` \| `PromiseLike`\<`O`\>
 
 #### Returns
 
@@ -293,3 +267,59 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 #### Returns
 
 `TransformStream`\<`T`, `string`\>
+
+***
+
+### transform()
+
+> **transform**\<`I`, `O`\>(`callback`, `flush?`): `TransformStream`\<`I`, `O`\>
+
+#### Type Parameters
+
+##### I
+
+`I`
+
+##### O
+
+`O`
+
+#### Parameters
+
+##### callback
+
+`TransformerTransformCallback`\<`I`, `O`\>
+
+##### flush?
+
+`TransformerFlushCallback`\<`O`\>
+
+#### Returns
+
+`TransformStream`\<`I`, `O`\>
+
+***
+
+### writeTo()
+
+> **writeTo**\<`T`\>(`write`, `close?`): `WritableStream`\<`T`\>
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+#### Parameters
+
+##### write
+
+`UnderlyingSinkWriteCallback`\<`T`\>
+
+##### close?
+
+`UnderlyingSinkCloseCallback`
+
+#### Returns
+
+`WritableStream`\<`T`\>
