@@ -1,4 +1,6 @@
-import { fromJSONLines, toJSONLines } from '../src/json-lines.js'
+import { jest } from '@jest/globals'
+
+import { JSONLinesError, fromJSONLines, toJSONLines } from '../src/json-lines.js'
 import { createReadable } from '../src/readable.js'
 import { createArraySink } from '../src/writable.js'
 
@@ -53,6 +55,37 @@ describe('fromJSONLines()', () => {
     controller.close()
 
     await expect(result).resolves.toEqual([{ partial: 'json' }])
+  })
+
+  test('supports primitive values', async () => {
+    const [source, controller] = createReadable()
+    const [sink, result] = createArraySink()
+    source.pipeThrough(fromJSONLines()).pipeTo(sink)
+
+    controller.enqueue('null\n')
+    controller.enqueue('true\n')
+    controller.enqueue('false\n')
+    controller.enqueue('"test"\n')
+    controller.enqueue('123\n')
+    controller.close()
+
+    await expect(result).resolves.toEqual([null, true, false, 'test', 123])
+  })
+
+  test('calls onInvalidJSON when JSON is invalid', async () => {
+    const onInvalidJSON = jest.fn()
+    const [source, controller] = createReadable()
+    const [sink, result] = createArraySink()
+    source.pipeThrough(fromJSONLines({ onInvalidJSON })).pipeTo(sink)
+
+    controller.enqueue('{"invalid": json}')
+    controller.close()
+
+    await expect(result).resolves.toEqual([])
+    expect(onInvalidJSON).toHaveBeenCalledWith(
+      '{"invalid":json}',
+      expect.any(TransformStreamDefaultController),
+    )
   })
 })
 

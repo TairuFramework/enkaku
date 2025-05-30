@@ -11,7 +11,7 @@
  */
 
 import { type Socket, createConnection } from 'node:net'
-import { type DecodeJSON, fromJSONLines, writeTo } from '@enkaku/stream'
+import { type FromJSONLinesOptions, fromJSONLines, writeTo } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
 
 export type SocketOrPromise = Socket | Promise<Socket>
@@ -31,7 +31,7 @@ export async function connectSocket(path: string): Promise<Socket> {
 
 export async function createTransportStream<R, W>(
   source: SocketSource,
-  decode?: DecodeJSON<R>,
+  options?: FromJSONLinesOptions<R>,
 ): Promise<ReadableWritablePair<R, W>> {
   const socket = await Promise.resolve(typeof source === 'function' ? source() : source)
 
@@ -43,7 +43,7 @@ export async function createTransportStream<R, W>(
       socket.on('close', () => controller.close())
       socket.on('error', (err) => controller.error(err))
     },
-  }).pipeThrough(fromJSONLines<R>(decode))
+  }).pipeThrough(fromJSONLines<R>(options))
 
   const writable = writeTo<W>(
     (msg) => {
@@ -57,15 +57,15 @@ export async function createTransportStream<R, W>(
   return { readable, writable }
 }
 
-export type SocketTransportParams<R> = {
+export type SocketTransportParams<R> = FromJSONLinesOptions<R> & {
   socket: SocketSource | string
   signal?: AbortSignal
-  decode?: DecodeJSON<R>
 }
 
 export class SocketTransport<R, W> extends Transport<R, W> {
   constructor(params: SocketTransportParams<R>) {
-    const source = typeof params.socket === 'string' ? connectSocket(params.socket) : params.socket
-    super({ stream: () => createTransportStream(source, params.decode), signal: params.signal })
+    const { socket, signal, ...options } = params
+    const source = typeof socket === 'string' ? connectSocket(socket) : socket
+    super({ stream: () => createTransportStream(source, options), signal })
   }
 }

@@ -8,9 +8,16 @@ export class JSONLinesError extends Error {}
 
 export type DecodeJSON<T = unknown> = (value: string) => T
 
+export type FromJSONLinesOptions<T = unknown> = {
+  decode?: DecodeJSON<unknown>
+  onInvalidJSON?: (value: string, controller: TransformStreamDefaultController<T>) => void
+}
+
 export function fromJSONLines<T = unknown>(
-  decode: DecodeJSON<T> = JSON.parse,
+  options: FromJSONLinesOptions<T> = {},
 ): TransformStream<Uint8Array | string, T> {
+  const { decode = JSON.parse, onInvalidJSON } = options
+
   let input = ''
   let output = ''
   let nestingDepth = 0
@@ -62,8 +69,8 @@ export function fromJSONLines<T = unknown>(
           if (nestingDepth === 0 && !isInString && output !== '') {
             try {
               controller.enqueue(decode(output))
-            } catch (cause) {
-              controller.error(new JSONLinesError('Invalid JSON', { cause }))
+            } catch {
+              onInvalidJSON?.(output, controller)
             }
             output = ''
           } else if (isInString) {
@@ -84,8 +91,8 @@ export function fromJSONLines<T = unknown>(
       if (nestingDepth === 0 && !isInString && output !== '') {
         try {
           controller.enqueue(decode(output))
-        } catch (cause) {
-          controller.error(new JSONLinesError('Invalid JSON', { cause }))
+        } catch {
+          onInvalidJSON?.(output, controller)
         }
       }
     },
