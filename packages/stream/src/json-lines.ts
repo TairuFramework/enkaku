@@ -28,8 +28,11 @@ export function fromJSONLines<T = unknown>(
     if (isInString) {
       if (char === '\\') {
         isEscapingChar = !isEscapingChar
-      } else if (char === '"' && !isEscapingChar) {
-        isInString = false
+      } else {
+        if (char === '"' && !isEscapingChar) {
+          isInString = false
+        }
+        isEscapingChar = false
       }
       output += char
     } else {
