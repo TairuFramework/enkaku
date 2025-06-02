@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals'
 
-import { Disposer, lazy, toPromise } from '../src/index.js'
+import { Disposer, lazy, raceSignal, toPromise } from '../src/index.js'
 
 describe('Disposer', () => {
   test('only disposes once', async () => {
@@ -14,7 +14,7 @@ describe('Disposer', () => {
   })
 })
 
-describe('lazy', () => {
+describe('lazy()', () => {
   test('only calls the execute function if needed', () => {
     const execute = jest.fn(() => Promise.resolve())
     const call = lazy(execute)
@@ -62,5 +62,52 @@ describe('toPromise()', () => {
 
   test('with rejected promise', async () => {
     await expect(toPromise(() => Promise.reject('rejected'))).rejects.toBe('rejected')
+  })
+})
+
+describe('raceSignal()', () => {
+  test('with already resolved promise', async () => {
+    const controller = new AbortController()
+    controller.abort('aborted')
+    const promise = Promise.resolve('OK')
+    await expect(raceSignal(promise, controller.signal)).resolves.toBe('OK')
+  })
+
+  test('with already rejected promise', async () => {
+    const controller = new AbortController()
+    controller.abort('aborted')
+    const promise = Promise.reject('rejected')
+    await expect(raceSignal(promise, controller.signal)).rejects.toBe('rejected')
+  })
+
+  test('with already aborted signal', async () => {
+    const controller = new AbortController()
+    controller.abort('aborted')
+    const promise = new Promise(() => {})
+    await expect(raceSignal(promise, controller.signal)).rejects.toBe(controller.signal.reason)
+  })
+
+  test('with promise resolving before signal is aborted', async () => {
+    const signal = AbortSignal.timeout(100)
+    const promise = new Promise((resolve) => setTimeout(() => resolve('OK'), 50))
+    await expect(raceSignal(promise, signal)).resolves.toBe('OK')
+  })
+
+  test('with promise rejecting before signal is aborted', async () => {
+    const signal = AbortSignal.timeout(100)
+    const promise = new Promise((_, reject) => setTimeout(() => reject('rejected'), 50))
+    await expect(raceSignal(promise, signal)).rejects.toBe('rejected')
+  })
+
+  test('with signal aborting before promise resolves', async () => {
+    const signal = AbortSignal.timeout(50)
+    const promise = new Promise((resolve) => setTimeout(() => resolve('OK'), 100))
+    await expect(raceSignal(promise, signal)).rejects.toThrow(DOMException)
+  })
+
+  test('with signal aborting before promise rejects', async () => {
+    const signal = AbortSignal.timeout(50)
+    const promise = new Promise((_, reject) => setTimeout(() => reject('rejected'), 100))
+    await expect(raceSignal(promise, signal)).rejects.toThrow(DOMException)
   })
 })

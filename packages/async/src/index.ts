@@ -91,15 +91,15 @@ export class Disposer extends AbortController implements AsyncDisposable {
 /**
  * Converts a function returning a value or promise to a Promise.
  */
-export function toPromise<T = unknown>(execute: () => T | Promise<T>): Promise<T> {
+export function toPromise<T = unknown>(execute: () => T | PromiseLike<T>): Promise<T> {
   return Promise.resolve().then(() => execute())
 }
 
 /**
  * Lazily run the `execute` function at most once when awaited.
  */
-export function lazy<T>(execute: () => Promise<T>): PromiseLike<T> {
-  let promise: Promise<T> | undefined
+export function lazy<T>(execute: () => PromiseLike<T>): PromiseLike<T> {
+  let promise: PromiseLike<T> | undefined
   return {
     // biome-ignore lint/suspicious/noThenProperty: intentional PromiseLike
     then: (onfullfilled, onrejected) => {
@@ -109,4 +109,17 @@ export function lazy<T>(execute: () => Promise<T>): PromiseLike<T> {
       return promise.then(onfullfilled, onrejected)
     },
   }
+}
+
+export function raceSignal<T>(promise: PromiseLike<T>, signal: AbortSignal): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => {
+      if (signal.aborted) {
+        reject(signal.reason)
+      } else {
+        signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+      }
+    }),
+  ])
 }
