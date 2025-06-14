@@ -78,6 +78,10 @@ export function fromEmitter<
   })
 
   return {
+    [Symbol.asyncDispose]() {
+      stop()
+      return Promise.resolve()
+    },
     [Symbol.asyncIterator]() {
       return this
     },

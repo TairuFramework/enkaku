@@ -32,8 +32,8 @@
   "dependencies": {
     "@enkaku/codec": "workspace:^",
     "@enkaku/token": "workspace:^",
-    "expo-crypto": "^14.1.4",
-    "expo-secure-store": "^14.2.3"
+    "expo-crypto": "catalog:",
+    "expo-secure-store": "catalog:"
   },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^"

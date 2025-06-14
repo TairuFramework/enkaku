@@ -86,6 +86,9 @@ export function createGenerator<
   let value: GeneratorValue<State> = { status: 'state', state: initialState }
 
   return {
+    async [Symbol.asyncDispose]() {
+      await this.return(undefined)
+    },
     [Symbol.asyncIterator]() {
       return this
     },

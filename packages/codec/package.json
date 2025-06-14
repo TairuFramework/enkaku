@@ -30,9 +30,9 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "canonicalize": "^2.1.0"
+    "canonicalize": "catalog:"
   },
   "devDependencies": {
-    "uint8arrays": "^5.1.0"
+    "uint8arrays": "catalog:"
   }
 }

@@ -33,11 +33,11 @@
   "dependencies": {
     "@enkaku/codec": "workspace:^",
     "@enkaku/schema": "workspace:^",
-    "@noble/curves": "^1.9.1",
-    "@noble/hashes": "^1.8.0",
-    "@scure/base": "^1.2.6"
+    "@noble/curves": "catalog:",
+    "@noble/hashes": "catalog:",
+    "@scure/base": "catalog:"
   },
   "devDependencies": {
-    "uint8arrays": "^5.1.0"
+    "uint8arrays": "catalog:"
   }
 }

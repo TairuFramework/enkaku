@@ -102,6 +102,42 @@ npm install @enkaku/stream
 
 `string`
 
+***
+
+### FromJSONLinesOptions\<T\>
+
+> **FromJSONLinesOptions**\<`T`\> = `object`
+
+#### Type Parameters
+
+##### T
+
+`T` = `unknown`
+
+#### Properties
+
+##### decode?
+
+> `optional` **decode**: [`DecodeJSON`](#decodejson)\<`unknown`\>
+
+##### onInvalidJSON()?
+
+> `optional` **onInvalidJSON**: (`value`, `controller`) => `void`
+
+###### Parameters
+
+###### value
+
+`string`
+
+###### controller
+
+`TransformStreamDefaultController`\<`T`\>
+
+###### Returns
+
+`void`
+
 ## Functions
 
 ### createArraySink()
@@ -162,7 +198,7 @@ Create a `ReadableWritablePair` stream queuing written messages until they are r
 
 ### createReadable()
 
-> **createReadable**\<`T`\>(): \[`ReadableStream`\<`T`\>, `ReadableStreamDefaultController`\<`T`\>\]
+> **createReadable**\<`T`\>(`cancel?`): \[`ReadableStream`\<`T`\>, `ReadableStreamDefaultController`\<`T`\>\]
 
 Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream) and associated [ReadableStreamDefaultController](https://developer.mozilla.org/en-US/docs/Web/API/ReadableStreamDefaultController).
 
@@ -172,6 +208,12 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 `T`
 
+#### Parameters
+
+##### cancel?
+
+(`reason?`) => `void`
+
 #### Returns
 
 \[`ReadableStream`\<`T`\>, `ReadableStreamDefaultController`\<`T`\>\]
@@ -180,7 +222,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 ### fromJSONLines()
 
-> **fromJSONLines**\<`T`\>(`decode`): `TransformStream`\<`string` \| `Uint8Array`\<`ArrayBufferLike`\>, `T`\>
+> **fromJSONLines**\<`T`\>(`options`): `TransformStream`\<`string` \| `Uint8Array`\<`ArrayBufferLike`\>, `T`\>
 
 #### Type Parameters
 
@@ -190,9 +232,9 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Parameters
 
-##### decode
+##### options
 
-[`DecodeJSON`](#decodejson)\<`T`\> = `JSON.parse`
+[`FromJSONLinesOptions`](#fromjsonlinesoptions)\<`T`\> = `{}`
 
 #### Returns
 
@@ -203,6 +245,32 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 ### map()
 
 > **map**\<`I`, `O`\>(`handler`): `TransformStream`\<`I`, `O`\>
+
+#### Type Parameters
+
+##### I
+
+`I`
+
+##### O
+
+`O`
+
+#### Parameters
+
+##### handler
+
+(`input`) => `O`
+
+#### Returns
+
+`TransformStream`\<`I`, `O`\>
+
+***
+
+### mapAsync()
+
+> **mapAsync**\<`I`, `O`\>(`handler`): `TransformStream`\<`I`, `O`\>
 
 #### Type Parameters
 
@@ -302,7 +370,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 ### writeTo()
 
-> **writeTo**\<`T`\>(`write`, `close?`): `WritableStream`\<`T`\>
+> **writeTo**\<`T`\>(`write`, `close?`, `abort?`): `WritableStream`\<`T`\>
 
 #### Type Parameters
 
@@ -319,6 +387,10 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 ##### close?
 
 `UnderlyingSinkCloseCallback`
+
+##### abort?
+
+`UnderlyingSinkAbortCallback`
 
 #### Returns
 

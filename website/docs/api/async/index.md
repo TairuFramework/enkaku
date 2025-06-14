@@ -201,11 +201,37 @@ Lazily run the `execute` function at most once when awaited.
 
 ##### execute
 
-() => `Promise`\<`T`\>
+() => `PromiseLike`\<`T`\>
 
 #### Returns
 
 `PromiseLike`\<`T`\>
+
+***
+
+### raceSignal()
+
+> **raceSignal**\<`T`\>(`promise`, `signal`): `Promise`\<`T`\>
+
+#### Type Parameters
+
+##### T
+
+`T`
+
+#### Parameters
+
+##### promise
+
+`PromiseLike`\<`T`\>
+
+##### signal
+
+`AbortSignal`
+
+#### Returns
+
+`Promise`\<`T`\>
 
 ***
 
@@ -225,7 +251,7 @@ Converts a function returning a value or promise to a Promise.
 
 ##### execute
 
-() => `T` \| `Promise`\<`T`\>
+() => `T` \| `PromiseLike`\<`T`\>
 
 #### Returns
 

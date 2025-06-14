@@ -30,7 +30,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "emittery": "^1.1.0"
+    "emittery": "catalog:"
   },
   "devDependencies": {
     "@enkaku/stream": "workspace:^"
