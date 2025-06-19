@@ -4,7 +4,10 @@
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Stateful flow execution",
-  "keywords": ["flow", "generator"],
+  "keywords": [
+    "flow",
+    "generator"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
@@ -16,7 +19,9 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": ["lib/*"],
+  "files": [
+    "lib/*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build:clean": "del lib",

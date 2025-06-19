@@ -15,10 +15,10 @@ export { type ServeParams, Server, type ServerParams, serve } from './server.js'
 export type {
   ChannelHandler,
   ChannelHandlerContext,
-  ProcedureHandlers,
   EventHandler,
   EventHandlerContext,
   HandlerReturn,
+  ProcedureHandlers,
   RequestHandler,
   RequestHandlerContext,
   ServerEmitter,

@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals'
 
-import { JSONLinesError, fromJSONLines, toJSONLines } from '../src/json-lines.js'
+import { fromJSONLines, toJSONLines } from '../src/json-lines.js'
 import { createReadable } from '../src/readable.js'
 import { createArraySink } from '../src/writable.js'
 

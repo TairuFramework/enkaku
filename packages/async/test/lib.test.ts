@@ -17,7 +17,7 @@ describe('Disposer', () => {
 describe('lazy()', () => {
   test('only calls the execute function if needed', () => {
     const execute = jest.fn(() => Promise.resolve())
-    const call = lazy(execute)
+    lazy(execute)
     expect(execute).not.toHaveBeenCalled()
   })
 

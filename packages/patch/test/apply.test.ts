@@ -1,4 +1,4 @@
-import { PatchError, deletePath, getPath, parsePath, setPath } from '../src/apply.js'
+import { deletePath, getPath, PatchError, parsePath, setPath } from '../src/apply.js'
 
 describe('parsePath()', () => {
   it('should parse simple paths', () => {

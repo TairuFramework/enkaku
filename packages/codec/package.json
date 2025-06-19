@@ -4,7 +4,10 @@
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Enkaku codecs",
-  "keywords": ["base64", "binary"],
+  "keywords": [
+    "base64",
+    "binary"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
@@ -16,7 +19,9 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": ["lib/*"],
+  "files": [
+    "lib/*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build:clean": "del lib",

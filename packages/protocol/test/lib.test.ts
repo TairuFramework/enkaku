@@ -2,9 +2,9 @@ import { createValidator, isType } from '@enkaku/schema'
 import { createUnsignedToken } from '@enkaku/token'
 
 import {
-  type ProtocolDefinition,
   createClientMessageSchema,
   createServerMessageSchema,
+  type ProtocolDefinition,
 } from '../src'
 
 const protocol = {

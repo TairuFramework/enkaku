@@ -4,7 +4,11 @@
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Web streams utilities for Enkaku transports",
-  "keywords": ["web", "stream", "transport"],
+  "keywords": [
+    "web",
+    "stream",
+    "transport"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
@@ -16,7 +20,9 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": ["lib/*"],
+  "files": [
+    "lib/*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build:clean": "del lib",

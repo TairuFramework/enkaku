@@ -1,9 +1,9 @@
 import { randomTokenSigner, stringifyToken } from '@enkaku/token'
 
 import {
-  type CapabilityPayload,
   assertNonExpired,
   assertValidDelegation,
+  type CapabilityPayload,
   checkCapability,
   checkDelegationChain,
   createCapability,

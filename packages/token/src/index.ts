@@ -12,15 +12,15 @@
 
 export { CODECS, getAlgorithmAndPublicKey, getDID, getSignatureInfo } from './did.js'
 export {
+  capabilitySchema,
   type SignatureAlgorithm,
   type SignedHeader,
   type SignedPayload,
   type SupportedHeader,
-  type UnsignedHeader,
-  capabilitySchema,
   signedHeaderSchema,
   signedPayloadSchema,
   supportedHeaderSchema,
+  type UnsignedHeader,
   unsignedHeaderSchema,
   validateAlgorithm,
   validateSignedHeader,
@@ -48,7 +48,7 @@ export {
 export type * from './types.js'
 export { stringifyToken } from './utils.js'
 export {
+  getVerifier,
   type Verifier,
   type Verifiers,
-  getVerifier,
 } from './verifier.js'

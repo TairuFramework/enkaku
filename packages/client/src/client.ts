@@ -15,7 +15,7 @@ import type {
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
 import { createPipe, writeTo } from '@enkaku/stream'
-import { type TokenSigner, createUnsignedToken } from '@enkaku/token'
+import { createUnsignedToken, type TokenSigner } from '@enkaku/token'
 
 import { RequestError } from './error.js'
 
@@ -434,7 +434,7 @@ export class Client<
     const providedSignal = config?.signal
     if (providedSignal?.aborted) {
       // no-op
-      const send = async (val: T['Send']) => {}
+      const send = async (_val: T['Send']) => {}
       return Object.assign(
         createStream(
           rid,

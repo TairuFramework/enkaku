@@ -11,11 +11,11 @@
  */
 
 import {
+  isVerifiedToken,
   type SignedHeader,
   type SignedPayload,
   type SignedToken,
   type TokenSigner,
-  isVerifiedToken,
   verifyToken,
 } from '@enkaku/token'
 

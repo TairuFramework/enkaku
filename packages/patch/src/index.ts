@@ -10,5 +10,5 @@
  * @module patch
  */
 
-export { PatchError, applyPatches } from './apply.js'
+export { applyPatches, PatchError } from './apply.js'
 export * from './schemas.js'

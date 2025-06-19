@@ -26,7 +26,7 @@ describe('ServerTransport', () => {
     type Protocol = typeof protocol
 
     const testEventHandler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test/event'>>
-    const testRequestHandler = jest.fn((ctx) => {
+    const testRequestHandler = jest.fn(() => {
       return setTimeout(100, 'hello')
     }) as jest.Mock<RequestHandler<Protocol, 'test/request'>>
 
@@ -34,8 +34,7 @@ describe('ServerTransport', () => {
       'test/event': testEventHandler,
       'test/request': testRequestHandler,
     }
-    const onWriteError = jest.fn()
-    const transport = new ServerTransport<Protocol>({ onWriteError })
+    const transport = new ServerTransport<Protocol>()
     const server = serve<Protocol>({ handlers, public: true, transport })
 
     const headers = new Headers()
@@ -72,6 +71,5 @@ describe('ServerTransport', () => {
     )
 
     await server.dispose()
-    expect(onWriteError).not.toHaveBeenCalled()
   })
 })

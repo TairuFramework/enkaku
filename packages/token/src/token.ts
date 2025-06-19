@@ -10,7 +10,7 @@ import {
   validateUnsignedHeader,
 } from './schemas.js'
 import type { SignedToken, Token, TokenSigner, UnsignedToken, VerifiedToken } from './types.js'
-import { type Verifiers, getVerifier } from './verifier.js'
+import { getVerifier, type Verifiers } from './verifier.js'
 
 /**
  * Verify the signature of a signed payload and return the public key of the issuer.

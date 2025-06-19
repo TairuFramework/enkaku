@@ -10,7 +10,6 @@
  * @module client
  */
 
-export { Client } from './client.js'
 export type {
   ChannelCall,
   ChannelDefinitionsType,
@@ -22,4 +21,5 @@ export type {
   StreamCall,
   StreamDefinitionsType,
 } from './client.js'
+export { Client } from './client.js'
 export { type ErrorObjectType, RequestError, type RequestErrorParams } from './error.js'

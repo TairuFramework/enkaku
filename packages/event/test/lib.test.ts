@@ -1,5 +1,4 @@
 import { createArraySink } from '@enkaku/stream'
-import { jest } from '@jest/globals'
 
 import { EventEmitter } from '../src/index.js'
 

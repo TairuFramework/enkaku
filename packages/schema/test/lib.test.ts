@@ -1,4 +1,4 @@
-import { ValidationError, assertType, createValidator, isType } from '../src/index.js'
+import { assertType, createValidator, isType, ValidationError } from '../src/index.js'
 
 describe('createValidator()', () => {
   test('creates a schema validation function', () => {

@@ -4,7 +4,12 @@
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "JSON schema validation for Enkaku RPC",
-  "keywords": ["json", "schema", "json-schema", "validation"],
+  "keywords": [
+    "json",
+    "schema",
+    "json-schema",
+    "validation"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
@@ -16,7 +21,9 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": ["lib/*"],
+  "files": [
+    "lib/*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build:clean": "del lib",

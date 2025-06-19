@@ -4,7 +4,13 @@
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "JWT signing and verification for Enkaku RPC",
-  "keywords": ["json", "web", "token", "jwt", "signature"],
+  "keywords": [
+    "json",
+    "web",
+    "token",
+    "jwt",
+    "signature"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
@@ -16,7 +22,9 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": ["lib/*"],
+  "files": [
+    "lib/*"
+  ],
   "sideEffects": false,
   "scripts": {
     "start": "tsx ./src/run.ts",

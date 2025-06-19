@@ -1,6 +1,6 @@
 import type { Schema } from '@enkaku/schema'
 
-import { type MessageType, createMessageSchema } from './message.js'
+import { createMessageSchema, type MessageType } from './message.js'
 import type {
   AnyProcedureDefinition,
   ChannelProcedureDefinition,

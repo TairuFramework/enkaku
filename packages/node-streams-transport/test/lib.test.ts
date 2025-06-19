@@ -7,7 +7,7 @@ describe('createTransportStream()', () => {
     const written: Array<string> = []
     const source = new Readable()
     const sink = new Writable({
-      write(chunk, encoding, cb) {
+      write(chunk, _encoding, cb) {
         written.push(chunk.toString('utf8'))
         cb()
       },

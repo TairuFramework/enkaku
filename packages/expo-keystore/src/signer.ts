@@ -1,4 +1,4 @@
-import { type TokenSigner, getTokenSigner } from '@enkaku/token'
+import { getTokenSigner, type TokenSigner } from '@enkaku/token'
 
 import { ExpoKeyStore } from './store.js'
 

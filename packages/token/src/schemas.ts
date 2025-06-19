@@ -1,4 +1,4 @@
-import { type FromSchema, type Schema, createValidator } from '@enkaku/schema'
+import { createValidator, type FromSchema, type Schema } from '@enkaku/schema'
 
 /** @internal */
 export const SUPPORTED_ALGORITHMS = ['EdDSA', 'ES256'] as const

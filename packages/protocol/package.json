@@ -4,7 +4,12 @@
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Enkaku RPC protocol",
-  "keywords": ["protocol", "json", "rpc", "schema"],
+  "keywords": [
+    "protocol",
+    "json",
+    "rpc",
+    "schema"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
@@ -16,7 +21,9 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": ["lib/*"],
+  "files": [
+    "lib/*"
+  ],
   "sideEffects": false,
   "scripts": {
     "start": "tsx ./src/run.ts",

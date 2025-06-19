@@ -10,7 +10,7 @@
  * @module socket-transport
  */
 
-import { type Socket, createConnection } from 'node:net'
+import { createConnection, type Socket } from 'node:net'
 import { type FromJSONLinesOptions, fromJSONLines, writeTo } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
 

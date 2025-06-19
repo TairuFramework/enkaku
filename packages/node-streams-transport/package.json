@@ -4,7 +4,13 @@
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Node Streams transport for Enkaku RPC clients and servers",
-  "keywords": ["transport", "rpc", "node", "streams", "ipc"],
+  "keywords": [
+    "transport",
+    "rpc",
+    "node",
+    "streams",
+    "ipc"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
@@ -16,7 +22,9 @@
   "exports": {
     ".": "./lib/index.js"
   },
-  "files": ["lib/*"],
+  "files": [
+    "lib/*"
+  ],
   "sideEffects": false,
   "scripts": {
     "build:clean": "del lib",

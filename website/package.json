@@ -15,37 +15,29 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@dipakparmar/docusaurus-plugin-umami": "catalog:",
-    "@docusaurus/core": "catalog:",
-    "@docusaurus/faster": "catalog:",
-    "@docusaurus/preset-classic": "catalog:",
-    "@docusaurus/theme-mermaid": "catalog:",
-    "@mdx-js/react": "catalog:",
-    "@orama/plugin-docusaurus-v3": "catalog:",
-    "clsx": "catalog:",
-    "docusaurus-plugin-typedoc": "catalog:",
-    "prism-react-renderer": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:"
+    "@dipakparmar/docusaurus-plugin-umami": "^2.3.0",
+    "@docusaurus/core": "^3.8.1",
+    "@docusaurus/faster": "^3.8.1",
+    "@docusaurus/preset-classic": "^3.8.1",
+    "@docusaurus/theme-mermaid": "^3.8.1",
+    "@mdx-js/react": "^3.0.0",
+    "@orama/plugin-docusaurus-v3": "^3.1.7",
+    "clsx": "^2.0.0",
+    "docusaurus-plugin-typedoc": "^1.4.0",
+    "prism-react-renderer": "^2.4.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "catalog:",
-    "@docusaurus/tsconfig": "catalog:",
-    "@docusaurus/types": "catalog:",
-    "@types/react": "catalog:",
+    "@docusaurus/module-type-aliases": "^3.8.1",
+    "@docusaurus/tsconfig": "^3.8.1",
+    "@docusaurus/types": "^3.8.1",
+    "@types/react": "^19.1.8",
     "typescript": "~5.8.3"
   },
   "browserslist": {
-    "production": [
-      ">0.5%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 3 chrome version",
-      "last 3 firefox version",
-      "last 5 safari version"
-    ]
+    "production": [">0.5%", "not dead", "not op_mini all"],
+    "development": ["last 3 chrome version", "last 3 firefox version", "last 5 safari version"]
   },
   "engines": {
     "node": ">=18.0"
