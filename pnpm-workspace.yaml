@@ -4,33 +4,33 @@ packages:
   - website
 
 catalog:
-  '@biomejs/biome': ^2.0.0
+  '@biomejs/biome': ^2.0.5
   '@hono/node-server': ^1.14.4
-  '@jest/globals': ^30.0.1
+  '@jest/globals': ^30.0.2
   '@napi-rs/keyring': ^1.1.8
   '@noble/curves': ^1.9.2
   '@noble/hashes': ^1.8.0
   '@scure/base': ^1.2.6
   '@standard-schema/spec': ^1.0.0
   '@swc/cli': ^0.7.7
-  '@swc/core': ^1.12.2
+  '@swc/core': ^1.12.6
   '@swc/jest': ^0.2.38
   '@types/jest': ^30.0.0
-  '@types/node': ^24.0.3
+  '@types/node': ^24.0.4
   ajv: ^8.17.1
   ajv-formats: ^3.0.1
   canonicalize: ^2.1.0
   del-cli: ^6.0.0
-  emittery: ^1.1.0
+  emittery: ^1.2.0
   expo-crypto: ^14.1.5
   expo-secure-store: ^14.2.3
   get-port: ^7.1.0
-  jest: ^30.0.1
+  jest: ^30.0.2
   json-schema-to-ts: ^3.1.1
   tsx: ^4.20.1
   turbo: ^2.5.4
   typedoc: ^0.28.5
-  typedoc-plugin-markdown: ^4.6.4
+  typedoc-plugin-markdown: ^4.7.0
   uint8arrays: ^5.1.0
   undici: ^7.10.0
 

@@ -12,6 +12,18 @@ export const patchAddOperationSchema = {
 } as const satisfies Schema
 export type PatchAddOperation = FromSchema<typeof patchAddOperationSchema>
 
+export const patchSetOperationSchema = {
+  type: 'object',
+  properties: {
+    op: { type: 'string', const: 'set' },
+    path: { type: 'string' },
+    value: {},
+  },
+  additionalProperties: false,
+  required: ['op', 'path', 'value'],
+} as const satisfies Schema
+export type PatchSetOperation = FromSchema<typeof patchSetOperationSchema>
+
 export const patchRemoveOperationSchema = {
   type: 'object',
   properties: {
@@ -62,6 +74,7 @@ export type PatchCopyOperation = FromSchema<typeof patchCopyOperationSchema>
 export const patchOperationSchema = {
   anyOf: [
     patchAddOperationSchema,
+    patchSetOperationSchema,
     patchRemoveOperationSchema,
     patchReplaceOperationSchema,
     patchMoveOperationSchema,

@@ -7,6 +7,20 @@ describe('applyPatches()', () => {
     expect(data).toEqual({ foo: { bar: 1, baz: 2 } })
   })
 
+  describe('set operations', () => {
+    it('should apply on existing path', () => {
+      const data: Record<string, unknown> = { foo: { bar: 1, baz: 1 } }
+      applyPatches(data, [{ op: 'set', path: '/foo/baz', value: 2 }])
+      expect(data).toEqual({ foo: { bar: 1, baz: 2 } })
+    })
+
+    it('should apply on non-existent path', () => {
+      const data: Record<string, unknown> = { foo: { bar: 1 } }
+      applyPatches(data, [{ op: 'set', path: '/foo/baz', value: 2 }])
+      expect(data).toEqual({ foo: { bar: 1, baz: 2 } })
+    })
+  })
+
   it('should apply remove operations', () => {
     const data: Record<string, unknown> = { foo: { bar: 1, baz: 2 } }
     applyPatches(data, [{ op: 'remove', path: '/foo/baz' }])

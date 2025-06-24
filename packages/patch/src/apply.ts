@@ -143,6 +143,9 @@ export function applyPatches(data: Record<string, unknown>, patches: Array<Patch
         assertPathExists(data, patch.path)
         setPath(data, patch.path, patch.value, true)
         break
+      case 'set':
+        setPath(data, patch.path, patch.value)
+        break
       case 'remove':
         assertPathExists(data, patch.path)
         deletePath(data, patch.path)
