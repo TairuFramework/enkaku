@@ -46,7 +46,7 @@ npm install @enkaku/generator
 
 ### fromEmitter()
 
-> **fromEmitter**\<`Events`, `EventName`\>(`emitter`, `name`, `signal?`): `AsyncGenerator`\<`Events`\[`EventName`\], `void`, `void`\>
+> **fromEmitter**\<`Events`, `EventName`\>(`emitter`, `name`, `options?`): `AsyncGenerator`\<`Events`\[`EventName`\], `void`, `void`\>
 
 #### Type Parameters
 
@@ -68,7 +68,13 @@ npm install @enkaku/generator
 
 `EventName`
 
-##### signal?
+##### options?
+
+###### filter?
+
+(`event`) => `boolean`
+
+###### signal?
 
 `AbortSignal`
 

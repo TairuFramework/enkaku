@@ -50,6 +50,9 @@ describe('consume()', () => {
     let value = 0
     let returnedValue: string | undefined
     const generator: AsyncGenerator<number, string> = {
+      [Symbol.asyncDispose]() {
+        return Promise.resolve()
+      },
       [Symbol.asyncIterator]() {
         return this
       },
@@ -80,6 +83,9 @@ describe('consume()', () => {
     let value = 0
     let rejectReason: string | undefined
     const generator: AsyncGenerator<number, string> = {
+      [Symbol.asyncDispose]() {
+        return Promise.resolve()
+      },
       [Symbol.asyncIterator]() {
         return this
       },
@@ -135,7 +141,7 @@ describe('fromEmitter()', () => {
   test('supports stopping iteration with a signal', async () => {
     const controller = new AbortController()
     const emitter = new EventEmitter<{ test: number }>()
-    const generator = fromEmitter(emitter, 'test', controller.signal)
+    const generator = fromEmitter(emitter, 'test', { signal: controller.signal })
 
     emitter.emit('test', 1)
     emitter.emit('test', 2)
@@ -149,6 +155,25 @@ describe('fromEmitter()', () => {
       }
     }
     expect(values).toEqual([1, 2])
+  })
+
+  test('supports filtering events', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+    const generator = fromEmitter(emitter, 'test', { filter: (value) => value % 2 === 0 })
+
+    emitter.emit('test', 1)
+    emitter.emit('test', 2)
+    emitter.emit('test', 3)
+    emitter.emit('test', 4)
+
+    const values: Array<number> = []
+    for await (const value of generator) {
+      values.push(value)
+      if (value === 4) {
+        break
+      }
+    }
+    expect(values).toEqual([2, 4])
   })
 
   test('supports calling return() on the iterator', async () => {

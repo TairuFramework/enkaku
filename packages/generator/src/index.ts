@@ -53,27 +53,31 @@ export function fromEmitter<
 >(
   emitter: EventEmitter<Events>,
   name: EventName,
-  signal?: AbortSignal,
+  options?: { filter?: (event: Events[EventName]) => boolean; signal?: AbortSignal },
 ): AsyncGenerator<Events[EventName], void, void> {
   let isDone = false
   let pending: Deferred<Events[EventName]> | null = null
   const queue: Array<Events[EventName]> = []
 
-  const unsubscribe = emitter.on(name, (event) => {
-    if (pending == null) {
-      queue.push(event)
-    } else {
-      pending.resolve(event)
-      pending = null
-    }
-  })
+  const unsubscribe = emitter.on(
+    name,
+    (event) => {
+      if (pending == null) {
+        queue.push(event)
+      } else {
+        pending.resolve(event)
+        pending = null
+      }
+    },
+    { filter: options?.filter },
+  )
 
   const stop = () => {
     unsubscribe()
     isDone = true
   }
 
-  signal?.addEventListener('abort', () => {
+  options?.signal?.addEventListener('abort', () => {
     stop()
   })
 
