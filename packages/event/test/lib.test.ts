@@ -3,8 +3,47 @@ import { createArraySink } from '@enkaku/stream'
 import { EventEmitter } from '../src/index.js'
 
 describe('EventEmitter', () => {
+  test('events can be listened to using a filter', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+    const items: Array<number> = []
+
+    emitter.on(
+      'test',
+      (value) => {
+        items.push(value)
+      },
+      { filter: (value) => value % 2 === 0 },
+    )
+
+    await emitter.emit('test', 1)
+    await emitter.emit('test', 2)
+    await emitter.emit('test', 3)
+    await emitter.emit('test', 4)
+
+    expect(items).toEqual([2, 4])
+  })
+
   describe('event streams', () => {
     test('events can be listened to using a readable stream', async () => {
+      const emitter = new EventEmitter<{ test: number }>()
+      const controller = new AbortController()
+      const [writable, items] = createArraySink<number>()
+
+      const readable = emitter.readable('test', {
+        filter: (value) => value % 2 === 0,
+        signal: controller.signal,
+      })
+      readable.pipeTo(writable)
+      await emitter.emit('test', 1)
+      await emitter.emit('test', 2)
+      await emitter.emit('test', 3)
+
+      controller.abort()
+      await emitter.emit('test', 4)
+      await expect(items).resolves.toEqual([2])
+    })
+
+    test('events can be listened to using a filter', async () => {
       const emitter = new EventEmitter<{ test: number }>()
       const controller = new AbortController()
       const [writable, items] = createArraySink<number>()
