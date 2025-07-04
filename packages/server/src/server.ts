@@ -1,4 +1,4 @@
-import { Disposer } from '@enkaku/async'
+import { DisposeInterruption, Disposer } from '@enkaku/async'
 import { EventEmitter } from '@enkaku/event'
 import {
   type AnyClientMessageOf,
@@ -63,9 +63,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
   const disposer = new Disposer({
     dispose: async () => {
+      const interruption = new DisposeInterruption()
       // Abort all currently running handlers
       for (const controller of Object.values(controllers)) {
-        controller.abort('Dispose')
+        controller.abort(interruption)
       }
       // Wait until all running handlers are done
       await Promise.all(Object.values(running))

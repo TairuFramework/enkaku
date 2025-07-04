@@ -52,7 +52,14 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
   _writer: Promise<WritableStreamDefaultWriter<W>> | undefined
 
   constructor(params: TransportParams<R, W>) {
-    super()
+    super({
+      dispose: async () => {
+        if (this._stream != null) {
+          const writer = await this._getWriter()
+          await writer.close()
+        }
+      },
+    })
     this.#events = new EventEmitter<TransportEvents>()
     this.#params = params
   }
@@ -88,14 +95,6 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
       })
     }
     return this._writer
-  }
-
-  /** @internal */
-  async _dispose(): Promise<void> {
-    if (this._stream != null) {
-      const writer = await this._getWriter()
-      await writer.close()
-    }
   }
 
   getWritable(): WritableStream<W> {
@@ -134,15 +133,15 @@ export class DirectTransports<ToClient, ToServer> extends Disposer {
   #server: TransportType<ToServer, ToClient>
 
   constructor(options: DirectTransportsOptions = {}) {
-    super(options)
+    super({
+      ...options,
+      dispose: async (reason?: unknown) => {
+        await Promise.all([this.#client.dispose(reason), this.#server.dispose(reason)])
+      },
+    })
     const [serverStream, clientStream] = createConnection<ToClient, ToServer>()
     this.#client = new Transport({ stream: clientStream })
     this.#server = new Transport({ stream: serverStream })
-  }
-
-  /** @internal */
-  async _dispose(): Promise<void> {
-    await Promise.all([this.#client.dispose(), this.#server.dispose()])
   }
 
   get client(): TransportType<ToClient, ToServer> {

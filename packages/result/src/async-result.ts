@@ -6,17 +6,18 @@ import { Result } from './result.js'
 // TODO: refactor flow package to use AsyncResult
 // class TaskExecution extends AsyncResult<V, E> implements Abortable, Disposable
 
-export type AsyncMapOut<V, E extends Error = Error> =
+export type MappedResult<V, E extends Error = Error> =
   | V
   | PromiseLike<V>
   | Result<V, E>
   | PromiseLike<Result<V, E>>
   | AsyncResult<V, E>
 
+// @ts-expect-error Promise.all() is not a generic method
 export class AsyncResult<V, E extends Error = Error> extends Promise<Result<V, E>> {
   static [Symbol.species] = Promise
 
-  static all<V, E extends Error = Error>(
+  static collect<V, E extends Error = Error>(
     values: Iterable<V | PromiseLike<V>>,
   ): AsyncResult<Array<AsyncResult<V, E>>, never> {
     const inputs = Array.from(values).map((value) => toPromise(() => value))
@@ -63,10 +64,20 @@ export class AsyncResult<V, E extends Error = Error> extends Promise<Result<V, E
     return new AsyncResult(Promise.reject(Result.error(error)))
   }
 
+  #isSettled = false
+
   constructor(promise: PromiseLike<Result<V, E>>) {
     super((resolve) => {
-      promise.then(resolve, resolve)
+      const onSettled = (value: Result<V, E>) => {
+        this.#isSettled = true
+        resolve(value)
+      }
+      promise.then(onSettled, onSettled)
     })
+  }
+
+  get isSettled(): boolean {
+    return this.#isSettled
   }
 
   get optional(): Promise<Option<V>> {
@@ -78,26 +89,22 @@ export class AsyncResult<V, E extends Error = Error> extends Promise<Result<V, E
   }
 
   map<OutV, OutE extends Error = Error>(
-    fn: (value: V) => AsyncMapOut<OutV, OutE>,
-    errorFn?: (error: E) => AsyncMapOut<OutV, OutE>,
-  ): AsyncResult<V | OutV, E | OutE> {
+    fn: (value: V) => MappedResult<OutV, OutE>,
+  ): AsyncResult<OutV, E | OutE> {
     return new AsyncResult(
       this.then((self) => {
-        if (self.isOK()) {
-          return toPromise(() => fn(self.value))
-            .then(AsyncResult.from<OutV, OutE>)
-            .catch((e) => AsyncResult.from(e as OutE))
-        }
-        return errorFn
-          ? toPromise(() => errorFn(self.error as E))
+        return self.isError()
+          ? self
+          : toPromise(() => fn(self.value))
               .then(AsyncResult.from<OutV, OutE>)
               .catch((e) => AsyncResult.from(e as OutE))
-          : self
       }),
     )
   }
 
-  mapError<OutE extends Error = Error>(fn: (error: E) => OutE): AsyncResult<V, E | OutE> {
+  mapError<OutE extends Error = Error>(
+    fn: (error: E) => MappedResult<V, OutE>,
+  ): AsyncResult<V, E | OutE> {
     return new AsyncResult(
       this.then((self) => {
         return self.isError()

@@ -25,6 +25,16 @@ export class Result<V, E extends Error = Error> {
     return new Result({ ok: false, value: undefined as never, error })
   }
 
+  static toError<V, E extends Error = Error>(cause: unknown, createError?: () => E): Result<V, E> {
+    const error =
+      cause instanceof Error
+        ? cause
+        : createError
+          ? createError()
+          : new Error('Unknown error', { cause })
+    return Result.error(error as E)
+  }
+
   #state: ResultState<V, E>
   #optional?: Option<V>
 
@@ -70,6 +80,21 @@ export class Result<V, E extends Error = Error> {
       return Result.is(result) ? result : Result.ok(result)
     } catch (error) {
       return Result.error(error as OutE)
+    }
+  }
+
+  mapError<OutE extends Error = Error>(
+    fn: (error: E) => OutE | Result<V, OutE>,
+  ): Result<V, E | OutE> {
+    if (this.isOK()) {
+      return this
+    }
+
+    try {
+      const result = fn(this.#state.error as E)
+      return Result.from(result)
+    } catch (error) {
+      return Result.from(error as OutE)
     }
   }
 }

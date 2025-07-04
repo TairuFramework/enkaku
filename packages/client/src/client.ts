@@ -206,7 +206,12 @@ export class Client<
   #transport: ClientTransportOf<Protocol>
 
   constructor(params: ClientParams<Protocol>) {
-    super()
+    super({
+      dispose: async (reason?: unknown) => {
+        this.#abortControllers(reason)
+        await this.#transport.dispose(reason)
+      },
+    })
     this.#createMessage = getCreateMessage<Protocol>(params.signer, params.serverID)
     this.#getRandomID = params.getRandomID ?? defaultRandomID
     this.#handleTransportDisposed = params.handleTransportDisposed
@@ -214,12 +219,6 @@ export class Client<
     this.#transport = params.transport
     // Start reading from transport
     this.#setupTransport()
-  }
-
-  /** @internal */
-  async _dispose(reason?: unknown): Promise<void> {
-    this.#abortControllers(reason)
-    await this.#transport.dispose(reason)
   }
 
   #abortControllers(reason?: unknown): void {

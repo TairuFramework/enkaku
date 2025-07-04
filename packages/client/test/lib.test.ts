@@ -1,3 +1,4 @@
+import { DisposeInterruption } from '@enkaku/async'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -100,7 +101,7 @@ describe('Client', () => {
       await client.dispose()
       expect(handleTransportDisposed).not.toHaveBeenCalled()
       expect(client.signal.aborted).toBe(true)
-      expect(client.signal.reason).toBe('Dispose')
+      expect(client.signal.reason).toBeInstanceOf(DisposeInterruption)
     })
   })
 
@@ -227,7 +228,7 @@ describe('Client', () => {
 
       expect(handleTransportError).not.toHaveBeenCalled()
       expect(client.signal.aborted).toBe(true)
-      expect(client.signal.reason).toBe('Dispose')
+      expect(client.signal.reason).toBeInstanceOf(DisposeInterruption)
     })
   })
 

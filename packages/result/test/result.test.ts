@@ -306,11 +306,80 @@ describe('Result', () => {
         expect(() => mapped.value).toThrow(CustomError)
       })
     })
+
+    describe('mapError', () => {
+      test('returns same Result for Result.ok', () => {
+        const result = Result.ok('test')
+        const mapped = result.mapError(() => new Error('transformed error'))
+        expect(mapped.isOK()).toBe(true)
+        expect(mapped.value).toBe('test')
+      })
+
+      test('transforms error for Result.error', () => {
+        const originalError = new Error('original error')
+        const result = Result.error(originalError)
+        const mapped = result.mapError((error) => new Error(`transformed: ${error.message}`))
+        expect(mapped.isError()).toBe(true)
+        expect(() => mapped.value).toThrow('transformed: original error')
+      })
+
+      test('handles function returning Result.ok', () => {
+        const result = Result.error<string>(new Error('test error'))
+        const mapped = result.mapError(() => Result.ok('recovered value'))
+        expect(mapped.isOK()).toBe(true)
+        expect(mapped.value).toBe('recovered value')
+      })
+
+      test('handles function returning Result.error', () => {
+        const result = Result.error(new Error('original error'))
+        const mapped = result.mapError(() => Result.error(new Error('new error')))
+        expect(mapped.isError()).toBe(true)
+        expect(() => mapped.value).toThrow('new error')
+      })
+
+      test('handles function throwing error', () => {
+        const result = Result.error(new Error('original error'))
+        const mapped = result.mapError(() => {
+          throw new Error('thrown error')
+        })
+        expect(mapped.isError()).toBe(true)
+        expect(() => mapped.value).toThrow('thrown error')
+      })
+
+      test('transforms custom error types', () => {
+        class CustomError extends Error {
+          constructor(message: string) {
+            super(message)
+            this.name = 'CustomError'
+          }
+        }
+        class TransformedError extends Error {
+          constructor(message: string) {
+            super(message)
+            this.name = 'TransformedError'
+          }
+        }
+        const result = Result.error(new CustomError('custom error'))
+        const mapped = result.mapError(
+          (error) => new TransformedError(`transformed: ${error.message}`),
+        )
+        expect(mapped.isError()).toBe(true)
+        expect(() => mapped.value).toThrow('transformed: custom error')
+        expect(() => mapped.value).toThrow(TransformedError)
+      })
+
+      test('preserves value type when mapping error result', () => {
+        const result = Result.error(new Error('test'))
+        const mapped = result.mapError(() => new Error('transformed'))
+        expect(mapped.isError()).toBe(true)
+        expect(() => mapped.value).toThrow('transformed')
+      })
+    })
   })
 
   describe('edge cases and integration', () => {
     test('chaining map operations', () => {
-      const result = Result.ok('hello world')
+      const result = Result.ok<string>('hello world')
       const mapped = result
         .map((str) => str.split(' '))
         .map((words) => words.join('-'))
@@ -401,6 +470,40 @@ describe('Result', () => {
         const value: string = result.value
         expect(value).toBe('test')
       }
+    })
+
+    test('mapError chaining', () => {
+      const result = Result.error(new Error('original error'))
+      const mapped = result
+        .mapError((error) => new Error(`level1: ${error.message}`))
+        .mapError((error) => new Error(`level2: ${error.message}`))
+        .mapError((error) => new Error(`level3: ${error.message}`))
+
+      expect(mapped.isError()).toBe(true)
+      expect(() => mapped.value).toThrow('level3: level2: level1: original error')
+    })
+
+    test('mapError with recovery', () => {
+      const result = Result.error(new Error('database error'))
+      const mapped = result.mapError((error) => {
+        if (error.message.includes('database')) {
+          return Result.ok('fallback value')
+        }
+        return error
+      })
+
+      expect(mapped.isOK()).toBe(true)
+      expect(mapped.value).toBe('fallback value')
+    })
+
+    test('mapError preserves original error when function throws', () => {
+      const originalError = new Error('original error')
+      const result = Result.error(originalError)
+      const mapped = result.mapError(() => {
+        throw new Error('mapping failed')
+      })
+      expect(mapped.isError()).toBe(true)
+      expect(() => mapped.value).toThrow('mapping failed')
     })
   })
 })
