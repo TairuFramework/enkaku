@@ -5,8 +5,9 @@ import {
   TimeoutInterruption,
 } from '@enkaku/async'
 import { jest } from '@jest/globals'
+
 import { AsyncResult } from '../src/async-result.js'
-import { Execution } from '../src/execution.js'
+import { type Executable, Execution } from '../src/execution.js'
 import { Result } from '../src/result.js'
 
 describe('Execution', () => {
@@ -935,6 +936,423 @@ describe('Execution', () => {
       expect(result.isError()).toBe(true)
       expect(result.error).toBe(chainError)
       expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe.skip('chain timeout behavior', () => {
+    // Note: The constructor (chain) timeout only starts when the chain is awaited,
+    // not when the first execution is triggered. The timeout covers the total time
+    // spent in the chain after it is awaited.
+
+    test('constructor timeout applies to total chain time after awaiting', async () => {
+      const executionOrder: string[] = []
+      const startTime = Date.now()
+
+      // Chain timeout: 120ms
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
+      })
+      const firstExecution = new Execution(firstExecute, { timeout: 120 })
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
+      })
+      const chainedExecution = firstExecution.chain((result) => {
+        executionOrder.push('chain function')
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Await the chain (timeout starts now)
+      const result = await chainedExecution
+      const endTime = Date.now()
+      const totalTime = endTime - startTime
+
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(totalTime).toBeGreaterThanOrEqual(100)
+      expect(totalTime).toBeLessThan(130) // Should complete before timeout
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('constructor timeout triggers if total chain time after awaiting exceeds timeout', async () => {
+      const executionOrder: string[] = []
+      const startTime = Date.now()
+
+      // Chain timeout: 100ms
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 60))
+      })
+      const firstExecution = new Execution(firstExecute, { timeout: 100 })
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 60))
+      })
+      const chainedExecution = firstExecution.chain((result) => {
+        executionOrder.push('chain function')
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Await the chain (timeout starts now)
+      const result = await chainedExecution
+      const endTime = Date.now()
+      const totalTime = endTime - startTime
+
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(totalTime).toBeGreaterThanOrEqual(100)
+      expect(totalTime).toBeLessThan(130)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    // The rest of the tests (executable timeouts, precedence, etc.) remain valid as written,
+    // since they test per-executable timeout behavior and do not assume chain timeout starts before awaiting.
+
+    test('executable timeout applies only to individual executable', async () => {
+      const executionOrder: string[] = []
+
+      // First executable with 50ms timeout
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 100))
+      }) as Executable<string>
+      firstExecute.timeout = 50
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
+      })
+      const chainedExecution = firstExecution.chain((result) => {
+        executionOrder.push('chain function')
+        expect(result.isError()).toBe(true)
+        expect(result.error).toBeInstanceOf(TimeoutInterruption)
+        return secondExecute
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('executable timeout in second step applies only to that step', async () => {
+      const executionOrder: string[] = []
+
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
+      })
+      const firstExecution = new Execution(firstExecute)
+
+      // Second executable with 30ms timeout
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 100))
+      }) as Executable<string>
+      secondExecute.timeout = 30
+      const chainedExecution = firstExecution.chain((result) => {
+        executionOrder.push('chain function')
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('constructor timeout takes precedence over executable timeout when both would trigger', async () => {
+      const executionOrder: string[] = []
+
+      // Create a chain with 80ms constructor timeout
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
+      }) as Executable<string>
+      firstExecute.timeout = 100 // Executable timeout longer than constructor timeout
+      const firstExecution = new Execution(firstExecute, { timeout: 80 })
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
+      })
+      const chainedExecution = firstExecution.chain((result) => {
+        executionOrder.push('chain function')
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('executable timeout takes precedence when it is shorter than constructor timeout', async () => {
+      const executionOrder: string[] = []
+
+      // Create a chain with 100ms constructor timeout
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
+      }) as Executable<string>
+      firstExecute.timeout = 30 // Executable timeout shorter than constructor timeout
+      const firstExecution = new Execution(firstExecute, { timeout: 100 })
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
+      })
+      const chainedExecution = firstExecution.chain((result) => {
+        executionOrder.push('chain function')
+        expect(result.isError()).toBe(true)
+        expect(result.error).toBeInstanceOf(TimeoutInterruption)
+        return secondExecute
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('third executable without timeout is still affected by constructor timeout', async () => {
+      const executionOrder: string[] = []
+
+      // Create a chain with 120ms constructor timeout
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
+      })
+      const firstExecution = new Execution(firstExecute, { timeout: 120 })
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
+      })
+      const thirdExecute = jest.fn(() => {
+        executionOrder.push('third')
+        return new Promise((resolve) => setTimeout(() => resolve('third'), 50))
+      })
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          executionOrder.push('chain1 function')
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chain((result) => {
+          executionOrder.push('chain2 function')
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('second')
+          return thirdExecute
+        })
+
+      // Execute the chain
+      const result = await chainedExecution
+
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(executionOrder).toEqual([
+        'first',
+        'chain1 function',
+        'second',
+        'chain2 function',
+        'third',
+      ])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('complex scenario: mixed timeouts across chain', async () => {
+      const executionOrder: string[] = []
+      const startTime = Date.now()
+
+      // Chain timeout: 200ms, Executable 1 timeout: 50ms, Executable 2 timeout: 300ms, Executable 3: no timeout
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 30)) // Completes before 50ms timeout
+      }) as Executable<string>
+      firstExecute.timeout = 50
+      const firstExecution = new Execution(firstExecute, { timeout: 200 })
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 100)) // Takes 100ms, within 300ms timeout
+      }) as Executable<string>
+      secondExecute.timeout = 300
+
+      const thirdExecute = jest.fn(() => {
+        executionOrder.push('third')
+        return new Promise((resolve) => setTimeout(() => resolve('third'), 50)) // Takes 50ms, but chain timeout will trigger
+      })
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          executionOrder.push('chain1 function')
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chain((result) => {
+          executionOrder.push('chain2 function')
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('second')
+          return thirdExecute
+        })
+
+      // Execute the chain
+      const result = await chainedExecution
+      const endTime = Date.now()
+      const totalTime = endTime - startTime
+
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(executionOrder).toEqual([
+        'first',
+        'chain1 function',
+        'second',
+        'chain2 function',
+        'third',
+      ])
+      expect(totalTime).toBeGreaterThanOrEqual(180) // Should be close to 200ms
+      expect(totalTime).toBeLessThan(220) // Should not exceed 200ms by much
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('executable timeout triggers before constructor timeout in first step', async () => {
+      const executionOrder: string[] = []
+
+      // Constructor timeout: 100ms, Executable timeout: 30ms
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 50)) // Takes 50ms
+      }) as Executable<string>
+      firstExecute.timeout = 30 // Shorter than constructor timeout
+      const firstExecution = new Execution(firstExecute, { timeout: 100 })
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
+      })
+      const chainedExecution = firstExecution.chain((result) => {
+        executionOrder.push('chain function')
+        expect(result.isError()).toBe(true)
+        expect(result.error).toBeInstanceOf(TimeoutInterruption)
+        return secondExecute
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('constructor timeout triggers before executable timeout in second step', async () => {
+      const executionOrder: string[] = []
+
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
+      })
+      const firstExecution = new Execution(firstExecute, { timeout: 120 }) // Constructor timeout: 120ms
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 100)) // Takes 100ms
+      }) as Executable<string>
+      secondExecute.timeout = 150 // Longer than constructor timeout
+
+      const chainedExecution = firstExecution.chain((result) => {
+        executionOrder.push('chain function')
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('timeout cleanup is properly handled across chain', async () => {
+      const executionOrder: string[] = []
+
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
+      }) as Executable<string>
+      firstExecute.timeout = 30
+      const firstExecution = new Execution(firstExecute, { timeout: 100 })
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
+      })
+
+      const chainedExecution = firstExecution.chain((result) => {
+        executionOrder.push('chain function')
+        expect(result.isError()).toBe(true)
+        expect(result.error).toBeInstanceOf(TimeoutInterruption)
+        return secondExecute
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+
+      // Verify that the execution can be disposed without issues
+      await firstExecution[Symbol.asyncDispose]()
+      expect(firstExecution.isDisposed).toBe(true)
     })
   })
 })
