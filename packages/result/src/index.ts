@@ -11,5 +11,6 @@
  */
 
 export * from './async-result.js'
+export * from './execution.js'
 export * from './option.js'
 export * from './result.js'

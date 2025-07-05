@@ -253,6 +253,181 @@ describe('Execution', () => {
     })
   })
 
+  describe('metadata property', () => {
+    test('returns undefined when no metadata is provided', () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+      expect(execution.metadata).toBeUndefined()
+    })
+
+    test('returns the provided metadata object', () => {
+      const metadata = { userId: 123, operation: 'test' }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { metadata })
+      expect(execution.metadata).toBe(metadata)
+    })
+
+    test('returns the provided metadata string', () => {
+      const metadata = { operation: 'test-operation' }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { metadata })
+      expect(execution.metadata).toBe(metadata)
+    })
+
+    test('returns the provided metadata number', () => {
+      const metadata = { count: 42 }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { metadata })
+      expect(execution.metadata).toBe(metadata)
+    })
+
+    test('returns the provided metadata array', () => {
+      const metadata = { steps: ['step1', 'step2', 'step3'] }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { metadata })
+      expect(execution.metadata).toBe(metadata)
+    })
+
+    test('returns the provided metadata function', () => {
+      const metadata = { operation: () => 'test-function' }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { metadata })
+      expect(execution.metadata).toBe(metadata)
+    })
+
+    test('returns null metadata', () => {
+      const metadata = { operation: null }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { metadata })
+      expect(execution.metadata).toBe(metadata)
+    })
+
+    test('returns complex nested metadata object', () => {
+      const metadata = {
+        user: {
+          id: 123,
+          name: 'John Doe',
+          preferences: {
+            theme: 'dark',
+            language: 'en',
+          },
+        },
+        operation: {
+          type: 'database-query',
+          timestamp: new Date('2024-01-01T00:00:00Z'),
+          retries: 3,
+        },
+      }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { metadata })
+      expect(execution.metadata).toBe(metadata)
+    })
+
+    test('metadata is immutable and not affected by execution state', async () => {
+      const metadata = { count: 0 }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { metadata })
+
+      // Metadata should be the same before execution
+      expect(execution.metadata).toBe(metadata)
+
+      // Execute the execution
+      await execution
+
+      // Metadata should still be the same after execution
+      expect(execution.metadata).toBe(metadata)
+
+      // Abort the execution
+      execution.abort('test abort')
+
+      // Metadata should still be the same after abort
+      expect(execution.metadata).toBe(metadata)
+
+      // Cancel the execution
+      execution.cancel('test cancel')
+
+      // Metadata should still be the same after cancel
+      expect(execution.metadata).toBe(metadata)
+    })
+
+    test('metadata can be explicitly passed to chained execution', async () => {
+      const metadata = { chainId: 'first-chain' }
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute, { metadata })
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      expect(chainedExecution.metadata).toBe(metadata)
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(chainedExecution.metadata).toBe(metadata)
+    })
+
+    test('metadata works with typed generics', () => {
+      type UserMetadata = {
+        userId: number
+        operation: string
+      }
+
+      const metadata: UserMetadata = { userId: 123, operation: 'test' }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution<string, Error, UserMetadata>(execute, { metadata })
+
+      expect(execution.metadata).toBe(metadata)
+      expect(execution.metadata?.userId).toBe(123)
+      expect(execution.metadata?.operation).toBe('test')
+    })
+
+    test('metadata is accessible even when execution fails', async () => {
+      const metadata = { errorContext: 'test-error' }
+      const error = new Error('test error')
+      const execute = jest.fn(() => Promise.reject(error))
+      const execution = new Execution(execute, { metadata })
+
+      // Metadata should be accessible before execution
+      expect(execution.metadata).toBe(metadata)
+
+      // Execute and expect failure
+      const result = await execution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(error)
+
+      // Metadata should still be accessible after error
+      expect(execution.metadata).toBe(metadata)
+    })
+
+    test('metadata is accessible even when execution is interrupted', async () => {
+      const metadata = { interruptContext: 'test-interrupt' }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { metadata })
+
+      // Metadata should be accessible before interruption
+      expect(execution.metadata).toBe(metadata)
+
+      // Interrupt the execution
+      execution.abort('test abort')
+
+      // Metadata should still be accessible after interruption
+      expect(execution.metadata).toBe(metadata)
+
+      // Execute and expect interruption
+      const result = await execution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(AbortInterruption)
+
+      // Metadata should still be accessible after execution with interruption
+      expect(execution.metadata).toBe(metadata)
+    })
+  })
+
   describe('Symbol.asyncDispose method', () => {
     test('disposes the execution with DisposeInterruption', async () => {
       const execute = jest.fn(() => Promise.resolve('test'))

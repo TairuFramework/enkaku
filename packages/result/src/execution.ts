@@ -25,14 +25,17 @@ export type ExecutionResult<V, E extends Error = Error> =
 
 export type ExecuteFn<V, E extends Error = Error> = (signal: AbortSignal) => ExecutionResult<V, E>
 
-export type ExecutionOptions = {
-  cleanup?: () => void
+export type ExecutionOptions<M extends Record<string, unknown> = Record<string, unknown>> = {
+  metadata?: M
   signal?: AbortSignal
   timeout?: number
 }
 
-export type ExecutionContext<V, E extends Error = Error> = ExecutionOptions & {
+export type ExecutionContext<V, E extends Error = Error> = {
   execute: ExecuteFn<V, E>
+  cleanup?: () => void
+  signal?: AbortSignal
+  timeout?: number
 }
 
 function toContext<V, E extends Error = Error>(
@@ -49,7 +52,11 @@ export type Executable<V, E extends Error = Error> =
   | ExecutionContext<V, E>
   | PromiseLike<ExecutionContext<V, E>>
 
-export class Execution<V, E extends Error = Error>
+export class Execution<
+    V,
+    E extends Error = Error,
+    M extends Record<string, unknown> = Record<string, unknown>,
+  >
   extends AsyncResult<V, E | Interruption>
   implements AbortController, AsyncDisposable
 {
@@ -58,9 +65,10 @@ export class Execution<V, E extends Error = Error>
   #chainSignal?: AbortSignal
   #chainTimeout?: ScheduledTimeout
   #executableTimeout?: ScheduledTimeout
+  #metadata?: M
   #signal: AbortSignal
 
-  constructor(executable: Executable<V, E>, options: ExecutionOptions = {}) {
+  constructor(executable: Executable<V, E>, options: ExecutionOptions<M> = {}) {
     const chainSignals: Array<AbortSignal> = []
     if (options.signal) {
       chainSignals.push(options.signal)
@@ -88,11 +96,11 @@ export class Execution<V, E extends Error = Error>
         executableSignals.push(this.#executableTimeout.signal)
       }
 
-      if (this.#chainTimeout || this.#executableTimeout || options.cleanup) {
+      if (this.#chainTimeout || this.#executableTimeout || ctx.cleanup) {
         this.#cleanup = () => {
           this.#chainTimeout?.cancel()
           this.#executableTimeout?.cancel()
-          options.cleanup?.()
+          ctx.cleanup?.()
         }
       }
 
@@ -138,6 +146,7 @@ export class Execution<V, E extends Error = Error>
 
     super(lazy(() => toContext(executable).then(execute)))
     this.#controller = controller
+    this.#metadata = options.metadata
     this.#signal = options.signal
       ? AbortSignal.any([options.signal, controller.signal])
       : controller.signal
@@ -166,6 +175,10 @@ export class Execution<V, E extends Error = Error>
 
   get isTimedOut(): boolean {
     return this.#signal.reason instanceof TimeoutInterruption
+  }
+
+  get metadata(): M | undefined {
+    return this.#metadata
   }
 
   get signal() {
@@ -218,6 +231,10 @@ export class Execution<V, E extends Error = Error>
         : ctx.signal
       return { ...ctx, cleanup, signal }
     })
-    return new Execution(nextContext)
+    return new Execution(nextContext, { metadata: this.metadata })
+  }
+
+  execute(): Promise<Result<V, E | Interruption>> {
+    return this.then()
   }
 }
