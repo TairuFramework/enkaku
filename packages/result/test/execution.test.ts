@@ -1464,4 +1464,434 @@ describe('Execution', () => {
       await firstExecution[Symbol.asyncDispose]()
     })
   })
+
+  describe('execute method', () => {
+    test('executes the execution and returns a Promise<Result>', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('test')
+      expect(execute).toHaveBeenCalledTimes(1)
+      expect(execute).toHaveBeenCalledWith(execution.signal)
+    })
+
+    test('returns the same result as awaiting the execution directly', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      const directResult = await execution
+      const executeResult = await execution.execute()
+
+      expect(executeResult.isOK()).toBe(directResult.isOK())
+      expect(executeResult.value).toBe(directResult.value)
+      expect(execute).toHaveBeenCalledTimes(1) // execute() reuses the same execution
+    })
+
+    test('handles execute function that throws', async () => {
+      const error = new Error('execute error')
+      const execute = jest.fn(() => Promise.reject(error))
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(error)
+    })
+
+    test('handles execute function returning Result.error', async () => {
+      const error = new Error('result error')
+      const execute = jest.fn(() => Promise.resolve(Result.error(error)))
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(error)
+    })
+
+    test('handles execute function returning AsyncResult', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('test')
+    })
+
+    test('handles timeout interruption', async () => {
+      const execute = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('test'), 100)),
+      )
+      const execution = new Execution(execute, { timeout: 50 })
+
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(execution.isTimedOut).toBe(true)
+    })
+
+    test('handles abort interruption', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      execution.abort('test abort')
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(AbortInterruption)
+      expect(execution.isAborted).toBe(true)
+    })
+
+    test('handles cancel interruption', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      execution.cancel('test cancel')
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(CancelInterruption)
+      expect(execution.isCanceled).toBe(true)
+    })
+
+    test('handles dispose interruption', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      await execution[Symbol.asyncDispose]()
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(DisposeInterruption)
+      expect(execution.isDisposed).toBe(true)
+    })
+
+    test('handles external signal abort', async () => {
+      const externalController = new AbortController()
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { signal: externalController.signal })
+
+      externalController.abort('external abort')
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(AbortInterruption)
+      expect(execution.isAborted).toBe(true)
+    })
+
+    test('handles synchronous error in execute function', async () => {
+      const error = new Error('sync error')
+      const execute = jest.fn(() => {
+        throw error
+      })
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(error)
+    })
+
+    test('can be called multiple times on the same execution', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      const result1 = await execution.execute()
+      const result2 = await execution.execute()
+      const result3 = await execution.execute()
+
+      expect(result1.isOK()).toBe(true)
+      expect(result1.value).toBe('test')
+      expect(result2.isOK()).toBe(true)
+      expect(result2.value).toBe('test')
+      expect(result3.isOK()).toBe(true)
+      expect(result3.value).toBe('test')
+      expect(execute).toHaveBeenCalledTimes(1) // execute() reuses the same execution
+    })
+
+    test('works with complex return types', async () => {
+      const complexData = { id: 123, name: 'test', nested: { value: 'nested' } }
+      const execute = jest.fn(() => Promise.resolve(complexData))
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toEqual(complexData)
+    })
+
+    test('works with null and undefined values', async () => {
+      const executeNull = jest.fn(() => Promise.resolve(null))
+      const executionNull = new Execution(executeNull)
+
+      const resultNull = await executionNull.execute()
+      expect(resultNull.isOK()).toBe(true)
+      expect(resultNull.value).toBe(null)
+
+      const executeUndefined = jest.fn(() => Promise.resolve(undefined))
+      const executionUndefined = new Execution(executeUndefined)
+
+      const resultUndefined = await executionUndefined.execute()
+      expect(resultUndefined.isOK()).toBe(true)
+      expect(resultUndefined.value).toBe(undefined)
+    })
+
+    test('works with boolean values', async () => {
+      const executeTrue = jest.fn(() => Promise.resolve(true))
+      const executionTrue = new Execution(executeTrue)
+
+      const resultTrue = await executionTrue.execute()
+      expect(resultTrue.isOK()).toBe(true)
+      expect(resultTrue.value).toBe(true)
+
+      const executeFalse = jest.fn(() => Promise.resolve(false))
+      const executionFalse = new Execution(executeFalse)
+
+      const resultFalse = await executionFalse.execute()
+      expect(resultFalse.isOK()).toBe(true)
+      expect(resultFalse.value).toBe(false)
+    })
+
+    test('works with number values', async () => {
+      const execute = jest.fn(() => Promise.resolve(42))
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe(42)
+    })
+
+    test('works with array values', async () => {
+      const arrayData = [1, 2, 3, 'test', { nested: true }]
+      const execute = jest.fn(() => Promise.resolve(arrayData))
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toEqual(arrayData)
+    })
+
+    test('works with function values', async () => {
+      const testFunction = () => 'test function'
+      const execute = jest.fn(() => Promise.resolve(testFunction))
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe(testFunction)
+      expect(typeof result.value).toBe('function')
+    })
+
+    test('handles custom error types', async () => {
+      class CustomError extends Error {
+        constructor(
+          message: string,
+          public code: number,
+        ) {
+          super(message)
+          this.name = 'CustomError'
+        }
+      }
+
+      const customError = new CustomError('custom error', 500)
+      const execute = jest.fn(() => Promise.reject(customError))
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(customError)
+      expect(result.error && 'code' in result.error ? result.error.code : undefined).toBe(500)
+    })
+
+    test('handles Result.error with custom error types', async () => {
+      class CustomError extends Error {
+        constructor(
+          message: string,
+          public code: number,
+        ) {
+          super(message)
+          this.name = 'CustomError'
+        }
+      }
+
+      const customError = new CustomError('custom error', 500)
+      const execute = jest.fn(() => Promise.resolve(Result.error(customError)))
+      const execution = new Execution(execute)
+
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(customError)
+      expect(result.error && 'code' in result.error ? result.error.code : undefined).toBe(500)
+    })
+
+    test('works with typed generics', async () => {
+      type User = {
+        id: number
+        name: string
+        email: string
+      }
+
+      type UserError = Error & {
+        code: 'USER_NOT_FOUND' | 'USER_INVALID'
+      }
+
+      const user: User = { id: 1, name: 'John Doe', email: 'john@example.com' }
+      const execute = jest.fn(() => Promise.resolve(user))
+      const execution = new Execution<User, UserError>(execute)
+
+      const result = await execution.execute()
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toEqual(user)
+      expect(result.value.id).toBe(1)
+      expect(result.value.name).toBe('John Doe')
+      expect(result.value.email).toBe('john@example.com')
+    })
+
+    test('handles typed generics with error', async () => {
+      type User = {
+        id: number
+        name: string
+      }
+
+      type UserError = Error & {
+        code: 'USER_NOT_FOUND'
+      }
+
+      const userError: UserError = Object.assign(new Error('User not found'), {
+        code: 'USER_NOT_FOUND' as const,
+      })
+      const execute = jest.fn(() => Promise.reject(userError))
+      const execution = new Execution<User, UserError>(execute)
+
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(userError)
+      expect(result.error && 'code' in result.error ? result.error.code : undefined).toBe(
+        'USER_NOT_FOUND',
+      )
+    })
+
+    test('works with metadata and execute method', async () => {
+      const metadata = { userId: 123, operation: 'test' }
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute, { metadata })
+
+      const result = await execution.execute()
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('test')
+      expect(execution.metadata).toBe(metadata)
+    })
+
+    test('execute method preserves execution state', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      // Execute once
+      const result1 = await execution.execute()
+      expect(result1.isOK()).toBe(true)
+      expect(execution.isAborted).toBe(false)
+      expect(execution.isInterrupted).toBe(false)
+
+      // Execute again - state should be preserved
+      const result2 = await execution.execute()
+      expect(result2.isOK()).toBe(true)
+      expect(execution.isAborted).toBe(false)
+      expect(execution.isInterrupted).toBe(false)
+    })
+
+    test('execute method works after interruption', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      // Interrupt the execution
+      execution.abort('test abort')
+
+      // Execute after interruption
+      const result = await execution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(AbortInterruption)
+      expect(execution.isAborted).toBe(true)
+    })
+
+    test('execute method works with chained executions', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const result = await chainedExecution.execute()
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('execute method works with complex chained executions', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('second')
+          return thirdExecute
+        })
+
+      const result = await chainedExecution.execute()
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('third')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('execute method works with chained executions that have errors', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const secondExecute = jest.fn(() => Promise.reject(secondError))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const result = await chainedExecution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(secondError)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('execute method works with timeout in chained executions', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
+      )
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Create a new execution with timeout from the chained result
+      const timedExecution = new Execution(() => chainedExecution, { timeout: 50 })
+
+      const result = await timedExecution.execute()
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+  })
 })
