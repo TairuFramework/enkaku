@@ -25,27 +25,29 @@ export type ExecutionResult<V, E extends Error = Error> =
 
 export type ExecuteFn<V, E extends Error = Error> = (signal: AbortSignal) => ExecutionResult<V, E>
 
-export type Executable<V, E extends Error = Error> = (
-  | ExecuteFn<V, E>
-  | PromiseLike<ExecuteFn<V, E>>
-) & {
-  timeout?: number
-}
-
-export function executable<V, E extends Error = Error>(
-  fn: ExecuteFn<V, E> | PromiseLike<ExecuteFn<V, E>>,
-  timeout?: number,
-): Executable<V, E> {
-  const ex = fn as Executable<V, E>
-  ex.timeout = timeout
-  return ex
-}
-
 export type ExecutionOptions = {
   cleanup?: () => void
   signal?: AbortSignal
   timeout?: number
 }
+
+export type ExecutionContext<V, E extends Error = Error> = ExecutionOptions & {
+  execute: ExecuteFn<V, E>
+}
+
+function toContext<V, E extends Error = Error>(
+  executable: Executable<V, E>,
+): Promise<ExecutionContext<V, E>> {
+  return Promise.resolve(executable).then((execute) => {
+    return typeof execute === 'function' ? { execute } : execute
+  })
+}
+
+export type Executable<V, E extends Error = Error> =
+  | ExecuteFn<V, E>
+  | PromiseLike<ExecuteFn<V, E>>
+  | ExecutionContext<V, E>
+  | PromiseLike<ExecutionContext<V, E>>
 
 export class Execution<V, E extends Error = Error>
   extends AsyncResult<V, E | Interruption>
@@ -67,15 +69,20 @@ export class Execution<V, E extends Error = Error>
     const controller = new AbortController()
     const executableSignals = [controller.signal]
 
-    const execute = (): Promise<Result<V, E | Interruption>> => {
+    const execute = (ctx: ExecutionContext<V, E>): Promise<Result<V, E | Interruption>> => {
       if (options.timeout) {
         this.#chainTimeout = ScheduledTimeout.in(options.timeout, {
           message: 'Execution chain timed out',
         })
         chainSignals.push(this.#chainTimeout.signal)
       }
-      if (executable.timeout) {
-        this.#executableTimeout = ScheduledTimeout.in(executable.timeout, {
+
+      if (ctx.signal) {
+        // Propagate signal from first executable down the chain
+        chainSignals.push(ctx.signal)
+      }
+      if (ctx.timeout) {
+        this.#executableTimeout = ScheduledTimeout.in(ctx.timeout, {
           message: 'Execution timed out',
         })
         executableSignals.push(this.#executableTimeout.signal)
@@ -107,7 +114,7 @@ export class Execution<V, E extends Error = Error>
       }
 
       const deferred = defer<Result<V, E | Interruption>, never>()
-      toPromise(() => Promise.resolve(executable).then((execute) => execute(signal)))
+      toPromise(() => ctx.execute(signal))
         .then(Result.from<V, E | Interruption>, (cause) => {
           return Result.toError<V, E | Interruption>(
             cause,
@@ -129,7 +136,7 @@ export class Execution<V, E extends Error = Error>
       return deferred.promise
     }
 
-    super(lazy(() => execute()))
+    super(lazy(() => toContext(executable).then(execute)))
     this.#controller = controller
     this.#signal = options.signal
       ? AbortSignal.any([options.signal, controller.signal])
@@ -193,11 +200,24 @@ export class Execution<V, E extends Error = Error>
   chain<OutV, OutE extends Error = Error>(
     fn: (result: Result<V, E | Interruption>) => Executable<OutV, OutE>,
   ): Execution<V | OutV, E | OutE> {
-    return this.isInterrupted
-      ? this
-      : new Execution(
-          lazy(() => this.then(fn)),
-          { cleanup: () => this.#cleanup?.(), signal: this.#chainSignal },
-        )
+    if (this.isAborted) {
+      return this
+    }
+
+    const nextContext = lazy(async () => {
+      const executable = await this.then(fn)
+      const ctx = await toContext(executable)
+      const cleanup = () => {
+        ctx.cleanup?.()
+        this.#cleanup?.()
+      }
+      const signal = this.#chainSignal
+        ? ctx.signal
+          ? AbortSignal.any([this.#chainSignal, ctx.signal])
+          : this.#chainSignal
+        : ctx.signal
+      return { ...ctx, cleanup, signal }
+    })
+    return new Execution(nextContext)
   }
 }

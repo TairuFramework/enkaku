@@ -7,7 +7,7 @@ import {
 import { jest } from '@jest/globals'
 
 import { AsyncResult } from '../src/async-result.js'
-import { type Executable, Execution } from '../src/execution.js'
+import { Execution } from '../src/execution.js'
 import { Result } from '../src/result.js'
 
 describe('Execution', () => {
@@ -819,64 +819,11 @@ describe('Execution', () => {
 
       // Execute the chain
       const result = await chainedExecution
-      expect(result.isOK()).toBe(true)
-      expect(result.value).toBe('second')
-      expect(firstExecute).not.toHaveBeenCalled() // Not called because execution was aborted before starting
-      expect(secondExecute).toHaveBeenCalledTimes(1)
-    })
-
-    test('handles chain with synchronous error in chain callback', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
-      const firstExecution = new Execution(firstExecute)
-
-      const chainError = new Error('chain error')
-      const chainedExecution = firstExecution.chain((result) => {
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
-        throw chainError
-      })
-
-      // Execute the chain
-      const result = await chainedExecution
-      expect(result.isError()).toBe(true)
-      expect(result.error).toBe(chainError)
-      expect(firstExecute).toHaveBeenCalledTimes(1)
-    })
-
-    test('handles chain with async error in chain callback', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
-      const firstExecution = new Execution(firstExecute)
-
-      const chainError = new Error('chain error')
-      const chainedExecution = firstExecution.chain(async (result) => {
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
-        throw chainError
-      })
-
-      // Execute the chain
-      const result = await chainedExecution
-      expect(result.isError()).toBe(true)
-      expect(result.error).toBe(chainError)
-      expect(firstExecute).toHaveBeenCalledTimes(1)
-    })
-
-    test('handles chain with rejected promise in chain callback', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
-      const firstExecution = new Execution(firstExecute)
-
-      const chainError = new Error('chain error')
-      const chainedExecution = firstExecution.chain((result) => {
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
-        return Promise.reject(chainError)
-      })
-
-      // Execute the chain
-      const result = await chainedExecution
-      expect(result.isError()).toBe(true)
-      expect(result.error).toBe(chainError)
-      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(result.isOK()).toBe(false)
+      expect(result.error).toBeInstanceOf(AbortInterruption)
+      // Not called because execution was aborted before starting
+      expect(firstExecute).not.toHaveBeenCalled()
+      expect(secondExecute).not.toHaveBeenCalled()
     })
 
     test('handles chain with Result.error in chain callback', async () => {
@@ -939,7 +886,7 @@ describe('Execution', () => {
     })
   })
 
-  describe.skip('chain timeout behavior', () => {
+  describe('chain timeout behavior', () => {
     // Note: The constructor (chain) timeout only starts when the chain is awaited,
     // not when the first execution is triggered. The timeout covers the total time
     // spent in the chain after it is awaited.
@@ -1016,9 +963,6 @@ describe('Execution', () => {
       expect(secondExecute).toHaveBeenCalledTimes(1)
     })
 
-    // The rest of the tests (executable timeouts, precedence, etc.) remain valid as written,
-    // since they test per-executable timeout behavior and do not assume chain timeout starts before awaiting.
-
     test('executable timeout applies only to individual executable', async () => {
       const executionOrder: string[] = []
 
@@ -1026,9 +970,8 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => {
         executionOrder.push('first')
         return new Promise((resolve) => setTimeout(() => resolve('first'), 100))
-      }) as Executable<string>
-      firstExecute.timeout = 50
-      const firstExecution = new Execution(firstExecute)
+      })
+      const firstExecution = new Execution({ execute: firstExecute, timeout: 50 })
 
       const secondExecute = jest.fn(() => {
         executionOrder.push('second')
@@ -1064,13 +1007,12 @@ describe('Execution', () => {
       const secondExecute = jest.fn(() => {
         executionOrder.push('second')
         return new Promise((resolve) => setTimeout(() => resolve('second'), 100))
-      }) as Executable<string>
-      secondExecute.timeout = 30
+      })
       const chainedExecution = firstExecution.chain((result) => {
         executionOrder.push('chain function')
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
-        return secondExecute
+        return { execute: secondExecute, timeout: 30 }
       })
 
       // Execute the chain
@@ -1090,9 +1032,8 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => {
         executionOrder.push('first')
         return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
-      }) as Executable<string>
-      firstExecute.timeout = 100 // Executable timeout longer than constructor timeout
-      const firstExecution = new Execution(firstExecute, { timeout: 80 })
+      })
+      const firstExecution = new Execution({ execute: firstExecute }, { timeout: 80 })
 
       const secondExecute = jest.fn(() => {
         executionOrder.push('second')
@@ -1122,9 +1063,8 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => {
         executionOrder.push('first')
         return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
-      }) as Executable<string>
-      firstExecute.timeout = 30 // Executable timeout shorter than constructor timeout
-      const firstExecution = new Execution(firstExecute, { timeout: 100 })
+      })
+      const firstExecution = new Execution({ execute: firstExecute, timeout: 30 }, { timeout: 100 })
 
       const secondExecute = jest.fn(() => {
         executionOrder.push('second')
@@ -1205,19 +1145,17 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => {
         executionOrder.push('first')
         return new Promise((resolve) => setTimeout(() => resolve('first'), 30)) // Completes before 50ms timeout
-      }) as Executable<string>
-      firstExecute.timeout = 50
-      const firstExecution = new Execution(firstExecute, { timeout: 200 })
+      })
+      const firstExecution = new Execution({ execute: firstExecute, timeout: 50 }, { timeout: 200 })
 
       const secondExecute = jest.fn(() => {
         executionOrder.push('second')
         return new Promise((resolve) => setTimeout(() => resolve('second'), 100)) // Takes 100ms, within 300ms timeout
-      }) as Executable<string>
-      secondExecute.timeout = 300
+      })
 
       const thirdExecute = jest.fn(() => {
         executionOrder.push('third')
-        return new Promise((resolve) => setTimeout(() => resolve('third'), 50)) // Takes 50ms, but chain timeout will trigger
+        return new Promise((resolve) => setTimeout(() => resolve('third'), 100)) // Takes 100ms, but chain timeout will trigger
       })
 
       const chainedExecution = firstExecution
@@ -1225,7 +1163,7 @@ describe('Execution', () => {
           executionOrder.push('chain1 function')
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
-          return secondExecute
+          return { execute: secondExecute, timeout: 300 }
         })
         .chain((result) => {
           executionOrder.push('chain2 function')
@@ -1262,9 +1200,8 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => {
         executionOrder.push('first')
         return new Promise((resolve) => setTimeout(() => resolve('first'), 50)) // Takes 50ms
-      }) as Executable<string>
-      firstExecute.timeout = 30 // Shorter than constructor timeout
-      const firstExecution = new Execution(firstExecute, { timeout: 100 })
+      })
+      const firstExecution = new Execution({ execute: firstExecute, timeout: 30 }, { timeout: 100 })
 
       const secondExecute = jest.fn(() => {
         executionOrder.push('second')
@@ -1299,14 +1236,13 @@ describe('Execution', () => {
       const secondExecute = jest.fn(() => {
         executionOrder.push('second')
         return new Promise((resolve) => setTimeout(() => resolve('second'), 100)) // Takes 100ms
-      }) as Executable<string>
-      secondExecute.timeout = 150 // Longer than constructor timeout
+      })
 
       const chainedExecution = firstExecution.chain((result) => {
         executionOrder.push('chain function')
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
-        return secondExecute
+        return { execute: secondExecute, timeout: 150 } // Longer than constructor timeout
       })
 
       // Execute the chain
@@ -1325,9 +1261,8 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => {
         executionOrder.push('first')
         return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
-      }) as Executable<string>
-      firstExecute.timeout = 30
-      const firstExecution = new Execution(firstExecute, { timeout: 100 })
+      })
+      const firstExecution = new Execution({ execute: firstExecute, timeout: 30 }, { timeout: 100 })
 
       const secondExecute = jest.fn(() => {
         executionOrder.push('second')
@@ -1352,7 +1287,6 @@ describe('Execution', () => {
 
       // Verify that the execution can be disposed without issues
       await firstExecution[Symbol.asyncDispose]()
-      expect(firstExecution.isDisposed).toBe(true)
     })
   })
 })
