@@ -44,40 +44,20 @@ export class AsyncResult<V, E extends Error = Error> extends Promise<Result<V, E
   }
 
   static ok<V, E extends Error = Error>(value: V): AsyncResult<V, E> {
-    return new AsyncResult(Promise.resolve(Result.ok(value)))
+    return new AsyncResult((resolve) => resolve(Result.ok(value)))
   }
 
   static error<V, E extends Error = Error>(error: E): AsyncResult<V, E> {
-    return new AsyncResult(Promise.reject(Result.error(error)))
+    return new AsyncResult((resolve) => resolve(Result.error(error)))
   }
 
   static resolve<V, E extends Error = Error>(value: V | PromiseLike<V>): AsyncResult<V, E> {
-    return new AsyncResult(
-      toPromise(() => value).then(
-        (value) => Result.from<V, E>(value),
-        (error) => Result.from<V, E>(error),
-      ),
-    )
-  }
-
-  static reject<V, E extends Error>(error: E): AsyncResult<V, E> {
-    return new AsyncResult(Promise.reject(Result.error(error)))
-  }
-
-  #isSettled = false
-
-  constructor(promise: PromiseLike<Result<V, E>>) {
-    super((resolve) => {
-      const onSettled = (value: Result<V, E>) => {
-        this.#isSettled = true
-        resolve(value)
-      }
-      promise.then(onSettled, onSettled)
+    return new AsyncResult((resolve) => {
+      return toPromise(() => value)
+        .then(Result.from<V, E>)
+        .catch(Result.toError<V, E>)
+        .then(resolve)
     })
-  }
-
-  get isSettled(): boolean {
-    return this.#isSettled
   }
 
   get value(): Promise<V> {
@@ -99,28 +79,32 @@ export class AsyncResult<V, E extends Error = Error> extends Promise<Result<V, E
   map<OutV, OutE extends Error = Error>(
     fn: (value: V) => MappedResult<OutV, OutE>,
   ): AsyncResult<OutV, E | OutE> {
-    return new AsyncResult(
+    return new AsyncResult((resolve) => {
       this.then((self) => {
-        return self.isError()
-          ? self
-          : toPromise(() => fn(self.value))
-              .then(AsyncResult.from<OutV, OutE>)
-              .catch((e) => AsyncResult.from(e as OutE))
-      }),
-    )
+        if (self.isError()) {
+          return resolve(self)
+        }
+        toPromise(() => fn(self.value))
+          .then(Result.from<OutV, OutE>)
+          .catch(Result.toError<OutV, OutE>)
+          .then(resolve)
+      })
+    })
   }
 
   mapError<OutE extends Error = Error>(
     fn: (error: E) => MappedResult<V, OutE>,
   ): AsyncResult<V, E | OutE> {
-    return new AsyncResult(
+    return new AsyncResult((resolve) => {
       this.then((self) => {
-        return self.isError()
-          ? toPromise(() => fn(self.error as E))
-              .then(AsyncResult.from<V, OutE>)
-              .catch((e) => AsyncResult.from(e as OutE))
-          : self
-      }),
-    )
+        if (self.isOK()) {
+          return resolve(self)
+        }
+        toPromise(() => fn(self.error as E))
+          .then(Result.from<V, E | OutE>)
+          .catch(Result.toError<V, E | OutE>)
+          .then(resolve)
+      })
+    })
   }
 }

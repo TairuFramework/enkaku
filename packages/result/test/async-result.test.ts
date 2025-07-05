@@ -121,28 +121,6 @@ describe('AsyncResult', () => {
       })
     })
 
-    describe('AsyncResult.reject', () => {
-      test('rejects with an error', async () => {
-        const error = new Error('reject error')
-        const result = await AsyncResult.reject(error)
-        expect(result.isError()).toBe(true)
-        expect(result.error).toBe(error)
-      })
-
-      test('rejects with custom error type', async () => {
-        class CustomError extends Error {
-          constructor(message: string) {
-            super(message)
-            this.name = 'CustomError'
-          }
-        }
-        const error = new CustomError('custom reject error')
-        const result = await AsyncResult.reject(error)
-        expect(result.isError()).toBe(true)
-        expect(result.error).toBe(error)
-      })
-    })
-
     describe('AsyncResult.from', () => {
       test('returns the same AsyncResult if input is already an AsyncResult', async () => {
         const original = AsyncResult.ok('test')
@@ -284,25 +262,6 @@ describe('AsyncResult', () => {
   })
 
   describe('instance methods', () => {
-    describe('isSettled', () => {
-      test('returns false initially', () => {
-        const asyncResult = AsyncResult.ok('test')
-        expect(asyncResult.isSettled).toBe(false)
-      })
-
-      test('returns true after resolution', async () => {
-        const asyncResult = AsyncResult.ok('test')
-        await asyncResult
-        expect(asyncResult.isSettled).toBe(true)
-      })
-
-      test('returns true after rejection', async () => {
-        const asyncResult = AsyncResult.error(new Error('test'))
-        await asyncResult
-        expect(asyncResult.isSettled).toBe(true)
-      })
-    })
-
     describe('value', () => {
       test('returns value for AsyncResult.ok', async () => {
         const asyncResult = AsyncResult.ok('test')
@@ -756,9 +715,9 @@ describe('AsyncResult', () => {
       expect(result.value).toBe('test')
     })
 
-    test('handles rejected promises in constructor', async () => {
+    test('handles error Result in constructor', async () => {
       const error = new Error('constructor error')
-      const asyncResult = new AsyncResult(Promise.reject(Result.error(error)))
+      const asyncResult = new AsyncResult((resolve) => resolve(Result.error(error)))
       const result = await asyncResult
       expect(result.isError()).toBe(true)
       expect(result.error).toBe(error)

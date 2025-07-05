@@ -10,6 +10,7 @@ import {
 } from '@enkaku/async'
 
 import { AsyncResult } from './async-result.js'
+import type { Option } from './option.js'
 import { Result } from './result.js'
 
 function noop() {}
@@ -22,6 +23,10 @@ export type ExecutionResult<V, E extends Error = Error> =
   | AsyncResult<V, E | Interruption>
 
 export type ExecuteFn<V, E extends Error = Error> = (signal: AbortSignal) => ExecutionResult<V, E>
+
+export type Executable<V, E extends Error = Error> = ExecuteFn<V, E> & {
+  timeout?: number
+}
 
 export type ExecutionOptions = {
   signal?: AbortSignal
@@ -36,7 +41,7 @@ export class Execution<V, E extends Error = Error>
   #signal: AbortSignal
   #timeout?: ScheduledTimeout
 
-  constructor(execute: ExecuteFn<V, E>, options: ExecutionOptions = {}) {
+  constructor(executable: Executable<V, E>, options: ExecutionOptions = {}) {
     const controller = new AbortController()
     const signals = [controller.signal]
     let timeout: ScheduledTimeout | undefined
@@ -45,26 +50,30 @@ export class Execution<V, E extends Error = Error>
       signals.push(options.signal)
     }
     if (options.timeout) {
-      timeout = ScheduledTimeout.in(options.timeout)
+      timeout = ScheduledTimeout.in(options.timeout, {
+        message: 'Execution timed out',
+      })
       signals.push(timeout.signal)
     }
-
-    let promise: PromiseLike<Result<V, E | Interruption>>
     const signal = signals.length === 1 ? signals[0] : AbortSignal.any(signals)
-    if (signal.aborted) {
-      promise = AsyncResult.error(signal.reason)
-    } else {
-      const deferred = defer<Result<V, E | Interruption>, never>()
-      toPromise(() => execute(signal))
-        .then(
-          (value) => Result.from<V, E | Interruption>(value as V),
-          (cause) => {
-            return Result.toError<V, E | Interruption>(
-              cause,
-              () => new Error('Execution failed', { cause }) as E,
-            )
-          },
+
+    function execute(): Promise<Result<V, E | Interruption>> {
+      if (signal.aborted) {
+        const result = Result.toError<V, E | Interruption>(
+          signal.reason,
+          () => new AbortInterruption({ cause: signal.reason }),
         )
+        return Promise.resolve(result)
+      }
+
+      const deferred = defer<Result<V, E | Interruption>, never>()
+      toPromise(() => executable(signal))
+        .then(Result.from<V, E | Interruption>, (cause) => {
+          return Result.toError<V, E | Interruption>(
+            cause,
+            () => new Error('Execution failed', { cause }) as E,
+          )
+        })
         .then(deferred.resolve)
       signal.addEventListener(
         'abort',
@@ -77,10 +86,21 @@ export class Execution<V, E extends Error = Error>
         },
         { once: true },
       )
-      promise = deferred.promise
+      return deferred.promise
     }
 
-    super(promise)
+    super((resolve) => {
+      let executing: Promise<Result<V, E | Interruption>> | undefined
+      resolve({
+        // biome-ignore lint/suspicious/noThenProperty: expected behavior
+        then: (onFulfilled) => {
+          if (!executing) {
+            executing = execute()
+          }
+          return executing.then(onFulfilled)
+        },
+      })
+    })
     this.#controller = controller
     this.#signal = signal
     this.#timeout = timeout
@@ -113,6 +133,22 @@ export class Execution<V, E extends Error = Error>
 
   get signal() {
     return this.#signal
+  }
+
+  get value(): Promise<V> {
+    return this.then((self) => self.value)
+  }
+
+  get optional(): Promise<Option<V>> {
+    return this.then((self) => self.optional)
+  }
+
+  get orNull(): Promise<V | null> {
+    return this.then((self) => self.orNull)
+  }
+
+  or(defaultValue: V): Promise<V> {
+    return this.then((self) => self.or(defaultValue))
   }
 
   abort(reason?: unknown) {
