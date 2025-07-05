@@ -1,20 +1,24 @@
 type OptionState<V> = { some: true; value: V } | { some: false; value: never }
 
 export class Option<V> {
-  static from<V>(value: unknown): Option<V> {
-    return Option.is<V>(value) ? value : value == null ? Option.none() : Option.some(value as V)
-  }
-
-  static is<V>(value: unknown): value is Option<V> {
-    return value instanceof Option
+  static none<V>(): Option<V> {
+    return new Option<V>({ some: false, value: undefined as never })
   }
 
   static some<V>(value: V): Option<V> {
     return new Option({ some: true, value })
   }
 
-  static none<V>(): Option<V> {
-    return new Option<V>({ some: false, value: undefined as never })
+  static of<V>(value?: V): Option<V> {
+    return value == null ? Option.none() : Option.some(value)
+  }
+
+  static is<V>(value: unknown): value is Option<V> {
+    return value instanceof Option
+  }
+
+  static from<V>(value: unknown): Option<V> {
+    return Option.is<V>(value) ? value : Option.of(value as V)
   }
 
   #state: OptionState<V>
@@ -31,18 +35,18 @@ export class Option<V> {
     return !this.#state.some
   }
 
-  get valueOrNull(): V | null {
+  get orNull(): V | null {
     return this.isSome() ? this.#state.value : null
   }
 
-  get valueOrThrow(): V {
+  get orThrow(): V {
     if (this.isSome()) {
       return this.#state.value
     }
     throw new Error('Option is none')
   }
 
-  getOr(defaultValue: V): V {
+  or(defaultValue: V): V {
     return this.isSome() ? this.#state.value : defaultValue
   }
 

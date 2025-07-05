@@ -70,6 +70,33 @@ describe('Result', () => {
       })
     })
 
+    describe('Result.toError', () => {
+      test('creates Result.error from Error instance', () => {
+        const error = new Error('test error')
+        const result = Result.toError(error)
+        expect(result.isError()).toBe(true)
+        expect(() => result.value).toThrow('test error')
+      })
+
+      test('creates Result.error from non-Error with default error', () => {
+        const result = Result.toError('string error')
+        expect(result.isError()).toBe(true)
+        expect(() => result.value).toThrow('Unknown error')
+      })
+
+      test('creates Result.error from non-Error with custom error factory', () => {
+        const result = Result.toError('string error', () => new Error('custom error'))
+        expect(result.isError()).toBe(true)
+        expect(() => result.value).toThrow('custom error')
+      })
+
+      test('creates Result.error from null', () => {
+        const result = Result.toError(null)
+        expect(result.isError()).toBe(true)
+        expect(() => result.value).toThrow('Unknown error')
+      })
+    })
+
     describe('Result.from', () => {
       test('returns the same Result if input is already a Result', () => {
         const original = Result.ok('test')
@@ -197,12 +224,38 @@ describe('Result', () => {
       })
     })
 
+    describe('error', () => {
+      test('returns null for Result.ok', () => {
+        const result = Result.ok('test')
+        expect(result.error).toBe(null)
+      })
+
+      test('returns error for Result.error', () => {
+        const error = new Error('test error')
+        const result = Result.error(error)
+        expect(result.error).toBe(error)
+      })
+
+      test('returns custom error type for Result.error', () => {
+        class CustomError extends Error {
+          constructor(message: string) {
+            super(message)
+            this.name = 'CustomError'
+          }
+        }
+        const error = new CustomError('custom error')
+        const result = Result.error(error)
+        expect(result.error).toBe(error)
+        expect(result.error?.name).toBe('CustomError')
+      })
+    })
+
     describe('optional', () => {
       test('returns Option.some for Result.ok', () => {
         const result = Result.ok('test')
         const option = result.optional
         expect(option.isSome()).toBe(true)
-        expect(option.valueOrNull).toBe('test')
+        expect(option.orNull).toBe('test')
       })
 
       test('returns Option.none for Result.error', () => {
@@ -215,14 +268,54 @@ describe('Result', () => {
         const result = Result.ok(null)
         const option = result.optional
         expect(option.isSome()).toBe(true)
-        expect(option.valueOrNull).toBe(null)
+        expect(option.orNull).toBe(null)
       })
 
       test('returns Option.some for Result.ok with undefined', () => {
         const result = Result.ok(undefined)
         const option = result.optional
         expect(option.isSome()).toBe(true)
-        expect(option.valueOrNull).toBe(undefined)
+        expect(option.orNull).toBe(undefined)
+      })
+    })
+
+    describe('orNull', () => {
+      test('returns value for Result.ok', () => {
+        const result = Result.ok('test')
+        expect(result.orNull).toBe('test')
+      })
+
+      test('returns null for Result.error', () => {
+        const result = Result.error(new Error('test'))
+        expect(result.orNull).toBe(null)
+      })
+
+      test('returns null value for Result.ok with null', () => {
+        const result = Result.ok(null)
+        expect(result.orNull).toBe(null)
+      })
+
+      test('returns undefined for Result.ok with undefined', () => {
+        const result = Result.ok(undefined)
+        expect(result.orNull).toBe(undefined)
+      })
+    })
+
+    describe('or', () => {
+      test('returns value for Result.ok', () => {
+        const result = Result.ok('test')
+        expect(result.or('default')).toBe('test')
+      })
+
+      test('returns default value for Result.error', () => {
+        const result = Result.error(new Error('test'))
+        expect(result.or('default')).toBe('default')
+      })
+
+      test('returns complex default value for Result.error', () => {
+        const result = Result.error(new Error('test'))
+        const defaultObj = { id: 1, name: 'default' }
+        expect(result.or(defaultObj)).toBe(defaultObj)
       })
     })
 
@@ -448,7 +541,7 @@ describe('Result', () => {
       const result = Result.ok(complexObj)
       const option = result.optional
       expect(option.isSome()).toBe(true)
-      expect(option.valueOrNull).toBe(complexObj)
+      expect(option.orNull).toBe(complexObj)
     })
 
     test('error propagation through map chain', () => {
@@ -504,6 +597,43 @@ describe('Result', () => {
       })
       expect(mapped.isError()).toBe(true)
       expect(() => mapped.value).toThrow('mapping failed')
+    })
+
+    test('orNull and or methods work together', () => {
+      const okResult = Result.ok('success')
+      const errorResult = Result.error(new Error('failure'))
+
+      expect(okResult.orNull).toBe('success')
+      expect(okResult.or('default')).toBe('success')
+      expect(errorResult.orNull).toBe(null)
+      expect(errorResult.or('default')).toBe('default')
+    })
+
+    test('error getter provides access to error without throwing', () => {
+      const error = new Error('test error')
+      const result = Result.error(error)
+
+      expect(result.error).toBe(error)
+      expect(() => result.value).toThrow('test error')
+    })
+
+    test('toError static method handles various input types', () => {
+      const errorResult = Result.toError(new Error('explicit error'))
+      const stringResult = Result.toError('string error')
+      const nullResult = Result.toError(null)
+      const customResult = Result.toError('custom', () => new Error('custom error'))
+
+      expect(errorResult.isError()).toBe(true)
+      expect(() => errorResult.value).toThrow('explicit error')
+
+      expect(stringResult.isError()).toBe(true)
+      expect(() => stringResult.value).toThrow('Unknown error')
+
+      expect(nullResult.isError()).toBe(true)
+      expect(() => nullResult.value).toThrow('Unknown error')
+
+      expect(customResult.isError()).toBe(true)
+      expect(() => customResult.value).toThrow('custom error')
     })
   })
 })

@@ -6,26 +6,26 @@ describe('Option', () => {
       test('creates an Option with a value', () => {
         const option = Option.some('test')
         expect(option.isSome()).toBe(true)
-        expect(option.valueOrNull).toBe('test')
+        expect(option.orNull).toBe('test')
       })
 
       test('creates an Option with null value', () => {
         const option = Option.some(null)
         expect(option.isSome()).toBe(true)
-        expect(option.valueOrNull).toBe(null)
+        expect(option.orNull).toBe(null)
       })
 
       test('creates an Option with undefined value', () => {
         const option = Option.some(undefined)
         expect(option.isSome()).toBe(true)
-        expect(option.valueOrNull).toBe(undefined)
+        expect(option.orNull).toBe(undefined)
       })
 
       test('creates an Option with complex object', () => {
         const obj = { id: 1, name: 'test' }
         const option = Option.some(obj)
         expect(option.isSome()).toBe(true)
-        expect(option.valueOrNull).toBe(obj)
+        expect(option.orNull).toBe(obj)
       })
     })
 
@@ -33,12 +33,48 @@ describe('Option', () => {
       test('creates an Option without a value', () => {
         const option = Option.none()
         expect(option.isNone()).toBe(true)
-        expect(option.valueOrNull).toBe(null)
+        expect(option.orNull).toBe(null)
       })
 
-      test('throws when accessing valueOrThrow', () => {
+      test('throws when accessing orThrow', () => {
         const option = Option.none()
-        expect(() => option.valueOrThrow).toThrow('Option is none')
+        expect(() => option.orThrow).toThrow('Option is none')
+      })
+    })
+
+    describe('Option.of', () => {
+      test('creates Option.some for non-null values', () => {
+        const result = Option.of('test')
+        expect(result.isSome()).toBe(true)
+        expect(result.orNull).toBe('test')
+      })
+
+      test('creates Option.some for 0', () => {
+        const result = Option.of(0)
+        expect(result.isSome()).toBe(true)
+        expect(result.orNull).toBe(0)
+      })
+
+      test('creates Option.some for empty string', () => {
+        const result = Option.of('')
+        expect(result.isSome()).toBe(true)
+        expect(result.orNull).toBe('')
+      })
+
+      test('creates Option.some for false', () => {
+        const result = Option.of(false)
+        expect(result.isSome()).toBe(true)
+        expect(result.orNull).toBe(false)
+      })
+
+      test('creates Option.none for null', () => {
+        const result = Option.of(null)
+        expect(result.isNone()).toBe(true)
+      })
+
+      test('creates Option.none for undefined', () => {
+        const result = Option.of(undefined)
+        expect(result.isNone()).toBe(true)
       })
     })
 
@@ -52,25 +88,25 @@ describe('Option', () => {
       test('creates Option.some for non-null values', () => {
         const result = Option.from('test')
         expect(result.isSome()).toBe(true)
-        expect(result.valueOrNull).toBe('test')
+        expect(result.orNull).toBe('test')
       })
 
       test('creates Option.some for 0', () => {
         const result = Option.from(0)
         expect(result.isSome()).toBe(true)
-        expect(result.valueOrNull).toBe(0)
+        expect(result.orNull).toBe(0)
       })
 
       test('creates Option.some for empty string', () => {
         const result = Option.from('')
         expect(result.isSome()).toBe(true)
-        expect(result.valueOrNull).toBe('')
+        expect(result.orNull).toBe('')
       })
 
       test('creates Option.some for false', () => {
         const result = Option.from(false)
         expect(result.isSome()).toBe(true)
-        expect(result.valueOrNull).toBe(false)
+        expect(result.orNull).toBe(false)
       })
 
       test('creates Option.none for null', () => {
@@ -109,14 +145,14 @@ describe('Option', () => {
 
       test('returns false for Option.none', () => {
         const option = Option.none()
-        expect(option.isSome()).toBe(false)
+        expect(option.isNone()).toBe(true)
       })
 
       test('acts as type guard', () => {
         const option: Option<string> = Option.some('test')
         if (option.isSome()) {
           // TypeScript should know this is safe
-          expect(option.valueOrNull).toBe('test')
+          expect(option.orNull).toBe('test')
         }
       })
     })
@@ -136,55 +172,55 @@ describe('Option', () => {
         const option: Option<string> = Option.none()
         if (option.isNone()) {
           // TypeScript should know this is safe
-          expect(option.valueOrNull).toBe(null)
+          expect(option.orNull).toBe(null)
         }
       })
     })
 
-    describe('valueOrNull', () => {
+    describe('orNull', () => {
       test('returns value for Option.some', () => {
         const option = Option.some('test')
-        expect(option.valueOrNull).toBe('test')
+        expect(option.orNull).toBe('test')
       })
 
       test('returns null for Option.none', () => {
         const option = Option.none()
-        expect(option.valueOrNull).toBe(null)
+        expect(option.orNull).toBe(null)
       })
 
       test('returns null for Option.some(null)', () => {
         const option = Option.some(null)
-        expect(option.valueOrNull).toBe(null)
+        expect(option.orNull).toBe(null)
       })
     })
 
-    describe('valueOrThrow', () => {
+    describe('orThrow', () => {
       test('returns value for Option.some', () => {
         const option = Option.some('test')
-        expect(option.valueOrThrow).toBe('test')
+        expect(option.orThrow).toBe('test')
       })
 
       test('throws error for Option.none', () => {
         const option = Option.none()
-        expect(() => option.valueOrThrow).toThrow('Option is none')
+        expect(() => option.orThrow).toThrow('Option is none')
       })
     })
 
-    describe('getOr', () => {
+    describe('or', () => {
       test('returns value for Option.some', () => {
         const option = Option.some('test')
-        expect(option.getOr('default')).toBe('test')
+        expect(option.or('default')).toBe('test')
       })
 
       test('returns default for Option.none', () => {
         const option = Option.none()
-        expect(option.getOr('default')).toBe('default')
+        expect(option.or('default')).toBe('default')
       })
 
       test('returns default for Option.none with complex default', () => {
         const option = Option.none<{ id: number; name: string }>()
         const defaultObj = { id: 1, name: 'default' }
-        expect(option.getOr(defaultObj)).toBe(defaultObj)
+        expect(option.or(defaultObj)).toBe(defaultObj)
       })
     })
 
@@ -193,7 +229,7 @@ describe('Option', () => {
         const option = Option.some('test')
         const result = option.map((value) => value.toUpperCase())
         expect(result.isSome()).toBe(true)
-        expect(result.valueOrNull).toBe('TEST')
+        expect(result.orNull).toBe('TEST')
       })
 
       test('returns Option.none for Option.none', () => {
@@ -206,7 +242,7 @@ describe('Option', () => {
         const option = Option.some('test')
         const result = option.map((value) => Option.some(value.toUpperCase()))
         expect(result.isSome()).toBe(true)
-        expect(result.valueOrNull).toBe('TEST')
+        expect(result.orNull).toBe('TEST')
       })
 
       test('handles function returning Option.none', () => {
@@ -219,7 +255,7 @@ describe('Option', () => {
         const option = Option.some({ id: 1, name: 'test' })
         const result = option.map((obj) => ({ ...obj, name: obj.name.toUpperCase() }))
         expect(result.isSome()).toBe(true)
-        expect(result.valueOrNull).toEqual({ id: 1, name: 'TEST' })
+        expect(result.orNull).toEqual({ id: 1, name: 'TEST' })
       })
     })
   })
@@ -233,7 +269,7 @@ describe('Option', () => {
         .map((str) => str.toUpperCase())
 
       expect(result.isSome()).toBe(true)
-      expect(result.valueOrNull).toBe('HELLO-WORLD')
+      expect(result.orNull).toBe('HELLO-WORLD')
     })
 
     test('chaining with Option.none in middle', () => {
@@ -246,9 +282,9 @@ describe('Option', () => {
       expect(result.isNone()).toBe(true)
     })
 
-    test('getOr with different types', () => {
+    test('or with different types', () => {
       const option = Option.none<number>()
-      const result = option.getOr(42)
+      const result = option.or(42)
       expect(result).toBe(42)
     })
 
@@ -256,7 +292,7 @@ describe('Option', () => {
       const option = Option.some('123')
       const result = option.map((str) => Number.parseInt(str, 10))
       expect(result.isSome()).toBe(true)
-      expect(result.valueOrNull).toBe(123)
+      expect(result.orNull).toBe(123)
     })
 
     test('Option.some with falsy values', () => {
@@ -266,11 +302,11 @@ describe('Option', () => {
       expect(Option.some(Number.NaN).isSome()).toBe(true)
     })
 
-    test('Option.from with falsy values', () => {
-      expect(Option.from(0).isSome()).toBe(true)
-      expect(Option.from('').isSome()).toBe(true)
-      expect(Option.from(false).isSome()).toBe(true)
-      expect(Option.from(Number.NaN).isSome()).toBe(true)
+    test('Option.of with falsy values', () => {
+      expect(Option.of(0).isSome()).toBe(true)
+      expect(Option.of('').isSome()).toBe(true)
+      expect(Option.of(false).isSome()).toBe(true)
+      expect(Option.of(Number.NaN).isSome()).toBe(true)
     })
   })
 })

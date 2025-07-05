@@ -1,31 +1,39 @@
-import { type InterruptionOptions, TimeoutInterruption } from './interuptions.js'
+import { type InterruptionOptions, TimeoutInterruption } from './interruptions.js'
+
+export type ScheduledTimeoutParams = InterruptionOptions & { delay: number }
 
 export class ScheduledTimeout implements Disposable {
-  static create(delay: number, options?: InterruptionOptions): ScheduledTimeout {
-    const controller = new AbortController()
-    const timer = setTimeout(() => {
-      controller.abort(new TimeoutInterruption({ message: `Timeout after ${delay}ms`, ...options }))
-    }, delay)
-    return new ScheduledTimeout(controller.signal, timer)
+  static at(date: Date, options?: InterruptionOptions): ScheduledTimeout {
+    const delay = date.getTime() - Date.now()
+    return new ScheduledTimeout({ delay, ...options })
   }
 
-  #signal: AbortSignal
+  static in(delay: number, options?: InterruptionOptions): ScheduledTimeout {
+    return new ScheduledTimeout({ delay, ...options })
+  }
+
+  #controller: AbortController
   #timeout: NodeJS.Timeout
 
-  constructor(signal: AbortSignal, timeout: NodeJS.Timeout) {
-    this.#signal = signal
-    this.#timeout = timeout
-  }
-
-  get signal() {
-    return this.#signal
-  }
-
-  clear() {
-    clearTimeout(this.#timeout)
+  constructor(params: ScheduledTimeoutParams) {
+    const { delay, ...options } = params
+    this.#controller = new AbortController()
+    this.#timeout = setTimeout(() => {
+      this.#controller.abort(
+        new TimeoutInterruption({ message: `Timeout after ${delay}ms`, ...options }),
+      )
+    }, delay)
   }
 
   [Symbol.dispose]() {
-    this.clear()
+    this.cancel()
+  }
+
+  get signal() {
+    return this.#controller.signal
+  }
+
+  cancel() {
+    clearTimeout(this.#timeout)
   }
 }

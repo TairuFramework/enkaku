@@ -12,6 +12,6 @@
 
 export * from './defer.js'
 export * from './disposer.js'
-export * from './interuptions.js'
+export * from './interruptions.js'
 export * from './timeout.js'
 export * from './utils.js'

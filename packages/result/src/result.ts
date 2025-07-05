@@ -68,6 +68,14 @@ export class Result<V, E extends Error = Error> {
     return this.#optional
   }
 
+  get orNull(): V | null {
+    return this.isOK() ? this.#state.value : null
+  }
+
+  or(defaultValue: V): V {
+    return this.isOK() ? this.#state.value : defaultValue
+  }
+
   map<OutV, OutE extends Error = Error>(
     fn: (value: V) => OutV | Result<OutV, OutE>,
   ): Result<OutV, E | OutE> {

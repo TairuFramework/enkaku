@@ -284,12 +284,45 @@ describe('AsyncResult', () => {
   })
 
   describe('instance methods', () => {
+    describe('isSettled', () => {
+      test('returns false initially', () => {
+        const asyncResult = AsyncResult.ok('test')
+        expect(asyncResult.isSettled).toBe(false)
+      })
+
+      test('returns true after resolution', async () => {
+        const asyncResult = AsyncResult.ok('test')
+        await asyncResult
+        expect(asyncResult.isSettled).toBe(true)
+      })
+
+      test('returns true after rejection', async () => {
+        const asyncResult = AsyncResult.error(new Error('test'))
+        await asyncResult
+        expect(asyncResult.isSettled).toBe(true)
+      })
+    })
+
+    describe('value', () => {
+      test('returns value for AsyncResult.ok', async () => {
+        const asyncResult = AsyncResult.ok('test')
+        const value = await asyncResult.value
+        expect(value).toBe('test')
+      })
+
+      test('throws error for AsyncResult.error', async () => {
+        const error = new Error('test error')
+        const asyncResult = AsyncResult.error(error)
+        await expect(asyncResult.value).rejects.toThrow('test error')
+      })
+    })
+
     describe('optional', () => {
       test('returns Option.some for AsyncResult.ok', async () => {
         const asyncResult = AsyncResult.ok('test')
         const option = await asyncResult.optional
         expect(option.isSome()).toBe(true)
-        expect(option.valueOrNull).toBe('test')
+        expect(option.orNull).toBe('test')
       })
 
       test('returns Option.none for AsyncResult.error', async () => {
@@ -302,40 +335,48 @@ describe('AsyncResult', () => {
         const asyncResult = AsyncResult.ok(null)
         const option = await asyncResult.optional
         expect(option.isSome()).toBe(true)
-        expect(option.valueOrNull).toBe(null)
+        expect(option.orNull).toBe(null)
       })
 
       test('returns Option.some for AsyncResult.ok with undefined', async () => {
         const asyncResult = AsyncResult.ok(undefined)
         const option = await asyncResult.optional
         expect(option.isSome()).toBe(true)
-        expect(option.valueOrNull).toBe(undefined)
+        expect(option.orNull).toBe(undefined)
       })
     })
 
-    describe('resolvedOr', () => {
+    describe('orNull', () => {
       test('returns value for AsyncResult.ok', async () => {
         const asyncResult = AsyncResult.ok('test')
-        const value = await asyncResult.resolvedOr('default')
+        const value = await asyncResult.orNull
+        expect(value).toBe('test')
+      })
+
+      test('returns null for AsyncResult.error', async () => {
+        const asyncResult = AsyncResult.error(new Error('test'))
+        const value = await asyncResult.orNull
+        expect(value).toBe(null)
+      })
+    })
+
+    describe('or', () => {
+      test('returns value for AsyncResult.ok', async () => {
+        const asyncResult = AsyncResult.ok('test')
+        const value = await asyncResult.or('default')
         expect(value).toBe('test')
       })
 
       test('returns default value for AsyncResult.error', async () => {
         const asyncResult = AsyncResult.error(new Error('test'))
-        const result = await asyncResult.resolvedOr('default')
+        const result = await asyncResult.or('default')
         expect(result).toBe('default')
-      })
-
-      test('returns async default value for AsyncResult.error', async () => {
-        const asyncResult = AsyncResult.error(new Error('test'))
-        const result = await asyncResult.resolvedOr(Promise.resolve('async default'))
-        expect(result).toBe('async default')
       })
 
       test('handles complex default values', async () => {
         const asyncResult = AsyncResult.error(new Error('test'))
         const defaultObj = { id: 1, name: 'default' }
-        const result = await asyncResult.resolvedOr(defaultObj)
+        const result = await asyncResult.or(defaultObj)
         expect(result).toEqual(defaultObj)
       })
     })
@@ -685,7 +726,7 @@ describe('AsyncResult', () => {
       const asyncResult = AsyncResult.ok(complexObj)
       const option = await asyncResult.optional
       expect(option.isSome()).toBe(true)
-      expect(option.valueOrNull).toBe(complexObj)
+      expect(option.orNull).toBe(complexObj)
     })
 
     test('error propagation through map chain', async () => {

@@ -80,12 +80,20 @@ export class AsyncResult<V, E extends Error = Error> extends Promise<Result<V, E
     return this.#isSettled
   }
 
+  get value(): Promise<V> {
+    return this.then((self) => self.value)
+  }
+
   get optional(): Promise<Option<V>> {
     return this.then((self) => self.optional)
   }
 
-  resolvedOr(defaultValue: V | PromiseLike<V>): Promise<V> {
-    return this.then((self) => (self.isOK() ? self.value : defaultValue))
+  get orNull(): Promise<V | null> {
+    return this.then((self) => self.orNull)
+  }
+
+  or(defaultValue: V): Promise<V> {
+    return this.then((self) => self.or(defaultValue))
   }
 
   map<OutV, OutE extends Error = Error>(

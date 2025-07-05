@@ -1,5 +1,5 @@
 import { defer } from './defer.js'
-import { DisposeInterruption } from './interuptions.js'
+import { DisposeInterruption } from './interruptions.js'
 
 export type DisposerParams = {
   dispose?: (reason?: unknown) => Promise<void>

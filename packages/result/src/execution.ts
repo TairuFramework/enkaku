@@ -45,7 +45,7 @@ export class Execution<V, E extends Error = Error>
       signals.push(options.signal)
     }
     if (options.timeout) {
-      timeout = ScheduledTimeout.create(options.timeout)
+      timeout = ScheduledTimeout.in(options.timeout)
       signals.push(timeout.signal)
     }
 
@@ -111,7 +111,7 @@ export class Execution<V, E extends Error = Error>
   }
 
   abort(reason?: unknown) {
-    this.#timeout?.clear()
+    this.#timeout?.cancel()
     this.#controller.abort(reason ?? new AbortInterruption())
   }
 
