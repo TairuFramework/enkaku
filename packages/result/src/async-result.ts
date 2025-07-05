@@ -17,15 +17,15 @@ export type MappedResult<V, E extends Error = Error> =
 export class AsyncResult<V, E extends Error = Error> extends Promise<Result<V, E>> {
   static [Symbol.species] = Promise
 
-  static collect<V, E extends Error = Error>(
+  static all<V, E extends Error = Error>(
     values: Iterable<V | PromiseLike<V>>,
-  ): AsyncResult<Array<AsyncResult<V, E>>, never> {
+  ): AsyncResult<Array<Result<V, E>>, never> {
     const inputs = Array.from(values).map((value) => toPromise(() => value))
     const promise = Promise.allSettled(inputs).then((results) => {
       return results.map((result) => {
         return result.status === 'fulfilled'
-          ? AsyncResult.ok<V, E>(result.value)
-          : AsyncResult.error<V, E>(result.reason as E)
+          ? Result.ok<V, E>(result.value)
+          : Result.error<V, E>(result.reason as E)
       })
     })
     return AsyncResult.resolve(promise)

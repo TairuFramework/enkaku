@@ -86,6 +86,11 @@ export class Execution<V, E extends Error = Error>
     this.#timeout = timeout
   }
 
+  [Symbol.asyncDispose]() {
+    this.abort(new DisposeInterruption())
+    return this.then(noop, noop)
+  }
+
   get isAborted(): boolean {
     return this.#signal.aborted
   }
@@ -117,10 +122,5 @@ export class Execution<V, E extends Error = Error>
 
   cancel(cause?: unknown) {
     this.abort(new CancelInterruption({ cause }))
-  }
-
-  [Symbol.asyncDispose]() {
-    this.abort(new DisposeInterruption())
-    return this.then(noop, noop)
   }
 }

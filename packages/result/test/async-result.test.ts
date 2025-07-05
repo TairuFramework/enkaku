@@ -240,43 +240,43 @@ describe('AsyncResult', () => {
       })
     })
 
-    describe('AsyncResult.collect', () => {
+    describe('AsyncResult.all', () => {
       test('resolves all successful values', async () => {
         const values = ['a', 'b', 'c']
-        const result = await AsyncResult.collect(values)
+        const result = await AsyncResult.all(values)
         expect(result.isOK()).toBe(true)
-        const asyncResults = result.value
-        expect(asyncResults).toHaveLength(3)
-        expect(await asyncResults[0]).toEqual(Result.ok('a'))
-        expect(await asyncResults[1]).toEqual(Result.ok('b'))
-        expect(await asyncResults[2]).toEqual(Result.ok('c'))
+        const results = result.value
+        expect(results).toHaveLength(3)
+        expect(results[0]).toEqual(Result.ok('a'))
+        expect(results[1]).toEqual(Result.ok('b'))
+        expect(results[2]).toEqual(Result.ok('c'))
       })
 
       test('handles mixed success and failure', async () => {
         const values = ['a', Promise.reject(new Error('test error')), 'c']
-        const result = await AsyncResult.collect(values)
+        const result = await AsyncResult.all(values)
         expect(result.isOK()).toBe(true)
-        const asyncResults = result.value
-        expect(asyncResults).toHaveLength(3)
-        expect(await asyncResults[0]).toEqual(Result.ok('a'))
-        expect(await asyncResults[1]).toEqual(Result.error(new Error('test error')))
-        expect(await asyncResults[2]).toEqual(Result.ok('c'))
+        const results = result.value
+        expect(results).toHaveLength(3)
+        expect(results[0]).toEqual(Result.ok('a'))
+        expect(results[1]).toEqual(Result.error(new Error('test error')))
+        expect(results[2]).toEqual(Result.ok('c'))
       })
 
       test('handles all failures', async () => {
         const error1 = new Error('error 1')
         const error2 = new Error('error 2')
         const values = [Promise.reject(error1), Promise.reject(error2)]
-        const result = await AsyncResult.collect(values)
+        const result = await AsyncResult.all(values)
         expect(result.isOK()).toBe(true)
-        const asyncResults = result.value
-        expect(asyncResults).toHaveLength(2)
-        expect(await asyncResults[0]).toEqual(Result.error(error1))
-        expect(await asyncResults[1]).toEqual(Result.error(error2))
+        const results = result.value
+        expect(results).toHaveLength(2)
+        expect(results[0]).toEqual(Result.error(error1))
+        expect(results[1]).toEqual(Result.error(error2))
       })
 
       test('handles empty array', async () => {
-        const result = await AsyncResult.collect([])
+        const result = await AsyncResult.all([])
         expect(result.isOK()).toBe(true)
         expect(result.value).toEqual([])
       })
