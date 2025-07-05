@@ -715,9 +715,9 @@ describe('AsyncResult', () => {
       expect(result.value).toBe('test')
     })
 
-    test('handles error Result in constructor', async () => {
+    test('handles error result in constructor', async () => {
       const error = new Error('constructor error')
-      const asyncResult = new AsyncResult((resolve) => resolve(Result.error(error)))
+      const asyncResult = new AsyncResult(Promise.resolve(Result.error(error)))
       const result = await asyncResult
       expect(result.isError()).toBe(true)
       expect(result.error).toBe(error)

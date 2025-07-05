@@ -1,35 +1,4 @@
-import { jest } from '@jest/globals'
-
-import { lazy, raceSignal, toPromise } from '../src/utils.js'
-
-describe('lazy()', () => {
-  test('only calls the execute function if needed', () => {
-    const execute = jest.fn(() => Promise.resolve())
-    lazy(execute)
-    expect(execute).not.toHaveBeenCalled()
-  })
-
-  test('calls the execute function at most once', async () => {
-    const execute = jest.fn(() => Promise.resolve('OK'))
-    const call = lazy(execute)
-    const res1 = await call
-    const res2 = call.then((value) => `value: ${value}`)
-    expect(res1).toBe('OK')
-    await expect(res2).resolves.toBe('value: OK')
-    expect(execute).toHaveBeenCalledTimes(1)
-  })
-
-  test('throws errors', async () => {
-    const execute = jest.fn(() => Promise.reject('failed'))
-    const call = lazy(execute)
-    await expect(call).rejects.toBe('failed')
-    const res = call.then(
-      () => 'success',
-      (err) => Promise.reject(`error: ${err}`),
-    )
-    await expect(res).rejects.toBe('error: failed')
-  })
-})
+import { raceSignal, toPromise } from '../src/utils.js'
 
 describe('toPromise()', () => {
   test('with sync return', async () => {

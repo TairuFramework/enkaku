@@ -13,5 +13,6 @@
 export * from './defer.js'
 export * from './disposer.js'
 export * from './interruptions.js'
+export * from './lazy.js'
 export * from './timeout.js'
 export * from './utils.js'

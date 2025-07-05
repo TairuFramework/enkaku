@@ -13,8 +13,7 @@ export type MappedResult<V, E extends Error = Error> =
   | PromiseLike<Result<V, E>>
   | AsyncResult<V, E>
 
-// @ts-expect-error Promise.all() is not a generic method
-export class AsyncResult<V, E extends Error = Error> extends Promise<Result<V, E>> {
+export class AsyncResult<V, E extends Error = Error> implements PromiseLike<Result<V, E>> {
   static [Symbol.species] = Promise
 
   static all<V, E extends Error = Error>(
@@ -44,67 +43,78 @@ export class AsyncResult<V, E extends Error = Error> extends Promise<Result<V, E
   }
 
   static ok<V, E extends Error = Error>(value: V): AsyncResult<V, E> {
-    return new AsyncResult((resolve) => resolve(Result.ok(value)))
+    return new AsyncResult(Promise.resolve(Result.ok(value)))
   }
 
   static error<V, E extends Error = Error>(error: E): AsyncResult<V, E> {
-    return new AsyncResult((resolve) => resolve(Result.error(error)))
+    return new AsyncResult(Promise.resolve(Result.error(error)))
   }
 
   static resolve<V, E extends Error = Error>(value: V | PromiseLike<V>): AsyncResult<V, E> {
-    return new AsyncResult((resolve) => {
-      return toPromise(() => value)
+    return new AsyncResult(
+      toPromise(() => value)
         .then(Result.from<V, E>)
-        .catch(Result.toError<V, E>)
-        .then(resolve)
-    })
+        .catch(Result.toError<V, E>),
+    )
+  }
+
+  #promise: Promise<Result<V, E>>
+
+  constructor(promise: Promise<Result<V, E>>) {
+    this.#promise = promise
   }
 
   get value(): Promise<V> {
-    return this.then((self) => self.value)
+    return this.#promise.then((self) => self.value)
   }
 
   get optional(): Promise<Option<V>> {
-    return this.then((self) => self.optional)
+    return this.#promise.then((self) => self.optional)
   }
 
   get orNull(): Promise<V | null> {
-    return this.then((self) => self.orNull)
+    return this.#promise.then((self) => self.orNull)
+  }
+
+  // biome-ignore lint/suspicious/noThenProperty: expected behavior
+  then<TResult1 = Result<V, E>, TResult2 = never>(
+    onfulfilled?: ((value: Result<V, E>) => TResult1 | PromiseLike<TResult1>) | null | undefined,
+    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
+  ): Promise<TResult1 | TResult2> {
+    return this.#promise.then(onfulfilled, onrejected)
   }
 
   or(defaultValue: V): Promise<V> {
-    return this.then((self) => self.or(defaultValue))
+    return this.#promise.then((self) => self.or(defaultValue))
   }
 
   map<OutV, OutE extends Error = Error>(
     fn: (value: V) => MappedResult<OutV, OutE>,
   ): AsyncResult<OutV, E | OutE> {
-    return new AsyncResult((resolve) => {
-      this.then((self) => {
+    return new AsyncResult(
+      this.#promise.then((self) => {
         if (self.isError()) {
-          return resolve(self)
+          return self as unknown as Result<OutV, E | OutE>
         }
-        toPromise(() => fn(self.value))
+        return toPromise(() => fn(self.value))
           .then(Result.from<OutV, OutE>)
           .catch(Result.toError<OutV, OutE>)
-          .then(resolve)
-      })
-    })
+      }),
+    )
   }
 
   mapError<OutE extends Error = Error>(
     fn: (error: E) => MappedResult<V, OutE>,
   ): AsyncResult<V, E | OutE> {
-    return new AsyncResult((resolve) => {
-      this.then((self) => {
+    return new AsyncResult(
+      this.#promise.then((self) => {
         if (self.isOK()) {
-          return resolve(self)
+          return self as unknown as Result<V, E | OutE>
         }
-        toPromise(() => fn(self.error as E))
+        return toPromise(() => fn(self.error as E))
           .then(Result.from<V, E | OutE>)
           .catch(Result.toError<V, E | OutE>)
-          .then(resolve)
-      })
-    })
+      }),
+    )
   }
 }

@@ -4,6 +4,7 @@ import {
   DisposeInterruption,
   defer,
   Interruption,
+  lazy,
   ScheduledTimeout,
   TimeoutInterruption,
   toPromise,
@@ -24,7 +25,10 @@ export type ExecutionResult<V, E extends Error = Error> =
 
 export type ExecuteFn<V, E extends Error = Error> = (signal: AbortSignal) => ExecutionResult<V, E>
 
-export type Executable<V, E extends Error = Error> = ExecuteFn<V, E> & {
+export type Executable<V, E extends Error = Error> = (
+  | ExecuteFn<V, E>
+  | PromiseLike<ExecuteFn<V, E>>
+) & {
   timeout?: number
 }
 
@@ -67,7 +71,7 @@ export class Execution<V, E extends Error = Error>
       }
 
       const deferred = defer<Result<V, E | Interruption>, never>()
-      toPromise(() => executable(signal))
+      toPromise(() => Promise.resolve(executable).then((execute) => execute(signal)))
         .then(Result.from<V, E | Interruption>, (cause) => {
           return Result.toError<V, E | Interruption>(
             cause,
@@ -89,18 +93,7 @@ export class Execution<V, E extends Error = Error>
       return deferred.promise
     }
 
-    super((resolve) => {
-      let executing: Promise<Result<V, E | Interruption>> | undefined
-      resolve({
-        // biome-ignore lint/suspicious/noThenProperty: expected behavior
-        then: (onFulfilled) => {
-          if (!executing) {
-            executing = execute()
-          }
-          return executing.then(onFulfilled)
-        },
-      })
-    })
+    super(lazy(() => execute()))
     this.#controller = controller
     this.#signal = signal
     this.#timeout = timeout
@@ -158,5 +151,12 @@ export class Execution<V, E extends Error = Error>
 
   cancel(cause?: unknown) {
     this.abort(new CancelInterruption({ cause }))
+  }
+
+  chain<OutV, OutE extends Error = Error>(
+    fn: (result: Result<V, E | Interruption>) => Executable<OutV, OutE>,
+  ): Execution<V | OutV, E | OutE> {
+    // TODO: support propagating signals
+    return this.isInterrupted ? this : new Execution(lazy(() => this.then(fn)))
   }
 }
