@@ -11,46 +11,48 @@ import {
 } from '@enkaku/async'
 import { AsyncResult, type Option, Result } from '@enkaku/result'
 
-import type { ChainFn, Executable, ExecutionContext, ExecutionOptions } from './types.js'
+import type { ChainFn, Executable, ExecuteContext } from './types.js'
 
 function noop() {}
 
 function toContext<V, E extends Error = Error>(
   executable: Executable<V, E>,
-): Promise<ExecutionContext<V, E>> {
+): Promise<ExecuteContext<V, E>> {
   return Promise.resolve(executable).then((execute) => {
     return typeof execute === 'function' ? { execute } : execute
   })
 }
 
-export class Execution<
-    V,
-    E extends Error = Error,
-    M extends Record<string, unknown> = Record<string, unknown>,
-  >
+type ExecutionContext<V = unknown, E extends Error = Error> = {
+  parent?: Execution<V, E>
+  signal?: AbortSignal
+  timeout?: number
+}
+
+export class Execution<V, E extends Error = Error>
   extends AsyncResult<V, E | Interruption>
-  implements AbortController, AsyncDisposable
+  implements AbortController, AsyncDisposable, AsyncIterable<Result<unknown, Error | Interruption>>
 {
   #cleanup?: () => void
   #controller: AbortController
   #chainSignal?: AbortSignal
   #chainTimeout?: ScheduledTimeout
   #executableTimeout?: ScheduledTimeout
-  #metadata?: M
+  #parent?: Execution<unknown, Error>
   #signal: AbortSignal
 
-  constructor(executable: Executable<V, E>, options: ExecutionOptions<M> = {}) {
+  constructor(executable: Executable<V, E>, executionContext: ExecutionContext = {}) {
     const chainSignals: Array<AbortSignal> = []
-    if (options.signal) {
-      chainSignals.push(options.signal)
+    if (executionContext.signal) {
+      chainSignals.push(executionContext.signal)
     }
 
     const controller = new AbortController()
     const executableSignals = [controller.signal]
 
-    const execute = (ctx: ExecutionContext<V, E>): Promise<Result<V, E | Interruption>> => {
-      if (options.timeout) {
-        this.#chainTimeout = ScheduledTimeout.in(options.timeout, {
+    const execute = (ctx: ExecuteContext<V, E>): Promise<Result<V, E | Interruption>> => {
+      if (executionContext.timeout) {
+        this.#chainTimeout = ScheduledTimeout.in(executionContext.timeout, {
           message: 'Execution chain timed out',
         })
         chainSignals.push(this.#chainTimeout.signal)
@@ -117,15 +119,33 @@ export class Execution<
 
     super(lazy(() => toContext(executable).then(execute)))
     this.#controller = controller
-    this.#metadata = options.metadata
-    this.#signal = options.signal
-      ? AbortSignal.any([options.signal, controller.signal])
+    this.#parent = executionContext.parent
+    this.#signal = executionContext.signal
+      ? AbortSignal.any([executionContext.signal, controller.signal])
       : controller.signal
   }
 
   [Symbol.asyncDispose]() {
     this.abort(new DisposeInterruption())
     return this.then(noop, noop)
+  }
+
+  async *[Symbol.asyncIterator]() {
+    const chain: Array<Execution<unknown, Error | Interruption>> = []
+    let current: Execution<unknown, Error | Interruption> | undefined = this
+    while (current) {
+      chain.unshift(current)
+      current = current.#parent
+    }
+
+    let previous: Result<unknown, Error | Interruption> | undefined
+    for (const execution of chain) {
+      const result = await execution.execute()
+      if (result !== previous) {
+        previous = result
+        yield result
+      }
+    }
   }
 
   get isAborted(): boolean {
@@ -146,10 +166,6 @@ export class Execution<
 
   get isTimedOut(): boolean {
     return this.#signal.reason instanceof TimeoutInterruption
-  }
-
-  get metadata(): M | undefined {
-    return this.#metadata
   }
 
   get signal() {
@@ -192,7 +208,7 @@ export class Execution<
           cleanup: () => this.#cleanup?.(),
           execute: () => result,
           signal: this.#signal,
-        } as ExecutionContext<V, E>
+        } as ExecuteContext<V, E>
       }
 
       const ctx = await toContext(executable)
@@ -207,7 +223,7 @@ export class Execution<
         : ctx.signal
       return { ...ctx, cleanup, signal }
     })
-    return new Execution(nextContext, { metadata: this.metadata })
+    return new Execution(nextContext, { parent: this })
   }
 
   chainError<OutV, OutE extends Error = Error>(
@@ -224,5 +240,9 @@ export class Execution<
 
   execute(): Promise<Result<V, E | Interruption>> {
     return this.then()
+  }
+
+  generate<V = unknown, E extends Error = Error>(): AsyncGenerator<Result<V, E | Interruption>> {
+    return this[Symbol.asyncIterator]() as AsyncGenerator<Result<V, E | Interruption>>
   }
 }

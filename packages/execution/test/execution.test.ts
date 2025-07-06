@@ -2,6 +2,7 @@ import {
   AbortInterruption,
   CancelInterruption,
   DisposeInterruption,
+  type Interruption,
   TimeoutInterruption,
 } from '@enkaku/async'
 import { AsyncResult, Result } from '@enkaku/result'
@@ -249,181 +250,6 @@ describe('Execution', () => {
 
       execution.abort('test abort')
       expect(execution.isTimedOut).toBe(false)
-    })
-  })
-
-  describe('metadata property', () => {
-    test('returns undefined when no metadata is provided', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute)
-      expect(execution.metadata).toBeUndefined()
-    })
-
-    test('returns the provided metadata object', () => {
-      const metadata = { userId: 123, operation: 'test' }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute, { metadata })
-      expect(execution.metadata).toBe(metadata)
-    })
-
-    test('returns the provided metadata string', () => {
-      const metadata = { operation: 'test-operation' }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute, { metadata })
-      expect(execution.metadata).toBe(metadata)
-    })
-
-    test('returns the provided metadata number', () => {
-      const metadata = { count: 42 }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute, { metadata })
-      expect(execution.metadata).toBe(metadata)
-    })
-
-    test('returns the provided metadata array', () => {
-      const metadata = { steps: ['step1', 'step2', 'step3'] }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute, { metadata })
-      expect(execution.metadata).toBe(metadata)
-    })
-
-    test('returns the provided metadata function', () => {
-      const metadata = { operation: () => 'test-function' }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute, { metadata })
-      expect(execution.metadata).toBe(metadata)
-    })
-
-    test('returns null metadata', () => {
-      const metadata = { operation: null }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute, { metadata })
-      expect(execution.metadata).toBe(metadata)
-    })
-
-    test('returns complex nested metadata object', () => {
-      const metadata = {
-        user: {
-          id: 123,
-          name: 'John Doe',
-          preferences: {
-            theme: 'dark',
-            language: 'en',
-          },
-        },
-        operation: {
-          type: 'database-query',
-          timestamp: new Date('2024-01-01T00:00:00Z'),
-          retries: 3,
-        },
-      }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute, { metadata })
-      expect(execution.metadata).toBe(metadata)
-    })
-
-    test('metadata is immutable and not affected by execution state', async () => {
-      const metadata = { count: 0 }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute, { metadata })
-
-      // Metadata should be the same before execution
-      expect(execution.metadata).toBe(metadata)
-
-      // Execute the execution
-      await execution
-
-      // Metadata should still be the same after execution
-      expect(execution.metadata).toBe(metadata)
-
-      // Abort the execution
-      execution.abort('test abort')
-
-      // Metadata should still be the same after abort
-      expect(execution.metadata).toBe(metadata)
-
-      // Cancel the execution
-      execution.cancel('test cancel')
-
-      // Metadata should still be the same after cancel
-      expect(execution.metadata).toBe(metadata)
-    })
-
-    test('metadata can be explicitly passed to chained execution', async () => {
-      const metadata = { chainId: 'first-chain' }
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
-      const firstExecution = new Execution(firstExecute, { metadata })
-
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
-        return secondExecute
-      })
-
-      expect(chainedExecution.metadata).toBe(metadata)
-
-      // Execute the chain
-      const result = await chainedExecution
-      expect(result.isOK()).toBe(true)
-      expect(result.value).toBe('second')
-      expect(chainedExecution.metadata).toBe(metadata)
-    })
-
-    test('metadata works with typed generics', () => {
-      type UserMetadata = {
-        userId: number
-        operation: string
-      }
-
-      const metadata: UserMetadata = { userId: 123, operation: 'test' }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution<string, Error, UserMetadata>(execute, { metadata })
-
-      expect(execution.metadata).toBe(metadata)
-      expect(execution.metadata?.userId).toBe(123)
-      expect(execution.metadata?.operation).toBe('test')
-    })
-
-    test('metadata is accessible even when execution fails', async () => {
-      const metadata = { errorContext: 'test-error' }
-      const error = new Error('test error')
-      const execute = jest.fn(() => Promise.reject(error))
-      const execution = new Execution(execute, { metadata })
-
-      // Metadata should be accessible before execution
-      expect(execution.metadata).toBe(metadata)
-
-      // Execute and expect failure
-      const result = await execution
-      expect(result.isError()).toBe(true)
-      expect(result.error).toBe(error)
-
-      // Metadata should still be accessible after error
-      expect(execution.metadata).toBe(metadata)
-    })
-
-    test('metadata is accessible even when execution is interrupted', async () => {
-      const metadata = { interruptContext: 'test-interrupt' }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute, { metadata })
-
-      // Metadata should be accessible before interruption
-      expect(execution.metadata).toBe(metadata)
-
-      // Interrupt the execution
-      execution.abort('test abort')
-
-      // Metadata should still be accessible after interruption
-      expect(execution.metadata).toBe(metadata)
-
-      // Execute and expect interruption
-      const result = await execution
-      expect(result.isError()).toBe(true)
-      expect(result.error).toBeInstanceOf(AbortInterruption)
-
-      // Metadata should still be accessible after execution with interruption
-      expect(execution.metadata).toBe(metadata)
     })
   })
 
@@ -1394,27 +1220,6 @@ describe('Execution', () => {
       expect(firstExecute).toHaveBeenCalledTimes(1)
     })
 
-    test('preserves metadata in chained execution', async () => {
-      const metadata = { errorContext: 'test-error' }
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
-      const firstExecution = new Execution(firstExecute, { metadata })
-
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
-        expect(error).toBeInstanceOf(Error)
-        expect(error.message).toBe('first error')
-        return errorHandler
-      })
-
-      expect(chainedExecution.metadata).toBe(metadata)
-
-      // Execute the chain
-      const result = await chainedExecution
-      expect(result.isOK()).toBe(true)
-      expect(result.value).toBe('recovered')
-      expect(chainedExecution.metadata).toBe(metadata)
-    })
-
     test('works with typed generics', async () => {
       type User = {
         id: number
@@ -2034,26 +1839,6 @@ describe('Execution', () => {
       expect(firstExecute).toHaveBeenCalledTimes(1)
     })
 
-    test('preserves metadata in chained execution', async () => {
-      const metadata = { okContext: 'test-ok' }
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
-      const firstExecution = new Execution(firstExecute, { metadata })
-
-      const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
-        expect(value).toBe('first')
-        return okHandler
-      })
-
-      expect(chainedExecution.metadata).toBe(metadata)
-
-      // Execute the chain
-      const result = await chainedExecution
-      expect(result.isOK()).toBe(true)
-      expect(result.value).toBe('second')
-      expect(chainedExecution.metadata).toBe(metadata)
-    })
-
     test('works with typed generics', async () => {
       type User = {
         id: number
@@ -2605,17 +2390,6 @@ describe('Execution', () => {
       )
     })
 
-    test('works with metadata and execute method', async () => {
-      const metadata = { userId: 123, operation: 'test' }
-      const execute = jest.fn(() => Promise.resolve('test'))
-      const execution = new Execution(execute, { metadata })
-
-      const result = await execution.execute()
-      expect(result.isOK()).toBe(true)
-      expect(result.value).toBe('test')
-      expect(execution.metadata).toBe(metadata)
-    })
-
     test('execute method preserves execution state', async () => {
       const execute = jest.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
@@ -2732,6 +2506,1615 @@ describe('Execution', () => {
       expect(result.error).toBeInstanceOf(TimeoutInterruption)
       expect(firstExecute).toHaveBeenCalledTimes(1)
       expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('AsyncIterable behavior', () => {
+    test('yields single execution result', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of execution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(1)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('test')
+      expect(execute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields chained execution results in order', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields multiple chained execution results in order', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('second')
+          return thirdExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(3)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toBe('third')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields error results in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const secondExecute = jest.fn(() => Promise.reject(secondError))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBe(secondError)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields mixed success and error results in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const secondExecute = jest.fn(() => Promise.reject(secondError))
+      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chain((result) => {
+          expect(result.isError()).toBe(true)
+          expect(result.error).toBe(secondError)
+          return thirdExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(3)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBe(secondError)
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toBe('third')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields chainError results in order', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return errorHandler
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isError()).toBe(true)
+      expect(results[0].error).toBeInstanceOf(Error)
+      expect(results[0].error && results[0].error.message).toBe('first error')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields chainOK results in order', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return okHandler
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields mixed chain, chainError, and chainOK results', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.reject(new Error('second error')))
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chainError((error) => {
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('second error')
+          return errorHandler
+        })
+        .chainOK((value) => {
+          expect(value).toBe('recovered')
+          return thirdExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(4)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBeInstanceOf(Error)
+      expect(results[1].error && results[1].error.message).toBe('second error')
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toBe('recovered')
+      expect(results[3].isOK()).toBe(true)
+      expect(results[3].value).toBe('third')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields interruption results in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Abort the chained execution before iterating
+      chainedExecution.abort('test abort')
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBeInstanceOf(AbortInterruption)
+      expect(results[1].error && results[1].error.cause).toBe('test abort')
+      expect(firstExecute).toHaveBeenCalled()
+      expect(secondExecute).not.toHaveBeenCalled() // Not called because execution was aborted
+    })
+
+    test('yields timeout interruption results in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
+      )
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Create a new execution with timeout from the chained result
+      const timedExecution = new Execution(() => chainedExecution, { timeout: 50 })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of timedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(1)
+      expect(results[0].isError()).toBe(true)
+      expect(results[0].error).toBeInstanceOf(TimeoutInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields cancel interruption results in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Cancel the chained execution before iterating
+      chainedExecution.cancel('test cancel')
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBeInstanceOf(CancelInterruption)
+      expect(results[1].error && results[1].error.cause).toBe('test cancel')
+      expect(firstExecute).toHaveBeenCalled()
+      expect(secondExecute).not.toHaveBeenCalled() // Not called because execution was canceled
+    })
+
+    test('yields dispose interruption results in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Dispose the chained execution before iterating
+      await chainedExecution[Symbol.asyncDispose]()
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBeInstanceOf(DisposeInterruption)
+      expect(firstExecute).toHaveBeenCalled()
+      expect(secondExecute).not.toHaveBeenCalled()
+    })
+
+    test('yields results from complex nested chains', async () => {
+      const executionOrder: string[] = []
+
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return Promise.resolve('first')
+      })
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return Promise.reject(new Error('second error'))
+      })
+
+      const errorHandler = jest.fn(() => {
+        executionOrder.push('error handler')
+        return Promise.resolve('recovered')
+      })
+
+      const thirdExecute = jest.fn(() => {
+        executionOrder.push('third')
+        return Promise.resolve('third')
+      })
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          executionOrder.push('chain 1')
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chainError((error) => {
+          executionOrder.push('chainError')
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('second error')
+          return errorHandler
+        })
+        .chainOK((value) => {
+          executionOrder.push('chainOK')
+          expect(value).toBe('recovered')
+          return thirdExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(4)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBeInstanceOf(Error)
+      expect(results[1].error && results[1].error.message).toBe('second error')
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toBe('recovered')
+      expect(results[3].isOK()).toBe(true)
+      expect(results[3].value).toBe('third')
+
+      expect(executionOrder).toEqual([
+        'first',
+        'chain 1',
+        'second',
+        'chainError',
+        'error handler',
+        'chainOK',
+        'third',
+      ])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields results from deeply nested chains', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('step 1'))
+      let currentExecution: Execution<unknown, Error> = new Execution(firstExecute)
+
+      // Create a deep chain of 5 executions
+      for (let i = 2; i <= 5; i++) {
+        const nextExecute = jest.fn(() => Promise.resolve(`step ${i}`))
+        currentExecution = currentExecution.chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe(`step ${i - 1}`)
+          return nextExecute
+        })
+      }
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of currentExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(5)
+      for (let i = 0; i < 5; i++) {
+        expect(results[i].isOK()).toBe(true)
+        expect(results[i].value).toBe(`step ${i + 1}`)
+      }
+    })
+
+    test('yields results with different value types in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve(42))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('string value'))
+      const thirdExecute = jest.fn(() => Promise.resolve({ id: 123, name: 'test' }))
+      const fourthExecute = jest.fn(() => Promise.resolve([1, 2, 3]))
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe(42)
+          return secondExecute
+        })
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('string value')
+          return thirdExecute
+        })
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toEqual({ id: 123, name: 'test' })
+          return fourthExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(4)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe(42)
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('string value')
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toEqual({ id: 123, name: 'test' })
+      expect(results[3].isOK()).toBe(true)
+      expect(results[3].value).toEqual([1, 2, 3])
+    })
+
+    test('yields results with typed generics in chain', async () => {
+      type User = {
+        id: number
+        name: string
+      }
+
+      type UserError = Error & {
+        code: 'USER_NOT_FOUND' | 'USER_INVALID'
+      }
+
+      const user: User = { id: 1, name: 'John Doe' }
+      const firstExecute = jest.fn(() => Promise.resolve(user))
+      const firstExecution = new Execution<User, UserError>(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('processed'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toEqual(user)
+        expect(result.value.id).toBe(1)
+        expect(result.value.name).toBe('John Doe')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toEqual(user)
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('processed')
+    })
+
+    test('yields results with custom error types in chain', async () => {
+      class CustomError extends Error {
+        constructor(
+          message: string,
+          public code: number,
+        ) {
+          super(message)
+          this.name = 'CustomError'
+        }
+      }
+
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const customError = new CustomError('custom error', 500)
+      const secondExecute = jest.fn(() => Promise.reject(customError))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBe(customError)
+      expect(
+        results[1].error && 'code' in results[1].error ? results[1].error.code : undefined,
+      ).toBe(500)
+    })
+
+    test('yields results from generate method', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields results from generate method with errors', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const secondExecute = jest.fn(() => Promise.reject(secondError))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBe(secondError)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles early break in iteration', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('second')
+          return thirdExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      let count = 0
+      for await (const result of chainedExecution) {
+        results.push(result)
+        count++
+        if (count === 2) break // Break after second result
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).not.toHaveBeenCalled()
+    })
+
+    test('handles iteration with async operations in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        return 'second'
+      })
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('does not yield results from chain with null returns', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return null // Return null to stop the chain
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(1)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields results from chainError with null returns', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return null // Return null to stop the chain
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(1)
+      expect(results[0].isError()).toBe(true)
+      expect(results[0].error).toBeInstanceOf(Error)
+      expect(results[0].error && results[0].error.message).toBe('first error')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('yields results from chainOK with null returns', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return null // Return null to stop the chain
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      for await (const result of chainedExecution) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(1)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('generate method', () => {
+    test('generates AsyncIterable for simple execution', async () => {
+      const execute = jest.fn(() => Promise.resolve('test'))
+      const execution = new Execution(execute)
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = execution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(1)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('test')
+      expect(execute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable for chained execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable for complex chained execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.reject(new Error('second error')))
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chainError((error) => {
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('second error')
+          return errorHandler
+        })
+        .chainOK((value) => {
+          expect(value).toBe('recovered')
+          return thirdExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(4)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBeInstanceOf(Error)
+      expect(results[1].error && results[1].error.message).toBe('second error')
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toBe('recovered')
+      expect(results[3].isOK()).toBe(true)
+      expect(results[3].value).toBe('third')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with typed generics', async () => {
+      type User = {
+        id: number
+        name: string
+      }
+
+      type UserError = Error & {
+        code: 'USER_NOT_FOUND' | 'USER_INVALID'
+      }
+
+      const user: User = { id: 1, name: 'John Doe' }
+      const firstExecute = jest.fn(() => Promise.resolve(user))
+      const firstExecution = new Execution<User, UserError>(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('processed'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toEqual(user)
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<User | string, UserError>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toEqual(user)
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('processed')
+    })
+
+    test('generates AsyncIterable with custom error types', async () => {
+      class CustomError extends Error {
+        constructor(
+          message: string,
+          public code: number,
+        ) {
+          super(message)
+          this.name = 'CustomError'
+        }
+      }
+
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const customError = new CustomError('custom error', 500)
+      const secondExecute = jest.fn(() => Promise.reject(customError))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, CustomError>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBe(customError)
+      expect(
+        results[1].error && 'code' in results[1].error ? results[1].error.code : undefined,
+      ).toBe(500)
+    })
+
+    test('generates AsyncIterable with interruption handling', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Abort the chained execution before generating
+      chainedExecution.abort('test abort')
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBeInstanceOf(AbortInterruption)
+      expect(results[1].error && results[1].error.cause).toBe('test abort')
+      expect(firstExecute).toHaveBeenCalled()
+      expect(secondExecute).not.toHaveBeenCalled()
+    })
+
+    test('generates AsyncIterable with timeout interruption', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
+      )
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Create a new execution with timeout from the chained result
+      const timedExecution = new Execution(() => chainedExecution, { timeout: 50 })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = timedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(1)
+      expect(results[0].isError()).toBe(true)
+      expect(results[0].error).toBeInstanceOf(TimeoutInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with early break', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('second')
+          return thirdExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      let count = 0
+      for await (const result of generator) {
+        results.push(result)
+        count++
+        if (count === 2) break // Break after second result
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).not.toHaveBeenCalled()
+    })
+
+    test('generates AsyncIterable with async operations', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        return 'second'
+      })
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with null chain returns', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return null // Return null to stop the chain
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(1)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with chainError and null returns', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return null // Return null to stop the chain
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(1)
+      expect(results[0].isError()).toBe(true)
+      expect(results[0].error).toBeInstanceOf(Error)
+      expect(results[0].error && results[0].error.message).toBe('first error')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with chainOK and null returns', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return null // Return null to stop the chain
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(1)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with deeply nested chains', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('step 1'))
+      let currentExecution: Execution<unknown, Error> = new Execution(firstExecute)
+
+      // Create a deep chain of 5 executions
+      for (let i = 2; i <= 5; i++) {
+        const nextExecute = jest.fn(() => Promise.resolve(`step ${i}`))
+        currentExecution = currentExecution.chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe(`step ${i - 1}`)
+          return nextExecute
+        })
+      }
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = currentExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(5)
+      for (let i = 0; i < 5; i++) {
+        expect(results[i].isOK()).toBe(true)
+        expect(results[i].value).toBe(`step ${i + 1}`)
+      }
+    })
+
+    test('generates AsyncIterable with different value types', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve(42))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('string value'))
+      const thirdExecute = jest.fn(() => Promise.resolve({ id: 123, name: 'test' }))
+      const fourthExecute = jest.fn(() => Promise.resolve([1, 2, 3]))
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe(42)
+          return secondExecute
+        })
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('string value')
+          return thirdExecute
+        })
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toEqual({ id: 123, name: 'test' })
+          return fourthExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(4)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe(42)
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('string value')
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toEqual({ id: 123, name: 'test' })
+      expect(results[3].isOK()).toBe(true)
+      expect(results[3].value).toEqual([1, 2, 3])
+    })
+
+    test('generates AsyncIterable with mixed success and error results', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const secondExecute = jest.fn(() => Promise.reject(secondError))
+      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chain((result) => {
+          expect(result.isError()).toBe(true)
+          expect(result.error).toBe(secondError)
+          return thirdExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(3)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBe(secondError)
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toBe('third')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with multiple error recovery chains', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const firstErrorHandler = jest.fn(() => Promise.reject(new Error('second error')))
+      const secondErrorHandler = jest.fn(() => Promise.resolve('recovered'))
+
+      const chainedExecution = firstExecution
+        .chainError((error) => {
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('first error')
+          return firstErrorHandler
+        })
+        .chainError((error) => {
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('second error')
+          return secondErrorHandler
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(3)
+      expect(results[0].isError()).toBe(true)
+      expect(results[0].error).toBeInstanceOf(Error)
+      expect(results[0].error && results[0].error.message).toBe('first error')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBeInstanceOf(Error)
+      expect(results[1].error && results[1].error.message).toBe('second error')
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(firstErrorHandler).toHaveBeenCalledTimes(1)
+      expect(secondErrorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with multiple success chains', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondHandler = jest.fn(() => Promise.resolve('second'))
+      const thirdHandler = jest.fn(() => Promise.resolve('third'))
+
+      const chainedExecution = firstExecution
+        .chainOK((value) => {
+          expect(value).toBe('first')
+          return secondHandler
+        })
+        .chainOK((value) => {
+          expect(value).toBe('second')
+          return thirdHandler
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(3)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toBe('third')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondHandler).toHaveBeenCalledTimes(1)
+      expect(thirdHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with complex mixed chains', async () => {
+      const executionOrder: string[] = []
+
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return Promise.resolve('first')
+      })
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return Promise.reject(new Error('second error'))
+      })
+
+      const errorHandler = jest.fn(() => {
+        executionOrder.push('error handler')
+        return Promise.resolve('recovered')
+      })
+
+      const thirdExecute = jest.fn(() => {
+        executionOrder.push('third')
+        return Promise.resolve('third')
+      })
+
+      const chainedExecution = firstExecution
+        .chain((result) => {
+          executionOrder.push('chain 1')
+          expect(result.isOK()).toBe(true)
+          expect(result.value).toBe('first')
+          return secondExecute
+        })
+        .chainError((error) => {
+          executionOrder.push('chainError')
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('second error')
+          return errorHandler
+        })
+        .chainOK((value) => {
+          executionOrder.push('chainOK')
+          expect(value).toBe('recovered')
+          return thirdExecute
+        })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(4)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBeInstanceOf(Error)
+      expect(results[1].error && results[1].error.message).toBe('second error')
+      expect(results[2].isOK()).toBe(true)
+      expect(results[2].value).toBe('recovered')
+      expect(results[3].isOK()).toBe(true)
+      expect(results[3].value).toBe('third')
+
+      expect(executionOrder).toEqual([
+        'first',
+        'chain 1',
+        'second',
+        'chainError',
+        'error handler',
+        'chainOK',
+        'third',
+      ])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with executable objects in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return { execute: secondExecute }
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with executable objects with timeout', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
+      )
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return { execute: secondExecute, timeout: 50 }
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBeInstanceOf(TimeoutInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with AsyncResult in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecution = new Execution(secondExecute)
+
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return () => secondExecution
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with AsyncResult.error in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const secondExecution = new Execution(() => Promise.reject(secondError))
+
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return () => secondExecution
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBe(secondError)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with promise returning functions in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return Promise.resolve(secondExecute)
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with async functions in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain(async (result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with Result.ok in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve(Result.ok('second')))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isOK()).toBe(true)
+      expect(results[1].value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with Result.error in chain', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const secondExecute = jest.fn(() => Promise.resolve(Result.error(secondError)))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      const results: Array<Result<unknown, Error | Interruption>> = []
+      const generator = chainedExecution.generate<unknown, Error>()
+      for await (const result of generator) {
+        results.push(result)
+      }
+
+      expect(results).toHaveLength(2)
+      expect(results[0].isOK()).toBe(true)
+      expect(results[0].value).toBe('first')
+      expect(results[1].isError()).toBe(true)
+      expect(results[1].error).toBe(secondError)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('generates AsyncIterable with multiple generator calls', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chain((result) => {
+        expect(result.isOK()).toBe(true)
+        expect(result.value).toBe('first')
+        return secondExecute
+      })
+
+      // Generate multiple times
+      const generator1 = chainedExecution.generate<unknown, Error>()
+      const generator2 = chainedExecution.generate<unknown, Error>()
+
+      const results1: Array<Result<unknown, Error | Interruption>> = []
+      const results2: Array<Result<unknown, Error | Interruption>> = []
+
+      for await (const result of generator1) {
+        results1.push(result)
+      }
+
+      for await (const result of generator2) {
+        results2.push(result)
+      }
+
+      expect(results1).toHaveLength(2)
+      expect(results1[0].isOK()).toBe(true)
+      expect(results1[0].value).toBe('first')
+      expect(results1[1].isOK()).toBe(true)
+      expect(results1[1].value).toBe('second')
+
+      expect(results2).toHaveLength(2)
+      expect(results2[0].isOK()).toBe(true)
+      expect(results2[0].value).toBe('first')
+      expect(results2[1].isOK()).toBe(true)
+      expect(results2[1].value).toBe('second')
+
+      expect(firstExecute).toHaveBeenCalledTimes(1) // Same execution instance
+      expect(secondExecute).toHaveBeenCalledTimes(1) // Same execution instance
     })
   })
 })
