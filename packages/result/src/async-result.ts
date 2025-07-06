@@ -3,9 +3,6 @@ import { toPromise } from '@enkaku/async'
 import type { Option } from './option.js'
 import { Result } from './result.js'
 
-// TODO: refactor flow package to use AsyncResult
-// class TaskExecution extends AsyncResult<V, E> implements Abortable, Disposable
-
 export type MappedResult<V, E extends Error = Error> =
   | V
   | PromiseLike<V>
