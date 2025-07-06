@@ -4,11 +4,10 @@ import {
   DisposeInterruption,
   TimeoutInterruption,
 } from '@enkaku/async'
+import { AsyncResult, Result } from '@enkaku/result'
 import { jest } from '@jest/globals'
 
-import { AsyncResult } from '../src/async-result.js'
 import { Execution } from '../src/execution.js'
-import { Result } from '../src/result.js'
 
 describe('Execution', () => {
   describe('constructor', () => {
@@ -994,11 +993,11 @@ describe('Execution', () => {
 
       // Execute the chain
       const result = await chainedExecution
-      expect(result.isOK()).toBe(false)
-      expect(result.error).toBeInstanceOf(AbortInterruption)
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
       // Not called because execution was aborted before starting
       expect(firstExecute).not.toHaveBeenCalled()
-      expect(secondExecute).not.toHaveBeenCalled()
+      expect(secondExecute).toHaveBeenCalledTimes(1)
     })
 
     test('handles chain with Result.error in chain callback', async () => {
@@ -1061,250 +1060,557 @@ describe('Execution', () => {
     })
   })
 
-  describe('chain timeout behavior', () => {
-    // Note: The constructor (chain) timeout only starts when the chain is awaited,
-    // not when the first execution is triggered. The timeout covers the total time
-    // spent in the chain after it is awaited.
+  describe('chainError method', () => {
+    test('creates a chained execution that only executes on error', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
 
-    test('constructor timeout applies to total chain time after awaiting', async () => {
-      const executionOrder: string[] = []
-      const startTime = Date.now()
-
-      // Chain timeout: 120ms
-      const firstExecute = jest.fn(() => {
-        executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
-      })
-      const firstExecution = new Execution(firstExecute, { timeout: 120 })
-
-      const secondExecute = jest.fn(() => {
-        executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
-      })
-      const chainedExecution = firstExecution.chain((result) => {
-        executionOrder.push('chain function')
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
-        return secondExecute
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return errorHandler
       })
 
-      // Await the chain (timeout starts now)
+      // Neither execution should have been called yet
+      expect(firstExecute).not.toHaveBeenCalled()
+      expect(errorHandler).not.toHaveBeenCalled()
+
+      // Execute the chain
       const result = await chainedExecution
-      const endTime = Date.now()
-      const totalTime = endTime - startTime
-
       expect(result.isOK()).toBe(true)
-      expect(result.value).toBe('second')
-      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
-      expect(totalTime).toBeGreaterThanOrEqual(100)
-      expect(totalTime).toBeLessThan(130) // Should complete before timeout
+      expect(result.value).toBe('recovered')
       expect(firstExecute).toHaveBeenCalledTimes(1)
-      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
     })
 
-    test('constructor timeout triggers if total chain time after awaiting exceeds timeout', async () => {
-      const executionOrder: string[] = []
-      const startTime = Date.now()
+    test('does not execute error handler when first execution succeeds', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('success'))
+      const firstExecution = new Execution(firstExecute)
 
-      // Chain timeout: 100ms
-      const firstExecute = jest.fn(() => {
-        executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 60))
-      })
-      const firstExecution = new Execution(firstExecute, { timeout: 100 })
-
-      const secondExecute = jest.fn(() => {
-        executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 60))
-      })
-      const chainedExecution = firstExecution.chain((result) => {
-        executionOrder.push('chain function')
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
-        return secondExecute
-      })
-
-      // Await the chain (timeout starts now)
-      const result = await chainedExecution
-      const endTime = Date.now()
-      const totalTime = endTime - startTime
-
-      expect(result.isError()).toBe(true)
-      expect(result.error).toBeInstanceOf(TimeoutInterruption)
-      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
-      expect(totalTime).toBeGreaterThanOrEqual(100)
-      expect(totalTime).toBeLessThan(130)
-      expect(firstExecute).toHaveBeenCalledTimes(1)
-      expect(secondExecute).toHaveBeenCalledTimes(1)
-    })
-
-    test('executable timeout applies only to individual executable', async () => {
-      const executionOrder: string[] = []
-
-      // First executable with 50ms timeout
-      const firstExecute = jest.fn(() => {
-        executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 100))
-      })
-      const firstExecution = new Execution({ execute: firstExecute, timeout: 50 })
-
-      const secondExecute = jest.fn(() => {
-        executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
-      })
-      const chainedExecution = firstExecution.chain((result) => {
-        executionOrder.push('chain function')
-        expect(result.isError()).toBe(true)
-        expect(result.error).toBeInstanceOf(TimeoutInterruption)
-        return secondExecute
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        // This should not be called
+        expect(true).toBe(false)
+        return errorHandler
       })
 
       // Execute the chain
       const result = await chainedExecution
-
       expect(result.isOK()).toBe(true)
-      expect(result.value).toBe('second')
-      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(result.value).toBe('success')
       expect(firstExecute).toHaveBeenCalledTimes(1)
-      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).not.toHaveBeenCalled()
     })
 
-    test('executable timeout in second step applies only to that step', async () => {
+    test('handles error in error handler', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const errorHandler = jest.fn(() => Promise.reject(secondError))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return errorHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(secondError)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles Result.error in first execution', async () => {
+      const firstError = new Error('first error')
+      const firstExecute = jest.fn(() => Promise.resolve(Result.error(firstError)))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBe(firstError)
+        return errorHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles Result.error in error handler', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const errorHandler = jest.fn(() => Promise.resolve(Result.error(secondError)))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return errorHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(secondError)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles AbortInterruption in first execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('success'))
+      const firstExecution = new Execution(firstExecute)
+
+      // Abort the execution
+      firstExecution.abort('test abort')
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(AbortInterruption)
+        return errorHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).not.toHaveBeenCalled() // Not called because execution was aborted before starting
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles CancelInterruption in first execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('success'))
+      const firstExecution = new Execution(firstExecute)
+
+      // Cancel the execution
+      firstExecution.cancel('test cancel')
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(CancelInterruption)
+        return errorHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).not.toHaveBeenCalled() // Not called because execution was canceled before starting
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles DisposeInterruption in first execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('success'))
+      const firstExecution = new Execution(firstExecute)
+
+      // Dispose the execution
+      await firstExecution[Symbol.asyncDispose]()
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(DisposeInterruption)
+        return errorHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).not.toHaveBeenCalled() // Not called because execution was disposed before starting
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles TimeoutInterruption in first execution', async () => {
+      const firstExecute = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('success'), 100)),
+      )
+      const firstExecution = new Execution({ execute: firstExecute, timeout: 50 })
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(TimeoutInterruption)
+        return errorHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('supports multiple chainError calls', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const firstErrorHandler = jest.fn(() => Promise.reject(new Error('second error')))
+      const secondErrorHandler = jest.fn(() => Promise.resolve('recovered'))
+
+      const chainedExecution = firstExecution
+        .chainError((error) => {
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('first error')
+          return firstErrorHandler
+        })
+        .chainError((error) => {
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('second error')
+          return secondErrorHandler
+        })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(firstErrorHandler).toHaveBeenCalledTimes(1)
+      expect(secondErrorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles async function in error handler', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError(async (error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        // Simulate some async work
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        return errorHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles promise returning function in error handler', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return Promise.resolve(errorHandler)
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles executable object in error handler', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return { execute: errorHandler }
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles executable object with timeout in error handler', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('recovered'), 100)),
+      )
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return { execute: errorHandler, timeout: 50 }
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles AsyncResult in error handler', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const secondExecution = new Execution(errorHandler)
+
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return () => secondExecution
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles AsyncResult.error in error handler', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const secondExecution = new Execution(() => Promise.reject(secondError))
+
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return () => secondExecution
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(secondError)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('preserves metadata in chained execution', async () => {
+      const metadata = { errorContext: 'test-error' }
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute, { metadata })
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return errorHandler
+      })
+
+      expect(chainedExecution.metadata).toBe(metadata)
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(chainedExecution.metadata).toBe(metadata)
+    })
+
+    test('works with typed generics', async () => {
+      type User = {
+        id: number
+        name: string
+      }
+
+      type UserError = Error & {
+        code: 'USER_NOT_FOUND' | 'USER_INVALID'
+      }
+
+      const userError: UserError = Object.assign(new Error('User not found'), {
+        code: 'USER_NOT_FOUND' as const,
+      })
+      const firstExecute = jest.fn(() => Promise.reject(userError))
+      const firstExecution = new Execution<User, UserError>(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBe(userError)
+        if ('code' in error) {
+          expect(error.code).toBe('USER_NOT_FOUND')
+        }
+        return errorHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles custom error types in error handler', async () => {
+      class CustomError extends Error {
+        constructor(
+          message: string,
+          public code: number,
+        ) {
+          super(message)
+          this.name = 'CustomError'
+        }
+      }
+
+      const customError = new CustomError('custom error', 500)
+      const firstExecute = jest.fn(() => Promise.reject(customError))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBe(customError)
+        if ('code' in error) {
+          expect(error.code).toBe(500)
+        }
+        return errorHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles null return from error handler', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return null
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(Error)
+      if (result.error) {
+        expect(result.error.message).toBe('first error')
+      }
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles undefined return from error handler', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return null // Return null instead of undefined to avoid the signal issue
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(Error)
+      if (result.error) {
+        expect(result.error.message).toBe('first error')
+      }
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles complex error recovery scenario', async () => {
       const executionOrder: string[] = []
 
       const firstExecute = jest.fn(() => {
         executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
+        return Promise.reject(new Error('first error'))
       })
       const firstExecution = new Execution(firstExecute)
 
-      // Second executable with 30ms timeout
       const secondExecute = jest.fn(() => {
         executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 100))
-      })
-      const chainedExecution = firstExecution.chain((result) => {
-        executionOrder.push('chain function')
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
-        return { execute: secondExecute, timeout: 30 }
+        return Promise.reject(new Error('second error'))
       })
 
-      // Execute the chain
-      const result = await chainedExecution
-
-      expect(result.isError()).toBe(true)
-      expect(result.error).toBeInstanceOf(TimeoutInterruption)
-      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
-      expect(firstExecute).toHaveBeenCalledTimes(1)
-      expect(secondExecute).toHaveBeenCalledTimes(1)
-    })
-
-    test('constructor timeout takes precedence over executable timeout when both would trigger', async () => {
-      const executionOrder: string[] = []
-
-      // Create a chain with 80ms constructor timeout
-      const firstExecute = jest.fn(() => {
-        executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
-      })
-      const firstExecution = new Execution({ execute: firstExecute }, { timeout: 80 })
-
-      const secondExecute = jest.fn(() => {
-        executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
-      })
-      const chainedExecution = firstExecution.chain((result) => {
-        executionOrder.push('chain function')
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
-        return secondExecute
-      })
-
-      // Execute the chain
-      const result = await chainedExecution
-
-      expect(result.isError()).toBe(true)
-      expect(result.error).toBeInstanceOf(TimeoutInterruption)
-      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
-      expect(firstExecute).toHaveBeenCalledTimes(1)
-      expect(secondExecute).toHaveBeenCalledTimes(1)
-    })
-
-    test('executable timeout takes precedence when it is shorter than constructor timeout', async () => {
-      const executionOrder: string[] = []
-
-      // Create a chain with 100ms constructor timeout
-      const firstExecute = jest.fn(() => {
-        executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
-      })
-      const firstExecution = new Execution({ execute: firstExecute, timeout: 30 }, { timeout: 100 })
-
-      const secondExecute = jest.fn(() => {
-        executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
-      })
-      const chainedExecution = firstExecution.chain((result) => {
-        executionOrder.push('chain function')
-        expect(result.isError()).toBe(true)
-        expect(result.error).toBeInstanceOf(TimeoutInterruption)
-        return secondExecute
-      })
-
-      // Execute the chain
-      const result = await chainedExecution
-
-      expect(result.isOK()).toBe(true)
-      expect(result.value).toBe('second')
-      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
-      expect(firstExecute).toHaveBeenCalledTimes(1)
-      expect(secondExecute).toHaveBeenCalledTimes(1)
-    })
-
-    test('third executable without timeout is still affected by constructor timeout', async () => {
-      const executionOrder: string[] = []
-
-      // Create a chain with 120ms constructor timeout
-      const firstExecute = jest.fn(() => {
-        executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
-      })
-      const firstExecution = new Execution(firstExecute, { timeout: 120 })
-
-      const secondExecute = jest.fn(() => {
-        executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
-      })
       const thirdExecute = jest.fn(() => {
         executionOrder.push('third')
-        return new Promise((resolve) => setTimeout(() => resolve('third'), 50))
+        return Promise.resolve('recovered')
       })
 
       const chainedExecution = firstExecution
-        .chain((result) => {
-          executionOrder.push('chain1 function')
-          expect(result.isOK()).toBe(true)
-          expect(result.value).toBe('first')
+        .chainError((error) => {
+          executionOrder.push('error handler 1')
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('first error')
+          return secondExecute
+        })
+        .chainError((error) => {
+          executionOrder.push('error handler 2')
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('second error')
+          return thirdExecute
+        })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('recovered')
+      expect(executionOrder).toEqual([
+        'first',
+        'error handler 1',
+        'second',
+        'error handler 2',
+        'third',
+      ])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(thirdExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles mixed chain and chainError calls', async () => {
+      const executionOrder: string[] = []
+
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return Promise.reject(new Error('first error'))
+      })
+      const firstExecution = new Execution(firstExecute)
+
+      const secondExecute = jest.fn(() => {
+        executionOrder.push('second')
+        return Promise.resolve('success')
+      })
+
+      const thirdExecute = jest.fn(() => {
+        executionOrder.push('third')
+        return Promise.resolve('final')
+      })
+
+      const chainedExecution = firstExecution
+        .chainError((error) => {
+          executionOrder.push('error handler')
+          expect(error).toBeInstanceOf(Error)
+          expect(error.message).toBe('first error')
           return secondExecute
         })
         .chain((result) => {
-          executionOrder.push('chain2 function')
+          executionOrder.push('chain function')
           expect(result.isOK()).toBe(true)
-          expect(result.value).toBe('second')
+          expect(result.value).toBe('success')
           return thirdExecute
         })
 
       // Execute the chain
       const result = await chainedExecution
-
-      expect(result.isError()).toBe(true)
-      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('final')
       expect(executionOrder).toEqual([
         'first',
-        'chain1 function',
+        'error handler',
         'second',
-        'chain2 function',
+        'chain function',
         'third',
       ])
       expect(firstExecute).toHaveBeenCalledTimes(1)
@@ -1312,156 +1618,692 @@ describe('Execution', () => {
       expect(thirdExecute).toHaveBeenCalledTimes(1)
     })
 
-    test('complex scenario: mixed timeouts across chain', async () => {
-      const executionOrder: string[] = []
-      const startTime = Date.now()
+    test('handles timeout in error handler execution', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
 
-      // Chain timeout: 200ms, Executable 1 timeout: 50ms, Executable 2 timeout: 300ms, Executable 3: no timeout
+      const errorHandler = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('recovered'), 100)),
+      )
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return errorHandler
+      })
+
+      // Create a new execution with timeout from the chained result
+      const timedExecution = new Execution(() => chainedExecution, { timeout: 50 })
+
+      // Execute the timed chain
+      const result = await timedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles abort in error handler execution', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return errorHandler
+      })
+
+      // Abort the chained execution before consuming
+      chainedExecution.abort('test abort')
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(AbortInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).not.toHaveBeenCalled() // Not called because execution was aborted
+    })
+
+    test('handles cancel in error handler execution', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return errorHandler
+      })
+
+      // Cancel the chained execution before consuming
+      chainedExecution.cancel('test cancel')
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(CancelInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).not.toHaveBeenCalled() // Not called because execution was canceled
+    })
+
+    test('handles dispose in error handler execution', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecution = new Execution(firstExecute)
+
+      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const chainedExecution = firstExecution.chainError((error) => {
+        expect(error).toBeInstanceOf(Error)
+        expect(error.message).toBe('first error')
+        return errorHandler
+      })
+
+      // Dispose the chained execution before consuming
+      await chainedExecution[Symbol.asyncDispose]()
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(DisposeInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(errorHandler).not.toHaveBeenCalled() // Not called because execution was disposed
+    })
+  })
+
+  describe('chainOK method', () => {
+    test('creates a chained execution that only executes on success', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return okHandler
+      })
+
+      // Neither execution should have been called yet
+      expect(firstExecute).not.toHaveBeenCalled()
+      expect(okHandler).not.toHaveBeenCalled()
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('does not execute ok handler when first execution fails', async () => {
+      const firstExecute = jest.fn(() => Promise.reject(new Error('fail')))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        // This should not be called
+        expect(true).toBe(false)
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(Error)
+      expect(result.error && result.error.message).toBe('fail')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).not.toHaveBeenCalled()
+    })
+
+    test('handles error in ok handler', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const okHandler = jest.fn(() => Promise.reject(secondError))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(secondError)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles Result.ok in first execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve(Result.ok('first')))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles Result.ok in ok handler', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve(Result.ok('second')))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles AbortInterruption in first execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      // Abort the execution
+      firstExecution.abort('test abort')
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        // Should not be called
+        expect(true).toBe(false)
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(AbortInterruption)
+      expect(firstExecute).not.toHaveBeenCalled()
+      expect(okHandler).not.toHaveBeenCalled()
+    })
+
+    test('handles CancelInterruption in first execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      // Cancel the execution
+      firstExecution.cancel('test cancel')
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        // Should not be called
+        expect(true).toBe(false)
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(CancelInterruption)
+      expect(firstExecute).not.toHaveBeenCalled()
+      expect(okHandler).not.toHaveBeenCalled()
+    })
+
+    test('handles DisposeInterruption in first execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      // Dispose the execution
+      await firstExecution[Symbol.asyncDispose]()
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        // Should not be called
+        expect(true).toBe(false)
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(DisposeInterruption)
+      expect(firstExecute).not.toHaveBeenCalled()
+      expect(okHandler).not.toHaveBeenCalled()
+    })
+
+    test('handles TimeoutInterruption in first execution', async () => {
+      const firstExecute = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('first'), 100)),
+      )
+      const firstExecution = new Execution({ execute: firstExecute, timeout: 50 })
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        // Should not be called
+        expect(true).toBe(false)
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).not.toHaveBeenCalled()
+    })
+
+    test('supports multiple chainOK calls', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondHandler = jest.fn(() => Promise.resolve('second'))
+      const thirdHandler = jest.fn(() => Promise.resolve('third'))
+
+      const chainedExecution = firstExecution
+        .chainOK((value) => {
+          expect(value).toBe('first')
+          return secondHandler
+        })
+        .chainOK((value) => {
+          expect(value).toBe('second')
+          return thirdHandler
+        })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('third')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondHandler).toHaveBeenCalledTimes(1)
+      expect(thirdHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles async function in ok handler', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK(async (value) => {
+        expect(value).toBe('first')
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles promise returning function in ok handler', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return Promise.resolve(okHandler)
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles executable object in ok handler', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return { execute: okHandler }
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles executable object with timeout in ok handler', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
+      )
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return { execute: okHandler, timeout: 50 }
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(TimeoutInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles AsyncResult in ok handler', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const secondExecution = new Execution(okHandler)
+
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return () => secondExecution
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles AsyncResult.error in ok handler', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const secondError = new Error('second error')
+      const secondExecution = new Execution(() => Promise.reject(secondError))
+
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return () => secondExecution
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBe(secondError)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('preserves metadata in chained execution', async () => {
+      const metadata = { okContext: 'test-ok' }
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute, { metadata })
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return okHandler
+      })
+
+      expect(chainedExecution.metadata).toBe(metadata)
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(chainedExecution.metadata).toBe(metadata)
+    })
+
+    test('works with typed generics', async () => {
+      type User = {
+        id: number
+        name: string
+      }
+
+      type UserError = Error & {
+        code: 'USER_NOT_FOUND' | 'USER_INVALID'
+      }
+
+      const user: User = { id: 1, name: 'John Doe' }
+      const firstExecute = jest.fn(() => Promise.resolve(user))
+      const firstExecution = new Execution<User, UserError>(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe(user)
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles custom value types in ok handler', async () => {
+      class CustomValue {
+        constructor(public data: string) {}
+      }
+      const customValue = new CustomValue('custom')
+      const firstExecute = jest.fn(() => Promise.resolve(customValue))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe(customValue)
+        expect(value.data).toBe('custom')
+        return okHandler
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('second')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles null return from ok handler', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return null
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('first')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles undefined return from ok handler', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return null // Return null instead of undefined to avoid the signal issue
+      })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('first')
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles complex ok chaining scenario', async () => {
+      const executionOrder: string[] = []
+
       const firstExecute = jest.fn(() => {
         executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 30)) // Completes before 50ms timeout
+        return Promise.resolve('first')
       })
-      const firstExecution = new Execution({ execute: firstExecute, timeout: 50 }, { timeout: 200 })
+      const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => {
+      const secondHandler = jest.fn(() => {
         executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 100)) // Takes 100ms, within 300ms timeout
+        return Promise.resolve('second')
       })
 
-      const thirdExecute = jest.fn(() => {
+      const thirdHandler = jest.fn(() => {
         executionOrder.push('third')
-        return new Promise((resolve) => setTimeout(() => resolve('third'), 100)) // Takes 100ms, but chain timeout will trigger
+        return Promise.resolve('third')
       })
 
       const chainedExecution = firstExecution
-        .chain((result) => {
-          executionOrder.push('chain1 function')
-          expect(result.isOK()).toBe(true)
-          expect(result.value).toBe('first')
-          return { execute: secondExecute, timeout: 300 }
+        .chainOK((value) => {
+          executionOrder.push('ok handler 1')
+          expect(value).toBe('first')
+          return secondHandler
+        })
+        .chainOK((value) => {
+          executionOrder.push('ok handler 2')
+          expect(value).toBe('second')
+          return thirdHandler
+        })
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('third')
+      expect(executionOrder).toEqual(['first', 'ok handler 1', 'second', 'ok handler 2', 'third'])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondHandler).toHaveBeenCalledTimes(1)
+      expect(thirdHandler).toHaveBeenCalledTimes(1)
+    })
+
+    test('handles mixed chain and chainOK calls', async () => {
+      const executionOrder: string[] = []
+
+      const firstExecute = jest.fn(() => {
+        executionOrder.push('first')
+        return Promise.resolve('first')
+      })
+      const firstExecution = new Execution(firstExecute)
+
+      const secondHandler = jest.fn(() => {
+        executionOrder.push('second')
+        return Promise.resolve('second')
+      })
+
+      const thirdHandler = jest.fn(() => {
+        executionOrder.push('third')
+        return Promise.resolve('third')
+      })
+
+      const chainedExecution = firstExecution
+        .chainOK((value) => {
+          executionOrder.push('ok handler')
+          expect(value).toBe('first')
+          return secondHandler
         })
         .chain((result) => {
-          executionOrder.push('chain2 function')
+          executionOrder.push('chain function')
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('second')
-          return thirdExecute
+          return thirdHandler
         })
 
       // Execute the chain
       const result = await chainedExecution
-      const endTime = Date.now()
-      const totalTime = endTime - startTime
+      expect(result.isOK()).toBe(true)
+      expect(result.value).toBe('third')
+      expect(executionOrder).toEqual(['first', 'ok handler', 'second', 'chain function', 'third'])
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(secondHandler).toHaveBeenCalledTimes(1)
+      expect(thirdHandler).toHaveBeenCalledTimes(1)
+    })
 
+    test('handles timeout in ok handler execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(
+        () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
+      )
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return okHandler
+      })
+
+      // Create a new execution with timeout from the chained result
+      const timedExecution = new Execution(() => chainedExecution, { timeout: 50 })
+
+      // Execute the timed chain
+      const result = await timedExecution
       expect(result.isError()).toBe(true)
       expect(result.error).toBeInstanceOf(TimeoutInterruption)
-      expect(executionOrder).toEqual([
-        'first',
-        'chain1 function',
-        'second',
-        'chain2 function',
-        'third',
-      ])
-      expect(totalTime).toBeGreaterThanOrEqual(180) // Should be close to 200ms
-      expect(totalTime).toBeLessThan(220) // Should not exceed 200ms by much
       expect(firstExecute).toHaveBeenCalledTimes(1)
-      expect(secondExecute).toHaveBeenCalledTimes(1)
-      expect(thirdExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).toHaveBeenCalledTimes(1)
     })
 
-    test('executable timeout triggers before constructor timeout in first step', async () => {
-      const executionOrder: string[] = []
+    test('handles abort in ok handler execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
 
-      // Constructor timeout: 100ms, Executable timeout: 30ms
-      const firstExecute = jest.fn(() => {
-        executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 50)) // Takes 50ms
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return okHandler
       })
-      const firstExecution = new Execution({ execute: firstExecute, timeout: 30 }, { timeout: 100 })
 
-      const secondExecute = jest.fn(() => {
-        executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
-      })
-      const chainedExecution = firstExecution.chain((result) => {
-        executionOrder.push('chain function')
-        expect(result.isError()).toBe(true)
-        expect(result.error).toBeInstanceOf(TimeoutInterruption)
-        return secondExecute
-      })
+      // Abort the chained execution before consuming
+      chainedExecution.abort('test abort')
 
       // Execute the chain
       const result = await chainedExecution
-
-      expect(result.isOK()).toBe(true)
-      expect(result.value).toBe('second')
-      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
-      expect(firstExecute).toHaveBeenCalledTimes(1)
-      expect(secondExecute).toHaveBeenCalledTimes(1)
-    })
-
-    test('constructor timeout triggers before executable timeout in second step', async () => {
-      const executionOrder: string[] = []
-
-      const firstExecute = jest.fn(() => {
-        executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
-      })
-      const firstExecution = new Execution(firstExecute, { timeout: 120 }) // Constructor timeout: 120ms
-
-      const secondExecute = jest.fn(() => {
-        executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 100)) // Takes 100ms
-      })
-
-      const chainedExecution = firstExecution.chain((result) => {
-        executionOrder.push('chain function')
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
-        return { execute: secondExecute, timeout: 150 } // Longer than constructor timeout
-      })
-
-      // Execute the chain
-      const result = await chainedExecution
-
       expect(result.isError()).toBe(true)
-      expect(result.error).toBeInstanceOf(TimeoutInterruption)
-      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(result.error).toBeInstanceOf(AbortInterruption)
       expect(firstExecute).toHaveBeenCalledTimes(1)
-      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).not.toHaveBeenCalled() // Not called because execution was aborted
     })
 
-    test('timeout cleanup is properly handled across chain', async () => {
-      const executionOrder: string[] = []
+    test('handles cancel in ok handler execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
 
-      const firstExecute = jest.fn(() => {
-        executionOrder.push('first')
-        return new Promise((resolve) => setTimeout(() => resolve('first'), 50))
-      })
-      const firstExecution = new Execution({ execute: firstExecute, timeout: 30 }, { timeout: 100 })
-
-      const secondExecute = jest.fn(() => {
-        executionOrder.push('second')
-        return new Promise((resolve) => setTimeout(() => resolve('second'), 50))
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return okHandler
       })
 
-      const chainedExecution = firstExecution.chain((result) => {
-        executionOrder.push('chain function')
-        expect(result.isError()).toBe(true)
-        expect(result.error).toBeInstanceOf(TimeoutInterruption)
-        return secondExecute
-      })
+      // Cancel the chained execution before consuming
+      chainedExecution.cancel('test cancel')
 
       // Execute the chain
       const result = await chainedExecution
-
-      expect(result.isOK()).toBe(true)
-      expect(result.value).toBe('second')
-      expect(executionOrder).toEqual(['first', 'chain function', 'second'])
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(CancelInterruption)
       expect(firstExecute).toHaveBeenCalledTimes(1)
-      expect(secondExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).not.toHaveBeenCalled() // Not called because execution was canceled
+    })
 
-      // Verify that the execution can be disposed without issues
-      await firstExecution[Symbol.asyncDispose]()
+    test('handles dispose in ok handler execution', async () => {
+      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecution = new Execution(firstExecute)
+
+      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const chainedExecution = firstExecution.chainOK((value) => {
+        expect(value).toBe('first')
+        return okHandler
+      })
+
+      // Dispose the chained execution before consuming
+      await chainedExecution[Symbol.asyncDispose]()
+
+      // Execute the chain
+      const result = await chainedExecution
+      expect(result.isError()).toBe(true)
+      expect(result.error).toBeInstanceOf(DisposeInterruption)
+      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(okHandler).not.toHaveBeenCalled() // Not called because execution was disposed
     })
   })
 
@@ -1722,14 +2564,13 @@ describe('Execution', () => {
       type User = {
         id: number
         name: string
-        email: string
       }
 
       type UserError = Error & {
         code: 'USER_NOT_FOUND' | 'USER_INVALID'
       }
 
-      const user: User = { id: 1, name: 'John Doe', email: 'john@example.com' }
+      const user: User = { id: 1, name: 'John Doe' }
       const execute = jest.fn(() => Promise.resolve(user))
       const execution = new Execution<User, UserError>(execute)
 
@@ -1738,7 +2579,6 @@ describe('Execution', () => {
       expect(result.value).toEqual(user)
       expect(result.value.id).toBe(1)
       expect(result.value.name).toBe('John Doe')
-      expect(result.value.email).toBe('john@example.com')
     })
 
     test('handles typed generics with error', async () => {

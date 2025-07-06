@@ -9,34 +9,11 @@ import {
   TimeoutInterruption,
   toPromise,
 } from '@enkaku/async'
+import { AsyncResult, type Option, Result } from '@enkaku/result'
 
-import { AsyncResult } from './async-result.js'
-import type { Option } from './option.js'
-import { Result } from './result.js'
+import type { ChainFn, Executable, ExecutionContext, ExecutionOptions } from './types.js'
 
 function noop() {}
-
-export type ExecutionResult<V, E extends Error = Error> =
-  | V
-  | PromiseLike<V>
-  | Result<V, E | Interruption>
-  | PromiseLike<Result<V, E | Interruption>>
-  | AsyncResult<V, E | Interruption>
-
-export type ExecuteFn<V, E extends Error = Error> = (signal: AbortSignal) => ExecutionResult<V, E>
-
-export type ExecutionOptions<M extends Record<string, unknown> = Record<string, unknown>> = {
-  metadata?: M
-  signal?: AbortSignal
-  timeout?: number
-}
-
-export type ExecutionContext<V, E extends Error = Error> = {
-  execute: ExecuteFn<V, E>
-  cleanup?: () => void
-  signal?: AbortSignal
-  timeout?: number
-}
 
 function toContext<V, E extends Error = Error>(
   executable: Executable<V, E>,
@@ -45,12 +22,6 @@ function toContext<V, E extends Error = Error>(
     return typeof execute === 'function' ? { execute } : execute
   })
 }
-
-export type Executable<V, E extends Error = Error> =
-  | ExecuteFn<V, E>
-  | PromiseLike<ExecuteFn<V, E>>
-  | ExecutionContext<V, E>
-  | PromiseLike<ExecutionContext<V, E>>
 
 export class Execution<
     V,
@@ -211,14 +182,19 @@ export class Execution<
   }
 
   chain<OutV, OutE extends Error = Error>(
-    fn: (result: Result<V, E | Interruption>) => Executable<OutV, OutE>,
+    fn: ChainFn<V, OutV, E, OutE>,
   ): Execution<V | OutV, E | OutE> {
-    if (this.isAborted) {
-      return this
-    }
-
     const nextContext = lazy(async () => {
-      const executable = await this.then(fn)
+      const result = await this.execute()
+      const executable = fn(result)
+      if (executable == null) {
+        return {
+          cleanup: () => this.#cleanup?.(),
+          execute: () => result,
+          signal: this.#signal,
+        } as ExecutionContext<V, E>
+      }
+
       const ctx = await toContext(executable)
       const cleanup = () => {
         ctx.cleanup?.()
@@ -232,6 +208,18 @@ export class Execution<
       return { ...ctx, cleanup, signal }
     })
     return new Execution(nextContext, { metadata: this.metadata })
+  }
+
+  chainError<OutV, OutE extends Error = Error>(
+    fn: (error: E | Interruption) => Executable<OutV, OutE> | null,
+  ): Execution<V | OutV, E | OutE> {
+    return this.chain((result) => (result.isError() ? fn(result.error as E | Interruption) : null))
+  }
+
+  chainOK<OutV, OutE extends Error = Error>(
+    fn: (value: V) => Executable<OutV, OutE> | null,
+  ): Execution<V | OutV, E | OutE> {
+    return this.chain((result) => (result.isOK() ? fn(result.value) : null))
   }
 
   execute(): Promise<Result<V, E | Interruption>> {

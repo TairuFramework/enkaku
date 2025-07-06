@@ -27,7 +27,7 @@ catalog:
   get-port: ^7.1.0
   jest: ^30.0.4
   json-schema-to-ts: ^3.1.1
-  tsx: ^4.20.1
+  tsx: ^4.20.3
   turbo: ^2.5.4
   typedoc: ^0.28.7
   typedoc-plugin-markdown: ^4.7.0
