@@ -24,7 +24,7 @@ function toContext<V, E extends Error = Error>(
 }
 
 type ExecutionContext<V = unknown, E extends Error = Error> = {
-  parent?: Execution<V, E>
+  previous?: Execution<V, E>
   signal?: AbortSignal
   timeout?: number
 }
@@ -38,7 +38,7 @@ export class Execution<V, E extends Error = Error>
   #chainSignal?: AbortSignal
   #chainTimeout?: ScheduledTimeout
   #executableTimeout?: ScheduledTimeout
-  #parent?: Execution<unknown, Error>
+  #previous?: Execution<unknown, Error>
   #signal: AbortSignal
 
   constructor(executable: Executable<V, E>, executionContext: ExecutionContext = {}) {
@@ -119,7 +119,7 @@ export class Execution<V, E extends Error = Error>
 
     super(lazy(() => toContext(executable).then(execute)))
     this.#controller = controller
-    this.#parent = executionContext.parent
+    this.#previous = executionContext.previous
     this.#signal = executionContext.signal
       ? AbortSignal.any([executionContext.signal, controller.signal])
       : controller.signal
@@ -135,7 +135,7 @@ export class Execution<V, E extends Error = Error>
     let current: Execution<unknown, Error | Interruption> | undefined = this
     while (current) {
       chain.unshift(current)
-      current = current.#parent
+      current = current.#previous
     }
 
     let previous: Result<unknown, Error | Interruption> | undefined
@@ -190,6 +190,7 @@ export class Execution<V, E extends Error = Error>
 
   abort(reason?: unknown) {
     this.#cleanup?.()
+    this.#previous?.abort(reason)
     this.#controller.abort(reason ?? new AbortInterruption())
   }
 
@@ -223,7 +224,7 @@ export class Execution<V, E extends Error = Error>
         : ctx.signal
       return { ...ctx, cleanup, signal }
     })
-    return new Execution(nextContext, { parent: this })
+    return new Execution(nextContext, { previous: this })
   }
 
   chainError<OutV, OutE extends Error = Error>(

@@ -167,9 +167,9 @@ importers:
       '@enkaku/async':
         specifier: workspace:^
         version: link:../async
-      '@enkaku/result':
+      '@enkaku/execution':
         specifier: workspace:^
-        version: link:../result
+        version: link:../execution
       '@enkaku/stream':
         specifier: workspace:^
         version: link:../stream
@@ -13582,7 +13582,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 17.0.45
+      '@types/node': 24.0.10
 
   '@types/send@0.17.5':
     dependencies:

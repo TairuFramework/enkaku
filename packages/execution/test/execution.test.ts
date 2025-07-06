@@ -915,7 +915,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.chainError(() => {
         // This should not be called
         expect(true).toBe(false)
         return errorHandler
@@ -1453,8 +1453,8 @@ describe('Execution', () => {
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.chainError((error) => {
-        expect(error).toBeInstanceOf(Error)
-        expect(error.message).toBe('first error')
+        expect(error).toBeInstanceOf(AbortInterruption)
+        expect(error.cause).toBe('test abort')
         return errorHandler
       })
 
@@ -1465,7 +1465,7 @@ describe('Execution', () => {
       const result = await chainedExecution
       expect(result.isError()).toBe(true)
       expect(result.error).toBeInstanceOf(AbortInterruption)
-      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(firstExecute).not.toHaveBeenCalled() // Not called because execution was aborted
       expect(errorHandler).not.toHaveBeenCalled() // Not called because execution was aborted
     })
 
@@ -1475,8 +1475,8 @@ describe('Execution', () => {
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.chainError((error) => {
-        expect(error).toBeInstanceOf(Error)
-        expect(error.message).toBe('first error')
+        expect(error).toBeInstanceOf(CancelInterruption)
+        expect(error.cause).toBe('test cancel')
         return errorHandler
       })
 
@@ -1487,7 +1487,7 @@ describe('Execution', () => {
       const result = await chainedExecution
       expect(result.isError()).toBe(true)
       expect(result.error).toBeInstanceOf(CancelInterruption)
-      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(firstExecute).not.toHaveBeenCalled()
       expect(errorHandler).not.toHaveBeenCalled() // Not called because execution was canceled
     })
 
@@ -1497,8 +1497,7 @@ describe('Execution', () => {
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.chainError((error) => {
-        expect(error).toBeInstanceOf(Error)
-        expect(error.message).toBe('first error')
+        expect(error).toBeInstanceOf(DisposeInterruption)
         return errorHandler
       })
 
@@ -1509,7 +1508,7 @@ describe('Execution', () => {
       const result = await chainedExecution
       expect(result.isError()).toBe(true)
       expect(result.error).toBeInstanceOf(DisposeInterruption)
-      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(firstExecute).not.toHaveBeenCalled()
       expect(errorHandler).not.toHaveBeenCalled() // Not called because execution was disposed
     })
   })
@@ -1542,7 +1541,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.chainOK(() => {
         // This should not be called
         expect(true).toBe(false)
         return okHandler
@@ -1552,7 +1551,7 @@ describe('Execution', () => {
       const result = await chainedExecution
       expect(result.isError()).toBe(true)
       expect(result.error).toBeInstanceOf(Error)
-      expect(result.error && result.error.message).toBe('fail')
+      expect(result.error?.message).toBe('fail')
       expect(firstExecute).toHaveBeenCalledTimes(1)
       expect(okHandler).not.toHaveBeenCalled()
     })
@@ -1620,7 +1619,7 @@ describe('Execution', () => {
       firstExecution.abort('test abort')
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.chainOK(() => {
         // Should not be called
         expect(true).toBe(false)
         return okHandler
@@ -1642,7 +1641,7 @@ describe('Execution', () => {
       firstExecution.cancel('test cancel')
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.chainOK(() => {
         // Should not be called
         expect(true).toBe(false)
         return okHandler
@@ -1664,7 +1663,7 @@ describe('Execution', () => {
       await firstExecution[Symbol.asyncDispose]()
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.chainOK(() => {
         // Should not be called
         expect(true).toBe(false)
         return okHandler
@@ -1685,7 +1684,7 @@ describe('Execution', () => {
       const firstExecution = new Execution({ execute: firstExecute, timeout: 50 })
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.chainOK(() => {
         // Should not be called
         expect(true).toBe(false)
         return okHandler
@@ -2045,7 +2044,7 @@ describe('Execution', () => {
       const result = await chainedExecution
       expect(result.isError()).toBe(true)
       expect(result.error).toBeInstanceOf(AbortInterruption)
-      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(firstExecute).not.toHaveBeenCalled() // Not called because execution was aborted
       expect(okHandler).not.toHaveBeenCalled() // Not called because execution was aborted
     })
 
@@ -2066,7 +2065,7 @@ describe('Execution', () => {
       const result = await chainedExecution
       expect(result.isError()).toBe(true)
       expect(result.error).toBeInstanceOf(CancelInterruption)
-      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(firstExecute).not.toHaveBeenCalled()
       expect(okHandler).not.toHaveBeenCalled() // Not called because execution was canceled
     })
 
@@ -2087,7 +2086,7 @@ describe('Execution', () => {
       const result = await chainedExecution
       expect(result.isError()).toBe(true)
       expect(result.error).toBeInstanceOf(DisposeInterruption)
-      expect(firstExecute).toHaveBeenCalledTimes(1)
+      expect(firstExecute).not.toHaveBeenCalled()
       expect(okHandler).not.toHaveBeenCalled() // Not called because execution was disposed
     })
   })
@@ -2668,7 +2667,7 @@ describe('Execution', () => {
       expect(results).toHaveLength(2)
       expect(results[0].isError()).toBe(true)
       expect(results[0].error).toBeInstanceOf(Error)
-      expect(results[0].error && results[0].error.message).toBe('first error')
+      expect(results[0].error?.message).toBe('first error')
       expect(results[1].isOK()).toBe(true)
       expect(results[1].value).toBe('recovered')
       expect(firstExecute).toHaveBeenCalledTimes(1)
@@ -2733,7 +2732,7 @@ describe('Execution', () => {
       expect(results[0].value).toBe('first')
       expect(results[1].isError()).toBe(true)
       expect(results[1].error).toBeInstanceOf(Error)
-      expect(results[1].error && results[1].error.message).toBe('second error')
+      expect(results[1].error?.message).toBe('second error')
       expect(results[2].isOK()).toBe(true)
       expect(results[2].value).toBe('recovered')
       expect(results[3].isOK()).toBe(true)
@@ -2750,8 +2749,9 @@ describe('Execution', () => {
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.chain((result) => {
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
+        expect(result.isError()).toBe(true)
+        expect(result.error).toBeInstanceOf(AbortInterruption)
+        expect(result.error?.cause).toBe('test abort')
         return secondExecute
       })
 
@@ -2764,12 +2764,13 @@ describe('Execution', () => {
       }
 
       expect(results).toHaveLength(2)
-      expect(results[0].isOK()).toBe(true)
-      expect(results[0].value).toBe('first')
+      expect(results[0].isError()).toBe(true)
+      expect(results[0].error).toBeInstanceOf(AbortInterruption)
+      expect(results[0].error?.cause).toBe('test abort')
       expect(results[1].isError()).toBe(true)
       expect(results[1].error).toBeInstanceOf(AbortInterruption)
-      expect(results[1].error && results[1].error.cause).toBe('test abort')
-      expect(firstExecute).toHaveBeenCalled()
+      expect(results[1].error?.cause).toBe('test abort')
+      expect(firstExecute).not.toHaveBeenCalled()
       expect(secondExecute).not.toHaveBeenCalled() // Not called because execution was aborted
     })
 
@@ -2807,8 +2808,9 @@ describe('Execution', () => {
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.chain((result) => {
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
+        expect(result.isError()).toBe(true)
+        expect(result.error).toBeInstanceOf(CancelInterruption)
+        expect(result.error?.cause).toBe('test cancel')
         return secondExecute
       })
 
@@ -2821,12 +2823,13 @@ describe('Execution', () => {
       }
 
       expect(results).toHaveLength(2)
-      expect(results[0].isOK()).toBe(true)
-      expect(results[0].value).toBe('first')
+      expect(results[0].isError()).toBe(true)
+      expect(results[0].error).toBeInstanceOf(CancelInterruption)
+      expect(results[0].error?.cause).toBe('test cancel')
       expect(results[1].isError()).toBe(true)
       expect(results[1].error).toBeInstanceOf(CancelInterruption)
-      expect(results[1].error && results[1].error.cause).toBe('test cancel')
-      expect(firstExecute).toHaveBeenCalled()
+      expect(results[1].error?.cause).toBe('test cancel')
+      expect(firstExecute).not.toHaveBeenCalled()
       expect(secondExecute).not.toHaveBeenCalled() // Not called because execution was canceled
     })
 
@@ -2836,8 +2839,8 @@ describe('Execution', () => {
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.chain((result) => {
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
+        expect(result.isError()).toBe(true)
+        expect(result.error).toBeInstanceOf(DisposeInterruption)
         return secondExecute
       })
 
@@ -2850,11 +2853,11 @@ describe('Execution', () => {
       }
 
       expect(results).toHaveLength(2)
-      expect(results[0].isOK()).toBe(true)
-      expect(results[0].value).toBe('first')
+      expect(results[0].isError()).toBe(true)
+      expect(results[0].error).toBeInstanceOf(DisposeInterruption)
       expect(results[1].isError()).toBe(true)
       expect(results[1].error).toBeInstanceOf(DisposeInterruption)
-      expect(firstExecute).toHaveBeenCalled()
+      expect(firstExecute).not.toHaveBeenCalled()
       expect(secondExecute).not.toHaveBeenCalled()
     })
 
@@ -2911,7 +2914,7 @@ describe('Execution', () => {
       expect(results[0].value).toBe('first')
       expect(results[1].isError()).toBe(true)
       expect(results[1].error).toBeInstanceOf(Error)
-      expect(results[1].error && results[1].error.message).toBe('second error')
+      expect(results[1].error?.message).toBe('second error')
       expect(results[2].isOK()).toBe(true)
       expect(results[2].value).toBe('recovered')
       expect(results[3].isOK()).toBe(true)
@@ -3227,7 +3230,7 @@ describe('Execution', () => {
       expect(results).toHaveLength(1)
       expect(results[0].isError()).toBe(true)
       expect(results[0].error).toBeInstanceOf(Error)
-      expect(results[0].error && results[0].error.message).toBe('first error')
+      expect(results[0].error?.message).toBe('first error')
       expect(firstExecute).toHaveBeenCalledTimes(1)
     })
 
@@ -3330,7 +3333,7 @@ describe('Execution', () => {
       expect(results[0].value).toBe('first')
       expect(results[1].isError()).toBe(true)
       expect(results[1].error).toBeInstanceOf(Error)
-      expect(results[1].error && results[1].error.message).toBe('second error')
+      expect(results[1].error?.message).toBe('second error')
       expect(results[2].isOK()).toBe(true)
       expect(results[2].value).toBe('recovered')
       expect(results[3].isOK()).toBe(true)
@@ -3419,8 +3422,9 @@ describe('Execution', () => {
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.chain((result) => {
-        expect(result.isOK()).toBe(true)
-        expect(result.value).toBe('first')
+        expect(result.isError()).toBe(true)
+        expect(result.error).toBeInstanceOf(AbortInterruption)
+        expect(result.error?.cause).toBe('test abort')
         return secondExecute
       })
 
@@ -3434,12 +3438,13 @@ describe('Execution', () => {
       }
 
       expect(results).toHaveLength(2)
-      expect(results[0].isOK()).toBe(true)
-      expect(results[0].value).toBe('first')
+      expect(results[0].isError()).toBe(true)
+      expect(results[0].error).toBeInstanceOf(AbortInterruption)
+      expect(results[0].error?.cause).toBe('test abort')
       expect(results[1].isError()).toBe(true)
       expect(results[1].error).toBeInstanceOf(AbortInterruption)
-      expect(results[1].error && results[1].error.cause).toBe('test abort')
-      expect(firstExecute).toHaveBeenCalled()
+      expect(results[1].error?.cause).toBe('test abort')
+      expect(firstExecute).not.toHaveBeenCalled()
       expect(secondExecute).not.toHaveBeenCalled()
     })
 
@@ -3579,7 +3584,7 @@ describe('Execution', () => {
       expect(results).toHaveLength(1)
       expect(results[0].isError()).toBe(true)
       expect(results[0].error).toBeInstanceOf(Error)
-      expect(results[0].error && results[0].error.message).toBe('first error')
+      expect(results[0].error?.message).toBe('first error')
       expect(firstExecute).toHaveBeenCalledTimes(1)
     })
 
@@ -3739,10 +3744,10 @@ describe('Execution', () => {
       expect(results).toHaveLength(3)
       expect(results[0].isError()).toBe(true)
       expect(results[0].error).toBeInstanceOf(Error)
-      expect(results[0].error && results[0].error.message).toBe('first error')
+      expect(results[0].error?.message).toBe('first error')
       expect(results[1].isError()).toBe(true)
       expect(results[1].error).toBeInstanceOf(Error)
-      expect(results[1].error && results[1].error.message).toBe('second error')
+      expect(results[1].error?.message).toBe('second error')
       expect(results[2].isOK()).toBe(true)
       expect(results[2].value).toBe('recovered')
       expect(firstExecute).toHaveBeenCalledTimes(1)
@@ -3839,7 +3844,7 @@ describe('Execution', () => {
       expect(results[0].value).toBe('first')
       expect(results[1].isError()).toBe(true)
       expect(results[1].error).toBeInstanceOf(Error)
-      expect(results[1].error && results[1].error.message).toBe('second error')
+      expect(results[1].error?.message).toBe('second error')
       expect(results[2].isOK()).toBe(true)
       expect(results[2].value).toBe('recovered')
       expect(results[3].isOK()).toBe(true)

@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@enkaku/async": "workspace:^",
-    "@enkaku/result": "workspace:^",
+    "@enkaku/execution": "workspace:^",
     "@enkaku/stream": "workspace:^",
     "@enkaku/token": "workspace:^"
   },
