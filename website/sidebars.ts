@@ -67,6 +67,8 @@ const sidebars: SidebarsConfig = {
         'api/async/index',
         'api/codec/index',
         'api/event/index',
+        'api/result/index',
+        'api/execution/index',
         'api/flow/index',
         'api/generator/index',
         'api/patch/index',

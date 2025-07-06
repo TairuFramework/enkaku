@@ -46,7 +46,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor-3)
 
 #### Accessors
 

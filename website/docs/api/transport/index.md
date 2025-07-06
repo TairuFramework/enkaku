@@ -46,7 +46,7 @@ Create direct Transports for communication between a client and server in the sa
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor-3)
 
 #### Accessors
 
@@ -166,7 +166,7 @@ Base Transport class implementing TransportType.
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor-3)
 
 #### Accessors
 
