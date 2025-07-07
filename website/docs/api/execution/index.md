@@ -10,7 +10,7 @@ npm install @enkaku/execution
 
 ## Classes
 
-### Execution\<V, E, M\>
+### Execution\<V, E\>
 
 #### Extends
 
@@ -26,34 +26,31 @@ npm install @enkaku/execution
 
 `E` *extends* `Error` = `Error`
 
-##### M
-
-`M` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
-
 #### Implements
 
 - `AbortController`
 - `AsyncDisposable`
+- `AsyncIterable`\<[`Result`](../result/index.md#result)\<`unknown`, `Error` \| [`Interruption`](../async/index.md#interruption)\>\>
 
 #### Constructors
 
 ##### Constructor
 
-> **new Execution**\<`V`, `E`, `M`\>(`executable`, `options`): [`Execution`](#execution)\<`V`, `E`, `M`\>
+> **new Execution**\<`V`, `E`\>(`executable`, `executionContext`): [`Execution`](#execution)\<`V`, `E`\>
 
 ###### Parameters
 
 ###### executable
 
-`Executable`\<`V`, `E`\>
+[`Executable`](#executable)\<`V`, `E`\>
 
-###### options
+###### executionContext
 
-`ExecutionOptions`\<`M`\> = `{}`
+`ExecutionContext` = `{}`
 
 ###### Returns
 
-[`Execution`](#execution)\<`V`, `E`, `M`\>
+[`Execution`](#execution)\<`V`, `E`\>
 
 ###### Overrides
 
@@ -120,16 +117,6 @@ npm install @enkaku/execution
 ###### Returns
 
 `boolean`
-
-##### metadata
-
-###### Get Signature
-
-> **get** **metadata**(): `undefined` \| `M`
-
-###### Returns
-
-`undefined` \| `M`
 
 ##### optional
 
@@ -205,6 +192,18 @@ Returns the AbortSignal object associated with this object.
 
 `AsyncDisposable.[asyncDispose]`
 
+##### \[asyncIterator\]()
+
+> **\[asyncIterator\]**(): `AsyncGenerator`\<[`Result`](../result/index.md#result)\<`unknown`, [`Interruption`](../async/index.md#interruption) \| `Error`\>, `void`, `unknown`\>
+
+###### Returns
+
+`AsyncGenerator`\<[`Result`](../result/index.md#result)\<`unknown`, [`Interruption`](../async/index.md#interruption) \| `Error`\>, `void`, `unknown`\>
+
+###### Implementation of
+
+`AsyncIterable.[asyncIterator]`
+
 ##### abort()
 
 > **abort**(`reason?`): `void`
@@ -241,78 +240,6 @@ Invoking this method will set this object's AbortSignal's aborted flag and signa
 
 `void`
 
-##### chain()
-
-> **chain**\<`OutV`, `OutE`\>(`fn`): [`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
-
-###### Type Parameters
-
-###### OutV
-
-`OutV`
-
-###### OutE
-
-`OutE` *extends* `Error` = `Error`
-
-###### Parameters
-
-###### fn
-
-`ChainFn`\<`V`, `OutV`, `E`, `OutE`\>
-
-###### Returns
-
-[`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
-
-##### chainError()
-
-> **chainError**\<`OutV`, `OutE`\>(`fn`): [`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
-
-###### Type Parameters
-
-###### OutV
-
-`OutV`
-
-###### OutE
-
-`OutE` *extends* `Error` = `Error`
-
-###### Parameters
-
-###### fn
-
-(`error`) => `null` \| `Executable`\<`OutV`, `OutE`\>
-
-###### Returns
-
-[`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
-
-##### chainOK()
-
-> **chainOK**\<`OutV`, `OutE`\>(`fn`): [`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
-
-###### Type Parameters
-
-###### OutV
-
-`OutV`
-
-###### OutE
-
-`OutE` *extends* `Error` = `Error`
-
-###### Parameters
-
-###### fn
-
-(`value`) => `null` \| `Executable`\<`OutV`, `OutE`\>
-
-###### Returns
-
-[`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
-
 ##### execute()
 
 > **execute**(): `Promise`\<[`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>\>
@@ -320,6 +247,72 @@ Invoking this method will set this object's AbortSignal's aborted flag and signa
 ###### Returns
 
 `Promise`\<[`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>\>
+
+##### generate()
+
+> **generate**\<`V`, `E`\>(): `AsyncGenerator`\<[`Result`](../result/index.md#result)\<`V`, [`Interruption`](../async/index.md#interruption) \| `E`\>\>
+
+###### Type Parameters
+
+###### V
+
+`V` = `unknown`
+
+###### E
+
+`E` *extends* `Error` = `Error`
+
+###### Returns
+
+`AsyncGenerator`\<[`Result`](../result/index.md#result)\<`V`, [`Interruption`](../async/index.md#interruption) \| `E`\>\>
+
+##### ifError()
+
+> **ifError**\<`OutV`, `OutE`\>(`fn`): [`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
+
+###### Type Parameters
+
+###### OutV
+
+`OutV`
+
+###### OutE
+
+`OutE` *extends* `Error` = `Error`
+
+###### Parameters
+
+###### fn
+
+(`error`) => `null` \| [`Executable`](#executable)\<`OutV`, `OutE`\>
+
+###### Returns
+
+[`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
+
+##### ifOK()
+
+> **ifOK**\<`OutV`, `OutE`\>(`fn`): [`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
+
+###### Type Parameters
+
+###### OutV
+
+`OutV`
+
+###### OutE
+
+`OutE` *extends* `Error` = `Error`
+
+###### Parameters
+
+###### fn
+
+(`value`) => `null` \| [`Executable`](#executable)\<`OutV`, `OutE`\>
+
+###### Returns
+
+[`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
 
 ##### map()
 
@@ -372,6 +365,30 @@ Invoking this method will set this object's AbortSignal's aborted flag and signa
 ###### Inherited from
 
 [`AsyncResult`](../result/index.md#asyncresult).[`mapError`](../result/index.md#asyncresult#maperror)
+
+##### next()
+
+> **next**\<`OutV`, `OutE`\>(`fn`): [`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
+
+###### Type Parameters
+
+###### OutV
+
+`OutV`
+
+###### OutE
+
+`OutE` *extends* `Error` = `Error`
+
+###### Parameters
+
+###### fn
+
+[`NextFn`](#nextfn)\<`V`, `OutV`, `E`, `OutE`\>
+
+###### Returns
+
+[`Execution`](#execution)\<`V` \| `OutV`, `E` \| `OutE`\>
 
 ##### or()
 
@@ -598,3 +615,133 @@ A Promise for the completion of which ever callback is executed.
 ###### Inherited from
 
 [`AsyncResult`](../result/index.md#asyncresult).[`resolve`](../result/index.md#asyncresult#resolve)
+
+## Type Aliases
+
+### Executable\<V, E\>
+
+> **Executable**\<`V`, `E`\> = [`ExecuteFn`](#executefn)\<`V`, `E`\> \| `PromiseLike`\<[`ExecuteFn`](#executefn)\<`V`, `E`\>\> \| [`ExecuteContext`](#executecontext)\<`V`, `E`\> \| `PromiseLike`\<[`ExecuteContext`](#executecontext)\<`V`, `E`\>\>
+
+#### Type Parameters
+
+##### V
+
+`V`
+
+##### E
+
+`E` *extends* `Error` = `Error`
+
+***
+
+### ExecuteContext\<V, E\>
+
+> **ExecuteContext**\<`V`, `E`\> = `object`
+
+#### Type Parameters
+
+##### V
+
+`V`
+
+##### E
+
+`E` *extends* `Error` = `Error`
+
+#### Properties
+
+##### cleanup()?
+
+> `optional` **cleanup**: () => `void`
+
+###### Returns
+
+`void`
+
+##### execute
+
+> **execute**: [`ExecuteFn`](#executefn)\<`V`, `E`\>
+
+##### signal?
+
+> `optional` **signal**: `AbortSignal`
+
+##### timeout?
+
+> `optional` **timeout**: `number`
+
+***
+
+### ExecuteFn()\<V, E\>
+
+> **ExecuteFn**\<`V`, `E`\> = (`signal`) => [`ExecutionResult`](#executionresult)\<`V`, `E`\>
+
+#### Type Parameters
+
+##### V
+
+`V`
+
+##### E
+
+`E` *extends* `Error` = `Error`
+
+#### Parameters
+
+##### signal
+
+`AbortSignal`
+
+#### Returns
+
+[`ExecutionResult`](#executionresult)\<`V`, `E`\>
+
+***
+
+### ExecutionResult\<V, E\>
+
+> **ExecutionResult**\<`V`, `E`\> = `V` \| `PromiseLike`\<`V`\> \| [`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\> \| `PromiseLike`\<[`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>\> \| [`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
+
+#### Type Parameters
+
+##### V
+
+`V`
+
+##### E
+
+`E` *extends* `Error` = `Error`
+
+***
+
+### NextFn()\<V, OutV, E, OutE\>
+
+> **NextFn**\<`V`, `OutV`, `E`, `OutE`\> = (`result`) => [`Executable`](#executable)\<`V` \| `OutV`, `E` \| `OutE`\> \| `null`
+
+#### Type Parameters
+
+##### V
+
+`V`
+
+##### OutV
+
+`OutV`
+
+##### E
+
+`E` *extends* `Error` = `Error`
+
+##### OutE
+
+`OutE` *extends* `Error` = `Error`
+
+#### Parameters
+
+##### result
+
+[`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
+
+#### Returns
+
+[`Executable`](#executable)\<`V` \| `OutV`, `E` \| `OutE`\> \| `null`

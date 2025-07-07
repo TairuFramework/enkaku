@@ -11,7 +11,7 @@ import {
 } from '@enkaku/async'
 import { AsyncResult, type Option, Result } from '@enkaku/result'
 
-import type { ChainFn, Executable, ExecuteContext } from './types.js'
+import type { Executable, ExecuteContext, NextFn } from './types.js'
 
 function noop() {}
 
@@ -198,8 +198,8 @@ export class Execution<V, E extends Error = Error>
     this.abort(new CancelInterruption({ cause }))
   }
 
-  chain<OutV, OutE extends Error = Error>(
-    fn: ChainFn<V, OutV, E, OutE>,
+  next<OutV, OutE extends Error = Error>(
+    fn: NextFn<V, OutV, E, OutE>,
   ): Execution<V | OutV, E | OutE> {
     const nextContext = lazy(async () => {
       const result = await this.execute()
@@ -227,16 +227,16 @@ export class Execution<V, E extends Error = Error>
     return new Execution(nextContext, { previous: this })
   }
 
-  chainError<OutV, OutE extends Error = Error>(
+  ifError<OutV, OutE extends Error = Error>(
     fn: (error: E | Interruption) => Executable<OutV, OutE> | null,
   ): Execution<V | OutV, E | OutE> {
-    return this.chain((result) => (result.isError() ? fn(result.error as E | Interruption) : null))
+    return this.next((result) => (result.isError() ? fn(result.error as E | Interruption) : null))
   }
 
-  chainOK<OutV, OutE extends Error = Error>(
+  ifOK<OutV, OutE extends Error = Error>(
     fn: (value: V) => Executable<OutV, OutE> | null,
   ): Execution<V | OutV, E | OutE> {
-    return this.chain((result) => (result.isOK() ? fn(result.value) : null))
+    return this.next((result) => (result.isOK() ? fn(result.value) : null))
   }
 
   execute(): Promise<Result<V, E | Interruption>> {

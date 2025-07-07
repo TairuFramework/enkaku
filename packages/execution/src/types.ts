@@ -23,6 +23,6 @@ export type Executable<V, E extends Error = Error> =
   | ExecuteContext<V, E>
   | PromiseLike<ExecuteContext<V, E>>
 
-export type ChainFn<V, OutV, E extends Error = Error, OutE extends Error = Error> = (
+export type NextFn<V, OutV, E extends Error = Error, OutE extends Error = Error> = (
   result: Result<V, E | Interruption>,
 ) => Executable<V | OutV, E | OutE> | null

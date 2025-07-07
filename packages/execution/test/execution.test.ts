@@ -481,7 +481,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -512,7 +512,7 @@ describe('Execution', () => {
         executionOrder.push('second')
         return Promise.resolve('second')
       })
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         executionOrder.push('chain function')
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -535,7 +535,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         // The chain function is called and should receive the error result
         expect(result.isError()).toBe(true)
         expect(result.error).toBe(error)
@@ -560,7 +560,7 @@ describe('Execution', () => {
 
       const secondError = new Error('second error')
       const secondExecute = jest.fn(() => Promise.reject(secondError))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -580,7 +580,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         // The chain function is called and should receive the error result
         expect(result.isError()).toBe(true)
         expect(result.error).toBe(error)
@@ -601,7 +601,7 @@ describe('Execution', () => {
 
       const secondError = new Error('second error')
       const secondExecute = jest.fn(() => Promise.resolve(Result.error(secondError)))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -623,12 +623,12 @@ describe('Execution', () => {
       const thirdExecute = jest.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('second')
           return thirdExecute
@@ -653,7 +653,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain(async (result) => {
+      const chainedExecution = firstExecution.next(async (result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         // Simulate some async work
@@ -674,7 +674,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return Promise.resolve(secondExecute)
@@ -695,7 +695,7 @@ describe('Execution', () => {
       const secondExecute = jest.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -716,7 +716,7 @@ describe('Execution', () => {
       const secondExecute = jest.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -738,7 +738,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         // The chain function is called and should receive the abort result
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(AbortInterruption)
@@ -761,7 +761,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         // The chain function is called and should receive the cancel result
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(CancelInterruption)
@@ -784,7 +784,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         // The chain function is called and should receive the dispose result
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(DisposeInterruption)
@@ -810,7 +810,7 @@ describe('Execution', () => {
       firstExecution.abort('test abort')
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         // The chain function should be called and receive the abort result
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(AbortInterruption)
@@ -831,7 +831,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const chainError = new Error('chain error')
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return () => Promise.resolve(Result.error(chainError))
@@ -851,7 +851,7 @@ describe('Execution', () => {
       const secondExecute = jest.fn(() => Promise.resolve('second'))
       const secondExecution = new Execution(secondExecute)
 
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return () => secondExecution
@@ -872,7 +872,7 @@ describe('Execution', () => {
       const chainError = new Error('chain error')
       const secondExecution = new Execution(() => Promise.reject(chainError))
 
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return () => secondExecution
@@ -886,13 +886,13 @@ describe('Execution', () => {
     })
   })
 
-  describe('chainError method', () => {
+  describe('ifError method', () => {
     test('creates a chained execution that only executes on error', async () => {
       const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return errorHandler
@@ -915,7 +915,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError(() => {
+      const chainedExecution = firstExecution.ifError(() => {
         // This should not be called
         expect(true).toBe(false)
         return errorHandler
@@ -935,7 +935,7 @@ describe('Execution', () => {
 
       const secondError = new Error('second error')
       const errorHandler = jest.fn(() => Promise.reject(secondError))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return errorHandler
@@ -955,7 +955,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBe(firstError)
         return errorHandler
       })
@@ -974,7 +974,7 @@ describe('Execution', () => {
 
       const secondError = new Error('second error')
       const errorHandler = jest.fn(() => Promise.resolve(Result.error(secondError)))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return errorHandler
@@ -996,7 +996,7 @@ describe('Execution', () => {
       firstExecution.abort('test abort')
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(AbortInterruption)
         return errorHandler
       })
@@ -1017,7 +1017,7 @@ describe('Execution', () => {
       firstExecution.cancel('test cancel')
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(CancelInterruption)
         return errorHandler
       })
@@ -1038,7 +1038,7 @@ describe('Execution', () => {
       await firstExecution[Symbol.asyncDispose]()
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(DisposeInterruption)
         return errorHandler
       })
@@ -1058,7 +1058,7 @@ describe('Execution', () => {
       const firstExecution = new Execution({ execute: firstExecute, timeout: 50 })
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(TimeoutInterruption)
         return errorHandler
       })
@@ -1071,7 +1071,7 @@ describe('Execution', () => {
       expect(errorHandler).toHaveBeenCalledTimes(1)
     })
 
-    test('supports multiple chainError calls', async () => {
+    test('supports multiple ifError calls', async () => {
       const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
@@ -1079,12 +1079,12 @@ describe('Execution', () => {
       const secondErrorHandler = jest.fn(() => Promise.resolve('recovered'))
 
       const chainedExecution = firstExecution
-        .chainError((error) => {
+        .ifError((error) => {
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('first error')
           return firstErrorHandler
         })
-        .chainError((error) => {
+        .ifError((error) => {
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('second error')
           return secondErrorHandler
@@ -1104,7 +1104,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError(async (error) => {
+      const chainedExecution = firstExecution.ifError(async (error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         // Simulate some async work
@@ -1125,7 +1125,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return Promise.resolve(errorHandler)
@@ -1144,7 +1144,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return { execute: errorHandler }
@@ -1165,7 +1165,7 @@ describe('Execution', () => {
       const errorHandler = jest.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('recovered'), 100)),
       )
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return { execute: errorHandler, timeout: 50 }
@@ -1186,7 +1186,7 @@ describe('Execution', () => {
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
       const secondExecution = new Execution(errorHandler)
 
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return () => secondExecution
@@ -1207,7 +1207,7 @@ describe('Execution', () => {
       const secondError = new Error('second error')
       const secondExecution = new Execution(() => Promise.reject(secondError))
 
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return () => secondExecution
@@ -1237,7 +1237,7 @@ describe('Execution', () => {
       const firstExecution = new Execution<User, UserError>(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBe(userError)
         if ('code' in error) {
           expect(error.code).toBe('USER_NOT_FOUND')
@@ -1269,7 +1269,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBe(customError)
         if ('code' in error) {
           expect(error.code).toBe(500)
@@ -1289,7 +1289,7 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return null
@@ -1309,7 +1309,7 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return null // Return null instead of undefined to avoid the signal issue
@@ -1345,13 +1345,13 @@ describe('Execution', () => {
       })
 
       const chainedExecution = firstExecution
-        .chainError((error) => {
+        .ifError((error) => {
           executionOrder.push('error handler 1')
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('first error')
           return secondExecute
         })
-        .chainError((error) => {
+        .ifError((error) => {
           executionOrder.push('error handler 2')
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('second error')
@@ -1374,7 +1374,7 @@ describe('Execution', () => {
       expect(thirdExecute).toHaveBeenCalledTimes(1)
     })
 
-    test('handles mixed chain and chainError calls', async () => {
+    test('handles mixed next and ifError calls', async () => {
       const executionOrder: string[] = []
 
       const firstExecute = jest.fn(() => {
@@ -1394,14 +1394,14 @@ describe('Execution', () => {
       })
 
       const chainedExecution = firstExecution
-        .chainError((error) => {
+        .ifError((error) => {
           executionOrder.push('error handler')
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('first error')
           return secondExecute
         })
-        .chain((result) => {
-          executionOrder.push('chain function')
+        .next((result) => {
+          executionOrder.push('next function')
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('success')
           return thirdExecute
@@ -1411,13 +1411,7 @@ describe('Execution', () => {
       const result = await chainedExecution
       expect(result.isOK()).toBe(true)
       expect(result.value).toBe('final')
-      expect(executionOrder).toEqual([
-        'first',
-        'error handler',
-        'second',
-        'chain function',
-        'third',
-      ])
+      expect(executionOrder).toEqual(['first', 'error handler', 'second', 'next function', 'third'])
       expect(firstExecute).toHaveBeenCalledTimes(1)
       expect(secondExecute).toHaveBeenCalledTimes(1)
       expect(thirdExecute).toHaveBeenCalledTimes(1)
@@ -1430,7 +1424,7 @@ describe('Execution', () => {
       const errorHandler = jest.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('recovered'), 100)),
       )
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return errorHandler
@@ -1452,7 +1446,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(AbortInterruption)
         expect(error.cause).toBe('test abort')
         return errorHandler
@@ -1474,7 +1468,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(CancelInterruption)
         expect(error.cause).toBe('test cancel')
         return errorHandler
@@ -1496,7 +1490,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(DisposeInterruption)
         return errorHandler
       })
@@ -1513,13 +1507,13 @@ describe('Execution', () => {
     })
   })
 
-  describe('chainOK method', () => {
+  describe('ifOK method', () => {
     test('creates a chained execution that only executes on success', async () => {
       const firstExecute = jest.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
       })
@@ -1541,7 +1535,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK(() => {
+      const chainedExecution = firstExecution.ifOK(() => {
         // This should not be called
         expect(true).toBe(false)
         return okHandler
@@ -1562,7 +1556,7 @@ describe('Execution', () => {
 
       const secondError = new Error('second error')
       const okHandler = jest.fn(() => Promise.reject(secondError))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
       })
@@ -1580,7 +1574,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
       })
@@ -1598,7 +1592,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve(Result.ok('second')))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
       })
@@ -1619,7 +1613,7 @@ describe('Execution', () => {
       firstExecution.abort('test abort')
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK(() => {
+      const chainedExecution = firstExecution.ifOK(() => {
         // Should not be called
         expect(true).toBe(false)
         return okHandler
@@ -1641,7 +1635,7 @@ describe('Execution', () => {
       firstExecution.cancel('test cancel')
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK(() => {
+      const chainedExecution = firstExecution.ifOK(() => {
         // Should not be called
         expect(true).toBe(false)
         return okHandler
@@ -1663,7 +1657,7 @@ describe('Execution', () => {
       await firstExecution[Symbol.asyncDispose]()
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK(() => {
+      const chainedExecution = firstExecution.ifOK(() => {
         // Should not be called
         expect(true).toBe(false)
         return okHandler
@@ -1684,7 +1678,7 @@ describe('Execution', () => {
       const firstExecution = new Execution({ execute: firstExecute, timeout: 50 })
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK(() => {
+      const chainedExecution = firstExecution.ifOK(() => {
         // Should not be called
         expect(true).toBe(false)
         return okHandler
@@ -1698,7 +1692,7 @@ describe('Execution', () => {
       expect(okHandler).not.toHaveBeenCalled()
     })
 
-    test('supports multiple chainOK calls', async () => {
+    test('supports multiple ifOK calls', async () => {
       const firstExecute = jest.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
@@ -1706,11 +1700,11 @@ describe('Execution', () => {
       const thirdHandler = jest.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
-        .chainOK((value) => {
+        .ifOK((value) => {
           expect(value).toBe('first')
           return secondHandler
         })
-        .chainOK((value) => {
+        .ifOK((value) => {
           expect(value).toBe('second')
           return thirdHandler
         })
@@ -1729,7 +1723,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK(async (value) => {
+      const chainedExecution = firstExecution.ifOK(async (value) => {
         expect(value).toBe('first')
         await new Promise((resolve) => setTimeout(resolve, 10))
         return okHandler
@@ -1748,7 +1742,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return Promise.resolve(okHandler)
       })
@@ -1766,7 +1760,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return { execute: okHandler }
       })
@@ -1786,7 +1780,7 @@ describe('Execution', () => {
       const okHandler = jest.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return { execute: okHandler, timeout: 50 }
       })
@@ -1806,7 +1800,7 @@ describe('Execution', () => {
       const okHandler = jest.fn(() => Promise.resolve('second'))
       const secondExecution = new Execution(okHandler)
 
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return () => secondExecution
       })
@@ -1826,7 +1820,7 @@ describe('Execution', () => {
       const secondError = new Error('second error')
       const secondExecution = new Execution(() => Promise.reject(secondError))
 
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return () => secondExecution
       })
@@ -1853,7 +1847,7 @@ describe('Execution', () => {
       const firstExecution = new Execution<User, UserError>(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe(user)
         return okHandler
       })
@@ -1875,7 +1869,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe(customValue)
         expect(value.data).toBe('custom')
         return okHandler
@@ -1893,7 +1887,7 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return null
       })
@@ -1909,7 +1903,7 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return null // Return null instead of undefined to avoid the signal issue
       })
@@ -1941,12 +1935,12 @@ describe('Execution', () => {
       })
 
       const chainedExecution = firstExecution
-        .chainOK((value) => {
+        .ifOK((value) => {
           executionOrder.push('ok handler 1')
           expect(value).toBe('first')
           return secondHandler
         })
-        .chainOK((value) => {
+        .ifOK((value) => {
           executionOrder.push('ok handler 2')
           expect(value).toBe('second')
           return thirdHandler
@@ -1962,7 +1956,7 @@ describe('Execution', () => {
       expect(thirdHandler).toHaveBeenCalledTimes(1)
     })
 
-    test('handles mixed chain and chainOK calls', async () => {
+    test('handles mixed chain and ifOK calls', async () => {
       const executionOrder: string[] = []
 
       const firstExecute = jest.fn(() => {
@@ -1982,12 +1976,12 @@ describe('Execution', () => {
       })
 
       const chainedExecution = firstExecution
-        .chainOK((value) => {
+        .ifOK((value) => {
           executionOrder.push('ok handler')
           expect(value).toBe('first')
           return secondHandler
         })
-        .chain((result) => {
+        .next((result) => {
           executionOrder.push('chain function')
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('second')
@@ -2011,7 +2005,7 @@ describe('Execution', () => {
       const okHandler = jest.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
       })
@@ -2032,7 +2026,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
       })
@@ -2053,7 +2047,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
       })
@@ -2074,7 +2068,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
       })
@@ -2425,7 +2419,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -2446,12 +2440,12 @@ describe('Execution', () => {
       const thirdExecute = jest.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('second')
           return thirdExecute
@@ -2471,7 +2465,7 @@ describe('Execution', () => {
 
       const secondError = new Error('second error')
       const secondExecute = jest.fn(() => Promise.reject(secondError))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -2491,7 +2485,7 @@ describe('Execution', () => {
       const secondExecute = jest.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -2529,7 +2523,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -2557,12 +2551,12 @@ describe('Execution', () => {
       const thirdExecute = jest.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('second')
           return thirdExecute
@@ -2591,7 +2585,7 @@ describe('Execution', () => {
 
       const secondError = new Error('second error')
       const secondExecute = jest.fn(() => Promise.reject(secondError))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -2620,12 +2614,12 @@ describe('Execution', () => {
       const thirdExecute = jest.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isError()).toBe(true)
           expect(result.error).toBe(secondError)
           return thirdExecute
@@ -2648,12 +2642,12 @@ describe('Execution', () => {
       expect(thirdExecute).toHaveBeenCalledTimes(1)
     })
 
-    test('yields chainError results in order', async () => {
+    test('yields ifError results in order', async () => {
       const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
       const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return errorHandler
@@ -2674,12 +2668,12 @@ describe('Execution', () => {
       expect(errorHandler).toHaveBeenCalledTimes(1)
     })
 
-    test('yields chainOK results in order', async () => {
+    test('yields ifOK results in order', async () => {
       const firstExecute = jest.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const okHandler = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
       })
@@ -2698,7 +2692,7 @@ describe('Execution', () => {
       expect(okHandler).toHaveBeenCalledTimes(1)
     })
 
-    test('yields mixed chain, chainError, and chainOK results', async () => {
+    test('yields mixed chain, ifError, and ifOK results', async () => {
       const firstExecute = jest.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
@@ -2707,17 +2701,17 @@ describe('Execution', () => {
       const thirdExecute = jest.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chainError((error) => {
+        .ifError((error) => {
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('second error')
           return errorHandler
         })
-        .chainOK((value) => {
+        .ifOK((value) => {
           expect(value).toBe('recovered')
           return thirdExecute
         })
@@ -2748,7 +2742,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(AbortInterruption)
         expect(result.error?.cause).toBe('test abort')
@@ -2781,7 +2775,7 @@ describe('Execution', () => {
       const secondExecute = jest.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -2807,7 +2801,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(CancelInterruption)
         expect(result.error?.cause).toBe('test cancel')
@@ -2838,7 +2832,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(DisposeInterruption)
         return secondExecute
@@ -2886,20 +2880,20 @@ describe('Execution', () => {
       })
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           executionOrder.push('chain 1')
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chainError((error) => {
-          executionOrder.push('chainError')
+        .ifError((error) => {
+          executionOrder.push('ifError')
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('second error')
           return errorHandler
         })
-        .chainOK((value) => {
-          executionOrder.push('chainOK')
+        .ifOK((value) => {
+          executionOrder.push('ifOK')
           expect(value).toBe('recovered')
           return thirdExecute
         })
@@ -2924,9 +2918,9 @@ describe('Execution', () => {
         'first',
         'chain 1',
         'second',
-        'chainError',
+        'ifError',
         'error handler',
-        'chainOK',
+        'ifOK',
         'third',
       ])
       expect(firstExecute).toHaveBeenCalledTimes(1)
@@ -2942,7 +2936,7 @@ describe('Execution', () => {
       // Create a deep chain of 5 executions
       for (let i = 2; i <= 5; i++) {
         const nextExecute = jest.fn(() => Promise.resolve(`step ${i}`))
-        currentExecution = currentExecution.chain((result) => {
+        currentExecution = currentExecution.next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe(`step ${i - 1}`)
           return nextExecute
@@ -2970,17 +2964,17 @@ describe('Execution', () => {
       const fourthExecute = jest.fn(() => Promise.resolve([1, 2, 3]))
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe(42)
           return secondExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('string value')
           return thirdExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toEqual({ id: 123, name: 'test' })
           return fourthExecute
@@ -3017,7 +3011,7 @@ describe('Execution', () => {
       const firstExecution = new Execution<User, UserError>(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('processed'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toEqual(user)
         expect(result.value.id).toBe(1)
@@ -3053,7 +3047,7 @@ describe('Execution', () => {
 
       const customError = new CustomError('custom error', 500)
       const secondExecute = jest.fn(() => Promise.reject(customError))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -3079,7 +3073,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -3106,7 +3100,7 @@ describe('Execution', () => {
 
       const secondError = new Error('second error')
       const secondExecute = jest.fn(() => Promise.reject(secondError))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -3134,12 +3128,12 @@ describe('Execution', () => {
       const secondExecute = jest.fn(() => Promise.resolve('second'))
       const thirdExecute = jest.fn(() => Promise.resolve('third'))
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('second')
           return thirdExecute
@@ -3171,7 +3165,7 @@ describe('Execution', () => {
         await new Promise((resolve) => setTimeout(resolve, 10))
         return 'second'
       })
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -3195,7 +3189,7 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return null // Return null to stop the chain
@@ -3212,11 +3206,11 @@ describe('Execution', () => {
       expect(firstExecute).toHaveBeenCalledTimes(1)
     })
 
-    test('yields results from chainError with null returns', async () => {
+    test('yields results from ifError with null returns', async () => {
       const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return null // Return null to stop the chain
@@ -3234,11 +3228,11 @@ describe('Execution', () => {
       expect(firstExecute).toHaveBeenCalledTimes(1)
     })
 
-    test('yields results from chainOK with null returns', async () => {
+    test('yields results from ifOK with null returns', async () => {
       const firstExecute = jest.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return null // Return null to stop the chain
       })
@@ -3277,7 +3271,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -3307,17 +3301,17 @@ describe('Execution', () => {
       const thirdExecute = jest.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chainError((error) => {
+        .ifError((error) => {
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('second error')
           return errorHandler
         })
-        .chainOK((value) => {
+        .ifOK((value) => {
           expect(value).toBe('recovered')
           return thirdExecute
         })
@@ -3359,7 +3353,7 @@ describe('Execution', () => {
       const firstExecution = new Execution<User, UserError>(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('processed'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toEqual(user)
         return secondExecute
@@ -3394,7 +3388,7 @@ describe('Execution', () => {
 
       const customError = new CustomError('custom error', 500)
       const secondExecute = jest.fn(() => Promise.reject(customError))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -3421,7 +3415,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(AbortInterruption)
         expect(result.error?.cause).toBe('test abort')
@@ -3455,7 +3449,7 @@ describe('Execution', () => {
       const secondExecute = jest.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -3484,12 +3478,12 @@ describe('Execution', () => {
       const secondExecute = jest.fn(() => Promise.resolve('second'))
       const thirdExecute = jest.fn(() => Promise.resolve('third'))
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('second')
           return thirdExecute
@@ -3522,7 +3516,7 @@ describe('Execution', () => {
         await new Promise((resolve) => setTimeout(resolve, 10))
         return 'second'
       })
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -3547,7 +3541,7 @@ describe('Execution', () => {
       const firstExecute = jest.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return null // Return null to stop the chain
@@ -3565,11 +3559,11 @@ describe('Execution', () => {
       expect(firstExecute).toHaveBeenCalledTimes(1)
     })
 
-    test('generates AsyncIterable with chainError and null returns', async () => {
+    test('generates AsyncIterable with ifError and null returns', async () => {
       const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const chainedExecution = firstExecution.chainError((error) => {
+      const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
         return null // Return null to stop the chain
@@ -3588,11 +3582,11 @@ describe('Execution', () => {
       expect(firstExecute).toHaveBeenCalledTimes(1)
     })
 
-    test('generates AsyncIterable with chainOK and null returns', async () => {
+    test('generates AsyncIterable with ifOK and null returns', async () => {
       const firstExecute = jest.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const chainedExecution = firstExecution.chainOK((value) => {
+      const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return null // Return null to stop the chain
       })
@@ -3616,7 +3610,7 @@ describe('Execution', () => {
       // Create a deep chain of 5 executions
       for (let i = 2; i <= 5; i++) {
         const nextExecute = jest.fn(() => Promise.resolve(`step ${i}`))
-        currentExecution = currentExecution.chain((result) => {
+        currentExecution = currentExecution.next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe(`step ${i - 1}`)
           return nextExecute
@@ -3645,17 +3639,17 @@ describe('Execution', () => {
       const fourthExecute = jest.fn(() => Promise.resolve([1, 2, 3]))
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe(42)
           return secondExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('string value')
           return thirdExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toEqual({ id: 123, name: 'test' })
           return fourthExecute
@@ -3687,12 +3681,12 @@ describe('Execution', () => {
       const thirdExecute = jest.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chain((result) => {
+        .next((result) => {
           expect(result.isError()).toBe(true)
           expect(result.error).toBe(secondError)
           return thirdExecute
@@ -3724,12 +3718,12 @@ describe('Execution', () => {
       const secondErrorHandler = jest.fn(() => Promise.resolve('recovered'))
 
       const chainedExecution = firstExecution
-        .chainError((error) => {
+        .ifError((error) => {
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('first error')
           return firstErrorHandler
         })
-        .chainError((error) => {
+        .ifError((error) => {
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('second error')
           return secondErrorHandler
@@ -3763,11 +3757,11 @@ describe('Execution', () => {
       const thirdHandler = jest.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
-        .chainOK((value) => {
+        .ifOK((value) => {
           expect(value).toBe('first')
           return secondHandler
         })
-        .chainOK((value) => {
+        .ifOK((value) => {
           expect(value).toBe('second')
           return thirdHandler
         })
@@ -3815,20 +3809,20 @@ describe('Execution', () => {
       })
 
       const chainedExecution = firstExecution
-        .chain((result) => {
+        .next((result) => {
           executionOrder.push('chain 1')
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe('first')
           return secondExecute
         })
-        .chainError((error) => {
-          executionOrder.push('chainError')
+        .ifError((error) => {
+          executionOrder.push('ifError')
           expect(error).toBeInstanceOf(Error)
           expect(error.message).toBe('second error')
           return errorHandler
         })
-        .chainOK((value) => {
-          executionOrder.push('chainOK')
+        .ifOK((value) => {
+          executionOrder.push('ifOK')
           expect(value).toBe('recovered')
           return thirdExecute
         })
@@ -3854,9 +3848,9 @@ describe('Execution', () => {
         'first',
         'chain 1',
         'second',
-        'chainError',
+        'ifError',
         'error handler',
-        'chainOK',
+        'ifOK',
         'third',
       ])
       expect(firstExecute).toHaveBeenCalledTimes(1)
@@ -3870,7 +3864,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return { execute: secondExecute }
@@ -3898,7 +3892,7 @@ describe('Execution', () => {
       const secondExecute = jest.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return { execute: secondExecute, timeout: 50 }
@@ -3926,7 +3920,7 @@ describe('Execution', () => {
       const secondExecute = jest.fn(() => Promise.resolve('second'))
       const secondExecution = new Execution(secondExecute)
 
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return () => secondExecution
@@ -3954,7 +3948,7 @@ describe('Execution', () => {
       const secondError = new Error('second error')
       const secondExecution = new Execution(() => Promise.reject(secondError))
 
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return () => secondExecution
@@ -3979,7 +3973,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return Promise.resolve(secondExecute)
@@ -4005,7 +3999,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain(async (result) => {
+      const chainedExecution = firstExecution.next(async (result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         await new Promise((resolve) => setTimeout(resolve, 10))
@@ -4032,7 +4026,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve(Result.ok('second')))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -4059,7 +4053,7 @@ describe('Execution', () => {
 
       const secondError = new Error('second error')
       const secondExecute = jest.fn(() => Promise.resolve(Result.error(secondError)))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
@@ -4085,7 +4079,7 @@ describe('Execution', () => {
       const firstExecution = new Execution(firstExecute)
 
       const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const chainedExecution = firstExecution.chain((result) => {
+      const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
         return secondExecute
