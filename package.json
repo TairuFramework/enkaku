@@ -7,7 +7,7 @@
   "packageManager": "pnpm@10.14.0",
   "scripts": {
     "lint": "biome check --write ./packages ./tests",
-    "test": "node --experimental-eventsource --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "test": "turbo run test:unit",
     "test:ci": "pnpm run test --ci --runInBand",
     "build:js": "turbo run build:js",
     "build:types": "pnpm run -r build:types",

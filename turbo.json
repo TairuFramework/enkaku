@@ -5,6 +5,7 @@
     "build:js": {
       "dependsOn": ["^clean"],
       "outputs": ["lib/**"]
-    }
+    },
+    "test:unit": {}
   }
 }

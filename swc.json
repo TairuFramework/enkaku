@@ -11,6 +11,9 @@
             "process.env.NODE_ENV": "production"
           }
         }
+      },
+      "react": {
+        "runtime": "automatic"
       }
     }
   }
