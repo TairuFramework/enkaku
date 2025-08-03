@@ -1,5 +1,10 @@
 import type { PatchOperation } from './schemas.js'
 
+/**
+ * Error thrown when patch operations fail.
+ *
+ * @public
+ */
 export class PatchError extends Error {
   code: string
 
@@ -39,6 +44,15 @@ function assertPathDoesNotExist(obj: unknown, path: string): void {
   }
 }
 
+/**
+ * Parses a JSON Pointer path into an array of keys.
+ *
+ * @param path - JSON Pointer path (e.g., "/foo/bar/0")
+ * @returns Array of property keys and array indices
+ * @throws {PatchError} When path doesn't start with '/'
+ *
+ * @public
+ */
 export function parsePath(path: string): Array<string | number> {
   assertValidPath(path)
   return path
@@ -47,18 +61,41 @@ export function parsePath(path: string): Array<string | number> {
     .map((key) => {
       // Handle JSON Pointer escape sequences
       const unescaped = key.replace(/~1/g, '/').replace(/~0/g, '~')
-      // Convert array indices to numbers
+      // Convert array indices to numbers, but not empty strings
+      if (unescaped === '') {
+        return unescaped
+      }
       const index = Number(unescaped)
       return Number.isNaN(index) ? unescaped : index
     })
 }
 
+/**
+ * Gets a value from an object using a JSON Pointer path.
+ *
+ * @param obj - Object to traverse
+ * @param path - JSON Pointer path
+ * @returns The value at the specified path, or undefined if not found
+ *
+ * @public
+ */
 export function getPath(obj: unknown, path: string): unknown {
   const keys = parsePath(path)
   // @ts-ignore index signature
   return keys.reduce((acc, key) => acc?.[key], obj)
 }
 
+/**
+ * Sets a value in an object using a JSON Pointer path.
+ *
+ * @param obj - Object to modify
+ * @param path - JSON Pointer path
+ * @param value - Value to set
+ * @param shouldExist - Whether the path should already exist
+ * @throws {PatchError} When path validation fails
+ *
+ * @public
+ */
 export function setPath(
   obj: Record<string, unknown> | Array<unknown>,
   path: string,
@@ -100,6 +137,15 @@ export function setPath(
   }
 }
 
+/**
+ * Deletes a value from an object using a JSON Pointer path.
+ *
+ * @param obj - Object to modify
+ * @param path - JSON Pointer path
+ * @throws {PatchError} When path doesn't exist or is invalid
+ *
+ * @public
+ */
 export function deletePath(obj: Record<string, unknown> | Array<unknown>, path: string): void {
   const keys = parsePath(path)
   const lastKey = keys.pop()
@@ -132,6 +178,28 @@ export function deletePath(obj: Record<string, unknown> | Array<unknown>, path: 
   }
 }
 
+/**
+ * Applies an array of JSON Patch operations to an object.
+ *
+ * Operations are applied sequentially. If any operation fails,
+ * the function throws and no further operations are applied.
+ *
+ * @param data - Object to modify
+ * @param patches - Array of patch operations to apply
+ * @throws {PatchError} When any operation fails
+ *
+ * @example
+ * ```typescript
+ * const data = { foo: { bar: 1 } }
+ * applyPatches(data, [
+ *   { op: 'replace', path: '/foo/bar', value: 2 },
+ *   { op: 'add', path: '/foo/baz', value: 3 }
+ * ])
+ * // data is now { foo: { bar: 2, baz: 3 } }
+ * ```
+ *
+ * @public
+ */
 export function applyPatches(data: Record<string, unknown>, patches: Array<PatchOperation>): void {
   for (const patch of patches) {
     switch (patch.op) {
@@ -167,6 +235,17 @@ export function applyPatches(data: Record<string, unknown>, patches: Array<Patch
         }
         deletePath(data, patch.from)
         setPath(data, patch.path, value)
+        break
+      }
+      case 'test': {
+        assertPathExists(data, patch.path)
+        const value = getPath(data, patch.path)
+        if (!Object.is(value, patch.value)) {
+          throw new PatchError(
+            `Test operation failed at path ${patch.path}: expected ${JSON.stringify(patch.value)}, got ${JSON.stringify(value)}`,
+            'TEST_FAILED',
+          )
+        }
         break
       }
       default:

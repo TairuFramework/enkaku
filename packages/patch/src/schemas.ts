@@ -71,6 +71,18 @@ export const patchCopyOperationSchema = {
 } as const satisfies Schema
 export type PatchCopyOperation = FromSchema<typeof patchCopyOperationSchema>
 
+export const patchTestOperationSchema = {
+  type: 'object',
+  properties: {
+    op: { type: 'string', const: 'test' },
+    path: { type: 'string' },
+    value: {},
+  },
+  additionalProperties: false,
+  required: ['op', 'path', 'value'],
+} as const satisfies Schema
+export type PatchTestOperation = FromSchema<typeof patchTestOperationSchema>
+
 export const patchOperationSchema = {
   anyOf: [
     patchAddOperationSchema,
@@ -79,6 +91,7 @@ export const patchOperationSchema = {
     patchReplaceOperationSchema,
     patchMoveOperationSchema,
     patchCopyOperationSchema,
+    patchTestOperationSchema,
   ],
 } as const satisfies Schema
 export type PatchOperation = FromSchema<typeof patchOperationSchema>
