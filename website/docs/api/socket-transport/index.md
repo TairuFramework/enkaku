@@ -46,7 +46,7 @@ Base Transport class implementing TransportType.
 
 ###### Overrides
 
-[`Transport`](../transport/index.md#transport).[`constructor`](../transport/index.md#transport#constructor-1)
+[`Transport`](../transport/index.md#transport).[`constructor`](../transport/index.md#constructor-1)
 
 #### Accessors
 
@@ -62,7 +62,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`disposed`](../transport/index.md#transport#disposed-1)
+[`Transport`](../transport/index.md#transport).[`disposed`](../transport/index.md#disposed-1)
 
 ##### events
 
@@ -76,7 +76,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`events`](../transport/index.md#transport#events)
+[`Transport`](../transport/index.md#transport).[`events`](../transport/index.md#events)
 
 #### Methods
 
@@ -90,7 +90,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`[asyncDispose]`](../transport/index.md#transport#asyncdispose-2)
+[`Transport`](../transport/index.md#transport).[`[asyncDispose]`](../transport/index.md#asyncdispose-2)
 
 ##### \[asyncIterator\]()
 
@@ -110,7 +110,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`[asyncIterator]`](../transport/index.md#transport#asynciterator)
+[`Transport`](../transport/index.md#transport).[`[asyncIterator]`](../transport/index.md#asynciterator)
 
 ##### dispose()
 
@@ -128,7 +128,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`dispose`](../transport/index.md#transport#dispose-2)
+[`Transport`](../transport/index.md#transport).[`dispose`](../transport/index.md#dispose-2)
 
 ##### getWritable()
 
@@ -140,7 +140,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`getWritable`](../transport/index.md#transport#getwritable)
+[`Transport`](../transport/index.md#transport).[`getWritable`](../transport/index.md#getwritable)
 
 ##### read()
 
@@ -152,7 +152,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`read`](../transport/index.md#transport#read)
+[`Transport`](../transport/index.md#transport).[`read`](../transport/index.md#read)
 
 ##### write()
 
@@ -170,7 +170,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`write`](../transport/index.md#transport#write)
+[`Transport`](../transport/index.md#transport).[`write`](../transport/index.md#write)
 
 ## Type Aliases
 

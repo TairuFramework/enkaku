@@ -46,7 +46,7 @@ Create direct Transports for communication between a client and server in the sa
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor-3)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructor-3)
 
 #### Accessors
 
@@ -72,7 +72,7 @@ Create direct Transports for communication between a client and server in the sa
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposer#disposed)
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed)
 
 ##### server
 
@@ -96,7 +96,7 @@ Create direct Transports for communication between a client and server in the sa
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#disposer#asyncdispose)
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose)
 
 ##### dispose()
 
@@ -114,7 +114,7 @@ Create direct Transports for communication between a client and server in the sa
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#disposer#dispose)
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose)
 
 ***
 
@@ -166,7 +166,7 @@ Base Transport class implementing TransportType.
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor-3)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructor-3)
 
 #### Accessors
 
@@ -186,7 +186,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposer#disposed)
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed)
 
 ##### events
 
@@ -200,7 +200,7 @@ Base Transport class implementing TransportType.
 
 ###### Implementation of
 
-`TransportType.events`
+`__type`.`events`
 
 #### Methods
 
@@ -218,7 +218,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#disposer#asyncdispose)
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose)
 
 ##### \[asyncIterator\]()
 
@@ -238,7 +238,7 @@ Base Transport class implementing TransportType.
 
 ###### Implementation of
 
-`TransportType.[asyncIterator]`
+`__type`.`[asyncIterator]`
 
 ##### dispose()
 
@@ -260,7 +260,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#disposer#dispose)
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose)
 
 ##### getWritable()
 
@@ -272,7 +272,7 @@ Base Transport class implementing TransportType.
 
 ###### Implementation of
 
-`TransportType.getWritable`
+`__type`.`getWritable`
 
 ##### read()
 
@@ -284,7 +284,7 @@ Base Transport class implementing TransportType.
 
 ###### Implementation of
 
-`TransportType.read`
+`__type`.`read`
 
 ##### write()
 
@@ -302,7 +302,7 @@ Base Transport class implementing TransportType.
 
 ###### Implementation of
 
-`TransportType.write`
+`__type`.`write`
 
 ## Type Aliases
 

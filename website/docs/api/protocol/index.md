@@ -812,227 +812,227 @@ npm install @enkaku/protocol
 
 ###### properties.description
 
-> `readonly` **properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.description.type
 
-> `readonly` **properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error
 
-> `readonly` **properties.error**: `object` = `errorObjectDefinition`
+> `readonly` **error**: `object` = `errorObjectDefinition`
 
 ###### properties.error.properties
 
-> `readonly` **properties.error.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.additionalProperties
 
-> `readonly` **properties.error.properties.additionalProperties**: `object`
+> `readonly` **additionalProperties**: `object`
 
 ###### properties.error.properties.additionalProperties.const
 
-> `readonly` **properties.error.properties.additionalProperties.const**: `false` = `false`
+> `readonly` **const**: `false` = `false`
 
 ###### properties.error.properties.additionalProperties.type
 
-> `readonly` **properties.error.properties.additionalProperties.type**: `"boolean"` = `'boolean'`
+> `readonly` **type**: `"boolean"` = `'boolean'`
 
 ###### properties.error.properties.properties
 
-> `readonly` **properties.error.properties.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties
 
-> `readonly` **properties.error.properties.properties.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.code
 
-> `readonly` **properties.error.properties.properties.properties.code**: `object`
+> `readonly` **code**: `object`
 
 ###### properties.error.properties.properties.properties.code.additionalProperties
 
-> `readonly` **properties.error.properties.properties.properties.code.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.error.properties.properties.properties.code.properties
 
-> `readonly` **properties.error.properties.properties.properties.code.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.code.properties.type
 
-> `readonly` **properties.error.properties.properties.properties.code.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.properties.properties.code.properties.type.const
 
-> `readonly` **properties.error.properties.properties.properties.code.properties.type.const**: `"string"` = `'string'`
+> `readonly` **const**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.code.properties.type.type
 
-> `readonly` **properties.error.properties.properties.properties.code.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.code.required
 
-> `readonly` **properties.error.properties.properties.properties.code.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.code.type
 
-> `readonly` **properties.error.properties.properties.properties.code.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.properties.data
 
-> `readonly` **properties.error.properties.properties.properties.data**: `object` = `objectTypeDefinition`
+> `readonly` **data**: `object` = `objectTypeDefinition`
 
 ###### properties.error.properties.properties.properties.data.additionalProperties
 
-> `readonly` **properties.error.properties.properties.properties.data.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.error.properties.properties.properties.data.properties
 
-> `readonly` **properties.error.properties.properties.properties.data.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.$id
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.$id**: `object`
+> `readonly` **$id**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.$id.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.data.properties.description
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.description.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.data.properties.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.type.const
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.type.const**: `"object"` = `'object'`
+> `readonly` **const**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.properties.data.properties.type.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.data.required
 
-> `readonly` **properties.error.properties.properties.properties.data.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.data.type
 
-> `readonly` **properties.error.properties.properties.properties.data.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.properties.message
 
-> `readonly` **properties.error.properties.properties.properties.message**: `object`
+> `readonly` **message**: `object`
 
 ###### properties.error.properties.properties.properties.message.additionalProperties
 
-> `readonly` **properties.error.properties.properties.properties.message.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.error.properties.properties.properties.message.properties
 
-> `readonly` **properties.error.properties.properties.properties.message.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.message.properties.type
 
-> `readonly` **properties.error.properties.properties.properties.message.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.properties.properties.message.properties.type.const
 
-> `readonly` **properties.error.properties.properties.properties.message.properties.type.const**: `"string"` = `'string'`
+> `readonly` **const**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.message.properties.type.type
 
-> `readonly` **properties.error.properties.properties.properties.message.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.message.required
 
-> `readonly` **properties.error.properties.properties.properties.message.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.message.type
 
-> `readonly` **properties.error.properties.properties.properties.message.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.type
 
-> `readonly` **properties.error.properties.properties.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.required
 
-> `readonly` **properties.error.properties.required**: `object`
+> `readonly` **required**: `object`
 
 ###### properties.error.properties.required.anyOf
 
-> `readonly` **properties.error.properties.required.anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
+> `readonly` **anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
 
 ###### properties.error.properties.type
 
-> `readonly` **properties.error.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.type.const
 
-> `readonly` **properties.error.properties.type.const**: `"object"` = `'object'`
+> `readonly` **const**: `"object"` = `'object'`
 
 ###### properties.error.properties.type.type
 
-> `readonly` **properties.error.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.required
 
-> `readonly` **properties.error.required**: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]
+> `readonly` **required**: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]
 
 ###### properties.error.type
 
-> `readonly` **properties.error.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.param
 
-> `readonly` **properties.param**: `object` = `anyTypeDefinition`
+> `readonly` **param**: `object` = `anyTypeDefinition`
 
 ###### properties.param.anyOf
 
-> `readonly` **properties.param.anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
 ###### properties.receive
 
-> `readonly` **properties.receive**: `object` = `anyTypeDefinition`
+> `readonly` **receive**: `object` = `anyTypeDefinition`
 
 ###### properties.receive.anyOf
 
-> `readonly` **properties.receive.anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
 ###### properties.result
 
-> `readonly` **properties.result**: `object` = `anyTypeDefinition`
+> `readonly` **result**: `object` = `anyTypeDefinition`
 
 ###### properties.result.anyOf
 
-> `readonly` **properties.result.anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
 ###### properties.send
 
-> `readonly` **properties.send**: `object` = `anyTypeDefinition`
+> `readonly` **send**: `object` = `anyTypeDefinition`
 
 ###### properties.send.anyOf
 
-> `readonly` **properties.send.anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
 ###### properties.type
 
-> `readonly` **properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.type.const
 
-> `readonly` **properties.type.const**: `"channel"` = `'channel'`
+> `readonly` **const**: `"channel"` = `'channel'`
 
 ###### properties.type.type
 
-> `readonly` **properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 
@@ -1072,27 +1072,27 @@ npm install @enkaku/protocol
 
 ###### properties.code
 
-> `readonly` **properties.code**: `object`
+> `readonly` **code**: `object`
 
 ###### properties.code.type
 
-> `readonly` **properties.code.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.data
 
-> `readonly` **properties.data**: `object`
+> `readonly` **data**: `object`
 
 ###### properties.data.type
 
-> `readonly` **properties.data.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.message
 
-> `readonly` **properties.message**: `object`
+> `readonly` **message**: `object`
 
 ###### properties.message.type
 
-> `readonly` **properties.message.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 
@@ -1116,159 +1116,159 @@ npm install @enkaku/protocol
 
 ###### properties.additionalProperties
 
-> `readonly` **properties.additionalProperties**: `object`
+> `readonly` **additionalProperties**: `object`
 
 ###### properties.additionalProperties.const
 
-> `readonly` **properties.additionalProperties.const**: `false` = `false`
+> `readonly` **const**: `false` = `false`
 
 ###### properties.additionalProperties.type
 
-> `readonly` **properties.additionalProperties.type**: `"boolean"` = `'boolean'`
+> `readonly` **type**: `"boolean"` = `'boolean'`
 
 ###### properties.properties
 
-> `readonly` **properties.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.properties.properties
 
-> `readonly` **properties.properties.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.properties.properties.code
 
-> `readonly` **properties.properties.properties.code**: `object`
+> `readonly` **code**: `object`
 
 ###### properties.properties.properties.code.additionalProperties
 
-> `readonly` **properties.properties.properties.code.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.properties.properties.code.properties
 
-> `readonly` **properties.properties.properties.code.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.properties.properties.code.properties.type
 
-> `readonly` **properties.properties.properties.code.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.properties.properties.code.properties.type.const
 
-> `readonly` **properties.properties.properties.code.properties.type.const**: `"string"` = `'string'`
+> `readonly` **const**: `"string"` = `'string'`
 
 ###### properties.properties.properties.code.properties.type.type
 
-> `readonly` **properties.properties.properties.code.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.properties.properties.code.required
 
-> `readonly` **properties.properties.properties.code.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.properties.properties.code.type
 
-> `readonly` **properties.properties.properties.code.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.properties.properties.data
 
-> `readonly` **properties.properties.properties.data**: `object` = `objectTypeDefinition`
+> `readonly` **data**: `object` = `objectTypeDefinition`
 
 ###### properties.properties.properties.data.additionalProperties
 
-> `readonly` **properties.properties.properties.data.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.properties.properties.data.properties
 
-> `readonly` **properties.properties.properties.data.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.properties.properties.data.properties.$id
 
-> `readonly` **properties.properties.properties.data.properties.$id**: `object`
+> `readonly` **$id**: `object`
 
 ###### properties.properties.properties.data.properties.$id.type
 
-> `readonly` **properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.properties.properties.data.properties.description
 
-> `readonly` **properties.properties.properties.data.properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.properties.properties.data.properties.description.type
 
-> `readonly` **properties.properties.properties.data.properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.properties.properties.data.properties.type
 
-> `readonly` **properties.properties.properties.data.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.properties.properties.data.properties.type.const
 
-> `readonly` **properties.properties.properties.data.properties.type.const**: `"object"` = `'object'`
+> `readonly` **const**: `"object"` = `'object'`
 
 ###### properties.properties.properties.data.properties.type.type
 
-> `readonly` **properties.properties.properties.data.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.properties.properties.data.required
 
-> `readonly` **properties.properties.properties.data.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.properties.properties.data.type
 
-> `readonly` **properties.properties.properties.data.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.properties.properties.message
 
-> `readonly` **properties.properties.properties.message**: `object`
+> `readonly` **message**: `object`
 
 ###### properties.properties.properties.message.additionalProperties
 
-> `readonly` **properties.properties.properties.message.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.properties.properties.message.properties
 
-> `readonly` **properties.properties.properties.message.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.properties.properties.message.properties.type
 
-> `readonly` **properties.properties.properties.message.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.properties.properties.message.properties.type.const
 
-> `readonly` **properties.properties.properties.message.properties.type.const**: `"string"` = `'string'`
+> `readonly` **const**: `"string"` = `'string'`
 
 ###### properties.properties.properties.message.properties.type.type
 
-> `readonly` **properties.properties.properties.message.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.properties.properties.message.required
 
-> `readonly` **properties.properties.properties.message.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.properties.properties.message.type
 
-> `readonly` **properties.properties.properties.message.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.properties.type
 
-> `readonly` **properties.properties.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.required
 
-> `readonly` **properties.required**: `object`
+> `readonly` **required**: `object`
 
 ###### properties.required.anyOf
 
-> `readonly` **properties.required.anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
+> `readonly` **anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
 
 ###### properties.type
 
-> `readonly` **properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.type.const
 
-> `readonly` **properties.type.const**: `"object"` = `'object'`
+> `readonly` **const**: `"object"` = `'object'`
 
 ###### properties.type.type
 
-> `readonly` **properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 
@@ -1296,71 +1296,71 @@ npm install @enkaku/protocol
 
 ###### properties.data
 
-> `readonly` **properties.data**: `object` = `objectTypeDefinition`
+> `readonly` **data**: `object` = `objectTypeDefinition`
 
 ###### properties.data.additionalProperties
 
-> `readonly` **properties.data.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.data.properties
 
-> `readonly` **properties.data.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.data.properties.$id
 
-> `readonly` **properties.data.properties.$id**: `object`
+> `readonly` **$id**: `object`
 
 ###### properties.data.properties.$id.type
 
-> `readonly` **properties.data.properties.$id.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.data.properties.description
 
-> `readonly` **properties.data.properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.data.properties.description.type
 
-> `readonly` **properties.data.properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.data.properties.type
 
-> `readonly` **properties.data.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.data.properties.type.const
 
-> `readonly` **properties.data.properties.type.const**: `"object"` = `'object'`
+> `readonly` **const**: `"object"` = `'object'`
 
 ###### properties.data.properties.type.type
 
-> `readonly` **properties.data.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.data.required
 
-> `readonly` **properties.data.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.data.type
 
-> `readonly` **properties.data.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.description
 
-> `readonly` **properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.description.type
 
-> `readonly` **properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.type
 
-> `readonly` **properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.type.const
 
-> `readonly` **properties.type.const**: `"event"` = `'event'`
+> `readonly` **const**: `"event"` = `'event'`
 
 ###### properties.type.type
 
-> `readonly` **properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 
@@ -1388,31 +1388,31 @@ npm install @enkaku/protocol
 
 ###### properties.$id
 
-> `readonly` **properties.$id**: `object`
+> `readonly` **$id**: `object`
 
 ###### properties.$id.type
 
-> `readonly` **properties.$id.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.description
 
-> `readonly` **properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.description.type
 
-> `readonly` **properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.type
 
-> `readonly` **properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.type.const
 
-> `readonly` **properties.type.const**: `"object"` = `'object'`
+> `readonly` **const**: `"object"` = `'object'`
 
 ###### properties.type.type
 
-> `readonly` **properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 
@@ -1436,7 +1436,7 @@ npm install @enkaku/protocol
 
 ###### additionalProperties.anyOf
 
-> `readonly` **additionalProperties.anyOf**: readonly \[\{ `additionalProperties`: `false`; `properties`: \{ `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"event"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"request"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `receive`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"stream"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"receive"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `receive`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `send`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"channel"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"send"`, `"receive"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `false`; `properties`: \{ `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"event"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"request"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `receive`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"stream"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"receive"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `receive`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `send`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: ...; `properties`: ...; `required`: ...; `type`: ...; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"channel"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"send"`, `"receive"`\]; `type`: `"object"`; \}\]
 
 ##### type
 
@@ -1460,211 +1460,211 @@ npm install @enkaku/protocol
 
 ###### properties.description
 
-> `readonly` **properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.description.type
 
-> `readonly` **properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error
 
-> `readonly` **properties.error**: `object` = `errorObjectDefinition`
+> `readonly` **error**: `object` = `errorObjectDefinition`
 
 ###### properties.error.properties
 
-> `readonly` **properties.error.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.additionalProperties
 
-> `readonly` **properties.error.properties.additionalProperties**: `object`
+> `readonly` **additionalProperties**: `object`
 
 ###### properties.error.properties.additionalProperties.const
 
-> `readonly` **properties.error.properties.additionalProperties.const**: `false` = `false`
+> `readonly` **const**: `false` = `false`
 
 ###### properties.error.properties.additionalProperties.type
 
-> `readonly` **properties.error.properties.additionalProperties.type**: `"boolean"` = `'boolean'`
+> `readonly` **type**: `"boolean"` = `'boolean'`
 
 ###### properties.error.properties.properties
 
-> `readonly` **properties.error.properties.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties
 
-> `readonly` **properties.error.properties.properties.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.code
 
-> `readonly` **properties.error.properties.properties.properties.code**: `object`
+> `readonly` **code**: `object`
 
 ###### properties.error.properties.properties.properties.code.additionalProperties
 
-> `readonly` **properties.error.properties.properties.properties.code.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.error.properties.properties.properties.code.properties
 
-> `readonly` **properties.error.properties.properties.properties.code.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.code.properties.type
 
-> `readonly` **properties.error.properties.properties.properties.code.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.properties.properties.code.properties.type.const
 
-> `readonly` **properties.error.properties.properties.properties.code.properties.type.const**: `"string"` = `'string'`
+> `readonly` **const**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.code.properties.type.type
 
-> `readonly` **properties.error.properties.properties.properties.code.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.code.required
 
-> `readonly` **properties.error.properties.properties.properties.code.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.code.type
 
-> `readonly` **properties.error.properties.properties.properties.code.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.properties.data
 
-> `readonly` **properties.error.properties.properties.properties.data**: `object` = `objectTypeDefinition`
+> `readonly` **data**: `object` = `objectTypeDefinition`
 
 ###### properties.error.properties.properties.properties.data.additionalProperties
 
-> `readonly` **properties.error.properties.properties.properties.data.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.error.properties.properties.properties.data.properties
 
-> `readonly` **properties.error.properties.properties.properties.data.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.$id
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.$id**: `object`
+> `readonly` **$id**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.$id.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.data.properties.description
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.description.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.data.properties.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.type.const
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.type.const**: `"object"` = `'object'`
+> `readonly` **const**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.properties.data.properties.type.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.data.required
 
-> `readonly` **properties.error.properties.properties.properties.data.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.data.type
 
-> `readonly` **properties.error.properties.properties.properties.data.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.properties.message
 
-> `readonly` **properties.error.properties.properties.properties.message**: `object`
+> `readonly` **message**: `object`
 
 ###### properties.error.properties.properties.properties.message.additionalProperties
 
-> `readonly` **properties.error.properties.properties.properties.message.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.error.properties.properties.properties.message.properties
 
-> `readonly` **properties.error.properties.properties.properties.message.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.message.properties.type
 
-> `readonly` **properties.error.properties.properties.properties.message.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.properties.properties.message.properties.type.const
 
-> `readonly` **properties.error.properties.properties.properties.message.properties.type.const**: `"string"` = `'string'`
+> `readonly` **const**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.message.properties.type.type
 
-> `readonly` **properties.error.properties.properties.properties.message.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.message.required
 
-> `readonly` **properties.error.properties.properties.properties.message.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.message.type
 
-> `readonly` **properties.error.properties.properties.properties.message.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.type
 
-> `readonly` **properties.error.properties.properties.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.required
 
-> `readonly` **properties.error.properties.required**: `object`
+> `readonly` **required**: `object`
 
 ###### properties.error.properties.required.anyOf
 
-> `readonly` **properties.error.properties.required.anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
+> `readonly` **anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
 
 ###### properties.error.properties.type
 
-> `readonly` **properties.error.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.type.const
 
-> `readonly` **properties.error.properties.type.const**: `"object"` = `'object'`
+> `readonly` **const**: `"object"` = `'object'`
 
 ###### properties.error.properties.type.type
 
-> `readonly` **properties.error.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.required
 
-> `readonly` **properties.error.required**: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]
+> `readonly` **required**: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]
 
 ###### properties.error.type
 
-> `readonly` **properties.error.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.param
 
-> `readonly` **properties.param**: `object` = `anyTypeDefinition`
+> `readonly` **param**: `object` = `anyTypeDefinition`
 
 ###### properties.param.anyOf
 
-> `readonly` **properties.param.anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
 ###### properties.result
 
-> `readonly` **properties.result**: `object` = `anyTypeDefinition`
+> `readonly` **result**: `object` = `anyTypeDefinition`
 
 ###### properties.result.anyOf
 
-> `readonly` **properties.result.anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
 ###### properties.type
 
-> `readonly` **properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.type.const
 
-> `readonly` **properties.type.const**: `"request"` = `'request'`
+> `readonly` **const**: `"request"` = `'request'`
 
 ###### properties.type.type
 
-> `readonly` **properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 
@@ -1692,31 +1692,31 @@ npm install @enkaku/protocol
 
 ###### properties.$id
 
-> `readonly` **properties.$id**: `object`
+> `readonly` **$id**: `object`
 
 ###### properties.$id.type
 
-> `readonly` **properties.$id.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.description
 
-> `readonly` **properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.description.type
 
-> `readonly` **properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.type
 
-> `readonly` **properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.type.enum
 
-> `readonly` **properties.type.enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
+> `readonly` **enum**: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]
 
 ###### properties.type.type
 
-> `readonly` **properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 
@@ -1744,219 +1744,219 @@ npm install @enkaku/protocol
 
 ###### properties.description
 
-> `readonly` **properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.description.type
 
-> `readonly` **properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error
 
-> `readonly` **properties.error**: `object` = `errorObjectDefinition`
+> `readonly` **error**: `object` = `errorObjectDefinition`
 
 ###### properties.error.properties
 
-> `readonly` **properties.error.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.additionalProperties
 
-> `readonly` **properties.error.properties.additionalProperties**: `object`
+> `readonly` **additionalProperties**: `object`
 
 ###### properties.error.properties.additionalProperties.const
 
-> `readonly` **properties.error.properties.additionalProperties.const**: `false` = `false`
+> `readonly` **const**: `false` = `false`
 
 ###### properties.error.properties.additionalProperties.type
 
-> `readonly` **properties.error.properties.additionalProperties.type**: `"boolean"` = `'boolean'`
+> `readonly` **type**: `"boolean"` = `'boolean'`
 
 ###### properties.error.properties.properties
 
-> `readonly` **properties.error.properties.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties
 
-> `readonly` **properties.error.properties.properties.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.code
 
-> `readonly` **properties.error.properties.properties.properties.code**: `object`
+> `readonly` **code**: `object`
 
 ###### properties.error.properties.properties.properties.code.additionalProperties
 
-> `readonly` **properties.error.properties.properties.properties.code.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.error.properties.properties.properties.code.properties
 
-> `readonly` **properties.error.properties.properties.properties.code.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.code.properties.type
 
-> `readonly` **properties.error.properties.properties.properties.code.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.properties.properties.code.properties.type.const
 
-> `readonly` **properties.error.properties.properties.properties.code.properties.type.const**: `"string"` = `'string'`
+> `readonly` **const**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.code.properties.type.type
 
-> `readonly` **properties.error.properties.properties.properties.code.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.code.required
 
-> `readonly` **properties.error.properties.properties.properties.code.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.code.type
 
-> `readonly` **properties.error.properties.properties.properties.code.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.properties.data
 
-> `readonly` **properties.error.properties.properties.properties.data**: `object` = `objectTypeDefinition`
+> `readonly` **data**: `object` = `objectTypeDefinition`
 
 ###### properties.error.properties.properties.properties.data.additionalProperties
 
-> `readonly` **properties.error.properties.properties.properties.data.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.error.properties.properties.properties.data.properties
 
-> `readonly` **properties.error.properties.properties.properties.data.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.$id
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.$id**: `object`
+> `readonly` **$id**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.$id.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.$id.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.data.properties.description
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.description**: `object`
+> `readonly` **description**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.description.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.description.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.data.properties.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.properties.properties.data.properties.type.const
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.type.const**: `"object"` = `'object'`
+> `readonly` **const**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.properties.data.properties.type.type
 
-> `readonly` **properties.error.properties.properties.properties.data.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.data.required
 
-> `readonly` **properties.error.properties.properties.properties.data.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.data.type
 
-> `readonly` **properties.error.properties.properties.properties.data.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.properties.message
 
-> `readonly` **properties.error.properties.properties.properties.message**: `object`
+> `readonly` **message**: `object`
 
 ###### properties.error.properties.properties.properties.message.additionalProperties
 
-> `readonly` **properties.error.properties.properties.properties.message.additionalProperties**: `true` = `true`
+> `readonly` **additionalProperties**: `true` = `true`
 
 ###### properties.error.properties.properties.properties.message.properties
 
-> `readonly` **properties.error.properties.properties.properties.message.properties**: `object`
+> `readonly` **properties**: `object`
 
 ###### properties.error.properties.properties.properties.message.properties.type
 
-> `readonly` **properties.error.properties.properties.properties.message.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.properties.properties.message.properties.type.const
 
-> `readonly` **properties.error.properties.properties.properties.message.properties.type.const**: `"string"` = `'string'`
+> `readonly` **const**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.message.properties.type.type
 
-> `readonly` **properties.error.properties.properties.properties.message.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.properties.properties.properties.message.required
 
-> `readonly` **properties.error.properties.properties.properties.message.required**: readonly \[`"type"`\]
+> `readonly` **required**: readonly \[`"type"`\]
 
 ###### properties.error.properties.properties.properties.message.type
 
-> `readonly` **properties.error.properties.properties.properties.message.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.properties.type
 
-> `readonly` **properties.error.properties.properties.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.error.properties.required
 
-> `readonly` **properties.error.properties.required**: `object`
+> `readonly` **required**: `object`
 
 ###### properties.error.properties.required.anyOf
 
-> `readonly` **properties.error.properties.required.anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
+> `readonly` **anyOf**: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]
 
 ###### properties.error.properties.type
 
-> `readonly` **properties.error.properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.error.properties.type.const
 
-> `readonly` **properties.error.properties.type.const**: `"object"` = `'object'`
+> `readonly` **const**: `"object"` = `'object'`
 
 ###### properties.error.properties.type.type
 
-> `readonly` **properties.error.properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.error.required
 
-> `readonly` **properties.error.required**: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]
+> `readonly` **required**: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]
 
 ###### properties.error.type
 
-> `readonly` **properties.error.type**: `"object"` = `'object'`
+> `readonly` **type**: `"object"` = `'object'`
 
 ###### properties.param
 
-> `readonly` **properties.param**: `object` = `anyTypeDefinition`
+> `readonly` **param**: `object` = `anyTypeDefinition`
 
 ###### properties.param.anyOf
 
-> `readonly` **properties.param.anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
 ###### properties.receive
 
-> `readonly` **properties.receive**: `object` = `anyTypeDefinition`
+> `readonly` **receive**: `object` = `anyTypeDefinition`
 
 ###### properties.receive.anyOf
 
-> `readonly` **properties.receive.anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
 ###### properties.result
 
-> `readonly` **properties.result**: `object` = `anyTypeDefinition`
+> `readonly` **result**: `object` = `anyTypeDefinition`
 
 ###### properties.result.anyOf
 
-> `readonly` **properties.result.anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[..., ..., ..., ..., ..., ..., ...\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
 ###### properties.type
 
-> `readonly` **properties.type**: `object`
+> `readonly` **type**: `object`
 
 ###### properties.type.const
 
-> `readonly` **properties.type.const**: `"stream"` = `'stream'`
+> `readonly` **const**: `"stream"` = `'stream'`
 
 ###### properties.type.type
 
-> `readonly` **properties.type.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 

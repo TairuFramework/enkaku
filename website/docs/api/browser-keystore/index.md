@@ -50,7 +50,7 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-`KeyEntry.keyID`
+[`KeyEntry`](../protocol/index.md#keyentry).[`keyID`](../protocol/index.md#keyid)
 
 #### Methods
 
@@ -64,7 +64,7 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-`KeyEntry.getAsync`
+[`KeyEntry`](../protocol/index.md#keyentry).[`getAsync`](../protocol/index.md#getasync)
 
 ##### provideAsync()
 
@@ -76,7 +76,7 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-`KeyEntry.provideAsync`
+[`KeyEntry`](../protocol/index.md#keyentry).[`provideAsync`](../protocol/index.md#provideasync)
 
 ##### removeAsync()
 
@@ -88,7 +88,7 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-`KeyEntry.removeAsync`
+[`KeyEntry`](../protocol/index.md#keyentry).[`removeAsync`](../protocol/index.md#removeasync)
 
 ##### setAsync()
 
@@ -106,7 +106,7 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-`KeyEntry.setAsync`
+[`KeyEntry`](../protocol/index.md#keyentry).[`setAsync`](../protocol/index.md#setasync)
 
 ***
 
@@ -150,7 +150,7 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-`KeyStore.entry`
+[`KeyStore`](../protocol/index.md#keystore).[`entry`](../protocol/index.md#entry)
 
 ##### open()
 

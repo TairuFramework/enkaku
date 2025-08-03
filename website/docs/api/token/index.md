@@ -212,9 +212,15 @@ npm install @enkaku/token
 
 ### randomPrivateKey()
 
-> `const` **randomPrivateKey**: () => `Uint8Array` = `ed25519.utils.randomPrivateKey`
+> `const` **randomPrivateKey**: (`seed?`) => `Uint8Array` = `ed25519.utils.randomPrivateKey`
 
 Generate a random private key.
+
+#### Parameters
+
+##### seed?
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 #### Returns
 
@@ -336,7 +342,7 @@ Check if a token is signed.
 
 ##### Payload
 
-`Payload` *extends* `object` = \{[`key`: `string`]: `unknown`; `aud?`: `string`; `cap?`: `string` \| `string`[]; `exp?`: `number`; `iat?`: `number`; `iss`: `string`; `nbf?`: `number`; `sub?`: `string`; \}
+`Payload` *extends* `object` = \{\[`key`: `string`\]: `unknown`; `aud?`: `string`; `cap?`: `string` \| `string`[]; `exp?`: `number`; `iat?`: `number`; `iss`: `string`; `nbf?`: `number`; `sub?`: `string`; \}
 
 #### Parameters
 

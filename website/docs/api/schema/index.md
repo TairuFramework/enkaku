@@ -324,6 +324,46 @@ Checks the type of the given `value` using the `validator`.
 
 ***
 
+### resolveReference()
+
+> **resolveReference**(`root`, `ref`): [`Schema`](#schema-1)
+
+#### Parameters
+
+##### root
+
+[`Schema`](#schema-1)
+
+##### ref
+
+`string`
+
+#### Returns
+
+[`Schema`](#schema-1)
+
+***
+
+### resolveSchema()
+
+> **resolveSchema**(`root`, `schema`): [`Schema`](#schema-1)
+
+#### Parameters
+
+##### root
+
+[`Schema`](#schema-1)
+
+##### schema
+
+[`Schema`](#schema-1)
+
+#### Returns
+
+[`Schema`](#schema-1)
+
+***
+
 ### toStandardValidator()
 
 > **toStandardValidator**\<`T`\>(`validator`): `StandardSchemaV1`\<`T`\>

@@ -106,27 +106,27 @@ npm install @enkaku/patch
 
 ###### properties.op
 
-> `readonly` **properties.op**: `object`
+> `readonly` **op**: `object`
 
 ###### properties.op.const
 
-> `readonly` **properties.op.const**: `"add"` = `'add'`
+> `readonly` **const**: `"add"` = `'add'`
 
 ###### properties.op.type
 
-> `readonly` **properties.op.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.path
 
-> `readonly` **properties.path**: `object`
+> `readonly` **path**: `object`
 
 ###### properties.path.type
 
-> `readonly` **properties.path.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.value
 
-> `readonly` **properties.value**: `object` = `{}`
+> `readonly` **value**: `object` = `{}`
 
 ##### required
 
@@ -154,31 +154,31 @@ npm install @enkaku/patch
 
 ###### properties.from
 
-> `readonly` **properties.from**: `object`
+> `readonly` **from**: `object`
 
 ###### properties.from.type
 
-> `readonly` **properties.from.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.op
 
-> `readonly` **properties.op**: `object`
+> `readonly` **op**: `object`
 
 ###### properties.op.const
 
-> `readonly` **properties.op.const**: `"copy"` = `'copy'`
+> `readonly` **const**: `"copy"` = `'copy'`
 
 ###### properties.op.type
 
-> `readonly` **properties.op.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.path
 
-> `readonly` **properties.path**: `object`
+> `readonly` **path**: `object`
 
 ###### properties.path.type
 
-> `readonly` **properties.path.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 
@@ -206,31 +206,31 @@ npm install @enkaku/patch
 
 ###### properties.from
 
-> `readonly` **properties.from**: `object`
+> `readonly` **from**: `object`
 
 ###### properties.from.type
 
-> `readonly` **properties.from.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.op
 
-> `readonly` **properties.op**: `object`
+> `readonly` **op**: `object`
 
 ###### properties.op.const
 
-> `readonly` **properties.op.const**: `"move"` = `'move'`
+> `readonly` **const**: `"move"` = `'move'`
 
 ###### properties.op.type
 
-> `readonly` **properties.op.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.path
 
-> `readonly` **properties.path**: `object`
+> `readonly` **path**: `object`
 
 ###### properties.path.type
 
-> `readonly` **properties.path.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 
@@ -270,23 +270,23 @@ npm install @enkaku/patch
 
 ###### properties.op
 
-> `readonly` **properties.op**: `object`
+> `readonly` **op**: `object`
 
 ###### properties.op.const
 
-> `readonly` **properties.op.const**: `"remove"` = `'remove'`
+> `readonly` **const**: `"remove"` = `'remove'`
 
 ###### properties.op.type
 
-> `readonly` **properties.op.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.path
 
-> `readonly` **properties.path**: `object`
+> `readonly` **path**: `object`
 
 ###### properties.path.type
 
-> `readonly` **properties.path.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ##### required
 
@@ -314,27 +314,27 @@ npm install @enkaku/patch
 
 ###### properties.op
 
-> `readonly` **properties.op**: `object`
+> `readonly` **op**: `object`
 
 ###### properties.op.const
 
-> `readonly` **properties.op.const**: `"replace"` = `'replace'`
+> `readonly` **const**: `"replace"` = `'replace'`
 
 ###### properties.op.type
 
-> `readonly` **properties.op.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.path
 
-> `readonly` **properties.path**: `object`
+> `readonly` **path**: `object`
 
 ###### properties.path.type
 
-> `readonly` **properties.path.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.value
 
-> `readonly` **properties.value**: `object` = `{}`
+> `readonly` **value**: `object` = `{}`
 
 ##### required
 
@@ -362,27 +362,27 @@ npm install @enkaku/patch
 
 ###### properties.op
 
-> `readonly` **properties.op**: `object`
+> `readonly` **op**: `object`
 
 ###### properties.op.const
 
-> `readonly` **properties.op.const**: `"set"` = `'set'`
+> `readonly` **const**: `"set"` = `'set'`
 
 ###### properties.op.type
 
-> `readonly` **properties.op.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.path
 
-> `readonly` **properties.path**: `object`
+> `readonly` **path**: `object`
 
 ###### properties.path.type
 
-> `readonly` **properties.path.type**: `"string"` = `'string'`
+> `readonly` **type**: `"string"` = `'string'`
 
 ###### properties.value
 
-> `readonly` **properties.value**: `object` = `{}`
+> `readonly` **value**: `object` = `{}`
 
 ##### required
 

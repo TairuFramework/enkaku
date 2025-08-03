@@ -42,7 +42,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor-3)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructor-3)
 
 #### Accessors
 
@@ -58,7 +58,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposer#disposed)
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed)
 
 ##### events
 
@@ -82,7 +82,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#disposer#asyncdispose)
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose)
 
 ##### dispose()
 
@@ -100,7 +100,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#disposer#dispose)
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose)
 
 ##### handle()
 

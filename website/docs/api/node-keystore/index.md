@@ -54,7 +54,7 @@ npm install @enkaku/node-keystore
 
 ###### Implementation of
 
-`KeyEntry.keyID`
+[`KeyEntry`](../protocol/index.md#keyentry).[`keyID`](../protocol/index.md#keyid)
 
 #### Methods
 
@@ -76,7 +76,7 @@ npm install @enkaku/node-keystore
 
 ###### Implementation of
 
-`KeyEntry.getAsync`
+[`KeyEntry`](../protocol/index.md#keyentry).[`getAsync`](../protocol/index.md#getasync)
 
 ##### provide()
 
@@ -96,7 +96,7 @@ npm install @enkaku/node-keystore
 
 ###### Implementation of
 
-`KeyEntry.provideAsync`
+[`KeyEntry`](../protocol/index.md#keyentry).[`provideAsync`](../protocol/index.md#provideasync)
 
 ##### remove()
 
@@ -116,7 +116,7 @@ npm install @enkaku/node-keystore
 
 ###### Implementation of
 
-`KeyEntry.removeAsync`
+[`KeyEntry`](../protocol/index.md#keyentry).[`removeAsync`](../protocol/index.md#removeasync)
 
 ##### set()
 
@@ -148,7 +148,7 @@ npm install @enkaku/node-keystore
 
 ###### Implementation of
 
-`KeyEntry.setAsync`
+[`KeyEntry`](../protocol/index.md#keyentry).[`setAsync`](../protocol/index.md#setasync)
 
 ***
 
@@ -192,7 +192,7 @@ npm install @enkaku/node-keystore
 
 ###### Implementation of
 
-`KeyStore.entry`
+[`KeyStore`](../protocol/index.md#keystore).[`entry`](../protocol/index.md#entry)
 
 ##### list()
 

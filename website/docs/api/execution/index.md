@@ -54,7 +54,7 @@ npm install @enkaku/execution
 
 ###### Overrides
 
-[`AsyncResult`](../result/index.md#asyncresult).[`constructor`](../result/index.md#asyncresult#constructor)
+[`AsyncResult`](../result/index.md#asyncresult).[`constructor`](../result/index.md#constructor)
 
 #### Properties
 
@@ -64,7 +64,7 @@ npm install @enkaku/execution
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`[species]`](../result/index.md#asyncresult#species)
+[`AsyncResult`](../result/index.md#asyncresult).[`[species]`](../result/index.md#species)
 
 #### Accessors
 
@@ -130,7 +130,7 @@ npm install @enkaku/execution
 
 ###### Overrides
 
-[`AsyncResult`](../result/index.md#asyncresult).[`optional`](../result/index.md#asyncresult#optional)
+[`AsyncResult`](../result/index.md#asyncresult).[`optional`](../result/index.md#optional)
 
 ##### orNull
 
@@ -144,7 +144,7 @@ npm install @enkaku/execution
 
 ###### Overrides
 
-[`AsyncResult`](../result/index.md#asyncresult).[`orNull`](../result/index.md#asyncresult#ornull)
+[`AsyncResult`](../result/index.md#asyncresult).[`orNull`](../result/index.md#ornull)
 
 ##### signal
 
@@ -152,7 +152,7 @@ npm install @enkaku/execution
 
 > **get** **signal**(): `AbortSignal`
 
-Returns the AbortSignal object associated with this object.
+The **`signal`** read-only property of the AbortController interface returns an AbortSignal object instance, which can be used to communicate with/abort an asynchronous operation as desired.
 
 [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortController/signal)
 
@@ -176,7 +176,7 @@ Returns the AbortSignal object associated with this object.
 
 ###### Overrides
 
-[`AsyncResult`](../result/index.md#asyncresult).[`value`](../result/index.md#asyncresult#value)
+[`AsyncResult`](../result/index.md#asyncresult).[`value`](../result/index.md#value)
 
 #### Methods
 
@@ -208,7 +208,7 @@ Returns the AbortSignal object associated with this object.
 
 > **abort**(`reason?`): `void`
 
-Invoking this method will set this object's AbortSignal's aborted flag and signal to any observers that the associated activity is to be aborted.
+The **`abort()`** method of the AbortController interface aborts an asynchronous operation before it has completed.
 
 [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortController/abort)
 
@@ -340,7 +340,7 @@ Invoking this method will set this object's AbortSignal's aborted flag and signa
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`map`](../result/index.md#asyncresult#map)
+[`AsyncResult`](../result/index.md#asyncresult).[`map`](../result/index.md#map)
 
 ##### mapError()
 
@@ -364,7 +364,7 @@ Invoking this method will set this object's AbortSignal's aborted flag and signa
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`mapError`](../result/index.md#asyncresult#maperror)
+[`AsyncResult`](../result/index.md#asyncresult).[`mapError`](../result/index.md#maperror)
 
 ##### next()
 
@@ -406,7 +406,7 @@ Invoking this method will set this object's AbortSignal's aborted flag and signa
 
 ###### Overrides
 
-[`AsyncResult`](../result/index.md#asyncresult).[`or`](../result/index.md#asyncresult#or)
+[`AsyncResult`](../result/index.md#asyncresult).[`or`](../result/index.md#or)
 
 ##### then()
 
@@ -446,7 +446,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`then`](../result/index.md#asyncresult#then)
+[`AsyncResult`](../result/index.md#asyncresult).[`then`](../result/index.md#then)
 
 ##### all()
 
@@ -474,7 +474,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`all`](../result/index.md#asyncresult#all)
+[`AsyncResult`](../result/index.md#asyncresult).[`all`](../result/index.md#all)
 
 ##### error()
 
@@ -502,7 +502,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`error`](../result/index.md#asyncresult#error)
+[`AsyncResult`](../result/index.md#asyncresult).[`error`](../result/index.md#error)
 
 ##### from()
 
@@ -530,7 +530,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`from`](../result/index.md#asyncresult#from)
+[`AsyncResult`](../result/index.md#asyncresult).[`from`](../result/index.md#from)
 
 ##### is()
 
@@ -558,7 +558,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`is`](../result/index.md#asyncresult#is)
+[`AsyncResult`](../result/index.md#asyncresult).[`is`](../result/index.md#is)
 
 ##### ok()
 
@@ -586,7 +586,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`ok`](../result/index.md#asyncresult#ok)
+[`AsyncResult`](../result/index.md#asyncresult).[`ok`](../result/index.md#ok)
 
 ##### resolve()
 
@@ -614,7 +614,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`resolve`](../result/index.md#asyncresult#resolve)
+[`AsyncResult`](../result/index.md#asyncresult).[`resolve`](../result/index.md#resolve)
 
 ## Type Aliases
 

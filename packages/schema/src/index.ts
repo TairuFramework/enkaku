@@ -15,6 +15,7 @@ export type { FromSchema } from 'json-schema-to-ts'
 
 export { ValidationError, ValidationErrorObject } from './errors.js'
 export type { Schema } from './types.js'
+export { resolveReference, resolveSchema } from './utils.js'
 export {
   assertType,
   asType,

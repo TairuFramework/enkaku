@@ -46,7 +46,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Overrides
 
-[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#disposer#constructor-3)
+[`Disposer`](../async/index.md#disposer).[`constructor`](../async/index.md#constructor-3)
 
 #### Accessors
 
@@ -62,7 +62,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposer#disposed)
+[`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed)
 
 #### Methods
 
@@ -76,7 +76,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#disposer#asyncdispose)
+[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose)
 
 ##### createChannel()
 
@@ -150,7 +150,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Inherited from
 
-[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#disposer#dispose)
+[`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose)
 
 ##### request()
 
@@ -264,7 +264,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Implementation of
 
-`ErrorObjectType.code`
+[`ErrorObjectType`](#errorobjecttype).[`code`](#code-3)
 
 ##### data
 
@@ -278,7 +278,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Implementation of
 
-`ErrorObjectType.data`
+[`ErrorObjectType`](#errorobjecttype).[`data`](#data-3)
 
 #### Methods
 
