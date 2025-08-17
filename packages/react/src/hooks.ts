@@ -62,7 +62,7 @@ export function createSuspenseRequestHook<
       return args[0] ? { cache: true, param: args[0] } : SUSPENSE_CONFIG
     }, [args[0]])
     return useMemo(() => {
-      // @ts-ignore config type
+      // @ts-expect-error config type
       return execute(client, procedure, config)
     }, [client, config, execute, procedure])
   }

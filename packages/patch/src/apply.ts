@@ -81,7 +81,7 @@ export function parsePath(path: string): Array<string | number> {
  */
 export function getPath(obj: unknown, path: string): unknown {
   const keys = parsePath(path)
-  // @ts-ignore index signature
+  // @ts-expect-error index signature
   return keys.reduce((acc, key) => acc?.[key], obj)
 }
 
@@ -109,7 +109,7 @@ export function setPath(
       if (acc === undefined) {
         throw new PatchError(`Path ${path} does not exist`, 'PATH_NOT_FOUND')
       }
-      // @ts-ignore unknown object
+      // @ts-expect-error unknown object
       return acc[key]
     }, obj)
 
@@ -154,7 +154,7 @@ export function deletePath(obj: Record<string, unknown> | Array<unknown>, path: 
       if (acc === undefined) {
         throw new PatchError(`Path ${path} does not exist`, 'PATH_NOT_FOUND')
       }
-      // @ts-ignore unknown object
+      // @ts-expect-error unknown object
       return acc[key]
     }, obj)
 
@@ -249,7 +249,7 @@ export function applyPatches(data: Record<string, unknown>, patches: Array<Patch
         break
       }
       default:
-        // @ts-ignore never type
+        // @ts-expect-error never type
         throw new PatchError(`Unknown operation: ${patch.op}`, 'INVALID_OPERATION')
     }
   }

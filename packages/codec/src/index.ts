@@ -14,7 +14,7 @@ import serialize from 'canonicalize'
 
 /** @internal */
 export function canonicalStringify(value: unknown): string {
-  // @ts-ignore TS definition
+  // @ts-expect-error TS definition
   return serialize(value)
 }
 

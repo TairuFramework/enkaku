@@ -20,7 +20,7 @@ type Protocol = typeof protocol
 describe('handleRequest()', () => {
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const payload = { typ: 'request', rid: '1', prc: 'unknown' }
-    // @ts-ignore type instantiation too deep
+    // @ts-expect-error type instantiation too deep
     const returned = handleRequest(
       { handlers: {} } as unknown as HandlerContext<Protocol>,
       // @ts-expect-error

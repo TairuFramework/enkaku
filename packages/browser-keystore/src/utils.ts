@@ -22,7 +22,7 @@ export async function getSigner(keyPair: CryptoKeyPair): Promise<GenericSigner> 
       const signature = await globalThis.crypto.subtle.sign(
         { name: 'ECDSA', hash: 'SHA-256' },
         keyPair.privateKey,
-        // @ts-ignore - ArrayBufferLike type
+        // @ts-expect-error - ArrayBufferLike type
         data,
       )
       return new Uint8Array(signature)

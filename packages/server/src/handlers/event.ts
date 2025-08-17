@@ -21,7 +21,6 @@ export function handleEvent<
     message: msg,
     data: msg.payload.data,
   } as unknown as EventHandlerContext<Protocol, Procedure>
-  // @ts-ignore type instantiation too deep
   return toPromise(() => handler(handlerContext)).catch((cause) => {
     ctx.events.emit('handlerError', {
       error: new Error(`Error handling procedure: ${msg.payload.prc}`, { cause }),

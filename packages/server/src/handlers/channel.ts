@@ -63,6 +63,6 @@ export function handleChannel<
     signal: controller.signal,
     writable: receiveStream.writable,
   }
-  // @ts-ignore context and handler types
+  // @ts-expect-error context and handler types
   return executeHandler(ctx, msg.payload, () => handler(handlerContext))
 }

@@ -39,7 +39,7 @@ describe('handleChannel()', () => {
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const unknownPayload = { typ: 'channel', rid: '1', prc: 'unknown', prm: {} } as const
-    // @ts-ignore type instantiation too deep
+    // @ts-expect-error type instantiation too deep
     const returned = handleChannel(
       { handlers: {} } as unknown as HandlerContext<Protocol>,
       // @ts-expect-error
@@ -138,7 +138,7 @@ describe('handleChannel()', () => {
     const reject = jest.fn()
     const send = jest.fn()
 
-    // @ts-ignore type instantiation too deep
+    // @ts-expect-error type instantiation too deep
     const resultPromise = handleChannel(
       {
         controllers,

@@ -32,7 +32,7 @@ describe('handleStream()', () => {
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const unknownPayload = { typ: 'stream', rid: '1', prc: 'unknown' }
-    // @ts-ignore type instantiation too deep
+    // @ts-expect-error type instantiation too deep
     const returned = handleStream(
       { handlers: {} } as unknown as HandlerContext<Protocol>,
       // @ts-expect-error

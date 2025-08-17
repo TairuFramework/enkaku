@@ -8,7 +8,7 @@ function canSend(signal: AbortSignal): boolean {
   return !signal.aborted || signal.reason === 'Close'
 }
 
-// @ts-ignore type instantiation too deep
+// @ts-expect-error type instantiation too deep
 export async function executeHandler<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,

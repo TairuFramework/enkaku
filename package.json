@@ -5,10 +5,17 @@
   "type": "module",
   "private": true,
   "packageManager": "pnpm@10.14.0",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "~24.5.0",
+      "onFail": "download"
+    }
+  },
   "scripts": {
     "lint": "biome check --write ./packages ./tests",
     "test": "turbo run test:unit",
-    "test:ci": "pnpm run test --ci --runInBand",
+    "test:ci": "pnpm run test -- --ci --runInBand",
     "build:js": "turbo run build:js",
     "build:types": "pnpm run -r build:types",
     "build:types:ci": "pnpm run -r build:types:ci",

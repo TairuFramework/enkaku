@@ -26,7 +26,7 @@ export function useCreateStream<
       ...args: Param extends never ? [] : [Param]
     ): StreamCall<Receive, Result> {
       const config = args[0] ? { param: args[0] } : {}
-      // @ts-ignore config type
+      // @ts-expect-error config type
       const call = client.createStream(procedure, config) as StreamCall<Receive, Result>
       setCurrentCall(call)
       return call

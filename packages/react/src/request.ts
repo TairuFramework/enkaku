@@ -24,7 +24,7 @@ export function useSendRequest<
   const sendRequest = useCallback(
     function sendRequest(...args: Param extends never ? [] : [Param]): RequestCall<Result> {
       const config = args[0] ? { param: args[0] } : {}
-      // @ts-ignore config type
+      // @ts-expect-error config type
       const ref = client.request(procedure, { ...config, cacheID }) as ReferencedCall<
         RequestCall<Result>
       >
@@ -71,7 +71,7 @@ export function useRequest<
     return args[0] ? { cache: true, param: args[0] } : SUSPENSE_CONFIG
   }, [args[0]])
   const call = useMemo(() => {
-    // @ts-ignore config type
+    // @ts-expect-error config type
     const ref = client.request(procedure, { ...config, cacheID }) as ReferencedCall<
       RequestCall<Result>
     >

@@ -7,7 +7,7 @@ import { ValidationError } from './errors.js'
 import type { Schema } from './types.js'
 
 const ajv = new Ajv({ allErrors: true, useDefaults: true })
-// @ts-ignore missing type definition
+// @ts-expect-error missing type definition
 addFormats(ajv)
 
 /**

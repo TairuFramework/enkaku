@@ -28,7 +28,7 @@ describe('handleEvent()', () => {
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const payload = { typ: 'event', prc: 'unknown' }
-    // @ts-ignore type instantiation too deep
+    // @ts-expect-error type instantiation too deep
     const returned = handleEvent({ handlers: {} } as unknown as HandlerContext<Protocol>, {
       // @ts-expect-error
       payload,
@@ -48,7 +48,7 @@ describe('handleEvent()', () => {
     // Handler promise should always resolve
     await expect(
       handleEvent(
-        // @ts-ignore type instantiation too deep
+        // @ts-expect-error type instantiation too deep
         { events, handlers: { test: handler } } as unknown as HandlerContext<Protocol>,
         clientToken,
       ),
@@ -70,7 +70,7 @@ describe('handleEvent()', () => {
 
     await expect(
       handleEvent(
-        // @ts-ignore type instantiation too deep
+        // @ts-expect-error type instantiation too deep
         { events, handlers: { test: handler } } as unknown as HandlerContext<Protocol>,
         clientToken,
       ),

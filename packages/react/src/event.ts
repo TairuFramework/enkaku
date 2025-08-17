@@ -16,7 +16,7 @@ export function useSendEvent<
 
   return useCallback(
     async function sendEvent(...data: Data extends never ? [] : [Data]): Promise<void> {
-      // @ts-ignore data type
+      // @ts-expect-error data type
       await client.sendEvent(procedure, ...data)
     },
     [client, procedure],

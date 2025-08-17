@@ -160,7 +160,6 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           break
         case 'channel': {
           const message = msg as ChannelMessageOf<Protocol>
-          // @ts-ignore type instantiation too deep
           process(message, () => handleChannel(context, message))
           break
         }
@@ -226,7 +225,6 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         this.#abortController.abort()
         // Dispose of all handling transports
         await Promise.all(
-          // @ts-ignore type instantiation too deep
           this.#handling.map(async (handling) => {
             // Wait until all handlers are done - they might still need to flush messages to the transport
             await handling.done

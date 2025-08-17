@@ -28,6 +28,6 @@ export function handleRequest<
     param: msg.payload.prm,
     signal: controller.signal,
   }
-  // @ts-ignore context and handler types
+  // @ts-expect-error context and handler types
   return executeHandler(ctx, msg.payload, () => handler(handlerContext))
 }
