@@ -1,7 +1,8 @@
 import type { ClientDefinitionsType, StreamCall } from '@enkaku/client'
 import type { ProtocolDefinition } from '@enkaku/protocol'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 
+import type { ReferencedCall } from './client.js'
 import { useEnkakuClient } from './context.js'
 
 export type CreateStream<Param, Receive, Result> = (
@@ -19,7 +20,11 @@ export function useCreateStream<
   procedure: Procedure,
 ): [CreateStream<Param, Receive, Result>, StreamCall<Receive, Result> | null] {
   const client = useEnkakuClient<Protocol>()
-  const [currentCall, setCurrentCall] = useState<StreamCall<Receive, Result> | null>(null)
+  const cacheID = useId()
+  const activeCallRef = useRef<ReferencedCall<StreamCall<Receive, Result>> | null>(null)
+  const [currentCall, setCurrentCall] = useState<ReferencedCall<
+    StreamCall<Receive, Result>
+  > | null>(null)
 
   const createStream = useCallback(
     function createStream(
@@ -27,14 +32,33 @@ export function useCreateStream<
     ): StreamCall<Receive, Result> {
       const config = args[0] ? { param: args[0] } : {}
       // @ts-expect-error config type
-      const call = client.createStream(procedure, config) as StreamCall<Receive, Result>
-      setCurrentCall(call)
+      const ref = client.createStream(procedure, { ...config, cacheID }) as ReferencedCall<
+        StreamCall<Receive, Result>
+      >
+      const call = ref[0]
+      activeCallRef.current = ref
+      call
+        .catch(() => {
+          // Suppress the error to avoid uncaught exception
+        })
+        .finally(() => {
+          if (activeCallRef.current === ref) {
+            activeCallRef.current = null
+          }
+        })
+      setCurrentCall(ref)
       return call
     },
-    [client, procedure],
+    [cacheID, client, procedure],
   )
 
-  return [createStream, currentCall] as const
+  useEffect(() => {
+    return () => {
+      activeCallRef.current?.[1]()
+    }
+  }, [])
+
+  return [createStream, currentCall?.[0] ?? null] as const
 }
 
 export function useReceiveLatest<
@@ -52,7 +76,8 @@ export function useReceiveLatest<
     if (callRef.current !== call) {
       callRef.current = call
       setLatest(null)
-      writerRef.current?.close()
+      // Just set the ref to null instead of trying to close
+      writerRef.current = null
       if (call != null) {
         writerRef.current = new WritableStream({ write: setLatest })
         call.readable.pipeTo(writerRef.current)
@@ -81,7 +106,8 @@ export function useReceiveAll<
       callRef.current = call
       setDone(false)
       setValues([])
-      writerRef.current?.close()
+      // Just set the ref to null instead of trying to close
+      writerRef.current = null
       if (call == null) {
         setDonePromise(null)
       } else {
