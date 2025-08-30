@@ -15,11 +15,11 @@ export const randomPrivateKey = ed25519.utils.randomSecretKey
 /**
  * Create a generic signer object for the given private key.
  */
-export function getSigner(privateKey: Uint8Array | string): GenericSigner {
+export function getSigner(privateKey: Uint8Array | string, publicKey?: Uint8Array): GenericSigner {
   const key = typeof privateKey === 'string' ? fromB64(privateKey) : privateKey
   return {
     algorithm: 'EdDSA',
-    publicKey: ed25519.getPublicKey(key),
+    publicKey: publicKey ?? ed25519.getPublicKey(key),
     sign: (bytes: Uint8Array) => ed25519.sign(bytes, key),
   }
 }
@@ -28,8 +28,8 @@ export function getSigner(privateKey: Uint8Array | string): GenericSigner {
  * Generate a generic signer object with a random private key.
  */
 export function randomSigner(): OwnSigner {
-  const privateKey = randomPrivateKey()
-  return { ...getSigner(privateKey), privateKey }
+  const { publicKey, secretKey } = ed25519.keygen()
+  return { ...getSigner(secretKey, publicKey), privateKey: secretKey }
 }
 
 /**

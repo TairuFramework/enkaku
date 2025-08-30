@@ -1,6 +1,5 @@
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { p256 } from '@noble/curves/nist.js'
-import { sha256 } from '@noble/hashes/sha2.js'
 
 import { getTokenSigner, randomPrivateKey, randomSigner, randomTokenSigner } from '../src/signer.js'
 import type { GenericSigner } from '../src/types.js'
@@ -37,13 +36,11 @@ describe('sign and verify', () => {
   })
 
   test('ES256 signature', async () => {
-    const privateKey = p256.utils.randomSecretKey()
+    const { publicKey, secretKey } = p256.keygen()
     const signer: GenericSigner = {
       algorithm: 'ES256',
-      publicKey: p256.getPublicKey(privateKey, true),
-      sign: (message) => {
-        return p256.sign(sha256(message), privateKey)
-      },
+      publicKey,
+      sign: (message) => p256.sign(message, secretKey),
     }
 
     const message = new Uint8Array([1, 2, 3])
@@ -52,8 +49,7 @@ describe('sign and verify', () => {
     const verified = await verify(signature, message, signer.publicKey)
     expect(verified).toBe(true)
 
-    const otherKey = p256.utils.randomSecretKey()
-    const failed = await verify(signature, message, p256.getPublicKey(otherKey, true))
+    const failed = await verify(signature, message, p256.keygen().publicKey)
     expect(failed).toBe(false)
   })
 })

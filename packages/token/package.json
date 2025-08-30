@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/token",
-  "version": "0.12.1",
+  "version": "0.12.3",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "JWT signing and verification for Enkaku RPC",
@@ -42,7 +42,6 @@
     "@enkaku/codec": "workspace:^",
     "@enkaku/schema": "workspace:^",
     "@noble/curves": "catalog:",
-    "@noble/hashes": "catalog:",
     "@scure/base": "catalog:"
   },
   "devDependencies": {
