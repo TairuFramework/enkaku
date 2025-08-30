@@ -1,5 +1,5 @@
 import { b64uFromJSON, fromB64, fromUTF, toB64, toB64U } from '@enkaku/codec'
-import { ed25519 } from '@noble/curves/ed25519'
+import { ed25519 } from '@noble/curves/ed25519.js'
 
 import { CODECS, getDID } from './did.js'
 import type { SignedHeader } from './schemas.js'
@@ -10,7 +10,7 @@ export { fromB64 as decodePrivateKey, toB64 as encodePrivateKey }
 /**
  * Generate a random private key.
  */
-export const randomPrivateKey = ed25519.utils.randomPrivateKey
+export const randomPrivateKey = ed25519.utils.randomSecretKey
 
 /**
  * Create a generic signer object for the given private key.
