@@ -151,9 +151,6 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
-      '@noble/curves':
-        specifier: 'catalog:'
-        version: 2.0.0
     devDependencies:
       '@enkaku/protocol':
         specifier: workspace:^
