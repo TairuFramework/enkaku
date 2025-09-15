@@ -260,7 +260,7 @@ npm install @enkaku/protocol
 
 > **EventCallPayload**\<`Procedure`, `Data`\> = `object` & `Data` *extends* `undefined` ? `object` : `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### prc
 
@@ -764,7 +764,7 @@ npm install @enkaku/protocol
 
 > `const` **anyProcedureDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### anyOf
 
@@ -776,7 +776,7 @@ npm install @enkaku/protocol
 
 > `const` **anyRequestProcedureDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### anyOf
 
@@ -788,7 +788,7 @@ npm install @enkaku/protocol
 
 > `const` **anyTypeDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### anyOf
 
@@ -800,7 +800,7 @@ npm install @enkaku/protocol
 
 > `const` **channelProcedureDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -1048,7 +1048,7 @@ npm install @enkaku/protocol
 
 > `const` **errorDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### anyOf
 
@@ -1060,7 +1060,7 @@ npm install @enkaku/protocol
 
 > `const` **errorObject**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -1108,7 +1108,7 @@ npm install @enkaku/protocol
 
 > `const` **errorObjectDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### properties
 
@@ -1284,7 +1284,7 @@ npm install @enkaku/protocol
 
 > `const` **eventProcedureDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -1376,7 +1376,7 @@ npm install @enkaku/protocol
 
 > `const` **objectTypeDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -1428,7 +1428,7 @@ npm install @enkaku/protocol
 
 > `const` **protocolDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -1448,7 +1448,7 @@ npm install @enkaku/protocol
 
 > `const` **requestProcedureDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -1680,7 +1680,7 @@ npm install @enkaku/protocol
 
 > `const` **singleTypeDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -1732,7 +1732,7 @@ npm install @enkaku/protocol
 
 > `const` **streamProcedureDefinition**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 

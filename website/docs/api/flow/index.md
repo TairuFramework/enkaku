@@ -124,7 +124,7 @@ npm install @enkaku/flow
 
 > **FlowGenerator**\<`State`, `Handlers`\> = `AsyncGenerator`\<[`GeneratorValue`](#generatorvalue)\<`State`\>, [`GeneratorDoneValue`](#generatordonevalue)\<`State`\> \| `undefined`, [`GenerateNext`](#generatenext)\<`State`, `Handlers`\> \| `undefined`\> & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### events
 
@@ -306,7 +306,7 @@ npm install @enkaku/flow
 
 > **HandlerExecutionContext**\<`State`, `Params`, `Events`\> = [`GenericHandlerContext`](#generichandlercontext)\<`Events`\> & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### params
 

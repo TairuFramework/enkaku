@@ -312,7 +312,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 > **ChannelCall**\<`Receive`, `Send`, `Result`\> = [`StreamCall`](#streamcall)\<`Receive`, `Result`\> & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### send()
 
@@ -498,7 +498,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 > **RequestCall**\<`Result`\> = `Promise`\<`Result`\> & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### abort()
 
@@ -562,7 +562,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 > **StreamCall**\<`Receive`, `Result`\> = [`RequestCall`](#requestcall)\<`Result`\> & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### close()
 

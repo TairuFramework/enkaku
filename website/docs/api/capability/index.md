@@ -14,7 +14,7 @@ npm install @enkaku/capability
 
 > **CapabilityPayload** = [`Permission`](#permission) & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### aud
 
@@ -78,7 +78,7 @@ npm install @enkaku/capability
 
 > **SignCapabilityPayload** = `Omit`\<[`CapabilityPayload`](#capabilitypayload), `"iss"`\> & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### iss?
 

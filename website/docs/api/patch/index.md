@@ -12,6 +12,8 @@ npm install @enkaku/patch
 
 ### PatchError
 
+Error thrown when patch operations fail.
+
 #### Extends
 
 - `Error`
@@ -88,13 +90,19 @@ npm install @enkaku/patch
 
 > **PatchSetOperation** = `FromSchema`\<*typeof* [`patchSetOperationSchema`](#patchsetoperationschema)\>
 
+***
+
+### PatchTestOperation
+
+> **PatchTestOperation** = `FromSchema`\<*typeof* [`patchTestOperationSchema`](#patchtestoperationschema)\>
+
 ## Variables
 
 ### patchAddOperationSchema
 
 > `const` **patchAddOperationSchema**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -142,7 +150,7 @@ npm install @enkaku/patch
 
 > `const` **patchCopyOperationSchema**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -194,7 +202,7 @@ npm install @enkaku/patch
 
 > `const` **patchMoveOperationSchema**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -246,11 +254,11 @@ npm install @enkaku/patch
 
 > `const` **patchOperationSchema**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### anyOf
 
-> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"add"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"set"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"remove"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"op"`, `"path"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"replace"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `from`: \{ `type`: `"string"`; \}; `op`: \{ `const`: `"move"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"op"`, `"from"`, `"path"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `from`: \{ `type`: `"string"`; \}; `op`: \{ `const`: `"copy"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"op"`, `"from"`, `"path"`\]; `type`: `"object"`; \}\]
+> `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"add"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"set"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"remove"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"op"`, `"path"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"replace"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `from`: \{ `type`: `"string"`; \}; `op`: \{ `const`: `"move"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"op"`, `"from"`, `"path"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `from`: \{ `type`: `"string"`; \}; `op`: \{ `const`: `"copy"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"op"`, `"from"`, `"path"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"test"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}\]
 
 ***
 
@@ -258,7 +266,7 @@ npm install @enkaku/patch
 
 > `const` **patchRemoveOperationSchema**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -302,7 +310,7 @@ npm install @enkaku/patch
 
 > `const` **patchReplaceOperationSchema**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -350,7 +358,7 @@ npm install @enkaku/patch
 
 > `const` **patchSetOperationSchema**: `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### additionalProperties
 
@@ -392,11 +400,64 @@ npm install @enkaku/patch
 
 > `readonly` **type**: `"object"` = `'object'`
 
+***
+
+### patchTestOperationSchema
+
+> `const` **patchTestOperationSchema**: `object`
+
+#### Type Declaration
+
+##### additionalProperties
+
+> `readonly` **additionalProperties**: `false` = `false`
+
+##### properties
+
+> `readonly` **properties**: `object`
+
+###### properties.op
+
+> `readonly` **op**: `object`
+
+###### properties.op.const
+
+> `readonly` **const**: `"test"` = `'test'`
+
+###### properties.op.type
+
+> `readonly` **type**: `"string"` = `'string'`
+
+###### properties.path
+
+> `readonly` **path**: `object`
+
+###### properties.path.type
+
+> `readonly` **type**: `"string"` = `'string'`
+
+###### properties.value
+
+> `readonly` **value**: `object` = `{}`
+
+##### required
+
+> `readonly` **required**: readonly \[`"op"`, `"path"`, `"value"`\]
+
+##### type
+
+> `readonly` **type**: `"object"` = `'object'`
+
 ## Functions
 
 ### applyPatches()
 
 > **applyPatches**(`data`, `patches`): `void`
+
+Applies an array of JSON Patch operations to an object.
+
+Operations are applied sequentially. If any operation fails,
+the function throws and no further operations are applied.
 
 #### Parameters
 
@@ -404,10 +465,75 @@ npm install @enkaku/patch
 
 `Record`\<`string`, `unknown`\>
 
+Object to modify
+
 ##### patches
 
-(\{ `op`: `"add"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"set"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"remove"`; `path`: `string`; \} \| \{ `op`: `"replace"`; `path`: `string`; `value`: `unknown`; \} \| \{ `from`: `string`; `op`: `"move"`; `path`: `string`; \} \| \{ `from`: `string`; `op`: `"copy"`; `path`: `string`; \})[]
+(\{ `op`: `"add"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"set"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"remove"`; `path`: `string`; \} \| \{ `op`: `"replace"`; `path`: `string`; `value`: `unknown`; \} \| \{ `from`: `string`; `op`: `"move"`; `path`: `string`; \} \| \{ `from`: `string`; `op`: `"copy"`; `path`: `string`; \} \| \{ `op`: `"test"`; `path`: `string`; `value`: `unknown`; \})[]
+
+Array of patch operations to apply
 
 #### Returns
 
 `void`
+
+#### Throws
+
+When any operation fails
+
+#### Example
+
+```typescript
+const data = { foo: { bar: 1 } }
+applyPatches(data, [
+  { op: 'replace', path: '/foo/bar', value: 2 },
+  { op: 'add', path: '/foo/baz', value: 3 }
+])
+// data is now { foo: { bar: 2, baz: 3 } }
+```
+
+***
+
+### createPatches()
+
+> **createPatches**(`to`, `from`): (\{ `op`: `"add"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"set"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"remove"`; `path`: `string`; \} \| \{ `op`: `"replace"`; `path`: `string`; `value`: `unknown`; \} \| \{ `from`: `string`; `op`: `"move"`; `path`: `string`; \} \| \{ `from`: `string`; `op`: `"copy"`; `path`: `string`; \} \| \{ `op`: `"test"`; `path`: `string`; `value`: `unknown`; \})[]
+
+Creates JSON Patch operations to transform one object into another.
+
+Generates the minimal set of operations needed to transform the `from`
+object into the `to` object. The resulting patches can be applied
+using `applyPatches`.
+
+#### Parameters
+
+##### to
+
+`Record`\<`string`, `unknown`\>
+
+Target object state
+
+##### from
+
+`Record`\<`string`, `unknown`\> = `{}`
+
+Source object state (defaults to empty object)
+
+#### Returns
+
+(\{ `op`: `"add"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"set"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"remove"`; `path`: `string`; \} \| \{ `op`: `"replace"`; `path`: `string`; `value`: `unknown`; \} \| \{ `from`: `string`; `op`: `"move"`; `path`: `string`; \} \| \{ `from`: `string`; `op`: `"copy"`; `path`: `string`; \} \| \{ `op`: `"test"`; `path`: `string`; `value`: `unknown`; \})[]
+
+Array of patch operations
+
+#### Example
+
+```typescript
+const from = { foo: 1, bar: 'old' }
+const to = { foo: 2, baz: 'new' }
+const patches = createPatches(to, from)
+// Returns:
+// [
+//   { op: 'replace', path: '/foo', value: 2 },
+//   { op: 'remove', path: '/bar' },
+//   { op: 'add', path: '/baz', value: 'new' }
+// ]
+```

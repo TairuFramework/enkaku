@@ -190,7 +190,7 @@ Base Transport class implementing TransportType.
 
 > **SocketTransportParams**\<`R`\> = [`FromJSONLinesOptions`](../stream/index.md#fromjsonlinesoptions)\<`R`\> & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### signal?
 

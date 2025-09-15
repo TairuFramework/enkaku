@@ -731,7 +731,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 > **InterruptionOptions** = `ErrorOptions` & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### message?
 
@@ -743,7 +743,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 > **ScheduledTimeoutParams** = [`InterruptionOptions`](#interruptionoptions) & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### delay
 

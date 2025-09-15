@@ -266,7 +266,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 > **ServeParams**\<`Protocol`\> = `Omit`\<[`ServerParams`](#serverparams)\<`Protocol`\>, `"transports"`\> & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### transport
 

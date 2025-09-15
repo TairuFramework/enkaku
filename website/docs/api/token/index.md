@@ -44,7 +44,7 @@ npm install @enkaku/token
 
 > **OwnSigner** = [`GenericSigner`](#genericsigner) & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### privateKey
 
@@ -56,7 +56,7 @@ npm install @enkaku/token
 
 > **OwnTokenSigner** = [`TokenSigner`](#tokensigner) & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### privateKey
 
@@ -192,7 +192,7 @@ npm install @enkaku/token
 
 > **VerifiedToken**\<`Payload`, `Header`\> = [`SignedToken`](#signedtoken)\<`Payload`, `Header`\> & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### verifiedPublicKey
 
@@ -212,7 +212,7 @@ npm install @enkaku/token
 
 ### randomPrivateKey()
 
-> `const` **randomPrivateKey**: (`seed?`) => `Uint8Array` = `ed25519.utils.randomPrivateKey`
+> `const` **randomPrivateKey**: (`seed?`) => `Uint8Array` = `ed25519.utils.randomSecretKey`
 
 Generate a random private key.
 
@@ -298,7 +298,7 @@ Convert a Uint8Array to a base64-encoded string.
 
 ### getSigner()
 
-> **getSigner**(`privateKey`): [`GenericSigner`](#genericsigner)
+> **getSigner**(`privateKey`, `publicKey?`): [`GenericSigner`](#genericsigner)
 
 Create a generic signer object for the given private key.
 
@@ -307,6 +307,10 @@ Create a generic signer object for the given private key.
 ##### privateKey
 
 `string` | `Uint8Array`\<`ArrayBufferLike`\>
+
+##### publicKey?
+
+`Uint8Array`\<`ArrayBufferLike`\>
 
 #### Returns
 

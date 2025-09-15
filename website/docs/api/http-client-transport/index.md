@@ -242,7 +242,7 @@ Base Transport class implementing TransportType.
 
 > **TransportStream**\<`Protocol`\> = `ReadableWritablePair`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)\<`Protocol`\>\> & `object`
 
-#### Type declaration
+#### Type Declaration
 
 ##### controller
 

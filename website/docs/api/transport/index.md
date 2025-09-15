@@ -402,7 +402,7 @@ Base Transport class implementing TransportType.
 
 Generic Transport object type implementing read and write functions.
 
-#### Type declaration
+#### Type Declaration
 
 ##### getWritable()
 
