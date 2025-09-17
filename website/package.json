@@ -21,12 +21,12 @@
     "@docusaurus/preset-classic": "^3.8.1",
     "@docusaurus/theme-mermaid": "^3.8.1",
     "@mdx-js/react": "^3.1.1",
-    "@orama/plugin-docusaurus-v3": "^3.1.13",
+    "@orama/plugin-docusaurus-v3": "catalog:",
     "clsx": "^2.1.1",
     "docusaurus-plugin-typedoc": "^1.4.2",
     "prism-react-renderer": "^2.4.1",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react": "catalog:",
+    "react-dom": "catalog:"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.8.1",

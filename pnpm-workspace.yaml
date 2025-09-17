@@ -10,23 +10,29 @@ catalog:
   '@napi-rs/keyring': ^1.2.0
   '@noble/curves': ^2.0.0
   '@noble/hashes': ^2.0.0
+  '@orama/plugin-docusaurus-v3': ^3.1.14
   '@scure/base': ^2.0.0
   '@standard-schema/spec': ^1.0.0
   '@swc/cli': ^0.7.8
   '@swc/core': ^1.13.5
   '@swc/jest': ^0.2.39
   '@types/jest': ^30.0.0
-  '@types/node': ^24.4.0
+  '@types/node': ^24.5.1
   ajv: ^8.17.1
   ajv-formats: ^3.0.1
   canonicalize: 2.1.0
   del-cli: ^6.0.0
+  detox: ^20.41.2
+  detox-cli: ^20.0.0
   emittery: ^1.2.0
+  expo: ~54.0.8
   expo-crypto: ^15.0.7
   expo-secure-store: ^15.0.7
   get-port: ^7.1.0
   jest: ^30.1.3
   json-schema-to-ts: ^3.1.1
+  react: 19.1.0
+  react-dom: 19.1.0
   tsx: ^4.20.5
   turbo: ^2.5.6
   typedoc: ^0.28.13
@@ -34,12 +40,22 @@ catalog:
   uint8arrays: ^5.1.0
   undici: ^7.16.0
 
-catalogMode: manual
+catalogMode: prefer
+
+catalogs:
+  expo:
+    expo: ~54.0.7
+    expo-status-bar: ~3.0.8
+    react: 19.1.0
+    react-native: 0.81.4
+
+nodeLinker: hoisted
 
 onlyBuiltDependencies:
   - '@biomejs/biome'
   - '@swc/core'
   - core-js
   - core-js-pure
+  - detox
   - esbuild
   - unrs-resolver
