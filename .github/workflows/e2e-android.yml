@@ -31,7 +31,7 @@ jobs:
       #   with:
       #     packages: 'platform-tools'
 
-      - name: Enable KVM (for Android Emulator)
+      - name: Enable KVM
         run: |
           # Check if KVM is available
           if [ -e /dev/kvm ]; then
@@ -49,19 +49,22 @@ jobs:
           else
             echo "KVM not available, continuing without hardware acceleration"
           fi
+      
+      - name: Create emulator
+        run: echo no | avdmanager create avd --force -n "test" --abi 'google_apis/x86_64' --package 'system-images;android-36;google_apis;x86_64'
 
       - name: Build Android app
-        # working-directory: tests/e2e-expo
-        # run: pnpm run android:release
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 36
-          arch: x86_64
-          target: google_apis
-          working-directory: tests/e2e-expo
-          script: |
-            pwd
-            pnpm run android:release
+        working-directory: tests/e2e-expo
+        run: pnpm run android:release
+        # uses: reactivecircus/android-emulator-runner@v2
+        # with:
+        #   api-level: 36
+        #   arch: x86_64
+        #   target: google_apis
+        #   working-directory: tests/e2e-expo
+        #   script: |
+        #     pwd
+        #     pnpm run android:release
 
       - name: Run Maestro tests
         working-directory: tests/e2e-expo
