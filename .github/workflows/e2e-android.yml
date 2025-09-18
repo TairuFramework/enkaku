@@ -51,6 +51,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
+          arch: x86_64
           script: pnpm run android:release
 
       - name: Run Maestro tests
