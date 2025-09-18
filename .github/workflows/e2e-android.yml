@@ -14,8 +14,8 @@ jobs:
       - name: List Android SDKs
         run: |
           echo "ANDROID_HOME: $ANDROID_HOME"
-          ls -la $ANDROID_HOME
-          $ANDROID_HOME/tools/bin/sdkmanager --list
+          ls -la $ANDROID_HOME/cmdline-tools
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list
       
       - name: Checkout repository
         uses: actions/checkout@v4
