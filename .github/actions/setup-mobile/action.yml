@@ -15,12 +15,15 @@ runs:
         cache: 'pnpm'
 
     - name: Install dependencies
+      shell: bash
       run: pnpm install --frozen-lockfile
 
     - name: Build packages
+      shell: bash
       run: pnpm run build:ci
 
     - name: Install Maestro
+      shell: bash
       run: |
         curl -Ls "https://get.maestro.mobile.dev" | bash
         echo "$HOME/.maestro/bin" >> $GITHUB_PATH
