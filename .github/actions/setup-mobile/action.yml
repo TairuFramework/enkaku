@@ -25,5 +25,5 @@ runs:
     - name: Install Maestro
       shell: bash
       run: |
-        brew tap mobile-dev-inc/tap
-        brew install maestro
+        curl -Ls "https://get.maestro.mobile.dev" | bash
+        echo "$HOME/.maestro/bin" >> $GITHUB_PATH
