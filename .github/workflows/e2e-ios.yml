@@ -1,0 +1,39 @@
+name: iOS E2E
+on: [push, pull_request]
+env:
+  CI: true
+  DO_NOT_TRACK: 1
+
+jobs:
+  test:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-mobile
+
+      - name: Build iOS app
+        working-directory: tests/e2e-expo
+        run: pnpm run ios:release
+
+      - name: Verify app is running
+        run: |
+          # Check if the iOS Simulator is running the app
+          xcrun simctl list devices booted
+          
+          # Take a screenshot to verify
+          maestro screenshot before-test.png || echo "Screenshot failed, continuing..."
+
+      - name: Run Maestro tests
+        working-directory: tests/e2e-expo
+        run: pnpm run test
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-screenshots
+          path: "*.png"

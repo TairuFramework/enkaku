@@ -1,0 +1,63 @@
+name: Android E2E
+on: [push, pull_request]
+env:
+  CI: true
+  DO_NOT_TRACK: 1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-mobile
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+
+      - name: Enable KVM (for Android Emulator)
+        run: |
+          # Check if KVM is available
+          if [ -e /dev/kvm ]; then
+            echo "KVM is available"
+            # Create directory if it doesn't exist
+            sudo mkdir -p /etc/udev/rules.d
+            
+            # Set up KVM permissions
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+            sudo udevadm control --reload-rules
+            sudo udevadm trigger --name-match=kvm
+            
+            # Add user to KVM group
+            sudo usermod -a -G kvm $USER
+          else
+            echo "KVM not available, continuing without hardware acceleration"
+          fi
+
+      - name: Build Android app
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          script: pnpm run android:release
+
+      - name: Run Maestro tests
+        working-directory: tests/e2e-expo
+        run: pnpm run test
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-screenshots
+          path: "*.png"
