@@ -11,11 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: List Android SDKs
-        run: |
-          echo "ANDROID_HOME: $ANDROID_HOME"
-          ls -la $ANDROID_HOME/cmdline-tools
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list
+      - name: List Android system images
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list | grep "system-images"
       
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -57,6 +54,8 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
+          arch: arm64-v8a
+          target: google_apis
           script: pnpm run android:release
 
       - name: Run Maestro tests
