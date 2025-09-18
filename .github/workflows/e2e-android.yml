@@ -60,7 +60,7 @@ jobs:
           target: google_apis
           working-directory: tests/e2e-expo
           script: |
-            cwd
+            pwd
             pnpm run android:release
 
       - name: Run Maestro tests
