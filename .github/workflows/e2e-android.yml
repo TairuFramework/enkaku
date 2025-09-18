@@ -3,6 +3,8 @@ on: [push, pull_request]
 env:
   CI: true
   DO_NOT_TRACK: 1
+  MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: true
+  MAESTRO_CLI_NO_ANALYTICS: true
 
 jobs:
   test:
@@ -48,7 +50,7 @@ jobs:
       - name: Build Android app
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: 36
           script: pnpm run android:release
 
       - name: Run Maestro tests
