@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: List Android system images
-        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list | grep "system-images"
+      # - name: List Android system images
+      #   run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list | grep "system-images"
       
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,16 +51,17 @@ jobs:
           fi
 
       - name: Build Android app
-        working-directory: tests/e2e-expo
-        run: pnpm run android:release
-        # uses: reactivecircus/android-emulator-runner@v2
-        # with:
-        #   api-level: 36
-        #   arch: x86_64
-        #   target: google_apis
-        #   script: |
-        #     cd tests/e2e-expo
-        #     pnpm run android:release
+        # working-directory: tests/e2e-expo
+        # run: pnpm run android:release
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          target: google_apis
+          working-directory: tests/e2e-expo
+          script: |
+            cwd
+            pnpm run android:release
 
       - name: Run Maestro tests
         working-directory: tests/e2e-expo
