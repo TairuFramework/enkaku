@@ -14,19 +14,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+      # - name: Setup Java
+      #   uses: actions/setup-java@v5
+      #   with:
+      #     distribution: 'temurin'
+      #     java-version: '17'
 
       - name: Setup environment
         uses: ./.github/actions/setup-mobile
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools'
+      # - name: Setup Android SDK
+      #   uses: android-actions/setup-android@v3
+      #   with:
+      #     packages: 'platform-tools'
 
       - name: Enable KVM (for Android Emulator)
         run: |
