@@ -20,6 +20,7 @@ jobs:
       - name: Create emulator
         run: |
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          echo y | sdkmanager "system-images;android-36;google_apis;x86_64"
           echo no | avdmanager create avd --force -n "test" --abi 'google_apis/x86_64' --package 'system-images;android-36;google_apis;x86_64'
 
       # - name: Setup Java
