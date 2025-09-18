@@ -47,11 +47,15 @@ jobs:
             echo "KVM not available, continuing without hardware acceleration"
           fi
 
+      - name: List Android SDKs
+        run: |
+          which sdkmanager
+          sdkmanager --list
+
       - name: Build Android app
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 36
-          arch: x86_64
           script: pnpm run android:release
 
       - name: Run Maestro tests
