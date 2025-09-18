@@ -51,14 +51,16 @@ jobs:
           fi
 
       - name: Build Android app
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 36
-          arch: x86_64
-          target: google_apis
-          script: |
-            cd tests/e2e-expo
-            pnpm run android:release
+        working-directory: tests/e2e-expo
+        run: pnpm run android:release
+        # uses: reactivecircus/android-emulator-runner@v2
+        # with:
+        #   api-level: 36
+        #   arch: x86_64
+        #   target: google_apis
+        #   script: |
+        #     cd tests/e2e-expo
+        #     pnpm run android:release
 
       - name: Run Maestro tests
         working-directory: tests/e2e-expo
