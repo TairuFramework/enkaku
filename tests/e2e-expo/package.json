@@ -1,6 +1,7 @@
 {
   "name": "e2e-expo",
   "version": "1.0.0",
+  "private": true,
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -11,16 +12,15 @@
     "test": "MAESTRO_CLI_NO_ANALYTICS=true MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED=true maestro test .maestro/sign-verify.yaml"
   },
   "dependencies": {
-    "@enkaku/expo-keystore": "workspace:*",
-    "@enkaku/token": "workspace:*",
-    "expo": "catalog:",
-    "expo-status-bar": "~3.0.8",
-    "react": "19.1.0",
-    "react-native": "0.81.4"
+    "@enkaku/expo-keystore": "workspace:^",
+    "@enkaku/token": "workspace:^",
+    "expo": "catalog:expo",
+    "expo-status-bar": "catalog:expo",
+    "react": "catalog:expo",
+    "react-native": "catalog:expo"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
     "typescript": "~5.9.2"
-  },
-  "private": true
+  }
 }
