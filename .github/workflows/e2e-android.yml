@@ -30,6 +30,10 @@ jobs:
           echo "Created emulator:"
           avdmanager list avd
 
+          # List emulators
+          echo "Emulators:"
+          $ANDROID_HOME/emulator/emulator -list-avds
+
           # Start emulator
           echo "Starting emulator..."
           $ANDROID_HOME/emulator/emulator \
