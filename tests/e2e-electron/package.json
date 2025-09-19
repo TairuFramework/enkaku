@@ -1,0 +1,34 @@
+{
+  "name": "e2e-electron",
+  "productName": "e2e-electron",
+  "version": "1.0.0",
+  "description": "My Electron application description",
+  "main": ".vite/build/main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package"
+  },
+  "dependencies": {
+    "@enkaku/client": "workspace:*",
+    "@enkaku/electron-keystore": "workspace:*",
+    "@enkaku/electron-rpc": "workspace:*",
+    "@enkaku/server": "workspace:*",
+    "@enkaku/token": "workspace:*",
+    "@enkaku/transport": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-native-electron": "catalog:",
+    "react-native-web": "catalog:"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "catalog:",
+    "@electron-forge/plugin-vite": "catalog:",
+    "@enkaku/protocol": "workspace:*",
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "@vitejs/plugin-react-swc": "catalog:",
+    "electron": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

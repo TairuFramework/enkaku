@@ -1,0 +1,58 @@
+{
+  "name": "@enkaku/electron-rpc",
+  "version": "0.12.0",
+  "license": "MIT",
+  "homepage": "https://enkaku.dev",
+  "description": "Enkaku RPC using Electron IPC",
+  "keywords": [
+    "electron",
+    "ipc",
+    "rpc"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/electron-rpc"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js",
+    "./main": {
+      "types": "./lib/main.d.ts",
+      "default": "./lib/main.js"
+    },
+    "./preload": "./lib/preload.js",
+    "./renderer": {
+      "types": "./lib/renderer.d.ts",
+      "default": "./lib/renderer.js"
+    }
+  },
+  "files": [
+    "lib/*"
+  ],
+  "scripts": {
+    "start": "tsx ./src/run.ts",
+    "build:clean": "del lib",
+    "build:js": "swc src -d ./lib --config-file ../../swc.json --strip-leading-paths",
+    "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
+    "build:types:ci": "tsc --emitDeclarationOnly --skipLibCheck --declarationMap false",
+    "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
+    "test:types": "tsc --noEmit",
+    "test": "pnpm run test:types",
+    "prepublishOnly": "pnpm run build"
+  },
+  "peerDependencies": {
+    "electron": "catalog:"
+  },
+  "dependencies": {
+    "@enkaku/client": "workspace:^",
+    "@enkaku/server": "workspace:^",
+    "@enkaku/transport": "workspace:^"
+  },
+  "devDependencies": {
+    "@enkaku/protocol": "workspace:^",
+    "electron": "catalog:"
+  }
+}
