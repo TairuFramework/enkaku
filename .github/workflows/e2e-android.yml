@@ -35,7 +35,7 @@ jobs:
 
       - name: Create emulator
         run: |
-          export ANDROID_AVD_HOME=$HOME/.android/avd
+          export ANDROID_AVD_HOME=$HOME/.config/.android/avd
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
           export PATH=$PATH:$ANDROID_HOME/platform-tools
           export PATH=$PATH:$ANDROID_HOME/emulator
@@ -63,7 +63,7 @@ jobs:
           echo "EMULATOR_PID=$EMULATOR_PID" >> $GITHUB_ENV
           echo "Started emulator with PID: $EMULATOR_PID"
 
-      - name: Wait for Emulator to Boot
+      - name: Wait for emulator to boot
         run: |
           export PATH=$PATH:$ANDROID_HOME/platform-tools
           
