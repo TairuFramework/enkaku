@@ -1,0 +1,142 @@
+name: Android E2E
+on: [push, pull_request]
+env:
+  CI: true
+  DO_NOT_TRACK: 1
+  MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: true
+  MAESTRO_CLI_NO_ANALYTICS: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          # Check if KVM is available
+          if [ -e /dev/kvm ]; then
+            echo "KVM is available"
+            # Create directory if it doesn't exist
+            sudo mkdir -p /etc/udev/rules.d
+            
+            # Set up KVM permissions
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+            sudo udevadm control --reload-rules
+            sudo udevadm trigger --name-match=kvm
+            
+            # Add user to KVM group
+            sudo usermod -a -G kvm $USER
+          else
+            echo "KVM not available, continuing without hardware acceleration"
+          fi
+
+      - name: Create emulator
+        run: |
+          export ANDROID_AVD_HOME=$HOME/.config/.android/avd
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          
+          # Install system image
+          echo y | sdkmanager "system-images;android-36;google_apis;x86_64"
+          
+          # Create emulator
+          echo no | avdmanager create avd --force -n "test-emulator" --abi 'google_apis/x86_64' --package 'system-images;android-36;google_apis;x86_64'
+
+          # Start emulator
+          echo "Starting emulator..."
+          $ANDROID_HOME/emulator/emulator \
+            -avd test-emulator \
+            -no-window \
+            -no-audio \
+            -no-boot-anim \
+            -gpu swiftshader_indirect \
+            -memory 4096 \
+            -no-snapshot-save &
+
+          EMULATOR_PID=$!
+          echo "EMULATOR_PID=$EMULATOR_PID" >> $GITHUB_ENV
+          echo "Started emulator with PID: $EMULATOR_PID"
+
+      - name: Wait for emulator to boot
+        run: |
+          export PATH=$PATH:$ANDROID_HOME/platform-tools
+          
+          echo "Waiting for emulator boot..."
+          # Wait for device to be detected by ADB
+          timeout=300  # 5 minutes
+          counter=0
+          
+          while [ $counter -lt $timeout ]; do
+            if adb devices | grep -q "emulator.*device"; then
+              echo "✅ Emulator detected by ADB"
+              break
+            fi
+            
+            echo "Waiting for emulator... ($counter/$timeout seconds)"
+            sleep 5
+            counter=$((counter + 5))
+          done
+          
+          if [ $counter -ge $timeout ]; then
+            echo "❌ Emulator boot timeout"
+            adb devices
+            exit 1
+          fi
+          
+          # Wait for system to be fully ready
+          echo "Waiting for system boot..."
+          adb wait-for-device
+          
+          # Wait for boot completion
+          timeout 300 bash -c '
+            while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\''\r'\'')" != "1" ]; do
+              echo "Waiting for boot completion..."
+              sleep 5
+            done
+          '
+          
+          # Disable animations for testing
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0  
+          adb shell settings put global animator_duration_scale 0
+          
+          echo "✅ Emulator fully ready"
+          
+          # Verify emulator info
+          echo "Emulator info:"
+          adb devices -l
+          adb shell getprop ro.build.version.release
+          adb shell getprop ro.product.cpu.abi
+  
+      - name: Verify ADB connection
+        run: |
+          export PATH=$PATH:$ANDROID_HOME/platform-tools
+          echo "ADB status:"
+          adb devices -l
+          
+          # Test ADB connection
+          adb shell echo "ADB connection test" || {
+            echo "❌ ADB connection failed"
+            exit 1
+          }
+          echo "✅ ADB connection verified"
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-mobile
+
+      - name: Build Android app
+        working-directory: tests/e2e-expo
+        run: pnpm run android:release
+
+      - name: Run Maestro tests
+        working-directory: tests/e2e-expo
+        run: pnpm run test
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-screenshots
+          path: "*.png"

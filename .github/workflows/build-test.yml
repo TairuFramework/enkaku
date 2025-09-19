@@ -3,10 +3,10 @@ on: [push, pull_request]
 env:
   CI: true
   DO_NOT_TRACK: 1
+
 jobs:
   build:
     name: Build, lint, and test on Node ${{ matrix.node }}
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -28,7 +28,7 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: 'pnpm'
 
-      - name: Install dependencies and build
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build

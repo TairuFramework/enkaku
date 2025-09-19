@@ -6,10 +6,10 @@
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
-    "android:release": "expo run:android --variant release",
+    "android:release": "expo run:android --no-bundler --variant release",
     "ios": "expo start --ios",
-    "ios:release": "expo run:ios --configuration Release",
-    "test": "MAESTRO_CLI_NO_ANALYTICS=true MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED=true maestro test .maestro/sign-verify.yaml"
+    "ios:release": "expo run:ios --no-bundler --configuration Release",
+    "test": "MAESTRO_CLI_NO_ANALYTICS=true MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED=true maestro test .maestro/"
   },
   "dependencies": {
     "@enkaku/expo-keystore": "workspace:^",
