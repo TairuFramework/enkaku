@@ -11,61 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      # - name: List Android system images
-      #   run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --list | grep "system-images"
-      
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Create emulator
-        run: |
-          # echo "Home path:"
-          # echo $HOME
-          # echo "Android home:"
-          # echo $ANDROID_HOME
-          # echo "Android SDK home:"
-          # echo $ANDROID_SDK_HOME
-          export ANDROID_AVD_HOME=$HOME/.config/.android/avd
-          echo "Android AVD home:"
-          echo $ANDROID_AVD_HOME
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-          
-          # Install system image
-          echo y | sdkmanager "system-images;android-36;google_apis;x86_64"
-          
-          # Create emulator
-          echo no | avdmanager create avd --force -n "test-emulator" --abi 'google_apis/x86_64' --package 'system-images;android-36;google_apis;x86_64'
-          echo "Created emulator:"
-          avdmanager list avd
-          echo "Emulators in AVD home:"
-          ls -la $ANDROID_AVD_HOME
-
-          # List emulators
-          echo "Emulator AVD list:"
-          $ANDROID_HOME/emulator/emulator -list-avds
-
-          # Start emulator
-          echo "Starting emulator..."
-          $ANDROID_HOME/emulator/emulator \
-            -avd test-emulator \
-            -no-window \
-            -no-audio \
-            -no-boot-anim \
-            -gpu swiftshader_indirect \
-            -memory 4096 &
-      # - name: Setup Java
-      #   uses: actions/setup-java@v5
-      #   with:
-      #     distribution: 'temurin'
-      #     java-version: '17'
-
-      - name: Setup environment
-        uses: ./.github/actions/setup-mobile
-
-      # - name: Setup Android SDK
-      #   uses: android-actions/setup-android@v3
-      #   with:
-      #     packages: 'platform-tools'
 
       - name: Enable KVM
         run: |
@@ -85,24 +32,107 @@ jobs:
           else
             echo "KVM not available, continuing without hardware acceleration"
           fi
-      
-      # - name: Create emulator
-      #   run: |
-      #     export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-      #     echo no | avdmanager create avd --force -n "test" --abi 'google_apis/x86_64' --package 'system-images;android-36;google_apis;x86_64'
+
+      - name: Create emulator
+        run: |
+          export ANDROID_AVD_HOME=$HOME/.android/avd
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          export PATH=$PATH:$ANDROID_HOME/platform-tools
+          export PATH=$PATH:$ANDROID_HOME/emulator
+          
+          # Install system image
+          echo y | sdkmanager "system-images;android-36;google_apis;x86_64"
+          
+          # Create emulator
+          echo no | avdmanager create avd --force -n "test-emulator" --abi 'google_apis/x86_64' --package 'system-images;android-36;google_apis;x86_64'
+          echo "Available emulators:"
+          $ANDROID_HOME/emulator/emulator -list-avds
+
+          # Start emulator
+          echo "Starting emulator..."
+          $ANDROID_HOME/emulator/emulator \
+            -avd test-emulator \
+            -no-window \
+            -no-audio \
+            -no-boot-anim \
+            -gpu swiftshader_indirect \
+            -memory 4096 \
+            -no-snapshot-save &
+
+          EMULATOR_PID=$!
+          echo "EMULATOR_PID=$EMULATOR_PID" >> $GITHUB_ENV
+          echo "Started emulator with PID: $EMULATOR_PID"
+
+      - name: Wait for Emulator to Boot
+        run: |
+          export PATH=$PATH:$ANDROID_HOME/platform-tools
+          
+          echo "Waiting for emulator boot..."
+          # Wait for device to be detected by ADB
+          timeout=300  # 5 minutes
+          counter=0
+          
+          while [ $counter -lt $timeout ]; do
+            if adb devices | grep -q "emulator.*device"; then
+              echo "✅ Emulator detected by ADB"
+              break
+            fi
+            
+            echo "Waiting for emulator... ($counter/$timeout seconds)"
+            sleep 5
+            counter=$((counter + 5))
+          done
+          
+          if [ $counter -ge $timeout ]; then
+            echo "❌ Emulator boot timeout"
+            adb devices
+            exit 1
+          fi
+          
+          # Wait for system to be fully ready
+          echo "Waiting for system boot..."
+          adb wait-for-device
+          
+          # Wait for boot completion
+          timeout 300 bash -c '
+            while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\''\r'\'')" != "1" ]; do
+              echo "Waiting for boot completion..."
+              sleep 5
+            done
+          '
+          
+          # Disable animations for testing
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0  
+          adb shell settings put global animator_duration_scale 0
+          
+          echo "✅ Emulator fully ready"
+          
+          # Verify emulator info
+          echo "Emulator info:"
+          adb devices -l
+          adb shell getprop ro.build.version.release
+          adb shell getprop ro.product.cpu.abi
+  
+      - name: Verify ADB Connection
+        run: |
+          echo "ADB status:"
+          adb devices -l
+          
+          # Test ADB connection
+          adb shell echo "ADB connection test" || {
+            echo "❌ ADB connection failed"
+            exit 1
+          }
+          
+          echo "✅ ADB connection verified"
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-mobile
 
       - name: Build Android app
         working-directory: tests/e2e-expo
         run: pnpm run android:release
-        # uses: reactivecircus/android-emulator-runner@v2
-        # with:
-        #   api-level: 36
-        #   arch: x86_64
-        #   target: google_apis
-        #   working-directory: tests/e2e-expo
-        #   script: |
-        #     pwd
-        #     pnpm run android:release
 
       - name: Run Maestro tests
         working-directory: tests/e2e-expo
