@@ -35,23 +35,14 @@ jobs:
 
       - name: Create emulator
         run: |
-          echo "Android command line tools:"
-          ls $ANDROID_HOME/cmdline-tools/latest/bin
-          echo "Android platform tools:"
-          ls $ANDROID_HOME/platform-tools
-
           export ANDROID_AVD_HOME=$HOME/.config/.android/avd
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-          export PATH=$PATH:$ANDROID_HOME/platform-tools
-          export PATH=$PATH:$ANDROID_HOME/emulator
           
           # Install system image
           echo y | sdkmanager "system-images;android-36;google_apis;x86_64"
           
           # Create emulator
           echo no | avdmanager create avd --force -n "test-emulator" --abi 'google_apis/x86_64' --package 'system-images;android-36;google_apis;x86_64'
-          echo "Available emulators:"
-          $ANDROID_HOME/emulator/emulator -list-avds
 
           # Start emulator
           echo "Starting emulator..."
@@ -119,11 +110,9 @@ jobs:
           adb shell getprop ro.build.version.release
           adb shell getprop ro.product.cpu.abi
   
-      - name: Verify ADB Connection
+      - name: Verify ADB connection
         run: |
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
           export PATH=$PATH:$ANDROID_HOME/platform-tools
-
           echo "ADB status:"
           adb devices -l
           
@@ -132,7 +121,6 @@ jobs:
             echo "❌ ADB connection failed"
             exit 1
           }
-          
           echo "✅ ADB connection verified"
 
       - name: Setup environment
