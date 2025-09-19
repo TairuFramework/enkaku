@@ -26,18 +26,20 @@ jobs:
           echo y | sdkmanager "system-images;android-36;google_apis;x86_64"
           
           # Create emulator
-          echo no | avdmanager create avd --force -n "test" --abi 'google_apis/x86_64' --package 'system-images;android-36;google_apis;x86_64'
+          echo no | avdmanager create avd --force -n "test-emulator" --abi 'google_apis/x86_64' --package 'system-images;android-36;google_apis;x86_64'
           echo "Created emulator:"
           avdmanager list avd
+          echo "Emulators in AVD home:"
+          ls -la $ANDROID_AVD_HOME
 
           # List emulators
-          echo "Emulators:"
+          echo "Emulator AVD list:"
           $ANDROID_HOME/emulator/emulator -list-avds
 
           # Start emulator
           echo "Starting emulator..."
           $ANDROID_HOME/emulator/emulator \
-            -avd test \
+            -avd test-emulator \
             -no-window \
             -no-audio \
             -no-boot-anim \
