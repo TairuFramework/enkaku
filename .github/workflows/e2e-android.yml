@@ -35,6 +35,11 @@ jobs:
 
       - name: Create emulator
         run: |
+          echo "Android command line tools:"
+          ls $ANDROID_HOME/cmdline-tools/latest/bin
+          echo "Android platform tools:"
+          ls $ANDROID_HOME/platform-tools
+
           export ANDROID_AVD_HOME=$HOME/.config/.android/avd
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
           export PATH=$PATH:$ANDROID_HOME/platform-tools
@@ -116,6 +121,9 @@ jobs:
   
       - name: Verify ADB Connection
         run: |
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          export PATH=$PATH:$ANDROID_HOME/platform-tools
+
           echo "ADB status:"
           adb devices -l
           
