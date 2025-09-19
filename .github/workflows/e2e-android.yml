@@ -19,7 +19,9 @@ jobs:
 
       - name: Create emulator
         run: |
-          export ANDROID_AVD_HOME=$HOME/.android/avd
+          echo "Android home:"
+          echo $ANDROID_HOME
+          export ANDROID_AVD_HOME=$ANDROID_HOME/avd
           export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
           
           # Install system image
