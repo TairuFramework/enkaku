@@ -1,0 +1,38 @@
+name: Desktop E2E
+on: [push, pull_request]
+env:
+  CI: true
+  DO_NOT_TRACK: 1
+
+jobs:
+  test:
+    name: Run E2E desktop tests on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: 24
+
+      - name: Package app
+        working-directory: tests/e2e-electron
+        run: pnpm run package
+
+      - name: Setup virtual display (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          export DISPLAY=:99
+          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        
+      - name: Run tests
+        working-directory: tests/e2e-electron
+        run: pnpm run test

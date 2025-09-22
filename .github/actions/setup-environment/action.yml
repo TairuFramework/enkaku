@@ -1,4 +1,10 @@
-name: Setup mobile environment
+name: Setup environment
+inputs:
+  node-version:
+    description: 'Node version to use'
+    required: false
+    default: 24
+
 runs:
   using: 'composite'
   steps:
@@ -11,7 +17,7 @@ runs:
     - name: Setup node
       uses: actions/setup-node@v4
       with:
-        node-version: 24
+        node-version: ${{ inputs.node-version }}
         cache: 'pnpm'
 
     - name: Install dependencies
@@ -21,9 +27,3 @@ runs:
     - name: Build packages
       shell: bash
       run: pnpm run build:ci
-
-    - name: Install Maestro
-      shell: bash
-      run: |
-        curl -Ls "https://get.maestro.mobile.dev" | bash
-        echo "$HOME/.maestro/bin" >> $GITHUB_PATH

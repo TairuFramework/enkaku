@@ -124,7 +124,15 @@ jobs:
           echo "✅ ADB connection verified"
 
       - name: Setup environment
-        uses: ./.github/actions/setup-mobile
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: 24
+
+      - name: Install Maestro
+        shell: bash
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
       - name: Build Android app
         working-directory: tests/e2e-expo
