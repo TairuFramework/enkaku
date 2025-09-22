@@ -18,7 +18,10 @@ function getAppPath() {
 const executablePath = getAppPath()
 
 test('sign and verify token', async () => {
-  const app = await electron.launch({ executablePath })
+  const app = await electron.launch({
+    executablePath,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
+  })
   const page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
   await page.getByText('Sign token').click()

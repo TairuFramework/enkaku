@@ -2,13 +2,16 @@ name: Desktop E2E
 on: [push, pull_request]
 env:
   CI: true
+  DISPLAY: ':99' # Virtual display for Linux
   DO_NOT_TRACK: 1
+  ELECTRON_DISABLE_GPU: 1
 
 jobs:
   test:
     name: Run E2E desktop tests on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
     
