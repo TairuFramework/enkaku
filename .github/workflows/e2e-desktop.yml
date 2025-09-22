@@ -2,13 +2,11 @@ name: Desktop E2E
 on: [push, pull_request]
 env:
   CI: true
-  DISPLAY: ':99' # Virtual display for Linux
   DO_NOT_TRACK: 1
-  ELECTRON_DISABLE_GPU: 1
 
 jobs:
   test:
-    name: Run E2E desktop tests on ${{ matrix.os }}
+    name: on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -28,14 +26,50 @@ jobs:
         working-directory: tests/e2e-electron
         run: pnpm run package
 
-      - name: Setup virtual display (Linux only)
+      - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb
+          sudo apt-get install -y \
+            libnss3-dev \
+            libgconf-2-4 \
+            libxss1 \
+            libasound2 \
+            libxtst6 \
+            libatspi2.0-0 \
+            libgtk-3-0 \
+            libgbm-dev
+
+      - name: Setup virtual display (Linux only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
           export DISPLAY=:99
           Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
         
       - name: Run tests
         working-directory: tests/e2e-electron
         run: pnpm run test
+        env:
+          DISPLAY: ':99'
+          ELECTRON_DISABLE_GPU: 1
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-${{ matrix.os }}
+          path: playwright-report/
+  
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results-${{ matrix.os }}
+          path: test-results/
+  
+      - name: Upload Screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: screenshots-${{ matrix.os }}
+          path: screenshots/
