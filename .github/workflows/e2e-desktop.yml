@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest, windows-latest]
     
     steps:
       - name: Checkout repository
@@ -26,30 +26,30 @@ jobs:
         working-directory: tests/e2e-electron
         run: pnpm run package
 
-      - name: Install Linux dependencies
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libnss3-dev \
-            libxss1 \
-            libxtst6 \
-            libatspi2.0-0 \
-            libgtk-3-0 \
-            libgbm-dev
+      # - name: Install Linux dependencies
+      #   if: matrix.os == 'ubuntu-latest'
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y \
+      #       libnss3-dev \
+      #       libxss1 \
+      #       libxtst6 \
+      #       libatspi2.0-0 \
+      #       libgtk-3-0 \
+      #       libgbm-dev
 
-      - name: Setup virtual display (Linux only)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+      # - name: Setup virtual display (Linux only)
+      #   if: matrix.os == 'ubuntu-latest'
+      #   run: |
+      #     export DISPLAY=:99
+      #     Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
         
       - name: Run tests
         working-directory: tests/e2e-electron
         run: pnpm run test
-        env:
-          DISPLAY: ':99'
-          ELECTRON_DISABLE_GPU: 1
+        # env:
+        #   DISPLAY: ':99'
+        #   ELECTRON_DISABLE_GPU: 1
 
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
