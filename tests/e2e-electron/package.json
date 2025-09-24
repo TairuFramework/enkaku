@@ -6,7 +6,8 @@
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
-    "package": "electron-forge package"
+    "package": "electron-forge package",
+    "test": "playwright test"
   },
   "dependencies": {
     "@enkaku/client": "workspace:*",
