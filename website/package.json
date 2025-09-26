@@ -16,10 +16,10 @@
   },
   "dependencies": {
     "@dipakparmar/docusaurus-plugin-umami": "^2.3.0",
-    "@docusaurus/core": "^3.8.1",
-    "@docusaurus/faster": "^3.8.1",
-    "@docusaurus/preset-classic": "^3.8.1",
-    "@docusaurus/theme-mermaid": "^3.8.1",
+    "@docusaurus/core": "catalog:",
+    "@docusaurus/faster": "catalog:",
+    "@docusaurus/preset-classic": "catalog:",
+    "@docusaurus/theme-mermaid": "catalog:",
     "@mdx-js/react": "^3.1.1",
     "@orama/plugin-docusaurus-v3": "catalog:",
     "clsx": "^2.1.1",
@@ -29,10 +29,10 @@
     "react-dom": "catalog:"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "^3.8.1",
-    "@docusaurus/tsconfig": "^3.8.1",
-    "@docusaurus/types": "^3.8.1",
-    "@types/react": "^19.1.13",
+    "@docusaurus/module-type-aliases": "catalog:",
+    "@docusaurus/tsconfig": "catalog:",
+    "@docusaurus/types": "catalog:",
+    "@types/react": "catalog:",
     "typescript": "~5.9.2"
   },
   "browserslist": {

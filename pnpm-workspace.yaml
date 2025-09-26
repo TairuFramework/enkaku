@@ -5,6 +5,13 @@ packages:
 
 catalog:
   '@biomejs/biome': ^2.2.4
+  '@docusaurus/core': ^3.9.1
+  '@docusaurus/faster': ^3.9.1
+  '@docusaurus/module-type-aliases': ^3.9.1
+  '@docusaurus/preset-classic': ^3.9.1
+  '@docusaurus/theme-mermaid': ^3.9.1
+  '@docusaurus/tsconfig': ^3.9.1
+  '@docusaurus/types': ^3.9.1
   '@electron-forge/cli': ^7.9.0
   '@electron-forge/plugin-vite': ^7.9.0
   '@hono/node-server': ^1.19.4
@@ -17,10 +24,11 @@ catalog:
   '@scure/base': ^2.0.0
   '@standard-schema/spec': ^1.0.0
   '@swc/cli': ^0.7.8
-  '@swc/core': ^1.13.5
+  '@swc/core': ^1.13.19
   '@swc/jest': ^0.2.39
   '@types/jest': ^30.0.0
   '@types/node': 24.5.2
+  '@types/react': ^19.1.14
   '@vitejs/plugin-react-swc': ^4.1.0
   ajv: ^8.17.1
   ajv-formats: ^3.0.1
@@ -40,7 +48,7 @@ catalog:
   react-dom: 19.1.0
   react-native-electron: ^0.22.0
   react-native-web: 0.21.1
-  tsx: ^4.20.5
+  tsx: ^4.20.6
   turbo: ^2.5.8
   typedoc: ^0.28.13
   typedoc-plugin-markdown: ^4.9.0
