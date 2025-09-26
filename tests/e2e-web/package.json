@@ -1,0 +1,28 @@
+{
+  "name": "e2e-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "start": "vite preview",
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "@enkaku/browser-keystore": "workspace:*",
+    "@enkaku/token": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "react-native-web": "catalog:"
+  },
+  "devDependencies": {
+    "@playwright/test": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "^19.1.9",
+    "@vitejs/plugin-react-swc": "^4.1.0",
+    "typescript": "catalog:",
+    "vite": "catalog:"
+  }
+}

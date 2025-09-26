@@ -1,0 +1,35 @@
+name: Web E2E
+on: [push, pull_request]
+env:
+  CI: true
+  DO_NOT_TRACK: 1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: 24
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Build app
+        working-directory: tests/e2e-web
+        run: pnpm run build
+
+      - name: Run Playwright tests
+        working-directory: tests/e2e-web
+        run: pnpm run test
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: tests/e2e-web/playwright-report/
+          retention-days: 30
