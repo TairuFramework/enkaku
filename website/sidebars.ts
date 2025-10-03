@@ -42,7 +42,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'RPC',
-      items: ['api/client/index', 'api/server/index', 'api/standalone/index'],
+      items: ['api/client/index', 'api/server/index', 'api/standalone/index', 'api/electron-rpc/index'],
     },
     {
       type: 'category',
@@ -58,7 +58,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Key stores',
-      items: ['api/browser-keystore/index', 'api/expo-keystore/index', 'api/node-keystore/index'],
+      items: ['api/browser-keystore/index', 'api/electron-keystore/index', 'api/expo-keystore/index', 'api/node-keystore/index'],
     },
     {
       type: 'category',

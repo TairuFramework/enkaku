@@ -10,7 +10,7 @@ npm install @enkaku/socket-transport
 
 ## Classes
 
-### SocketTransport\<R, W\>
+### SocketTransport
 
 Base Transport class implementing TransportType.
 
@@ -186,7 +186,7 @@ Base Transport class implementing TransportType.
 
 ***
 
-### SocketTransportParams\<R\>
+### SocketTransportParams
 
 > **SocketTransportParams**\<`R`\> = [`FromJSONLinesOptions`](../stream/index.md#fromjsonlinesoptions)\<`R`\> & `object`
 

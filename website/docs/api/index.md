@@ -7,6 +7,8 @@
 - [@enkaku/capability](capability/index.md)
 - [@enkaku/client](client/index.md)
 - [@enkaku/codec](codec/index.md)
+- [@enkaku/electron-keystore](electron-keystore/index.md)
+- [@enkaku/electron-rpc](electron-rpc/index.md)
 - [@enkaku/event](event/index.md)
 - [@enkaku/execution](execution/index.md)
 - [@enkaku/expo-keystore](expo-keystore/index.md)

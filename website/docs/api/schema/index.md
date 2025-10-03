@@ -160,7 +160,7 @@ JSON schema type used by the library.
 
 ***
 
-### Validator()\<T\>
+### Validator()
 
 > **Validator**\<`T`\> = (`value`) => `StandardSchemaV1.Result`\<`T`\>
 

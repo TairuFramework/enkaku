@@ -18,6 +18,7 @@ These packages support RPC interactions.
 - [`@enkaku/client`](./api/client/index.md): RPC client.
 - [`@enkaku/server`](./api/server/index.md): server logic for handling RPC.
 - [`@enkaku/standalone`](./api/standalone/index.md): standalone RPC client and server, mainly useful for testing.
+- [`@enkaku/electron-rpc`](./api/electron-rpc/index.md): RPC client and server logic using [Electron Inter-Process Communication (IPC)](https://www.electronjs.org/docs/latest/tutorial/ipc).
 
 ## Transports
 
@@ -33,6 +34,7 @@ These packages support messaging interactions for RPC clients and/or servers.
 These packages support secure storage for signer keys in various environment.
 
 - [`@enkaku/browser-keystore`](./api/browser-keystore/index.md): [IndexedDB](https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API) store for [CryptoKeys](https://developer.mozilla.org/en-US/docs/Web/API/CryptoKey) in browser environments.
+- [`@enkaku/electron-keystore`](./api/electron-keystore/index.md): Key store using [Electron's `safeStorage`](https://www.electronjs.org/docs/latest/api/safe-storage) and [Electron Store](https://github.com/sindresorhus/electron-store).
 - [`@enkaku/expo-keystore`](./api/expo-keystore/index.md): [SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/) for Expo (React Native) environments.
 - [`@enkaku/node-keystore`](./api/node-keystore/index.md): [Keyring](https://github.com/hwchen/keyring-rs) store for Node environments.
 

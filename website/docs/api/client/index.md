@@ -10,7 +10,7 @@ npm install @enkaku/client
 
 ## Classes
 
-### Client\<Protocol, ClientDefinitions\>
+### Client
 
 Disposer class, providing a dispose function and a disposed Promise.
 
@@ -210,7 +210,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### RequestError\<Code, Data\>
+### RequestError
 
 #### Extends
 
@@ -308,7 +308,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ## Type Aliases
 
-### ChannelCall\<Receive, Send, Result\>
+### ChannelCall
 
 > **ChannelCall**\<`Receive`, `Send`, `Result`\> = [`StreamCall`](#streamcall)\<`Receive`, `Result`\> & `object`
 
@@ -348,7 +348,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### ChannelDefinitionsType\<Protocol\>
+### ChannelDefinitionsType
 
 > **ChannelDefinitionsType**\<`Protocol`\> = `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends ChannelProcedureDefinition ? { Param: DataOf<Protocol[Procedure]["param"]>; Receive: DataOf<Protocol[Procedure]["receive"]>; Result: ReturnOf<Protocol[Procedure]["result"]>; Send: DataOf<Protocol[Procedure]["send"]> } : never }`\>
 
@@ -360,7 +360,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### ClientDefinitionsType\<Protocol\>
+### ClientDefinitionsType
 
 > **ClientDefinitionsType**\<`Protocol`\> = `object`
 
@@ -390,7 +390,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### ClientParams\<Protocol\>
+### ClientParams
 
 > **ClientParams**\<`Protocol`\> = `object`
 
@@ -452,7 +452,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### ErrorObjectType\<Code, Data\>
+### ErrorObjectType
 
 > **ErrorObjectType**\<`Code`, `Data`\> = `object`
 
@@ -482,7 +482,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### EventDefinitionsType\<Protocol\>
+### EventDefinitionsType
 
 > **EventDefinitionsType**\<`Protocol`\> = `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition ? { Data: DataOf<Protocol[Procedure]["data"]> } : never }`\>
 
@@ -494,7 +494,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### RequestCall\<Result\>
+### RequestCall
 
 > **RequestCall**\<`Result`\> = `Promise`\<`Result`\> & `object`
 
@@ -530,7 +530,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### RequestDefinitionsType\<Protocol\>
+### RequestDefinitionsType
 
 > **RequestDefinitionsType**\<`Protocol`\> = `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends RequestProcedureDefinition ? { Param: DataOf<Protocol[Procedure]["param"]>; Result: ReturnOf<Protocol[Procedure]["result"]> } : never }`\>
 
@@ -542,7 +542,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### RequestErrorParams\<Code, Data\>
+### RequestErrorParams
 
 > **RequestErrorParams**\<`Code`, `Data`\> = `ErrorOptions` & [`ErrorObjectType`](#errorobjecttype)\<`Code`, `Data`\>
 
@@ -558,7 +558,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### StreamCall\<Receive, Result\>
+### StreamCall
 
 > **StreamCall**\<`Receive`, `Result`\> = [`RequestCall`](#requestcall)\<`Result`\> & `object`
 
@@ -588,7 +588,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### StreamDefinitionsType\<Protocol\>
+### StreamDefinitionsType
 
 > **StreamDefinitionsType**\<`Protocol`\> = `FilterNever`\<`{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends StreamProcedureDefinition ? { Param: Protocol[Procedure]["param"] extends undefined ? never : DataOf<Protocol[Procedure]["param"]>; Receive: DataOf<Protocol[Procedure]["receive"]>; Result: ReturnOf<Protocol[Procedure]["result"]> } : never }`\>
 

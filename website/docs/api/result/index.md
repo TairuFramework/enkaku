@@ -10,7 +10,7 @@ npm install @enkaku/result
 
 ## Classes
 
-### AsyncResult\<V, E\>
+### AsyncResult
 
 #### Extended by
 
@@ -330,7 +330,7 @@ A Promise for the completion of which ever callback is executed.
 
 ***
 
-### Option\<V\>
+### Option
 
 #### Type Parameters
 
@@ -524,7 +524,7 @@ A Promise for the completion of which ever callback is executed.
 
 ***
 
-### Result\<V, E\>
+### Result
 
 #### Type Parameters
 
@@ -796,7 +796,7 @@ A Promise for the completion of which ever callback is executed.
 
 ## Type Aliases
 
-### MappedResult\<V, E\>
+### MappedResult
 
 > **MappedResult**\<`V`, `E`\> = `V` \| `PromiseLike`\<`V`\> \| [`Result`](#result)\<`V`, `E`\> \| `PromiseLike`\<[`Result`](#result)\<`V`, `E`\>\> \| [`AsyncResult`](#asyncresult)\<`V`, `E`\>
 

@@ -270,7 +270,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### LazyPromise\<T\>
+### LazyPromise
 
 #### Extends
 
@@ -623,7 +623,7 @@ A promise whose internal state matches the provided promise.
 
 ## Type Aliases
 
-### Deferred\<T, R\>
+### Deferred
 
 > **Deferred**\<`T`, `R`\> = `object`
 
@@ -701,7 +701,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 ***
 
-### ExecuteFn()\<T\>
+### ExecuteFn()
 
 > **ExecuteFn**\<`T`\> = (`resolve`, `reject`) => `void`
 

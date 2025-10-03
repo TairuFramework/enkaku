@@ -10,7 +10,7 @@ npm install @enkaku/http-server-transport
 
 ## Classes
 
-### ServerTransport\<Protocol\>
+### ServerTransport
 
 Base Transport class implementing TransportType.
 
@@ -194,7 +194,7 @@ Base Transport class implementing TransportType.
 
 ***
 
-### ServerBridge\<Protocol\>
+### ServerBridge
 
 > **ServerBridge**\<`Protocol`\> = `object`
 

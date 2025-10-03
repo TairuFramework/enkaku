@@ -10,7 +10,7 @@ npm install @enkaku/server
 
 ## Classes
 
-### Server\<Protocol\>
+### Server
 
 Disposer class, providing a dispose function and a disposed Promise.
 
@@ -122,7 +122,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ## Type Aliases
 
-### ChannelHandler\<Protocol, Procedure\>
+### ChannelHandler
 
 > **ChannelHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
@@ -138,7 +138,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### ChannelHandlerContext\<Protocol, Procedure\>
+### ChannelHandlerContext
 
 > **ChannelHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`StreamHandlerContext`](#streamhandlercontext)\<`Protocol`, `Procedure`\> & `object` : `never`
 
@@ -154,7 +154,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### EventHandler()\<Protocol, Procedure\>
+### EventHandler()
 
 > **EventHandler**\<`Protocol`, `Procedure`\> = (`context`) => `void` \| `Promise`\<`void`\>
 
@@ -180,7 +180,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### EventHandlerContext\<Protocol, Procedure\>
+### EventHandlerContext
 
 > **EventHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`EventProcedureDefinition`](../protocol/index.md#eventproceduredefinition) ? `object` : `never`
 
@@ -196,7 +196,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### HandlerReturn\<ResultSchema, Result\>
+### HandlerReturn
 
 > **HandlerReturn**\<`ResultSchema`, `Result`\> = `Result` \| `Promise`\<`Result`\>
 
@@ -218,7 +218,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### ProcedureHandlers\<Protocol\>
+### ProcedureHandlers
 
 > **ProcedureHandlers**\<`Protocol`\> = `{ [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition ? (context: EventHandlerContext<Protocol, Procedure>) => void : Protocol[Procedure] extends RequestProcedureDefinition ? (context: RequestHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : Protocol[Procedure] extends StreamProcedureDefinition ? (context: StreamHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : Protocol[Procedure] extends ChannelProcedureDefinition ? (context: ChannelHandlerContext<Protocol, Procedure>) => HandlerReturn<Protocol[Procedure]["result"]> : never }`
 
@@ -230,7 +230,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### RequestHandler\<Protocol, Procedure\>
+### RequestHandler
 
 > **RequestHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
@@ -246,7 +246,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### RequestHandlerContext\<Protocol, Procedure\>
+### RequestHandlerContext
 
 > **RequestHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? `object` : `never`
 
@@ -262,7 +262,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### ServeParams\<Protocol\>
+### ServeParams
 
 > **ServeParams**\<`Protocol`\> = `Omit`\<[`ServerParams`](#serverparams)\<`Protocol`\>, `"transports"`\> & `object`
 
@@ -338,7 +338,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### ServerParams\<Protocol\>
+### ServerParams
 
 > **ServerParams**\<`Protocol`\> = `object`
 
@@ -380,7 +380,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### StreamHandler\<Protocol, Procedure\>
+### StreamHandler
 
 > **StreamHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
@@ -396,7 +396,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### StreamHandlerContext\<Protocol, Procedure\>
+### StreamHandlerContext
 
 > **StreamHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`RequestHandlerContext`](#requesthandlercontext)\<`Protocol`, `Procedure`\> & `object` : `never`
 

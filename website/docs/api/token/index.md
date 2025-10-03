@@ -64,7 +64,7 @@ npm install @enkaku/token
 
 ***
 
-### SignedToken\<Payload, Header\>
+### SignedToken
 
 > **SignedToken**\<`Payload`, `Header`\> = `object`
 
@@ -98,7 +98,7 @@ npm install @enkaku/token
 
 ***
 
-### Token\<Payload, Header\>
+### Token
 
 > **Token**\<`Payload`, `Header`\> = [`UnsignedToken`](#unsignedtoken)\<`Payload`, `Header`\> \| [`SignedToken`](#signedtoken)\<`Payload`, `Header`\> \| [`VerifiedToken`](#verifiedtoken)\<`Payload`, `Header`\>
 
@@ -154,7 +154,7 @@ npm install @enkaku/token
 
 ***
 
-### UnsignedToken\<Payload, Header\>
+### UnsignedToken
 
 > **UnsignedToken**\<`Payload`, `Header`\> = `object`
 
@@ -188,7 +188,7 @@ npm install @enkaku/token
 
 ***
 
-### VerifiedToken\<Payload, Header\>
+### VerifiedToken
 
 > **VerifiedToken**\<`Payload`, `Header`\> = [`SignedToken`](#signedtoken)\<`Payload`, `Header`\> & `object`
 

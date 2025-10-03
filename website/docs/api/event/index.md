@@ -10,7 +10,7 @@ npm install @enkaku/event
 
 ## Classes
 
-### EventEmitter\<Events, AllEvents\>
+### EventEmitter
 
 #### Extends
 

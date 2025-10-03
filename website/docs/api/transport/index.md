@@ -10,7 +10,7 @@ npm install @enkaku/transport
 
 ## Classes
 
-### DirectTransports\<ToClient, ToServer\>
+### DirectTransports
 
 Create direct Transports for communication between a client and server in the same process.
 
@@ -118,7 +118,7 @@ Create direct Transports for communication between a client and server in the sa
 
 ***
 
-### Transport\<R, W\>
+### Transport
 
 Base Transport class implementing TransportType.
 
@@ -338,7 +338,7 @@ Base Transport class implementing TransportType.
 
 ***
 
-### TransportInput\<R, W\>
+### TransportInput
 
 > **TransportInput**\<`R`, `W`\> = [`TransportStream`](#transportstream)\<`R`, `W`\> \| () => [`TransportStream`](#transportstream)\<`R`, `W`\>
 
@@ -354,7 +354,7 @@ Base Transport class implementing TransportType.
 
 ***
 
-### TransportParams\<R, W\>
+### TransportParams
 
 > **TransportParams**\<`R`, `W`\> = `object`
 
@@ -380,7 +380,7 @@ Base Transport class implementing TransportType.
 
 ***
 
-### TransportStream\<R, W\>
+### TransportStream
 
 > **TransportStream**\<`R`, `W`\> = `ReadableWritablePair`\<`R`, `W`\> \| `Promise`\<`ReadableWritablePair`\<`R`, `W`\>\>
 
@@ -396,7 +396,7 @@ Base Transport class implementing TransportType.
 
 ***
 
-### TransportType\<R, W\>
+### TransportType
 
 > **TransportType**\<`R`, `W`\> = [`Disposer`](../async/index.md#disposer) & `object`
 

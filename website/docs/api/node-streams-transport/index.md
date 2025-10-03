@@ -10,7 +10,7 @@ npm install @enkaku/node-streams-transport
 
 ## Classes
 
-### NodeStreamsTransport\<R, W\>
+### NodeStreamsTransport
 
 Base Transport class implementing TransportType.
 

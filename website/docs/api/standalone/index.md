@@ -10,7 +10,7 @@ npm install @enkaku/standalone
 
 ## Type Aliases
 
-### StandaloneOptions\<Protocol\>
+### StandaloneOptions
 
 > **StandaloneOptions**\<`Protocol`\> = `object`
 

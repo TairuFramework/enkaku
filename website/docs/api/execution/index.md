@@ -10,7 +10,7 @@ npm install @enkaku/execution
 
 ## Classes
 
-### Execution\<V, E\>
+### Execution
 
 #### Extends
 
@@ -618,7 +618,7 @@ A Promise for the completion of which ever callback is executed.
 
 ## Type Aliases
 
-### Executable\<V, E\>
+### Executable
 
 > **Executable**\<`V`, `E`\> = [`ExecuteFn`](#executefn)\<`V`, `E`\> \| `PromiseLike`\<[`ExecuteFn`](#executefn)\<`V`, `E`\>\> \| [`ExecuteContext`](#executecontext)\<`V`, `E`\> \| `PromiseLike`\<[`ExecuteContext`](#executecontext)\<`V`, `E`\>\>
 
@@ -634,7 +634,7 @@ A Promise for the completion of which ever callback is executed.
 
 ***
 
-### ExecuteContext\<V, E\>
+### ExecuteContext
 
 > **ExecuteContext**\<`V`, `E`\> = `object`
 
@@ -672,7 +672,7 @@ A Promise for the completion of which ever callback is executed.
 
 ***
 
-### ExecuteFn()\<V, E\>
+### ExecuteFn()
 
 > **ExecuteFn**\<`V`, `E`\> = (`signal`) => [`ExecutionResult`](#executionresult)\<`V`, `E`\>
 
@@ -698,7 +698,7 @@ A Promise for the completion of which ever callback is executed.
 
 ***
 
-### ExecutionResult\<V, E\>
+### ExecutionResult
 
 > **ExecutionResult**\<`V`, `E`\> = `V` \| `PromiseLike`\<`V`\> \| [`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\> \| `PromiseLike`\<[`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>\> \| [`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
 
@@ -714,7 +714,7 @@ A Promise for the completion of which ever callback is executed.
 
 ***
 
-### NextFn()\<V, OutV, E, OutE\>
+### NextFn()
 
 > **NextFn**\<`V`, `OutV`, `E`, `OutE`\> = (`result`) => [`Executable`](#executable)\<`V` \| `OutV`, `E` \| `OutE`\> \| `null`
 

@@ -60,7 +60,7 @@ npm install @enkaku/stream
 
 ## Type Aliases
 
-### DecodeJSON()\<T\>
+### DecodeJSON()
 
 > **DecodeJSON**\<`T`\> = (`value`) => `T`
 
@@ -82,7 +82,7 @@ npm install @enkaku/stream
 
 ***
 
-### EncodeJSON()\<T\>
+### EncodeJSON()
 
 > **EncodeJSON**\<`T`\> = (`value`) => `string`
 
@@ -104,7 +104,7 @@ npm install @enkaku/stream
 
 ***
 
-### FromJSONLinesOptions\<T\>
+### FromJSONLinesOptions
 
 > **FromJSONLinesOptions**\<`T`\> = `object`
 

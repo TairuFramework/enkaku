@@ -48,7 +48,7 @@ npm install @enkaku/flow
 
 ## Type Aliases
 
-### CreateFlowParams\<State, Handlers\>
+### CreateFlowParams
 
 > **CreateFlowParams**\<`State`, `Handlers`\> = `object`
 
@@ -74,7 +74,7 @@ npm install @enkaku/flow
 
 ***
 
-### CreateGeneratorParams\<State, Handlers\>
+### CreateGeneratorParams
 
 > **CreateGeneratorParams**\<`State`, `Handlers`\> = [`CreateFlowParams`](#createflowparams)\<`State`, `Handlers`\> & [`GenerateFlowParams`](#generateflowparams)\<`State`, `Handlers`\>
 
@@ -90,7 +90,7 @@ npm install @enkaku/flow
 
 ***
 
-### FlowAction\<State, Handlers, Action\>
+### FlowAction
 
 > **FlowAction**\<`State`, `Handlers`, `Action`\> = `object`
 
@@ -120,7 +120,7 @@ npm install @enkaku/flow
 
 ***
 
-### FlowGenerator\<State, Handlers\>
+### FlowGenerator
 
 > **FlowGenerator**\<`State`, `Handlers`\> = `AsyncGenerator`\<[`GeneratorValue`](#generatorvalue)\<`State`\>, [`GeneratorDoneValue`](#generatordonevalue)\<`State`\> \| `undefined`, [`GenerateNext`](#generatenext)\<`State`, `Handlers`\> \| `undefined`\> & `object`
 
@@ -150,7 +150,7 @@ npm install @enkaku/flow
 
 ***
 
-### GenerateFlowParams\<State, Handlers\>
+### GenerateFlowParams
 
 > **GenerateFlowParams**\<`State`, `Handlers`\> = `object`
 
@@ -180,7 +180,7 @@ npm install @enkaku/flow
 
 ***
 
-### GenerateNext\<State, Handlers\>
+### GenerateNext
 
 > **GenerateNext**\<`State`, `Handlers`\> = `object`
 
@@ -210,7 +210,7 @@ npm install @enkaku/flow
 
 ***
 
-### GeneratorDoneValue\<State\>
+### GeneratorDoneValue
 
 > **GeneratorDoneValue**\<`State`\> = \{ `reason`: `string`; `state`: `State`; `status`: `"aborted"`; \} \| \{ `state`: `State`; `status`: `"end"`; \} \| \{ `error`: `Error`; `state`: `State`; `status`: `"error"`; \}
 
@@ -222,7 +222,7 @@ npm install @enkaku/flow
 
 ***
 
-### GeneratorValue\<State, Params\>
+### GeneratorValue
 
 > **GeneratorValue**\<`State`, `Params`\> = [`GeneratorDoneValue`](#generatordonevalue)\<`State`\> \| \{ `action`: `string`; `params`: `Params`; `state`: `State`; `status`: `"action"`; \} \| \{ `state`: `State`; `status`: `"state"`; \}
 
@@ -238,7 +238,7 @@ npm install @enkaku/flow
 
 ***
 
-### GenericHandlerContext\<Events\>
+### GenericHandlerContext
 
 > **GenericHandlerContext**\<`Events`\> = `object`
 
@@ -260,7 +260,7 @@ npm install @enkaku/flow
 
 ***
 
-### Handler()\<State, Params, Events\>
+### Handler()
 
 > **Handler**\<`State`, `Params`, `Events`\> = (`context`) => [`GeneratorValue`](#generatorvalue)\<`State`\> \| `Promise`\<[`GeneratorValue`](#generatorvalue)\<`State`\>\>
 
@@ -290,7 +290,7 @@ npm install @enkaku/flow
 
 ***
 
-### HandlerEvents\<H\>
+### HandlerEvents
 
 > **HandlerEvents**\<`H`\> = `H` *extends* [`Handler`](#handler)\<`Record`\<`string`, `unknown`\>, `Record`\<`string`, `unknown`\>, infer Events\> ? `Events` : `never`
 
@@ -302,7 +302,7 @@ npm install @enkaku/flow
 
 ***
 
-### HandlerExecutionContext\<State, Params, Events\>
+### HandlerExecutionContext
 
 > **HandlerExecutionContext**\<`State`, `Params`, `Events`\> = [`GenericHandlerContext`](#generichandlercontext)\<`Events`\> & `object`
 
@@ -332,7 +332,7 @@ npm install @enkaku/flow
 
 ***
 
-### HandlersEvents\<State, Handlers\>
+### HandlersEvents
 
 > **HandlersEvents**\<`State`, `Handlers`\> = `{ [K in keyof Handlers]: HandlerEvents<Handlers[K]> }`\[keyof `Handlers`\]
 
@@ -348,7 +348,7 @@ npm install @enkaku/flow
 
 ***
 
-### HandlersRecord\<State, Events\>
+### HandlersRecord
 
 > **HandlersRecord**\<`State`, `Events`\> = `object`
 

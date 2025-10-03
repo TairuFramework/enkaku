@@ -10,7 +10,7 @@ npm install @enkaku/http-client-transport
 
 ## Classes
 
-### ClientTransport\<Protocol\>
+### ClientTransport
 
 Base Transport class implementing TransportType.
 
@@ -238,7 +238,7 @@ Base Transport class implementing TransportType.
 
 ***
 
-### TransportStream\<Protocol\>
+### TransportStream
 
 > **TransportStream**\<`Protocol`\> = `ReadableWritablePair`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)\<`Protocol`\>\> & `object`
 

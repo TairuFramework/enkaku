@@ -30,7 +30,7 @@ npm install @enkaku/protocol
 
 ***
 
-### AnyClientMessageOf\<Protocol\>
+### AnyClientMessageOf
 
 > **AnyClientMessageOf**\<`Protocol`\> = [`Message`](#message)\<[`AnyClientPayloadOf`](#anyclientpayloadof)\<`Protocol`\>\>
 
@@ -42,7 +42,7 @@ npm install @enkaku/protocol
 
 ***
 
-### AnyClientPayloadOf\<Protocol\>
+### AnyClientPayloadOf
 
 > **AnyClientPayloadOf**\<`Protocol`\> = [`ValueOf`](#valueof)\<[`ClientPayloadRecordsOf`](#clientpayloadrecordsof)\<`Protocol`\>\>
 
@@ -66,7 +66,7 @@ npm install @enkaku/protocol
 
 ***
 
-### AnyServerMessageOf\<Protocol\>
+### AnyServerMessageOf
 
 > **AnyServerMessageOf**\<`Protocol`\> = [`Message`](#message)\<[`AnyServerPayloadOf`](#anyserverpayloadof)\<`Protocol`\>\>
 
@@ -78,7 +78,7 @@ npm install @enkaku/protocol
 
 ***
 
-### AnyServerPayloadOf\<Protocol\>
+### AnyServerPayloadOf
 
 > **AnyServerPayloadOf**\<`Protocol`\> = [`ValueOf`](#valueof)\<[`ServerPayloadRecordsOf`](#serverpayloadrecordsof)\<`Protocol`\>\>
 
@@ -90,7 +90,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ChannelPayloadOf\<Procedure, Definition\>
+### ChannelPayloadOf
 
 > **ChannelPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"channel"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
 
@@ -112,7 +112,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ClientMessage\<Payload\>
+### ClientMessage
 
 > **ClientMessage**\<`Payload`\> = [`Message`](#message)\<`Payload`\>
 
@@ -124,7 +124,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ClientPayloadOf\<Procedure, Definition\>
+### ClientPayloadOf
 
 > **ClientPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`EventProcedureDefinition`](#eventproceduredefinition) ? [`EventCallPayload`](#eventcallpayload)\<`Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"data"`\]\>\> : `Definition` *extends* [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"request"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"stream"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"channel"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`SendCallPayload`](#sendcallpayload)\<[`DataOf`](#dataof)\<`Definition`\[`"send"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `never`
 
@@ -140,7 +140,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ClientPayloadRecordsOf\<Protocol\>
+### ClientPayloadRecordsOf
 
 > **ClientPayloadRecordsOf**\<`Protocol`\> = `{ [Procedure in keyof Protocol & string]: ClientPayloadOf<Procedure, Protocol[Procedure]> }`
 
@@ -152,7 +152,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ClientTransportOf\<Protocol\>
+### ClientTransportOf
 
 > **ClientTransportOf**\<`Protocol`\> = [`TransportType`](../transport/index.md#transporttype)\<[`AnyServerMessageOf`](#anyservermessageof)\<`Protocol`\>, [`AnyClientMessageOf`](#anyclientmessageof)\<`Protocol`\>\>
 
@@ -164,7 +164,7 @@ npm install @enkaku/protocol
 
 ***
 
-### DataOf\<S\>
+### DataOf
 
 > **DataOf**\<`S`\> = `S` *extends* [`Schema`](../schema/index.md#schema-1) ? `FromSchema`\<`S`\> : `never`
 
@@ -194,7 +194,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ErrorPayloadOf\<Definition\>
+### ErrorPayloadOf
 
 > **ErrorPayloadOf**\<`Definition`\> = `Definition` *extends* [`AnyRequestProcedureDefinition`](#anyrequestproceduredefinition) ? [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `never`
 
@@ -206,7 +206,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ErrorReplyPayload\<Code, Data\>
+### ErrorReplyPayload
 
 > **ErrorReplyPayload**\<`Code`, `Data`\> = `object`
 
@@ -244,7 +244,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ErrorReplyPayloadOf\<Error\>
+### ErrorReplyPayloadOf
 
 > **ErrorReplyPayloadOf**\<`Error`\> = `Error` *extends* [`ErrorObject`](#errorobject) ? [`ErrorReplyPayload`](#errorreplypayload)\<`Error`\[`"code"`\], `Error`\[`"data"`\]\> : [`ErrorReplyPayload`](#errorreplypayload)\<`string`, `Record`\<`string`, `unknown`\>\>
 
@@ -256,7 +256,7 @@ npm install @enkaku/protocol
 
 ***
 
-### EventCallPayload\<Procedure, Data\>
+### EventCallPayload
 
 > **EventCallPayload**\<`Procedure`, `Data`\> = `object` & `Data` *extends* `undefined` ? `object` : `object`
 
@@ -282,7 +282,7 @@ npm install @enkaku/protocol
 
 ***
 
-### EventPayloadOf\<Procedure, Definition\>
+### EventPayloadOf
 
 > **EventPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`EventProcedureDefinition`](#eventproceduredefinition) ? [`EventCallPayload`](#eventcallpayload)\<`Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"data"`\]\>\> : `never`
 
@@ -304,7 +304,7 @@ npm install @enkaku/protocol
 
 ***
 
-### KeyEntry\<PrivateKeyType\>
+### KeyEntry
 
 > **KeyEntry**\<`PrivateKeyType`\> = `object`
 
@@ -362,7 +362,7 @@ npm install @enkaku/protocol
 
 ***
 
-### KeyStore\<PrivateKeyType, EntryType\>
+### KeyStore
 
 > **KeyStore**\<`PrivateKeyType`, `EntryType`\> = `object`
 
@@ -394,7 +394,7 @@ npm install @enkaku/protocol
 
 ***
 
-### Message\<Payload\>
+### Message
 
 > **Message**\<`Payload`\> = [`SignedToken`](../token/index.md#signedtoken)\<`SignedPayload` & `Payload`\> \| [`UnsignedToken`](../token/index.md#unsignedtoken)\<`Payload`\>
 
@@ -418,7 +418,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ReceiveActionPayloadOf\<Definition\>
+### ReceiveActionPayloadOf
 
 > **ReceiveActionPayloadOf**\<`Definition`\> = `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> : `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> : `never`
 
@@ -430,7 +430,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ReceiveReplyPayload\<Value\>
+### ReceiveReplyPayload
 
 > **ReceiveReplyPayload**\<`Value`\> = `object`
 
@@ -456,7 +456,7 @@ npm install @enkaku/protocol
 
 ***
 
-### RequestCallPayload\<Type, Procedure, Params\>
+### RequestCallPayload
 
 > **RequestCallPayload**\<`Type`, `Procedure`, `Params`\> = `object`
 
@@ -494,7 +494,7 @@ npm install @enkaku/protocol
 
 ***
 
-### RequestPayloadOf\<Procedure, Definition\>
+### RequestPayloadOf
 
 > **RequestPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"request"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
 
@@ -522,7 +522,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ResultPayloadOf\<Definition\>
+### ResultPayloadOf
 
 > **ResultPayloadOf**\<`Definition`\> = `Definition` *extends* [`AnyRequestProcedureDefinition`](#anyrequestproceduredefinition) ? [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> : `never`
 
@@ -534,7 +534,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ResultReplyPayload\<Value\>
+### ResultReplyPayload
 
 > **ResultReplyPayload**\<`Value`\> = `object`
 
@@ -560,7 +560,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ReturnOf\<S\>
+### ReturnOf
 
 > **ReturnOf**\<`S`\> = `S` *extends* [`Schema`](../schema/index.md#schema-1) ? `FromSchema`\<`S`\> : `void`
 
@@ -572,7 +572,7 @@ npm install @enkaku/protocol
 
 ***
 
-### SendCallPayload\<Value\>
+### SendCallPayload
 
 > **SendCallPayload**\<`Value`\> = `object`
 
@@ -598,7 +598,7 @@ npm install @enkaku/protocol
 
 ***
 
-### SendPayloadOf\<Definition\>
+### SendPayloadOf
 
 > **SendPayloadOf**\<`Definition`\> = `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`SendCallPayload`](#sendcallpayload)\<[`DataOf`](#dataof)\<`Definition`\[`"send"`\]\>\> : `never`
 
@@ -610,7 +610,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ServerMessage\<Payload\>
+### ServerMessage
 
 > **ServerMessage**\<`Payload`\> = [`Message`](#message)\<`Payload`\>
 
@@ -622,7 +622,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ServerPayloadOf\<Definition\>
+### ServerPayloadOf
 
 > **ServerPayloadOf**\<`Definition`\> = `Definition` *extends* [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof) : `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `never`
 
@@ -634,7 +634,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ServerPayloadRecordsOf\<Protocol\>
+### ServerPayloadRecordsOf
 
 > **ServerPayloadRecordsOf**\<`Protocol`\> = `{ [Procedure in keyof Protocol & string]: ServerPayloadOf<Protocol[Procedure]> }`
 
@@ -646,7 +646,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ServerTransportOf\<Protocol\>
+### ServerTransportOf
 
 > **ServerTransportOf**\<`Protocol`\> = [`TransportType`](../transport/index.md#transporttype)\<[`AnyClientMessageOf`](#anyclientmessageof)\<`Protocol`\>, [`AnyServerMessageOf`](#anyservermessageof)\<`Protocol`\>\>
 
@@ -658,7 +658,7 @@ npm install @enkaku/protocol
 
 ***
 
-### StreamPayloadOf\<Procedure, Definition\>
+### StreamPayloadOf
 
 > **StreamPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"stream"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
 
@@ -748,7 +748,7 @@ npm install @enkaku/protocol
 
 ***
 
-### ValueOf\<T\>
+### ValueOf
 
 > **ValueOf**\<`T`\> = `T`\[keyof `T`\]
 

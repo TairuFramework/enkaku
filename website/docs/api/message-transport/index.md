@@ -10,7 +10,7 @@ npm install @enkaku/message-transport
 
 ## Classes
 
-### MessageTransport\<R, W\>
+### MessageTransport
 
 Base Transport class implementing TransportType.
 

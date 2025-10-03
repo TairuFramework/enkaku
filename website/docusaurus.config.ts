@@ -13,7 +13,6 @@ const config: Config = {
   organizationName: 'TairuFramework',
   projectName: 'enkaku',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
   future: {
     experimental_faster: true,
     v4: true,
@@ -23,6 +22,9 @@ const config: Config = {
     locales: ['en'],
   },
   markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
     mermaid: true,
   },
   themes: ['@docusaurus/theme-mermaid'],
@@ -70,6 +72,20 @@ const config: Config = {
       } satisfies UmamiOptions,
     ],
     '@orama/plugin-docusaurus-v3',
+    function fixMermaidLayoutElk() {
+      return {
+        name: 'fix-mermaid-layout-elk',
+        configureWebpack() {
+          return {
+            resolve: {
+              alias: {
+                '@mermaid-js/layout-elk': false,
+              },
+            },
+          }
+        },
+      }
+    },
   ],
   themeConfig: {
     // Replace with your project's social card

@@ -42,7 +42,7 @@ npm install @enkaku/capability
 
 ***
 
-### CapabilityToken\<Payload, Header\>
+### CapabilityToken
 
 > **CapabilityToken**\<`Payload`, `Header`\> = [`SignedToken`](../token/index.md#signedtoken)\<`Payload`, `Header`\>
 
