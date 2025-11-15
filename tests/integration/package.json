@@ -1,6 +1,7 @@
 {
   "name": "@enkaku/integration-tests",
   "version": "0.1.0",
+  "private": true,
   "license": "MIT",
   "keywords": [],
   "type": "module",
