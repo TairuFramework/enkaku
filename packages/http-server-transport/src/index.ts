@@ -25,10 +25,11 @@ export type ServerBridge<Protocol extends ProtocolDefinition> = {
 type ActiveSession = { controller: ReadableStreamDefaultController<string> | null }
 
 type InflightRequest =
-  | ({ type: 'request' } & Deferred<Response>)
+  | ({ type: 'request'; headers: Record<string, string> } & Deferred<Response>)
   | { type: 'stream'; sessionID: string }
 
 export type ServerBridgeOptions = {
+  allowedOrigin?: string | Array<string>
   onWriteError?: (event: TransportEvents['writeFailed']) => void
 }
 
@@ -38,6 +39,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   type Incoming = AnyClientMessageOf<Protocol>
   type Outgoing = AnyServerMessageOf<Protocol>
 
+  const allowedOrigins = Array.isArray(options.allowedOrigin)
+    ? options.allowedOrigin
+    : [options.allowedOrigin ?? '*']
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
 
@@ -50,7 +54,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       return
     }
     if (request.type === 'request') {
-      request.resolve(Response.json(msg))
+      request.resolve(Response.json(msg, { headers: request.headers }))
       inflight.delete(msg.payload.rid)
     } else {
       const session = sessions.get(request.sessionID)
@@ -101,38 +105,86 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     return [sid, ctrl]
   }
 
-  async function handleRequest(request: Request): Promise<Response> {
-    if (request.method === 'GET') {
-      // GET request to access the SSE stream
-      const url = new URL(request.url)
-      const sessionID = url.searchParams.get('id')
-      if (sessionID == null) {
-        // No session ID, create one and return its ID to the client
-        const id = globalThis.crypto.randomUUID()
-        sessions.set(id, { controller: null })
-        return Response.json({ id })
-      }
+  function checkRequestOrigin(request: Request): Response | string {
+    const origin = request.headers.get('origin')
+    if (allowedOrigins.includes('*')) {
+      return origin ?? '*'
+    }
+    if (origin == null || !allowedOrigins.includes(origin)) {
+      return Response.json({ error: 'Origin not allowed' }, { status: 403 })
+    }
+    return origin
+  }
 
-      // Unknown session ID
-      if (!sessions.has(sessionID)) {
-        return Response.json({ error: 'Invalid ID' }, { status: 400 })
-      }
+  function getAccessControlHeaders(origin: string) {
+    return {
+      'Access-Control-Allow-Origin': origin,
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, enkaku-session-id',
+      'Access-Control-Max-Age': '86400', // 24 hours
+    }
+  }
 
-      // Create SSE feed and track controller
-      const [body, controller] = createReadable<string>()
-      sessions.set(sessionID, { controller })
+  function handleOptionsRequest(request: Request): Response {
+    const checkedOrigin = checkRequestOrigin(request)
+    if (checkedOrigin instanceof Response) {
+      return checkedOrigin
+    }
+    return new Response(null, {
+      headers: getAccessControlHeaders(checkedOrigin),
+      status: 204,
+    })
+  }
 
-      request.signal.addEventListener('abort', () => {
-        controller.close()
-        sessions.delete(sessionID)
-      })
-
-      return new Response(body.pipeThrough(new TextEncoderStream()), {
-        headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-store' },
-        status: 200,
-      })
+  function handleGetRequest(request: Request): Response {
+    const checkedOrigin = checkRequestOrigin(request)
+    if (checkedOrigin instanceof Response) {
+      return checkedOrigin
     }
 
+    const headers = getAccessControlHeaders(checkedOrigin)
+
+    // GET request to access the SSE stream
+    const url = new URL(request.url)
+    const sessionID = url.searchParams.get('id')
+    if (sessionID == null) {
+      // No session ID, create one and return its ID to the client
+      const id = globalThis.crypto.randomUUID()
+      sessions.set(id, { controller: null })
+      return Response.json({ id }, { headers })
+    }
+
+    if (!sessions.has(sessionID)) {
+      // Unknown session ID
+      return Response.json({ error: 'Invalid ID' }, { headers, status: 400 })
+    }
+
+    // Create SSE feed and track controller
+    const [body, controller] = createReadable<string>()
+    sessions.set(sessionID, { controller })
+
+    request.signal.addEventListener('abort', () => {
+      controller.close()
+      sessions.delete(sessionID)
+    })
+
+    return new Response(body.pipeThrough(new TextEncoderStream()), {
+      headers: {
+        ...headers,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-store',
+      },
+      status: 200,
+    })
+  }
+
+  async function handlePostRequest(request: Request): Promise<Response> {
+    const checkedOrigin = checkRequestOrigin(request)
+    if (checkedOrigin instanceof Response) {
+      return checkedOrigin
+    }
+
+    const headers = getAccessControlHeaders(checkedOrigin)
     try {
       const message = (await request.json()) as Incoming
       switch (message.payload.typ) {
@@ -141,11 +193,11 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         case 'event':
         case 'send':
           controller.enqueue(message)
-          return new Response(null, { status: 204 })
+          return new Response(null, { headers, status: 204 })
         // Immediate response message
         case 'request': {
           const response = defer<Response>()
-          inflight.set(message.payload.rid, { type: 'request', ...response })
+          inflight.set(message.payload.rid, { type: 'request', headers, ...response })
           controller.enqueue(message)
           // Wait for reply from message handler
           return response.promise
@@ -158,17 +210,37 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           inflight.set(message.payload.rid, { type: 'stream', sessionID: sid })
           controller.enqueue(message)
           // Replies will be send to the SSE stream, no content is returned here
-          return new Response(null, { status: 204 })
+          return new Response(null, { headers, status: 204 })
         }
         default:
           throw new Error('Invalid payload')
       }
     } catch (err) {
-      return Response.json({ error: (err as Error).message }, { status: 500 })
+      return Response.json({ error: (err as Error).message }, { headers, status: 500 })
+    }
+  }
+
+  async function handleRequest(request: Request): Promise<Response> {
+    switch (request.method) {
+      case 'OPTIONS':
+        return handleOptionsRequest(request)
+      case 'GET':
+        return handleGetRequest(request)
+      case 'POST':
+        return await handlePostRequest(request)
+      default:
+        return Response.json(
+          { error: 'Method not allowed' },
+          { headers: { Allow: 'GET, POST, OPTIONS' }, status: 405 },
+        )
     }
   }
 
   return { handleRequest, stream: { readable, writable } }
+}
+
+export type ServerTransportOptions = {
+  allowedOrigin?: string | Array<string>
 }
 
 export class ServerTransport<Protocol extends ProtocolDefinition> extends Transport<
@@ -177,8 +249,9 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
 > {
   #bridge: ServerBridge<Protocol>
 
-  constructor() {
+  constructor(options: ServerTransportOptions = {}) {
     const bridge = createServerBridge<Protocol>({
+      allowedOrigin: options.allowedOrigin,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
       },
