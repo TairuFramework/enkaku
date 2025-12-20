@@ -35,7 +35,7 @@ jobs:
           xcrun simctl list devices booted
           
           # Take a screenshot to verify
-          maestro screenshot before-test.png || echo "Screenshot failed, continuing..."
+          MAESTRO_CLI_NO_ANALYTICS=true MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED=true maestro screenshot before-test.png || echo "Screenshot failed, continuing..."
 
       - name: Run Maestro tests
         working-directory: tests/e2e-expo
