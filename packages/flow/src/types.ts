@@ -48,13 +48,8 @@ export type HandlersRecord<
   [K: string]: Handler<State, any, Events>
 }
 
-export type HandlerEvents<H> = H extends Handler<
-  Record<string, unknown>,
-  Record<string, unknown>,
-  infer Events
->
-  ? Events
-  : never
+export type HandlerEvents<H> =
+  H extends Handler<Record<string, unknown>, Record<string, unknown>, infer Events> ? Events : never
 
 export type HandlersEvents<
   State extends Record<string, unknown>,

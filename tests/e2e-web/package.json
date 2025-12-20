@@ -20,7 +20,7 @@
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",
     "@types/react": "catalog:",
-    "@types/react-dom": "^19.1.9",
+    "@types/react-dom": "catalog:",
     "@vitejs/plugin-react-swc": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
