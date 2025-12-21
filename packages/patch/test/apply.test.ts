@@ -89,4 +89,39 @@ describe('deletePath()', () => {
     const obj: Record<string, unknown> = { foo: { bar: 1 } }
     expect(() => deletePath(obj, '/foo/baz')).toThrow(PatchError)
   })
+
+  it('should not throw on non-existent paths if strict is false', () => {
+    const obj: Record<string, unknown> = { foo: { bar: 1 } }
+    expect(() => deletePath(obj, '/foo/baz', false)).not.toThrow()
+  })
+})
+
+describe('PatchError', () => {
+  it('should have correct name and code', () => {
+    const error = new PatchError('Test message', 'TEST_CODE')
+    expect(error.name).toBe('PatchError')
+    expect(error.code).toBe('TEST_CODE')
+    expect(error.message).toBe('Test message')
+  })
+
+  it('should be instanceof Error', () => {
+    const error = new PatchError('Test message', 'TEST_CODE')
+    expect(error).toBeInstanceOf(Error)
+    expect(error).toBeInstanceOf(PatchError)
+  })
+
+  it('should have all error codes', () => {
+    const codes = [
+      'INVALID_PATH',
+      'INVALID_INDEX',
+      'PATH_NOT_FOUND',
+      'PATH_EXISTS',
+      'TEST_FAILED',
+      'INVALID_OPERATION',
+    ]
+    for (const code of codes) {
+      const error = new PatchError('Message', code)
+      expect(error.code).toBe(code)
+    }
+  })
 })

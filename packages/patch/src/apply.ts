@@ -146,19 +146,23 @@ export function setPath(
  *
  * @public
  */
-export function deletePath(obj: Record<string, unknown> | Array<unknown>, path: string): void {
+export function deletePath(
+  obj: Record<string, unknown> | Array<unknown>,
+  path: string,
+  strict = true,
+): void {
   const keys = parsePath(path)
   const lastKey = keys.pop()
   if (lastKey !== undefined) {
     const target = keys.reduce((acc, key) => {
-      if (acc === undefined) {
+      if (acc === undefined && strict) {
         throw new PatchError(`Path ${path} does not exist`, 'PATH_NOT_FOUND')
       }
       // @ts-expect-error unknown object
       return acc[key]
     }, obj)
 
-    if (target === undefined) {
+    if (target === undefined && strict) {
       throw new PatchError(`Path ${path} does not exist`, 'PATH_NOT_FOUND')
     }
 
@@ -169,7 +173,7 @@ export function deletePath(obj: Record<string, unknown> | Array<unknown>, path: 
       assertValidArrayIndex(target, lastKey)
       target.splice(lastKey, 1)
     } else {
-      if (!(lastKey in target)) {
+      if (!(lastKey in target) && strict) {
         throw new PatchError(`Path ${path} does not exist`, 'PATH_NOT_FOUND')
       }
       const targetObj = target as Record<string, unknown>
@@ -186,6 +190,7 @@ export function deletePath(obj: Record<string, unknown> | Array<unknown>, path: 
  *
  * @param data - Object to modify
  * @param patches - Array of patch operations to apply
+ * @param strict - Whether to throw on non-existent paths (default: true)
  * @throws {PatchError} When any operation fails
  *
  * @example
@@ -200,22 +205,32 @@ export function deletePath(obj: Record<string, unknown> | Array<unknown>, path: 
  *
  * @public
  */
-export function applyPatches(data: Record<string, unknown>, patches: Array<PatchOperation>): void {
+export function applyPatches(
+  data: Record<string, unknown>,
+  patches: Array<PatchOperation>,
+  strict = true,
+): void {
   for (const patch of patches) {
     switch (patch.op) {
       case 'add':
-        assertPathDoesNotExist(data, patch.path)
+        if (strict) {
+          assertPathDoesNotExist(data, patch.path)
+        }
         setPath(data, patch.path, patch.value)
         break
       case 'replace':
-        assertPathExists(data, patch.path)
-        setPath(data, patch.path, patch.value, true)
+        if (strict) {
+          assertPathExists(data, patch.path)
+        }
+        setPath(data, patch.path, patch.value, strict)
         break
       case 'set':
         setPath(data, patch.path, patch.value)
         break
       case 'remove':
-        assertPathExists(data, patch.path)
+        if (strict) {
+          assertPathExists(data, patch.path)
+        }
         deletePath(data, patch.path)
         break
       case 'copy': {
