@@ -1,6 +1,6 @@
 import type { RequestCall } from '@enkaku/client'
 import { standalone } from '@enkaku/standalone'
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 import '@testing-library/jest-dom'
 import { act, render, renderHook, waitFor } from '@testing-library/react'
 import { type PropsWithChildren, Suspense, use } from 'react'
@@ -24,7 +24,7 @@ type Protocol = {
     }
   }
 }
-const mockHandler = jest.fn(() => ({ ok: true }))
+const mockHandler = vi.fn(() => ({ ok: true }))
 const mockClient = standalone<Protocol>({ test: mockHandler })
 
 const wrapper = ({ children }: PropsWithChildren) => (
@@ -33,7 +33,7 @@ const wrapper = ({ children }: PropsWithChildren) => (
 
 describe('useSendRequest', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('sends the request and returns the result', async () => {
@@ -69,7 +69,7 @@ describe('useSendRequest', () => {
   it('can cancel the call', async () => {
     // Handler that never resolves, but listens for abort
     type HandlerContext = { param: { message?: string }; signal: AbortSignal }
-    const abortableHandler = jest.fn((ctx: HandlerContext) => {
+    const abortableHandler = vi.fn((ctx: HandlerContext) => {
       return new Promise<{ ok: boolean }>((_resolve, reject) => {
         ctx.signal.addEventListener('abort', () => {
           reject(ctx.signal)
@@ -101,7 +101,7 @@ describe('useSendRequest', () => {
 
 describe('useRequest', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('sends the request immediately and returns the result', async () => {
@@ -137,7 +137,7 @@ describe('useRequest', () => {
 
   it('can abort the call', async () => {
     type HandlerContext = { param: { message?: string }; signal: AbortSignal }
-    const abortableHandler = jest.fn((ctx: HandlerContext) => {
+    const abortableHandler = vi.fn((ctx: HandlerContext) => {
       return new Promise<{ ok: boolean }>((_resolve, reject) => {
         ctx.signal.addEventListener('abort', () => {
           reject(ctx.signal)
@@ -160,7 +160,7 @@ describe('useRequest', () => {
   })
 
   it('handles handler errors', async () => {
-    const errorHandler = jest.fn(() => {
+    const errorHandler = vi.fn(() => {
       throw new Error('Handler error')
     })
     const errorClient = standalone<Protocol>({ test: errorHandler })

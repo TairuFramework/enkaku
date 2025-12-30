@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { createReadable } from '../src/readable.js'
 import { map, mapAsync, tap, transform } from '../src/transform.js'
@@ -56,7 +56,7 @@ test('mapAsync() applies an asynchronous transformation', async () => {
 })
 
 test('tap() calls the handler without transforming the input', async () => {
-  const handler = jest.fn((n: number) => n + 1)
+  const handler = vi.fn((n: number) => n + 1)
 
   const [source, controller] = createReadable<number>()
   const [sink, result] = createArraySink()

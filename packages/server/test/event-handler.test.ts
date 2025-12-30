@@ -1,7 +1,7 @@
 import { EventEmitter } from '@enkaku/event'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import { createUnsignedToken } from '@enkaku/token'
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { handleEvent } from '../src/handlers/event.js'
 import type { HandlerContext, ServerEvents } from '../src/types.js'
@@ -40,7 +40,7 @@ describe('handleEvent()', () => {
   test('sends an ErrorRejection if the handler fails but resolves the returned promise', async () => {
     const errorCause = new Error('Failed!')
     const events = new EventEmitter<ServerEvents>()
-    const handler = jest.fn(() => {
+    const handler = vi.fn(() => {
       throw errorCause
     })
     const handlerError = events.once('handlerError')
@@ -64,8 +64,8 @@ describe('handleEvent()', () => {
   test('successfully calls the event handler', async () => {
     const payload = { typ: 'event', prc: 'test', data: { test: true } } as const
     const events = new EventEmitter<ServerEvents>()
-    const handler = jest.fn()
-    const handlerErrorListener = jest.fn()
+    const handler = vi.fn()
+    const handlerErrorListener = vi.fn()
     events.once('handlerError', handlerErrorListener)
 
     await expect(

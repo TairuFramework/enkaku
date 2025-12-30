@@ -295,9 +295,17 @@ describe('applyPatches()', () => {
     })
 
     it('should handle nested arrays', () => {
-      const data: Record<string, unknown> = { matrix: [[1, 2], [3, 4]] }
+      const data: Record<string, unknown> = {
+        matrix: [
+          [1, 2],
+          [3, 4],
+        ],
+      }
       applyPatches(data, [{ op: 'replace', path: '/matrix/0/1', value: 99 }])
-      expect(data.matrix).toEqual([[1, 99], [3, 4]])
+      expect(data.matrix).toEqual([
+        [1, 99],
+        [3, 4],
+      ])
     })
 
     it('should handle arrays with objects', () => {

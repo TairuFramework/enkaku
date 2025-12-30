@@ -2,14 +2,12 @@ import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from 
 import { ValidationError } from '@enkaku/schema'
 import { createUnsignedToken, randomTokenSigner } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
-import { jest } from '@jest/globals'
+import { describe, expect, test, vi } from 'vitest'
 
 import {
-  type ChannelHandler,
   type EventHandler,
   type ProcedureHandlers,
   type RequestHandler,
-  type StreamHandler,
   serve,
 } from '../src/index.js'
 
@@ -30,7 +28,7 @@ describe('serve()', () => {
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
-    const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
+    const handler = vi.fn()
 
     const handlers = { test: handler } as ProcedureHandlers<Protocol>
     const transports = new DirectTransports<
@@ -94,7 +92,7 @@ describe('serve()', () => {
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
-    const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
+    const handler = vi.fn<EventHandler<Protocol, 'test'>>()
 
     const handlers = { test: handler } as ProcedureHandlers<Protocol>
     const transports = new DirectTransports<
@@ -136,7 +134,7 @@ describe('serve()', () => {
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
-    const handler = jest.fn((ctx) => {
+    const handler = vi.fn<RequestHandler<Protocol, 'test'>>((ctx) => {
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
           resolve('OK')
@@ -146,7 +144,7 @@ describe('serve()', () => {
           reject(new Error('aborted'))
         })
       })
-    }) as jest.Mock<RequestHandler<Protocol, 'test'>>
+    })
     const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
@@ -180,7 +178,7 @@ describe('serve()', () => {
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
-    const handler = jest.fn((ctx) => {
+    const handler = vi.fn((ctx) => {
       return new Promise((resolve, reject) => {
         const writer = ctx.writable.getWriter()
         let count = 0
@@ -197,7 +195,7 @@ describe('serve()', () => {
           reject(new Error('aborted'))
         })
       })
-    }) as jest.Mock<StreamHandler<Protocol, 'test'>>
+    })
     const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
@@ -243,7 +241,7 @@ describe('serve()', () => {
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
-    const handler = jest.fn(async (ctx) => {
+    const handler = vi.fn(async (ctx) => {
       const reader = ctx.readable.getReader()
       const writer = ctx.writable.getWriter()
       let count = 0
@@ -255,7 +253,7 @@ describe('serve()', () => {
         writer.write(ctx.param + value)
       }
       return 'END'
-    }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
+    })
     const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<

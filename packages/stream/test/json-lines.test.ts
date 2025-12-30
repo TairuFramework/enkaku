@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { fromJSONLines, toJSONLines } from '../src/json-lines.js'
 import { createReadable } from '../src/readable.js'
@@ -73,7 +73,7 @@ describe('fromJSONLines()', () => {
   })
 
   test('calls onInvalidJSON when JSON is invalid', async () => {
-    const onInvalidJSON = jest.fn()
+    const onInvalidJSON = vi.fn()
     const [source, controller] = createReadable()
     const [sink, result] = createArraySink()
     source.pipeThrough(fromJSONLines({ onInvalidJSON })).pipeTo(sink)

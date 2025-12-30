@@ -1,6 +1,6 @@
 import type { AnyServerPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createUnsignedToken } from '@enkaku/token'
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { handleStream } from '../src/handlers/stream.js'
 import type { HandlerContext, HandlerController, StreamHandlerContext } from '../src/types.js'
@@ -44,7 +44,7 @@ describe('handleStream()', () => {
 
   test('sends receive messages', async () => {
     const controllers = {}
-    const handler = jest.fn((ctx: StreamContext) => {
+    const handler = vi.fn((ctx: StreamContext) => {
       const writer = ctx.writable.getWriter()
       let count = 0
       return new Promise((resolve) => {
@@ -57,8 +57,8 @@ describe('handleStream()', () => {
         }, 100)
       })
     })
-    const reject = jest.fn()
-    const send = jest.fn()
+    const reject = vi.fn()
+    const send = vi.fn()
 
     await handleStream(
       {
@@ -81,7 +81,7 @@ describe('handleStream()', () => {
 
   test('stops sending receive messages if the abort signal is triggered', async () => {
     const controllers: Record<string, HandlerController> = {}
-    const handler = jest.fn((ctx: StreamContext) => {
+    const handler = vi.fn((ctx: StreamContext) => {
       const writer = ctx.writable.getWriter()
       let count = 0
       return new Promise((resolve) => {
@@ -94,8 +94,8 @@ describe('handleStream()', () => {
         }, 100)
       })
     })
-    const reject = jest.fn()
-    const send = jest.fn((payload: AnyServerPayloadOf<Protocol>) => {
+    const reject = vi.fn()
+    const send = vi.fn((payload: AnyServerPayloadOf<Protocol>) => {
       if (payload.typ === 'receive' && payload.val === 1) {
         controllers['1']?.abort()
       }

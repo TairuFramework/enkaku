@@ -1,7 +1,7 @@
 import type { AnyServerPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 import { map } from '@enkaku/stream'
 import { createUnsignedToken } from '@enkaku/token'
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { handleChannel } from '../src/handlers/channel.js'
 import type {
@@ -51,7 +51,7 @@ describe('handleChannel()', () => {
 
   test('sends receive messages', async () => {
     const controllers = {}
-    const handler = jest.fn((ctx: ChannelContext) => {
+    const handler = vi.fn((ctx: ChannelContext) => {
       const writer = ctx.writable.getWriter()
       let count = 0
       return new Promise((resolve) => {
@@ -64,8 +64,8 @@ describe('handleChannel()', () => {
         }, 100)
       })
     })
-    const reject = jest.fn()
-    const send = jest.fn()
+    const reject = vi.fn()
+    const send = vi.fn()
 
     await handleChannel(
       {
@@ -88,7 +88,7 @@ describe('handleChannel()', () => {
 
   test('stops sending receive messages if the abort signal is triggered', async () => {
     const controllers: Record<string, HandlerController> = {}
-    const handler = jest.fn((ctx: ChannelContext) => {
+    const handler = vi.fn((ctx: ChannelContext) => {
       const writer = ctx.writable.getWriter()
       let count = 0
       return new Promise((resolve) => {
@@ -101,8 +101,8 @@ describe('handleChannel()', () => {
         }, 100)
       })
     })
-    const reject = jest.fn()
-    const send = jest.fn((payload: AnyServerPayloadOf<Protocol>) => {
+    const reject = vi.fn()
+    const send = vi.fn((payload: AnyServerPayloadOf<Protocol>) => {
       if (payload.typ === 'receive' && payload.val === 1) {
         controllers['1']?.abort()
       }
@@ -127,7 +127,7 @@ describe('handleChannel()', () => {
 
   test('receives sent messages', async () => {
     const controllers: Record<string, ChannelController> = {}
-    const handler = jest.fn((ctx: ChannelContext) => {
+    const handler = vi.fn((ctx: ChannelContext) => {
       ctx.readable.pipeThrough(map((value) => value * 2)).pipeTo(ctx.writable)
       return new Promise((resolve) => {
         setTimeout(() => {
@@ -135,8 +135,8 @@ describe('handleChannel()', () => {
         }, 100)
       })
     })
-    const reject = jest.fn()
-    const send = jest.fn()
+    const reject = vi.fn()
+    const send = vi.fn()
 
     // @ts-expect-error type instantiation too deep
     const resultPromise = handleChannel(

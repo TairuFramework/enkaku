@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { Client } from '@enkaku/client'
 import { NodeStreamsTransport } from '@enkaku/node-streams-transport'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { describe, expect, test } from 'vitest'
 
 const protocol = {
   test: {

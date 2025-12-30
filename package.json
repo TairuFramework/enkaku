@@ -24,18 +24,16 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "@jest/globals": "catalog:",
     "@swc/cli": "catalog:",
     "@swc/core": "catalog:",
-    "@swc/jest": "catalog:",
-    "@types/jest": "catalog:",
     "@types/node": "catalog:",
+    "@vitest/ui": "catalog:",
     "del-cli": "catalog:",
-    "jest": "catalog:",
     "tsx": "catalog:",
     "turbo": "catalog:",
     "typedoc": "catalog:",
     "typedoc-plugin-markdown": "catalog:",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "catalog:"
   }
 }

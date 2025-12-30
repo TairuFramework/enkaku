@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { LazyPromise, lazy } from '../src/lazy.js'
 import { sleep } from '../src/utils.js'
@@ -7,7 +7,7 @@ describe('LazyPromise', () => {
   describe('static methods', () => {
     describe('LazyPromise.from()', () => {
       test('creates a LazyPromise from a function', async () => {
-        const execute = jest.fn(() => Promise.resolve('OK'))
+        const execute = vi.fn(() => Promise.resolve('OK'))
         const promise = LazyPromise.from(execute)
         expect(promise).toBeInstanceOf(LazyPromise)
         expect(promise).toBeInstanceOf(Promise)
@@ -16,14 +16,14 @@ describe('LazyPromise', () => {
       })
 
       test('creates a LazyPromise from a synchronous function', async () => {
-        const execute = jest.fn(() => 'OK')
+        const execute = vi.fn(() => 'OK')
         const promise = LazyPromise.from(execute)
         await expect(promise).resolves.toBe('OK')
         expect(execute).toHaveBeenCalledTimes(1)
       })
 
       test('handles errors from the execute function', async () => {
-        const execute = jest.fn(() => Promise.reject('failed'))
+        const execute = vi.fn(() => Promise.reject('failed'))
         const promise = LazyPromise.from(execute)
         await expect(promise).rejects.toBe('failed')
         expect(execute).toHaveBeenCalledTimes(1)
@@ -70,7 +70,7 @@ describe('LazyPromise', () => {
   describe('instance methods', () => {
     describe('then()', () => {
       test('executes lazily when then is called', async () => {
-        const execute = jest.fn((resolve: (value: string) => void) => {
+        const execute = vi.fn((resolve: (value: string) => void) => {
           resolve('OK')
         })
         const promise = new LazyPromise(execute)
@@ -85,7 +85,7 @@ describe('LazyPromise', () => {
       })
 
       test('only executes once even with multiple then calls', async () => {
-        const execute = jest.fn((resolve: (value: string) => void) => {
+        const execute = vi.fn((resolve: (value: string) => void) => {
           resolve('OK')
         })
         const promise = new LazyPromise(execute)
@@ -124,7 +124,7 @@ describe('LazyPromise', () => {
 
     describe('catch()', () => {
       test('executes lazily when catch is called', async () => {
-        const execute = jest.fn((_: (value: string) => void, reject: (reason: unknown) => void) => {
+        const execute = vi.fn((_: (value: string) => void, reject: (reason: unknown) => void) => {
           reject('failed')
         })
         const promise = new LazyPromise(execute)
@@ -137,7 +137,7 @@ describe('LazyPromise', () => {
       })
 
       test('only executes once even with multiple catch calls', async () => {
-        const execute = jest.fn((_: (value: string) => void, reject: (reason: unknown) => void) => {
+        const execute = vi.fn((_: (value: string) => void, reject: (reason: unknown) => void) => {
           reject('failed')
         })
         const promise = new LazyPromise(execute)
@@ -165,10 +165,10 @@ describe('LazyPromise', () => {
 
     describe('finally()', () => {
       test('executes lazily when finally is called', async () => {
-        const execute = jest.fn((resolve: (value: string) => void) => {
+        const execute = vi.fn((resolve: (value: string) => void) => {
           resolve('OK')
         })
-        const finallyCallback = jest.fn(() => {})
+        const finallyCallback = vi.fn(() => {})
         const promise = new LazyPromise(execute)
 
         expect(execute).not.toHaveBeenCalled()
@@ -180,10 +180,10 @@ describe('LazyPromise', () => {
       })
 
       test('only executes once even with multiple finally calls', async () => {
-        const execute = jest.fn((resolve: (value: string) => void) => {
+        const execute = vi.fn((resolve: (value: string) => void) => {
           resolve('OK')
         })
-        const finallyCallback = jest.fn(() => {})
+        const finallyCallback = vi.fn(() => {})
         const promise = new LazyPromise(execute)
 
         const result1 = promise.finally(finallyCallback)
@@ -196,8 +196,8 @@ describe('LazyPromise', () => {
       })
 
       test('calls finally callback for both resolved and rejected promises', async () => {
-        const resolveCallback = jest.fn(() => {})
-        const rejectCallback = jest.fn(() => {})
+        const resolveCallback = vi.fn(() => {})
+        const rejectCallback = vi.fn(() => {})
 
         const resolvePromise = new LazyPromise<string>((resolve) => resolve('success'))
         const rejectPromise = new LazyPromise<string>((_, reject) => reject('error'))
@@ -228,14 +228,14 @@ describe('LazyPromise', () => {
 
   describe('constructor', () => {
     test('creates a LazyPromise instance', () => {
-      const execute = jest.fn()
+      const execute = vi.fn()
       const promise = new LazyPromise(execute)
       expect(promise).toBeInstanceOf(LazyPromise)
       expect(promise).toBeInstanceOf(Promise)
     })
 
     test('does not execute immediately upon construction', () => {
-      const execute = jest.fn()
+      const execute = vi.fn()
       new LazyPromise(execute)
       expect(execute).not.toHaveBeenCalled()
     })
@@ -243,7 +243,7 @@ describe('LazyPromise', () => {
 
   describe('lazy execution behavior', () => {
     test('executes only when a promise method is called', async () => {
-      const execute = jest.fn((resolve: (value: string) => void) => {
+      const execute = vi.fn((resolve: (value: string) => void) => {
         resolve('executed')
       })
       const promise = new LazyPromise(execute)
@@ -258,7 +258,7 @@ describe('LazyPromise', () => {
     })
 
     test('maintains lazy behavior across different promise methods', async () => {
-      const execute = jest.fn((resolve: (value: string) => void) => {
+      const execute = vi.fn((resolve: (value: string) => void) => {
         resolve('OK')
       })
       const promise = new LazyPromise(execute)
@@ -276,7 +276,7 @@ describe('LazyPromise', () => {
 
 describe('lazy()', () => {
   test('executes lazily', async () => {
-    const execute = jest.fn(() => {
+    const execute = vi.fn(() => {
       return Promise.resolve('OK')
     })
     const call = lazy(execute)
@@ -286,13 +286,13 @@ describe('lazy()', () => {
   })
 
   test('only calls the execute function if needed', () => {
-    const execute = jest.fn(() => Promise.resolve())
+    const execute = vi.fn(() => Promise.resolve())
     lazy(execute)
     expect(execute).not.toHaveBeenCalled()
   })
 
   test('calls the execute function at most once', async () => {
-    const execute = jest.fn(() => Promise.resolve('OK'))
+    const execute = vi.fn(() => Promise.resolve('OK'))
     const call = lazy(execute)
     const res1 = await call
     const res2 = call.then((value) => `value: ${value}`)
@@ -302,7 +302,7 @@ describe('lazy()', () => {
   })
 
   test('throws errors', async () => {
-    const execute = jest.fn(() => Promise.reject('failed'))
+    const execute = vi.fn(() => Promise.reject('failed'))
     const call = lazy(execute)
     await expect(call).rejects.toBe('failed')
     const res = call.then(

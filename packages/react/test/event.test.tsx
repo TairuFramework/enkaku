@@ -1,7 +1,7 @@
 import { standalone } from '@enkaku/standalone'
-import { jest } from '@jest/globals'
 import { act, renderHook } from '@testing-library/react'
 import type { PropsWithChildren } from 'react'
+import { vi } from 'vitest'
 
 import { EnkakuProvider, useSendEvent } from '../src/index.js'
 
@@ -11,7 +11,7 @@ type Protocol = {
     data: { type: 'object'; properties: { message: { type: 'string' } } }
   }
 }
-const mockHandler = jest.fn()
+const mockHandler = vi.fn()
 const mockClient = standalone<Protocol>({ test: mockHandler })
 
 const wrapper = ({ children }: PropsWithChildren) => (
@@ -20,7 +20,7 @@ const wrapper = ({ children }: PropsWithChildren) => (
 
 describe('useSendEvent', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('sends the event', async () => {

@@ -11,7 +11,7 @@ import type {
 import { createArraySink } from '@enkaku/stream'
 import { randomTokenSigner, createUnsignedToken as unsignedToken } from '@enkaku/token'
 import { DirectTransports, Transport } from '@enkaku/transport'
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { Client } from '../src/client.js'
 
@@ -31,8 +31,8 @@ describe('Client', () => {
     type Protocol = typeof protocol
 
     test('uses the new transport provided', async () => {
-      const replacementStart = jest.fn(() => null)
-      const handleTransportDisposed = jest.fn(() => {
+      const replacementStart = vi.fn(() => null)
+      const handleTransportDisposed = vi.fn(() => {
         return new Transport({
           stream: {
             readable: new ReadableStream({ start: replacementStart }),
@@ -57,7 +57,7 @@ describe('Client', () => {
     })
 
     test('aborts the client if no new transport is provided', async () => {
-      const handleTransportDisposed = jest.fn(() => {})
+      const handleTransportDisposed = vi.fn(() => {})
 
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
@@ -87,7 +87,7 @@ describe('Client', () => {
     })
 
     test('does not call the handler if the client itself is aborted', async () => {
-      const handleTransportDisposed = jest.fn(() => {})
+      const handleTransportDisposed = vi.fn(() => {})
 
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
@@ -121,8 +121,8 @@ describe('Client', () => {
 
     test('uses the new transport provided', async () => {
       const cause = new Error('Transport error')
-      const replacementStart = jest.fn()
-      const handleTransportError = jest.fn((error) => {
+      const replacementStart = vi.fn()
+      const handleTransportError = vi.fn((error) => {
         expect(error).toBeInstanceOf(Error)
         expect((error as Error).message).toBe('Transport read failed')
         expect((error as Error).cause).toBe(cause)
@@ -157,7 +157,7 @@ describe('Client', () => {
 
     test('aborts the client if no new transport is provided', async () => {
       const cause = new Error('Transport error')
-      const handleTransportError = jest.fn((error) => {
+      const handleTransportError = vi.fn((error) => {
         expect(error).toBeInstanceOf(Error)
         expect((error as Error).message).toBe('Transport read failed')
         expect((error as Error).cause).toBe(cause)
@@ -206,7 +206,7 @@ describe('Client', () => {
 
     test('does not call the handler if the client itself is aborted', async () => {
       const cause = new Error('Transport error')
-      const handleTransportError = jest.fn(() => {})
+      const handleTransportError = vi.fn(() => {})
 
       const client = new Client<Protocol>({
         handleTransportError,

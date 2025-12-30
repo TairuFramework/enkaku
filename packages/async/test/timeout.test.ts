@@ -1,15 +1,15 @@
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { TimeoutInterruption } from '../src/interruptions.js'
 import { ScheduledTimeout } from '../src/timeout.js'
 
 describe('ScheduledTimeout', () => {
   beforeEach(() => {
-    jest.useFakeTimers()
+    vi.useFakeTimers()
   })
 
   afterEach(() => {
-    jest.useRealTimers()
+    vi.useRealTimers()
   })
 
   describe('static methods', () => {
@@ -40,7 +40,7 @@ describe('ScheduledTimeout', () => {
         // Should abort after the timeout fires (immediately for past dates)
         expect(timeout.signal.aborted).toBe(false)
 
-        jest.advanceTimersByTime(1)
+        vi.advanceTimersByTime(1)
         expect(timeout.signal.aborted).toBe(true)
       })
     })
@@ -69,7 +69,7 @@ describe('ScheduledTimeout', () => {
         // Should abort after the timeout fires (immediately for zero delay)
         expect(timeout.signal.aborted).toBe(false)
 
-        jest.advanceTimersByTime(1)
+        vi.advanceTimersByTime(1)
         expect(timeout.signal.aborted).toBe(true)
       })
 
@@ -80,7 +80,7 @@ describe('ScheduledTimeout', () => {
         // Should abort after the timeout fires (immediately for negative delay)
         expect(timeout.signal.aborted).toBe(false)
 
-        jest.advanceTimersByTime(1)
+        vi.advanceTimersByTime(1)
         expect(timeout.signal.aborted).toBe(true)
       })
     })
@@ -117,7 +117,7 @@ describe('ScheduledTimeout', () => {
 
       expect(timeout.signal.aborted).toBe(false)
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       expect(timeout.signal.aborted).toBe(true)
     })
@@ -129,7 +129,7 @@ describe('ScheduledTimeout', () => {
 
       timeout.cancel()
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       expect(timeout.signal.aborted).toBe(false)
     })
@@ -140,7 +140,7 @@ describe('ScheduledTimeout', () => {
       timeout.cancel()
       timeout.cancel()
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       expect(timeout.signal.aborted).toBe(false)
     })
@@ -158,7 +158,7 @@ describe('ScheduledTimeout', () => {
 
       timeout[Symbol.dispose]()
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       expect(timeout.signal.aborted).toBe(false)
     })
@@ -169,7 +169,7 @@ describe('ScheduledTimeout', () => {
       // Simulate using statement behavior
       timeout[Symbol.dispose]()
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       expect(timeout.signal.aborted).toBe(false)
     })
@@ -178,7 +178,7 @@ describe('ScheduledTimeout', () => {
   describe('timeout interruption', () => {
     test('aborts with TimeoutInterruption', () => {
       const timeout = new ScheduledTimeout({ delay: 1000 })
-      const callback = jest.fn()
+      const callback = vi.fn()
 
       timeout.signal.addEventListener('abort', () => {
         expect(timeout.signal.reason).toBeInstanceOf(TimeoutInterruption)
@@ -186,7 +186,7 @@ describe('ScheduledTimeout', () => {
         callback()
       })
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       expect(callback).toHaveBeenCalledTimes(1)
     })
@@ -194,7 +194,7 @@ describe('ScheduledTimeout', () => {
     test('aborts with custom message', () => {
       const options = { message: 'Custom timeout message' }
       const timeout = new ScheduledTimeout({ delay: 1000, ...options })
-      const callback = jest.fn()
+      const callback = vi.fn()
 
       timeout.signal.addEventListener('abort', () => {
         expect(timeout.signal.reason).toBeInstanceOf(TimeoutInterruption)
@@ -202,7 +202,7 @@ describe('ScheduledTimeout', () => {
         callback()
       })
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       expect(callback).toHaveBeenCalledTimes(1)
     })
@@ -211,7 +211,7 @@ describe('ScheduledTimeout', () => {
       const cause = new Error('Original error')
       const options = { cause }
       const timeout = new ScheduledTimeout({ delay: 1000, ...options })
-      const callback = jest.fn()
+      const callback = vi.fn()
 
       timeout.signal.addEventListener('abort', () => {
         expect(timeout.signal.reason).toBeInstanceOf(TimeoutInterruption)
@@ -219,7 +219,7 @@ describe('ScheduledTimeout', () => {
         callback()
       })
 
-      jest.advanceTimersByTime(1000)
+      vi.advanceTimersByTime(1000)
 
       expect(callback).toHaveBeenCalledTimes(1)
     })
@@ -237,7 +237,7 @@ describe('ScheduledTimeout', () => {
 
       expect(timeout.signal.aborted).toBe(false)
 
-      jest.advanceTimersByTime(1)
+      vi.advanceTimersByTime(1)
 
       expect(timeout.signal.aborted).toBe(true)
     })

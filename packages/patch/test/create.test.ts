@@ -186,7 +186,12 @@ describe('createPatches()', () => {
 
   it('should handle adding objects to arrays', () => {
     const from = { users: [{ id: 1, name: 'John' }] }
-    const to = { users: [{ id: 1, name: 'John' }, { id: 2, name: 'Jane' }] }
+    const to = {
+      users: [
+        { id: 1, name: 'John' },
+        { id: 2, name: 'Jane' },
+      ],
+    }
     const patches = createPatches(to, from)
     expect(patches).toEqual([{ op: 'add', path: '/users/1', value: { id: 2, name: 'Jane' } }])
   })
@@ -265,16 +270,10 @@ describe('createPatches()', () => {
 
   it('should handle deeply nested arrays with objects', () => {
     const from = {
-      data: [
-        { users: [{ name: 'John' }] },
-        { users: [{ name: 'Jane' }] },
-      ],
+      data: [{ users: [{ name: 'John' }] }, { users: [{ name: 'Jane' }] }],
     }
     const to = {
-      data: [
-        { users: [{ name: 'John', age: 30 }] },
-        { users: [{ name: 'Jane' }] },
-      ],
+      data: [{ users: [{ name: 'John', age: 30 }] }, { users: [{ name: 'Jane' }] }],
     }
     const patches = createPatches(to, from)
     expect(patches).toEqual([{ op: 'add', path: '/data/0/users/0/age', value: 30 }])

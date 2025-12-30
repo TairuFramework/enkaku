@@ -1,10 +1,10 @@
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { Disposer } from '../src/disposer.js'
 
 describe('Disposer', () => {
   test('only disposes once', async () => {
-    const disposeFn = jest.fn(() => Promise.resolve())
+    const disposeFn = vi.fn(() => Promise.resolve())
     const disposer = new Disposer({ dispose: disposeFn })
 
     await expect(disposer.dispose()).resolves.toBeUndefined()
@@ -14,7 +14,7 @@ describe('Disposer', () => {
   })
 
   test('calls dispose function with abort reason', async () => {
-    const disposeFn = jest.fn(() => Promise.resolve())
+    const disposeFn = vi.fn(() => Promise.resolve())
     const disposer = new Disposer({ dispose: disposeFn })
     const reason = new Error('test reason')
 
@@ -51,7 +51,7 @@ describe('Disposer', () => {
 
   test('listens to external abort signal', async () => {
     const externalController = new AbortController()
-    const disposeFn = jest.fn(() => Promise.resolve())
+    const disposeFn = vi.fn(() => Promise.resolve())
     const disposer = new Disposer({
       dispose: disposeFn,
       signal: externalController.signal,

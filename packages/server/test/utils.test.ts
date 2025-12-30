@@ -1,6 +1,6 @@
 import { EventEmitter } from '@enkaku/event'
 import type { ProtocolDefinition } from '@enkaku/protocol'
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { HandlerError } from '../src/error.js'
 import type { HandlerContext, ServerEvents } from '../src/types.js'
@@ -27,10 +27,10 @@ describe('executeHandler()', () => {
     const error = new HandlerError({ code: 'TEST123', message: 'Request failed' })
     const controllers = { '1': new AbortController() }
     const events = new EventEmitter<ServerEvents>()
-    const handler = jest.fn(() => {
+    const handler = vi.fn(() => {
       throw error
     })
-    const send = jest.fn()
+    const send = vi.fn()
     const handlerError = events.once('handlerError')
 
     // @ts-expect-error type instantiation too deep
@@ -63,14 +63,14 @@ describe('executeHandler()', () => {
     const error = new HandlerError({ code: 'TEST123', message: 'Request failed' })
     const controllers = { '1': new AbortController() }
     const events = new EventEmitter<ServerEvents>()
-    const handler = jest.fn(() => {
+    const handler = vi.fn(() => {
       return new Promise<string>((_, reject) => {
         setTimeout(() => {
           reject(error)
         }, 100)
       })
     })
-    const send = jest.fn()
+    const send = vi.fn()
     const handlerError = events.once('handlerError')
 
     // @ts-expect-error type instantiation too deep
@@ -106,14 +106,14 @@ describe('executeHandler()', () => {
     const error = new HandlerError({ code: 'TEST123', message: 'Request failed' })
     const controllers = { '1': new AbortController() }
     const events = new EventEmitter<ServerEvents>()
-    const handler = jest.fn(() => {
+    const handler = vi.fn(() => {
       return new Promise<string>((_, reject) => {
         setTimeout(() => {
           reject(error)
         }, 100)
       })
     })
-    const send = jest.fn()
+    const send = vi.fn()
     const handlerError = events.once('handlerError')
 
     // @ts-expect-error type instantiation too deep
@@ -140,9 +140,9 @@ describe('executeHandler()', () => {
 
   test('sends a result response with the handler returned value', async () => {
     const controllers = { '1': new AbortController() }
-    const handler = jest.fn(() => 'OK')
-    const reject = jest.fn()
-    const send = jest.fn()
+    const handler = vi.fn(() => 'OK')
+    const reject = vi.fn()
+    const send = vi.fn()
 
     await executeHandler(
       {
@@ -161,15 +161,15 @@ describe('executeHandler()', () => {
 
   test('sends a result response if the abort signal is triggered with the "Close" reason', async () => {
     const controllers = { '1': new AbortController() }
-    const handler = jest.fn(() => {
+    const handler = vi.fn(() => {
       return new Promise<string>((resolve) => {
         setTimeout(() => {
           resolve('OK')
         }, 100)
       })
     })
-    const reject = jest.fn()
-    const send = jest.fn()
+    const reject = vi.fn()
+    const send = vi.fn()
 
     // @ts-expect-error type instantiation too deep
     const requestPromise = executeHandler(
@@ -192,15 +192,15 @@ describe('executeHandler()', () => {
 
   test('does not send a result response if the abort signal is triggered with a reason other than "Close"', async () => {
     const controllers = { '1': new AbortController() }
-    const handler = jest.fn(() => {
+    const handler = vi.fn(() => {
       return new Promise<string>((resolve) => {
         setTimeout(() => {
           resolve('OK')
         }, 100)
       })
     })
-    const reject = jest.fn()
-    const send = jest.fn()
+    const reject = vi.fn()
+    const send = vi.fn()
 
     // @ts-expect-error type instantiation too deep
     const requestPromise = executeHandler(

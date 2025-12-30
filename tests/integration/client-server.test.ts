@@ -10,7 +10,7 @@ import {
 } from '@enkaku/server'
 import { createUnsignedToken } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
-import { jest } from '@jest/globals'
+import { describe, expect, test, vi } from 'vitest'
 
 describe('client-server integration', () => {
   describe('events', () => {
@@ -28,7 +28,7 @@ describe('client-server integration', () => {
       } as const satisfies ProtocolDefinition
       type Protocol = typeof protocol
 
-      const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
+      const handler = vi.fn() as EventHandler<Protocol, 'test'>
       const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
       const transports = new DirectTransports<
@@ -59,7 +59,7 @@ describe('client-server integration', () => {
       } as const satisfies ProtocolDefinition
       type Protocol = typeof protocol
 
-      const handler = jest.fn((ctx) => {
+      const handler = vi.fn((ctx) => {
         return new Promise((resolve, reject) => {
           const timer = setTimeout(() => {
             resolve('OK')
@@ -69,7 +69,7 @@ describe('client-server integration', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<RequestHandler<Protocol, 'test'>>
+      }) as RequestHandler<Protocol, 'test'>
       const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
       const transports = new DirectTransports<
@@ -98,7 +98,7 @@ describe('client-server integration', () => {
       } as const satisfies ProtocolDefinition
       type Protocol = typeof protocol
 
-      const handler = jest.fn((ctx) => {
+      const handler = vi.fn((ctx) => {
         return new Promise((resolve, reject) => {
           const writer = ctx.writable.getWriter()
           let count = 0
@@ -115,7 +115,7 @@ describe('client-server integration', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<StreamHandler<Protocol, 'test'>>
+      }) as StreamHandler<Protocol, 'test'>
       const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
       const transports = new DirectTransports<
@@ -157,7 +157,7 @@ describe('client-server integration', () => {
       } as const satisfies ProtocolDefinition
       type Protocol = typeof protocol
 
-      const handler = jest.fn(async (ctx) => {
+      const handler = vi.fn(async (ctx) => {
         const reader = ctx.readable.getReader()
         const writer = ctx.writable.getWriter()
         let count = 0
@@ -169,7 +169,7 @@ describe('client-server integration', () => {
           writer.write(ctx.param + value)
         }
         return 'END'
-      }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
+      }) as ChannelHandler<Protocol, 'test'>
       const handlers = { test: handler } as ProcedureHandlers<Protocol>
 
       const transports = new DirectTransports<

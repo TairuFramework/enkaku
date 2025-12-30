@@ -1,16 +1,16 @@
 import type { Client } from '@enkaku/client'
 import type { ProtocolDefinition } from '@enkaku/protocol'
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 import '@testing-library/jest-dom'
 import { render } from '@testing-library/react'
 
 import { EnkakuProvider, useEnkakuClient } from '../src/index.js'
 
 const mockClient = {
-  request: jest.fn(),
-  sendEvent: jest.fn(),
-  createStream: jest.fn(),
-  createChannel: jest.fn(),
+  request: vi.fn(),
+  sendEvent: vi.fn(),
+  createStream: vi.fn(),
+  createChannel: vi.fn(),
 } as unknown as Client<ProtocolDefinition>
 
 function TestComponent() {
@@ -29,7 +29,7 @@ describe('EnkakuProvider', () => {
   })
 
   it('throws error when useEnkakuClient is used outside provider', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     expect(() => {
       render(<TestComponent />)

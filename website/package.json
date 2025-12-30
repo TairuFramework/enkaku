@@ -15,7 +15,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@dipakparmar/docusaurus-plugin-umami": "^2.3.0",
+    "@dipakparmar/docusaurus-plugin-umami": "catalog:",
     "@docusaurus/core": "catalog:",
     "@docusaurus/faster": "catalog:",
     "@docusaurus/preset-classic": "catalog:",

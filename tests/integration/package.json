@@ -15,7 +15,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "test": "node --experimental-eventsource --experimental-vm-modules ../../node_modules/jest/bin/jest.js"
+    "test": "NODE_OPTIONS='--experimental-eventsource' vitest run"
   },
   "devDependencies": {
     "@enkaku/client": "workspace:^",

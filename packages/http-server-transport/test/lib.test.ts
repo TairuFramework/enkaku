@@ -1,8 +1,8 @@
 import { setTimeout } from 'node:timers/promises'
 import type { ProtocolDefinition } from '@enkaku/protocol'
-import { type EventHandler, type RequestHandler, serve } from '@enkaku/server'
+import { serve } from '@enkaku/server'
 import { createUnsignedToken } from '@enkaku/token'
-import { jest } from '@jest/globals'
+import { describe, expect, test, vi } from 'vitest'
 
 import { ServerTransport } from '../src/index.js'
 
@@ -25,10 +25,10 @@ describe('ServerTransport', () => {
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
-    const testEventHandler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test/event'>>
-    const testRequestHandler = jest.fn(() => {
+    const testEventHandler = vi.fn()
+    const testRequestHandler = vi.fn(() => {
       return setTimeout(100, 'hello')
-    }) as jest.Mock<RequestHandler<Protocol, 'test/request'>>
+    })
 
     const handlers = {
       'test/event': testEventHandler,
@@ -151,9 +151,9 @@ describe('ServerTransport', () => {
     })
 
     test('handles POST requests', async () => {
-      const testRequestHandler = jest.fn(() => {
+      const testRequestHandler = vi.fn(() => {
         return setTimeout(100, 'hello')
-      }) as jest.Mock<RequestHandler<Protocol, 'test/request'>>
+      })
 
       const handlers = {
         'test/request': testRequestHandler,
@@ -187,9 +187,9 @@ describe('ServerTransport', () => {
     })
 
     // test('handles POST requests', async () => {
-    //   const testRequestHandler = jest.fn(() => {
+    //   const testRequestHandler = vi.fn(() => {
     //     return setTimeout(100, 'hello')
-    //   }) as jest.Mock<RequestHandler<Protocol, 'test/request'>>
+    //   })
 
     //   const handlers = {
     //     'test/request': testRequestHandler,

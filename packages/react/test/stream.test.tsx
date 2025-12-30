@@ -1,6 +1,6 @@
 import type { StreamCall } from '@enkaku/client'
 import { standalone } from '@enkaku/standalone'
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 import '@testing-library/jest-dom'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { PropsWithChildren } from 'react'
@@ -47,7 +47,7 @@ type Protocol = {
 }
 
 // Mock handler that emits a sequence of numbers
-const numbersHandler = jest.fn(
+const numbersHandler = vi.fn(
   (ctx: {
     param: { count: number }
     signal: AbortSignal
@@ -86,7 +86,7 @@ const numbersHandler = jest.fn(
 )
 
 // Mock handler that emits messages without parameters
-const messagesHandler = jest.fn(
+const messagesHandler = vi.fn(
   (ctx: { signal: AbortSignal; writable: WritableStream<{ message: string }> }) => {
     return new Promise((resolve, reject) => {
       const writer = ctx.writable.getWriter()
@@ -131,7 +131,7 @@ const wrapper = ({ children }: PropsWithChildren) => (
 
 describe('useCreateStream', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('creates a stream and returns the function and null initially', () => {
@@ -213,7 +213,7 @@ describe('useCreateStream', () => {
 
   it('can abort a stream', async () => {
     // Handler that listens for abort signal
-    const abortableHandler = jest.fn(
+    const abortableHandler = vi.fn(
       (ctx: {
         param: { count: number }
         signal: AbortSignal
@@ -273,7 +273,7 @@ describe('useCreateStream', () => {
 
 describe('useReceiveLatest', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('returns null when no call is provided', () => {
@@ -379,7 +379,7 @@ describe('useReceiveLatest', () => {
 
 describe('useReceiveAll', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('returns empty array, false, and null when no call is provided', () => {
@@ -529,7 +529,7 @@ describe('useReceiveAll', () => {
 
 describe('Stream caching and reference counting', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('caches streams with the same parameters within the same component', async () => {
@@ -608,7 +608,7 @@ describe('Stream caching and reference counting', () => {
 
 describe('Stream hooks integration', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('works together with useCreateStream and useReceiveLatest', async () => {

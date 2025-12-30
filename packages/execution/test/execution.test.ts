@@ -6,14 +6,14 @@ import {
   TimeoutInterruption,
 } from '@enkaku/async'
 import { AsyncResult, Result } from '@enkaku/result'
-import { jest } from '@jest/globals'
+import { vi } from 'vitest'
 
 import { Execution } from '../src/execution.js'
 
 describe('Execution', () => {
   describe('constructor', () => {
     test('creates an Execution with a simple execute function', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       const result = await execution
@@ -24,7 +24,7 @@ describe('Execution', () => {
     })
 
     test('creates an Execution with a function returning Result', async () => {
-      const execute = jest.fn(() => Promise.resolve(Result.ok('test')))
+      const execute = vi.fn(() => Promise.resolve(Result.ok('test')))
       const execution = new Execution(execute)
 
       const result = await execution
@@ -33,7 +33,7 @@ describe('Execution', () => {
     })
 
     test('creates an Execution with a function returning AsyncResult', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       const result = await execution
@@ -43,7 +43,7 @@ describe('Execution', () => {
 
     test('handles execute function that throws', async () => {
       const error = new Error('execute error')
-      const execute = jest.fn(() => Promise.reject(error))
+      const execute = vi.fn(() => Promise.reject(error))
       const execution = new Execution(execute)
 
       const result = await execution
@@ -53,7 +53,7 @@ describe('Execution', () => {
 
     test('handles execute function returning Result.error', async () => {
       const error = new Error('result error')
-      const execute = jest.fn(() => Promise.resolve(Result.error(error)))
+      const execute = vi.fn(() => Promise.resolve(Result.error(error)))
       const execution = new Execution(execute)
 
       const result = await execution
@@ -65,7 +65,7 @@ describe('Execution', () => {
   describe('constructor with options', () => {
     test('creates Execution with external signal', async () => {
       const externalController = new AbortController()
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute, { signal: externalController.signal })
 
       const result = await execution
@@ -78,9 +78,7 @@ describe('Execution', () => {
     })
 
     test('creates Execution with timeout', async () => {
-      const execute = jest.fn(
-        () => new Promise((resolve) => setTimeout(() => resolve('test'), 100)),
-      )
+      const execute = vi.fn(() => new Promise((resolve) => setTimeout(() => resolve('test'), 100)))
       const execution = new Execution(execute, { timeout: 50 })
 
       const result = await execution
@@ -91,9 +89,7 @@ describe('Execution', () => {
 
     test('creates Execution with both signal and timeout', async () => {
       const externalController = new AbortController()
-      const execute = jest.fn(
-        () => new Promise((resolve) => setTimeout(() => resolve('test'), 100)),
-      )
+      const execute = vi.fn(() => new Promise((resolve) => setTimeout(() => resolve('test'), 100)))
       const execution = new Execution(execute, {
         signal: externalController.signal,
         timeout: 50,
@@ -108,7 +104,7 @@ describe('Execution', () => {
 
   describe('signal property', () => {
     test('returns the internal AbortSignal', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       expect(execution.signal).toBeInstanceOf(AbortSignal)
@@ -116,7 +112,7 @@ describe('Execution', () => {
     })
 
     test('signal is aborted after calling abort', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       expect(execution.signal.aborted).toBe(false)
@@ -128,14 +124,14 @@ describe('Execution', () => {
 
   describe('isAborted property', () => {
     test('returns false when not aborted', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       expect(execution.isAborted).toBe(false)
     })
 
     test('returns true when aborted', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.abort('test abort')
@@ -145,14 +141,14 @@ describe('Execution', () => {
 
   describe('isInterrupted property', () => {
     test('returns false when not interrupted', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       expect(execution.isInterrupted).toBe(false)
     })
 
     test('returns true when aborted with AbortInterruption', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.abort()
@@ -160,7 +156,7 @@ describe('Execution', () => {
     })
 
     test('returns true when canceled', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.cancel()
@@ -168,7 +164,7 @@ describe('Execution', () => {
     })
 
     test('returns true when disposed', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       await execution[Symbol.asyncDispose]()
@@ -178,14 +174,14 @@ describe('Execution', () => {
 
   describe('isCanceled property', () => {
     test('returns false when not canceled', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       expect(execution.isCanceled).toBe(false)
     })
 
     test('returns true when canceled', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.cancel()
@@ -193,7 +189,7 @@ describe('Execution', () => {
     })
 
     test('returns false when aborted with non-CancelInterruption', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.abort('test abort')
@@ -203,14 +199,14 @@ describe('Execution', () => {
 
   describe('isDisposed property', () => {
     test('returns false when not disposed', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       expect(execution.isDisposed).toBe(false)
     })
 
     test('returns true when disposed', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       await execution[Symbol.asyncDispose]()
@@ -218,7 +214,7 @@ describe('Execution', () => {
     })
 
     test('returns false when aborted with non-DisposeInterruption', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.abort('test abort')
@@ -228,16 +224,14 @@ describe('Execution', () => {
 
   describe('isTimedOut property', () => {
     test('returns false when not timed out', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       expect(execution.isTimedOut).toBe(false)
     })
 
     test('returns true when timed out', async () => {
-      const execute = jest.fn(
-        () => new Promise((resolve) => setTimeout(() => resolve('test'), 100)),
-      )
+      const execute = vi.fn(() => new Promise((resolve) => setTimeout(() => resolve('test'), 100)))
       const execution = new Execution(execute, { timeout: 50 })
 
       await execution
@@ -245,7 +239,7 @@ describe('Execution', () => {
     })
 
     test('returns false when aborted with non-TimeoutInterruption', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.abort('test abort')
@@ -255,7 +249,7 @@ describe('Execution', () => {
 
   describe('Symbol.asyncDispose method', () => {
     test('disposes the execution with DisposeInterruption', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       await execution[Symbol.asyncDispose]()
@@ -267,7 +261,7 @@ describe('Execution', () => {
     })
 
     test('returns a promise that resolves after disposal', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       const disposePromise = execution[Symbol.asyncDispose]()
@@ -280,7 +274,7 @@ describe('Execution', () => {
 
   describe('abort method', () => {
     test('aborts the execution with default AbortInterruption', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.abort()
@@ -291,7 +285,7 @@ describe('Execution', () => {
     })
 
     test('aborts the execution with custom reason', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.abort('custom reason')
@@ -302,7 +296,7 @@ describe('Execution', () => {
     })
 
     test('aborts the execution with existing Interruption', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
       const interruption = new AbortInterruption({ cause: 'test' })
 
@@ -316,7 +310,7 @@ describe('Execution', () => {
 
   describe('cancel method', () => {
     test('cancels the execution with CancelInterruption', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.cancel()
@@ -328,7 +322,7 @@ describe('Execution', () => {
     })
 
     test('cancels the execution with custom cause', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.cancel('custom cause')
@@ -344,9 +338,7 @@ describe('Execution', () => {
   describe('integration with external signals', () => {
     test('aborts when external signal is aborted', async () => {
       const externalController = new AbortController()
-      const execute = jest.fn(
-        () => new Promise((resolve) => setTimeout(() => resolve('test'), 100)),
-      )
+      const execute = vi.fn(() => new Promise((resolve) => setTimeout(() => resolve('test'), 100)))
       const execution = new Execution(execute, { signal: externalController.signal })
 
       // Abort external signal
@@ -359,9 +351,7 @@ describe('Execution', () => {
     })
 
     test('aborts when timeout signal is triggered', async () => {
-      const execute = jest.fn(
-        () => new Promise((resolve) => setTimeout(() => resolve('test'), 100)),
-      )
+      const execute = vi.fn(() => new Promise((resolve) => setTimeout(() => resolve('test'), 100)))
       const execution = new Execution(execute, { timeout: 50 })
 
       const result = await execution
@@ -372,9 +362,7 @@ describe('Execution', () => {
 
     test('aborts when any signal is aborted (signal + timeout)', async () => {
       const externalController = new AbortController()
-      const execute = jest.fn(
-        () => new Promise((resolve) => setTimeout(() => resolve('test'), 100)),
-      )
+      const execute = vi.fn(() => new Promise((resolve) => setTimeout(() => resolve('test'), 100)))
       const execution = new Execution(execute, {
         signal: externalController.signal,
         timeout: 50,
@@ -394,7 +382,7 @@ describe('Execution', () => {
   describe('error handling', () => {
     test('handles execute function throwing synchronous error', async () => {
       const error = new Error('sync error')
-      const execute = jest.fn(() => {
+      const execute = vi.fn(() => {
         throw error
       })
       const execution = new Execution(execute)
@@ -406,7 +394,7 @@ describe('Execution', () => {
 
     test('handles execute function returning rejected promise', async () => {
       const error = new Error('async error')
-      const execute = jest.fn(() => Promise.reject(error))
+      const execute = vi.fn(() => Promise.reject(error))
       const execution = new Execution(execute)
 
       const result = await execution
@@ -416,7 +404,7 @@ describe('Execution', () => {
 
     test('handles execute function returning Result.error', async () => {
       const error = new Error('result error')
-      const execute = jest.fn(() => Promise.resolve(Result.error(error)))
+      const execute = vi.fn(() => Promise.resolve(Result.error(error)))
       const execution = new Execution(execute)
 
       const result = await execution
@@ -435,7 +423,7 @@ describe('Execution', () => {
 
   describe('complex scenarios', () => {
     test('handles long-running operation with timeout', async () => {
-      const execute = jest.fn(
+      const execute = vi.fn(
         (signal: AbortSignal) =>
           new Promise((resolve) => {
             const timeout = setTimeout(() => resolve('success'), 200)
@@ -451,7 +439,7 @@ describe('Execution', () => {
     })
 
     test('handles operation that completes before timeout', async () => {
-      const execute = jest.fn(
+      const execute = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('success'), 25)),
       )
       const execution = new Execution(execute, { timeout: 100 })
@@ -463,7 +451,7 @@ describe('Execution', () => {
     })
 
     test('handles multiple abort calls gracefully', () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.abort('first abort')
@@ -477,10 +465,10 @@ describe('Execution', () => {
 
   describe('chain method', () => {
     test('creates a chained execution without executing immediately', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -502,13 +490,13 @@ describe('Execution', () => {
     test('executes chain steps in order', async () => {
       const executionOrder: string[] = []
 
-      const firstExecute = jest.fn(() => {
+      const firstExecute = vi.fn(() => {
         executionOrder.push('first')
         return Promise.resolve('first')
       })
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => {
+      const secondExecute = vi.fn(() => {
         executionOrder.push('second')
         return Promise.resolve('second')
       })
@@ -531,10 +519,10 @@ describe('Execution', () => {
 
     test('handles chain with error in first execution', async () => {
       const error = new Error('first error')
-      const firstExecute = jest.fn(() => Promise.reject(error))
+      const firstExecute = vi.fn(() => Promise.reject(error))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         // The chain function is called and should receive the error result
         expect(result.isError()).toBe(true)
@@ -555,11 +543,11 @@ describe('Execution', () => {
     })
 
     test('handles chain with error in second execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const secondExecute = jest.fn(() => Promise.reject(secondError))
+      const secondExecute = vi.fn(() => Promise.reject(secondError))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -576,10 +564,10 @@ describe('Execution', () => {
 
     test('handles chain with Result.error in first execution', async () => {
       const error = new Error('first error')
-      const firstExecute = jest.fn(() => Promise.resolve(Result.error(error)))
+      const firstExecute = vi.fn(() => Promise.resolve(Result.error(error)))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         // The chain function is called and should receive the error result
         expect(result.isError()).toBe(true)
@@ -596,11 +584,11 @@ describe('Execution', () => {
     })
 
     test('handles chain with Result.error in second execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const secondExecute = jest.fn(() => Promise.resolve(Result.error(secondError)))
+      const secondExecute = vi.fn(() => Promise.resolve(Result.error(secondError)))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -616,11 +604,11 @@ describe('Execution', () => {
     })
 
     test('supports multiple chain calls', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
+      const thirdExecute = vi.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
         .next((result) => {
@@ -649,10 +637,10 @@ describe('Execution', () => {
     })
 
     test('handles chain with async function in chain callback', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next(async (result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -670,10 +658,10 @@ describe('Execution', () => {
     })
 
     test('handles chain with promise returning function in chain callback', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -689,10 +677,10 @@ describe('Execution', () => {
     })
 
     test('handles chain with timeout in second execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(
+      const secondExecute = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
       const chainedExecution = firstExecution.next((result) => {
@@ -710,10 +698,10 @@ describe('Execution', () => {
     })
 
     test('handles chain with timeout error in second execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(
+      const secondExecute = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
       const chainedExecution = firstExecution.next((result) => {
@@ -734,10 +722,10 @@ describe('Execution', () => {
     })
 
     test('handles chain with abort in first execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         // The chain function is called and should receive the abort result
         expect(result.isError()).toBe(true)
@@ -757,10 +745,10 @@ describe('Execution', () => {
     })
 
     test('handles chain with cancel in first execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         // The chain function is called and should receive the cancel result
         expect(result.isError()).toBe(true)
@@ -780,10 +768,10 @@ describe('Execution', () => {
     })
 
     test('handles chain with dispose in first execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         // The chain function is called and should receive the dispose result
         expect(result.isError()).toBe(true)
@@ -803,13 +791,13 @@ describe('Execution', () => {
     })
 
     test('handles chain when already interrupted', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       // Abort the execution first
       firstExecution.abort('test abort')
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         // The chain function should be called and receive the abort result
         expect(result.isError()).toBe(true)
@@ -827,7 +815,7 @@ describe('Execution', () => {
     })
 
     test('handles chain with Result.error in chain callback', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const chainError = new Error('chain error')
@@ -845,10 +833,10 @@ describe('Execution', () => {
     })
 
     test('handles chain with AsyncResult in chain callback', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const secondExecution = new Execution(secondExecute)
 
       const chainedExecution = firstExecution.next((result) => {
@@ -866,7 +854,7 @@ describe('Execution', () => {
     })
 
     test('handles chain with AsyncResult.error in chain callback', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const chainError = new Error('chain error')
@@ -888,10 +876,10 @@ describe('Execution', () => {
 
   describe('ifError method', () => {
     test('creates a chained execution that only executes on error', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
@@ -911,10 +899,10 @@ describe('Execution', () => {
     })
 
     test('does not execute error handler when first execution succeeds', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('success'))
+      const firstExecute = vi.fn(() => Promise.resolve('success'))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError(() => {
         // This should not be called
         expect(true).toBe(false)
@@ -930,11 +918,11 @@ describe('Execution', () => {
     })
 
     test('handles error in error handler', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const errorHandler = jest.fn(() => Promise.reject(secondError))
+      const errorHandler = vi.fn(() => Promise.reject(secondError))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
@@ -951,10 +939,10 @@ describe('Execution', () => {
 
     test('handles Result.error in first execution', async () => {
       const firstError = new Error('first error')
-      const firstExecute = jest.fn(() => Promise.resolve(Result.error(firstError)))
+      const firstExecute = vi.fn(() => Promise.resolve(Result.error(firstError)))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBe(firstError)
         return errorHandler
@@ -969,11 +957,11 @@ describe('Execution', () => {
     })
 
     test('handles Result.error in error handler', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const errorHandler = jest.fn(() => Promise.resolve(Result.error(secondError)))
+      const errorHandler = vi.fn(() => Promise.resolve(Result.error(secondError)))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
@@ -989,13 +977,13 @@ describe('Execution', () => {
     })
 
     test('handles AbortInterruption in first execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('success'))
+      const firstExecute = vi.fn(() => Promise.resolve('success'))
       const firstExecution = new Execution(firstExecute)
 
       // Abort the execution
       firstExecution.abort('test abort')
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(AbortInterruption)
         return errorHandler
@@ -1010,13 +998,13 @@ describe('Execution', () => {
     })
 
     test('handles CancelInterruption in first execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('success'))
+      const firstExecute = vi.fn(() => Promise.resolve('success'))
       const firstExecution = new Execution(firstExecute)
 
       // Cancel the execution
       firstExecution.cancel('test cancel')
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(CancelInterruption)
         return errorHandler
@@ -1031,13 +1019,13 @@ describe('Execution', () => {
     })
 
     test('handles DisposeInterruption in first execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('success'))
+      const firstExecute = vi.fn(() => Promise.resolve('success'))
       const firstExecution = new Execution(firstExecute)
 
       // Dispose the execution
       await firstExecution[Symbol.asyncDispose]()
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(DisposeInterruption)
         return errorHandler
@@ -1052,12 +1040,12 @@ describe('Execution', () => {
     })
 
     test('handles TimeoutInterruption in first execution', async () => {
-      const firstExecute = jest.fn(
+      const firstExecute = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('success'), 100)),
       )
       const firstExecution = new Execution({ execute: firstExecute, timeout: 50 })
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(TimeoutInterruption)
         return errorHandler
@@ -1072,11 +1060,11 @@ describe('Execution', () => {
     })
 
     test('supports multiple ifError calls', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const firstErrorHandler = jest.fn(() => Promise.reject(new Error('second error')))
-      const secondErrorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const firstErrorHandler = vi.fn(() => Promise.reject(new Error('second error')))
+      const secondErrorHandler = vi.fn(() => Promise.resolve('recovered'))
 
       const chainedExecution = firstExecution
         .ifError((error) => {
@@ -1100,10 +1088,10 @@ describe('Execution', () => {
     })
 
     test('handles async function in error handler', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError(async (error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
@@ -1121,10 +1109,10 @@ describe('Execution', () => {
     })
 
     test('handles promise returning function in error handler', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
@@ -1140,10 +1128,10 @@ describe('Execution', () => {
     })
 
     test('handles executable object in error handler', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
@@ -1159,10 +1147,10 @@ describe('Execution', () => {
     })
 
     test('handles executable object with timeout in error handler', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(
+      const errorHandler = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('recovered'), 100)),
       )
       const chainedExecution = firstExecution.ifError((error) => {
@@ -1180,10 +1168,10 @@ describe('Execution', () => {
     })
 
     test('handles AsyncResult in error handler', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const secondExecution = new Execution(errorHandler)
 
       const chainedExecution = firstExecution.ifError((error) => {
@@ -1201,7 +1189,7 @@ describe('Execution', () => {
     })
 
     test('handles AsyncResult.error in error handler', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
@@ -1233,10 +1221,10 @@ describe('Execution', () => {
       const userError: UserError = Object.assign(new Error('User not found'), {
         code: 'USER_NOT_FOUND' as const,
       })
-      const firstExecute = jest.fn(() => Promise.reject(userError))
+      const firstExecute = vi.fn(() => Promise.reject(userError))
       const firstExecution = new Execution<User, UserError>(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBe(userError)
         if ('code' in error) {
@@ -1265,10 +1253,10 @@ describe('Execution', () => {
       }
 
       const customError = new CustomError('custom error', 500)
-      const firstExecute = jest.fn(() => Promise.reject(customError))
+      const firstExecute = vi.fn(() => Promise.reject(customError))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBe(customError)
         if ('code' in error) {
@@ -1286,7 +1274,7 @@ describe('Execution', () => {
     })
 
     test('handles null return from error handler', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
       const chainedExecution = firstExecution.ifError((error) => {
@@ -1306,7 +1294,7 @@ describe('Execution', () => {
     })
 
     test('handles undefined return from error handler', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
       const chainedExecution = firstExecution.ifError((error) => {
@@ -1328,18 +1316,18 @@ describe('Execution', () => {
     test('handles complex error recovery scenario', async () => {
       const executionOrder: string[] = []
 
-      const firstExecute = jest.fn(() => {
+      const firstExecute = vi.fn(() => {
         executionOrder.push('first')
         return Promise.reject(new Error('first error'))
       })
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => {
+      const secondExecute = vi.fn(() => {
         executionOrder.push('second')
         return Promise.reject(new Error('second error'))
       })
 
-      const thirdExecute = jest.fn(() => {
+      const thirdExecute = vi.fn(() => {
         executionOrder.push('third')
         return Promise.resolve('recovered')
       })
@@ -1377,18 +1365,18 @@ describe('Execution', () => {
     test('handles mixed next and ifError calls', async () => {
       const executionOrder: string[] = []
 
-      const firstExecute = jest.fn(() => {
+      const firstExecute = vi.fn(() => {
         executionOrder.push('first')
         return Promise.reject(new Error('first error'))
       })
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => {
+      const secondExecute = vi.fn(() => {
         executionOrder.push('second')
         return Promise.resolve('success')
       })
 
-      const thirdExecute = jest.fn(() => {
+      const thirdExecute = vi.fn(() => {
         executionOrder.push('third')
         return Promise.resolve('final')
       })
@@ -1418,10 +1406,10 @@ describe('Execution', () => {
     })
 
     test('handles timeout in error handler execution', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(
+      const errorHandler = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('recovered'), 100)),
       )
       const chainedExecution = firstExecution.ifError((error) => {
@@ -1442,10 +1430,10 @@ describe('Execution', () => {
     })
 
     test('handles abort in error handler execution', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(AbortInterruption)
         expect(error.cause).toBe('test abort')
@@ -1464,10 +1452,10 @@ describe('Execution', () => {
     })
 
     test('handles cancel in error handler execution', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(CancelInterruption)
         expect(error.cause).toBe('test cancel')
@@ -1486,10 +1474,10 @@ describe('Execution', () => {
     })
 
     test('handles dispose in error handler execution', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(DisposeInterruption)
         return errorHandler
@@ -1509,10 +1497,10 @@ describe('Execution', () => {
 
   describe('ifOK method', () => {
     test('creates a chained execution that only executes on success', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
@@ -1531,10 +1519,10 @@ describe('Execution', () => {
     })
 
     test('does not execute ok handler when first execution fails', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('fail')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('fail')))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK(() => {
         // This should not be called
         expect(true).toBe(false)
@@ -1551,11 +1539,11 @@ describe('Execution', () => {
     })
 
     test('handles error in ok handler', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const okHandler = jest.fn(() => Promise.reject(secondError))
+      const okHandler = vi.fn(() => Promise.reject(secondError))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
@@ -1570,10 +1558,10 @@ describe('Execution', () => {
     })
 
     test('handles Result.ok in first execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve(Result.ok('first')))
+      const firstExecute = vi.fn(() => Promise.resolve(Result.ok('first')))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
@@ -1588,10 +1576,10 @@ describe('Execution', () => {
     })
 
     test('handles Result.ok in ok handler', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve(Result.ok('second')))
+      const okHandler = vi.fn(() => Promise.resolve(Result.ok('second')))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
@@ -1606,13 +1594,13 @@ describe('Execution', () => {
     })
 
     test('handles AbortInterruption in first execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       // Abort the execution
       firstExecution.abort('test abort')
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK(() => {
         // Should not be called
         expect(true).toBe(false)
@@ -1628,13 +1616,13 @@ describe('Execution', () => {
     })
 
     test('handles CancelInterruption in first execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       // Cancel the execution
       firstExecution.cancel('test cancel')
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK(() => {
         // Should not be called
         expect(true).toBe(false)
@@ -1650,13 +1638,13 @@ describe('Execution', () => {
     })
 
     test('handles DisposeInterruption in first execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       // Dispose the execution
       await firstExecution[Symbol.asyncDispose]()
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK(() => {
         // Should not be called
         expect(true).toBe(false)
@@ -1672,12 +1660,12 @@ describe('Execution', () => {
     })
 
     test('handles TimeoutInterruption in first execution', async () => {
-      const firstExecute = jest.fn(
+      const firstExecute = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('first'), 100)),
       )
       const firstExecution = new Execution({ execute: firstExecute, timeout: 50 })
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK(() => {
         // Should not be called
         expect(true).toBe(false)
@@ -1693,11 +1681,11 @@ describe('Execution', () => {
     })
 
     test('supports multiple ifOK calls', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondHandler = jest.fn(() => Promise.resolve('second'))
-      const thirdHandler = jest.fn(() => Promise.resolve('third'))
+      const secondHandler = vi.fn(() => Promise.resolve('second'))
+      const thirdHandler = vi.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
         .ifOK((value) => {
@@ -1719,10 +1707,10 @@ describe('Execution', () => {
     })
 
     test('handles async function in ok handler', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK(async (value) => {
         expect(value).toBe('first')
         await new Promise((resolve) => setTimeout(resolve, 10))
@@ -1738,10 +1726,10 @@ describe('Execution', () => {
     })
 
     test('handles promise returning function in ok handler', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return Promise.resolve(okHandler)
@@ -1756,10 +1744,10 @@ describe('Execution', () => {
     })
 
     test('handles executable object in ok handler', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return { execute: okHandler }
@@ -1774,10 +1762,10 @@ describe('Execution', () => {
     })
 
     test('handles executable object with timeout in ok handler', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(
+      const okHandler = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
       const chainedExecution = firstExecution.ifOK((value) => {
@@ -1794,10 +1782,10 @@ describe('Execution', () => {
     })
 
     test('handles AsyncResult in ok handler', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const secondExecution = new Execution(okHandler)
 
       const chainedExecution = firstExecution.ifOK((value) => {
@@ -1814,7 +1802,7 @@ describe('Execution', () => {
     })
 
     test('handles AsyncResult.error in ok handler', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
@@ -1843,10 +1831,10 @@ describe('Execution', () => {
       }
 
       const user: User = { id: 1, name: 'John Doe' }
-      const firstExecute = jest.fn(() => Promise.resolve(user))
+      const firstExecute = vi.fn(() => Promise.resolve(user))
       const firstExecution = new Execution<User, UserError>(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe(user)
         return okHandler
@@ -1865,10 +1853,10 @@ describe('Execution', () => {
         constructor(public data: string) {}
       }
       const customValue = new CustomValue('custom')
-      const firstExecute = jest.fn(() => Promise.resolve(customValue))
+      const firstExecute = vi.fn(() => Promise.resolve(customValue))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe(customValue)
         expect(value.data).toBe('custom')
@@ -1884,7 +1872,7 @@ describe('Execution', () => {
     })
 
     test('handles null return from ok handler', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const chainedExecution = firstExecution.ifOK((value) => {
@@ -1900,7 +1888,7 @@ describe('Execution', () => {
     })
 
     test('handles undefined return from ok handler', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const chainedExecution = firstExecution.ifOK((value) => {
@@ -1918,18 +1906,18 @@ describe('Execution', () => {
     test('handles complex ok chaining scenario', async () => {
       const executionOrder: string[] = []
 
-      const firstExecute = jest.fn(() => {
+      const firstExecute = vi.fn(() => {
         executionOrder.push('first')
         return Promise.resolve('first')
       })
       const firstExecution = new Execution(firstExecute)
 
-      const secondHandler = jest.fn(() => {
+      const secondHandler = vi.fn(() => {
         executionOrder.push('second')
         return Promise.resolve('second')
       })
 
-      const thirdHandler = jest.fn(() => {
+      const thirdHandler = vi.fn(() => {
         executionOrder.push('third')
         return Promise.resolve('third')
       })
@@ -1959,18 +1947,18 @@ describe('Execution', () => {
     test('handles mixed chain and ifOK calls', async () => {
       const executionOrder: string[] = []
 
-      const firstExecute = jest.fn(() => {
+      const firstExecute = vi.fn(() => {
         executionOrder.push('first')
         return Promise.resolve('first')
       })
       const firstExecution = new Execution(firstExecute)
 
-      const secondHandler = jest.fn(() => {
+      const secondHandler = vi.fn(() => {
         executionOrder.push('second')
         return Promise.resolve('second')
       })
 
-      const thirdHandler = jest.fn(() => {
+      const thirdHandler = vi.fn(() => {
         executionOrder.push('third')
         return Promise.resolve('third')
       })
@@ -1999,10 +1987,10 @@ describe('Execution', () => {
     })
 
     test('handles timeout in ok handler execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(
+      const okHandler = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
       const chainedExecution = firstExecution.ifOK((value) => {
@@ -2022,10 +2010,10 @@ describe('Execution', () => {
     })
 
     test('handles abort in ok handler execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
@@ -2043,10 +2031,10 @@ describe('Execution', () => {
     })
 
     test('handles cancel in ok handler execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
@@ -2064,10 +2052,10 @@ describe('Execution', () => {
     })
 
     test('handles dispose in ok handler execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
@@ -2087,7 +2075,7 @@ describe('Execution', () => {
 
   describe('execute method', () => {
     test('executes the execution and returns a Promise<Result>', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       const result = await execution.execute()
@@ -2098,7 +2086,7 @@ describe('Execution', () => {
     })
 
     test('returns the same result as awaiting the execution directly', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       const directResult = await execution
@@ -2111,7 +2099,7 @@ describe('Execution', () => {
 
     test('handles execute function that throws', async () => {
       const error = new Error('execute error')
-      const execute = jest.fn(() => Promise.reject(error))
+      const execute = vi.fn(() => Promise.reject(error))
       const execution = new Execution(execute)
 
       const result = await execution.execute()
@@ -2121,7 +2109,7 @@ describe('Execution', () => {
 
     test('handles execute function returning Result.error', async () => {
       const error = new Error('result error')
-      const execute = jest.fn(() => Promise.resolve(Result.error(error)))
+      const execute = vi.fn(() => Promise.resolve(Result.error(error)))
       const execution = new Execution(execute)
 
       const result = await execution.execute()
@@ -2130,7 +2118,7 @@ describe('Execution', () => {
     })
 
     test('handles execute function returning AsyncResult', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       const result = await execution.execute()
@@ -2139,9 +2127,7 @@ describe('Execution', () => {
     })
 
     test('handles timeout interruption', async () => {
-      const execute = jest.fn(
-        () => new Promise((resolve) => setTimeout(() => resolve('test'), 100)),
-      )
+      const execute = vi.fn(() => new Promise((resolve) => setTimeout(() => resolve('test'), 100)))
       const execution = new Execution(execute, { timeout: 50 })
 
       const result = await execution.execute()
@@ -2151,7 +2137,7 @@ describe('Execution', () => {
     })
 
     test('handles abort interruption', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.abort('test abort')
@@ -2162,7 +2148,7 @@ describe('Execution', () => {
     })
 
     test('handles cancel interruption', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       execution.cancel('test cancel')
@@ -2173,7 +2159,7 @@ describe('Execution', () => {
     })
 
     test('handles dispose interruption', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       await execution[Symbol.asyncDispose]()
@@ -2185,7 +2171,7 @@ describe('Execution', () => {
 
     test('handles external signal abort', async () => {
       const externalController = new AbortController()
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute, { signal: externalController.signal })
 
       externalController.abort('external abort')
@@ -2197,7 +2183,7 @@ describe('Execution', () => {
 
     test('handles synchronous error in execute function', async () => {
       const error = new Error('sync error')
-      const execute = jest.fn(() => {
+      const execute = vi.fn(() => {
         throw error
       })
       const execution = new Execution(execute)
@@ -2208,7 +2194,7 @@ describe('Execution', () => {
     })
 
     test('can be called multiple times on the same execution', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       const result1 = await execution.execute()
@@ -2226,7 +2212,7 @@ describe('Execution', () => {
 
     test('works with complex return types', async () => {
       const complexData = { id: 123, name: 'test', nested: { value: 'nested' } }
-      const execute = jest.fn(() => Promise.resolve(complexData))
+      const execute = vi.fn(() => Promise.resolve(complexData))
       const execution = new Execution(execute)
 
       const result = await execution.execute()
@@ -2235,14 +2221,14 @@ describe('Execution', () => {
     })
 
     test('works with null and undefined values', async () => {
-      const executeNull = jest.fn(() => Promise.resolve(null))
+      const executeNull = vi.fn(() => Promise.resolve(null))
       const executionNull = new Execution(executeNull)
 
       const resultNull = await executionNull.execute()
       expect(resultNull.isOK()).toBe(true)
       expect(resultNull.value).toBe(null)
 
-      const executeUndefined = jest.fn(() => Promise.resolve(undefined))
+      const executeUndefined = vi.fn(() => Promise.resolve(undefined))
       const executionUndefined = new Execution(executeUndefined)
 
       const resultUndefined = await executionUndefined.execute()
@@ -2251,14 +2237,14 @@ describe('Execution', () => {
     })
 
     test('works with boolean values', async () => {
-      const executeTrue = jest.fn(() => Promise.resolve(true))
+      const executeTrue = vi.fn(() => Promise.resolve(true))
       const executionTrue = new Execution(executeTrue)
 
       const resultTrue = await executionTrue.execute()
       expect(resultTrue.isOK()).toBe(true)
       expect(resultTrue.value).toBe(true)
 
-      const executeFalse = jest.fn(() => Promise.resolve(false))
+      const executeFalse = vi.fn(() => Promise.resolve(false))
       const executionFalse = new Execution(executeFalse)
 
       const resultFalse = await executionFalse.execute()
@@ -2267,7 +2253,7 @@ describe('Execution', () => {
     })
 
     test('works with number values', async () => {
-      const execute = jest.fn(() => Promise.resolve(42))
+      const execute = vi.fn(() => Promise.resolve(42))
       const execution = new Execution(execute)
 
       const result = await execution.execute()
@@ -2277,7 +2263,7 @@ describe('Execution', () => {
 
     test('works with array values', async () => {
       const arrayData = [1, 2, 3, 'test', { nested: true }]
-      const execute = jest.fn(() => Promise.resolve(arrayData))
+      const execute = vi.fn(() => Promise.resolve(arrayData))
       const execution = new Execution(execute)
 
       const result = await execution.execute()
@@ -2287,7 +2273,7 @@ describe('Execution', () => {
 
     test('works with function values', async () => {
       const testFunction = () => 'test function'
-      const execute = jest.fn(() => Promise.resolve(testFunction))
+      const execute = vi.fn(() => Promise.resolve(testFunction))
       const execution = new Execution(execute)
 
       const result = await execution.execute()
@@ -2308,7 +2294,7 @@ describe('Execution', () => {
       }
 
       const customError = new CustomError('custom error', 500)
-      const execute = jest.fn(() => Promise.reject(customError))
+      const execute = vi.fn(() => Promise.reject(customError))
       const execution = new Execution(execute)
 
       const result = await execution.execute()
@@ -2329,7 +2315,7 @@ describe('Execution', () => {
       }
 
       const customError = new CustomError('custom error', 500)
-      const execute = jest.fn(() => Promise.resolve(Result.error(customError)))
+      const execute = vi.fn(() => Promise.resolve(Result.error(customError)))
       const execution = new Execution(execute)
 
       const result = await execution.execute()
@@ -2349,7 +2335,7 @@ describe('Execution', () => {
       }
 
       const user: User = { id: 1, name: 'John Doe' }
-      const execute = jest.fn(() => Promise.resolve(user))
+      const execute = vi.fn(() => Promise.resolve(user))
       const execution = new Execution<User, UserError>(execute)
 
       const result = await execution.execute()
@@ -2372,7 +2358,7 @@ describe('Execution', () => {
       const userError: UserError = Object.assign(new Error('User not found'), {
         code: 'USER_NOT_FOUND' as const,
       })
-      const execute = jest.fn(() => Promise.reject(userError))
+      const execute = vi.fn(() => Promise.reject(userError))
       const execution = new Execution<User, UserError>(execute)
 
       const result = await execution.execute()
@@ -2384,7 +2370,7 @@ describe('Execution', () => {
     })
 
     test('execute method preserves execution state', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       // Execute once
@@ -2401,7 +2387,7 @@ describe('Execution', () => {
     })
 
     test('execute method works after interruption', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       // Interrupt the execution
@@ -2415,10 +2401,10 @@ describe('Execution', () => {
     })
 
     test('execute method works with chained executions', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -2433,11 +2419,11 @@ describe('Execution', () => {
     })
 
     test('execute method works with complex chained executions', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
+      const thirdExecute = vi.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
         .next((result) => {
@@ -2460,11 +2446,11 @@ describe('Execution', () => {
     })
 
     test('execute method works with chained executions that have errors', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const secondExecute = jest.fn(() => Promise.reject(secondError))
+      const secondExecute = vi.fn(() => Promise.reject(secondError))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -2479,10 +2465,10 @@ describe('Execution', () => {
     })
 
     test('execute method works with timeout in chained executions', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(
+      const secondExecute = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
       const chainedExecution = firstExecution.next((result) => {
@@ -2504,7 +2490,7 @@ describe('Execution', () => {
 
   describe('AsyncIterable behavior', () => {
     test('yields single execution result', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       const results: Array<Result<unknown, Error | Interruption>> = []
@@ -2519,10 +2505,10 @@ describe('Execution', () => {
     })
 
     test('yields chained execution results in order', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -2544,11 +2530,11 @@ describe('Execution', () => {
     })
 
     test('yields multiple chained execution results in order', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
+      const thirdExecute = vi.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
         .next((result) => {
@@ -2580,11 +2566,11 @@ describe('Execution', () => {
     })
 
     test('yields error results in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const secondExecute = jest.fn(() => Promise.reject(secondError))
+      const secondExecute = vi.fn(() => Promise.reject(secondError))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -2606,12 +2592,12 @@ describe('Execution', () => {
     })
 
     test('yields mixed success and error results in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const secondExecute = jest.fn(() => Promise.reject(secondError))
-      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const secondExecute = vi.fn(() => Promise.reject(secondError))
+      const thirdExecute = vi.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
         .next((result) => {
@@ -2643,10 +2629,10 @@ describe('Execution', () => {
     })
 
     test('yields ifError results in order', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
       const chainedExecution = firstExecution.ifError((error) => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe('first error')
@@ -2669,10 +2655,10 @@ describe('Execution', () => {
     })
 
     test('yields ifOK results in order', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const okHandler = jest.fn(() => Promise.resolve('second'))
+      const okHandler = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.ifOK((value) => {
         expect(value).toBe('first')
         return okHandler
@@ -2693,12 +2679,12 @@ describe('Execution', () => {
     })
 
     test('yields mixed chain, ifError, and ifOK results', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.reject(new Error('second error')))
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const secondExecute = vi.fn(() => Promise.reject(new Error('second error')))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
+      const thirdExecute = vi.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
         .next((result) => {
@@ -2738,10 +2724,10 @@ describe('Execution', () => {
     })
 
     test('yields interruption results in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(AbortInterruption)
@@ -2769,10 +2755,10 @@ describe('Execution', () => {
     })
 
     test('yields timeout interruption results in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(
+      const secondExecute = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
       const chainedExecution = firstExecution.next((result) => {
@@ -2797,10 +2783,10 @@ describe('Execution', () => {
     })
 
     test('yields cancel interruption results in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(CancelInterruption)
@@ -2828,10 +2814,10 @@ describe('Execution', () => {
     })
 
     test('yields dispose interruption results in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(DisposeInterruption)
@@ -2858,23 +2844,23 @@ describe('Execution', () => {
     test('yields results from complex nested chains', async () => {
       const executionOrder: string[] = []
 
-      const firstExecute = jest.fn(() => {
+      const firstExecute = vi.fn(() => {
         executionOrder.push('first')
         return Promise.resolve('first')
       })
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => {
+      const secondExecute = vi.fn(() => {
         executionOrder.push('second')
         return Promise.reject(new Error('second error'))
       })
 
-      const errorHandler = jest.fn(() => {
+      const errorHandler = vi.fn(() => {
         executionOrder.push('error handler')
         return Promise.resolve('recovered')
       })
 
-      const thirdExecute = jest.fn(() => {
+      const thirdExecute = vi.fn(() => {
         executionOrder.push('third')
         return Promise.resolve('third')
       })
@@ -2930,12 +2916,12 @@ describe('Execution', () => {
     })
 
     test('yields results from deeply nested chains', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('step 1'))
+      const firstExecute = vi.fn(() => Promise.resolve('step 1'))
       let currentExecution: Execution<unknown, Error> = new Execution(firstExecute)
 
       // Create a deep chain of 5 executions
       for (let i = 2; i <= 5; i++) {
-        const nextExecute = jest.fn(() => Promise.resolve(`step ${i}`))
+        const nextExecute = vi.fn(() => Promise.resolve(`step ${i}`))
         currentExecution = currentExecution.next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe(`step ${i - 1}`)
@@ -2956,12 +2942,12 @@ describe('Execution', () => {
     })
 
     test('yields results with different value types in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve(42))
+      const firstExecute = vi.fn(() => Promise.resolve(42))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('string value'))
-      const thirdExecute = jest.fn(() => Promise.resolve({ id: 123, name: 'test' }))
-      const fourthExecute = jest.fn(() => Promise.resolve([1, 2, 3]))
+      const secondExecute = vi.fn(() => Promise.resolve('string value'))
+      const thirdExecute = vi.fn(() => Promise.resolve({ id: 123, name: 'test' }))
+      const fourthExecute = vi.fn(() => Promise.resolve([1, 2, 3]))
 
       const chainedExecution = firstExecution
         .next((result) => {
@@ -3007,10 +2993,10 @@ describe('Execution', () => {
       }
 
       const user: User = { id: 1, name: 'John Doe' }
-      const firstExecute = jest.fn(() => Promise.resolve(user))
+      const firstExecute = vi.fn(() => Promise.resolve(user))
       const firstExecution = new Execution<User, UserError>(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('processed'))
+      const secondExecute = vi.fn(() => Promise.resolve('processed'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toEqual(user)
@@ -3042,11 +3028,11 @@ describe('Execution', () => {
         }
       }
 
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const customError = new CustomError('custom error', 500)
-      const secondExecute = jest.fn(() => Promise.reject(customError))
+      const secondExecute = vi.fn(() => Promise.reject(customError))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -3069,10 +3055,10 @@ describe('Execution', () => {
     })
 
     test('yields results from generate method', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -3095,11 +3081,11 @@ describe('Execution', () => {
     })
 
     test('yields results from generate method with errors', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const secondExecute = jest.fn(() => Promise.reject(secondError))
+      const secondExecute = vi.fn(() => Promise.reject(secondError))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -3122,11 +3108,11 @@ describe('Execution', () => {
     })
 
     test('handles early break in iteration', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
+      const thirdExecute = vi.fn(() => Promise.resolve('third'))
       const chainedExecution = firstExecution
         .next((result) => {
           expect(result.isOK()).toBe(true)
@@ -3158,10 +3144,10 @@ describe('Execution', () => {
     })
 
     test('handles iteration with async operations in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(async () => {
+      const secondExecute = vi.fn(async () => {
         await new Promise((resolve) => setTimeout(resolve, 10))
         return 'second'
       })
@@ -3186,7 +3172,7 @@ describe('Execution', () => {
     })
 
     test('does not yield results from chain with null returns', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const chainedExecution = firstExecution.next((result) => {
@@ -3207,7 +3193,7 @@ describe('Execution', () => {
     })
 
     test('yields results from ifError with null returns', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
       const chainedExecution = firstExecution.ifError((error) => {
@@ -3229,7 +3215,7 @@ describe('Execution', () => {
     })
 
     test('yields results from ifOK with null returns', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const chainedExecution = firstExecution.ifOK((value) => {
@@ -3251,7 +3237,7 @@ describe('Execution', () => {
 
   describe('generate method', () => {
     test('generates AsyncIterable for simple execution', async () => {
-      const execute = jest.fn(() => Promise.resolve('test'))
+      const execute = vi.fn(() => Promise.resolve('test'))
       const execution = new Execution(execute)
 
       const results: Array<Result<unknown, Error | Interruption>> = []
@@ -3267,10 +3253,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable for chained execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -3293,12 +3279,12 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable for complex chained execution', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.reject(new Error('second error')))
-      const errorHandler = jest.fn(() => Promise.resolve('recovered'))
-      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const secondExecute = vi.fn(() => Promise.reject(new Error('second error')))
+      const errorHandler = vi.fn(() => Promise.resolve('recovered'))
+      const thirdExecute = vi.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
         .next((result) => {
@@ -3349,10 +3335,10 @@ describe('Execution', () => {
       }
 
       const user: User = { id: 1, name: 'John Doe' }
-      const firstExecute = jest.fn(() => Promise.resolve(user))
+      const firstExecute = vi.fn(() => Promise.resolve(user))
       const firstExecution = new Execution<User, UserError>(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('processed'))
+      const secondExecute = vi.fn(() => Promise.resolve('processed'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toEqual(user)
@@ -3383,11 +3369,11 @@ describe('Execution', () => {
         }
       }
 
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const customError = new CustomError('custom error', 500)
-      const secondExecute = jest.fn(() => Promise.reject(customError))
+      const secondExecute = vi.fn(() => Promise.reject(customError))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -3411,10 +3397,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with interruption handling', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isError()).toBe(true)
         expect(result.error).toBeInstanceOf(AbortInterruption)
@@ -3443,10 +3429,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with timeout interruption', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(
+      const secondExecute = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
       const chainedExecution = firstExecution.next((result) => {
@@ -3472,11 +3458,11 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with early break', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
-      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
+      const thirdExecute = vi.fn(() => Promise.resolve('third'))
       const chainedExecution = firstExecution
         .next((result) => {
           expect(result.isOK()).toBe(true)
@@ -3509,10 +3495,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with async operations', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(async () => {
+      const secondExecute = vi.fn(async () => {
         await new Promise((resolve) => setTimeout(resolve, 10))
         return 'second'
       })
@@ -3538,7 +3524,7 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with null chain returns', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const chainedExecution = firstExecution.next((result) => {
@@ -3560,7 +3546,7 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with ifError and null returns', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
       const chainedExecution = firstExecution.ifError((error) => {
@@ -3583,7 +3569,7 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with ifOK and null returns', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const chainedExecution = firstExecution.ifOK((value) => {
@@ -3604,12 +3590,12 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with deeply nested chains', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('step 1'))
+      const firstExecute = vi.fn(() => Promise.resolve('step 1'))
       let currentExecution: Execution<unknown, Error> = new Execution(firstExecute)
 
       // Create a deep chain of 5 executions
       for (let i = 2; i <= 5; i++) {
-        const nextExecute = jest.fn(() => Promise.resolve(`step ${i}`))
+        const nextExecute = vi.fn(() => Promise.resolve(`step ${i}`))
         currentExecution = currentExecution.next((result) => {
           expect(result.isOK()).toBe(true)
           expect(result.value).toBe(`step ${i - 1}`)
@@ -3631,12 +3617,12 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with different value types', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve(42))
+      const firstExecute = vi.fn(() => Promise.resolve(42))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('string value'))
-      const thirdExecute = jest.fn(() => Promise.resolve({ id: 123, name: 'test' }))
-      const fourthExecute = jest.fn(() => Promise.resolve([1, 2, 3]))
+      const secondExecute = vi.fn(() => Promise.resolve('string value'))
+      const thirdExecute = vi.fn(() => Promise.resolve({ id: 123, name: 'test' }))
+      const fourthExecute = vi.fn(() => Promise.resolve([1, 2, 3]))
 
       const chainedExecution = firstExecution
         .next((result) => {
@@ -3673,12 +3659,12 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with mixed success and error results', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const secondExecute = jest.fn(() => Promise.reject(secondError))
-      const thirdExecute = jest.fn(() => Promise.resolve('third'))
+      const secondExecute = vi.fn(() => Promise.reject(secondError))
+      const thirdExecute = vi.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
         .next((result) => {
@@ -3711,11 +3697,11 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with multiple error recovery chains', async () => {
-      const firstExecute = jest.fn(() => Promise.reject(new Error('first error')))
+      const firstExecute = vi.fn(() => Promise.reject(new Error('first error')))
       const firstExecution = new Execution(firstExecute)
 
-      const firstErrorHandler = jest.fn(() => Promise.reject(new Error('second error')))
-      const secondErrorHandler = jest.fn(() => Promise.resolve('recovered'))
+      const firstErrorHandler = vi.fn(() => Promise.reject(new Error('second error')))
+      const secondErrorHandler = vi.fn(() => Promise.resolve('recovered'))
 
       const chainedExecution = firstExecution
         .ifError((error) => {
@@ -3750,11 +3736,11 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with multiple success chains', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondHandler = jest.fn(() => Promise.resolve('second'))
-      const thirdHandler = jest.fn(() => Promise.resolve('third'))
+      const secondHandler = vi.fn(() => Promise.resolve('second'))
+      const thirdHandler = vi.fn(() => Promise.resolve('third'))
 
       const chainedExecution = firstExecution
         .ifOK((value) => {
@@ -3787,23 +3773,23 @@ describe('Execution', () => {
     test('generates AsyncIterable with complex mixed chains', async () => {
       const executionOrder: string[] = []
 
-      const firstExecute = jest.fn(() => {
+      const firstExecute = vi.fn(() => {
         executionOrder.push('first')
         return Promise.resolve('first')
       })
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => {
+      const secondExecute = vi.fn(() => {
         executionOrder.push('second')
         return Promise.reject(new Error('second error'))
       })
 
-      const errorHandler = jest.fn(() => {
+      const errorHandler = vi.fn(() => {
         executionOrder.push('error handler')
         return Promise.resolve('recovered')
       })
 
-      const thirdExecute = jest.fn(() => {
+      const thirdExecute = vi.fn(() => {
         executionOrder.push('third')
         return Promise.resolve('third')
       })
@@ -3860,10 +3846,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with executable objects in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -3886,10 +3872,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with executable objects with timeout', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(
+      const secondExecute = vi.fn(
         () => new Promise((resolve) => setTimeout(() => resolve('second'), 100)),
       )
       const chainedExecution = firstExecution.next((result) => {
@@ -3914,10 +3900,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with AsyncResult in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const secondExecution = new Execution(secondExecute)
 
       const chainedExecution = firstExecution.next((result) => {
@@ -3942,7 +3928,7 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with AsyncResult.error in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
@@ -3969,10 +3955,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with promise returning functions in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -3995,10 +3981,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with async functions in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next(async (result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -4022,10 +4008,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with Result.ok in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve(Result.ok('second')))
+      const secondExecute = vi.fn(() => Promise.resolve(Result.ok('second')))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -4048,11 +4034,11 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with Result.error in chain', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
       const secondError = new Error('second error')
-      const secondExecute = jest.fn(() => Promise.resolve(Result.error(secondError)))
+      const secondExecute = vi.fn(() => Promise.resolve(Result.error(secondError)))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')
@@ -4075,10 +4061,10 @@ describe('Execution', () => {
     })
 
     test('generates AsyncIterable with multiple generator calls', async () => {
-      const firstExecute = jest.fn(() => Promise.resolve('first'))
+      const firstExecute = vi.fn(() => Promise.resolve('first'))
       const firstExecution = new Execution(firstExecute)
 
-      const secondExecute = jest.fn(() => Promise.resolve('second'))
+      const secondExecute = vi.fn(() => Promise.resolve('second'))
       const chainedExecution = firstExecution.next((result) => {
         expect(result.isOK()).toBe(true)
         expect(result.value).toBe('first')

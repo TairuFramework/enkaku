@@ -1,7 +1,7 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import type { ChannelHandler, EventHandler, RequestHandler, StreamHandler } from '@enkaku/server'
 import { randomTokenSigner } from '@enkaku/token'
-import { jest } from '@jest/globals'
+import { describe, expect, test, vi } from 'vitest'
 
 import { standalone } from '../src'
 
@@ -23,7 +23,7 @@ describe('standalone', () => {
       } as const satisfies ProtocolDefinition
       type Protocol = typeof protocol
 
-      const handler = jest.fn() as jest.Mock<EventHandler<Protocol, 'test'>>
+      const handler = vi.fn<EventHandler<Protocol, 'test'>>()
       const client = standalone<Protocol>({ test: handler }, { signer })
 
       await client.sendEvent('test', { hello: 'world' })
@@ -47,7 +47,7 @@ describe('standalone', () => {
       } as const satisfies ProtocolDefinition
       type Protocol = typeof protocol
 
-      const handler = jest.fn((ctx) => {
+      const handler = vi.fn<RequestHandler<Protocol, 'test'>>((ctx) => {
         return new Promise((resolve, reject) => {
           const timer = setTimeout(() => {
             resolve('OK')
@@ -57,7 +57,7 @@ describe('standalone', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<RequestHandler<Protocol, 'test'>>
+      })
       const client = await standalone<Protocol>({ test: handler })
 
       await expect(client.request('test')).resolves.toBe('OK')
@@ -76,7 +76,7 @@ describe('standalone', () => {
       } as const satisfies ProtocolDefinition
       type Protocol = typeof protocol
 
-      const handler = jest.fn((ctx) => {
+      const handler = vi.fn<StreamHandler<Protocol, 'test'>>((ctx) => {
         return new Promise((resolve, reject) => {
           const writer = ctx.writable.getWriter()
           let count = 0
@@ -93,7 +93,7 @@ describe('standalone', () => {
             reject(new Error('aborted'))
           })
         })
-      }) as jest.Mock<StreamHandler<Protocol, 'test'>>
+      })
       const client = standalone<Protocol>({ test: handler })
 
       const stream = client.createStream('test', { param: 3 })
@@ -125,7 +125,7 @@ describe('standalone', () => {
       } as const satisfies ProtocolDefinition
       type Protocol = typeof protocol
 
-      const handler = jest.fn(async (ctx) => {
+      const handler = vi.fn<ChannelHandler<Protocol, 'test'>>(async (ctx) => {
         const reader = ctx.readable.getReader()
         const writer = ctx.writable.getWriter()
         let count = 0
@@ -137,7 +137,7 @@ describe('standalone', () => {
           writer.write(ctx.param + value)
         }
         return 'END'
-      }) as jest.Mock<ChannelHandler<Protocol, 'test'>>
+      })
       const client = standalone<Protocol>({ test: handler })
 
       const channel = client.createChannel('test', { param: 5 })
