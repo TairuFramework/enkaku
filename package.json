@@ -15,7 +15,6 @@
   "scripts": {
     "lint": "biome check --write ./packages ./tests",
     "test": "turbo run test:unit",
-    "test:ci": "pnpm run test -- --ci --runInBand",
     "build:js": "turbo run build:js",
     "build:types": "pnpm run -r build:types",
     "build:types:ci": "pnpm run -r build:types:ci",
