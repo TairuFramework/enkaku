@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { Option } from '../src/option.js'
 
 describe('Option', () => {

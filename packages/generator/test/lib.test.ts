@@ -1,5 +1,6 @@
 import { EventEmitter } from '@enkaku/event'
 import { createPipe } from '@enkaku/stream'
+import { describe, expect, test } from 'vitest'
 
 import { consume, fromEmitter, fromStream } from '../src/index.js'
 

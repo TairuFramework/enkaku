@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { deletePath, getPath, PatchError, parsePath, setPath } from '../src/apply.js'
 
 describe('parsePath()', () => {

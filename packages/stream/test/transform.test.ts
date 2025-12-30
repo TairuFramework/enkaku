@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import { createReadable } from '../src/readable.js'
 import { map, mapAsync, tap, transform } from '../src/transform.js'

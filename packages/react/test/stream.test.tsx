@@ -1,9 +1,8 @@
 import type { StreamCall } from '@enkaku/client'
 import { standalone } from '@enkaku/standalone'
-import { vi } from 'vitest'
-import '@testing-library/jest-dom'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { PropsWithChildren } from 'react'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { EnkakuProvider, useCreateStream, useReceiveAll, useReceiveLatest } from '../src/index.js'
 
@@ -134,7 +133,7 @@ describe('useCreateStream', () => {
     vi.clearAllMocks()
   })
 
-  it('creates a stream and returns the function and null initially', () => {
+  test('creates a stream and returns the function and null initially', () => {
     const { result } = renderHook(() => useCreateStream<Protocol>('numbers'), { wrapper })
     const [createStream, currentCall] = result.current
 
@@ -143,7 +142,7 @@ describe('useCreateStream', () => {
     expect(currentCall).toBeNull()
   })
 
-  it('creates a stream with parameters and returns the current call', async () => {
+  test('creates a stream with parameters and returns the current call', async () => {
     const { result } = renderHook(() => useCreateStream<Protocol>('numbers'), { wrapper })
     const [createStream] = result.current
 
@@ -163,7 +162,7 @@ describe('useCreateStream', () => {
     expect(numbersHandler).toHaveBeenCalledWith(expect.objectContaining({ param: { count: 3 } }))
   })
 
-  it('creates a stream without parameters', async () => {
+  test('creates a stream without parameters', async () => {
     const { result } = renderHook(() => useCreateStream<Protocol>('messages'), { wrapper })
     const [createStream] = result.current
 
@@ -181,7 +180,7 @@ describe('useCreateStream', () => {
     expect(messagesHandler).toHaveBeenCalled()
   })
 
-  it('updates current call when creating a new stream', async () => {
+  test('updates current call when creating a new stream', async () => {
     const { result } = renderHook(() => useCreateStream<Protocol>('numbers'), { wrapper })
     const [createStream] = result.current
 
@@ -211,7 +210,7 @@ describe('useCreateStream', () => {
     })
   })
 
-  it('can abort a stream', async () => {
+  test('can abort a stream', async () => {
     // Handler that listens for abort signal
     const abortableHandler = vi.fn(
       (ctx: {
@@ -276,12 +275,12 @@ describe('useReceiveLatest', () => {
     vi.clearAllMocks()
   })
 
-  it('returns null when no call is provided', () => {
+  test('returns null when no call is provided', () => {
     const { result } = renderHook(() => useReceiveLatest(null))
     expect(result.current).toBeNull()
   })
 
-  it('receives the latest value from a stream', async () => {
+  test('receives the latest value from a stream', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('numbers')
@@ -307,7 +306,7 @@ describe('useReceiveLatest', () => {
     expect(numbersHandler).toHaveBeenCalledWith(expect.objectContaining({ param: { count: 3 } }))
   })
 
-  it('resets when call changes', async () => {
+  test('resets when call changes', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('numbers')
@@ -346,7 +345,7 @@ describe('useReceiveLatest', () => {
     )
   })
 
-  it('handles null call after having a call', async () => {
+  test('handles null call after having a call', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('numbers')
@@ -382,7 +381,7 @@ describe('useReceiveAll', () => {
     vi.clearAllMocks()
   })
 
-  it('returns empty array, false, and null when no call is provided', () => {
+  test('returns empty array, false, and null when no call is provided', () => {
     const { result } = renderHook(() => useReceiveAll(null))
     const [values, done, donePromise] = result.current
 
@@ -391,7 +390,7 @@ describe('useReceiveAll', () => {
     expect(donePromise).toBeNull()
   })
 
-  it('collects all values from a stream', async () => {
+  test('collects all values from a stream', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('numbers')
@@ -418,7 +417,7 @@ describe('useReceiveAll', () => {
     expect(numbersHandler).toHaveBeenCalledWith(expect.objectContaining({ param: { count: 3 } }))
   })
 
-  it('provides a done promise that resolves when stream completes', async () => {
+  test('provides a done promise that resolves when stream completes', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('messages')
@@ -452,7 +451,7 @@ describe('useReceiveAll', () => {
     })
   })
 
-  it('resets when call changes', async () => {
+  test('resets when call changes', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('numbers')
@@ -493,7 +492,7 @@ describe('useReceiveAll', () => {
     )
   })
 
-  it('handles null call after having a call', async () => {
+  test('handles null call after having a call', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('numbers')
@@ -532,7 +531,7 @@ describe('Stream caching and reference counting', () => {
     vi.clearAllMocks()
   })
 
-  it('caches streams with the same parameters within the same component', async () => {
+  test('caches streams with the same parameters within the same component', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('numbers')
@@ -557,7 +556,7 @@ describe('Stream caching and reference counting', () => {
     expect(numbersHandler).toHaveBeenCalledTimes(1)
   })
 
-  it('creates different streams for different parameters', async () => {
+  test('creates different streams for different parameters', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('numbers')
@@ -580,7 +579,7 @@ describe('Stream caching and reference counting', () => {
     expect(numbersHandler).toHaveBeenCalledTimes(2)
   })
 
-  it('handles cleanup on unmount', async () => {
+  test('handles cleanup on unmount', async () => {
     const { result, unmount } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('numbers')
@@ -611,7 +610,7 @@ describe('Stream hooks integration', () => {
     vi.clearAllMocks()
   })
 
-  it('works together with useCreateStream and useReceiveLatest', async () => {
+  test('works together with useCreateStream and useReceiveLatest', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('numbers')
@@ -637,7 +636,7 @@ describe('Stream hooks integration', () => {
     )
   })
 
-  it('works together with useCreateStream and useReceiveAll', async () => {
+  test('works together with useCreateStream and useReceiveAll', async () => {
     const { result } = renderHook(
       () => {
         const [createStream, currentCall] = useCreateStream<Protocol>('messages')

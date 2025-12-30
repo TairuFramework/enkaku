@@ -1,4 +1,5 @@
 import { equals } from 'uint8arrays'
+import { expect, test } from 'vitest'
 
 import {
   b64uFromJSON,

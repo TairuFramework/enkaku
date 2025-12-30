@@ -1,8 +1,7 @@
 import type { Client } from '@enkaku/client'
 import type { ProtocolDefinition } from '@enkaku/protocol'
-import { vi } from 'vitest'
-import '@testing-library/jest-dom'
 import { render } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 
 import { EnkakuProvider, useEnkakuClient } from '../src/index.js'
 

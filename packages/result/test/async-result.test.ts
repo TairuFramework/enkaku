@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { AsyncResult } from '../src/async-result.js'
 import { Result } from '../src/result.js'
 
@@ -725,7 +727,7 @@ describe('AsyncResult', () => {
 
     test('Symbol.species behavior', () => {
       const asyncResult = AsyncResult.ok('test')
-      expect((asyncResult.constructor as any)[Symbol.species]).toBe(Promise)
+      expect((asyncResult.constructor as PromiseConstructor)[Symbol.species]).toBe(Promise)
     })
   })
 })

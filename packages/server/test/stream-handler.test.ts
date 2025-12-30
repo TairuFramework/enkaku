@@ -1,6 +1,6 @@
 import type { AnyServerPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createUnsignedToken } from '@enkaku/token'
-import { vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { handleStream } from '../src/handlers/stream.js'
 import type { HandlerContext, HandlerController, StreamHandlerContext } from '../src/types.js'

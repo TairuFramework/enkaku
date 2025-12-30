@@ -1,5 +1,6 @@
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { equals } from 'uint8arrays'
+import { expect, test } from 'vitest'
 
 import { randomTokenSigner } from '../src/signer.js'
 import {

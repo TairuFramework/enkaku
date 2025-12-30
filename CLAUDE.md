@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 - `pnpm run test:types` - Run TypeScript checks
-- `pnpm run test:unit` - Run all unit tests using Jest
+- `pnpm run test:unit` - Run all unit tests using Vitest
 - `pnpm run test` - Run TypeScript and unit tests
 
 ### Linting
@@ -28,7 +28,7 @@ This is a monorepo for **Enkaku**, an RPC framework for modern applications. Key
 ### Core Structure
 - **Monorepo**: Uses pnpm workspaces with packages in `packages/` directory
 - **Build System**: Turbo for build orchestration, SWC for compilation
-- **Testing**: Jest with SWC transformation for TypeScript
+- **Testing**: Vitest test runner
 - **Linting**: Biome for code formatting and linting
 
 ### Key Packages

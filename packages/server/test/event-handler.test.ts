@@ -1,7 +1,7 @@
 import { EventEmitter } from '@enkaku/event'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import { createUnsignedToken } from '@enkaku/token'
-import { vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { handleEvent } from '../src/handlers/event.js'
 import type { HandlerContext, ServerEvents } from '../src/types.js'

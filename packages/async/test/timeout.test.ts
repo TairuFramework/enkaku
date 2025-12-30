@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { TimeoutInterruption } from '../src/interruptions.js'
 import { ScheduledTimeout } from '../src/timeout.js'

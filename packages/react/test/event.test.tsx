@@ -1,7 +1,7 @@
 import { standalone } from '@enkaku/standalone'
 import { act, renderHook } from '@testing-library/react'
 import type { PropsWithChildren } from 'react'
-import { vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { EnkakuProvider, useSendEvent } from '../src/index.js'
 

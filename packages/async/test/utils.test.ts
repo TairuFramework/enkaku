@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { raceSignal, toPromise } from '../src/utils.js'
 
 describe('toPromise()', () => {

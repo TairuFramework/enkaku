@@ -1,4 +1,4 @@
-export type ExecuteFn<T> = (resolve: (value: T) => void, reject: (reason?: any) => void) => void
+export type ExecuteFn<T> = (resolve: (value: T) => void, reject: (reason?: unknown) => void) => void
 
 export class LazyPromise<T> extends Promise<T> {
   static from<T>(execute: () => T | PromiseLike<T>) {
@@ -32,14 +32,14 @@ export class LazyPromise<T> extends Promise<T> {
   // biome-ignore lint/suspicious/noThenProperty: expected behavior
   then<TResult1 = T, TResult2 = never>(
     onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | null | undefined,
-    onRejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
+    onRejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null | undefined,
   ): Promise<TResult1 | TResult2> {
     this.#promise ??= new Promise(this.#execute)
     return this.#promise.then(onFulfilled, onRejected)
   }
 
   catch<TResult = never>(
-    onRejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null | undefined,
+    onRejected?: ((reason: unknown) => TResult | PromiseLike<TResult>) | null | undefined,
   ): Promise<T | TResult> {
     this.#promise ??= new Promise(this.#execute)
     return this.#promise.catch(onRejected)

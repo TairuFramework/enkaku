@@ -1,5 +1,6 @@
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { p256 } from '@noble/curves/nist.js'
+import { describe, expect, test } from 'vitest'
 
 import { getTokenSigner, randomPrivateKey, randomSigner, randomTokenSigner } from '../src/signer.js'
 import type { GenericSigner } from '../src/types.js'

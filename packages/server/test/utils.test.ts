@@ -1,6 +1,6 @@
 import { EventEmitter } from '@enkaku/event'
 import type { ProtocolDefinition } from '@enkaku/protocol'
-import { vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { HandlerError } from '../src/error.js'
 import type { HandlerContext, ServerEvents } from '../src/types.js'

@@ -76,7 +76,7 @@ export class AsyncResult<V, E extends Error = Error> implements PromiseLike<Resu
   // biome-ignore lint/suspicious/noThenProperty: expected behavior
   then<TResult1 = Result<V, E>, TResult2 = never>(
     onfulfilled?: ((value: Result<V, E>) => TResult1 | PromiseLike<TResult1>) | null | undefined,
-    onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null | undefined,
+    onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null | undefined,
   ): Promise<TResult1 | TResult2> {
     return this.#promise.then(onfulfilled, onrejected)
   }

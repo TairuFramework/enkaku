@@ -1,6 +1,7 @@
 import { createCapability } from '@enkaku/capability'
 import type { AnyClientPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 import { randomTokenSigner, stringifyToken } from '@enkaku/token'
+import { describe, expect, test } from 'vitest'
 
 import { checkClientToken } from '../src/access-control.js'
 

@@ -1,4 +1,5 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
+import { describe, expect, test } from 'vitest'
 
 import { handleRequest } from '../src/handlers/request.js'
 import type { HandlerContext } from '../src/types.js'

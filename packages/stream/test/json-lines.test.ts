@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { fromJSONLines, toJSONLines } from '../src/json-lines.js'
 import { createReadable } from '../src/readable.js'

@@ -1,4 +1,5 @@
 import { createArraySink } from '@enkaku/stream'
+import { describe, expect, test } from 'vitest'
 
 import { EventEmitter } from '../src/index.js'
 

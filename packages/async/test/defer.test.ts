@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { defer } from '../src/defer.js'
 
 describe('defer()', () => {

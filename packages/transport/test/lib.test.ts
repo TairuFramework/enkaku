@@ -1,4 +1,5 @@
 import { createPipe } from '@enkaku/stream'
+import { describe, expect, test } from 'vitest'
 
 import { DirectTransports, Transport } from '../src/index.js'
 

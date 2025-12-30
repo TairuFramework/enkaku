@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { LazyPromise, lazy } from '../src/lazy.js'
 import { sleep } from '../src/utils.js'

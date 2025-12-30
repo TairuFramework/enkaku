@@ -1,7 +1,9 @@
+import { describe, expect, test } from 'vitest'
+
 import { applyPatches, createPatches } from '../src/index.js'
 
 describe('Integration tests - createPatches and applyPatches', () => {
-  it('should round-trip simple objects', () => {
+  test('should round-trip simple objects', () => {
     const from = { foo: 1, bar: 'test' }
     const to = { foo: 2, baz: 'new' }
 
@@ -12,7 +14,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(result).toEqual(to)
   })
 
-  it('should round-trip nested objects', () => {
+  test('should round-trip nested objects', () => {
     const from = {
       user: {
         name: 'John',
@@ -33,7 +35,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(result).toEqual(to)
   })
 
-  it('should round-trip arrays', () => {
+  test('should round-trip arrays', () => {
     const from = { items: [1, 2, 3, 4] }
     const to = { items: [1, 5, 6] }
 
@@ -44,7 +46,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(result).toEqual(to)
   })
 
-  it('should round-trip nested arrays with objects', () => {
+  test('should round-trip nested arrays with objects', () => {
     const from = {
       users: [
         { id: 1, name: 'John', tags: ['admin'] },
@@ -65,7 +67,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(result).toEqual(to)
   })
 
-  it('should handle type changes in round-trip', () => {
+  test('should handle type changes in round-trip', () => {
     const from = { data: 'string' }
     const to = { data: 42 }
 
@@ -76,7 +78,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(result).toEqual(to)
   })
 
-  it('should handle empty patches (no changes)', () => {
+  test('should handle empty patches (no changes)', () => {
     const from = { foo: 1, bar: { baz: 2 } }
     const to = { foo: 1, bar: { baz: 2 } }
 
@@ -88,7 +90,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(result).toEqual(to)
   })
 
-  it('should create empty patches after round-trip', () => {
+  test('should create empty patches after round-trip', () => {
     const from = { foo: 1, bar: { baz: 'test' }, items: [1, 2, 3] }
     const to = { foo: 2, qux: 'new', items: [1, 3, 4] }
 
@@ -103,7 +105,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(patches2).toEqual([])
   })
 
-  it('should handle complex real-world scenario', () => {
+  test('should handle complex real-world scenario', () => {
     const from = {
       version: 1,
       metadata: {
@@ -146,7 +148,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(result).toEqual(to)
   })
 
-  it('should handle multiple sequential transformations', () => {
+  test('should handle multiple sequential transformations', () => {
     const state1 = { count: 0, items: [] }
     const state2 = { count: 1, items: ['a'] }
     const state3 = { count: 2, items: ['a', 'b'] }
@@ -169,7 +171,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(current).toEqual(state4)
   })
 
-  it('should handle null values in round-trip', () => {
+  test('should handle null values in round-trip', () => {
     const from = { a: null, b: 1, c: 'test' }
     const to = { a: 1, b: null, c: null }
 
@@ -180,7 +182,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(result).toEqual(to)
   })
 
-  it('should handle boolean values in round-trip', () => {
+  test('should handle boolean values in round-trip', () => {
     const from = { active: true, verified: false, pending: true }
     const to = { active: false, verified: true, pending: true }
 
@@ -191,7 +193,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(result).toEqual(to)
   })
 
-  it('should handle empty arrays and objects', () => {
+  test('should handle empty arrays and objects', () => {
     const from = { arr: [1, 2, 3], obj: { a: 1, b: 2 } }
     const to = { arr: [], obj: {} }
 
@@ -202,7 +204,7 @@ describe('Integration tests - createPatches and applyPatches', () => {
     expect(result).toEqual(to)
   })
 
-  it('should handle deeply nested structures', () => {
+  test('should handle deeply nested structures', () => {
     const from = {
       level1: {
         level2: {

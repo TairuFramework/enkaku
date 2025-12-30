@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { createConnection } from '../src/connection.js'
 
 describe('createConnection()', () => {

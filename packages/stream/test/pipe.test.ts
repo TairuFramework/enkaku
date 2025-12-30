@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { createPipe } from '../src/index.js'
 
 describe('createPipe()', () => {

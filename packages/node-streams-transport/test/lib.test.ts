@@ -1,4 +1,5 @@
 import { Readable, Writable } from 'node:stream'
+import { describe, expect, test } from 'vitest'
 
 import { createTransportStream } from '../src/index.js'
 

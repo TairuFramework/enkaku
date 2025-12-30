@@ -11,7 +11,7 @@ import type {
 import { createArraySink } from '@enkaku/stream'
 import { randomTokenSigner, createUnsignedToken as unsignedToken } from '@enkaku/token'
 import { DirectTransports, Transport } from '@enkaku/transport'
-import { vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { Client } from '../src/client.js'
 

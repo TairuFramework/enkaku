@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { assertType, createValidator, isType, ValidationError } from '../src/index.js'
 
 describe('createValidator()', () => {
