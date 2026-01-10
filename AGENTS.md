@@ -74,6 +74,11 @@ Most packages have individual test suites. Run tests for specific packages:
 - Use descriptive generic parameter names beyond single letters
 - Leverage conditional types and mapped types for complex transformations
 
+### Security
+- Token-based authentication with signing/verification
+- Keystore abstractions for secure key management
+- Access control mechanisms in server implementation
+
 ## Architecture Overview
 
 ### Core Structure
@@ -81,6 +86,16 @@ Most packages have individual test suites. Run tests for specific packages:
 - **Build System**: Turbo for build orchestration, SWC for compilation
 - **Testing**: Vitest test runner
 - **Linting**: Biome for code formatting and linting
+
+### Key Packages
+- **protocol**: Core protocol definitions, schemas, and types
+- **client**: Client-side RPC implementation with typed procedure calls
+- **server**: Server-side RPC implementation with handler registration
+- **transport**: Transport layer abstractions (http, socket, node-streams)
+- **token**: JWT-like token system for authentication
+- **stream**: Stream utilities for data flow management
+- **execution**: Execution chain management for procedures
+- **keystore**: Key management for different environments (node, browser, expo)
 
 ### Development Workflow
 1. Install dependencies: `pnpm install`
