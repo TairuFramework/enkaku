@@ -26,13 +26,13 @@ import type { MyProtocol } from './protocol'
 const transport = new ClientTransport<MyProtocol>({
   url: 'https://api.example.com/rpc'
 })
-const client = new Client({ protocol, transport })
+const client = new Client({ protocol: myProtocol, transport })
 
 // Server side
 const serverTransport = new ServerTransport<MyProtocol>({
   allowedOrigin: ['https://example.com']
 })
-const server = new Server({ protocol, transport: serverTransport })
+const server = new Server({ protocol: myProtocol, transport: serverTransport })
 
 // Use with Bun/Deno/Node HTTP server
 Bun.serve({
@@ -61,12 +61,12 @@ import type { MyProtocol } from './protocol'
 const transports = new DirectTransports<ToClient, ToServer>()
 
 const client = new Client({
-  protocol,
+  protocol: myProtocol,
   transport: transports.client
 })
 
 const server = new Server({
-  protocol,
+  protocol: myProtocol,
   transport: transports.server
 })
 
@@ -105,7 +105,7 @@ const netServer = createServer(async (socket) => {
   const transport = new SocketTransport<ClientMessage, ServerMessage>({
     socket
   })
-  const server = new Server({ protocol, transport })
+  const server = new Server({ protocol: myProtocol, transport })
   // Server will handle messages from this socket
 })
 
@@ -134,13 +134,13 @@ const worker = new Worker('./worker.js')
 worker.postMessage({ port: port2 }, [port2])
 
 const transport = new MessageTransport<ToMain, ToWorker>({ port: port1 })
-const client = new Client({ protocol, transport })
+const client = new Client({ protocol: myProtocol, transport })
 
 // Worker thread (worker.js)
 self.addEventListener('message', (event) => {
   const port = event.data.port
   const transport = new MessageTransport<ToWorker, ToMain>({ port })
-  const server = new Server({ protocol, transport })
+  const server = new Server({ protocol: myProtocol, transport })
 })
 ```
 
@@ -171,7 +171,7 @@ const transport = new NodeStreamsTransport<FromChild, ToChild>({
   }
 })
 
-const client = new Client({ protocol, transport })
+const client = new Client({ protocol: myProtocol, transport })
 
 // Child process (child.js)
 const transport = new NodeStreamsTransport<ToChild, FromChild>({
@@ -181,7 +181,7 @@ const transport = new NodeStreamsTransport<ToChild, FromChild>({
   }
 })
 
-const server = new Server({ protocol, transport })
+const server = new Server({ protocol: myProtocol, transport })
 ```
 
 **Use case**: Child processes, stdin/stdout pipes, custom Node streams
