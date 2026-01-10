@@ -1,4 +1,5 @@
 import { Disposer, defer } from '@enkaku/async'
+import { getEnkakuLogger, type Logger } from '@enkaku/log'
 import type {
   AnyClientMessageOf,
   AnyClientPayloadOf,
@@ -187,6 +188,7 @@ export type ClientParams<Protocol extends ProtocolDefinition> = {
   handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
+  logger?: Logger
   transport: ClientTransportOf<Protocol>
   serverID?: string
   signer?: TokenSigner | Promise<TokenSigner>
@@ -203,6 +205,7 @@ export class Client<
   #handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   #handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
+  #logger: Logger
   #transport: ClientTransportOf<Protocol>
 
   constructor(params: ClientParams<Protocol>) {
@@ -216,6 +219,7 @@ export class Client<
     this.#getRandomID = params.getRandomID ?? defaultRandomID
     this.#handleTransportDisposed = params.handleTransportDisposed
     this.#handleTransportError = params.handleTransportError
+    this.#logger = params.logger ?? getEnkakuLogger('client', { clientID: this.#getRandomID() })
     this.#transport = params.transport
     // Start reading from transport
     this.#setupTransport()
@@ -278,12 +282,15 @@ export class Client<
 
       const controller = this.#controllers[msg.payload.rid]
       if (controller == null) {
-        console.warn(`No controller for request ${msg.payload.rid}`)
+        this.#logger.warn('controller not found for request {rid}', {
+          rid: msg.payload.rid,
+        })
         continue
       }
 
       switch (msg.payload.typ) {
         case 'error':
+          this.#logger.debug('received error reply for request {rid}')
           controller.error(RequestError.fromPayload(msg.payload))
           delete this.#controllers[msg.payload.rid]
           break
@@ -291,6 +298,7 @@ export class Client<
           void (controller as StreamController<unknown, unknown>).receive?.write(msg.payload.val)
           break
         case 'result':
+          this.#logger.trace('received result reply for request {rid}')
           controller.ok(msg.payload.val)
           delete this.#controllers[msg.payload.rid]
           break
@@ -340,6 +348,7 @@ export class Client<
     const payload = args.length
       ? { typ: 'event', prc: procedure, data: args[0] }
       : { typ: 'event', prc: procedure }
+    this.#logger.trace('send event {procedure}', { procedure })
     await this.#write(payload as unknown as AnyClientPayloadOf<Protocol>)
   }
 
@@ -358,6 +367,7 @@ export class Client<
 
     const providedSignal = config?.signal
     if (providedSignal?.aborted) {
+      this.#logger.debug('reject aborted request {procedure} with ID { rid }', { procedure, rid })
       return createRequest(rid, controller, providedSignal, Promise.reject(providedSignal))
     }
 
@@ -366,6 +376,7 @@ export class Client<
     const payload = prm
       ? { typ: 'request', rid, prc: procedure, prm }
       : { typ: 'request', rid, prc: procedure }
+    this.#logger.trace('send request {procedure} with ID {rid}', { procedure, rid })
     const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>)
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
@@ -392,6 +403,10 @@ export class Client<
 
     const providedSignal = config?.signal
     if (providedSignal?.aborted) {
+      this.#logger.debug('reject aborted stream creation {procedure} with ID {rid}', {
+        procedure,
+        rid,
+      })
       return createStream(
         rid,
         controller,
@@ -406,6 +421,7 @@ export class Client<
     const payload = prm
       ? { typ: 'stream', rid, prc: procedure, prm }
       : { typ: 'stream', rid, prc: procedure }
+    this.#logger.trace('create stream {procedure} with ID {rid}', { procedure, rid })
     const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>)
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
@@ -432,6 +448,10 @@ export class Client<
 
     const providedSignal = config?.signal
     if (providedSignal?.aborted) {
+      this.#logger.debug('reject aborted channel creation {procedure} with ID {rid}', {
+        procedure,
+        rid,
+      })
       // no-op
       const send = async (_val: T['Send']) => {}
       return Object.assign(
@@ -451,6 +471,7 @@ export class Client<
     const payload = prm
       ? { typ: 'channel', rid, prc: procedure, prm }
       : { typ: 'channel', rid, prc: procedure }
+    this.#logger.trace('create channel {procedure} with ID {rid}', { procedure, rid })
     const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>)
     const signal = this.#handleSignal(rid, controller, providedSignal)
 

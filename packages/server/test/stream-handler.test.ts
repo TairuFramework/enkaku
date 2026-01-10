@@ -59,17 +59,23 @@ describe('handleStream()', () => {
     })
     const reject = vi.fn()
     const send = vi.fn()
+    const trace = vi.fn()
 
     await handleStream(
       {
         controllers,
         handlers: { test: handler },
+        logger: { trace },
         reject,
         send,
       } as unknown as HandlerContext<Protocol>,
       clientToken,
     )
 
+    expect(trace).toHaveBeenCalledWith('handle stream {procedure} with ID {rid}', {
+      procedure: 'test',
+      rid: '1',
+    })
     expect(send).toHaveBeenCalledTimes(4)
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })
@@ -100,17 +106,23 @@ describe('handleStream()', () => {
         controllers['1']?.abort()
       }
     })
+    const trace = vi.fn()
 
     await handleStream(
       {
         controllers,
         handlers: { test: handler },
+        logger: { trace },
         reject,
         send,
       } as unknown as HandlerContext<Protocol>,
       clientToken,
     )
 
+    expect(trace).toHaveBeenCalledWith('handle stream {procedure} with ID {rid}', {
+      procedure: 'test',
+      rid: '1',
+    })
     expect(send).toHaveBeenCalledTimes(2)
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })

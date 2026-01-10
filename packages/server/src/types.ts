@@ -1,4 +1,5 @@
 import type { EventEmitter } from '@enkaku/event'
+import type { Logger } from '@enkaku/log'
 import type {
   AnyRequestProcedureDefinition,
   AnyServerPayloadOf,
@@ -169,5 +170,6 @@ export type HandlerContext<Protocol extends ProtocolDefinition> = {
   controllers: Record<string, HandlerController>
   events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
+  logger: Logger
   send: (payload: AnyServerPayloadOf<Protocol>) => Promise<void>
 }

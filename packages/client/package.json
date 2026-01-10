@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/client",
-  "version": "0.12.1",
+  "version": "0.12.2",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Enkaku RPC client",
@@ -39,6 +39,7 @@
   "dependencies": {
     "@enkaku/async": "workspace:^",
     "@enkaku/execution": "workspace:^",
+    "@enkaku/log": "workspace:^",
     "@enkaku/stream": "workspace:^",
     "@enkaku/token": "workspace:^"
   },

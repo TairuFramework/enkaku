@@ -66,17 +66,23 @@ describe('handleChannel()', () => {
     })
     const reject = vi.fn()
     const send = vi.fn()
+    const trace = vi.fn()
 
     await handleChannel(
       {
         controllers,
         handlers: { test: handler },
+        logger: { trace },
         reject,
         send,
       } as unknown as HandlerContext<Protocol>,
       clientToken,
     )
 
+    expect(trace).toBeCalledWith('handle channel {procedure} with ID {rid}', {
+      procedure: 'test',
+      rid: '1',
+    })
     expect(send).toHaveBeenCalledTimes(4)
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })
@@ -107,17 +113,23 @@ describe('handleChannel()', () => {
         controllers['1']?.abort()
       }
     })
+    const trace = vi.fn()
 
     await handleChannel(
       {
         controllers,
         handlers: { test: handler },
+        logger: { trace },
         reject,
         send,
       } as unknown as HandlerContext<Protocol>,
       clientToken,
     )
 
+    expect(trace).toBeCalledWith('handle channel {procedure} with ID {rid}', {
+      procedure: 'test',
+      rid: '1',
+    })
     expect(send).toHaveBeenCalledTimes(2)
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })
@@ -137,12 +149,14 @@ describe('handleChannel()', () => {
     })
     const reject = vi.fn()
     const send = vi.fn()
+    const trace = vi.fn()
 
     // @ts-expect-error type instantiation too deep
     const resultPromise = handleChannel(
       {
         controllers,
         handlers: { test: handler },
+        logger: { trace },
         reject,
         send,
       } as unknown as HandlerContext<Protocol>,
@@ -153,6 +167,10 @@ describe('handleChannel()', () => {
     await controllers['1'].writer.write(2)
     await resultPromise
 
+    expect(trace).toBeCalledWith('handle channel {procedure} with ID {rid}', {
+      procedure: 'test',
+      rid: '1',
+    })
     expect(send).toHaveBeenCalledTimes(4)
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 2 })

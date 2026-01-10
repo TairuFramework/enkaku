@@ -40,6 +40,7 @@ describe('handleEvent()', () => {
   test('sends an ErrorRejection if the handler fails but resolves the returned promise', async () => {
     const errorCause = new Error('Failed!')
     const events = new EventEmitter<ServerEvents>()
+    const trace = vi.fn()
     const handler = vi.fn(() => {
       throw errorCause
     })
@@ -48,11 +49,15 @@ describe('handleEvent()', () => {
     // Handler promise should always resolve
     await expect(
       handleEvent(
-        // @ts-expect-error type instantiation too deep
-        { events, handlers: { test: handler } } as unknown as HandlerContext<Protocol>,
+        {
+          events,
+          handlers: { test: handler },
+          logger: { trace },
+        } as unknown as HandlerContext<Protocol>,
         clientToken,
       ),
     ).resolves.toBeUndefined()
+    expect(trace).toHaveBeenCalledWith('handle event {procedure}', { procedure: 'test' })
 
     // Handler failure should emit an handlerError
     const emittedError = await handlerError
@@ -64,17 +69,22 @@ describe('handleEvent()', () => {
   test('successfully calls the event handler', async () => {
     const payload = { typ: 'event', prc: 'test', data: { test: true } } as const
     const events = new EventEmitter<ServerEvents>()
+    const trace = vi.fn()
     const handler = vi.fn()
     const handlerErrorListener = vi.fn()
     events.once('handlerError', handlerErrorListener)
 
     await expect(
       handleEvent(
-        // @ts-expect-error type instantiation too deep
-        { events, handlers: { test: handler } } as unknown as HandlerContext<Protocol>,
+        {
+          events,
+          handlers: { test: handler },
+          logger: { trace },
+        } as unknown as HandlerContext<Protocol>,
         clientToken,
       ),
     ).resolves.toBeUndefined()
+    expect(trace).toHaveBeenCalledWith('handle event {procedure}', { procedure: 'test' })
     expect(handler).toHaveBeenCalledWith({
       message: createUnsignedToken(payload),
       data: { test: true },

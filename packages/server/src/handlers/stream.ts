@@ -23,6 +23,11 @@ export function handleStream<
     return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
+  ctx.logger.trace('handle stream {procedure} with ID {rid}', {
+    procedure: msg.payload.prc,
+    rid: msg.payload.rid,
+  })
+
   const controller = new AbortController()
   ctx.controllers[msg.payload.rid] = controller
 

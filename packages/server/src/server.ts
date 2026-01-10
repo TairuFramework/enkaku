@@ -1,5 +1,6 @@
 import { DisposeInterruption, Disposer } from '@enkaku/async'
 import { EventEmitter } from '@enkaku/event'
+import { getEnkakuLogger, type Logger } from '@enkaku/log'
 import {
   type AnyClientMessageOf,
   type AnyServerPayloadOf,
@@ -42,6 +43,7 @@ export type AccessControlParams =
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
   events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
+  logger: Logger
   signal: AbortSignal
   transport: ServerTransportOf<Protocol>
   validator?: Validator<AnyClientMessageOf<Protocol>>
@@ -50,13 +52,14 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
 async function handleMessages<Protocol extends ProtocolDefinition>(
   params: HandleMessagesParams<Protocol>,
 ): Promise<void> {
-  const { events, handlers, signal, transport, validator } = params
+  const { events, handlers, logger, signal, transport, validator } = params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
   const context: HandlerContext<Protocol> = {
     controllers,
     events,
     handlers,
+    logger,
     send: (payload) => transport.write(createUnsignedToken(payload)),
   }
   const running: Record<string, Promise<void>> = Object.create(null)
@@ -83,6 +86,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     ? (message: unknown) => {
         const result = validator(message)
         if (result instanceof ValidationError) {
+          logger.debug('received invalid message', { error: result })
           events.emit('invalidMessage', {
             error: new Error('Invalid protocol message', { cause: result }),
             message,
@@ -202,13 +206,14 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   access?: ProcedureAccessRecord
   handlers: ProcedureHandlers<Protocol>
   id?: string
+  logger?: Logger
   protocol?: Protocol
   public?: boolean
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
 }
 
-export type HandleOptions = { public?: boolean; access?: ProcedureAccessRecord }
+export type HandleOptions = { access?: ProcedureAccessRecord; logger?: Logger; public?: boolean }
 
 export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #abortController: AbortController
@@ -216,6 +221,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #events: ServerEmitter
   #handlers: ProcedureHandlers<Protocol>
   #handling: Array<HandlingTransport<Protocol>> = []
+  #logger: Logger
   #validator?: Validator<AnyClientMessageOf<Protocol>>
 
   constructor(params: ServerParams<Protocol>) {
@@ -238,6 +244,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#abortController = new AbortController()
     this.#events = new EventEmitter<ServerEvents>()
     this.#handlers = params.handlers
+    this.#logger =
+      params.logger ?? getEnkakuLogger('server', { serverID: params.id ?? crypto.randomUUID() })
 
     if (params.id == null) {
       if (params.public) {
@@ -271,6 +279,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   handle(transport: ServerTransportOf<Protocol>, options: HandleOptions = {}): Promise<void> {
     const publicAccess = options.public ?? this.#accessControl.public
     const access = options.access ?? this.#accessControl.access ?? {}
+    const logger =
+      options.logger ?? this.#logger.getChild('handler').with({ transportID: crypto.randomUUID() })
 
     let accessControl: AccessControlParams
     if (publicAccess) {
@@ -286,13 +296,18 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const done = handleMessages<Protocol>({
       events: this.#events,
       handlers: this.#handlers,
+      logger,
       signal: this.#abortController.signal,
       transport,
       validator: this.#validator,
       ...accessControl,
     })
     this.#handling.push({ done, transport })
-    return done
+
+    logger.info('added')
+    return done.then(() => {
+      logger.info('done')
+    })
   }
 }
 

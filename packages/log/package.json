@@ -1,18 +1,14 @@
 {
-  "name": "@enkaku/server",
-  "version": "0.12.2",
+  "name": "@enkaku/log",
+  "version": "0.12.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Server logic for Enkaku RPC",
-  "keywords": [
-    "json",
-    "rpc",
-    "server"
-  ],
+  "description": "Enkaku logger",
+  "keywords": [],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/server"
+    "directory": "packages/log"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -31,21 +27,10 @@
     "build:types:ci": "tsc --emitDeclarationOnly --skipLibCheck --declarationMap false",
     "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
     "test:types": "tsc --noEmit --skipLibCheck",
-    "test:unit": "vitest run",
-    "test": "pnpm run test:types && pnpm run test:unit",
+    "test": "pnpm run test:types",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/async": "workspace:^",
-    "@enkaku/capability": "workspace:^",
-    "@enkaku/event": "workspace:^",
-    "@enkaku/log": "workspace:^",
-    "@enkaku/protocol": "workspace:^",
-    "@enkaku/schema": "workspace:^",
-    "@enkaku/stream": "workspace:^",
-    "@enkaku/token": "workspace:^"
-  },
-  "devDependencies": {
-    "@enkaku/transport": "workspace:^"
+    "@logtape/logtape": "catalog:"
   }
 }

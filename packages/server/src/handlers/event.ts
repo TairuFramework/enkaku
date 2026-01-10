@@ -17,6 +17,8 @@ export function handleEvent<
     return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
+  ctx.logger.trace('handle event {procedure}', { procedure: msg.payload.prc })
+
   const handlerContext = {
     message: msg,
     data: msg.payload.data,

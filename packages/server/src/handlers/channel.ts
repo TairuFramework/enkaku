@@ -32,6 +32,11 @@ export function handleChannel<
     return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
+  ctx.logger.trace('handle channel {procedure} with ID {rid}', {
+    procedure: msg.payload.prc,
+    rid: msg.payload.rid,
+  })
+
   const sendStream = createPipe<SendType<Protocol, Procedure>>()
   const controller: ChannelController<SendType<Protocol, Procedure>> = Object.assign(
     new AbortController(),
