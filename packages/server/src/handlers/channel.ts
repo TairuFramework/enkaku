@@ -4,7 +4,7 @@ import type {
   ClientMessage,
   ProtocolDefinition,
 } from '@enkaku/protocol'
-import { createPipe, writeTo } from '@enkaku/stream'
+import { createPipe, tap, writeTo } from '@enkaku/stream'
 
 import type {
   ChannelController,
@@ -53,6 +53,10 @@ export function handleChannel<
       if (controller.signal.aborted) {
         return
       }
+      ctx.logger.trace('send value to channel {procedure} with ID {rid}', {
+        procedure: msg.payload.prc,
+        rid: msg.payload.rid,
+      })
       await ctx.send({
         typ: 'receive',
         rid: msg.payload.rid,
@@ -61,10 +65,20 @@ export function handleChannel<
     }),
   )
 
+  const readable = sendStream.readable.pipeThrough(
+    tap((value) => {
+      ctx.logger.trace('received value from channel {procedure} with ID {rid}', {
+        procedure: msg.payload.prc,
+        rid: msg.payload.rid,
+        value,
+      })
+    }),
+  )
+
   const handlerContext = {
     message: msg,
     param: msg.payload.prm,
-    readable: sendStream.readable,
+    readable,
     signal: controller.signal,
     writable: receiveStream.writable,
   }

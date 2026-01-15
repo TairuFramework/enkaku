@@ -23,6 +23,7 @@ export function handleRequest<
   ctx.logger.trace('handle request {procedure} with ID {rid}', {
     procedure: msg.payload.prc,
     rid: msg.payload.rid,
+    param: msg.payload.prm,
   })
 
   const controller = new AbortController()

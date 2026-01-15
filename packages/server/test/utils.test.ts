@@ -1,4 +1,5 @@
 import { EventEmitter } from '@enkaku/event'
+import type { Logger } from '@enkaku/log'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import { describe, expect, test, vi } from 'vitest'
 
@@ -30,6 +31,9 @@ describe('executeHandler()', () => {
     const handler = vi.fn(() => {
       throw error
     })
+    const logger = {
+      trace: vi.fn(),
+    } as unknown as Logger
     const send = vi.fn()
     const handlerError = events.once('handlerError')
 
@@ -39,6 +43,7 @@ describe('executeHandler()', () => {
         controllers,
         events,
         handlers: { test: handler },
+        logger,
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
@@ -53,10 +58,15 @@ describe('executeHandler()', () => {
     })
 
     const emittedError = await handlerError
-    expect(emittedError.error.message).toBe('Error handling procedure: test')
-    expect(emittedError.error.cause).toBe(error)
+    expect(emittedError.error.message).toBe('Request failed')
     expect(emittedError.payload).toEqual(payload)
     expect(controllers).toEqual({})
+    expect(logger.trace).toHaveBeenCalledWith('send error to {type} {procedure} with ID {rid}', {
+      type: 'request',
+      procedure: payload.prc,
+      rid: payload.rid,
+      error,
+    })
   })
 
   test('sends an error response if the abort signal is triggered with the "Close" reason', async () => {
@@ -70,6 +80,9 @@ describe('executeHandler()', () => {
         }, 100)
       })
     })
+    const logger = {
+      trace: vi.fn(),
+    } as unknown as Logger
     const send = vi.fn()
     const handlerError = events.once('handlerError')
 
@@ -79,6 +92,7 @@ describe('executeHandler()', () => {
         controllers,
         events,
         handlers: { test: handler },
+        logger,
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
@@ -96,10 +110,15 @@ describe('executeHandler()', () => {
     })
 
     const emittedError = await handlerError
-    expect(emittedError.error.message).toBe('Error handling procedure: test')
-    expect(emittedError.error.cause).toBe(error)
+    expect(emittedError.error.message).toBe('Request failed')
     expect(emittedError.payload).toEqual(payload)
     expect(controllers).toEqual({})
+    expect(logger.trace).toHaveBeenCalledWith('send error to {type} {procedure} with ID {rid}', {
+      type: 'request',
+      procedure: payload.prc,
+      rid: payload.rid,
+      error,
+    })
   })
 
   test('does not send an error response if the abort signal is triggered with a reason other than "Close"', async () => {
@@ -113,6 +132,9 @@ describe('executeHandler()', () => {
         }, 100)
       })
     })
+    const logger = {
+      debug: vi.fn(),
+    } as unknown as Logger
     const send = vi.fn()
     const handlerError = events.once('handlerError')
 
@@ -122,6 +144,7 @@ describe('executeHandler()', () => {
         controllers,
         events,
         handlers: { test: handler },
+        logger,
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
@@ -132,15 +155,26 @@ describe('executeHandler()', () => {
 
     expect(send).not.toHaveBeenCalled()
     const emittedError = await handlerError
-    expect(emittedError.error.message).toBe('Error handling procedure: test')
-    expect(emittedError.error.cause).toBe(error)
+    expect(emittedError.error.message).toBe('Request failed')
     expect(emittedError.payload).toEqual(payload)
     expect(controllers).toEqual({})
+    expect(logger.debug).toHaveBeenCalledWith(
+      'handler error for {type} {procedure} with ID {rid} cannot be sent to client',
+      {
+        type: 'request',
+        procedure: payload.prc,
+        rid: payload.rid,
+        error,
+      },
+    )
   })
 
   test('sends a result response with the handler returned value', async () => {
     const controllers = { '1': new AbortController() }
     const handler = vi.fn(() => 'OK')
+    const logger = {
+      trace: vi.fn(),
+    } as unknown as Logger
     const reject = vi.fn()
     const send = vi.fn()
 
@@ -148,6 +182,7 @@ describe('executeHandler()', () => {
       {
         controllers,
         handlers: { test: handler },
+        logger,
         reject,
         send,
       } as unknown as HandlerContext<Protocol>,
@@ -157,6 +192,12 @@ describe('executeHandler()', () => {
     expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
+    expect(logger.trace).toHaveBeenCalledWith('send result to {type} {procedure} with ID {rid}', {
+      type: 'request',
+      procedure: payload.prc,
+      rid: payload.rid,
+      result: 'OK',
+    })
   })
 
   test('sends a result response if the abort signal is triggered with the "Close" reason', async () => {
@@ -168,6 +209,9 @@ describe('executeHandler()', () => {
         }, 100)
       })
     })
+    const logger = {
+      trace: vi.fn(),
+    } as unknown as Logger
     const reject = vi.fn()
     const send = vi.fn()
 
@@ -176,6 +220,7 @@ describe('executeHandler()', () => {
       {
         controllers,
         handlers: { test: handler },
+        logger,
         reject,
         send,
       } as unknown as HandlerContext<Protocol>,
@@ -188,6 +233,12 @@ describe('executeHandler()', () => {
     expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
+    expect(logger.trace).toHaveBeenCalledWith('send result to {type} {procedure} with ID {rid}', {
+      type: 'request',
+      procedure: payload.prc,
+      rid: payload.rid,
+      result: 'OK',
+    })
   })
 
   test('does not send a result response if the abort signal is triggered with a reason other than "Close"', async () => {
@@ -199,6 +250,9 @@ describe('executeHandler()', () => {
         }, 100)
       })
     })
+    const logger = {
+      trace: vi.fn(),
+    } as unknown as Logger
     const reject = vi.fn()
     const send = vi.fn()
 
@@ -207,6 +261,7 @@ describe('executeHandler()', () => {
       {
         controllers,
         handlers: { test: handler },
+        logger,
         reject,
         send,
       } as unknown as HandlerContext<Protocol>,
@@ -219,5 +274,6 @@ describe('executeHandler()', () => {
     expect(send).not.toHaveBeenCalled()
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
+    expect(logger.trace).not.toHaveBeenCalled()
   })
 })

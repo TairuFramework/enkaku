@@ -17,6 +17,7 @@ import {
 import { createUnsignedToken, isSignedToken, type SignedToken, type Token } from '@enkaku/token'
 
 import { checkClientToken, type ProcedureAccessRecord } from './access-control.js'
+import { HandlerError } from './error.js'
 import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'
 import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { handleRequest, type RequestMessageOf } from './handlers/request.js'
@@ -103,8 +104,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   ) {
     const returned = handle()
     if (returned instanceof Error) {
-      const rid = message.payload.typ === 'event' ? undefined : message.payload.rid
-      events.emit('handlerError', { error: returned, payload: message.payload, rid })
+      events.emit('handlerError', {
+        error: HandlerError.from(returned, { code: 'EK01' }),
+        payload: message.payload,
+      })
     } else {
       const id =
         message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
@@ -129,20 +132,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               message as unknown as SignedToken,
             )
           }
-        } catch (err) {
-          const errorMessage = (err as Error).message ?? 'Access denied'
+        } catch (cause) {
+          const error = new HandlerError({
+            cause,
+            code: 'EK02',
+            message: (cause as Error).message ?? 'Access denied',
+          })
           if (message.payload.typ === 'event') {
-            events.emit('handlerError', {
-              error: new Error(errorMessage, { cause: err }),
-              payload: message.payload,
-            })
+            events.emit('handlerError', { error, payload: message.payload })
           } else {
-            context.send({
-              typ: 'error',
-              rid: message.payload.rid,
-              code: 'EK02',
-              msg: errorMessage,
-            } as AnyServerPayloadOf<Protocol>)
+            context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>)
           }
           return
         }

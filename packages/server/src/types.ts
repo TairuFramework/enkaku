@@ -15,6 +15,8 @@ import type {
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
 
+import type { HandlerError } from './error.js'
+
 export type RequestController = AbortController
 
 export type ChannelController<Send = unknown> = AbortController & {
@@ -159,7 +161,10 @@ export type SendType<
 
 export type ServerEvents = {
   handlerAbort: { rid: string }
-  handlerError: { error: Error; payload: Record<string, unknown>; rid?: string }
+  handlerError: {
+    error: HandlerError<string>
+    payload: Record<string, unknown>
+  }
   handlerTimeout: { rid: string }
   invalidMessage: { error: Error; message: unknown }
 }

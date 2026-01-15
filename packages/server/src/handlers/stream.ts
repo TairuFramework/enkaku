@@ -37,6 +37,10 @@ export function handleStream<
       if (controller.signal.aborted) {
         return
       }
+      ctx.logger.trace('send value to stream {procedure} with ID {rid}', {
+        procedure: msg.payload.prc,
+        rid: msg.payload.rid,
+      })
       await ctx.send({
         typ: 'receive',
         rid: msg.payload.rid,

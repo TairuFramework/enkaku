@@ -1,4 +1,5 @@
 import { DisposeInterruption } from '@enkaku/async'
+import type { Logger } from '@enkaku/log'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -40,6 +41,9 @@ describe('Client', () => {
           },
         })
       })
+      const logger = {
+        debug: vi.fn(),
+      } as unknown as Logger
 
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
@@ -47,6 +51,7 @@ describe('Client', () => {
       >()
       const client = new Client<Protocol>({
         handleTransportDisposed,
+        logger,
         transport: transports.client,
       })
 
@@ -54,10 +59,16 @@ describe('Client', () => {
       expect(handleTransportDisposed).toHaveBeenCalled()
       expect(replacementStart).toHaveBeenCalled()
       expect(client.signal.aborted).toBe(false)
+      expect(logger.debug).toHaveBeenCalledWith(
+        'using new transport provided by transport disposed handler',
+      )
     })
 
     test('aborts the client if no new transport is provided', async () => {
       const handleTransportDisposed = vi.fn(() => {})
+      const logger = {
+        debug: vi.fn(),
+      } as unknown as Logger
 
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
@@ -65,6 +76,7 @@ describe('Client', () => {
       >()
       const client = new Client<Protocol>({
         handleTransportDisposed,
+        logger,
         transport: transports.client,
       })
 
@@ -72,22 +84,31 @@ describe('Client', () => {
       expect(handleTransportDisposed).toHaveBeenCalled()
       expect(client.signal.aborted).toBe(true)
       expect(client.signal.reason).toBe('TransportDisposed')
+      expect(logger.debug).toHaveBeenCalledWith('transport disposed')
     })
 
     test('aborts the client if no handler provided', async () => {
+      const logger = {
+        debug: vi.fn(),
+      } as unknown as Logger
+
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
-      const client = new Client<Protocol>({ transport: transports.client })
+      const client = new Client<Protocol>({ logger, transport: transports.client })
 
       await transports.client.dispose()
       expect(client.signal.aborted).toBe(true)
       expect(client.signal.reason).toBe('TransportDisposed')
+      expect(logger.debug).toHaveBeenCalledWith('transport disposed')
     })
 
     test('does not call the handler if the client itself is aborted', async () => {
       const handleTransportDisposed = vi.fn(() => {})
+      const logger = {
+        debug: vi.fn(),
+      } as unknown as Logger
 
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
@@ -95,6 +116,7 @@ describe('Client', () => {
       >()
       const client = new Client<Protocol>({
         handleTransportDisposed,
+        logger,
         transport: transports.client,
       })
 
@@ -102,6 +124,7 @@ describe('Client', () => {
       expect(handleTransportDisposed).not.toHaveBeenCalled()
       expect(client.signal.aborted).toBe(true)
       expect(client.signal.reason).toBeInstanceOf(DisposeInterruption)
+      expect(logger.debug).toHaveBeenCalledWith('disposed')
     })
   })
 
@@ -134,9 +157,14 @@ describe('Client', () => {
           },
         })
       })
+      const logger = {
+        debug: vi.fn(),
+        trace: vi.fn(),
+      } as unknown as Logger
 
       const client = new Client<Protocol>({
         handleTransportError,
+        logger,
         transport: new Transport({
           stream: {
             readable: new ReadableStream({
@@ -153,6 +181,10 @@ describe('Client', () => {
       expect(handleTransportError).toHaveBeenCalled()
       expect(replacementStart).toHaveBeenCalled()
       expect(client.signal.aborted).toBe(false)
+      expect(logger.debug).toHaveBeenCalledWith('failed to read from transport', { cause })
+      expect(logger.debug).toHaveBeenCalledWith(
+        'using new transport provided by transport error handler',
+      )
     })
 
     test('aborts the client if no new transport is provided', async () => {
@@ -162,9 +194,15 @@ describe('Client', () => {
         expect((error as Error).message).toBe('Transport read failed')
         expect((error as Error).cause).toBe(cause)
       })
+      const logger = {
+        debug: vi.fn(),
+        trace: vi.fn(),
+        warn: vi.fn(),
+      } as unknown as Logger
 
       const client = new Client<Protocol>({
         handleTransportError,
+        logger,
         transport: new Transport({
           stream: {
             readable: new ReadableStream({
@@ -181,11 +219,20 @@ describe('Client', () => {
       expect(handleTransportError).toHaveBeenCalled()
       expect(client.signal.aborted).toBe(true)
       expect((client.signal.reason as Error).message).toBe('Transport read failed')
+      expect(logger.debug).toHaveBeenCalledWith('failed to read from transport', { cause })
+      expect(logger.warn).toHaveBeenCalledWith('aborting following unhanded transport error')
     })
 
     test('aborts the client if no handler provided', async () => {
       const cause = new Error('Transport error')
+      const logger = {
+        debug: vi.fn(),
+        trace: vi.fn(),
+        warn: vi.fn(),
+      } as unknown as Logger
+
       const client = new Client<Protocol>({
+        logger,
         transport: new Transport({
           stream: {
             readable: new ReadableStream({
@@ -202,14 +249,21 @@ describe('Client', () => {
       expect(client.signal.aborted).toBe(true)
       expect((client.signal.reason as Error).message).toBe('Transport read failed')
       expect((client.signal.reason as Error).cause).toBe(cause)
+      expect(logger.debug).toHaveBeenCalledWith('failed to read from transport', { cause })
+      expect(logger.warn).toHaveBeenCalledWith('aborting following unhanded transport error')
     })
 
     test('does not call the handler if the client itself is aborted', async () => {
       const cause = new Error('Transport error')
       const handleTransportError = vi.fn(() => {})
+      const logger = {
+        debug: vi.fn(),
+        trace: vi.fn(),
+      } as unknown as Logger
 
       const client = new Client<Protocol>({
         handleTransportError,
+        logger,
         transport: new Transport({
           stream: {
             readable: new ReadableStream({
@@ -229,6 +283,7 @@ describe('Client', () => {
       expect(handleTransportError).not.toHaveBeenCalled()
       expect(client.signal.aborted).toBe(true)
       expect(client.signal.reason).toBeInstanceOf(DisposeInterruption)
+      expect(logger.debug).toHaveBeenCalledWith('disposed')
     })
   })
 
@@ -249,11 +304,17 @@ describe('Client', () => {
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
+    const logger = {
+      debug: vi.fn(),
+      trace: vi.fn(),
+    } as unknown as Logger
+
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
     const client = new Client<Protocol>({
+      logger,
       serverID: serverSigner.id,
       signer: clientSigner,
       transport: transports.client,
@@ -264,6 +325,10 @@ describe('Client', () => {
       aud: serverSigner.id,
       typ: 'event',
       prc: 'test/event',
+      data: { hello: 'world' },
+    })
+    expect(logger.trace).toHaveBeenCalledWith('send event {procedure}', {
+      procedure: 'test/event',
       data: { hello: 'world' },
     })
 
@@ -283,13 +348,23 @@ describe('Client', () => {
     type Protocol = typeof protocol
 
     test('sends request and gets result', async () => {
+      const logger = {
+        debug: vi.fn(),
+        trace: vi.fn(),
+      } as unknown as Logger
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
-      const client = new Client<Protocol>({ transport: transports.client })
+      const client = new Client<Protocol>({ logger, transport: transports.client })
 
       const request = client.request('test/request')
+      expect(logger.trace).toHaveBeenCalledWith('send request {procedure} with ID {rid}', {
+        procedure: 'test/request',
+        rid: request.id,
+        param: undefined,
+      })
+
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as RequestPayloadOf<
         'test/request',
@@ -298,19 +373,37 @@ describe('Client', () => {
       expect(payload.prc).toBe('test/request')
       await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
       await expect(request).resolves.toBe('OK')
+      expect(logger.trace).toHaveBeenCalledWith(
+        'result reply for {type} {procedure} with ID {rid}',
+        {
+          type: 'request',
+          procedure: 'test/request',
+          rid: request.id,
+          result: 'OK',
+        },
+      )
 
       await transports.dispose()
     })
 
     test('aborts request', async () => {
+      const logger = {
+        debug: vi.fn(),
+        trace: vi.fn(),
+      } as unknown as Logger
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
-      const client = new Client<Protocol>({ transport: transports.client })
+      const client = new Client<Protocol>({ logger, transport: transports.client })
 
       const request = client.request('test/request')
-      request.abort()
+      expect(logger.trace).toHaveBeenCalledWith('send request {procedure} with ID {rid}', {
+        procedure: 'test/request',
+        rid: request.id,
+        param: undefined,
+      })
+      request.abort('test')
 
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as RequestPayloadOf<
@@ -321,9 +414,15 @@ describe('Client', () => {
       expect(abortRead.value?.payload).toEqual({
         typ: 'abort',
         rid: payload.rid,
-        rsn: 'AbortError',
+        rsn: 'test',
       })
       await expect(request).rejects.toBeInstanceOf(AbortSignal)
+      expect(logger.trace).toHaveBeenCalledWith('abort {type} {procedure} with ID {rid}', {
+        type: 'request',
+        procedure: 'test/request',
+        rid: request.id,
+        reason: 'test',
+      })
 
       await transports.dispose()
     })
@@ -340,13 +439,23 @@ describe('Client', () => {
     type Protocol = typeof protocol
 
     test('sends request and gets receive stream and result', async () => {
+      const logger = {
+        debug: vi.fn(),
+        trace: vi.fn(),
+      } as unknown as Logger
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
-      const client = new Client<Protocol>({ transport: transports.client })
+      const client = new Client<Protocol>({ logger, transport: transports.client })
 
       const stream = client.createStream('test/stream')
+      expect(logger.trace).toHaveBeenCalledWith('create stream {procedure} with ID {rid}', {
+        procedure: 'test/stream',
+        rid: stream.id,
+        param: undefined,
+      })
+
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as StreamPayloadOf<
         'test/stream',
@@ -363,18 +472,59 @@ describe('Client', () => {
       stream.readable.pipeTo(writable)
       await expect(received).resolves.toEqual([1, 2, 3])
 
+      expect(logger.trace).toHaveBeenCalledWith(
+        'receive reply for {type} {procedure} with ID {rid}',
+        {
+          type: 'stream',
+          procedure: 'test/stream',
+          rid: stream.id,
+          receive: 1,
+        },
+      )
+      expect(logger.trace).toHaveBeenCalledWith(
+        'receive reply for {type} {procedure} with ID {rid}',
+        {
+          type: 'stream',
+          procedure: 'test/stream',
+          rid: stream.id,
+          receive: 2,
+        },
+      )
+      expect(logger.trace).toHaveBeenCalledWith(
+        'receive reply for {type} {procedure} with ID {rid}',
+        {
+          type: 'stream',
+          procedure: 'test/stream',
+          rid: stream.id,
+          receive: 3,
+        },
+      )
+      expect(logger.trace).toHaveBeenCalledWith(
+        'result reply for {type} {procedure} with ID {rid}',
+        {
+          type: 'stream',
+          procedure: 'test/stream',
+          rid: stream.id,
+          result: 'OK',
+        },
+      )
+
       await transports.dispose()
     })
 
-    test('aborts request', async () => {
+    test('aborts the stream', async () => {
+      const logger = {
+        debug: vi.fn(),
+        trace: vi.fn(),
+      } as unknown as Logger
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
-      const client = new Client<Protocol>({ transport: transports.client })
+      const client = new Client<Protocol>({ logger, transport: transports.client })
 
       const stream = client.createStream('test/stream')
-      stream.abort()
+      stream.abort('test')
 
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as StreamPayloadOf<
@@ -385,9 +535,15 @@ describe('Client', () => {
       expect(abortRead.value?.payload).toEqual({
         typ: 'abort',
         rid: payload.rid,
-        rsn: 'AbortError',
+        rsn: 'test',
       })
       await expect(stream).rejects.toBeInstanceOf(AbortSignal)
+      expect(logger.trace).toHaveBeenCalledWith('abort {type} {procedure} with ID {rid}', {
+        type: 'stream',
+        procedure: 'test/stream',
+        rid: stream.id,
+        reason: 'test',
+      })
 
       await transports.dispose()
     })
@@ -489,13 +645,23 @@ describe('Client', () => {
     type Protocol = typeof protocol
 
     test('sends request and channel values and gets receive stream and result', async () => {
+      const logger = {
+        debug: vi.fn(),
+        trace: vi.fn(),
+      } as unknown as Logger
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
-      const client = new Client<Protocol>({ transport: transports.client })
+      const client = new Client<Protocol>({ logger, transport: transports.client })
 
       const channel = client.createChannel('test/channel')
+      expect(logger.trace).toHaveBeenCalledWith('create channel {procedure} with ID {rid}', {
+        procedure: 'test/channel',
+        rid: channel.id,
+        param: undefined,
+      })
+
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as ChannelPayloadOf<
         'test/channel',
@@ -503,6 +669,11 @@ describe('Client', () => {
       >
 
       await channel.send(1)
+      expect(logger.trace).toHaveBeenCalledWith('send value to channel {procedure} with ID {rid}', {
+        procedure: 'test/channel',
+        rid: channel.id,
+        value: 1,
+      })
       const sentRead1 = await transports.server.read()
       const sent1 = sentRead1.value?.payload as ChannelPayloadOf<
         'test/channel',
@@ -511,6 +682,11 @@ describe('Client', () => {
       await expect(sent1).toEqual({ typ: 'send', rid: payload.rid, val: 1 })
 
       await channel.send(2)
+      expect(logger.trace).toHaveBeenCalledWith('send value to channel {procedure} with ID {rid}', {
+        procedure: 'test/channel',
+        rid: channel.id,
+        value: 2,
+      })
       const sentRead2 = await transports.server.read()
       const sent2 = sentRead2.value?.payload as ChannelPayloadOf<
         'test/channel',
@@ -528,18 +704,59 @@ describe('Client', () => {
       channel.readable.pipeTo(writable)
       await expect(received).resolves.toEqual([1, 2, 3])
 
+      expect(logger.trace).toHaveBeenCalledWith(
+        'receive reply for {type} {procedure} with ID {rid}',
+        {
+          type: 'channel',
+          procedure: 'test/channel',
+          rid: channel.id,
+          receive: 1,
+        },
+      )
+      expect(logger.trace).toHaveBeenCalledWith(
+        'receive reply for {type} {procedure} with ID {rid}',
+        {
+          type: 'channel',
+          procedure: 'test/channel',
+          rid: channel.id,
+          receive: 2,
+        },
+      )
+      expect(logger.trace).toHaveBeenCalledWith(
+        'receive reply for {type} {procedure} with ID {rid}',
+        {
+          type: 'channel',
+          procedure: 'test/channel',
+          rid: channel.id,
+          receive: 3,
+        },
+      )
+      expect(logger.trace).toHaveBeenCalledWith(
+        'result reply for {type} {procedure} with ID {rid}',
+        {
+          type: 'channel',
+          procedure: 'test/channel',
+          rid: channel.id,
+          result: 'OK',
+        },
+      )
+
       await transports.dispose()
     })
 
-    test('aborts request', async () => {
+    test('aborts the channel', async () => {
+      const logger = {
+        debug: vi.fn(),
+        trace: vi.fn(),
+      } as unknown as Logger
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
       >()
-      const client = new Client<Protocol>({ transport: transports.client })
+      const client = new Client<Protocol>({ logger, transport: transports.client })
 
       const channel = client.createChannel('test/channel')
-      channel.abort()
+      channel.abort('test')
 
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as ChannelPayloadOf<
@@ -550,9 +767,15 @@ describe('Client', () => {
       expect(abortRead.value?.payload).toEqual({
         typ: 'abort',
         rid: payload.rid,
-        rsn: 'AbortError',
+        rsn: 'test',
       })
       await expect(channel).rejects.toBeInstanceOf(AbortSignal)
+      expect(logger.trace).toHaveBeenCalledWith('abort {type} {procedure} with ID {rid}', {
+        type: 'channel',
+        procedure: 'test/channel',
+        rid: channel.id,
+        reason: 'test',
+      })
 
       await transports.dispose()
     })

@@ -1,6 +1,7 @@
 import { toPromise } from '@enkaku/async'
 import type { ClientMessage, EventPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 
+import { HandlerError } from '../error.js'
 import type { EventHandler, EventHandlerContext, HandlerContext } from '../types.js'
 
 export type EventMessageOf<
@@ -17,16 +18,25 @@ export function handleEvent<
     return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
-  ctx.logger.trace('handle event {procedure}', { procedure: msg.payload.prc })
+  ctx.logger.trace('handle event {procedure}', {
+    procedure: msg.payload.prc,
+    data: msg.payload.data,
+  })
 
   const handlerContext = {
     message: msg,
     data: msg.payload.data,
   } as unknown as EventHandlerContext<Protocol, Procedure>
   return toPromise(() => handler(handlerContext)).catch((cause) => {
-    ctx.events.emit('handlerError', {
-      error: new Error(`Error handling procedure: ${msg.payload.prc}`, { cause }),
-      payload: msg.payload,
+    const error = HandlerError.from(cause, {
+      code: 'EK01',
+      message: (cause as Error).message ?? 'Handler execution failed',
     })
+    ctx.logger.debug('handler error for event {procedure}', {
+      procedure: msg.payload.prc,
+      data: msg.payload.data,
+      error,
+    })
+    ctx.events.emit('handlerError', { error, payload: msg.payload })
   })
 }

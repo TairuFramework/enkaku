@@ -49,4 +49,12 @@ export class RequestError<
   get data(): Data {
     return this.#data
   }
+
+  toString() {
+    return `[RequestError] code ${this.#code}: ${this.message}`
+  }
+
+  toJSON(): ErrorObjectType<Code, Data> {
+    return { code: this.#code, data: this.#data, message: this.message }
+  }
 }
