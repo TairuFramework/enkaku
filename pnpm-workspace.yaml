@@ -37,14 +37,14 @@ catalog:
   ajv-formats: ^3.0.1
   canonicalize: 2.1.0
   del-cli: ^7.0.0
-  electron: ^39.2.7
+  electron: ^40.0.0
   electron-store: ^11.0.2
   emittery: ^1.2.0
   expo: ~54.0.8
   expo-crypto: ^15.0.8
   expo-secure-store: ^15.0.8
   get-port: ^7.1.0
-  happy-dom: ^20.3.0
+  happy-dom: ^20.3.1
   json-schema-to-ts: ^3.1.1
   playwright: ^1.55.0
   react: 19.1.0
