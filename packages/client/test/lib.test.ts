@@ -320,7 +320,7 @@ describe('Client', () => {
       transport: transports.client,
     })
 
-    await client.sendEvent('test/event', { hello: 'world' })
+    await client.sendEvent('test/event', { data: { hello: 'world' } })
     const signedMessage = await clientSigner.createToken({
       aud: serverSigner.id,
       typ: 'event',

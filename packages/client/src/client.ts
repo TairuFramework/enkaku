@@ -23,6 +23,8 @@ import { RequestError } from './error.js'
 
 type FilterNever<T> = { [K in keyof T as T[K] extends never ? never : K]: T[K] }
 
+export type AnyHeader = Record<string, unknown>
+
 export type RequestMeta = {
   type: RequestType
   procedure: string
@@ -108,6 +110,7 @@ type RequestController<Result> = AbortController &
     ok: (value: Result) => void
     error: (error: RequestError) => void
     aborted: (signal: AbortSignal) => void
+    header?: AnyHeader
   }
 
 type StreamController<Receive, Result> = RequestController<Result> & {
@@ -118,9 +121,16 @@ type AnyClientController =
   // biome-ignore lint/suspicious/noExplicitAny: what other way to type this?
   RequestController<any> | StreamController<any, any>
 
-function createController<T>(meta: RequestMeta, onDone?: () => void): RequestController<T> {
+type CreateControllerParams = RequestMeta & {
+  header?: AnyHeader
+}
+
+function createController<T>(
+  params: CreateControllerParams,
+  onDone?: () => void,
+): RequestController<T> {
   const deferred = defer<T>()
-  return Object.assign(new AbortController(), meta, {
+  return Object.assign(new AbortController(), params, {
     result: deferred.promise,
     ok: (value: T) => {
       deferred.resolve(value)
@@ -175,6 +185,7 @@ function createStream<Receive, Result>({
 
 type CreateMessage<Protocol extends ProtocolDefinition> = (
   payload: AnyClientPayloadOf<Protocol>,
+  header?: Record<string, unknown>,
 ) => AnyClientMessageOf<Protocol> | Promise<AnyClientMessageOf<Protocol>>
 
 function getCreateMessage<Protocol extends ProtocolDefinition>(
@@ -186,12 +197,12 @@ function getCreateMessage<Protocol extends ProtocolDefinition>(
   }
 
   const signerPromise = Promise.resolve(signer)
-  const createToken = (payload: Record<string, unknown>) => {
-    return signerPromise.then((s) => s.createToken(payload))
+  const createToken = (payload: Record<string, unknown>, header?: AnyHeader) => {
+    return signerPromise.then((s) => s.createToken(payload, header))
   }
 
   return (
-    aud ? (payload) => createToken({ aud, ...payload }) : createToken
+    aud ? (payload, header) => createToken({ aud, ...payload }, header) : createToken
   ) as CreateMessage<Protocol>
 }
 
@@ -347,11 +358,11 @@ export class Client<
     }
   }
 
-  async #write(payload: AnyClientPayloadOf<Protocol>): Promise<void> {
+  async #write(payload: AnyClientPayloadOf<Protocol>, header?: AnyHeader): Promise<void> {
     if (this.signal.aborted) {
       throw new Error('Client aborted', { cause: this.signal.reason })
     }
-    const message = await this.#createMessage(payload)
+    const message = await this.#createMessage(payload, header)
     await this.#transport.write(message)
   }
 
@@ -373,11 +384,14 @@ export class Client<
           rid,
           reason,
         })
-        void this.#write({
-          typ: 'abort',
-          rid,
-          rsn: reason,
-        } as unknown as AnyClientPayloadOf<Protocol>)
+        void this.#write(
+          {
+            typ: 'abort',
+            rid,
+            rsn: reason,
+          } as unknown as AnyClientPayloadOf<Protocol>,
+          controller.header,
+        )
         if (signal.reason !== 'Close') {
           controller.aborted(signal)
           delete this.#controllers[rid]
@@ -391,12 +405,17 @@ export class Client<
   async sendEvent<
     Procedure extends keyof ClientDefinitions['Events'] & string,
     T extends ClientDefinitions['Events'][Procedure] = ClientDefinitions['Events'][Procedure],
-  >(procedure: Procedure, ...args: T['Data'] extends never ? [] : [T['Data']]): Promise<void> {
-    const payload = args.length
-      ? { typ: 'event', prc: procedure, data: args[0] }
-      : { typ: 'event', prc: procedure }
-    this.#logger.trace('send event {procedure}', { procedure, data: args[0] })
-    await this.#write(payload as unknown as AnyClientPayloadOf<Protocol>)
+  >(
+    procedure: Procedure,
+    ...args: T['Data'] extends never
+      ? [config?: { data?: never; header?: AnyHeader }]
+      : [config: { data: T['Data']; header?: AnyHeader }]
+  ): Promise<void> {
+    const config = args[0] ?? {}
+    const data = config.data
+    const payload = data ? { typ: 'event', prc: procedure, data } : { typ: 'event', prc: procedure }
+    this.#logger.trace('send event {procedure}', { procedure, data })
+    await this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
   }
 
   request<
@@ -405,14 +424,18 @@ export class Client<
   >(
     procedure: Procedure,
     ...args: T['Param'] extends never
-      ? [config?: { id?: string; param?: never; signal?: AbortSignal }]
-      : [config: { id?: string; param: T['Param']; signal?: AbortSignal }]
+      ? [config?: { header?: AnyHeader; id?: string; param?: never; signal?: AbortSignal }]
+      : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
   ): RequestCall<T['Result']> & Promise<T['Result']> {
     const config = args[0] ?? {}
-    const controller = createController<T['Result']>({ type: 'request', procedure })
+    const controller = createController<T['Result']>({
+      type: 'request',
+      procedure,
+      header: config.header,
+    })
     const rid = config.id ?? this.#getRandomID()
 
-    const providedSignal = config?.signal
+    const providedSignal = config.signal
     if (providedSignal?.aborted) {
       this.#logger.debug('reject aborted request {procedure} with ID { rid }', { procedure, rid })
       return createRequest({
@@ -429,7 +452,7 @@ export class Client<
       ? { typ: 'request', rid, prc: procedure, prm }
       : { typ: 'request', rid, prc: procedure }
     this.#logger.trace('send request {procedure} with ID {rid}', { procedure, rid, param: prm })
-    const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>)
+    const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
     const signal = this.#handleSignal(rid, controller, providedSignal)
     return createRequest({ id: rid, controller, signal, sent })
   }
@@ -440,19 +463,21 @@ export class Client<
   >(
     procedure: Procedure,
     ...args: T['Param'] extends never
-      ? [config?: { id?: string; param?: never; signal?: AbortSignal }]
-      : [config: { id?: string; param: T['Param']; signal?: AbortSignal }]
+      ? [config?: { header?: AnyHeader; id?: string; param?: never; signal?: AbortSignal }]
+      : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
   ): StreamCall<T['Receive'], T['Result']> {
     const config = args[0] ?? {}
     const receive = createPipe<T['Receive']>()
     const writer = receive.writable.getWriter()
     const controller: StreamController<T['Receive'], T['Result']> = Object.assign(
-      createController<T['Result']>({ type: 'stream', procedure }, () => writer.close()),
+      createController<T['Result']>({ type: 'stream', procedure, header: config.header }, () =>
+        writer.close(),
+      ),
       { receive: writer },
     )
     const rid = config.id ?? this.#getRandomID()
 
-    const providedSignal = config?.signal
+    const providedSignal = config.signal
     if (providedSignal?.aborted) {
       this.#logger.debug('reject aborted stream creation {procedure} with ID {rid}', {
         procedure,
@@ -468,12 +493,12 @@ export class Client<
     }
 
     this.#controllers[rid] = controller
-    const prm = config?.param
+    const prm = config.param
     const payload = prm
       ? { typ: 'stream', rid, prc: procedure, prm }
       : { typ: 'stream', rid, prc: procedure }
     this.#logger.trace('create stream {procedure} with ID {rid}', { procedure, rid, param: prm })
-    const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>)
+    const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
     return createStream({
@@ -491,19 +516,21 @@ export class Client<
   >(
     procedure: Procedure,
     ...args: T['Param'] extends never
-      ? [config?: { id?: string; param?: never; signal?: AbortSignal }]
-      : [config: { id?: string; param: T['Param']; signal?: AbortSignal }]
+      ? [config?: { header?: AnyHeader; id?: string; param?: never; signal?: AbortSignal }]
+      : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
   ): ChannelCall<T['Receive'], T['Send'], T['Result']> {
     const config = args[0] ?? {}
     const receive = createPipe<T['Receive']>()
     const writer = receive.writable.getWriter()
     const controller: StreamController<T['Receive'], T['Result']> = Object.assign(
-      createController<T['Result']>({ type: 'channel', procedure }, () => writer.close()),
+      createController<T['Result']>({ type: 'channel', procedure, header: config.header }, () =>
+        writer.close(),
+      ),
       { receive: writer },
     )
     const rid = config.id ?? this.#getRandomID()
 
-    const providedSignal = config?.signal
+    const providedSignal = config.signal
     if (providedSignal?.aborted) {
       this.#logger.debug('reject aborted channel creation {procedure} with ID {rid}', {
         procedure,
@@ -524,12 +551,12 @@ export class Client<
     }
 
     this.#controllers[rid] = controller
-    const prm = config?.param
+    const prm = config.param
     const payload = prm
       ? { typ: 'channel', rid, prc: procedure, prm }
       : { typ: 'channel', rid, prc: procedure }
     this.#logger.trace('create channel {procedure} with ID {rid}', { procedure, rid, param: prm })
-    const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>)
+    const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
     const send = async (val: T['Send']) => {
@@ -538,7 +565,10 @@ export class Client<
         rid,
         value: val,
       })
-      await this.#write({ typ: 'send', rid, val } as unknown as AnyClientPayloadOf<Protocol>)
+      await this.#write(
+        { typ: 'send', rid, val } as unknown as AnyClientPayloadOf<Protocol>,
+        config.header,
+      )
     }
 
     return Object.assign(

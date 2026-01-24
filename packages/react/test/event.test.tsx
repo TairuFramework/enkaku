@@ -29,7 +29,7 @@ describe('useSendEvent', () => {
     expect(sendEvent).toBeDefined()
 
     await act(async () => {
-      await sendEvent({ message: 'Hello, world!' })
+      await sendEvent({ data: { message: 'Hello, world!' } })
     })
     expect(mockHandler).toHaveBeenCalledWith(
       expect.objectContaining({ data: { message: 'Hello, world!' } }),

@@ -44,7 +44,10 @@ export class ReactClient<
   async sendEvent<
     Procedure extends keyof Definitions['Events'] & string,
     T extends Definitions['Events'][Procedure] = Definitions['Events'][Procedure],
-  >(procedure: Procedure, ...args: T['Data'] extends never ? [] : [T['Data']]): Promise<void> {
+  >(
+    procedure: Procedure,
+    ...args: T['Data'] extends never ? [config?: { data?: never }] : [config: { data: T['Data'] }]
+  ): Promise<void> {
     await this.#client.sendEvent(procedure, ...args)
   }
 

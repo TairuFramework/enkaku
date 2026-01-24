@@ -4,7 +4,9 @@ import { useCallback } from 'react'
 
 import { useEnkakuClient } from './context.js'
 
-export type SendEvent<Data> = (...data: Data extends never ? [] : [Data]) => Promise<void>
+export type SendEvent<Data> = (
+  ...args: Data extends never ? [config?: { data?: never }] : [config: { data: Data }]
+) => Promise<void>
 
 export function useSendEvent<
   Protocol extends ProtocolDefinition,
@@ -15,9 +17,11 @@ export function useSendEvent<
   const client = useEnkakuClient<Protocol>()
 
   return useCallback(
-    async function sendEvent(...data: Data extends never ? [] : [Data]): Promise<void> {
+    async function sendEvent(
+      ...args: Data extends never ? [config?: { data?: never }] : [config: { data: Data }]
+    ): Promise<void> {
       // @ts-expect-error data type
-      await client.sendEvent(procedure, ...data)
+      await client.sendEvent(procedure, ...args)
     },
     [client, procedure],
   )

@@ -26,7 +26,7 @@ describe('standalone', () => {
       const handler = vi.fn<EventHandler<Protocol, 'test'>>()
       const client = standalone<Protocol>({ test: handler }, { signer })
 
-      await client.sendEvent('test', { hello: 'world' })
+      await client.sendEvent('test', { data: { hello: 'world' } })
       const message = await signer.createToken({
         aud: signer.id,
         typ: 'event',

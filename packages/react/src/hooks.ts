@@ -33,7 +33,7 @@ export function createLazyRequestHook<
         setCurrentCall(call)
         return call
       },
-      [client, execute, procedure],
+      [client, procedure],
     )
 
     return [sendRequest, currentCall] as const
@@ -64,6 +64,6 @@ export function createSuspenseRequestHook<
     return useMemo(() => {
       // @ts-expect-error config type
       return execute(client, procedure, config)
-    }, [client, config, execute, procedure])
+    }, [client, config, procedure])
   }
 }
