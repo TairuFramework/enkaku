@@ -16,7 +16,7 @@ catalog:
   '@electron-forge/cli': ^7.11.1
   '@electron-forge/plugin-vite': ^7.11.1
   '@hono/node-server': ^1.19.9
-  '@logtape/logtape': ^2.0.1
+  '@logtape/logtape': ^2.0.2
   '@napi-rs/keyring': ^1.2.0
   '@noble/curves': ^2.0.1
   '@noble/hashes': ^2.0.0
@@ -44,7 +44,7 @@ catalog:
   expo-crypto: ^15.0.8
   expo-secure-store: ^15.0.8
   get-port: ^7.1.0
-  happy-dom: ^20.3.7
+  happy-dom: ^20.3.9
   json-schema-to-ts: ^3.1.1
   playwright: ^1.55.0
   react: 19.1.0
@@ -52,7 +52,7 @@ catalog:
   react-native-electron: ^0.22.1
   react-native-web: 0.21.2
   tsx: ^4.21.0
-  turbo: ^2.7.5
+  turbo: ^2.7.6
   typedoc: ^0.28.16
   typedoc-plugin-markdown: ^4.9.0
   typescript: 5.9.2

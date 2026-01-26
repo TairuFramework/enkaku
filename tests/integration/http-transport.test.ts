@@ -64,7 +64,7 @@ describe('HTTP transports', () => {
       const handler = vi.fn() as EventHandler<Protocol, 'test'>
       const { client, dispose } = await createContext<Protocol>({ test: handler })
 
-      await client.sendEvent('test', { hello: 'world' })
+      await client.sendEvent('test', { data: { hello: 'world' } })
       await setTimeout(100)
       expect(handler).toHaveBeenCalledWith({
         data: { hello: 'world' },

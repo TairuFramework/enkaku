@@ -39,7 +39,7 @@ describe('client-server integration', () => {
       const client = new Client<Protocol>({ transport: transports.client })
       serve<Protocol>({ handlers, public: true, transport: transports.server })
 
-      await client.sendEvent('test', { hello: 'world' })
+      await client.sendEvent('test', { data: { hello: 'world' } })
       expect(handler).toHaveBeenCalledWith({
         data: { hello: 'world' },
         message: createUnsignedToken({ typ: 'event', prc: 'test', data: { hello: 'world' } }),
