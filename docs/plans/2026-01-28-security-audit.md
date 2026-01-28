@@ -851,10 +851,211 @@ The following fixes will require breaking changes:
 
 ---
 
-## Next Steps
+## Phase 3: Performance Improvements
 
-1. [ ] Prioritize issues by implementation order
-2. [ ] Create tracking issues for each item
-3. [ ] Implement fixes starting with CRITICAL items
-4. [ ] Add test coverage for each fix
-5. [ ] Perform performance audit after security fixes
+### Serialization Performance
+
+#### P-01: String Concatenation in JSON-Lines Parser
+- **Package:** `@enkaku/stream`
+- **File:** `packages/stream/src/json-lines.ts:37, 42, 47, 52, 57, 81`
+- **Impact:** HIGH - 10-50x slower for large payloads
+
+**Issue:** `output += char` in hot loop creates thousands of intermediate strings.
+
+**Recommendation:** Use array buffer approach:
+```typescript
+let output: string[] = []
+output.push(char)  // Instead of output += char
+output.join('')    // Join once at end
+```
+
+---
+
+#### P-02: Multiple Regex Replacements in Base64URL
+- **Package:** `@enkaku/codec`
+- **File:** `packages/codec/src/index.ts:48`
+- **Impact:** HIGH - 3x slower encoding
+
+**Issue:** Three sequential `.replace()` calls create 3 intermediate strings.
+
+**Recommendation:** Single regex with alternation:
+```typescript
+return toB64(bytes).replace(/[=+/]/g, m => m === '=' ? '' : m === '+' ? '-' : '_')
+```
+
+---
+
+#### P-03: Regex in Hot Loop
+- **Package:** `@enkaku/stream`
+- **File:** `packages/stream/src/json-lines.ts:56`
+- **Impact:** MEDIUM - 2-5x slower per message
+
+**Issue:** `/\S/.test(char)` regex executed for every character.
+
+**Recommendation:** Use character code comparison:
+```typescript
+if (char.charCodeAt(0) > 32) { ... }
+```
+
+---
+
+### Memory Usage
+
+#### P-04: Unbounded Controller Storage
+- **Package:** `@enkaku/server`
+- **File:** `packages/server/src/server.ts:58`
+- **Impact:** CRITICAL - Memory leak in long-running servers
+
+**Issue:** Controllers stored indefinitely until message completion. No TTL, max count, or orphan cleanup.
+
+**Recommendation:** Add timeout-based cleanup (30 min default) and size limits.
+
+---
+
+#### P-05: Session Map Growth Without Limits
+- **Package:** `@enkaku/http-server-transport`
+- **File:** `packages/http-server-transport/src/index.ts:45-46`
+- **Impact:** HIGH - DoS vector
+
+**Issue:** Sessions and inflight requests accumulate without cleanup.
+
+**Recommendation:** Add session timeout (5 min) and inflight request timeout (30s).
+
+---
+
+#### P-06: String Buffer Growth Without Limits
+- **Package:** `@enkaku/stream`
+- **File:** `packages/stream/src/json-lines.ts:21-22`
+- **Impact:** HIGH - OOM on large inputs
+
+**Issue:** `input` and `output` buffers grow unbounded.
+
+**Recommendation:** Add `MAX_BUFFER_SIZE` (1MB) and `MAX_OUTPUT_SIZE` (10MB).
+
+---
+
+### Async/Stream Performance
+
+#### P-07: No Backpressure in Stream Transforms
+- **Package:** `@enkaku/stream`
+- **File:** `packages/stream/src/json-lines.ts:63-89`
+- **Impact:** HIGH - Stream overflow
+
+**Issue:** Never checks `controller.desiredSize` before enqueueing.
+
+**Recommendation:** Check backpressure before enqueue, pause on slow consumers.
+
+---
+
+#### P-08: O(n²) Chain Unwinding
+- **Package:** `@enkaku/execution`
+- **File:** `packages/execution/src/execution.ts:134-139`
+- **Impact:** MEDIUM - Slow iteration
+
+**Issue:** `unshift()` is O(n) per call, making chain traversal O(n²).
+
+**Recommendation:** Use `push()` then `reverse()` for O(n).
+
+---
+
+#### P-09: Redundant Signal Combining
+- **Package:** `@enkaku/execution`
+- **File:** `packages/execution/src/execution.ts:80-86`
+- **Impact:** MEDIUM - Extra listeners
+
+**Issue:** `AbortSignal.any()` called twice with overlapping signals.
+
+**Recommendation:** Combine signals once with deduplication.
+
+---
+
+### Crypto Performance
+
+#### P-10: Sequential Capability Verification
+- **Package:** `@enkaku/capability`
+- **File:** `packages/capability/src/index.ts:163, 193`
+- **Impact:** MEDIUM - O(n) verification time
+
+**Issue:** Signature verification in chains is purely sequential.
+
+**Recommendation:** Parallelize with `Promise.all()` for independent chains.
+
+---
+
+#### P-11: Redundant DID/Signature Decoding
+- **Package:** `@enkaku/token`
+- **File:** `packages/token/src/token.ts:103, 131`
+- **Impact:** MEDIUM - Extra decode per verify
+
+**Issue:** Signature and DID re-decoded on every verification.
+
+**Recommendation:** Cache decoded results for tokens verified within time window.
+
+---
+
+#### P-12: Synchronous Keyring Operations
+- **Package:** `@enkaku/node-keystore`
+- **File:** `packages/node-keystore/src/entry.ts:37, 58, 90`
+- **Impact:** HIGH - Event loop blocking
+
+**Issue:** Sync methods block event loop.
+
+**Recommendation:** Document preference for async variants; deprecate sync in v1.
+
+---
+
+### Performance Priority Matrix
+
+| Priority | Issue | Package | Impact | Effort |
+|----------|-------|---------|--------|--------|
+| P0 | P-01: String concat in JSON-L | stream | 10-50x slower | Low |
+| P0 | P-04: Unbounded controllers | server | Memory leak | Medium |
+| P1 | P-02: Triple regex replace | codec | 3x slower | Low |
+| P1 | P-05: Session map growth | http-transport | DoS risk | Medium |
+| P1 | P-06: Buffer growth | stream | OOM risk | Low |
+| P1 | P-07: No backpressure | stream | Overflow | Medium |
+| P2 | P-03: Regex in hot loop | stream | 2-5x slower | Low |
+| P2 | P-08: O(n²) chain unwind | execution | Slow iteration | Low |
+| P2 | P-10: Sequential verify | capability | O(n) time | Medium |
+| P3 | P-09: Redundant signals | execution | Extra overhead | Low |
+| P3 | P-11: Redundant decode | token | Extra decode | Medium |
+| P3 | P-12: Sync keyring | node-keystore | Blocking | Low |
+
+---
+
+## Implementation Roadmap
+
+### Phase 1: Critical Security (Breaking Changes OK)
+1. C-01: Token expiration validation
+2. C-02, C-03: Capability authorization
+3. C-05, C-06, C-07: Server resource limits
+4. C-12: Browser keystore encryption
+5. H-05, H-06: Protocol schema hardening
+
+### Phase 2: High Priority Security
+1. H-01 through H-18: All high severity issues
+2. T-01 through T-07: Test coverage gaps
+
+### Phase 3: Performance
+1. P-01, P-02, P-03: Serialization quick wins
+2. P-04, P-05, P-06: Memory limits
+3. P-07: Stream backpressure
+
+### Phase 4: Medium Security + Polish
+1. M-01 through M-14: Medium severity issues
+2. L-01 through L-03: Low severity issues
+3. P-08 through P-12: Remaining performance
+
+---
+
+## Appendix: Breaking Changes Summary
+
+| Issue | Change | Migration |
+|-------|--------|-----------|
+| C-01 | Tokens with `exp` now validated | Ensure valid expiration times |
+| C-02 | Self-issued tokens validated | Update token creation logic |
+| C-05 | Controller limits enforced | Handle rejection errors |
+| C-12 | Browser keys encrypted | Keys re-generated on first use |
+| H-05 | Field size limits | Reduce payload sizes |
+| H-06 | additionalProperties: false | Remove extra fields |
+| P-12 | Sync keyring deprecated | Use async variants |
