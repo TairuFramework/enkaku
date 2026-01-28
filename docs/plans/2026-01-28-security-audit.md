@@ -697,6 +697,160 @@ The following fixes will require breaking changes:
 
 ---
 
+## Phase 2: Test Coverage Gaps
+
+### Coverage Summary by Package
+
+| Package | Test Files | Coverage | Critical Gaps |
+|---------|-----------|----------|---------------|
+| `@enkaku/token` | 2 | ~30% | 11 error paths untested |
+| `@enkaku/capability` | 1 | ~60% | Auth bypass untested (C-02, C-03) |
+| `@enkaku/client` | 1 | ~70% | Memory leak paths untested |
+| `@enkaku/server` | 6 | ~65% | Resource limits untested (C-05, C-06, C-07) |
+| `@enkaku/http-server-transport` | 1 | ~30% | Session exhaustion untested |
+| `@enkaku/http-client-transport` | 0 | 0% | **NO TESTS** |
+| `@enkaku/socket-transport` | 0 | 0% | **NO TESTS** |
+| `@enkaku/message-transport` | 0 | 0% | **NO TESTS** |
+| `@enkaku/node-streams-transport` | 1 | ~20% | Error paths untested |
+| `@enkaku/schema` | 1 | ~15% | Reference resolution untested (H-07) |
+| `@enkaku/protocol` | 1 | ~20% | Size constraints untested (H-05) |
+| `@enkaku/node-keystore` | 0 | 0% | **NO TESTS** |
+| `@enkaku/browser-keystore` | 0 | 0% | **NO TESTS** |
+| `@enkaku/expo-keystore` | 0 | 0% | **NO TESTS** |
+| `@enkaku/electron-keystore` | 0 | 0% | **NO TESTS** |
+| `@enkaku/codec` | 1 | ~60% | Depth limits untested (H-08) |
+| `@enkaku/stream` | 4 | ~70% | Size limits untested (H-18) |
+| `@enkaku/async` | 4 | ~85% | Good coverage |
+| `@enkaku/result` | 3 | ~90% | Excellent coverage |
+| `@enkaku/event` | 1 | ~65% | Error handling untested |
+| `@enkaku/execution` | 1 | ~60% | Chain cleanup untested |
+
+---
+
+### T-01: Token Package - Missing Error Path Tests
+- **Package:** `@enkaku/token`
+- **Priority:** HIGH
+
+**Untested Error Paths:**
+| Function | Location | Error Case |
+|----------|----------|------------|
+| `verifyToken()` | token.ts:113 | Malformed JWT (not 3 parts) |
+| `verifyToken()` | token.ts:116-118 | Invalid header type |
+| `verifyToken()` | token.ts:124-126 | Missing signature |
+| `verifyToken()` | token.ts:145 | Unsupported algorithm |
+| `verifySignedPayload()` | token.ts:31-32 | Invalid signature |
+| `getSignatureInfo()` | did.ts:47 | Invalid DID prefix |
+| `getSignatureInfo()` | did.ts:53 | Unsupported codec |
+| `isCodecMatch()` | did.ts:13-20 | Bytes shorter than codec |
+| `signToken()` | signer.ts:50-52 | Issuer mismatch |
+| `toTokenSigner()` | signer.ts:39-42 | Unsupported algorithm |
+| `getVerifier()` | verifier.ts:29-30 | No verifier for algorithm |
+
+---
+
+### T-02: Capability Package - Authorization Tests Missing
+- **Package:** `@enkaku/capability`
+- **Priority:** CRITICAL
+
+**Security-Critical Untested Paths:**
+| Function | Location | Issue | Security Link |
+|----------|----------|-------|---------------|
+| `checkCapability()` | index.ts:179-182 | iss===sub bypass | C-02 |
+| `createCapability()` | index.ts:67-76 | No auth checks | C-03 |
+| `checkDelegationChain()` | index.ts:149-167 | Deep chain DoS | H-04 |
+| `checkCapability()` | index.ts:174-176 | Missing subject | - |
+| `assertCapabilityToken()` | index.ts:60-62 | Invalid token | - |
+
+---
+
+### T-03: Client/Server - Resource Limit Tests Missing
+- **Package:** `@enkaku/client`, `@enkaku/server`
+- **Priority:** CRITICAL
+
+**Untested DoS Scenarios:**
+| Issue | Location | Test Needed |
+|-------|----------|-------------|
+| Unbounded controllers | server.ts:58 | 10,000 concurrent requests |
+| No handler limits | server.ts:101 | Handler explosion |
+| Channel send auth | server.ts:179 | Auth bypass on send |
+| Unbounded stream buffer | handlers/stream.ts:34 | 100MB writes |
+| Unbounded channel buffer | handlers/channel.ts:40 | Memory exhaustion |
+| Non-existent RID sends | client.ts:317 | Memory leak |
+
+---
+
+### T-04: Transport Packages - Zero Coverage
+- **Packages:** `@enkaku/http-client-transport`, `@enkaku/socket-transport`, `@enkaku/message-transport`
+- **Priority:** CRITICAL
+
+**Complete test suites needed for:**
+- Connection lifecycle (connect, disconnect, error)
+- Session management (create, timeout, cleanup)
+- Message framing (valid, malformed, oversized)
+- Backpressure handling
+- Abort signal propagation
+
+---
+
+### T-05: Keystore Packages - Zero Coverage
+- **Packages:** All 4 keystore packages
+- **Priority:** CRITICAL
+
+**Test suites needed for:**
+- Key lifecycle: create, retrieve, delete
+- Error handling: platform failures, invalid data
+- Security: encryption (C-12), memory clearing (M-14)
+- Edge cases: empty IDs, large keys, concurrent access
+
+---
+
+### T-06: Schema/Protocol - Validation Tests Missing
+- **Package:** `@enkaku/schema`, `@enkaku/protocol`
+- **Priority:** HIGH
+
+**Untested:**
+| Function | Location | Issue |
+|----------|----------|-------|
+| `resolveReference()` | utils.ts:3-20 | Prototype pollution (H-07) |
+| `resolveSchema()` | utils.ts:23-26 | Never tested |
+| All helper functions | client.ts, server.ts | Only main schemas tested |
+| Size constraints | All schemas | H-05 not enforced |
+
+---
+
+### T-07: Utility Packages - Security Tests Missing
+- **Packages:** `@enkaku/codec`, `@enkaku/stream`
+- **Priority:** HIGH
+
+**Untested Security Scenarios:**
+| Issue | Location | Test Needed |
+|-------|----------|-------------|
+| JSON depth limits | codec/index.ts:90 | 10,000+ nesting (H-08) |
+| Payload size limits | stream/json-lines.ts:74 | 10MB+ payloads (H-18) |
+| Base64 validation | codec/index.ts:33 | Invalid padding (M-03) |
+
+---
+
+## Test Priority Matrix
+
+### Priority 1: Security-Critical (Before v1)
+1. [ ] T-02: Capability authorization bypass tests
+2. [ ] T-03: Server resource limit tests
+3. [ ] T-04: Transport package test suites
+4. [ ] T-05: Keystore package test suites
+
+### Priority 2: High Severity
+1. [ ] T-01: Token error path tests
+2. [ ] T-06: Schema validation tests
+3. [ ] T-07: Codec/stream security tests
+
+### Priority 3: Coverage Improvement
+1. [ ] Event listener error handling
+2. [ ] Execution chain cleanup
+3. [ ] Stream backpressure
+
+---
+
 ## Next Steps
 
 1. [ ] Prioritize issues by implementation order
