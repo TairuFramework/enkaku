@@ -28,6 +28,8 @@ export const DEFAULT_MAX_DELEGATION_DEPTH = 20
 
 /** Options for delegation chain validation */
 export type DelegationChainOptions = {
+  /** Time to use for expiration checks (seconds since epoch). Defaults to now(). */
+  atTime?: number
   /** Maximum depth of delegation chain. Defaults to 20. */
   maxDepth?: number
 }
@@ -243,10 +245,10 @@ export function assertValidDelegation(
 export async function checkDelegationChain(
   payload: CapabilityPayload,
   capabilities: Array<string>,
-  atTime?: number,
   options?: DelegationChainOptions,
 ): Promise<void> {
   const maxDepth = options?.maxDepth ?? DEFAULT_MAX_DELEGATION_DEPTH
+  const atTime = options?.atTime
 
   if (capabilities.length > maxDepth) {
     throw new Error(`Invalid capability: delegation chain exceeds maximum depth of ${maxDepth}`)
@@ -264,7 +266,7 @@ export async function checkDelegationChain(
   const next = await verifyToken<CapabilityPayload>(head)
   assertCapabilityToken(next)
   assertValidDelegation(next.payload, payload, atTime)
-  await checkDelegationChain(next.payload, tail, atTime, options)
+  await checkDelegationChain(next.payload, tail, options)
 }
 
 export async function checkCapability(
@@ -312,5 +314,5 @@ export async function checkCapability(
 
   const toCapability = { ...payload, ...permission } as CapabilityPayload
   assertValidDelegation(capability.payload, toCapability, time)
-  await checkDelegationChain(capability.payload, tail, time, options)
+  await checkDelegationChain(capability.payload, tail, { ...options, atTime: time })
 }
