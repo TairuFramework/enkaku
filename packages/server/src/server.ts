@@ -67,8 +67,30 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   }
   const running: Record<string, Promise<void>> = Object.create(null)
 
+  // Periodic cleanup of expired controllers
+  const cleanupInterval = setInterval(() => {
+    const expired = limiter.getExpiredControllers()
+    for (const rid of expired) {
+      const controller = controllers[rid]
+      if (controller != null) {
+        controller.abort('Timeout')
+        const error = new HandlerError({
+          code: 'EK05',
+          message: 'Request timeout',
+        })
+        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
+        events.emit('handlerTimeout', { rid })
+        limiter.removeController(rid)
+        delete controllers[rid]
+      } else {
+        limiter.removeController(rid)
+      }
+    }
+  }, Math.min(limiter.limits.controllerTimeoutMs, 10000))
+
   const disposer = new Disposer({
     dispose: async () => {
+      clearInterval(cleanupInterval)
       const interruption = new DisposeInterruption()
       // Abort all currently running handlers
       for (const controller of Object.values(controllers)) {
