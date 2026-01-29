@@ -318,15 +318,33 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       dispose: async () => {
         // Signal messages handler to stop execution and run cleanup logic
         this.#abortController.abort()
-        // Dispose of all handling transports
-        await Promise.all(
-          this.#handling.map(async (handling) => {
-            // Wait until all handlers are done - they might still need to flush messages to the transport
-            await handling.done
-            // Dispose transport
+
+        const cleanupTimeout = this.#limiter.limits.cleanupTimeoutMs
+        const timeoutPromise = new Promise<void>((resolve) => {
+          setTimeout(resolve, cleanupTimeout)
+        })
+
+        // Race between graceful cleanup and timeout
+        await Promise.race([
+          Promise.all(
+            this.#handling.map(async (handling) => {
+              // Wait until all handlers are done - they might still need to flush messages to the transport
+              await handling.done
+              // Dispose transport
+              await handling.transport.dispose()
+            }),
+          ),
+          timeoutPromise,
+        ])
+
+        // Force dispose any remaining transports after timeout
+        for (const handling of this.#handling) {
+          try {
             await handling.transport.dispose()
-          }),
-        )
+          } catch {
+            // Ignore errors during forced cleanup
+          }
+        }
       },
       signal: params.signal,
     })
