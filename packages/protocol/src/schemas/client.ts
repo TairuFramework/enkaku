@@ -20,7 +20,7 @@ export const abortMessagePayload: Schema = {
     rsn: { type: 'string' },
   },
   required: ['typ', 'rid'],
-  additionalProperties: true,
+  additionalProperties: false,
 } as const satisfies Schema
 
 /** @internal */
@@ -39,7 +39,7 @@ export function createEventPayloadWithData(procedure: string, dataSchema: Schema
       jti: { type: 'string' },
     },
     required: ['typ', 'prc', 'data'],
-    additionalProperties: true,
+    additionalProperties: false,
   } as const satisfies Schema
 }
 
@@ -53,7 +53,7 @@ export function createEventPayloadWithoutData(procedure: string): Schema {
       jti: { type: 'string' },
     },
     required: ['typ', 'prc'],
-    additionalProperties: true,
+    additionalProperties: false,
   } as const satisfies Schema
 }
 
@@ -85,7 +85,7 @@ export function createRequestPayloadWithParam(
       jti: { type: 'string' },
     },
     required: ['typ', 'prc', 'rid', 'prm'],
-    additionalProperties: true,
+    additionalProperties: false,
   } as const satisfies Schema
 }
 
@@ -100,7 +100,7 @@ export function createRequestPayloadWithoutParam(procedure: string, type: Reques
       jti: { type: 'string' },
     },
     required: ['typ', 'prc', 'rid'],
-    additionalProperties: true,
+    additionalProperties: false,
   } as const satisfies Schema
 }
 
@@ -132,7 +132,7 @@ export function createSendMessageSchema(
       jti: { type: 'string' },
     },
     required: ['typ', 'prc', 'rid', 'val'],
-    additionalProperties: true,
+    additionalProperties: false,
   } as const satisfies Schema
   return createMessageSchema(payloadSchema, type)
 }
