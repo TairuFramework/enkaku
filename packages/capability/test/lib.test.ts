@@ -548,3 +548,89 @@ describe('checkDelegationChain() - depth limits (H-04)', () => {
     ).resolves.not.toThrow()
   })
 })
+
+describe('isCapabilityToken() - type validation (M-04)', () => {
+  const validHeader = { typ: 'JWT' as const, alg: 'EdDSA' as const }
+  const validSignature = 'test-signature'
+  const validPublicKey = new Uint8Array(32)
+
+  function makeToken(payload: Record<string, unknown>) {
+    return {
+      data: 'test',
+      header: validHeader,
+      payload: { iss: 'did:test:123', ...payload },
+      signature: validSignature,
+      verifiedPublicKey: validPublicKey,
+    }
+  }
+
+  test('rejects token with non-string aud', () => {
+    const token = makeToken({
+      sub: 'did:test:456',
+      aud: 123, // Should be string
+      act: 'test',
+      res: 'foo',
+    })
+    expect(isCapabilityToken(token)).toBe(false)
+  })
+
+  test('rejects token with non-string sub', () => {
+    const token = makeToken({
+      sub: { id: '456' }, // Should be string
+      aud: 'did:test:789',
+      act: 'test',
+      res: 'foo',
+    })
+    expect(isCapabilityToken(token)).toBe(false)
+  })
+
+  test('rejects token with invalid act type', () => {
+    const token = makeToken({
+      sub: 'did:test:456',
+      aud: 'did:test:789',
+      act: 123, // Should be string or string[]
+      res: 'foo',
+    })
+    expect(isCapabilityToken(token)).toBe(false)
+  })
+
+  test('rejects token with invalid res type', () => {
+    const token = makeToken({
+      sub: 'did:test:456',
+      aud: 'did:test:789',
+      act: 'test',
+      res: { path: 'foo' }, // Should be string or string[]
+    })
+    expect(isCapabilityToken(token)).toBe(false)
+  })
+
+  test('accepts token with string act and res', () => {
+    const token = makeToken({
+      sub: 'did:test:456',
+      aud: 'did:test:789',
+      act: 'test',
+      res: 'foo',
+    })
+    expect(isCapabilityToken(token)).toBe(true)
+  })
+
+  test('accepts token with array act and res', () => {
+    const token = makeToken({
+      sub: 'did:test:456',
+      aud: 'did:test:789',
+      act: ['read', 'write'],
+      res: ['foo', 'bar'],
+    })
+    expect(isCapabilityToken(token)).toBe(true)
+  })
+
+  test('rejects token with mixed array containing non-strings', () => {
+    const token = makeToken({
+      sub: 'did:test:456',
+      aud: 'did:test:789',
+      act: ['read', 123], // Invalid: number in array
+      res: 'foo',
+    })
+    expect(isCapabilityToken(token)).toBe(false)
+  })
+})
