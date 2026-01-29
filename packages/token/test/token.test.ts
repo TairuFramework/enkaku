@@ -1,8 +1,9 @@
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { equals } from 'uint8arrays'
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 
 import { randomTokenSigner } from '../src/signer.js'
+import type { TimeValidationOptions } from '../src/time.js'
 import {
   createUnsignedToken,
   isSignedToken,
@@ -25,6 +26,17 @@ test('create a signed token and verify it', async () => {
   expect(equals((verified as VerifiedToken<{ test: true }>).verifiedPublicKey, publicKey)).toBe(
     true,
   )
+})
+
+test('verifyToken rejects malformed JWT strings', async () => {
+  // Too few parts
+  await expect(verifyToken('header.payload')).rejects.toThrow('Invalid token format')
+  await expect(verifyToken('header')).rejects.toThrow('Invalid token format')
+  await expect(verifyToken('')).rejects.toThrow('Invalid token format')
+
+  // Too many parts
+  await expect(verifyToken('a.b.c.d')).rejects.toThrow('Invalid token format')
+  await expect(verifyToken('a.b.c.d.e')).rejects.toThrow('Invalid token format')
 })
 
 test('create an unsigned token, sign and stringify it', async () => {

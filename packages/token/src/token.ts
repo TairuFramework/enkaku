@@ -110,7 +110,11 @@ export async function verifyToken<
     throw new Error('Unsupported token')
   }
 
-  const [encodedHeader, encodedPayload, signature] = token.split('.')
+  const parts = token.split('.')
+  if (parts.length !== 3) {
+    throw new Error('Invalid token format: expected 3 parts separated by dots')
+  }
+  const [encodedHeader, encodedPayload, signature] = parts
 
   const header = b64uToJSON(encodedHeader)
   if (header.typ !== 'JWT') {
