@@ -1,6 +1,6 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { ValidationError } from '@enkaku/schema'
-import { createUnsignedToken, randomTokenSigner } from '@enkaku/token'
+import { randomTokenSigner } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
 import { describe, expect, test, vi } from 'vitest'
 
@@ -275,9 +275,13 @@ describe('serve()', () => {
     async function sendNext() {
       const val = send.shift()
       if (val != null) {
-        await transports.client.write(
-          createUnsignedToken({ typ: 'send', prc: 'test', rid: '1', val }),
-        )
+        const sendMsg = await signer.createToken({
+          typ: 'send',
+          prc: 'test',
+          rid: '1',
+          val,
+        } as const)
+        await transports.client.write(sendMsg)
       }
     }
     sendNext()

@@ -214,7 +214,37 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
         case 'send': {
           const controller = controllers[msg.payload.rid] as ChannelController | undefined
-          controller?.writer.write(msg.payload.val)
+          if (controller == null) {
+            logger.debug('received send for unknown channel {rid}', { rid: msg.payload.rid })
+            break
+          }
+          // In non-public mode, validate send messages
+          if (!params.public) {
+            if (!isSignedToken(msg as Token)) {
+              const error = new HandlerError({
+                code: 'EK02',
+                message: 'Channel send message must be signed',
+              })
+              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>)
+              break
+            }
+            try {
+              await checkClientToken(
+                params.serverID,
+                params.access,
+                msg as unknown as SignedToken,
+              )
+            } catch (cause) {
+              const error = new HandlerError({
+                cause,
+                code: 'EK02',
+                message: (cause as Error).message ?? 'Send authorization denied',
+              })
+              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>)
+              break
+            }
+          }
+          controller.writer.write(msg.payload.val)
           break
         }
         case 'stream': {
