@@ -4,6 +4,11 @@
 **Purpose:** Comprehensive security audit for v1 release
 **Scope:** All packages - security, coverage gaps, performance improvements
 
+**Resolved via implementation plans (archived):**
+- Token expiration validation (C-01, H-01) — `docs/plans/archive/2026-01-28-token-expiration-validation.md`
+- Capability authorization hardening (C-02, C-03, H-04, M-04) — `docs/plans/archive/2026-01-28-capability-authorization.md`
+- Server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) — `docs/plans/archive/2026-01-28-server-resource-limits.md`
+
 ---
 
 ## Executive Summary

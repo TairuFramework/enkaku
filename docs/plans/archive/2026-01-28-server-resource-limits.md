@@ -1,5 +1,7 @@
 # Server Resource Limits Implementation Plan
 
+**Status:** complete
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add resource limits and authorization enforcement to the server package to prevent DoS attacks and ensure proper security.

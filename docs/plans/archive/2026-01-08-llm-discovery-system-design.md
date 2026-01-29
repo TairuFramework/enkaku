@@ -1,8 +1,22 @@
 # LLM Progressive Discovery System for Enkaku
 
+**Status:** partial
+
 **Date**: 2026-01-08
-**Status**: Design
 **Purpose**: Enable LLMs to progressively discover Enkaku's capabilities without loading the entire codebase
+
+**What was implemented:**
+- AGENTS.md entry point with discovery pointers
+- Agent docs structure (`docs/agents/architecture.md`, `conventions.md`, `development.md`)
+- Discovery skill (`/enkaku:discover`)
+- 6 of 8 domain skills: transport, auth, core-rpc, streaming, validation, discover
+- All 5 domain capability docs (`docs/capabilities/domains/`)
+- All 5 use-case docs (`docs/capabilities/use-cases/`)
+
+**Remaining work (moved to `docs/plans/backlog/`):**
+- `/enkaku:execution` skill (referenced in discover.skill.md but not created)
+- `/enkaku:utilities` skill
+- `/enkaku:platform` skill
 
 ---
 

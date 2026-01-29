@@ -1,10 +1,11 @@
 # Capability Authorization Hardening Implementation Plan
 
+**Status:** complete
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Fix capability authorization bypass vulnerabilities and add DoS protection to the `@enkaku/capability` package.
 
-**Status:** COMPLETED
 **Branch:** `claude/implement-capability-authorization-b65WS`
 
 **Architecture:**

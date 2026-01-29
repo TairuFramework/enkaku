@@ -1,6 +1,7 @@
 # Token Expiration Validation Implementation Plan
 
-> **Status:** COMPLETED (2026-01-29)
+**Status:** complete
+
 > **Branch:** `claude/token-expiration-validation-Bcct6`
 > **Commits:** `f3a024a`..`3e36b89` (6 commits)
 > **Verified:** All tests pass (28 token + 14 capability), lint clean, build succeeds
