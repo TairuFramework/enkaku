@@ -482,8 +482,7 @@ describe('checkDelegationChain() - depth limits (H-04)', () => {
   async function buildDelegationChain(signers: Array<ReturnType<typeof randomTokenSigner>>) {
     const capabilities: Array<string> = []
     for (let i = 0; i < signers.length - 1; i++) {
-      const parentOption =
-        i > 0 ? { parentCapability: capabilities[i - 1] } : undefined
+      const parentOption = i > 0 ? { parentCapability: capabilities[i - 1] } : undefined
       const cap = await createCapability(
         signers[i],
         {
@@ -514,9 +513,9 @@ describe('checkDelegationChain() - depth limits (H-04)', () => {
     } as CapabilityPayload
 
     // Should reject: chain depth exceeds limit
-    await expect(
-      checkDelegationChain(finalPayload, [...capabilities].reverse()),
-    ).rejects.toThrow('delegation chain exceeds maximum depth')
+    await expect(checkDelegationChain(finalPayload, [...capabilities].reverse())).rejects.toThrow(
+      'delegation chain exceeds maximum depth',
+    )
   })
 
   test('accepts delegation chains within max depth', async () => {

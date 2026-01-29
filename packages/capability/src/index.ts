@@ -138,9 +138,7 @@ export async function createCapability<
 
   // Signer must be the audience of the parent capability
   if (parent.payload.aud !== signerId) {
-    throw new Error(
-      'Invalid capability: signer must be the audience of parent capability',
-    )
+    throw new Error('Invalid capability: signer must be the audience of parent capability')
   }
 
   // Subject must match
@@ -162,9 +160,7 @@ export async function createCapability<
   }
 
   if (!hasPermission(newPermission, parentPermission)) {
-    throw new Error(
-      'Invalid capability: delegated permission exceeds parent capability',
-    )
+    throw new Error('Invalid capability: delegated permission exceeds parent capability')
   }
 
   return await signer.createToken(payload, header)
@@ -250,9 +246,7 @@ export async function checkDelegationChain(
   const maxDepth = options?.maxDepth ?? DEFAULT_MAX_DELEGATION_DEPTH
 
   if (capabilities.length > maxDepth) {
-    throw new Error(
-      `Invalid capability: delegation chain exceeds maximum depth of ${maxDepth}`,
-    )
+    throw new Error(`Invalid capability: delegation chain exceeds maximum depth of ${maxDepth}`)
   }
 
   if (capabilities.length === 0) {
