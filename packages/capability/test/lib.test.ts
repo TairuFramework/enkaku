@@ -457,3 +457,94 @@ describe('checkCapability() - self-issued tokens (C-02)', () => {
     ).rejects.toThrow()
   })
 })
+
+describe('checkDelegationChain() - depth limits (H-04)', () => {
+  test('rejects delegation chains exceeding max depth', async () => {
+    const signers = Array.from({ length: 25 }, () => randomTokenSigner())
+
+    // Build a chain of 24 delegations (exceeds default limit of 20)
+    const capabilities: Array<string> = []
+    for (let i = 0; i < signers.length - 1; i++) {
+      const cap = await createCapability(signers[i], {
+        sub: signers[0].id,
+        aud: signers[i + 1].id,
+        act: '*',
+        res: '*',
+      })
+      capabilities.push(stringifyToken(cap))
+    }
+
+    const finalPayload = {
+      iss: signers[signers.length - 1].id,
+      sub: signers[0].id,
+      act: 'test',
+      res: 'foo',
+    } as CapabilityPayload
+
+    // Should reject: chain depth exceeds limit
+    await expect(
+      checkDelegationChain(finalPayload, capabilities.reverse()),
+    ).rejects.toThrow('delegation chain exceeds maximum depth')
+  })
+
+  test('accepts delegation chains within max depth', async () => {
+    const signers = Array.from({ length: 5 }, () => randomTokenSigner())
+
+    const capabilities: Array<string> = []
+    for (let i = 0; i < signers.length - 1; i++) {
+      const cap = await createCapability(signers[i], {
+        sub: signers[0].id,
+        aud: signers[i + 1].id,
+        act: '*',
+        res: '*',
+      })
+      capabilities.push(stringifyToken(cap))
+    }
+
+    const finalPayload = {
+      iss: signers[signers.length - 1].id,
+      sub: signers[0].id,
+      act: 'test',
+      res: 'foo',
+    } as CapabilityPayload
+
+    // Should succeed: chain depth within limit
+    await expect(
+      checkDelegationChain(finalPayload, capabilities.reverse()),
+    ).resolves.not.toThrow()
+  })
+
+  test('respects custom maxDepth option', async () => {
+    const signers = Array.from({ length: 5 }, () => randomTokenSigner())
+
+    const capabilities: Array<string> = []
+    for (let i = 0; i < signers.length - 1; i++) {
+      const cap = await createCapability(signers[i], {
+        sub: signers[0].id,
+        aud: signers[i + 1].id,
+        act: '*',
+        res: '*',
+      })
+      capabilities.push(stringifyToken(cap))
+    }
+
+    const finalPayload = {
+      iss: signers[signers.length - 1].id,
+      sub: signers[0].id,
+      act: 'test',
+      res: 'foo',
+    } as CapabilityPayload
+
+    const reversed = [...capabilities].reverse()
+
+    // Should reject: custom limit of 2
+    await expect(
+      checkDelegationChain(finalPayload, reversed, undefined, { maxDepth: 2 }),
+    ).rejects.toThrow('delegation chain exceeds maximum depth')
+
+    // Should succeed: custom limit of 10
+    await expect(
+      checkDelegationChain(finalPayload, reversed, undefined, { maxDepth: 10 }),
+    ).resolves.not.toThrow()
+  })
+})
