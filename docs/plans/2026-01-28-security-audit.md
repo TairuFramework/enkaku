@@ -10,8 +10,8 @@
 
 | Severity | Count | Status |
 |----------|-------|--------|
-| CRITICAL | 12 | Pending |
-| HIGH | 18 | Pending |
+| CRITICAL | 12 | 1 Fixed (C-01) |
+| HIGH | 18 | 1 Fixed (H-01), 1 Partial (T-01) |
 | MEDIUM | 14 | Pending |
 | LOW | 3 | Pending |
 
@@ -23,7 +23,8 @@
 - **Package:** `@enkaku/token`
 - **File:** `packages/token/src/token.ts:94-146`
 - **File:** `packages/token/src/schemas.ts:62-80`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `claude/token-expiration-validation-Bcct6`, commit `4f79228`
+- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md`
 
 **Description:**
 The `verifyToken()` function accepts `exp` (expiration), `nbf` (not before), and `iat` (issued at) claims in the token schema but never validates them. These fields are defined as optional numeric fields but there is no code path that checks if a token has expired or is used before its valid period.
@@ -229,7 +230,8 @@ Implement key encryption using `crypto.subtle.wrapKey()` before IndexedDB storag
 ### H-01: Malformed Token Parsing (Array Bounds)
 - **Package:** `@enkaku/token`
 - **File:** `packages/token/src/token.ts:113`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `claude/token-expiration-validation-Bcct6`, commit `f3a024a`
+- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md` (Task 1)
 
 **Description:**
 JWT string parsing uses array destructuring without bounds checking: `const [encodedHeader, encodedPayload, signature] = token.split('.')`. Tokens with fewer or more parts silently produce undefined values.
@@ -730,21 +732,25 @@ The following fixes will require breaking changes:
 ### T-01: Token Package - Missing Error Path Tests
 - **Package:** `@enkaku/token`
 - **Priority:** HIGH
+- **Status:** Partially fixed — Malformed JWT and time validation paths now tested. Remaining error paths still need coverage.
+- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md` (Tasks 1, 3, 4, 6)
 
 **Untested Error Paths:**
-| Function | Location | Error Case |
-|----------|----------|------------|
-| `verifyToken()` | token.ts:113 | Malformed JWT (not 3 parts) |
-| `verifyToken()` | token.ts:116-118 | Invalid header type |
-| `verifyToken()` | token.ts:124-126 | Missing signature |
-| `verifyToken()` | token.ts:145 | Unsupported algorithm |
-| `verifySignedPayload()` | token.ts:31-32 | Invalid signature |
-| `getSignatureInfo()` | did.ts:47 | Invalid DID prefix |
-| `getSignatureInfo()` | did.ts:53 | Unsupported codec |
-| `isCodecMatch()` | did.ts:13-20 | Bytes shorter than codec |
-| `signToken()` | signer.ts:50-52 | Issuer mismatch |
-| `toTokenSigner()` | signer.ts:39-42 | Unsupported algorithm |
-| `getVerifier()` | verifier.ts:29-30 | No verifier for algorithm |
+| Function | Location | Error Case | Status |
+|----------|----------|------------|--------|
+| `verifyToken()` | token.ts:113 | Malformed JWT (not 3 parts) | TESTED (H-01) |
+| `verifyToken()` | token.ts | Token expired (exp) | TESTED (C-01) |
+| `verifyToken()` | token.ts | Token not yet valid (nbf) | TESTED (C-01) |
+| `verifyToken()` | token.ts:116-118 | Invalid header type | Untested |
+| `verifyToken()` | token.ts:124-126 | Missing signature | Untested |
+| `verifyToken()` | token.ts:145 | Unsupported algorithm | Untested |
+| `verifySignedPayload()` | token.ts:31-32 | Invalid signature | Untested |
+| `getSignatureInfo()` | did.ts:47 | Invalid DID prefix | Untested |
+| `getSignatureInfo()` | did.ts:53 | Unsupported codec | Untested |
+| `isCodecMatch()` | did.ts:13-20 | Bytes shorter than codec | Untested |
+| `signToken()` | signer.ts:50-52 | Issuer mismatch | Untested |
+| `toTokenSigner()` | signer.ts:39-42 | Unsupported algorithm | Untested |
+| `getVerifier()` | verifier.ts:29-30 | No verifier for algorithm | Untested |
 
 ---
 
@@ -1026,15 +1032,15 @@ if (char.charCodeAt(0) > 32) { ... }
 ## Implementation Roadmap
 
 ### Phase 1: Critical Security (Breaking Changes OK)
-1. C-01: Token expiration validation
+1. ~~C-01: Token expiration validation~~ DONE
 2. C-02, C-03: Capability authorization
 3. C-05, C-06, C-07: Server resource limits
 4. C-12: Browser keystore encryption
 5. H-05, H-06: Protocol schema hardening
 
 ### Phase 2: High Priority Security
-1. H-01 through H-18: All high severity issues
-2. T-01 through T-07: Test coverage gaps
+1. ~~H-01~~: Fixed; H-02 through H-18: Remaining high severity issues
+2. T-01 (partial): Remaining token error paths; T-02 through T-07: Test coverage gaps
 
 ### Phase 3: Performance
 1. P-01, P-02, P-03: Serialization quick wins
