@@ -23,6 +23,15 @@ export function now(): number {
   return Math.floor(Date.now() / 1000)
 }
 
+/** Default maximum delegation chain depth */
+export const DEFAULT_MAX_DELEGATION_DEPTH = 20
+
+/** Options for delegation chain validation */
+export type DelegationChainOptions = {
+  /** Maximum depth of delegation chain. Defaults to 20. */
+  maxDepth?: number
+}
+
 export type Permission = {
   act: string | Array<string>
   res: string | Array<string>
@@ -150,7 +159,16 @@ export async function checkDelegationChain(
   payload: CapabilityPayload,
   capabilities: Array<string>,
   atTime?: number,
+  options?: DelegationChainOptions,
 ): Promise<void> {
+  const maxDepth = options?.maxDepth ?? DEFAULT_MAX_DELEGATION_DEPTH
+
+  if (capabilities.length > maxDepth) {
+    throw new Error(
+      `Invalid capability: delegation chain exceeds maximum depth of ${maxDepth}`,
+    )
+  }
+
   if (capabilities.length === 0) {
     if (payload.iss !== payload.sub) {
       throw new Error('Invalid capability: issuer should be subject')
@@ -163,13 +181,14 @@ export async function checkDelegationChain(
   const next = await verifyToken<CapabilityPayload>(head)
   assertCapabilityToken(next)
   assertValidDelegation(next.payload, payload, atTime)
-  await checkDelegationChain(next.payload, tail, atTime)
+  await checkDelegationChain(next.payload, tail, atTime, options)
 }
 
 export async function checkCapability(
   permission: Permission,
   payload: SignedPayload,
   atTime?: number,
+  options?: DelegationChainOptions,
 ): Promise<void> {
   if (payload.sub == null) {
     throw new Error('Invalid payload: no subject')
@@ -211,5 +230,5 @@ export async function checkCapability(
 
   const toCapability = { ...payload, ...permission } as CapabilityPayload
   assertValidDelegation(capability.payload, toCapability, time)
-  await checkDelegationChain(capability.payload, tail, time)
+  await checkDelegationChain(capability.payload, tail, time, options)
 }
