@@ -22,6 +22,7 @@ import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'
 import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { handleRequest, type RequestMessageOf } from './handlers/request.js'
 import { handleStream, type StreamMessageOf } from './handlers/stream.js'
+import { createResourceLimiter, type ResourceLimiter, type ResourceLimits } from './limits.js'
 import type {
   ChannelController,
   HandlerContext,
@@ -44,6 +45,7 @@ export type AccessControlParams =
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
   events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
+  limiter: ResourceLimiter
   logger: Logger
   signal: AbortSignal
   transport: ServerTransportOf<Protocol>
@@ -53,7 +55,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
 async function handleMessages<Protocol extends ProtocolDefinition>(
   params: HandleMessagesParams<Protocol>,
 ): Promise<void> {
-  const { events, handlers, logger, signal, transport, validator } = params
+  const { events, handlers, limiter, logger, signal, transport, validator } = params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
   const context: HandlerContext<Protocol> = {
@@ -64,9 +66,37 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     send: (payload) => transport.write(createUnsignedToken(payload)),
   }
   const running: Record<string, Promise<void>> = Object.create(null)
+  const encoder = new TextEncoder()
+
+  // Periodic cleanup of expired controllers
+  const cleanupInterval = setInterval(
+    () => {
+      const expired = limiter.getExpiredControllers()
+      for (const rid of expired) {
+        const controller = controllers[rid]
+        if (controller != null) {
+          controller.abort('Timeout')
+          const error = new HandlerError({
+            code: 'EK05',
+            message: 'Request timeout',
+          })
+          context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
+          events.emit('handlerTimeout', { rid })
+          limiter.removeController(rid)
+          limiter.releaseHandler()
+          delete controllers[rid]
+          delete running[rid]
+        } else {
+          limiter.removeController(rid)
+        }
+      }
+    },
+    Math.min(limiter.limits.controllerTimeoutMs, 10000),
+  )
 
   const disposer = new Disposer({
     dispose: async () => {
+      clearInterval(cleanupInterval)
       const interruption = new DisposeInterruption()
       // Abort all currently running handlers
       for (const controller of Object.values(controllers)) {
@@ -102,18 +132,55 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     message: ProcessMessageOf<Protocol>,
     handle: () => Error | Promise<void>,
   ) {
+    const rid =
+      message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
+
+    // Check controller limit
+    if (!limiter.canAddController()) {
+      const error = new HandlerError({
+        code: 'EK03',
+        message: 'Server controller limit reached',
+      })
+      if (message.payload.typ !== 'event') {
+        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
+      }
+      events.emit('handlerError', { error, payload: message.payload })
+      return
+    }
+
+    // Check handler concurrency (synchronous fast path)
+    if (limiter.activeHandlers >= limiter.limits.maxConcurrentHandlers) {
+      const error = new HandlerError({
+        code: 'EK04',
+        message: 'Server handler limit reached',
+      })
+      if (message.payload.typ !== 'event') {
+        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
+      }
+      events.emit('handlerError', { error, payload: message.payload })
+      return
+    }
+
+    limiter.addController(rid)
+    limiter.acquireHandler()
+
     const returned = handle()
     if (returned instanceof Error) {
+      limiter.removeController(rid)
+      limiter.releaseHandler()
       events.emit('handlerError', {
         error: HandlerError.from(returned, { code: 'EK01' }),
         payload: message.payload,
       })
     } else {
-      const id =
-        message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
-      running[id] = returned
+      running[rid] = returned
       returned.then(() => {
-        delete running[id]
+        // Guard against double-release if timeout cleanup already handled this rid
+        if (running[rid] === returned) {
+          limiter.removeController(rid)
+          limiter.releaseHandler()
+          delete running[rid]
+        }
       })
     }
   }
@@ -139,6 +206,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             message: (cause as Error).message ?? 'Access denied',
           })
           if (message.payload.typ === 'event') {
+            events.emit('eventAuthError', { error, payload: message.payload })
             events.emit('handlerError', { error, payload: message.payload })
           } else {
             context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>)
@@ -157,6 +225,19 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
     const msg = processMessage(next.value)
     if (msg != null) {
+      const msgSize = encoder.encode(JSON.stringify(msg.payload)).byteLength
+      if (msgSize > limiter.limits.maxMessageSize) {
+        const error = new HandlerError({
+          code: 'EK06',
+          message: 'Message exceeds maximum size',
+        })
+        if ('rid' in msg.payload && msg.payload.rid != null) {
+          context.send(error.toPayload(msg.payload.rid as string) as AnyServerPayloadOf<Protocol>)
+        }
+        events.emit('handlerError', { error, payload: msg.payload })
+        handleNext()
+        return
+      }
       switch (msg.payload.typ) {
         case 'abort':
           controllers[msg.payload.rid]?.abort(msg.payload.rsn)
@@ -178,7 +259,33 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
         case 'send': {
           const controller = controllers[msg.payload.rid] as ChannelController | undefined
-          controller?.writer.write(msg.payload.val)
+          if (controller == null) {
+            logger.debug('received send for unknown channel {rid}', { rid: msg.payload.rid })
+            break
+          }
+          // In non-public mode, validate send messages
+          if (!params.public) {
+            if (!isSignedToken(msg as Token)) {
+              const error = new HandlerError({
+                code: 'EK02',
+                message: 'Channel send message must be signed',
+              })
+              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>)
+              break
+            }
+            try {
+              await checkClientToken(params.serverID, params.access, msg as unknown as SignedToken)
+            } catch (cause) {
+              const error = new HandlerError({
+                cause,
+                code: 'EK02',
+                message: (cause as Error).message ?? 'Send authorization denied',
+              })
+              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>)
+              break
+            }
+          }
+          controller.writer.write(msg.payload.val)
           break
         }
         case 'stream': {
@@ -205,6 +312,7 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   access?: ProcedureAccessRecord
   handlers: ProcedureHandlers<Protocol>
   id?: string
+  limits?: Partial<ResourceLimits>
   logger?: Logger
   protocol?: Protocol
   public?: boolean
@@ -220,6 +328,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #events: ServerEmitter
   #handlers: ProcedureHandlers<Protocol>
   #handling: Array<HandlingTransport<Protocol>> = []
+  #limiter: ResourceLimiter
   #logger: Logger
   #validator?: Validator<AnyClientMessageOf<Protocol>>
 
@@ -228,15 +337,35 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       dispose: async () => {
         // Signal messages handler to stop execution and run cleanup logic
         this.#abortController.abort()
-        // Dispose of all handling transports
-        await Promise.all(
-          this.#handling.map(async (handling) => {
-            // Wait until all handlers are done - they might still need to flush messages to the transport
-            await handling.done
-            // Dispose transport
-            await handling.transport.dispose()
-          }),
-        )
+
+        const cleanupTimeout = this.#limiter.limits.cleanupTimeoutMs
+        const timeoutPromise = new Promise<void>((resolve) => {
+          setTimeout(resolve, cleanupTimeout)
+        })
+
+        // Race between graceful cleanup and timeout
+        const gracefulDone = await Promise.race([
+          Promise.all(
+            this.#handling.map(async (handling) => {
+              // Wait until all handlers are done - they might still need to flush messages to the transport
+              await handling.done
+              // Dispose transport
+              await handling.transport.dispose()
+            }),
+          ).then(() => true),
+          timeoutPromise.then(() => false),
+        ])
+
+        // Force dispose any remaining transports only if timed out
+        if (!gracefulDone) {
+          for (const handling of this.#handling) {
+            try {
+              await handling.transport.dispose()
+            } catch {
+              // Ignore errors during forced cleanup
+            }
+          }
+        }
       },
       signal: params.signal,
     })
@@ -262,8 +391,14 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       }
     }
 
+    this.#limiter = createResourceLimiter(params.limits)
+
     if (params.protocol != null) {
       this.#validator = createValidator(createClientMessageSchema(params.protocol))
+    } else {
+      this.#logger.warn(
+        'No protocol provided: message validation is disabled. Pass a protocol definition to enable runtime type checking.',
+      )
     }
 
     for (const transport of params.transports ?? []) {
@@ -295,6 +430,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const done = handleMessages<Protocol>({
       events: this.#events,
       handlers: this.#handlers,
+      limiter: this.#limiter,
       logger,
       signal: this.#abortController.signal,
       transport,

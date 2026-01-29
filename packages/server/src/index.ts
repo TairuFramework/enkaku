@@ -11,6 +11,12 @@
  */
 
 export type { ProcedureAccessRecord } from './access-control.js'
+export {
+  createResourceLimiter,
+  DEFAULT_RESOURCE_LIMITS,
+  type ResourceLimiter,
+  type ResourceLimits,
+} from './limits.js'
 export { type ServeParams, Server, type ServerParams, serve } from './server.js'
 export type {
   ChannelHandler,
