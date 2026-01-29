@@ -178,7 +178,23 @@ export async function checkCapability(
   const time = atTime ?? now()
   if (payload.iss === payload.sub) {
     // Subject is issuer, no delegation required
+    // But still need to validate the permission is granted
     assertNonExpired(payload, time)
+
+    // Validate that the token grants the requested permission
+    const tokenPermission = {
+      act: (payload as { act?: string | Array<string> }).act,
+      res: (payload as { res?: string | Array<string> }).res,
+    }
+
+    if (tokenPermission.act == null || tokenPermission.res == null) {
+      throw new Error('Invalid payload: missing act or res for self-issued token')
+    }
+
+    if (!hasPermission(permission, tokenPermission as Permission)) {
+      throw new Error('Invalid capability: permission not granted')
+    }
+
     return
   }
 
