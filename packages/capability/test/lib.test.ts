@@ -428,7 +428,7 @@ describe('checkCapability()', () => {
 
     await expect(
       checkCapability({ act: 'test/read', res: 'foo/bar' }, bobToken.payload, fixedTime),
-    ).rejects.toThrow('expired')
+    ).rejects.toThrow('Token expired')
   })
 })
 
@@ -603,6 +603,17 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
     }
   }
 
+  test('rejects token with non-string iss', () => {
+    const token = makeToken({
+      iss: 123, // Override default string iss
+      sub: 'did:test:456',
+      aud: 'did:test:789',
+      act: 'test',
+      res: 'foo',
+    })
+    expect(isCapabilityToken(token)).toBe(false)
+  })
+
   test('rejects token with non-string aud', () => {
     const token = makeToken({
       sub: 'did:test:456',
@@ -747,6 +758,21 @@ describe('createCapability() - delegation validation (C-03)', () => {
         { parentCapability: stringifyToken(rootCap) },
       ),
     ).rejects.toThrow('permission')
+  })
+
+  test('rejects delegation without parentCapability when signer is not subject', async () => {
+    const alice = randomTokenSigner()
+    const bob = randomTokenSigner()
+
+    // Bob tries to delegate for Alice without providing a parent capability
+    await expect(
+      createCapability(bob, {
+        sub: alice.id,
+        aud: 'did:test:carol',
+        act: 'test/read',
+        res: 'foo/bar',
+      }),
+    ).rejects.toThrow('parentCapability required')
   })
 
   test('rejects delegation when signer is not the parent audience', async () => {

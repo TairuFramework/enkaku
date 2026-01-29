@@ -81,6 +81,9 @@ export function isCapabilityToken<Payload extends CapabilityPayload>(
   const payload = token.payload as Record<string, unknown>
 
   // Validate required string fields
+  if (typeof payload.iss !== 'string') {
+    return false
+  }
   if (typeof payload.aud !== 'string') {
     return false
   }
@@ -281,16 +284,15 @@ export async function checkCapability(
     assertNonExpired(payload, time)
 
     // Validate that the token grants the requested permission
-    const tokenPermission = {
-      act: (payload as { act?: string | Array<string> }).act,
-      res: (payload as { res?: string | Array<string> }).res,
-    }
+    const p = payload as Record<string, unknown>
+    const act = p.act as string | Array<string> | undefined
+    const res = p.res as string | Array<string> | undefined
 
-    if (tokenPermission.act == null || tokenPermission.res == null) {
+    if (act == null || res == null) {
       throw new Error('Invalid payload: missing act or res for self-issued token')
     }
 
-    if (!hasPermission(permission, tokenPermission as Permission)) {
+    if (!hasPermission(permission, { act, res })) {
       throw new Error('Invalid capability: permission not granted')
     }
 
