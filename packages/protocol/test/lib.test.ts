@@ -251,3 +251,93 @@ describe('H-06: additional properties rejection', () => {
     expect(isType(validator, abortWithJti)).toBe(true)
   })
 })
+
+describe('H-05: string length constraints', () => {
+  test('rejects client messages with oversized rid', () => {
+    const schema = createClientMessageSchema(protocol)
+    const validator = createValidator({ ...schema, $id: 'client-h05-rid' })
+
+    const oversizedRid = 'x'.repeat(200)
+
+    const abortOversized = createUnsignedToken({ typ: 'abort', rid: oversizedRid })
+    expect(isType(validator, abortOversized)).toBe(false)
+
+    const requestOversized = createUnsignedToken({
+      typ: 'request',
+      prc: 'test/request',
+      rid: oversizedRid,
+    })
+    expect(isType(validator, requestOversized)).toBe(false)
+  })
+
+  test('rejects client messages with oversized jti', () => {
+    const schema = createClientMessageSchema(protocol)
+    const validator = createValidator({ ...schema, $id: 'client-h05-jti' })
+
+    const oversizedJti = 'x'.repeat(200)
+    const abort = createUnsignedToken({ typ: 'abort', rid: '1', jti: oversizedJti })
+    expect(isType(validator, abort)).toBe(false)
+  })
+
+  test('rejects abort with oversized rsn', () => {
+    const schema = createClientMessageSchema(protocol)
+    const validator = createValidator({ ...schema, $id: 'client-h05-rsn' })
+
+    const oversizedRsn = 'x'.repeat(2000)
+    const abort = createUnsignedToken({ typ: 'abort', rid: '1', rsn: oversizedRsn })
+    expect(isType(validator, abort)).toBe(false)
+  })
+
+  test('rejects error messages with oversized code or msg', () => {
+    const schema = createServerMessageSchema(protocol)
+    const validator = createValidator({ ...schema, $id: 'server-h05-error' })
+
+    const errorOversizedCode = createUnsignedToken({
+      typ: 'error',
+      rid: '1',
+      code: 'x'.repeat(200),
+      msg: 'test',
+    })
+    expect(isType(validator, errorOversizedCode)).toBe(false)
+
+    const errorOversizedMsg = createUnsignedToken({
+      typ: 'error',
+      rid: '1',
+      code: 'ERR',
+      msg: 'x'.repeat(5000),
+    })
+    expect(isType(validator, errorOversizedMsg)).toBe(false)
+  })
+
+  test('accepts messages within length limits', () => {
+    const clientSchema = createClientMessageSchema(protocol)
+    const clientValidator = createValidator({ ...clientSchema, $id: 'client-h05-valid' })
+
+    expect(
+      isType(
+        clientValidator,
+        createUnsignedToken({
+          typ: 'abort',
+          rid: 'abc-123',
+          jti: 'jti-456',
+          rsn: 'user cancelled',
+        }),
+      ),
+    ).toBe(true)
+
+    const serverSchema = createServerMessageSchema(protocol)
+    const serverValidator = createValidator({ ...serverSchema, $id: 'server-h05-valid' })
+
+    expect(
+      isType(
+        serverValidator,
+        createUnsignedToken({
+          typ: 'error',
+          rid: '1',
+          code: 'NOT_FOUND',
+          msg: 'Resource not found',
+        }),
+      ),
+    ).toBe(true)
+  })
+})
