@@ -55,6 +55,18 @@ export function handleStream<
     signal: controller.signal,
     writable: receiveStream.writable,
   }
-  // @ts-expect-error context and handler types
-  return executeHandler(ctx, msg.payload, () => handler(handlerContext))
+
+  // Wrap execution to ensure stream cleanup on handler crash
+  return (async () => {
+    try {
+      // @ts-expect-error context and handler types
+      await executeHandler(ctx, msg.payload, () => handler(handlerContext))
+    } finally {
+      try {
+        await receiveStream.writable.close()
+      } catch {
+        // Stream may already be closed
+      }
+    }
+  })()
 }
