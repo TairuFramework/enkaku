@@ -232,9 +232,9 @@ describe('H-06: additional properties rejection', () => {
     expect(
       isType(serverValidator, createUnsignedToken({ typ: 'result', rid: '1', val: 'test' })),
     ).toBe(true)
-    expect(
-      isType(serverValidator, createUnsignedToken({ typ: 'receive', rid: '1', val: 1 })),
-    ).toBe(true)
+    expect(isType(serverValidator, createUnsignedToken({ typ: 'receive', rid: '1', val: 1 }))).toBe(
+      true,
+    )
     expect(
       isType(
         serverValidator,
