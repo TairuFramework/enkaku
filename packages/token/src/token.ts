@@ -9,6 +9,7 @@ import {
   validateSignedPayload,
   validateUnsignedHeader,
 } from './schemas.js'
+import { assertTimeClaimsValid, type TimeValidationOptions } from './time.js'
 import type { SignedToken, Token, TokenSigner, UnsignedToken, VerifiedToken } from './types.js'
 import { getVerifier, type Verifiers } from './verifier.js'
 
@@ -90,12 +91,21 @@ export async function signToken<
 
 /**
  * Verify a token is either unsigned or signed with a valid signature.
+ * Also validates time-based claims (exp, nbf) if present.
  */
 export async function verifyToken<
   Payload extends Record<string, unknown> = Record<string, unknown>,
->(token: Token<Payload> | string, verifiers?: Verifiers): Promise<Token<Payload>> {
+>(
+  token: Token<Payload> | string,
+  verifiers?: Verifiers,
+  timeOptions?: TimeValidationOptions,
+): Promise<Token<Payload>> {
   if (typeof token !== 'string') {
-    if (isUnsignedToken(token) || isVerifiedToken(token)) {
+    if (isUnsignedToken(token)) {
+      return token
+    }
+    if (isVerifiedToken(token)) {
+      assertTimeClaimsValid(token.payload as Record<string, unknown>, timeOptions)
       return token
     }
     if (isSignedToken(token)) {
@@ -105,12 +115,17 @@ export async function verifyToken<
         token.data,
         verifiers,
       )
+      assertTimeClaimsValid(token.payload as Record<string, unknown>, timeOptions)
       return { ...token, verifiedPublicKey } as Token<Payload>
     }
     throw new Error('Unsupported token')
   }
 
-  const [encodedHeader, encodedPayload, signature] = token.split('.')
+  const parts = token.split('.')
+  if (parts.length !== 3) {
+    throw new Error('Invalid token format: expected 3 parts separated by dots')
+  }
+  const [encodedHeader, encodedPayload, signature] = parts
 
   const header = b64uToJSON(encodedHeader)
   if (header.typ !== 'JWT') {
@@ -133,6 +148,7 @@ export async function verifyToken<
       data,
       verifiers,
     )
+    assertTimeClaimsValid(payload as Record<string, unknown>, timeOptions)
     return {
       data,
       header,

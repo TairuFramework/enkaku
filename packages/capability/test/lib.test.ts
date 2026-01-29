@@ -383,4 +383,30 @@ describe('checkCapability()', () => {
       checkCapability({ act: 'test/call', res: 'foo/baz' }, token.payload),
     ).resolves.not.toThrow()
   })
+
+  test('rejects expired capability token', async () => {
+    const fixedTime = 1700000000
+    const alice = randomTokenSigner()
+    const bob = randomTokenSigner()
+
+    // Create an expired capability
+    const capability = await createCapability(alice, {
+      sub: alice.id,
+      aud: bob.id,
+      act: 'test/read',
+      res: 'foo/bar',
+      exp: fixedTime - 100, // Expired
+    })
+
+    const bobToken = await bob.createToken({
+      sub: alice.id,
+      act: 'test/read',
+      res: 'foo/bar',
+      cap: stringifyToken(capability),
+    })
+
+    await expect(
+      checkCapability({ act: 'test/read', res: 'foo/bar' }, bobToken.payload, fixedTime),
+    ).rejects.toThrow('Token expired')
+  })
 })

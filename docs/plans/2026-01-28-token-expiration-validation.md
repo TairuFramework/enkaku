@@ -1,5 +1,10 @@
 # Token Expiration Validation Implementation Plan
 
+> **Status:** COMPLETED (2026-01-29)
+> **Branch:** `claude/token-expiration-validation-Bcct6`
+> **Commits:** `f3a024a`..`3e36b89` (6 commits)
+> **Verified:** All tests pass (28 token + 14 capability), lint clean, build succeeds
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Implement proper token expiration (`exp`), not-before (`nbf`), and issued-at (`iat`) validation in the `@enkaku/token` package.
@@ -9,9 +14,9 @@
 **Tech Stack:** TypeScript, Vitest for testing
 
 **Related Issues from Security Audit:**
-- C-01: Token expiration not validated (PRIMARY)
-- H-01: Malformed token parsing - array bounds check (RELATED - same file)
-- T-01: Token error path tests missing (TEST COVERAGE)
+- C-01: Token expiration not validated (PRIMARY) — RESOLVED
+- H-01: Malformed token parsing - array bounds check (RELATED - same file) — RESOLVED
+- T-01: Token error path tests missing (TEST COVERAGE) — PARTIALLY RESOLVED (malformed JWT + time validation paths covered)
 
 ---
 
