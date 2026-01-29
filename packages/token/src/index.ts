@@ -38,6 +38,12 @@ export {
   toTokenSigner,
 } from './signer.js'
 export {
+  assertTimeClaimsValid,
+  now,
+  type TimeClaimsPayload,
+  type TimeValidationOptions,
+} from './time.js'
+export {
   createUnsignedToken,
   isSignedToken,
   isUnsignedToken,
