@@ -63,6 +63,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     events,
     handlers,
     logger,
+    maxBufferSize: limiter.limits.maxBufferSize,
     send: (payload) => transport.write(createUnsignedToken(payload)),
   }
   const running: Record<string, Promise<void>> = Object.create(null)

@@ -176,5 +176,6 @@ export type HandlerContext<Protocol extends ProtocolDefinition> = {
   events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
   logger: Logger
+  maxBufferSize: number
   send: (payload: AnyServerPayloadOf<Protocol>) => Promise<void>
 }
