@@ -51,16 +51,42 @@ export type CapabilityToken<
   Header extends Record<string, unknown> = Record<string, unknown>,
 > = SignedToken<Payload, Header>
 
+function isStringOrStringArray(value: unknown): value is string | Array<string> {
+  if (typeof value === 'string') {
+    return true
+  }
+  if (Array.isArray(value)) {
+    return value.every((item) => typeof item === 'string')
+  }
+  return false
+}
+
 export function isCapabilityToken<Payload extends CapabilityPayload>(
   token: unknown,
 ): token is CapabilityToken<Payload> {
-  return (
-    isVerifiedToken(token) &&
-    token.payload.aud != null &&
-    token.payload.sub != null &&
-    token.payload.act != null &&
-    token.payload.res != null
-  )
+  if (!isVerifiedToken(token)) {
+    return false
+  }
+
+  const payload = token.payload as Record<string, unknown>
+
+  // Validate required string fields
+  if (typeof payload.aud !== 'string') {
+    return false
+  }
+  if (typeof payload.sub !== 'string') {
+    return false
+  }
+
+  // Validate act and res are string or string[]
+  if (!isStringOrStringArray(payload.act)) {
+    return false
+  }
+  if (!isStringOrStringArray(payload.res)) {
+    return false
+  }
+
+  return true
 }
 
 export function assertCapabilityToken<Payload extends CapabilityPayload>(
