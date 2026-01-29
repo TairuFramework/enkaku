@@ -22,6 +22,7 @@ import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'
 import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { handleRequest, type RequestMessageOf } from './handlers/request.js'
 import { handleStream, type StreamMessageOf } from './handlers/stream.js'
+import { createResourceLimiter, type ResourceLimiter, type ResourceLimits } from './limits.js'
 import type {
   ChannelController,
   HandlerContext,
@@ -44,6 +45,7 @@ export type AccessControlParams =
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
   events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
+  limiter: ResourceLimiter
   logger: Logger
   signal: AbortSignal
   transport: ServerTransportOf<Protocol>
@@ -53,7 +55,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
 async function handleMessages<Protocol extends ProtocolDefinition>(
   params: HandleMessagesParams<Protocol>,
 ): Promise<void> {
-  const { events, handlers, logger, signal, transport, validator } = params
+  const { events, handlers, limiter, logger, signal, transport, validator } = params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
   const context: HandlerContext<Protocol> = {
@@ -102,18 +104,52 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     message: ProcessMessageOf<Protocol>,
     handle: () => Error | Promise<void>,
   ) {
+    const rid =
+      message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
+
+    // Check controller limit
+    if (!limiter.canAddController()) {
+      const error = new HandlerError({
+        code: 'EK03',
+        message: 'Server controller limit reached',
+      })
+      if (message.payload.typ !== 'event') {
+        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
+      }
+      events.emit('handlerError', { error, payload: message.payload })
+      return
+    }
+
+    // Check handler concurrency (synchronous fast path)
+    if (limiter.activeHandlers >= limiter.limits.maxConcurrentHandlers) {
+      const error = new HandlerError({
+        code: 'EK04',
+        message: 'Server handler limit reached',
+      })
+      if (message.payload.typ !== 'event') {
+        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
+      }
+      events.emit('handlerError', { error, payload: message.payload })
+      return
+    }
+
+    limiter.addController(rid)
+    limiter.acquireHandler()
+
     const returned = handle()
     if (returned instanceof Error) {
+      limiter.removeController(rid)
+      limiter.releaseHandler()
       events.emit('handlerError', {
         error: HandlerError.from(returned, { code: 'EK01' }),
         payload: message.payload,
       })
     } else {
-      const id =
-        message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
-      running[id] = returned
+      running[rid] = returned
       returned.then(() => {
-        delete running[id]
+        limiter.removeController(rid)
+        limiter.releaseHandler()
+        delete running[rid]
       })
     }
   }
@@ -205,6 +241,7 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   access?: ProcedureAccessRecord
   handlers: ProcedureHandlers<Protocol>
   id?: string
+  limits?: Partial<ResourceLimits>
   logger?: Logger
   protocol?: Protocol
   public?: boolean
@@ -220,6 +257,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #events: ServerEmitter
   #handlers: ProcedureHandlers<Protocol>
   #handling: Array<HandlingTransport<Protocol>> = []
+  #limiter: ResourceLimiter
   #logger: Logger
   #validator?: Validator<AnyClientMessageOf<Protocol>>
 
@@ -262,6 +300,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       }
     }
 
+    this.#limiter = createResourceLimiter(params.limits)
+
     if (params.protocol != null) {
       this.#validator = createValidator(createClientMessageSchema(params.protocol))
     }
@@ -295,6 +335,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const done = handleMessages<Protocol>({
       events: this.#events,
       handlers: this.#handlers,
+      limiter: this.#limiter,
       logger,
       signal: this.#abortController.signal,
       transport,
