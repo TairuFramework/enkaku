@@ -12,6 +12,9 @@ function mergeSignedPayload(payloadSchema: Schema): Schema {
     type: 'object',
     properties: {
       ...signedPayloadSchema.properties,
+      iss: { type: 'string', maxLength: 256 },
+      sub: { type: 'string', maxLength: 256 },
+      aud: { type: 'string', maxLength: 256 },
       ...(payloadObj.properties ?? {}),
     },
     required: [...signedPayloadSchema.required, ...(payloadObj.required ?? [])],
@@ -26,7 +29,7 @@ export function createSignedMessageSchema(payloadSchema: Schema): Schema {
     properties: {
       header: signedHeaderSchema,
       payload: mergeSignedPayload(payloadSchema),
-      signature: { type: 'string' },
+      signature: { type: 'string', maxLength: 512 },
       data: { type: 'string' },
     },
     required: ['header', 'payload', 'signature'],
