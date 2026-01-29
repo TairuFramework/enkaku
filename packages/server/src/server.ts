@@ -375,6 +375,10 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
 
     if (params.protocol != null) {
       this.#validator = createValidator(createClientMessageSchema(params.protocol))
+    } else {
+      this.#logger.warn(
+        'No protocol provided: message validation is disabled. Pass a protocol definition to enable runtime type checking.',
+      )
     }
 
     for (const transport of params.transports ?? []) {
