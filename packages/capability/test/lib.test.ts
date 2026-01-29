@@ -634,3 +634,107 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
     expect(isCapabilityToken(token)).toBe(false)
   })
 })
+
+describe('createCapability() - delegation validation (C-03)', () => {
+  test('creates capability when signer is the subject (root capability)', async () => {
+    const alice = randomTokenSigner()
+
+    // Alice creates a capability for herself - always allowed
+    const cap = await createCapability(alice, {
+      sub: alice.id,
+      aud: 'did:test:bob',
+      act: 'test/read',
+      res: 'foo/bar',
+    })
+
+    expect(cap.payload.iss).toBe(alice.id)
+    expect(cap.payload.sub).toBe(alice.id)
+  })
+
+  test('creates capability with parent validation when delegating', async () => {
+    const alice = randomTokenSigner()
+    const bob = randomTokenSigner()
+
+    // Alice creates root capability for Bob
+    const rootCap = await createCapability(alice, {
+      sub: alice.id,
+      aud: bob.id,
+      act: '*',
+      res: 'foo/*',
+    })
+
+    // Bob can delegate to Carol with valid parent
+    const carol = randomTokenSigner()
+    const delegatedCap = await createCapability(
+      bob,
+      {
+        sub: alice.id,
+        aud: carol.id,
+        act: 'test/read',
+        res: 'foo/bar',
+      },
+      undefined,
+      { parentCapability: stringifyToken(rootCap) },
+    )
+
+    expect(delegatedCap.payload.iss).toBe(bob.id)
+    expect(delegatedCap.payload.sub).toBe(alice.id)
+  })
+
+  test('rejects delegation that exceeds parent permissions', async () => {
+    const alice = randomTokenSigner()
+    const bob = randomTokenSigner()
+
+    const rootCap = await createCapability(alice, {
+      sub: alice.id,
+      aud: bob.id,
+      act: 'test/read', // Only read
+      res: 'foo/bar',
+    })
+
+    const carol = randomTokenSigner()
+
+    // Bob tries to delegate 'write' which he doesn't have
+    await expect(
+      createCapability(
+        bob,
+        {
+          sub: alice.id,
+          aud: carol.id,
+          act: 'test/write', // Exceeds parent
+          res: 'foo/bar',
+        },
+        undefined,
+        { parentCapability: stringifyToken(rootCap) },
+      ),
+    ).rejects.toThrow('permission')
+  })
+
+  test('rejects delegation when signer is not the parent audience', async () => {
+    const alice = randomTokenSigner()
+    const bob = randomTokenSigner()
+    const eve = randomTokenSigner() // Attacker
+
+    const rootCap = await createCapability(alice, {
+      sub: alice.id,
+      aud: bob.id,
+      act: '*',
+      res: '*',
+    })
+
+    // Eve tries to use Bob's capability
+    await expect(
+      createCapability(
+        eve,
+        {
+          sub: alice.id,
+          aud: 'did:test:victim',
+          act: '*',
+          res: '*',
+        },
+        undefined,
+        { parentCapability: stringifyToken(rootCap) },
+      ),
+    ).rejects.toThrow('audience')
+  })
+})
