@@ -128,3 +128,126 @@ describe('protocol messages validation', () => {
     expect(isType(validator, invalidReceive)).toBe(false)
   })
 })
+
+describe('H-06: additional properties rejection', () => {
+  test('rejects client payload with extra fields', () => {
+    const schema = createClientMessageSchema(protocol)
+    const validator = createValidator({ ...schema, $id: 'client-h06' })
+
+    const abortWithExtra = createUnsignedToken({ typ: 'abort', rid: '1', extra: 'field' })
+    expect(isType(validator, abortWithExtra)).toBe(false)
+
+    const requestWithExtra = createUnsignedToken({
+      typ: 'request',
+      prc: 'test/request',
+      rid: '1',
+      extra: 'field',
+    })
+    expect(isType(validator, requestWithExtra)).toBe(false)
+
+    const eventWithExtra = createUnsignedToken({
+      typ: 'event',
+      prc: 'test/event',
+      data: { foo: 'bar' },
+      extra: 'field',
+    })
+    expect(isType(validator, eventWithExtra)).toBe(false)
+
+    const sendWithExtra = createUnsignedToken({
+      typ: 'send',
+      prc: 'test/channel',
+      rid: '1',
+      val: '1',
+      extra: 'field',
+    })
+    expect(isType(validator, sendWithExtra)).toBe(false)
+  })
+
+  test('rejects server payload with extra fields', () => {
+    const schema = createServerMessageSchema(protocol)
+    const validator = createValidator({ ...schema, $id: 'server-h06' })
+
+    const resultWithExtra = createUnsignedToken({
+      typ: 'result',
+      rid: '1',
+      val: 'test',
+      extra: 'field',
+    })
+    expect(isType(validator, resultWithExtra)).toBe(false)
+
+    const receiveWithExtra = createUnsignedToken({
+      typ: 'receive',
+      rid: '1',
+      val: 1,
+      extra: 'field',
+    })
+    expect(isType(validator, receiveWithExtra)).toBe(false)
+
+    const errorWithExtra = createUnsignedToken({
+      typ: 'error',
+      rid: '1',
+      code: 'ERR',
+      msg: 'test',
+      extra: 'field',
+    })
+    expect(isType(validator, errorWithExtra)).toBe(false)
+  })
+
+  test('rejects unsigned message wrapper with extra fields', () => {
+    const schema = createClientMessageSchema(protocol)
+    const validator = createValidator({ ...schema, $id: 'wrapper-h06' })
+
+    const token = createUnsignedToken({ typ: 'abort', rid: '1' })
+    const withExtra = { ...token, extraField: 'value' }
+    expect(isType(validator, withExtra)).toBe(false)
+  })
+
+  test('still accepts valid messages without extra fields', () => {
+    const clientSchema = createClientMessageSchema(protocol)
+    const clientValidator = createValidator({ ...clientSchema, $id: 'client-h06-valid' })
+
+    expect(isType(clientValidator, createUnsignedToken({ typ: 'abort', rid: '1' }))).toBe(true)
+    expect(
+      isType(
+        clientValidator,
+        createUnsignedToken({ typ: 'request', prc: 'test/request', rid: '1' }),
+      ),
+    ).toBe(true)
+    expect(
+      isType(
+        clientValidator,
+        createUnsignedToken({ typ: 'event', prc: 'test/event', data: { foo: 'bar' } }),
+      ),
+    ).toBe(true)
+    expect(
+      isType(
+        clientValidator,
+        createUnsignedToken({ typ: 'send', prc: 'test/channel', rid: '1', val: '1' }),
+      ),
+    ).toBe(true)
+
+    const serverSchema = createServerMessageSchema(protocol)
+    const serverValidator = createValidator({ ...serverSchema, $id: 'server-h06-valid' })
+
+    expect(
+      isType(serverValidator, createUnsignedToken({ typ: 'result', rid: '1', val: 'test' })),
+    ).toBe(true)
+    expect(
+      isType(serverValidator, createUnsignedToken({ typ: 'receive', rid: '1', val: 1 })),
+    ).toBe(true)
+    expect(
+      isType(
+        serverValidator,
+        createUnsignedToken({ typ: 'error', rid: '1', code: 'ERR', msg: 'test' }),
+      ),
+    ).toBe(true)
+  })
+
+  test('accepts messages with optional jti field', () => {
+    const schema = createClientMessageSchema(protocol)
+    const validator = createValidator({ ...schema, $id: 'client-h06-jti' })
+
+    const abortWithJti = createUnsignedToken({ typ: 'abort', rid: '1', jti: 'abc-123' })
+    expect(isType(validator, abortWithJti)).toBe(true)
+  })
+})
