@@ -2,7 +2,6 @@ import { b64uToJSON, fromB64U, fromUTF } from '@enkaku/codec'
 import { assertType, isType } from '@enkaku/schema'
 
 import { getSignatureInfo } from './did.js'
-import { assertTimeClaimsValid, type TimeValidationOptions } from './time.js'
 import {
   type SignedPayload,
   validateAlgorithm,
@@ -10,6 +9,7 @@ import {
   validateSignedPayload,
   validateUnsignedHeader,
 } from './schemas.js'
+import { assertTimeClaimsValid, type TimeValidationOptions } from './time.js'
 import type { SignedToken, Token, TokenSigner, UnsignedToken, VerifiedToken } from './types.js'
 import { getVerifier, type Verifiers } from './verifier.js'
 

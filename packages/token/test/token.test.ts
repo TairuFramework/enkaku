@@ -3,7 +3,6 @@ import { equals } from 'uint8arrays'
 import { describe, expect, test } from 'vitest'
 
 import { randomTokenSigner } from '../src/signer.js'
-import type { TimeValidationOptions } from '../src/time.js'
 import {
   createUnsignedToken,
   isSignedToken,
