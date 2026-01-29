@@ -428,7 +428,7 @@ describe('checkCapability()', () => {
 
     await expect(
       checkCapability({ act: 'test/read', res: 'foo/bar' }, bobToken.payload, fixedTime),
-    ).rejects.toThrow('Token expired')
+    ).rejects.toThrow('expired')
   })
 })
 
