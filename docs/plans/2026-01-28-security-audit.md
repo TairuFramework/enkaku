@@ -10,9 +10,9 @@
 
 | Severity | Count | Status |
 |----------|-------|--------|
-| CRITICAL | 12 | 1 Fixed (C-01) |
-| HIGH | 18 | 1 Fixed (H-01), 1 Partial (T-01) |
-| MEDIUM | 14 | Pending |
+| CRITICAL | 12 | 3 Fixed (C-01, C-02, C-03) |
+| HIGH | 18 | 2 Fixed (H-01, H-04), 1 Partial (T-01) |
+| MEDIUM | 14 | 1 Fixed (M-04) |
 | LOW | 3 | Pending |
 
 ---
@@ -47,7 +47,8 @@ if (payload.nbf != null && payload.nbf > Date.now() / 1000) {
 ### C-02: Capability Authorization Bypass When iss === sub
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts:179-182`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `claude/implement-capability-authorization-b65WS`, commit `e88ca19`
+- **Plan:** `docs/plans/2026-01-28-capability-authorization.md`
 
 **Description:**
 In `checkCapability()`, when `payload.iss === payload.sub`, the function returns after only checking expiration without validating the requested permission against the token's actual `act` and `res` claims.
@@ -63,7 +64,8 @@ Always validate the requested permission against the token, even for self-issued
 ### C-03: createCapability() Lacks Authorization Checks
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts:67-76`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `claude/implement-capability-authorization-b65WS`, commit `0233141`
+- **Plan:** `docs/plans/2026-01-28-capability-authorization.md`
 
 **Description:**
 `createCapability()` performs zero authorization checks. Any caller can create a capability with any `aud`, `sub`, `act`, `res` values. No verification that the signer actually has permission to delegate those capabilities.
@@ -283,7 +285,8 @@ Require the caller identity in capability checks.
 ### H-04: Unbounded Delegation Chain Depth (DoS)
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts:149-167`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `claude/implement-capability-authorization-b65WS`, commit `76a461e`
+- **Plan:** `docs/plans/2026-01-28-capability-authorization.md`
 
 **Description:**
 `checkDelegationChain()` has no length limit on the capabilities array. Recursive calls are unbounded.
@@ -538,7 +541,8 @@ Add strict validation: `if (!/^[A-Za-z0-9_-]*$/.test(base64url)) throw Error`
 ### M-04: Incomplete Capability Token Type Checking
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts:45-55`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `claude/implement-capability-authorization-b65WS`, commit `54ff100`
+- **Plan:** `docs/plans/2026-01-28-capability-authorization.md`
 
 **Description:**
 Type checking only validates presence, not format. `aud`, `sub`, `act`, `res` can be any truthy value.
@@ -706,7 +710,7 @@ The following fixes will require breaking changes:
 | Package | Test Files | Coverage | Critical Gaps |
 |---------|-----------|----------|---------------|
 | `@enkaku/token` | 2 | ~30% | 11 error paths untested |
-| `@enkaku/capability` | 1 | ~60% | Auth bypass untested (C-02, C-03) |
+| `@enkaku/capability` | 1 | ~90% | Auth bypass fixed and tested (C-02, C-03, H-04, M-04) |
 | `@enkaku/client` | 1 | ~70% | Memory leak paths untested |
 | `@enkaku/server` | 6 | ~65% | Resource limits untested (C-05, C-06, C-07) |
 | `@enkaku/http-server-transport` | 1 | ~30% | Session exhaustion untested |
@@ -757,15 +761,18 @@ The following fixes will require breaking changes:
 ### T-02: Capability Package - Authorization Tests Missing
 - **Package:** `@enkaku/capability`
 - **Priority:** CRITICAL
+- **Status:** [x] Fixed — Branch `claude/implement-capability-authorization-b65WS`
+- **Plan:** `docs/plans/2026-01-28-capability-authorization.md`
 
-**Security-Critical Untested Paths:**
-| Function | Location | Issue | Security Link |
-|----------|----------|-------|---------------|
-| `checkCapability()` | index.ts:179-182 | iss===sub bypass | C-02 |
-| `createCapability()` | index.ts:67-76 | No auth checks | C-03 |
-| `checkDelegationChain()` | index.ts:149-167 | Deep chain DoS | H-04 |
-| `checkCapability()` | index.ts:174-176 | Missing subject | - |
-| `assertCapabilityToken()` | index.ts:60-62 | Invalid token | - |
+**Security-Critical Paths — Now Tested (34 tests total):**
+| Function | Location | Issue | Security Link | Status |
+|----------|----------|-------|---------------|--------|
+| `checkCapability()` | index.ts:179-182 | iss===sub bypass | C-02 | TESTED |
+| `createCapability()` | index.ts:67-76 | No auth checks | C-03 | TESTED |
+| `checkDelegationChain()` | index.ts:149-167 | Deep chain DoS | H-04 | TESTED |
+| `isCapabilityToken()` | index.ts:45-55 | Type validation | M-04 | TESTED |
+| `checkCapability()` | index.ts:174-176 | Missing subject | - | Previously tested |
+| `assertCapabilityToken()` | index.ts:60-62 | Invalid token | - | Previously tested |
 
 ---
 
@@ -840,7 +847,7 @@ The following fixes will require breaking changes:
 ## Test Priority Matrix
 
 ### Priority 1: Security-Critical (Before v1)
-1. [ ] T-02: Capability authorization bypass tests
+1. [x] T-02: Capability authorization bypass tests — DONE
 2. [ ] T-03: Server resource limit tests
 3. [ ] T-04: Transport package test suites
 4. [ ] T-05: Keystore package test suites
@@ -1033,14 +1040,14 @@ if (char.charCodeAt(0) > 32) { ... }
 
 ### Phase 1: Critical Security (Breaking Changes OK)
 1. ~~C-01: Token expiration validation~~ DONE
-2. C-02, C-03: Capability authorization
+2. ~~C-02, C-03: Capability authorization~~ DONE
 3. C-05, C-06, C-07: Server resource limits
 4. C-12: Browser keystore encryption
 5. H-05, H-06: Protocol schema hardening
 
 ### Phase 2: High Priority Security
-1. ~~H-01~~: Fixed; H-02 through H-18: Remaining high severity issues
-2. T-01 (partial): Remaining token error paths; T-02 through T-07: Test coverage gaps
+1. ~~H-01~~, ~~H-04~~: Fixed; H-02, H-03, H-05 through H-18: Remaining high severity issues
+2. T-01 (partial): Remaining token error paths; ~~T-02~~: Fixed; T-03 through T-07: Test coverage gaps
 
 ### Phase 3: Performance
 1. P-01, P-02, P-03: Serialization quick wins
@@ -1059,7 +1066,7 @@ if (char.charCodeAt(0) > 32) { ... }
 | Issue | Change | Migration |
 |-------|--------|-----------|
 | C-01 | Tokens with `exp` now validated | Ensure valid expiration times |
-| C-02 | Self-issued tokens validated | Update token creation logic |
+| C-02 | Self-issued tokens validated | Ensure tokens include `act`/`res` claims |
 | C-05 | Controller limits enforced | Handle rejection errors |
 | C-12 | Browser keys encrypted | Keys re-generated on first use |
 | H-05 | Field size limits | Reduce payload sizes |

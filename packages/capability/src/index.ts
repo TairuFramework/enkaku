@@ -23,6 +23,27 @@ export function now(): number {
   return Math.floor(Date.now() / 1000)
 }
 
+/** Default maximum delegation chain depth */
+export const DEFAULT_MAX_DELEGATION_DEPTH = 20
+
+/** Options for delegation chain validation */
+export type DelegationChainOptions = {
+  /** Time to use for expiration checks (seconds since epoch). Defaults to now(). */
+  atTime?: number
+  /** Maximum depth of delegation chain. Defaults to 20. */
+  maxDepth?: number
+}
+
+/** Options for capability creation */
+export type CreateCapabilityOptions = {
+  /**
+   * Parent capability token (stringified) that authorizes this delegation.
+   * Required when creating a capability where signer is not the subject.
+   * The signer must be the audience of the parent capability.
+   */
+  parentCapability?: string
+}
+
 export type Permission = {
   act: string | Array<string>
   res: string | Array<string>
@@ -42,16 +63,45 @@ export type CapabilityToken<
   Header extends Record<string, unknown> = Record<string, unknown>,
 > = SignedToken<Payload, Header>
 
+function isStringOrStringArray(value: unknown): value is string | Array<string> {
+  if (typeof value === 'string') {
+    return true
+  }
+  if (Array.isArray(value)) {
+    return value.every((item) => typeof item === 'string')
+  }
+  return false
+}
+
 export function isCapabilityToken<Payload extends CapabilityPayload>(
   token: unknown,
 ): token is CapabilityToken<Payload> {
-  return (
-    isVerifiedToken(token) &&
-    token.payload.aud != null &&
-    token.payload.sub != null &&
-    token.payload.act != null &&
-    token.payload.res != null
-  )
+  if (!isVerifiedToken(token)) {
+    return false
+  }
+
+  const payload = token.payload as Record<string, unknown>
+
+  // Validate required string fields
+  if (typeof payload.iss !== 'string') {
+    return false
+  }
+  if (typeof payload.aud !== 'string') {
+    return false
+  }
+  if (typeof payload.sub !== 'string') {
+    return false
+  }
+
+  // Validate act and res are string or string[]
+  if (!isStringOrStringArray(payload.act)) {
+    return false
+  }
+  if (!isStringOrStringArray(payload.res)) {
+    return false
+  }
+
+  return true
 }
 
 export function assertCapabilityToken<Payload extends CapabilityPayload>(
@@ -71,7 +121,53 @@ export async function createCapability<
   signer: TokenSigner,
   payload: Payload,
   header?: HeaderParams,
+  options?: CreateCapabilityOptions,
 ): Promise<CapabilityToken<Payload & { iss: string }, SignedHeader>> {
+  const signerId = signer.id
+
+  // If signer is the subject, no parent validation needed (root capability)
+  if (payload.sub === signerId) {
+    return await signer.createToken(payload, header)
+  }
+
+  // Signer is delegating on behalf of someone else - validate authorization
+  if (options?.parentCapability == null) {
+    throw new Error(
+      'Invalid capability: parentCapability required when delegating for another subject',
+    )
+  }
+
+  // Verify and validate the parent capability
+  const parent = await verifyToken<CapabilityPayload>(options.parentCapability)
+  assertCapabilityToken(parent)
+
+  // Signer must be the audience of the parent capability
+  if (parent.payload.aud !== signerId) {
+    throw new Error('Invalid capability: signer must be the audience of parent capability')
+  }
+
+  // Subject must match
+  if (parent.payload.sub !== payload.sub) {
+    throw new Error('Invalid capability: subject mismatch with parent capability')
+  }
+
+  // Check parent is not expired
+  assertNonExpired(parent.payload)
+
+  // Check that the new capability doesn't exceed parent permissions
+  const newPermission: Permission = {
+    act: payload.act,
+    res: payload.res,
+  }
+  const parentPermission: Permission = {
+    act: parent.payload.act,
+    res: parent.payload.res,
+  }
+
+  if (!hasPermission(newPermission, parentPermission)) {
+    throw new Error('Invalid capability: delegated permission exceeds parent capability')
+  }
+
   return await signer.createToken(payload, header)
 }
 
@@ -149,8 +245,15 @@ export function assertValidDelegation(
 export async function checkDelegationChain(
   payload: CapabilityPayload,
   capabilities: Array<string>,
-  atTime?: number,
+  options?: DelegationChainOptions,
 ): Promise<void> {
+  const maxDepth = options?.maxDepth ?? DEFAULT_MAX_DELEGATION_DEPTH
+  const atTime = options?.atTime
+
+  if (capabilities.length > maxDepth) {
+    throw new Error(`Invalid capability: delegation chain exceeds maximum depth of ${maxDepth}`)
+  }
+
   if (capabilities.length === 0) {
     if (payload.iss !== payload.sub) {
       throw new Error('Invalid capability: issuer should be subject')
@@ -163,13 +266,14 @@ export async function checkDelegationChain(
   const next = await verifyToken<CapabilityPayload>(head)
   assertCapabilityToken(next)
   assertValidDelegation(next.payload, payload, atTime)
-  await checkDelegationChain(next.payload, tail, atTime)
+  await checkDelegationChain(next.payload, tail, options)
 }
 
 export async function checkCapability(
   permission: Permission,
   payload: SignedPayload,
   atTime?: number,
+  options?: DelegationChainOptions,
 ): Promise<void> {
   if (payload.sub == null) {
     throw new Error('Invalid payload: no subject')
@@ -178,7 +282,22 @@ export async function checkCapability(
   const time = atTime ?? now()
   if (payload.iss === payload.sub) {
     // Subject is issuer, no delegation required
+    // But still need to validate the permission is granted
     assertNonExpired(payload, time)
+
+    // Validate that the token grants the requested permission
+    const p = payload as Record<string, unknown>
+    const act = p.act as string | Array<string> | undefined
+    const res = p.res as string | Array<string> | undefined
+
+    if (act == null || res == null) {
+      throw new Error('Invalid payload: missing act or res for self-issued token')
+    }
+
+    if (!hasPermission(permission, { act, res })) {
+      throw new Error('Invalid capability: permission not granted')
+    }
+
     return
   }
 
@@ -195,5 +314,5 @@ export async function checkCapability(
 
   const toCapability = { ...payload, ...permission } as CapabilityPayload
   assertValidDelegation(capability.payload, toCapability, time)
-  await checkDelegationChain(capability.payload, tail, time)
+  await checkDelegationChain(capability.payload, tail, { ...options, atTime: time })
 }
