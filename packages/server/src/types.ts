@@ -160,6 +160,10 @@ export type SendType<
   : never
 
 export type ServerEvents = {
+  eventAuthError: {
+    error: HandlerError<string>
+    payload: Record<string, unknown>
+  }
   handlerAbort: { rid: string }
   handlerError: {
     error: HandlerError<string>

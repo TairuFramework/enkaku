@@ -198,6 +198,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             message: (cause as Error).message ?? 'Access denied',
           })
           if (message.payload.typ === 'event') {
+            events.emit('eventAuthError', { error, payload: message.payload })
             events.emit('handlerError', { error, payload: message.payload })
           } else {
             context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>)
