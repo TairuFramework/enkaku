@@ -15,7 +15,7 @@
 
 | Severity | Count | Status |
 |----------|-------|--------|
-| CRITICAL | 12 | 6 Fixed (C-01, C-02, C-03, C-05, C-06, C-07) |
+| CRITICAL | 12 | 6 Fixed (C-01, C-02, C-03, C-05, C-06, C-07), 1 Won't Fix (C-12) |
 | HIGH | 18 | 5 Fixed (H-01, H-04, H-13, H-14, H-15), 1 Partial (T-01) |
 | MEDIUM | 14 | 4 Fixed (M-04, M-11, M-12), 1 Mitigated (M-10) |
 | LOW | 3 | Pending |
@@ -224,16 +224,26 @@ Support TLS connections via `node:tls.connect()`, add security options.
 ### C-12: Browser Keystore Stores Keys Unencrypted
 - **Package:** `@enkaku/browser-keystore`
 - **File:** `packages/browser-keystore/src/store.ts:36-41`
-- **Status:** [ ] Not Started
+- **Status:** [—] Won't Fix
+- **Severity downgraded:** CRITICAL → Informational
 
 **Description:**
-Uses IndexedDB for storage. IndexedDB data is NOT encrypted in browsers. Keys stored as `CryptoKeyPair` objects directly. Private keys are stored unencrypted and accessible via DevTools, browser extensions, or XSS attacks.
+Uses IndexedDB for storage. IndexedDB data is NOT encrypted in browsers. Keys stored as `CryptoKeyPair` objects directly.
 
-**Impact:**
-Complete compromise of all stored private keys via any same-origin code.
-
-**Recommendation:**
+**Original recommendation:**
 Implement key encryption using `crypto.subtle.wrapKey()` before IndexedDB storage.
+
+**Rationale for won't-fix:**
+The original analysis overstates the impact. Keys are generated with `extractable: false`, which means:
+
+1. **Raw private key bytes cannot be extracted.** `exportKey()` and `wrapKey()` both throw `InvalidAccessError` on non-extractable keys. No JavaScript code — including XSS — can read the private key material.
+2. **CryptoKeyPair in IndexedDB is a handle, not raw key data.** The actual key material lives in the browser's crypto engine, not in JS-accessible memory. An offline IndexedDB dump yields an opaque object, not usable key bytes.
+3. **Wrapping would reduce security.** `wrapKey()` requires `extractable: true` at generation time, meaning the private key bytes would be accessible during key creation and after every unwrap. This is strictly weaker than the current non-extractable approach.
+4. **Wrapping key storage has no viable secure location.** The wrapping key would also reside in IndexedDB (or be derived from same-origin-accessible data), so an XSS attacker who can read IndexedDB can unwrap and use the key — identical to the current threat.
+
+**Remaining risk:** An XSS attacker can read the CryptoKeyPair handle from IndexedDB and call `crypto.subtle.sign()` with it. This is an inherent limitation of any browser-based key storage — the Web Crypto API with non-extractable keys is the strongest protection browsers offer. This is the same security model used by WebAuthn/FIDO2.
+
+**Actual recommendation:** Add unit tests for the browser-keystore package (see T-05) and document the security model.
 
 ---
 
@@ -1087,7 +1097,7 @@ if (char.charCodeAt(0) > 32) { ... }
 1. ~~C-01: Token expiration validation~~ DONE
 2. ~~C-02, C-03: Capability authorization~~ DONE
 3. ~~C-05, C-06, C-07: Server resource limits~~ DONE (includes H-13, H-14, H-15, M-10, M-11, M-12)
-4. C-12: Browser keystore encryption
+4. ~~C-12: Browser keystore encryption~~ Won't Fix (non-extractable keys already provide strongest browser protection; wrapping would require extractable keys, reducing security)
 5. H-05, H-06: Protocol schema hardening
 
 ### Phase 2: High Priority Security
@@ -1117,7 +1127,7 @@ if (char.charCodeAt(0) > 32) { ... }
 | C-07 | Channel send auth required | Sign channel send messages in non-public mode |
 | H-13/H-14 | Per-message size limit (EK06) | `maxPayloadSize` renamed to `maxMessageSize`; applied per-message to all types |
 | M-12 | Dispose cleanup timeout | Configure `cleanupTimeoutMs` |
-| C-12 | Browser keys encrypted | Keys re-generated on first use |
+| ~~C-12~~ | ~~Browser keys encrypted~~ | Won't Fix — non-extractable keys are the correct approach |
 | H-05 | Field size limits | Reduce payload sizes |
 | H-06 | additionalProperties: false | Remove extra fields |
 | P-12 | Sync keyring deprecated | Use async variants |

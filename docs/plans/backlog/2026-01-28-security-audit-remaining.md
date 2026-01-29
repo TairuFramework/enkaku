@@ -5,20 +5,20 @@
 
 ## Summary
 
-15 of 47 issues were resolved across three implementation plans. The remaining open issues are listed below, grouped by severity.
+15 of 47 issues were resolved across three implementation plans. 1 issue (C-12) was closed as won't-fix. The remaining open issues are listed below, grouped by severity.
 
 ---
 
-## Critical (6 open)
+## Critical (5 open, 1 won't-fix)
 
-| ID | Issue | Package |
-|----|-------|---------|
-| C-04 | No capability revocation mechanism | `@enkaku/capability` |
-| C-08 | Session resource exhaustion (HTTP transport) | `@enkaku/http-server-transport` |
-| C-09 | Inflight request exhaustion (HTTP transport) | `@enkaku/http-server-transport` |
-| C-10 | No TLS/HTTPS enforcement | `@enkaku/http-*-transport` |
-| C-11 | Socket transport has no TLS support | `@enkaku/socket-transport` |
-| C-12 | Browser keystore stores keys unencrypted | `@enkaku/browser-keystore` |
+| ID | Issue | Package | Status |
+|----|-------|---------|--------|
+| C-04 | No capability revocation mechanism | `@enkaku/capability` | Open |
+| C-08 | Session resource exhaustion (HTTP transport) | `@enkaku/http-server-transport` | Open |
+| C-09 | Inflight request exhaustion (HTTP transport) | `@enkaku/http-server-transport` | Open |
+| C-10 | No TLS/HTTPS enforcement | `@enkaku/http-*-transport` | Open |
+| C-11 | Socket transport has no TLS support | `@enkaku/socket-transport` | Open |
+| C-12 | Browser keystore stores keys unencrypted | `@enkaku/browser-keystore` | Won't Fix — non-extractable keys are the correct approach; wrapping would require extractable keys, reducing security |
 
 ## High (13 open)
 
