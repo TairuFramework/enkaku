@@ -63,31 +63,36 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     events,
     handlers,
     logger,
-    maxBufferSize: limiter.limits.maxBufferSize,
     send: (payload) => transport.write(createUnsignedToken(payload)),
   }
   const running: Record<string, Promise<void>> = Object.create(null)
+  const encoder = new TextEncoder()
 
   // Periodic cleanup of expired controllers
-  const cleanupInterval = setInterval(() => {
-    const expired = limiter.getExpiredControllers()
-    for (const rid of expired) {
-      const controller = controllers[rid]
-      if (controller != null) {
-        controller.abort('Timeout')
-        const error = new HandlerError({
-          code: 'EK05',
-          message: 'Request timeout',
-        })
-        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
-        events.emit('handlerTimeout', { rid })
-        limiter.removeController(rid)
-        delete controllers[rid]
-      } else {
-        limiter.removeController(rid)
+  const cleanupInterval = setInterval(
+    () => {
+      const expired = limiter.getExpiredControllers()
+      for (const rid of expired) {
+        const controller = controllers[rid]
+        if (controller != null) {
+          controller.abort('Timeout')
+          const error = new HandlerError({
+            code: 'EK05',
+            message: 'Request timeout',
+          })
+          context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
+          events.emit('handlerTimeout', { rid })
+          limiter.removeController(rid)
+          limiter.releaseHandler()
+          delete controllers[rid]
+          delete running[rid]
+        } else {
+          limiter.removeController(rid)
+        }
       }
-    }
-  }, Math.min(limiter.limits.controllerTimeoutMs, 10000))
+    },
+    Math.min(limiter.limits.controllerTimeoutMs, 10000),
+  )
 
   const disposer = new Disposer({
     dispose: async () => {
@@ -170,9 +175,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     } else {
       running[rid] = returned
       returned.then(() => {
-        limiter.removeController(rid)
-        limiter.releaseHandler()
-        delete running[rid]
+        // Guard against double-release if timeout cleanup already handled this rid
+        if (running[rid] === returned) {
+          limiter.removeController(rid)
+          limiter.releaseHandler()
+          delete running[rid]
+        }
       })
     }
   }
@@ -217,6 +225,19 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
     const msg = processMessage(next.value)
     if (msg != null) {
+      const msgSize = encoder.encode(JSON.stringify(msg.payload)).byteLength
+      if (msgSize > limiter.limits.maxMessageSize) {
+        const error = new HandlerError({
+          code: 'EK06',
+          message: 'Message exceeds maximum size',
+        })
+        if ('rid' in msg.payload && msg.payload.rid != null) {
+          context.send(error.toPayload(msg.payload.rid as string) as AnyServerPayloadOf<Protocol>)
+        }
+        events.emit('handlerError', { error, payload: msg.payload })
+        handleNext()
+        return
+      }
       switch (msg.payload.typ) {
         case 'abort':
           controllers[msg.payload.rid]?.abort(msg.payload.rsn)
@@ -253,11 +274,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               break
             }
             try {
-              await checkClientToken(
-                params.serverID,
-                params.access,
-                msg as unknown as SignedToken,
-              )
+              await checkClientToken(params.serverID, params.access, msg as unknown as SignedToken)
             } catch (cause) {
               const error = new HandlerError({
                 cause,
@@ -327,7 +344,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         })
 
         // Race between graceful cleanup and timeout
-        await Promise.race([
+        const gracefulDone = await Promise.race([
           Promise.all(
             this.#handling.map(async (handling) => {
               // Wait until all handlers are done - they might still need to flush messages to the transport
@@ -335,16 +352,18 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
               // Dispose transport
               await handling.transport.dispose()
             }),
-          ),
-          timeoutPromise,
+          ).then(() => true),
+          timeoutPromise.then(() => false),
         ])
 
-        // Force dispose any remaining transports after timeout
-        for (const handling of this.#handling) {
-          try {
-            await handling.transport.dispose()
-          } catch {
-            // Ignore errors during forced cleanup
+        // Force dispose any remaining transports only if timed out
+        if (!gracefulDone) {
+          for (const handling of this.#handling) {
+            try {
+              await handling.transport.dispose()
+            } catch {
+              // Ignore errors during forced cleanup
+            }
           }
         }
       },

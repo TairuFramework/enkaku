@@ -35,9 +35,7 @@ describe('Server dispose timeout', () => {
       limits: { cleanupTimeoutMs: 100 },
     })
 
-    await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'stuck', rid: 'r1' }),
-    )
+    await transports.client.write(createUnsignedToken({ typ: 'request', prc: 'stuck', rid: 'r1' }))
 
     // Wait for handler to start
     await new Promise((resolve) => setTimeout(resolve, 20))

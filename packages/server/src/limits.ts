@@ -7,8 +7,8 @@ export type ResourceLimits = {
   controllerTimeoutMs: number
   /** Cleanup timeout in milliseconds when disposing. Default: 30000 (30 sec) */
   cleanupTimeoutMs: number
-  /** Maximum buffer size in bytes for streams/channels. Default: 10485760 (10 MB) */
-  maxBufferSize: number
+  /** Maximum size in bytes for any individual message payload. Default: 10485760 (10 MB) */
+  maxMessageSize: number
 }
 
 export const DEFAULT_RESOURCE_LIMITS: ResourceLimits = {
@@ -16,7 +16,7 @@ export const DEFAULT_RESOURCE_LIMITS: ResourceLimits = {
   maxConcurrentHandlers: 100,
   controllerTimeoutMs: 300000,
   cleanupTimeoutMs: 30000,
-  maxBufferSize: 10485760,
+  maxMessageSize: 10485760,
 }
 
 export type ResourceLimiter = {
@@ -27,7 +27,7 @@ export type ResourceLimiter = {
   addController: (rid: string) => void
   removeController: (rid: string) => void
   getExpiredControllers: () => Array<string>
-  acquireHandler: () => Promise<boolean>
+  acquireHandler: () => boolean
   releaseHandler: () => void
 }
 
@@ -67,7 +67,7 @@ export function createResourceLimiter(options?: Partial<ResourceLimits>): Resour
       }
       return expired
     },
-    async acquireHandler() {
+    acquireHandler() {
       if (handlerCount >= limits.maxConcurrentHandlers) {
         return false
       }

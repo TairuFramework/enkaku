@@ -577,9 +577,9 @@ describe('checkDelegationChain() - depth limits (H-04)', () => {
     const reversed = [...capabilities].reverse()
 
     // Should reject: custom limit of 2
-    await expect(
-      checkDelegationChain(finalPayload, reversed, { maxDepth: 2 }),
-    ).rejects.toThrow('delegation chain exceeds maximum depth')
+    await expect(checkDelegationChain(finalPayload, reversed, { maxDepth: 2 })).rejects.toThrow(
+      'delegation chain exceeds maximum depth',
+    )
 
     // Should succeed: custom limit of 10
     await expect(

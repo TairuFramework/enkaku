@@ -12,18 +12,18 @@
 
 ## Summary of Issues Addressed
 
-| Issue ID | Severity | Description |
-|----------|----------|-------------|
-| C-05 | CRITICAL | Unbounded Controller Storage (Server DoS) |
-| C-06 | CRITICAL | No Concurrent Handler Limits |
-| C-07 | CRITICAL | Channel Send Messages Skip Authorization |
-| H-13 | HIGH | Unbounded Stream Buffer |
-| H-14 | HIGH | Unbounded Channel Buffer |
-| H-15 | HIGH | Event Handlers Skip Authorization Response |
-| M-10 | MEDIUM | Validation is Optional (Server) |
-| M-11 | MEDIUM | Stream Not Closed on Handler Crash |
-| M-12 | MEDIUM | No Cleanup Timeout on Server Dispose |
-| T-03 | TEST | Client/Server Resource Limit Tests Missing |
+| Issue ID | Severity | Description | Status |
+|----------|----------|-------------|--------|
+| C-05 | CRITICAL | Unbounded Controller Storage (Server DoS) | Fixed (Tasks 1-3, 5, 7) |
+| C-06 | CRITICAL | No Concurrent Handler Limits | Fixed (Tasks 4, 5) |
+| C-07 | CRITICAL | Channel Send Messages Skip Authorization | Fixed (Task 6) |
+| H-13 | HIGH | Unbounded Stream Buffer | Fixed (Task 10 — per-message size limit) |
+| H-14 | HIGH | Unbounded Channel Buffer | Fixed (Task 10 — per-message size limit) |
+| H-15 | HIGH | Event Handlers Skip Authorization Response | Fixed (Task 12) |
+| M-10 | MEDIUM | Validation is Optional (Server) | Mitigated (Task 11 — warning logged) |
+| M-11 | MEDIUM | Stream Not Closed on Handler Crash | Fixed (Task 9) |
+| M-12 | MEDIUM | No Cleanup Timeout on Server Dispose | Fixed (Task 8) |
+| T-03 | TEST | Client/Server Resource Limit Tests Missing | Fixed (Tasks 5-12) |
 
 ---
 
@@ -54,7 +54,7 @@ describe('ResourceLimits', () => {
     expect(DEFAULT_RESOURCE_LIMITS.maxConcurrentHandlers).toBe(100)
     expect(DEFAULT_RESOURCE_LIMITS.controllerTimeoutMs).toBe(300000) // 5 min
     expect(DEFAULT_RESOURCE_LIMITS.cleanupTimeoutMs).toBe(30000) // 30 sec
-    expect(DEFAULT_RESOURCE_LIMITS.maxBufferSize).toBe(10485760) // 10 MB
+    expect(DEFAULT_RESOURCE_LIMITS.maxMessageSize).toBe(10485760) // 10 MB
   })
 
   test('createResourceLimiter returns limiter with defaults', () => {
@@ -89,8 +89,8 @@ export type ResourceLimits = {
   controllerTimeoutMs: number
   /** Cleanup timeout in milliseconds when disposing. Default: 30000 (30 sec) */
   cleanupTimeoutMs: number
-  /** Maximum buffer size in bytes for streams/channels. Default: 10485760 (10 MB) */
-  maxBufferSize: number
+  /** Maximum size in bytes for any individual message payload. Default: 10485760 (10 MB) */
+  maxMessageSize: number
 }
 
 export const DEFAULT_RESOURCE_LIMITS: ResourceLimits = {
@@ -98,7 +98,7 @@ export const DEFAULT_RESOURCE_LIMITS: ResourceLimits = {
   maxConcurrentHandlers: 100,
   controllerTimeoutMs: 300000,
   cleanupTimeoutMs: 30000,
-  maxBufferSize: 10485760,
+  maxMessageSize: 10485760,
 }
 
 export type ResourceLimiter = {
@@ -207,8 +207,8 @@ export type ResourceLimits = {
   controllerTimeoutMs: number
   /** Cleanup timeout in milliseconds when disposing. Default: 30000 (30 sec) */
   cleanupTimeoutMs: number
-  /** Maximum buffer size in bytes for streams/channels. Default: 10485760 (10 MB) */
-  maxBufferSize: number
+  /** Maximum size in bytes for any individual message payload. Default: 10485760 (10 MB) */
+  maxMessageSize: number
 }
 
 export const DEFAULT_RESOURCE_LIMITS: ResourceLimits = {
@@ -216,7 +216,7 @@ export const DEFAULT_RESOURCE_LIMITS: ResourceLimits = {
   maxConcurrentHandlers: 100,
   controllerTimeoutMs: 300000,
   cleanupTimeoutMs: 30000,
-  maxBufferSize: 10485760,
+  maxMessageSize: 10485760,
 }
 
 export type ResourceLimiter = {
@@ -1447,169 +1447,130 @@ EOF
 
 ---
 
-## Task 10: Add Buffer Size Limits (H-13, H-14)
+## Task 10: Add Per-Message Size Limits (H-13, H-14)
 
 **Files:**
-- Modify: `packages/server/src/handlers/stream.ts`
-- Modify: `packages/server/src/handlers/channel.ts`
-- Modify: `packages/server/src/types.ts`
+- Modify: `packages/server/src/limits.ts` (rename `maxPayloadSize` → `maxMessageSize`)
+- Modify: `packages/server/src/types.ts` (remove `maxPayloadSize` from `HandlerContext`)
+- Modify: `packages/server/src/handlers/stream.ts` (remove cumulative tracking)
+- Modify: `packages/server/src/handlers/channel.ts` (remove cumulative tracking)
+- Modify: `packages/server/src/server.ts` (add per-message check in `handleMessages`)
+- Modify: `packages/server/src/error.ts` (document EK06)
 - Test: `packages/server/test/buffer-limits.test.ts`
 
-**Step 1: Write the failing test**
+**Approach change:** Instead of cumulative buffer tracking inside individual stream/channel handlers, enforce a per-message size check in `handleMessages` that applies to ALL incoming client messages (request, stream, channel, event). This is simpler, more consistent, and catches oversized messages before they reach any handler.
 
-Create `packages/server/test/buffer-limits.test.ts`:
+**Step 1: Rename limit**
+
+In `packages/server/src/limits.ts`:
+- Rename `maxPayloadSize` → `maxMessageSize` in `ResourceLimits` type and `DEFAULT_RESOURCE_LIMITS`
+- Update doc comment: "Maximum size in bytes for any individual message payload"
+
+**Step 2: Remove from handler context**
+
+In `packages/server/src/types.ts`:
+- Remove `maxPayloadSize: number` from `HandlerContext`
+
+**Step 3: Remove cumulative tracking from handlers**
+
+In `packages/server/src/handlers/stream.ts` and `channel.ts`:
+- Remove `const encoder = new TextEncoder()` and `let payloadBytes = 0`
+- Remove the per-write size check and `BufferOverflow` abort logic
+- Keep the `writeTo` callback with just send logic
+
+**Step 4: Add per-message check in `handleMessages`**
+
+In `packages/server/src/server.ts`:
+- Remove `maxPayloadSize` from the `context` object
+- Add `const encoder = new TextEncoder()` at the top of `handleMessages`
+- After `processMessage` succeeds and before the `switch` statement:
 
 ```typescript
+const msgSize = encoder.encode(JSON.stringify(msg.payload)).byteLength
+if (msgSize > limiter.limits.maxMessageSize) {
+  const error = new HandlerError({
+    code: 'EK06',
+    message: 'Message exceeds maximum size',
+  })
+  if ('rid' in msg.payload && msg.payload.rid != null) {
+    context.send(error.toPayload(msg.payload.rid as string) as AnyServerPayloadOf<Protocol>)
+  }
+  events.emit('handlerError', { error, payload: msg.payload })
+  handleNext()
+  return
+}
+```
+
+- For messages with a `rid` (not events), send an error response with code `EK06`
+- Emit `handlerError` event
+- Skip processing and continue to `handleNext()`
+
+**Step 5: Document EK06**
+
+In `packages/server/src/error.ts`:
+- Add `EK06: Message exceeds maximum size` to the error code docs
+
+**Step 6: Write tests**
+
+Rewrite `packages/server/test/buffer-limits.test.ts` to test per-message rejection:
+
+```typescript
+import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { createUnsignedToken } from '@enkaku/token'
+import { DirectTransports } from '@enkaku/transport'
 import { describe, expect, test, vi } from 'vitest'
 
-import { Server } from '../src/server.js'
-import { createMockTransport } from './lib.test.js'
+import { type ProcedureHandlers, serve } from '../src/index.js'
 
-describe('Stream buffer limits', () => {
-  test('stream rejects writes exceeding buffer limit', async () => {
-    const transport = createMockTransport()
-    let writeError: Error | null = null
-
-    const server = new Server({
-      public: true,
-      handlers: {
-        bigStream: async ({ writable }) => {
-          const writer = writable.getWriter()
-          try {
-            // Write 2MB of data when limit is 1MB
-            const largeData = 'x'.repeat(2 * 1024 * 1024)
-            await writer.write(largeData)
-          } catch (err) {
-            writeError = err as Error
-          }
-          writer.releaseLock()
-          return 'done'
-        },
-      },
-      transports: [transport],
-      limits: { maxBufferSize: 1024 * 1024 }, // 1 MB
-    })
-
-    transport.mockReceive({ payload: { typ: 'stream', prc: 'bigStream', rid: 's1' } })
-
-    await vi.waitFor(() => {
-      expect(writeError).not.toBeNull()
-      expect(writeError?.message).toContain('buffer')
-    })
-
-    await server.dispose()
+describe('Per-message size limits', () => {
+  test('rejects oversized request with EK06 error', async () => {
+    // Send request with large param, verify EK06 error response
+    // Handler should NOT be called
   })
 
-  test('channel rejects send exceeding buffer limit', async () => {
-    const transport = createMockTransport()
+  test('rejects oversized stream message with EK06 error', async () => {
+    // Send stream init with large param, verify EK06 error response
+  })
 
-    const server = new Server({
-      public: true,
-      handlers: {
-        bigChannel: async ({ readable }) => {
-          for await (const _ of readable) {
-            // consume
-          }
-          return 'done'
-        },
-      },
-      transports: [transport],
-      limits: { maxBufferSize: 1024 }, // 1 KB
-    })
+  test('rejects oversized channel message with EK06 error', async () => {
+    // Send channel init with large param, verify EK06 error response
+  })
 
-    transport.mockReceive({ payload: { typ: 'channel', prc: 'bigChannel', rid: 'c1' } })
+  test('rejects oversized event message silently (no rid)', async () => {
+    // Send event with large data, verify handlerError event emitted
+    // No error response (events have no rid)
+  })
 
-    // Wait for channel to be established
-    await vi.waitFor(() => {}, { timeout: 100 })
-
-    // Send oversized message
-    const largeValue = 'x'.repeat(2048)
-    transport.mockReceive({ payload: { typ: 'send', rid: 'c1', val: largeValue } })
-
-    await vi.waitFor(() => {
-      const error = transport.written.find(
-        (msg) => msg.payload.rid === 'c1' && msg.payload.typ === 'error',
-      )
-      expect(error?.payload.err.message).toContain('size')
-    })
-
-    await server.dispose()
+  test('allows messages within size limit', async () => {
+    // Send small request, verify normal processing
   })
 })
 ```
 
-**Step 2: Run test to verify it fails**
+Also update `packages/server/test/limits.test.ts`:
+- Rename `maxPayloadSize` → `maxMessageSize` in assertions
 
-Run: `pnpm --filter @enkaku/server test -- buffer-limits.test.ts`
-Expected: FAIL (no buffer limits enforced)
-
-**Step 3: Write minimal implementation**
-
-1. Update `packages/server/src/types.ts` to include limits in HandlerContext:
-```typescript
-export type HandlerContext<Protocol extends ProtocolDefinition> = {
-  controllers: Record<string, HandlerController>
-  events: ServerEmitter
-  handlers: ProcedureHandlers<Protocol>
-  logger: Logger
-  maxBufferSize: number
-  send: (payload: AnyServerPayloadOf<Protocol>) => Promise<void>
-}
-```
-
-2. Update stream handler to check size:
-```typescript
-// In handleStream, before write:
-writeTo<ReceiveType<Protocol, Procedure>>(async (val) => {
-  // Check buffer size
-  const size = typeof val === 'string' ? val.length : JSON.stringify(val).length
-  if (size > ctx.maxBufferSize) {
-    throw new Error(`Write exceeds buffer size limit (${size} > ${ctx.maxBufferSize})`)
-  }
-  // ... rest of write logic
-})
-```
-
-3. Update channel handler to check incoming sends in server.ts:
-```typescript
-case 'send': {
-  const controller = controllers[msg.payload.rid] as ChannelController | undefined
-  if (controller == null) {
-    break
-  }
-  // Check buffer size
-  const val = msg.payload.val
-  const size = typeof val === 'string' ? val.length : JSON.stringify(val).length
-  if (size > limiter.limits.maxBufferSize) {
-    const error = new HandlerError({
-      code: 'EK06',
-      message: `Message size exceeds limit (${size} > ${limiter.limits.maxBufferSize})`,
-    })
-    context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>)
-    break
-  }
-  controller.writer.write(msg.payload.val)
-  break
-}
-```
-
-**Step 4: Run test to verify it passes**
+**Step 7: Verify**
 
 Run: `pnpm --filter @enkaku/server test -- buffer-limits.test.ts`
 Expected: PASS
 
-**Step 5: Commit**
+**Step 8: Commit**
 
 ```bash
-git add packages/server/src/handlers/stream.ts packages/server/src/handlers/channel.ts packages/server/src/types.ts packages/server/src/server.ts packages/server/test/buffer-limits.test.ts
+git add packages/server/src/limits.ts packages/server/src/types.ts packages/server/src/handlers/stream.ts packages/server/src/handlers/channel.ts packages/server/src/server.ts packages/server/src/error.ts packages/server/test/buffer-limits.test.ts packages/server/test/limits.test.ts
 git commit -m "$(cat <<'EOF'
-feat(server): add buffer size limits for streams and channels
+feat(server): add per-message size limits for all message types
 
-Addresses H-13, H-14: Streams and channels now enforce maximum buffer
-size limits, preventing memory exhaustion from large writes.
+Addresses H-13, H-14: Replaces cumulative buffer tracking with a
+per-message size check applied to all incoming client messages.
+Oversized messages are rejected with EK06 before reaching handlers.
 
-BREAKING CHANGE: Large writes/sends that exceed maxBufferSize will
-now be rejected with an error.
+Renames maxPayloadSize → maxMessageSize to reflect the new semantics.
+
+BREAKING CHANGE: maxPayloadSize renamed to maxMessageSize. Size checking
+now applies per-message to all types (request, stream, channel, event),
+not cumulatively to stream/channel sessions only.
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
 EOF
@@ -1881,13 +1842,15 @@ This implementation plan addresses the following security issues:
 1. Server now accepts `limits` option in constructor
 2. Requests exceeding controller/handler limits are rejected with EK03/EK04 errors
 3. Channel send messages in non-public servers require authorization
-4. Large writes/sends exceeding buffer limits are rejected
+4. `maxPayloadSize` renamed to `maxMessageSize` — now a per-message size check applied to all incoming client messages (not cumulative stream/channel tracking)
+5. Oversized messages are rejected with EK06 before reaching handlers
 
 **New Error Codes:**
 - EK03: Server controller limit reached
 - EK04: Server handler limit reached
 - EK05: Request timeout
-- EK06: Message size exceeds limit
+- EK06: Message exceeds maximum size
 
 **New Events:**
-- `authorizationFailed`: Emitted when authorization fails for any message type
+- `eventAuthError`: Emitted when authorization fails for event messages
+- `handlerTimeout`: Emitted when a controller expires

@@ -31,17 +31,10 @@ export function handleStream<
   const controller = new AbortController()
   ctx.controllers[msg.payload.rid] = controller
 
-  let bufferBytes = 0
   const receiveStream = createPipe<ReceiveType<Protocol, Procedure>>()
   receiveStream.readable.pipeTo(
     writeTo<ReceiveType<Protocol, Procedure>>(async (val) => {
       if (controller.signal.aborted) {
-        return
-      }
-      const size = JSON.stringify(val).length
-      bufferBytes += size
-      if (bufferBytes > ctx.maxBufferSize) {
-        controller.abort('BufferOverflow')
         return
       }
       ctx.logger.trace('send value to stream {procedure} with ID {rid}', {

@@ -1,11 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-import {
-  DEFAULT_RESOURCE_LIMITS,
-  createResourceLimiter,
-  type ResourceLimiter,
-  type ResourceLimits,
-} from '../src/limits.js'
+import { createResourceLimiter, DEFAULT_RESOURCE_LIMITS } from '../src/limits.js'
 
 describe('ResourceLimits', () => {
   test('DEFAULT_RESOURCE_LIMITS has expected values', () => {
@@ -13,7 +8,7 @@ describe('ResourceLimits', () => {
     expect(DEFAULT_RESOURCE_LIMITS.maxConcurrentHandlers).toBe(100)
     expect(DEFAULT_RESOURCE_LIMITS.controllerTimeoutMs).toBe(300000) // 5 min
     expect(DEFAULT_RESOURCE_LIMITS.cleanupTimeoutMs).toBe(30000) // 30 sec
-    expect(DEFAULT_RESOURCE_LIMITS.maxBufferSize).toBe(10485760) // 10 MB
+    expect(DEFAULT_RESOURCE_LIMITS.maxMessageSize).toBe(10485760) // 10 MB
   })
 
   test('createResourceLimiter returns limiter with defaults', () => {
@@ -102,27 +97,27 @@ describe('ResourceLimiter controller timeout', () => {
 })
 
 describe('ResourceLimiter handler concurrency', () => {
-  test('acquireHandler returns true when under limit', async () => {
+  test('acquireHandler returns true when under limit', () => {
     const limiter = createResourceLimiter({ maxConcurrentHandlers: 2 })
-    expect(await limiter.acquireHandler()).toBe(true)
+    expect(limiter.acquireHandler()).toBe(true)
     expect(limiter.activeHandlers).toBe(1)
   })
 
-  test('acquireHandler returns false at limit', async () => {
+  test('acquireHandler returns false at limit', () => {
     const limiter = createResourceLimiter({ maxConcurrentHandlers: 2 })
-    await limiter.acquireHandler()
-    await limiter.acquireHandler()
-    expect(await limiter.acquireHandler()).toBe(false)
+    limiter.acquireHandler()
+    limiter.acquireHandler()
+    expect(limiter.acquireHandler()).toBe(false)
     expect(limiter.activeHandlers).toBe(2)
   })
 
-  test('releaseHandler decrements count', async () => {
+  test('releaseHandler decrements count', () => {
     const limiter = createResourceLimiter({ maxConcurrentHandlers: 2 })
-    await limiter.acquireHandler()
-    await limiter.acquireHandler()
+    limiter.acquireHandler()
+    limiter.acquireHandler()
     limiter.releaseHandler()
     expect(limiter.activeHandlers).toBe(1)
-    expect(await limiter.acquireHandler()).toBe(true)
+    expect(limiter.acquireHandler()).toBe(true)
   })
 
   test('releaseHandler does not go negative', () => {

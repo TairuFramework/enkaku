@@ -40,15 +40,9 @@ describe('Server resource limits', () => {
     })
 
     // Send 3 requests - only 2 should be accepted
-    await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'r1' }),
-    )
-    await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'r2' }),
-    )
-    await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'r3' }),
-    )
+    await transports.client.write(createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'r1' }))
+    await transports.client.write(createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'r2' }))
+    await transports.client.write(createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'r3' }))
 
     // Wait for r3 rejection
     const r3Error = await transports.client.read()
