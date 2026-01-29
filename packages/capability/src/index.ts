@@ -32,6 +32,16 @@ export type DelegationChainOptions = {
   maxDepth?: number
 }
 
+/** Options for capability creation */
+export type CreateCapabilityOptions = {
+  /**
+   * Parent capability token (stringified) that authorizes this delegation.
+   * Required when creating a capability where signer is not the subject.
+   * The signer must be the audience of the parent capability.
+   */
+  parentCapability?: string
+}
+
 export type Permission = {
   act: string | Array<string>
   res: string | Array<string>
@@ -106,7 +116,57 @@ export async function createCapability<
   signer: TokenSigner,
   payload: Payload,
   header?: HeaderParams,
+  options?: CreateCapabilityOptions,
 ): Promise<CapabilityToken<Payload & { iss: string }, SignedHeader>> {
+  const signerId = signer.id
+
+  // If signer is the subject, no parent validation needed (root capability)
+  if (payload.sub === signerId) {
+    return await signer.createToken(payload, header)
+  }
+
+  // Signer is delegating on behalf of someone else - validate authorization
+  if (options?.parentCapability == null) {
+    throw new Error(
+      'Invalid capability: parentCapability required when delegating for another subject',
+    )
+  }
+
+  // Verify and validate the parent capability
+  const parent = await verifyToken<CapabilityPayload>(options.parentCapability)
+  assertCapabilityToken(parent)
+
+  // Signer must be the audience of the parent capability
+  if (parent.payload.aud !== signerId) {
+    throw new Error(
+      'Invalid capability: signer must be the audience of parent capability',
+    )
+  }
+
+  // Subject must match
+  if (parent.payload.sub !== payload.sub) {
+    throw new Error('Invalid capability: subject mismatch with parent capability')
+  }
+
+  // Check parent is not expired
+  assertNonExpired(parent.payload)
+
+  // Check that the new capability doesn't exceed parent permissions
+  const newPermission: Permission = {
+    act: payload.act,
+    res: payload.res,
+  }
+  const parentPermission: Permission = {
+    act: parent.payload.act,
+    res: parent.payload.res,
+  }
+
+  if (!hasPermission(newPermission, parentPermission)) {
+    throw new Error(
+      'Invalid capability: delegated permission exceeds parent capability',
+    )
+  }
+
   return await signer.createToken(payload, header)
 }
 

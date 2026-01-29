@@ -330,18 +330,28 @@ describe('checkDelegationChain()', () => {
       act: '*',
       res: 'foo/*',
     })
-    const delegateToC = await createCapability(signerB, {
-      sub: signerA.id,
-      aud: signerC.id,
-      act: 'test/*',
-      res: ['foo/bar', 'foo/baz'],
-    })
-    const delegateToD = await createCapability(signerC, {
-      sub: signerA.id,
-      aud: signerD.id,
-      act: ['test/read', 'test/write'],
-      res: 'foo/baz',
-    })
+    const delegateToC = await createCapability(
+      signerB,
+      {
+        sub: signerA.id,
+        aud: signerC.id,
+        act: 'test/*',
+        res: ['foo/bar', 'foo/baz'],
+      },
+      undefined,
+      { parentCapability: stringifyToken(delegateToB) },
+    )
+    const delegateToD = await createCapability(
+      signerC,
+      {
+        sub: signerA.id,
+        aud: signerD.id,
+        act: ['test/read', 'test/write'],
+        res: 'foo/baz',
+      },
+      undefined,
+      { parentCapability: stringifyToken(delegateToC) },
+    )
     await expect(
       checkDelegationChain(delegateToD.payload, [
         stringifyToken(delegateToC),
@@ -363,18 +373,28 @@ describe('checkCapability()', () => {
       act: '*',
       res: ['foo/*'],
     })
-    const delegateToC = await createCapability(signerB, {
-      sub: signerA.id,
-      aud: signerC.id,
-      act: 'test/*',
-      res: ['foo/bar', 'foo/baz'],
-    })
-    const delegateToD = await createCapability(signerC, {
-      sub: signerA.id,
-      aud: signerD.id,
-      act: 'test/*',
-      res: ['foo/baz'],
-    })
+    const delegateToC = await createCapability(
+      signerB,
+      {
+        sub: signerA.id,
+        aud: signerC.id,
+        act: 'test/*',
+        res: ['foo/bar', 'foo/baz'],
+      },
+      undefined,
+      { parentCapability: stringifyToken(delegateToB) },
+    )
+    const delegateToD = await createCapability(
+      signerC,
+      {
+        sub: signerA.id,
+        aud: signerD.id,
+        act: 'test/*',
+        res: ['foo/baz'],
+      },
+      undefined,
+      { parentCapability: stringifyToken(delegateToC) },
+    )
     const token = await signerD.createToken({
       sub: signerA.id,
       prc: 'test/call',
@@ -459,20 +479,32 @@ describe('checkCapability() - self-issued tokens (C-02)', () => {
 })
 
 describe('checkDelegationChain() - depth limits (H-04)', () => {
+  async function buildDelegationChain(signers: Array<ReturnType<typeof randomTokenSigner>>) {
+    const capabilities: Array<string> = []
+    for (let i = 0; i < signers.length - 1; i++) {
+      const parentOption =
+        i > 0 ? { parentCapability: capabilities[i - 1] } : undefined
+      const cap = await createCapability(
+        signers[i],
+        {
+          sub: signers[0].id,
+          aud: signers[i + 1].id,
+          act: '*',
+          res: '*',
+        },
+        undefined,
+        parentOption,
+      )
+      capabilities.push(stringifyToken(cap))
+    }
+    return capabilities
+  }
+
   test('rejects delegation chains exceeding max depth', async () => {
     const signers = Array.from({ length: 25 }, () => randomTokenSigner())
 
     // Build a chain of 24 delegations (exceeds default limit of 20)
-    const capabilities: Array<string> = []
-    for (let i = 0; i < signers.length - 1; i++) {
-      const cap = await createCapability(signers[i], {
-        sub: signers[0].id,
-        aud: signers[i + 1].id,
-        act: '*',
-        res: '*',
-      })
-      capabilities.push(stringifyToken(cap))
-    }
+    const capabilities = await buildDelegationChain(signers)
 
     const finalPayload = {
       iss: signers[signers.length - 1].id,
@@ -483,23 +515,14 @@ describe('checkDelegationChain() - depth limits (H-04)', () => {
 
     // Should reject: chain depth exceeds limit
     await expect(
-      checkDelegationChain(finalPayload, capabilities.reverse()),
+      checkDelegationChain(finalPayload, [...capabilities].reverse()),
     ).rejects.toThrow('delegation chain exceeds maximum depth')
   })
 
   test('accepts delegation chains within max depth', async () => {
     const signers = Array.from({ length: 5 }, () => randomTokenSigner())
 
-    const capabilities: Array<string> = []
-    for (let i = 0; i < signers.length - 1; i++) {
-      const cap = await createCapability(signers[i], {
-        sub: signers[0].id,
-        aud: signers[i + 1].id,
-        act: '*',
-        res: '*',
-      })
-      capabilities.push(stringifyToken(cap))
-    }
+    const capabilities = await buildDelegationChain(signers)
 
     const finalPayload = {
       iss: signers[signers.length - 1].id,
@@ -510,23 +533,14 @@ describe('checkDelegationChain() - depth limits (H-04)', () => {
 
     // Should succeed: chain depth within limit
     await expect(
-      checkDelegationChain(finalPayload, capabilities.reverse()),
+      checkDelegationChain(finalPayload, [...capabilities].reverse()),
     ).resolves.not.toThrow()
   })
 
   test('respects custom maxDepth option', async () => {
     const signers = Array.from({ length: 5 }, () => randomTokenSigner())
 
-    const capabilities: Array<string> = []
-    for (let i = 0; i < signers.length - 1; i++) {
-      const cap = await createCapability(signers[i], {
-        sub: signers[0].id,
-        aud: signers[i + 1].id,
-        act: '*',
-        res: '*',
-      })
-      capabilities.push(stringifyToken(cap))
-    }
+    const capabilities = await buildDelegationChain(signers)
 
     const finalPayload = {
       iss: signers[signers.length - 1].id,
