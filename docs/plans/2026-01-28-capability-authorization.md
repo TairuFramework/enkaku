@@ -4,6 +4,9 @@
 
 **Goal:** Fix capability authorization bypass vulnerabilities and add DoS protection to the `@enkaku/capability` package.
 
+**Status:** COMPLETED
+**Branch:** `claude/implement-capability-authorization-b65WS`
+
 **Architecture:**
 1. Fix `checkCapability()` to always validate permissions even for self-issued tokens (C-02)
 2. Add optional parent capability validation to `createCapability()` for delegated capabilities (C-03)
@@ -13,11 +16,17 @@
 **Tech Stack:** TypeScript, Vitest for testing
 
 **Related Issues from Security Audit:**
-- C-02: Capability authorization bypass when iss === sub (PRIMARY)
-- C-03: createCapability() lacks authorization checks (PRIMARY)
-- H-04: Unbounded delegation chain depth (RELATED - DoS prevention)
-- M-04: Incomplete capability token type checking (RELATED - type safety)
-- T-02: Capability authorization bypass tests (TEST COVERAGE)
+- C-02: Capability authorization bypass when iss === sub — **FIXED** (`e88ca19`)
+- C-03: createCapability() lacks authorization checks — **FIXED** (`0233141`)
+- H-04: Unbounded delegation chain depth — **FIXED** (`76a461e`)
+- M-04: Incomplete capability token type checking — **FIXED** (`54ff100`)
+- T-02: Capability authorization bypass tests — **COVERED** (34 tests)
+
+**Post-plan changes (code review feedback):**
+- Added `iss` type validation to `isCapabilityToken()` (`8e5e2a1`)
+- Added explicit test for missing `parentCapability` when delegating (`8e5e2a1`)
+- Cleaned up type assertions in `checkCapability()` self-issued path (`8e5e2a1`)
+- Moved `atTime` parameter into `DelegationChainOptions` record (`948cafb`)
 
 ---
 
@@ -916,7 +925,15 @@ git status
 | File | Change Type | Description |
 |------|-------------|-------------|
 | `packages/capability/src/index.ts` | Modify | Fix C-02, C-03, H-04, M-04 |
-| `packages/capability/test/lib.test.ts` | Modify | Add comprehensive security tests |
+| `packages/capability/test/lib.test.ts` | Modify | Add comprehensive security tests (34 tests total) |
+
+## Deviations from Plan
+
+1. **M-04 tests** use a `makeToken()` helper with realistic token shapes (`data`, `header`, `signature`, `verifiedPublicKey`) rather than the minimal stubs in the plan, because `isVerifiedToken()` validates these fields.
+2. **H-04 tests** use a shared `buildDelegationChain()` helper that correctly passes `parentCapability` for delegated capabilities (required after C-03).
+3. **`isCapabilityToken()`** also validates `iss` as a string (added during code review, not in original plan).
+4. **`checkDelegationChain()`** signature changed from `(payload, capabilities, atTime?, options?)` to `(payload, capabilities, options?)` — the `atTime` parameter was moved into the `DelegationChainOptions` record (post-plan refactor).
+5. **Existing tests** for `checkDelegationChain()` and `checkCapability()` were updated to pass `parentCapability` options, a necessary consequence of C-03.
 
 ## Breaking Changes
 
@@ -929,8 +946,9 @@ git status
    - Signer must be the audience of the parent capability
    - Delegated permissions cannot exceed parent's permissions
 
-3. **`checkDelegationChain()` has new signature** (H-04)
-   - New optional `options` parameter with `maxDepth` (default: 20)
+3. **`checkDelegationChain()` has new signature** (H-04 + refactor)
+   - New optional `options` parameter with `atTime` and `maxDepth` (default: 20)
+   - The `atTime` parameter moved from a positional argument into the options record
    - Chains exceeding max depth are rejected
 
 4. **`checkCapability()` has new signature** (H-04)
@@ -939,5 +957,5 @@ git status
 ## New Exports
 
 - `DEFAULT_MAX_DELEGATION_DEPTH` - Constant (20)
-- `DelegationChainOptions` - Type for chain validation options
+- `DelegationChainOptions` - Type for chain validation options (includes `atTime` and `maxDepth`)
 - `CreateCapabilityOptions` - Type for capability creation options
