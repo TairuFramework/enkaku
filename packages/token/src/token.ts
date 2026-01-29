@@ -2,6 +2,7 @@ import { b64uToJSON, fromB64U, fromUTF } from '@enkaku/codec'
 import { assertType, isType } from '@enkaku/schema'
 
 import { getSignatureInfo } from './did.js'
+import { assertTimeClaimsValid, type TimeValidationOptions } from './time.js'
 import {
   type SignedPayload,
   validateAlgorithm,
@@ -90,12 +91,21 @@ export async function signToken<
 
 /**
  * Verify a token is either unsigned or signed with a valid signature.
+ * Also validates time-based claims (exp, nbf) if present.
  */
 export async function verifyToken<
   Payload extends Record<string, unknown> = Record<string, unknown>,
->(token: Token<Payload> | string, verifiers?: Verifiers): Promise<Token<Payload>> {
+>(
+  token: Token<Payload> | string,
+  verifiers?: Verifiers,
+  timeOptions?: TimeValidationOptions,
+): Promise<Token<Payload>> {
   if (typeof token !== 'string') {
-    if (isUnsignedToken(token) || isVerifiedToken(token)) {
+    if (isUnsignedToken(token)) {
+      return token
+    }
+    if (isVerifiedToken(token)) {
+      assertTimeClaimsValid(token.payload as Record<string, unknown>, timeOptions)
       return token
     }
     if (isSignedToken(token)) {
@@ -105,6 +115,7 @@ export async function verifyToken<
         token.data,
         verifiers,
       )
+      assertTimeClaimsValid(token.payload as Record<string, unknown>, timeOptions)
       return { ...token, verifiedPublicKey } as Token<Payload>
     }
     throw new Error('Unsupported token')
@@ -137,6 +148,7 @@ export async function verifyToken<
       data,
       verifiers,
     )
+    assertTimeClaimsValid(payload as Record<string, unknown>, timeOptions)
     return {
       data,
       header,

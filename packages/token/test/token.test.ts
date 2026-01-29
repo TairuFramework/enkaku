@@ -49,3 +49,84 @@ test('create an unsigned token, sign and stringify it', async () => {
   const verified = await verifyToken(stringified)
   expect(isVerifiedToken(verified)).toBe(true)
 })
+
+describe('verifyToken with time validation', () => {
+  const fixedTime = 1700000000
+
+  test('rejects expired signed token', async () => {
+    const signer = randomTokenSigner()
+    const token = await signer.createToken({
+      test: true,
+      exp: fixedTime - 100,
+    })
+
+    await expect(verifyToken(token, undefined, { atTime: fixedTime })).rejects.toThrow(
+      'Token expired',
+    )
+  })
+
+  test('rejects token not yet valid (nbf in future)', async () => {
+    const signer = randomTokenSigner()
+    const token = await signer.createToken({
+      test: true,
+      nbf: fixedTime + 100,
+    })
+
+    await expect(verifyToken(token, undefined, { atTime: fixedTime })).rejects.toThrow(
+      'Token not yet valid',
+    )
+  })
+
+  test('accepts token within valid time window', async () => {
+    const signer = randomTokenSigner()
+    const token = await signer.createToken({
+      test: true,
+      nbf: fixedTime - 100,
+      exp: fixedTime + 100,
+    })
+
+    const result = await verifyToken(token, undefined, { atTime: fixedTime })
+    expect(result.payload.test).toBe(true)
+  })
+
+  test('accepts token without time claims', async () => {
+    const signer = randomTokenSigner()
+    const token = await signer.createToken({ test: true })
+
+    const result = await verifyToken(token, undefined, { atTime: fixedTime })
+    expect(result.payload.test).toBe(true)
+  })
+
+  test('respects clockTolerance option', async () => {
+    const signer = randomTokenSigner()
+    const token = await signer.createToken({
+      test: true,
+      exp: fixedTime - 5, // Expired 5 seconds ago
+    })
+
+    // Should fail without tolerance
+    await expect(verifyToken(token, undefined, { atTime: fixedTime })).rejects.toThrow(
+      'Token expired',
+    )
+
+    // Should pass with 10 second tolerance
+    const result = await verifyToken(token, undefined, {
+      atTime: fixedTime,
+      clockTolerance: 10,
+    })
+    expect(result.payload.test).toBe(true)
+  })
+
+  test('validates time claims for JWT string tokens', async () => {
+    const signer = randomTokenSigner()
+    const token = await signer.createToken({
+      test: true,
+      exp: fixedTime - 100,
+    })
+    const tokenString = stringifyToken(token)
+
+    await expect(verifyToken(tokenString, undefined, { atTime: fixedTime })).rejects.toThrow(
+      'Token expired',
+    )
+  })
+})
