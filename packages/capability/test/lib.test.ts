@@ -9,6 +9,7 @@ import {
   checkDelegationChain,
   createCapability,
   hasPermission,
+  isCapabilityToken,
   now,
 } from '../src/index.js'
 
@@ -382,5 +383,77 @@ describe('checkCapability()', () => {
     await expect(
       checkCapability({ act: 'test/call', res: 'foo/baz' }, token.payload),
     ).resolves.not.toThrow()
+  })
+})
+
+describe('checkCapability() - self-issued tokens (C-02)', () => {
+  test('validates permissions even for self-issued tokens', async () => {
+    const alice = randomTokenSigner()
+
+    // Alice creates a self-issued token claiming only 'read' permission
+    const token = await alice.createToken({
+      sub: alice.id,
+      act: 'test/read',
+      res: 'foo/bar',
+    })
+
+    // Should succeed: requesting exactly what was granted
+    await expect(
+      checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload),
+    ).resolves.not.toThrow()
+
+    // Should FAIL: requesting 'write' when only 'read' was granted
+    // BUG: Currently passes because iss === sub bypasses permission check
+    await expect(
+      checkCapability({ act: 'test/write', res: 'foo/bar' }, token.payload),
+    ).rejects.toThrow()
+  })
+
+  test('validates resource even for self-issued tokens', async () => {
+    const alice = randomTokenSigner()
+
+    const token = await alice.createToken({
+      sub: alice.id,
+      act: 'test/read',
+      res: 'foo/bar',
+    })
+
+    // Should FAIL: requesting different resource
+    await expect(
+      checkCapability({ act: 'test/read', res: 'foo/baz' }, token.payload),
+    ).rejects.toThrow()
+  })
+
+  test('respects wildcard permissions for self-issued tokens', async () => {
+    const alice = randomTokenSigner()
+
+    const token = await alice.createToken({
+      sub: alice.id,
+      act: '*',
+      res: 'foo/*',
+    })
+
+    // Should succeed: wildcard covers this
+    await expect(
+      checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload),
+    ).resolves.not.toThrow()
+
+    // Should fail: resource doesn't match wildcard
+    await expect(
+      checkCapability({ act: 'test/read', res: 'bar/baz' }, token.payload),
+    ).rejects.toThrow()
+  })
+
+  test('requires act and res claims for self-issued tokens', async () => {
+    const alice = randomTokenSigner()
+
+    // Token without act/res claims
+    const token = await alice.createToken({
+      sub: alice.id,
+    })
+
+    await expect(
+      checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload),
+    ).rejects.toThrow()
   })
 })
