@@ -1,5 +1,7 @@
 import type { Schema } from './types.js'
 
+const BLOCKED_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype'])
+
 export function resolveReference(root: Schema, ref: string): Schema {
   if (!ref.startsWith('#')) {
     throw new Error(`Invalid reference format: ${ref}`)
@@ -9,6 +11,9 @@ export function resolveReference(root: Schema, ref: string): Schema {
   // biome-ignore lint/suspicious/noExplicitAny: mixed type
   let current: any = root
   for (const segment of segments) {
+    if (BLOCKED_SEGMENTS.has(segment)) {
+      throw new Error(`Invalid reference segment: ${segment}`)
+    }
     if (current == null || typeof current !== 'object') {
       throw new Error(`Invalid reference path: ${ref}`)
     }
