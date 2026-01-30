@@ -33,6 +33,8 @@ export type ServerBridgeOptions = {
   onWriteError?: (event: TransportEvents['writeFailed']) => void
 }
 
+const VALID_PAYLOAD_TYPES = new Set(['abort', 'channel', 'event', 'request', 'send', 'stream'])
+
 export function createServerBridge<Protocol extends ProtocolDefinition>(
   options: ServerBridgeOptions = {},
 ): ServerBridge<Protocol> {
@@ -187,6 +189,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     const headers = getAccessControlHeaders(checkedOrigin)
     try {
       const message = (await request.json()) as Incoming
+      if (!VALID_PAYLOAD_TYPES.has(message?.payload?.typ)) {
+        return Response.json({ error: 'Invalid message type' }, { headers, status: 400 })
+      }
       switch (message.payload.typ) {
         // Fire and forget messages
         case 'abort':
@@ -215,8 +220,8 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         default:
           throw new Error('Invalid payload')
       }
-    } catch (err) {
-      return Response.json({ error: (err as Error).message }, { headers, status: 500 })
+    } catch {
+      return Response.json({ error: 'Invalid request' }, { headers, status: 400 })
     }
   }
 
