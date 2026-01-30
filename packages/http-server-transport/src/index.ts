@@ -266,12 +266,13 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
               { headers, status: 503 },
             )
           }
+          const rid = message.payload.rid
           const response = defer<Response>()
-          inflight.set(message.payload.rid, { type: 'request', headers, ...response })
+          inflight.set(rid, { type: 'request', headers, ...response })
 
           // Set timeout for this request
           const timer = setTimeout(() => {
-            const entry = inflight.get(message.payload.rid)
+            const entry = inflight.get(rid)
             if (entry != null && entry.type === 'request') {
               entry.resolve(
                 Response.json(
@@ -279,14 +280,14 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
                   { headers: entry.headers, status: 504 },
                 ),
               )
-              inflight.delete(message.payload.rid)
-              inflightTimers.delete(message.payload.rid)
+              inflight.delete(rid)
+              inflightTimers.delete(rid)
             }
           }, requestTimeoutMs)
           if (typeof timer === 'object' && 'unref' in timer) {
             timer.unref()
           }
-          inflightTimers.set(message.payload.rid, timer)
+          inflightTimers.set(rid, timer)
 
           controller.enqueue(message)
           // Wait for reply from message handler
