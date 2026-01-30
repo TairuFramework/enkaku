@@ -97,7 +97,7 @@ describe('fromJSONLines()', () => {
       .catch(() => {})
 
     const largeObj = JSON.stringify({ data: 'x'.repeat(100) })
-    controller.enqueue(largeObj + '\n')
+    controller.enqueue(`${largeObj}\n`)
     controller.close()
 
     await expect(result).rejects.toThrow('exceeds maximum message size')
@@ -110,7 +110,7 @@ describe('fromJSONLines()', () => {
     source.pipeThrough(fromJSONLines({ maxMessageSize: 200 })).pipeTo(sink)
 
     const smallObj = JSON.stringify({ data: 'ok' })
-    controller.enqueue(smallObj + '\n')
+    controller.enqueue(`${smallObj}\n`)
     controller.close()
 
     await expect(result).resolves.toEqual([{ data: 'ok' }])

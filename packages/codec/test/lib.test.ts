@@ -43,7 +43,7 @@ test('JSON to base64url encoding and decoding', () => {
 describe('b64uToJSON()', () => {
   test('rejects deeply nested JSON exceeding depth limit', () => {
     const depth = 200
-    const nested = '{"a":'.repeat(depth) + '1' + '}'.repeat(depth)
+    const nested = `${'{"a":'.repeat(depth)}1${'}'.repeat(depth)}`
     const encoded = b64uFromUTF(nested)
     expect(() => b64uToJSON(encoded)).toThrow('exceeds maximum nesting depth')
   })

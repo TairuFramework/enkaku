@@ -763,7 +763,7 @@ The following fixes will require breaking changes:
 
 | Package | Test Files | Coverage | Critical Gaps |
 |---------|-----------|----------|---------------|
-| `@enkaku/token` | 2 | ~30% | 11 error paths untested |
+| `@enkaku/token` | 3 | ~40% | 8 error paths untested (3 tested: H-02) |
 | `@enkaku/capability` | 1 | ~90% | Auth bypass fixed and tested (C-02, C-03, H-04, M-04) |
 | `@enkaku/client` | 1 | ~70% | Memory leak paths untested |
 | `@enkaku/server` | 16 | ~85% | Resource limits tested (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) |
@@ -772,14 +772,14 @@ The following fixes will require breaking changes:
 | `@enkaku/socket-transport` | 0 | 0% | **NO TESTS** |
 | `@enkaku/message-transport` | 0 | 0% | **NO TESTS** |
 | `@enkaku/node-streams-transport` | 1 | ~20% | Error paths untested |
-| `@enkaku/schema` | 1 | ~15% | Reference resolution untested (H-07) |
+| `@enkaku/schema` | 2 | ~40% | Reference resolution tested (H-07) |
 | `@enkaku/protocol` | 1 | ~20% | Size constraints untested (H-05) |
 | `@enkaku/node-keystore` | 0 | 0% | **NO TESTS** |
 | `@enkaku/browser-keystore` | 0 | 0% | **NO TESTS** |
 | `@enkaku/expo-keystore` | 0 | 0% | **NO TESTS** |
 | `@enkaku/electron-keystore` | 0 | 0% | **NO TESTS** |
-| `@enkaku/codec` | 1 | ~60% | Depth limits untested (H-08) |
-| `@enkaku/stream` | 4 | ~70% | Size limits untested (H-18) |
+| `@enkaku/codec` | 1 | ~70% | Depth limits tested (H-08) |
+| `@enkaku/stream` | 4 | ~75% | Size limits tested (H-18) |
 | `@enkaku/async` | 4 | ~85% | Good coverage |
 | `@enkaku/result` | 3 | ~90% | Excellent coverage |
 | `@enkaku/event` | 1 | ~65% | Error handling untested |
@@ -790,10 +790,10 @@ The following fixes will require breaking changes:
 ### T-01: Token Package - Missing Error Path Tests
 - **Package:** `@enkaku/token`
 - **Priority:** HIGH
-- **Status:** Partially fixed — Malformed JWT and time validation paths now tested. Remaining error paths still need coverage.
-- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md` (Tasks 1, 3, 4, 6)
+- **Status:** Partially fixed — Malformed JWT, time validation, and DID error paths now tested. Remaining error paths still need coverage.
+- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md` (Tasks 1, 3, 4, 6), `docs/plans/2026-01-30-input-validation-hardening.md` (Task 1)
 
-**Untested Error Paths:**
+**Error Paths:**
 | Function | Location | Error Case | Status |
 |----------|----------|------------|--------|
 | `verifyToken()` | token.ts:113 | Malformed JWT (not 3 parts) | TESTED (H-01) |
@@ -803,9 +803,9 @@ The following fixes will require breaking changes:
 | `verifyToken()` | token.ts:124-126 | Missing signature | Untested |
 | `verifyToken()` | token.ts:145 | Unsupported algorithm | Untested |
 | `verifySignedPayload()` | token.ts:31-32 | Invalid signature | Untested |
-| `getSignatureInfo()` | did.ts:47 | Invalid DID prefix | Untested |
-| `getSignatureInfo()` | did.ts:53 | Unsupported codec | Untested |
-| `isCodecMatch()` | did.ts:13-20 | Bytes shorter than codec | Untested |
+| `getSignatureInfo()` | did.ts:47 | Invalid DID prefix | TESTED (H-02) |
+| `getSignatureInfo()` | did.ts:53 | Unsupported codec | TESTED (H-02) |
+| `isCodecMatch()` | did.ts:13-20 | Bytes shorter than codec | TESTED (H-02) |
 | `signToken()` | signer.ts:50-52 | Issuer mismatch | Untested |
 | `toTokenSigner()` | signer.ts:39-42 | Unsupported algorithm | Untested |
 | `getVerifier()` | verifier.ts:29-30 | No verifier for algorithm | Untested |
@@ -880,12 +880,13 @@ The following fixes will require breaking changes:
 ### T-06: Schema/Protocol - Validation Tests Missing
 - **Package:** `@enkaku/schema`, `@enkaku/protocol`
 - **Priority:** HIGH
+- **Status:** Partially fixed — `resolveReference()` and `resolveSchema()` now tested (H-07). Schema helper and size constraint tests still needed.
 
 **Untested:**
 | Function | Location | Issue |
 |----------|----------|-------|
-| `resolveReference()` | utils.ts:3-20 | Prototype pollution (H-07) |
-| `resolveSchema()` | utils.ts:23-26 | Never tested |
+| `resolveReference()` | utils.ts:3-20 | Prototype pollution — TESTED (H-07) |
+| `resolveSchema()` | utils.ts:23-26 | TESTED (H-07) |
 | All helper functions | client.ts, server.ts | Only main schemas tested |
 | Size constraints | All schemas | H-05 not enforced |
 
@@ -894,12 +895,13 @@ The following fixes will require breaking changes:
 ### T-07: Utility Packages - Security Tests Missing
 - **Packages:** `@enkaku/codec`, `@enkaku/stream`
 - **Priority:** HIGH
+- **Status:** Partially fixed — JSON depth limits (H-08) and payload size limits (H-18) now tested. Base64 validation (M-03) still needed.
 
 **Untested Security Scenarios:**
 | Issue | Location | Test Needed |
 |-------|----------|-------------|
-| JSON depth limits | codec/index.ts:90 | 10,000+ nesting (H-08) |
-| Payload size limits | stream/json-lines.ts:74 | 10MB+ payloads (H-18) |
+| JSON depth limits | codec/index.ts:90 | TESTED — depth >128 rejected (H-08) |
+| Payload size limits | stream/json-lines.ts:74 | TESTED — maxBufferSize/maxMessageSize (H-18) |
 | Base64 validation | codec/index.ts:33 | Invalid padding (M-03) |
 
 ---
