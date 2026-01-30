@@ -36,6 +36,8 @@ export type ServerBridgeOptions = {
   onWriteError?: (event: TransportEvents['writeFailed']) => void
   maxSessions?: number
   sessionTimeoutMs?: number
+  maxInflightRequests?: number
+  requestTimeoutMs?: number
 }
 
 const VALID_PAYLOAD_TYPES = new Set(['abort', 'channel', 'event', 'request', 'send', 'stream'])
@@ -51,8 +53,11 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     : [options.allowedOrigin ?? '*']
   const maxSessions = options.maxSessions ?? 1000
   const sessionTimeoutMs = options.sessionTimeoutMs ?? 300_000 // 5 minutes
+  const maxInflightRequests = options.maxInflightRequests ?? 10_000
+  const requestTimeoutMs = options.requestTimeoutMs ?? 30_000 // 30 seconds
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
+  const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
 
   // Periodic cleanup of expired sessions
   const cleanupInterval = setInterval(
@@ -84,6 +89,11 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       return
     }
     if (request.type === 'request') {
+      const timer = inflightTimers.get(rid)
+      if (timer != null) {
+        clearTimeout(timer)
+        inflightTimers.delete(rid)
+      }
       request.resolve(Response.json(msg, { headers: request.headers }))
       inflight.delete(msg.payload.rid)
     } else {
@@ -233,8 +243,34 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           return new Response(null, { headers, status: 204 })
         // Immediate response message
         case 'request': {
+          if (inflight.size >= maxInflightRequests) {
+            return Response.json(
+              { error: 'Inflight request limit reached' },
+              { headers, status: 503 },
+            )
+          }
           const response = defer<Response>()
           inflight.set(message.payload.rid, { type: 'request', headers, ...response })
+
+          // Set timeout for this request
+          const timer = setTimeout(() => {
+            const entry = inflight.get(message.payload.rid)
+            if (entry != null && entry.type === 'request') {
+              entry.resolve(
+                Response.json(
+                  { error: 'Request timeout' },
+                  { headers: entry.headers, status: 504 },
+                ),
+              )
+              inflight.delete(message.payload.rid)
+              inflightTimers.delete(message.payload.rid)
+            }
+          }, requestTimeoutMs)
+          if (typeof timer === 'object' && 'unref' in timer) {
+            timer.unref()
+          }
+          inflightTimers.set(message.payload.rid, timer)
+
           controller.enqueue(message)
           // Wait for reply from message handler
           return response.promise
@@ -280,6 +316,8 @@ export type ServerTransportOptions = {
   allowedOrigin?: string | Array<string>
   maxSessions?: number
   sessionTimeoutMs?: number
+  maxInflightRequests?: number
+  requestTimeoutMs?: number
 }
 
 export class ServerTransport<Protocol extends ProtocolDefinition> extends Transport<
@@ -293,6 +331,8 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
       allowedOrigin: options.allowedOrigin,
       maxSessions: options.maxSessions,
       sessionTimeoutMs: options.sessionTimeoutMs,
+      maxInflightRequests: options.maxInflightRequests,
+      requestTimeoutMs: options.requestTimeoutMs,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
       },
