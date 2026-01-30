@@ -276,4 +276,69 @@ describe('executeHandler()', () => {
     expect(controllers).toEqual({})
     expect(logger.trace).not.toHaveBeenCalled()
   })
+
+  test('sends generic error message for non-HandlerError exceptions', async () => {
+    const controllers = { '1': new AbortController() }
+    const events = new EventEmitter<ServerEvents>()
+    const handler = vi.fn(() => {
+      throw new Error('Connection failed: postgres://admin:secret@internal-db:5432/users')
+    })
+    const logger = {
+      trace: vi.fn(),
+    } as unknown as Logger
+    const send = vi.fn()
+
+    // @ts-expect-error type instantiation too deep
+    await executeHandler(
+      {
+        controllers,
+        events,
+        handlers: { test: handler },
+        logger,
+        send,
+      } as unknown as HandlerContext<Protocol>,
+      payload,
+      () => handler(),
+    )
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        typ: 'error',
+        rid: '1',
+        msg: 'Handler execution failed',
+      }),
+    )
+  })
+
+  test('preserves error message for HandlerError exceptions', async () => {
+    const error = new HandlerError({ code: 'CUSTOM', message: 'User not found' })
+    const controllers = { '1': new AbortController() }
+    const events = new EventEmitter<ServerEvents>()
+    const handler = vi.fn(() => {
+      throw error
+    })
+    const logger = {
+      trace: vi.fn(),
+    } as unknown as Logger
+    const send = vi.fn()
+
+    // @ts-expect-error type instantiation too deep
+    await executeHandler(
+      {
+        controllers,
+        events,
+        handlers: { test: handler },
+        logger,
+        send,
+      } as unknown as HandlerContext<Protocol>,
+      payload,
+      () => handler(),
+    )
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        typ: 'error',
+        rid: '1',
+        msg: 'User not found',
+      }),
+    )
+  })
 })
