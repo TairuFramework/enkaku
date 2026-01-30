@@ -463,13 +463,8 @@ The following documentation files reference old APIs and must be updated:
 | `docs/skills/auth.skill.md` | `randomTokenSigner`, `provideTokenSignerAsync`, `provideTokenSigner`, `signer.createToken`, `signer.id` |
 | `docs/capabilities/domains/authentication.md` | All keystore `provideTokenSigner`/`provideTokenSignerAsync` signatures, `getSigner`, `toTokenSigner` |
 | `docs/capabilities/use-cases/securing-endpoints.md` | `provideTokenSignerAsync`, `provideTokenSigner` |
-| `website/docs/api/token/index.md` | `toTokenSigner()`, `getSigner()`, `TokenSigner` type |
-| `website/docs/api/browser-keystore/index.md` | `provideTokenSigner()`, `getSigner()` |
-| `website/docs/api/node-keystore/index.md` | `provideTokenSigner()`, `provideTokenSignerAsync()` |
-| `website/docs/api/electron-keystore/index.md` | `provideTokenSigner()`, `provideTokenSignerAsync()` |
-| `website/docs/api/expo-keystore/index.md` | `provideTokenSigner()`, `provideTokenSignerAsync()` |
-| `website/docs/api/server/index.md` | `ProcedureAccessRecord`, server `id` param |
-| `website/docs/api/standalone/index.md` | `ProcedureAccessRecord`, `signer` param |
+
+**Note:** `website/docs/api/` pages are auto-generated from source code and do not need manual edits.
 
 ### Downstream Impact
 
