@@ -10,6 +10,7 @@
 - Server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) — `docs/plans/archive/2026-01-28-server-resource-limits.md`
 - Input validation hardening (H-02, H-07, H-08, H-12, H-16, H-18) — `docs/plans/archive/2026-01-30-input-validation-hardening.md`
 - HTTP server transport hardening (C-08, C-09, H-09, H-10) — `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md`
+- Transport package test suites (T-04) — `docs/plans/archive/2026-01-30-transport-package-tests.complete.md`
 
 ---
 
