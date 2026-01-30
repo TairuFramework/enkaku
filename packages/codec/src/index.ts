@@ -88,15 +88,15 @@ const MAX_JSON_DEPTH = 128
 function checkJSONDepth(json: string): void {
   let depth = 0
   let inString = false
-  let escape = false
+  let isEscaped = false
   for (let i = 0; i < json.length; i++) {
     const char = json[i]
-    if (escape) {
-      escape = false
+    if (isEscaped) {
+      isEscaped = false
       continue
     }
     if (inString) {
-      if (char === '\\') escape = true
+      if (char === '\\') isEscaped = true
       else if (char === '"') inString = false
       continue
     }

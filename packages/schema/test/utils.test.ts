@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest'
-
-import { resolveReference, resolveSchema } from '../src/utils.js'
 import type { Schema } from '../src/types.js'
+import { resolveReference, resolveSchema } from '../src/utils.js'
 
 describe('resolveReference()', () => {
   const root: Schema = {
