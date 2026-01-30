@@ -42,6 +42,17 @@ export type ServerBridgeOptions = {
 
 const VALID_PAYLOAD_TYPES = new Set(['abort', 'channel', 'event', 'request', 'send', 'stream'])
 
+const ALLOWED_ORIGIN_SCHEMES = new Set(['http:', 'https:'])
+
+function isValidOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin)
+    return ALLOWED_ORIGIN_SCHEMES.has(url.protocol)
+  } catch {
+    return false
+  }
+}
+
 export function createServerBridge<Protocol extends ProtocolDefinition>(
   options: ServerBridgeOptions = {},
 ): ServerBridge<Protocol> {
@@ -148,7 +159,13 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   function checkRequestOrigin(request: Request): Response | string {
     const origin = request.headers.get('origin')
     if (allowedOrigins.includes('*')) {
-      return origin ?? '*'
+      if (origin == null) {
+        return '*'
+      }
+      if (!isValidOrigin(origin)) {
+        return Response.json({ error: 'Origin not allowed' }, { status: 403 })
+      }
+      return origin
     }
     if (origin == null || !allowedOrigins.includes(origin)) {
       return Response.json({ error: 'Origin not allowed' }, { status: 403 })
