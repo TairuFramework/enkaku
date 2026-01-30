@@ -8,6 +8,7 @@
 - Token expiration validation (C-01, H-01) — `docs/plans/archive/2026-01-28-token-expiration-validation.md`
 - Capability authorization hardening (C-02, C-03, H-04, M-04) — `docs/plans/archive/2026-01-28-capability-authorization.md`
 - Server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) — `docs/plans/archive/2026-01-28-server-resource-limits.md`
+- Input validation hardening (H-02, H-07, H-08, H-12, H-16, H-18) — `docs/plans/archive/2026-01-30-input-validation-hardening.md`
 
 ---
 
@@ -272,7 +273,7 @@ if (parts.length !== 3) {
 - **Package:** `@enkaku/token`
 - **File:** `packages/token/src/did.ts:13-20`
 - **Status:** [x] Fixed — Branch `main`
-- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 1)
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 1)
 
 **Description:**
 `isCodecMatch()` function accesses `bytes[i]` where `i >= bytes.length` when `bytes` is shorter than `codec.length`, returning `undefined`.
@@ -357,7 +358,7 @@ Change all message payload schemas to `additionalProperties: false`.
 - **Package:** `@enkaku/schema`
 - **File:** `packages/schema/src/utils.ts:3-20`
 - **Status:** [x] Fixed — Branch `main`
-- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 2)
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 2)
 
 **Description:**
 `resolveReference()` has no `__proto__` / `constructor` / `prototype` filtering. Unbounded traversal depth. No validation that resolved schema is actually a Schema.
@@ -375,7 +376,7 @@ if (['__proto__', 'constructor', 'prototype'].includes(segment)) {
 - **Package:** `@enkaku/codec`
 - **File:** `packages/codec/src/index.ts:90`
 - **Status:** [x] Fixed — Branch `main`
-- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 3)
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 3)
 
 **Description:**
 `b64uToJSON()` uses `JSON.parse()` without any depth or size limits. Vulnerable to stack exhaustion from deeply nested objects.
@@ -437,7 +438,7 @@ Add message sequence numbers, implement deduplication.
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:190-217`
 - **Status:** [x] Fixed — Branch `main`
-- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 6)
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 6)
 
 **Description:**
 Payload type (`typ` field) validated only via switch statement. Type is user-controlled string from JSON.
@@ -502,7 +503,7 @@ When authorization fails for events, only `events.emit('handlerError')` is calle
 - **Package:** `@enkaku/server`
 - **File:** `packages/server/src/utils.ts:40`
 - **Status:** [x] Fixed — Branch `main`
-- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 4)
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 4)
 
 **Description:**
 Raw error message from handler exception sent in response payload. Developers might include sensitive info in error messages.
@@ -526,7 +527,7 @@ When `params.public = true`, the entire authentication check is skipped. ALL mes
 - **Package:** `@enkaku/stream`
 - **File:** `packages/stream/src/json-lines.ts:63-102`
 - **Status:** [x] Fixed — Branch `main`
-- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 5)
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 5)
 
 **Description:**
 No buffer size limits in JSON parsing. Accumulates chunks indefinitely.
@@ -791,7 +792,7 @@ The following fixes will require breaking changes:
 - **Package:** `@enkaku/token`
 - **Priority:** HIGH
 - **Status:** Partially fixed — Malformed JWT, time validation, and DID error paths now tested. Remaining error paths still need coverage.
-- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md` (Tasks 1, 3, 4, 6), `docs/plans/2026-01-30-input-validation-hardening.md` (Task 1)
+- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md` (Tasks 1, 3, 4, 6), `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 1)
 
 **Error Paths:**
 | Function | Location | Error Case | Status |

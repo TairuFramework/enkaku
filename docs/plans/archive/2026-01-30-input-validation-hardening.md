@@ -1,5 +1,20 @@
 # Input Validation Hardening Implementation Plan
 
+**Status:** complete
+
+**Summary:** All 6 HIGH severity issues implemented with tests (24 new tests across 5 packages). Commits `cc4ba66`..`c6a1eef` on `main`. Code review approved with all suggestions addressed.
+
+| Issue | Package | Fix | Commit |
+|-------|---------|-----|--------|
+| H-02 | `@enkaku/token` | Bounds check in `isCodecMatch()` | `cc4ba66` |
+| H-07 | `@enkaku/schema` | Block prototype pollution in `resolveReference()` | `7c91020` |
+| H-08 | `@enkaku/codec` | JSON nesting depth limit (128) in `b64uToJSON()` | `ab56e75` |
+| H-16 | `@enkaku/server` | Generic error message for non-`HandlerError` exceptions | `4f039b7` |
+| H-18 | `@enkaku/stream` | `maxBufferSize`/`maxMessageSize` in `fromJSONLines()` | `7d5b7a3` |
+| H-12 | `@enkaku/http-server-transport` | Validate payload `typ` field, sanitize error responses | `bff572a` |
+
+---
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Fix 6 HIGH severity security issues (H-02, H-07, H-08, H-16, H-18, H-12) that harden input validation and payload processing across the `token`, `schema`, `codec`, `stream`, `server`, and `http-server-transport` packages.
