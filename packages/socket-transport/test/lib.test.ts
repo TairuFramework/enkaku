@@ -126,3 +126,96 @@ describe('createTransportStream()', () => {
     server.close()
   })
 })
+
+describe('createTransportStream() error handling', () => {
+  test('propagates socket close to readable stream', async () => {
+    const { server, socketPath } = await createTestServer()
+    const connectionPromise = waitForConnection(server)
+
+    const socket = await connectSocket(socketPath)
+    const serverSocket = await connectionPromise
+    const stream = await createTransportStream<unknown, unknown>(socket)
+
+    const reader = stream.readable.getReader()
+
+    // Force-destroy the server side to cause close on client side
+    serverSocket.destroy()
+
+    // The stream should close when the socket closes
+    const result = await reader.read()
+    expect(result.done).toBe(true)
+
+    server.close()
+  })
+})
+
+describe('SocketTransport', () => {
+  test('reads and writes via Transport interface with socket path string', async () => {
+    const { server, socketPath } = await createTestServer()
+    const connectionPromise = waitForConnection(server)
+
+    const transport = new SocketTransport<{ msg: string }, { msg: string }>({
+      socket: socketPath,
+    })
+    const serverSocket = await connectionPromise
+
+    // Server sends to client
+    serverSocket.write('{"msg":"hello"}\n')
+    const result = await transport.read()
+    expect(result.value).toEqual({ msg: 'hello' })
+
+    // Client sends to server
+    const serverReceived = new Promise<string>((resolve) => {
+      let data = ''
+      serverSocket.on('data', (chunk) => {
+        data += chunk.toString()
+        if (data.includes('\n')) {
+          resolve(data.trim())
+        }
+      })
+    })
+    await transport.write({ msg: 'world' })
+    const received = await serverReceived
+    expect(JSON.parse(received)).toEqual({ msg: 'world' })
+
+    await transport.dispose()
+    serverSocket.destroy()
+    server.close()
+  })
+
+  test('accepts a Socket instance directly', async () => {
+    const { server, socketPath } = await createTestServer()
+    const connectionPromise = waitForConnection(server)
+
+    const socket = await connectSocket(socketPath)
+    const serverSocket = await connectionPromise
+
+    const transport = new SocketTransport<{ n: number }, unknown>({ socket })
+
+    serverSocket.write('{"n":42}\n')
+    const result = await transport.read()
+    expect(result.value).toEqual({ n: 42 })
+
+    await transport.dispose()
+    serverSocket.destroy()
+    server.close()
+  })
+
+  test('accepts a Promise<Socket>', async () => {
+    const { server, socketPath } = await createTestServer()
+    const connectionPromise = waitForConnection(server)
+
+    const transport = new SocketTransport<{ n: number }, unknown>({
+      socket: connectSocket(socketPath),
+    })
+    const serverSocket = await connectionPromise
+
+    serverSocket.write('{"n":7}\n')
+    const result = await transport.read()
+    expect(result.value).toEqual({ n: 7 })
+
+    await transport.dispose()
+    serverSocket.destroy()
+    server.close()
+  })
+})
