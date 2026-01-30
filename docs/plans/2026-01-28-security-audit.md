@@ -9,7 +9,7 @@
 - Capability authorization hardening (C-02, C-03, H-04, M-04) — `docs/plans/archive/2026-01-28-capability-authorization.md`
 - Server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) — `docs/plans/archive/2026-01-28-server-resource-limits.md`
 - Input validation hardening (H-02, H-07, H-08, H-12, H-16, H-18) — `docs/plans/archive/2026-01-30-input-validation-hardening.md`
-- HTTP server transport hardening (C-08, C-09, H-09, H-10) — `docs/plans/2026-01-30-http-transport-hardening.md`
+- HTTP server transport hardening (C-08, C-09, H-09, H-10) — `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md`
 
 ---
 
@@ -160,7 +160,7 @@ Authorization bypass for all channel communications after initial handshake.
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:45-46, 149-169`
 - **Status:** [x] Fixed — Branch `main`
-- **Plan:** `docs/plans/2026-01-30-http-transport-hardening.md` (Task 1)
+- **Plan:** `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md` (Task 1)
 
 **Description:**
 Unbounded session creation with no limits. Sessions stored in Map with no expiration or cleanup mechanism except on client abort. No rate limiting on session creation.
@@ -179,7 +179,7 @@ Slowloris attack variant - create unlimited sessions, exhaust server memory.
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:45-46`
 - **Status:** [x] Fixed — Branch `main`
-- **Plan:** `docs/plans/2026-01-30-http-transport-hardening.md` (Task 2)
+- **Plan:** `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md` (Task 2)
 
 **Description:**
 Unbounded inflight request tracking. Entries deleted only when responses arrive. No cleanup for abandoned requests.
@@ -398,7 +398,7 @@ Implement custom JSON parser with depth limits: `MAX_DEPTH = 100`.
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:198-204`
 - **Status:** [x] Fixed — Branch `main`
-- **Plan:** `docs/plans/2026-01-30-http-transport-hardening.md` (Task 2)
+- **Plan:** `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md` (Task 2)
 
 **Description:**
 Requests wait indefinitely for responses. If handler never responds, request hangs forever.
@@ -413,7 +413,7 @@ Requests wait indefinitely for responses. If handler never responds, request han
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:108-126`
 - **Status:** [x] Fixed — Branch `main`
-- **Plan:** `docs/plans/2026-01-30-http-transport-hardening.md` (Task 3)
+- **Plan:** `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md` (Task 3)
 
 **Description:**
 Origin header is directly reflected back in CORS responses without validation. If `allowedOrigins` includes '*', any origin is accepted and reflected.
