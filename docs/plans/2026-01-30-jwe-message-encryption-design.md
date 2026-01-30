@@ -364,15 +364,22 @@ const keyPair = await crypto.subtle.generateKey(
 
 Existing keys with only `sign`/`verify` usages cannot perform ECDH. Old keys must be regenerated.
 
-### All Keystores
+### Keystore API Replacements
+
+Each keystore preserves its existing sync/async pattern:
+
+| Package | Removals | Additions |
+|---------|----------|-----------|
+| `@enkaku/node-keystore` | `provideTokenSigner()`, `provideTokenSignerAsync()` | `provideFullIdentity()` (sync, lazy), `provideFullIdentityAsync()` (async, eager) |
+| `@enkaku/electron-keystore` | `provideTokenSigner()`, `provideTokenSignerAsync()` | `provideFullIdentity()` (sync, lazy), `provideFullIdentityAsync()` (async, eager) |
+| `@enkaku/expo-keystore` | `provideTokenSigner()`, `provideTokenSignerAsync()` | `provideFullIdentity()` (sync, lazy), `provideFullIdentityAsync()` (async, eager) |
+| `@enkaku/browser-keystore` | `provideTokenSigner()` | `provideFullIdentity()` (async only, returns `Promise<FullIdentity>`) |
+
+### All Package Changes
 
 | Package | Removals | Additions |
 |---------|----------|-----------|
 | `@enkaku/token` | `TokenSigner`, `toTokenSigner()`, `getSigner()` | Identity types, JWE operations, `TokenEncrypter` |
-| `@enkaku/node-keystore` | `provideTokenSigner()`, `provideTokenSignerAsync()` | `provideFullIdentity()` |
-| `@enkaku/electron-keystore` | `provideTokenSigner()` | `provideFullIdentity()` |
-| `@enkaku/expo-keystore` | `provideTokenSigner()` | `provideFullIdentity()` |
-| `@enkaku/browser-keystore` | `provideTokenSigner()` | `provideFullIdentity()`, updated key usages |
 | `@enkaku/protocol` | -- | `EncryptionPolicy`, `ProcedureAccessConfig`, updated message types |
 | `@enkaku/client` | `signer` param | `identity`, `envelopeMode`, `encrypter` params |
 | `@enkaku/server` | `id` param | `identity`, `encryptionPolicy`, `responseEnvelopeMode` params |
