@@ -249,3 +249,103 @@ describe('createTransportStream() SSE session handling', () => {
     expect(mockClose).toHaveBeenCalled()
   })
 })
+
+describe('createTransportStream() SSE message reception', () => {
+  let originalFetch: typeof globalThis.fetch
+  let originalEventSource: typeof globalThis.EventSource
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch
+    originalEventSource = globalThis.EventSource
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    globalThis.EventSource = originalEventSource
+  })
+
+  test('enqueues SSE messages to readable stream', async () => {
+    let fetchCallCount = 0
+
+    globalThis.fetch = vi.fn(async () => {
+      fetchCallCount++
+      // First fetch is the SSE setup GET request
+      if (fetchCallCount === 1) {
+        return new Response(JSON.stringify({ id: 'sse-test' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+      // Subsequent fetches are POST requests — return 204 so no response body is enqueued
+      return new Response(null, { status: 204 })
+    }) as typeof fetch
+
+    const listeners: Record<string, Array<(event: any) => void>> = {}
+    globalThis.EventSource = class MockEventSource {
+      addEventListener(type: string, handler: (event: any) => void) {
+        if (listeners[type] == null) {
+          listeners[type] = []
+        }
+        listeners[type].push(handler)
+      }
+      close = vi.fn()
+      constructor() {}
+    } as any
+
+    const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
+
+    // Trigger SSE connection by sending a channel message
+    const writer = stream.writable.getWriter()
+    const channelMsg = { payload: { typ: 'channel', prc: 'test/channel', data: 'init' } } as any
+    await writer.write(channelMsg)
+
+    // Wait for the SSE connection promise to resolve
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    // Simulate SSE message from server
+    const serverMsg = { payload: { typ: 'result', val: 'sse-data' } }
+    for (const handler of listeners.message ?? []) {
+      handler({ data: JSON.stringify(serverMsg) })
+    }
+
+    const reader = stream.readable.getReader()
+    const result = await reader.read()
+    expect(result.value).toEqual(serverMsg)
+
+    await writer.close()
+  })
+})
+
+describe('ClientTransport', () => {
+  let originalFetch: typeof globalThis.fetch
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  test('creates a transport that sends messages via HTTP', async () => {
+    const responsePayload = { payload: { typ: 'result', val: 'ok' } }
+
+    globalThis.fetch = vi.fn(async () => {
+      return new Response(JSON.stringify(responsePayload), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    const { ClientTransport } = await import('../src/index.js')
+    const transport = new ClientTransport<Protocol>({ url: 'http://localhost/rpc' })
+
+    const requestMsg = { payload: { typ: 'request', prc: 'test/request' } } as any
+    await transport.write(requestMsg)
+
+    const result = await transport.read()
+    expect(result.value).toEqual(responsePayload)
+
+    await transport.dispose()
+  })
+})
