@@ -48,6 +48,20 @@ describe('b64uToJSON()', () => {
     expect(() => b64uToJSON(encoded)).toThrow('exceeds maximum nesting depth')
   })
 
+  test('rejects JSON at exactly depth 129', () => {
+    const depth = 129
+    const nested = `${'{"a":'.repeat(depth)}1${'}'.repeat(depth)}`
+    const encoded = b64uFromUTF(nested)
+    expect(() => b64uToJSON(encoded)).toThrow('exceeds maximum nesting depth')
+  })
+
+  test('accepts JSON at exactly depth 128', () => {
+    const depth = 128
+    const nested = `${'{"a":'.repeat(depth)}1${'}'.repeat(depth)}`
+    const encoded = b64uFromUTF(nested)
+    expect(b64uToJSON(encoded)).toBeDefined()
+  })
+
   test('accepts JSON within depth limit', () => {
     const obj = { a: { b: { c: { d: 'value' } } } }
     const encoded = b64uFromJSON(obj)

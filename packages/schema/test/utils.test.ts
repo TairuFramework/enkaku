@@ -65,6 +65,18 @@ describe('resolveReference()', () => {
       'Invalid reference segment',
     )
   })
+
+  test('rejects toString segment (inherited method access)', () => {
+    expect(() => resolveReference(root, '#/toString/something')).toThrow(
+      'Invalid reference segment',
+    )
+  })
+
+  test('rejects valueOf segment (inherited method access)', () => {
+    expect(() => resolveReference(root, '#/valueOf/something')).toThrow(
+      'Invalid reference segment',
+    )
+  })
 })
 
 describe('resolveSchema()', () => {

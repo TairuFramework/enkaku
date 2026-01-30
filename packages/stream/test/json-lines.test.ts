@@ -116,6 +116,39 @@ describe('fromJSONLines()', () => {
     await expect(result).resolves.toEqual([{ data: 'ok' }])
   })
 
+  test('rejects oversized message on flush (no trailing newline)', async () => {
+    const [source, controller] = createReadable()
+    const [sink, result] = createArraySink()
+    const pipe = source
+      .pipeThrough(fromJSONLines({ maxMessageSize: 50 }))
+      .pipeTo(sink)
+      .catch(() => {})
+
+    const largeObj = JSON.stringify({ data: 'x'.repeat(100) })
+    controller.enqueue(largeObj)
+    controller.close()
+
+    await expect(result).rejects.toThrow('exceeds maximum message size')
+    await pipe
+  })
+
+  test('rejects oversized message arriving across multiple chunks', async () => {
+    const [source, controller] = createReadable()
+    const [sink, result] = createArraySink()
+    const pipe = source
+      .pipeThrough(fromJSONLines({ maxMessageSize: 50 }))
+      .pipeTo(sink)
+      .catch(() => {})
+
+    controller.enqueue('{"data":"')
+    controller.enqueue('x'.repeat(100))
+    controller.enqueue('"}\n')
+    controller.close()
+
+    await expect(result).rejects.toThrow('exceeds maximum message size')
+    await pipe
+  })
+
   test('rejects accumulated input exceeding maxBufferSize', async () => {
     const [source, controller] = createReadable()
     const [sink, result] = createArraySink()

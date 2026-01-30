@@ -1,6 +1,6 @@
 import type { Schema } from './types.js'
 
-const BLOCKED_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype'])
+const BLOCKED_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype', 'toString', 'valueOf'])
 
 export function resolveReference(root: Schema, ref: string): Schema {
   if (!ref.startsWith('#')) {
