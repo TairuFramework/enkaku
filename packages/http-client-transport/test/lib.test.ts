@@ -1,7 +1,7 @@
-import type { ProtocolDefinition } from '@enkaku/protocol'
-import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest'
+import type { AnyClientMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { ResponseError, createEventStream, createTransportStream } from '../src/index.js'
+import { createEventStream, createTransportStream, ResponseError } from '../src/index.js'
 
 describe('ResponseError', () => {
   test('stores the response object', () => {
@@ -26,6 +26,7 @@ const protocol = {
   'test/channel': { type: 'channel', data: { type: 'string' }, result: { type: 'string' } },
 } as const satisfies ProtocolDefinition
 type Protocol = typeof protocol
+type ClientMessage = AnyClientMessageOf<Protocol>
 
 describe('createTransportStream()', () => {
   let originalFetch: typeof globalThis.fetch
@@ -54,7 +55,9 @@ describe('createTransportStream()', () => {
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
 
     const writer = stream.writable.getWriter()
-    const eventMsg = { payload: { typ: 'event', prc: 'test/event', data: 'hello' } } as any
+    const eventMsg = {
+      payload: { typ: 'event', prc: 'test/event', data: 'hello' },
+    } as unknown as ClientMessage
     await writer.write(eventMsg)
 
     expect(requests).toHaveLength(1)
@@ -79,7 +82,9 @@ describe('createTransportStream()', () => {
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
 
     const writer = stream.writable.getWriter()
-    const requestMsg = { payload: { typ: 'request', prc: 'test/request' } } as any
+    const requestMsg = {
+      payload: { typ: 'request', prc: 'test/request' },
+    } as unknown as ClientMessage
     await writer.write(requestMsg)
 
     const reader = stream.readable.getReader()
@@ -97,7 +102,9 @@ describe('createTransportStream()', () => {
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
 
     const writer = stream.writable.getWriter()
-    const requestMsg = { payload: { typ: 'request', prc: 'test/request' } } as any
+    const requestMsg = {
+      payload: { typ: 'request', prc: 'test/request' },
+    } as unknown as ClientMessage
     await writer.write(requestMsg)
 
     const reader = stream.readable.getReader()
@@ -171,13 +178,14 @@ describe('createTransportStream() SSE session handling', () => {
     globalThis.EventSource = class MockEventSource {
       addEventListener = mockAddEventListener
       close = mockClose
-      constructor() {}
-    } as any
+    } as unknown as typeof EventSource
 
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
 
     const writer = stream.writable.getWriter()
-    const channelMsg = { payload: { typ: 'channel', prc: 'test/channel', data: 'init' } } as any
+    const channelMsg = {
+      payload: { typ: 'channel', prc: 'test/channel', data: 'init' },
+    } as unknown as ClientMessage
     await writer.write(channelMsg)
 
     // Should have made 2 fetch calls: GET for session + POST for message
@@ -205,13 +213,14 @@ describe('createTransportStream() SSE session handling', () => {
     globalThis.EventSource = class MockEventSource {
       addEventListener = vi.fn()
       close = vi.fn()
-      constructor() {}
-    } as any
+    } as unknown as typeof EventSource
 
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
 
     const writer = stream.writable.getWriter()
-    const streamMsg = { payload: { typ: 'stream', prc: 'test/stream' } } as any
+    const streamMsg = {
+      payload: { typ: 'stream', prc: 'test/stream' },
+    } as unknown as ClientMessage
     await writer.write(streamMsg)
 
     // SSE setup GET + message POST
@@ -233,13 +242,14 @@ describe('createTransportStream() SSE session handling', () => {
     globalThis.EventSource = class MockEventSource {
       addEventListener = vi.fn()
       close = mockClose
-      constructor() {}
-    } as any
+    } as unknown as typeof EventSource
 
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
 
     const writer = stream.writable.getWriter()
-    const channelMsg = { payload: { typ: 'channel', prc: 'test/channel', data: 'init' } } as any
+    const channelMsg = {
+      payload: { typ: 'channel', prc: 'test/channel', data: 'init' },
+    } as unknown as ClientMessage
     await writer.write(channelMsg)
 
     // Wait for SSE connection to be established
@@ -280,23 +290,25 @@ describe('createTransportStream() SSE message reception', () => {
       return new Response(null, { status: 204 })
     }) as typeof fetch
 
-    const listeners: Record<string, Array<(event: any) => void>> = {}
+    type EventHandler = (event: { data: string }) => void
+    const listeners: Record<string, Array<EventHandler>> = {}
     globalThis.EventSource = class MockEventSource {
-      addEventListener(type: string, handler: (event: any) => void) {
+      addEventListener(type: string, handler: EventHandler) {
         if (listeners[type] == null) {
           listeners[type] = []
         }
         listeners[type].push(handler)
       }
       close = vi.fn()
-      constructor() {}
-    } as any
+    } as unknown as typeof EventSource
 
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
 
     // Trigger SSE connection by sending a channel message
     const writer = stream.writable.getWriter()
-    const channelMsg = { payload: { typ: 'channel', prc: 'test/channel', data: 'init' } } as any
+    const channelMsg = {
+      payload: { typ: 'channel', prc: 'test/channel', data: 'init' },
+    } as unknown as ClientMessage
     await writer.write(channelMsg)
 
     // Wait for the SSE connection promise to resolve
@@ -340,7 +352,9 @@ describe('ClientTransport', () => {
     const { ClientTransport } = await import('../src/index.js')
     const transport = new ClientTransport<Protocol>({ url: 'http://localhost/rpc' })
 
-    const requestMsg = { payload: { typ: 'request', prc: 'test/request' } } as any
+    const requestMsg = {
+      payload: { typ: 'request', prc: 'test/request' },
+    } as unknown as ClientMessage
     await transport.write(requestMsg)
 
     const result = await transport.read()

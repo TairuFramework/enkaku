@@ -1,4 +1,4 @@
-import { createServer, type Server, type Socket as NetSocket } from 'node:net'
+import { createServer, type Socket as NetSocket, type Server } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, test } from 'vitest'
@@ -7,7 +7,10 @@ import { connectSocket, createTransportStream, SocketTransport } from '../src/in
 
 function createTestServer(): Promise<{ server: Server; socketPath: string }> {
   return new Promise((resolve) => {
-    const socketPath = join(tmpdir(), `enkaku-test-${Date.now()}-${Math.random().toString(36).slice(2)}.sock`)
+    const socketPath = join(
+      tmpdir(),
+      `enkaku-test-${Date.now()}-${Math.random().toString(36).slice(2)}.sock`,
+    )
     const server = createServer()
     server.listen(socketPath, () => {
       resolve({ server, socketPath })
@@ -52,7 +55,7 @@ describe('createTransportStream()', () => {
     const stream = await createTransportStream<{ value: string }, { value: string }>(socket)
 
     // Send message from server to client through the socket
-    serverSocket.write(JSON.stringify({ value: 'from-server' }) + '\n')
+    serverSocket.write(`${JSON.stringify({ value: 'from-server' })}\n`)
 
     const reader = stream.readable.getReader()
     const result = await reader.read()
@@ -110,8 +113,8 @@ describe('createTransportStream()', () => {
     const { server, socketPath } = await createTestServer()
     const connectionPromise = waitForConnection(server)
 
-    const stream = await createTransportStream<{ ok: boolean }, unknown>(
-      () => connectSocket(socketPath),
+    const stream = await createTransportStream<{ ok: boolean }, unknown>(() =>
+      connectSocket(socketPath),
     )
     const serverSocket = await connectionPromise
 

@@ -90,9 +90,7 @@ describe('createTransportStream() source resolution', () => {
 
   test('accepts a factory function returning Promise<MessagePort>', async () => {
     const { port1, port2 } = new MessageChannel()
-    const stream = await createTransportStream<{ n: number }, unknown>(
-      () => Promise.resolve(port1),
-    )
+    const stream = await createTransportStream<{ n: number }, unknown>(() => Promise.resolve(port1))
 
     const reader = stream.readable.getReader()
     port2.postMessage({ n: 7 })

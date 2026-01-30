@@ -73,9 +73,7 @@ describe('resolveReference()', () => {
   })
 
   test('rejects valueOf segment (inherited method access)', () => {
-    expect(() => resolveReference(root, '#/valueOf/something')).toThrow(
-      'Invalid reference segment',
-    )
+    expect(() => resolveReference(root, '#/valueOf/something')).toThrow('Invalid reference segment')
   })
 })
 
