@@ -87,6 +87,49 @@ describe('fromJSONLines()', () => {
       expect.any(TransformStreamDefaultController),
     )
   })
+
+  test('rejects messages exceeding maxMessageSize', async () => {
+    const [source, controller] = createReadable()
+    const [sink, result] = createArraySink()
+    const pipe = source
+      .pipeThrough(fromJSONLines({ maxMessageSize: 50 }))
+      .pipeTo(sink)
+      .catch(() => {})
+
+    const largeObj = JSON.stringify({ data: 'x'.repeat(100) })
+    controller.enqueue(largeObj + '\n')
+    controller.close()
+
+    await expect(result).rejects.toThrow('exceeds maximum message size')
+    await pipe
+  })
+
+  test('accepts messages within maxMessageSize', async () => {
+    const [source, controller] = createReadable()
+    const [sink, result] = createArraySink()
+    source.pipeThrough(fromJSONLines({ maxMessageSize: 200 })).pipeTo(sink)
+
+    const smallObj = JSON.stringify({ data: 'ok' })
+    controller.enqueue(smallObj + '\n')
+    controller.close()
+
+    await expect(result).resolves.toEqual([{ data: 'ok' }])
+  })
+
+  test('rejects accumulated input exceeding maxBufferSize', async () => {
+    const [source, controller] = createReadable()
+    const [sink, result] = createArraySink()
+    const pipe = source
+      .pipeThrough(fromJSONLines({ maxBufferSize: 50 }))
+      .pipeTo(sink)
+      .catch(() => {})
+
+    controller.enqueue('x'.repeat(60))
+    controller.close()
+
+    await expect(result).rejects.toThrow('exceeds maximum buffer size')
+    await pipe
+  })
 })
 
 test('toJSONLines() encodes values to JSON lines', async () => {

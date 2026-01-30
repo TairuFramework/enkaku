@@ -10,13 +10,15 @@ export type DecodeJSON<T = unknown> = (value: string) => T
 
 export type FromJSONLinesOptions<T = unknown> = {
   decode?: DecodeJSON<unknown>
+  maxBufferSize?: number
+  maxMessageSize?: number
   onInvalidJSON?: (value: string, controller: TransformStreamDefaultController<T>) => void
 }
 
 export function fromJSONLines<T = unknown>(
   options: FromJSONLinesOptions<T> = {},
 ): TransformStream<Uint8Array | string, T> {
-  const { decode = JSON.parse, onInvalidJSON } = options
+  const { decode = JSON.parse, maxBufferSize, maxMessageSize, onInvalidJSON } = options
 
   let input = ''
   let output = ''
@@ -60,16 +62,30 @@ export function fromJSONLines<T = unknown>(
     }
   }
 
+  function checkOutputSize(): void {
+    if (maxMessageSize != null && output.length > maxMessageSize) {
+      throw new JSONLinesError(
+        `Message size ${output.length} exceeds maximum message size of ${maxMessageSize}`,
+      )
+    }
+  }
+
   return transform<Uint8Array | string, T>(
     (chunk, controller) => {
       try {
         input += typeof chunk === 'string' ? chunk : decoder.decode(chunk)
+        if (maxBufferSize != null && input.length > maxBufferSize) {
+          throw new JSONLinesError(
+            `Buffer size ${input.length} exceeds maximum buffer size of ${maxBufferSize}`,
+          )
+        }
         let newLineIndex = input.indexOf(SEPARATOR)
         while (newLineIndex !== -1) {
           for (const char of input.slice(0, newLineIndex)) {
             processChar(char)
           }
           if (nestingDepth === 0 && !isInString && output !== '') {
+            checkOutputSize()
             try {
               controller.enqueue(decode(output))
             } catch {
@@ -84,6 +100,9 @@ export function fromJSONLines<T = unknown>(
           newLineIndex = input.indexOf(SEPARATOR)
         }
       } catch (cause) {
+        if (cause instanceof JSONLinesError) {
+          throw cause
+        }
         controller.error(new JSONLinesError('Error processing chunk', { cause }))
       }
     },
@@ -92,6 +111,7 @@ export function fromJSONLines<T = unknown>(
         processChar(char)
       }
       if (nestingDepth === 0 && !isInString && output !== '') {
+        checkOutputSize()
         try {
           controller.enqueue(decode(output))
         } catch {
