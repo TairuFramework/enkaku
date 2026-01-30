@@ -1,7 +1,7 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest'
 
-import { ResponseError, createTransportStream } from '../src/index.js'
+import { ResponseError, createEventStream, createTransportStream } from '../src/index.js'
 
 describe('ResponseError', () => {
   test('stores the response object', () => {
@@ -104,5 +104,148 @@ describe('createTransportStream()', () => {
     await expect(reader.read()).rejects.toThrow(
       'Transport request failed with status 500 (Internal Server Error)',
     )
+  })
+})
+
+describe('createEventStream()', () => {
+  let originalFetch: typeof globalThis.fetch
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  test('throws ResponseError when fetch fails', async () => {
+    globalThis.fetch = vi.fn(async () => {
+      return new Response('Not Found', { status: 404, statusText: 'Not Found' })
+    }) as typeof fetch
+
+    await expect(createEventStream('http://localhost/rpc')).rejects.toThrow(
+      'Transport request failed with status 404',
+    )
+  })
+})
+
+describe('createTransportStream() SSE session handling', () => {
+  let originalFetch: typeof globalThis.fetch
+  let originalEventSource: typeof globalThis.EventSource
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch
+    originalEventSource = globalThis.EventSource
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    globalThis.EventSource = originalEventSource
+  })
+
+  test('channel messages include enkaku-session-id header', async () => {
+    const requests: Array<{ headers: Record<string, string> }> = []
+    let fetchCallCount = 0
+
+    globalThis.fetch = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      fetchCallCount++
+      const req = input instanceof Request ? input : new Request(input, init)
+      requests.push({
+        headers: Object.fromEntries(req.headers.entries()),
+      })
+
+      // First fetch is the SSE setup GET request
+      if (fetchCallCount === 1) {
+        return new Response(JSON.stringify({ id: 'session-123' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+      // Subsequent fetches are POST requests
+      return new Response(null, { status: 204 })
+    }) as typeof fetch
+
+    // Mock EventSource using a class so it can be used with `new`
+    const mockClose = vi.fn()
+    const mockAddEventListener = vi.fn()
+    globalThis.EventSource = class MockEventSource {
+      addEventListener = mockAddEventListener
+      close = mockClose
+      constructor() {}
+    } as any
+
+    const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
+
+    const writer = stream.writable.getWriter()
+    const channelMsg = { payload: { typ: 'channel', prc: 'test/channel', data: 'init' } } as any
+    await writer.write(channelMsg)
+
+    // Should have made 2 fetch calls: GET for session + POST for message
+    expect(fetchCallCount).toBe(2)
+    // The POST request should include the session ID header
+    expect(requests[1].headers['enkaku-session-id']).toBe('session-123')
+
+    await writer.close()
+  })
+
+  test('stream messages trigger SSE connection', async () => {
+    let fetchCallCount = 0
+
+    globalThis.fetch = vi.fn(async () => {
+      fetchCallCount++
+      if (fetchCallCount === 1) {
+        return new Response(JSON.stringify({ id: 'session-456' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+      return new Response(null, { status: 204 })
+    }) as typeof fetch
+
+    globalThis.EventSource = class MockEventSource {
+      addEventListener = vi.fn()
+      close = vi.fn()
+      constructor() {}
+    } as any
+
+    const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
+
+    const writer = stream.writable.getWriter()
+    const streamMsg = { payload: { typ: 'stream', prc: 'test/stream' } } as any
+    await writer.write(streamMsg)
+
+    // SSE setup GET + message POST
+    expect(fetchCallCount).toBe(2)
+
+    await writer.close()
+  })
+
+  test('disposes SSE source on writable close', async () => {
+    const mockClose = vi.fn()
+
+    globalThis.fetch = vi.fn(async () => {
+      return new Response(JSON.stringify({ id: 'session-789' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    globalThis.EventSource = class MockEventSource {
+      addEventListener = vi.fn()
+      close = mockClose
+      constructor() {}
+    } as any
+
+    const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
+
+    const writer = stream.writable.getWriter()
+    const channelMsg = { payload: { typ: 'channel', prc: 'test/channel', data: 'init' } } as any
+    await writer.write(channelMsg)
+
+    // Wait for SSE connection to be established
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    await writer.close()
+    expect(mockClose).toHaveBeenCalled()
   })
 })
