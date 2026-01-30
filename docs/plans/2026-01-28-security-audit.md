@@ -16,7 +16,7 @@
 | Severity | Count | Status |
 |----------|-------|--------|
 | CRITICAL | 12 | 6 Fixed (C-01, C-02, C-03, C-05, C-06, C-07), 1 Won't Fix (C-12) |
-| HIGH | 18 | 5 Fixed (H-01, H-04, H-13, H-14, H-15), 1 Partial (T-01) |
+| HIGH | 18 | 11 Fixed (H-01, H-02, H-04, H-07, H-08, H-12, H-13, H-14, H-15, H-16, H-18), 1 Partial (T-01) |
 | MEDIUM | 14 | 4 Fixed (M-04, M-11, M-12), 1 Mitigated (M-10) |
 | LOW | 3 | Pending |
 
@@ -271,7 +271,8 @@ if (parts.length !== 3) {
 ### H-02: Codec Comparison Missing Bounds Check
 - **Package:** `@enkaku/token`
 - **File:** `packages/token/src/did.ts:13-20`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 1)
 
 **Description:**
 `isCodecMatch()` function accesses `bytes[i]` where `i >= bytes.length` when `bytes` is shorter than `codec.length`, returning `undefined`.
@@ -355,7 +356,8 @@ Change all message payload schemas to `additionalProperties: false`.
 ### H-07: Unsafe Reference Resolution (Prototype Pollution Risk)
 - **Package:** `@enkaku/schema`
 - **File:** `packages/schema/src/utils.ts:3-20`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 2)
 
 **Description:**
 `resolveReference()` has no `__proto__` / `constructor` / `prototype` filtering. Unbounded traversal depth. No validation that resolved schema is actually a Schema.
@@ -372,7 +374,8 @@ if (['__proto__', 'constructor', 'prototype'].includes(segment)) {
 ### H-08: JSON.parse() Without Depth Limits
 - **Package:** `@enkaku/codec`
 - **File:** `packages/codec/src/index.ts:90`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 3)
 
 **Description:**
 `b64uToJSON()` uses `JSON.parse()` without any depth or size limits. Vulnerable to stack exhaustion from deeply nested objects.
@@ -433,7 +436,8 @@ Add message sequence numbers, implement deduplication.
 ### H-12: No Input Validation on Message Payload Type
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:190-217`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 6)
 
 **Description:**
 Payload type (`typ` field) validated only via switch statement. Type is user-controlled string from JSON.
@@ -497,7 +501,8 @@ When authorization fails for events, only `events.emit('handlerError')` is calle
 ### H-16: Handler Error Messages Sent to Clients
 - **Package:** `@enkaku/server`
 - **File:** `packages/server/src/utils.ts:40`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 4)
 
 **Description:**
 Raw error message from handler exception sent in response payload. Developers might include sensitive info in error messages.
@@ -520,7 +525,8 @@ When `params.public = true`, the entire authentication check is skipped. ALL mes
 ### H-18: No Payload Size Limits (Stream JSON Lines)
 - **Package:** `@enkaku/stream`
 - **File:** `packages/stream/src/json-lines.ts:63-102`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/2026-01-30-input-validation-hardening.md` (Task 5)
 
 **Description:**
 No buffer size limits in JSON parsing. Accumulates chunks indefinitely.
@@ -1101,7 +1107,7 @@ if (char.charCodeAt(0) > 32) { ... }
 5. ~~H-05, H-06: Protocol schema hardening~~ DONE (see `archive/2026-01-29-protocol-schema-hardening.md`)
 
 ### Phase 2: High Priority Security
-1. ~~H-01~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-13~~, ~~H-14~~, ~~H-15~~: Fixed; H-02, H-03, H-07 through H-12, H-16, H-17, H-18: Remaining high severity issues
+1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-18~~: Fixed; H-03, H-09, H-10, H-11, H-17: Remaining high severity issues
 2. T-01 (partial): Remaining token error paths; ~~T-02~~: Fixed; ~~T-03~~: Fixed; T-04 through T-07: Test coverage gaps
 
 ### Phase 3: Performance
