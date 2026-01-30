@@ -22,7 +22,10 @@ export type ServerBridge<Protocol extends ProtocolDefinition> = {
   stream: ReadableWritablePair<AnyClientMessageOf<Protocol>, AnyServerMessageOf<Protocol>>
 }
 
-type ActiveSession = { controller: ReadableStreamDefaultController<string> | null }
+type ActiveSession = {
+  controller: ReadableStreamDefaultController<string> | null
+  lastAccess: number
+}
 
 type InflightRequest =
   | ({ type: 'request'; headers: Record<string, string> } & Deferred<Response>)
@@ -31,6 +34,8 @@ type InflightRequest =
 export type ServerBridgeOptions = {
   allowedOrigin?: string | Array<string>
   onWriteError?: (event: TransportEvents['writeFailed']) => void
+  maxSessions?: number
+  sessionTimeoutMs?: number
 }
 
 const VALID_PAYLOAD_TYPES = new Set(['abort', 'channel', 'event', 'request', 'send', 'stream'])
@@ -44,8 +49,31 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const allowedOrigins = Array.isArray(options.allowedOrigin)
     ? options.allowedOrigin
     : [options.allowedOrigin ?? '*']
+  const maxSessions = options.maxSessions ?? 1000
+  const sessionTimeoutMs = options.sessionTimeoutMs ?? 300_000 // 5 minutes
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
+
+  // Periodic cleanup of expired sessions
+  const cleanupInterval = setInterval(
+    () => {
+      const now = Date.now()
+      for (const [id, session] of sessions) {
+        if (now - session.lastAccess > sessionTimeoutMs) {
+          if (session.controller != null) {
+            try {
+              session.controller.close()
+            } catch {}
+          }
+          sessions.delete(id)
+        }
+      }
+    },
+    Math.min(sessionTimeoutMs, 60_000),
+  )
+  if (typeof cleanupInterval === 'object' && 'unref' in cleanupInterval) {
+    cleanupInterval.unref()
+  }
 
   const [readable, controller] = createReadable<Incoming>()
   const writable = writeTo<Outgoing>((msg) => {
@@ -151,19 +179,23 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     const sessionID = url.searchParams.get('id')
     if (sessionID == null) {
       // No session ID, create one and return its ID to the client
+      if (sessions.size >= maxSessions) {
+        return Response.json({ error: 'Session limit reached' }, { headers, status: 503 })
+      }
       const id = globalThis.crypto.randomUUID()
-      sessions.set(id, { controller: null })
+      sessions.set(id, { controller: null, lastAccess: Date.now() })
       return Response.json({ id }, { headers })
     }
 
-    if (!sessions.has(sessionID)) {
+    const existing = sessions.get(sessionID)
+    if (existing == null) {
       // Unknown session ID
       return Response.json({ error: 'Invalid ID' }, { headers, status: 400 })
     }
 
-    // Create SSE feed and track controller
+    // Create SSE feed and track controller, refresh timeout
     const [body, controller] = createReadable<string>()
-    sessions.set(sessionID, { controller })
+    sessions.set(sessionID, { controller, lastAccess: Date.now() })
 
     request.signal.addEventListener('abort', () => {
       controller.close()
@@ -246,6 +278,8 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
 
 export type ServerTransportOptions = {
   allowedOrigin?: string | Array<string>
+  maxSessions?: number
+  sessionTimeoutMs?: number
 }
 
 export class ServerTransport<Protocol extends ProtocolDefinition> extends Transport<
@@ -257,6 +291,8 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
   constructor(options: ServerTransportOptions = {}) {
     const bridge = createServerBridge<Protocol>({
       allowedOrigin: options.allowedOrigin,
+      maxSessions: options.maxSessions,
+      sessionTimeoutMs: options.sessionTimeoutMs,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
       },
