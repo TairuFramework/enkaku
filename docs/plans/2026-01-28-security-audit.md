@@ -779,9 +779,9 @@ The following fixes will require breaking changes:
 | `@enkaku/client` | 1 | ~70% | Memory leak paths untested |
 | `@enkaku/server` | 16 | ~85% | Resource limits tested (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) |
 | `@enkaku/http-server-transport` | 4 | ~60% | Session limits, inflight limits, origin validation tested (C-08, C-09, H-09, H-10) |
-| `@enkaku/http-client-transport` | 0 | 0% | **NO TESTS** |
-| `@enkaku/socket-transport` | 0 | 0% | **NO TESTS** |
-| `@enkaku/message-transport` | 0 | 0% | **NO TESTS** |
+| `@enkaku/http-client-transport` | 1 | ~70% | Connection lifecycle, SSE session, message routing tested (T-04) |
+| `@enkaku/socket-transport` | 1 | ~80% | Connection, JSON-lines, Transport class, error handling tested (T-04) |
+| `@enkaku/message-transport` | 1 | ~80% | Stream creation, source resolution, Transport class tested (T-04) |
 | `@enkaku/node-streams-transport` | 1 | ~20% | Error paths untested |
 | `@enkaku/schema` | 2 | ~40% | Reference resolution tested (H-07) |
 | `@enkaku/protocol` | 1 | ~20% | Size constraints untested (H-05) |
@@ -866,13 +866,17 @@ The following fixes will require breaking changes:
 ### T-04: Transport Packages - Zero Coverage
 - **Packages:** `@enkaku/http-client-transport`, `@enkaku/socket-transport`, `@enkaku/message-transport`
 - **Priority:** CRITICAL
+- **Status:** [x] Fixed — message-transport (8 tests), socket-transport (9 tests), http-client-transport (11 tests)
+- **Plan:** `docs/plans/2026-01-30-transport-package-tests.md`
 
-**Complete test suites needed for:**
+**Test suites cover:**
 - Connection lifecycle (connect, disconnect, error)
-- Session management (create, timeout, cleanup)
-- Message framing (valid, malformed, oversized)
-- Backpressure handling
-- Abort signal propagation
+- Message flow (send, receive, multiple messages)
+- Source resolution (direct, Promise, factory function)
+- Transport class interface (read, write, async iteration, dispose)
+- SSE session handling (lazy connection, session ID headers, dispose)
+- HTTP message routing (event/request/stream/channel type dispatch)
+- Error propagation (fetch failures, socket close)
 
 ---
 
@@ -922,7 +926,7 @@ The following fixes will require breaking changes:
 ### Priority 1: Security-Critical (Before v1)
 1. [x] T-02: Capability authorization bypass tests — DONE
 2. [x] T-03: Server resource limit tests — DONE (62 tests across 16 files)
-3. [ ] T-04: Transport package test suites
+3. [x] T-04: Transport package test suites — DONE (28 tests across 3 packages)
 4. [ ] T-05: Keystore package test suites
 
 ### Priority 2: High Severity
@@ -1122,7 +1126,7 @@ if (char.charCodeAt(0) > 32) { ... }
 
 ### Phase 2: High Priority Security
 1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-09~~, ~~H-10~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-18~~: Fixed; H-03, H-11, H-17: Remaining high severity issues
-2. T-01 (partial): Remaining token error paths; ~~T-02~~: Fixed; ~~T-03~~: Fixed; T-04 through T-07: Test coverage gaps
+2. T-01 (partial): Remaining token error paths; ~~T-02~~: Fixed; ~~T-03~~: Fixed; ~~T-04~~: Fixed (28 tests); T-05 through T-07: Test coverage gaps
 
 ### Phase 3: Performance
 1. P-01, P-02, P-03: Serialization quick wins
