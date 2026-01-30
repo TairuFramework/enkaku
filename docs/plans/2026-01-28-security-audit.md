@@ -9,6 +9,7 @@
 - Capability authorization hardening (C-02, C-03, H-04, M-04) — `docs/plans/archive/2026-01-28-capability-authorization.md`
 - Server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) — `docs/plans/archive/2026-01-28-server-resource-limits.md`
 - Input validation hardening (H-02, H-07, H-08, H-12, H-16, H-18) — `docs/plans/archive/2026-01-30-input-validation-hardening.md`
+- HTTP server transport hardening (C-08, C-09, H-09, H-10) — `docs/plans/2026-01-30-http-transport-hardening.md`
 
 ---
 
@@ -16,8 +17,8 @@
 
 | Severity | Count | Status |
 |----------|-------|--------|
-| CRITICAL | 12 | 6 Fixed (C-01, C-02, C-03, C-05, C-06, C-07), 1 Won't Fix (C-12) |
-| HIGH | 18 | 11 Fixed (H-01, H-02, H-04, H-07, H-08, H-12, H-13, H-14, H-15, H-16, H-18), 1 Partial (T-01) |
+| CRITICAL | 12 | 8 Fixed (C-01, C-02, C-03, C-05, C-06, C-07, C-08, C-09), 1 Won't Fix (C-12) |
+| HIGH | 18 | 13 Fixed (H-01, H-02, H-04, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-18), 1 Partial (T-01) |
 | MEDIUM | 14 | 4 Fixed (M-04, M-11, M-12), 1 Mitigated (M-10) |
 | LOW | 3 | Pending |
 
@@ -158,7 +159,8 @@ Authorization bypass for all channel communications after initial handshake.
 ### C-08: Session Resource Exhaustion (HTTP Transport)
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:45-46, 149-169`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/2026-01-30-http-transport-hardening.md` (Task 1)
 
 **Description:**
 Unbounded session creation with no limits. Sessions stored in Map with no expiration or cleanup mechanism except on client abort. No rate limiting on session creation.
@@ -166,17 +168,18 @@ Unbounded session creation with no limits. Sessions stored in Map with no expira
 **Impact:**
 Slowloris attack variant - create unlimited sessions, exhaust server memory.
 
-**Recommendation:**
-- Implement session limits per client/IP
-- Add session timeout (e.g., 5 minutes)
-- Implement garbage collection for stale sessions
+**Fix Applied:**
+- `maxSessions` option (default: 1,000) enforces session creation limit — excess requests rejected with 503
+- `sessionTimeoutMs` option (default: 5 minutes) with periodic cleanup of expired sessions
+- SSE connect refreshes session timeout; expired sessions have their SSE controllers closed
 
 ---
 
 ### C-09: Inflight Request Exhaustion (HTTP Transport)
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:45-46`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/2026-01-30-http-transport-hardening.md` (Task 2)
 
 **Description:**
 Unbounded inflight request tracking. Entries deleted only when responses arrive. No cleanup for abandoned requests.
@@ -184,8 +187,10 @@ Unbounded inflight request tracking. Entries deleted only when responses arrive.
 **Impact:**
 Inflight requests accumulate if responses never arrive → memory exhaustion.
 
-**Recommendation:**
-Implement request timeout and auto-cleanup mechanism.
+**Fix Applied:**
+- `maxInflightRequests` option (default: 10,000) enforces inflight request limit — excess requests rejected with 503
+- `requestTimeoutMs` option (default: 30 seconds) auto-resolves timed-out requests with 504 and cleans up inflight/timer maps
+- Normal responses clear their associated timeout timer
 
 ---
 
@@ -392,20 +397,23 @@ Implement custom JSON parser with depth limits: `MAX_DEPTH = 100`.
 ### H-09: No Request Timeout (HTTP Transport)
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:198-204`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/2026-01-30-http-transport-hardening.md` (Task 2)
 
 **Description:**
 Requests wait indefinitely for responses. If handler never responds, request hangs forever.
 
-**Recommendation:**
-Add configurable timeout (default 30s), reject with 504 on timeout.
+**Fix Applied:**
+- `requestTimeoutMs` option (default: 30 seconds) applies a per-request timeout — timed-out requests resolve with 504 `{ error: 'Request timeout' }`
+- Timer cleared on normal response arrival
 
 ---
 
 ### H-10: Header Injection via Origin Reflection
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:108-126`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/2026-01-30-http-transport-hardening.md` (Task 3)
 
 **Description:**
 Origin header is directly reflected back in CORS responses without validation. If `allowedOrigins` includes '*', any origin is accepted and reflected.
@@ -413,8 +421,10 @@ Origin header is directly reflected back in CORS responses without validation. I
 **Impact:**
 HTTP Header Injection, cache poisoning.
 
-**Recommendation:**
-Validate origin format (URL parse) before reflecting; only return whitelisted origins.
+**Fix Applied:**
+- `isValidOrigin()` helper validates origin by parsing with `new URL()` and checking for http:/https: scheme
+- Invalid origins in wildcard mode rejected with 403
+- Non-http/https schemes (e.g., `javascript:`) rejected
 
 ---
 
@@ -768,7 +778,7 @@ The following fixes will require breaking changes:
 | `@enkaku/capability` | 1 | ~90% | Auth bypass fixed and tested (C-02, C-03, H-04, M-04) |
 | `@enkaku/client` | 1 | ~70% | Memory leak paths untested |
 | `@enkaku/server` | 16 | ~85% | Resource limits tested (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) |
-| `@enkaku/http-server-transport` | 1 | ~30% | Session exhaustion untested |
+| `@enkaku/http-server-transport` | 4 | ~60% | Session limits, inflight limits, origin validation tested (C-08, C-09, H-09, H-10) |
 | `@enkaku/http-client-transport` | 0 | 0% | **NO TESTS** |
 | `@enkaku/socket-transport` | 0 | 0% | **NO TESTS** |
 | `@enkaku/message-transport` | 0 | 0% | **NO TESTS** |
@@ -993,10 +1003,11 @@ if (char.charCodeAt(0) > 32) { ... }
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:45-46`
 - **Impact:** HIGH - DoS vector
+- **Status:** [x] Fixed — See C-08, C-09
 
 **Issue:** Sessions and inflight requests accumulate without cleanup.
 
-**Recommendation:** Add session timeout (5 min) and inflight request timeout (30s).
+**Fix Applied:** Session limits (`maxSessions`, `sessionTimeoutMs`) and inflight request limits (`maxInflightRequests`, `requestTimeoutMs`).
 
 ---
 
@@ -1088,7 +1099,7 @@ if (char.charCodeAt(0) > 32) { ... }
 | P0 | P-01: String concat in JSON-L | stream | 10-50x slower | Low |
 | ~~P0~~ | ~~P-04: Unbounded controllers~~ | ~~server~~ | ~~Memory leak~~ | ~~DONE~~ |
 | P1 | P-02: Triple regex replace | codec | 3x slower | Low |
-| P1 | P-05: Session map growth | http-transport | DoS risk | Medium |
+| ~~P1~~ | ~~P-05: Session map growth~~ | ~~http-transport~~ | ~~DoS risk~~ | ~~DONE~~ |
 | P1 | P-06: Buffer growth | stream | OOM risk | Low |
 | P1 | P-07: No backpressure | stream | Overflow | Medium |
 | P2 | P-03: Regex in hot loop | stream | 2-5x slower | Low |
@@ -1110,7 +1121,7 @@ if (char.charCodeAt(0) > 32) { ... }
 5. ~~H-05, H-06: Protocol schema hardening~~ DONE (see `archive/2026-01-29-protocol-schema-hardening.md`)
 
 ### Phase 2: High Priority Security
-1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-18~~: Fixed; H-03, H-09, H-10, H-11, H-17: Remaining high severity issues
+1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-09~~, ~~H-10~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-18~~: Fixed; H-03, H-11, H-17: Remaining high severity issues
 2. T-01 (partial): Remaining token error paths; ~~T-02~~: Fixed; ~~T-03~~: Fixed; T-04 through T-07: Test coverage gaps
 
 ### Phase 3: Performance
@@ -1135,6 +1146,9 @@ if (char.charCodeAt(0) > 32) { ... }
 | C-06 | Handler concurrency limits (EK04) | Handle rejection errors; configure `maxConcurrentHandlers` |
 | C-07 | Channel send auth required | Sign channel send messages in non-public mode |
 | H-13/H-14 | Per-message size limit (EK06) | `maxPayloadSize` renamed to `maxMessageSize`; applied per-message to all types |
+| C-08 | Session limits enforced (503) | Configure `maxSessions`, `sessionTimeoutMs` |
+| C-09 | Inflight request limits enforced (503/504) | Configure `maxInflightRequests`, `requestTimeoutMs` |
+| H-10 | Origin validation in wildcard CORS | Invalid origins now rejected with 403 |
 | M-12 | Dispose cleanup timeout | Configure `cleanupTimeoutMs` |
 | ~~C-12~~ | ~~Browser keys encrypted~~ | Won't Fix — non-extractable keys are the correct approach |
 | H-05 | Field size limits | Reduce payload sizes |
