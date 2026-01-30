@@ -5,7 +5,7 @@
 
 ## Summary
 
-15 of 47 issues were resolved across three implementation plans. 1 issue (C-12) was closed as won't-fix. The remaining open issues are listed below, grouped by severity.
+17 of 47 issues were resolved across four implementation plans. 1 issue (C-12) was closed as won't-fix. The remaining open issues are listed below, grouped by severity.
 
 ---
 
@@ -20,14 +20,14 @@
 | C-11 | Socket transport has no TLS support | `@enkaku/socket-transport` | Open |
 | C-12 | Browser keystore stores keys unencrypted | `@enkaku/browser-keystore` | Won't Fix — non-extractable keys are the correct approach; wrapping would require extractable keys, reducing security |
 
-## High (13 open)
+## High (11 open, 2 resolved)
 
 | ID | Issue | Package |
 |----|-------|---------|
 | H-02 | Codec comparison missing bounds check | `@enkaku/token` |
 | H-03 | No cryptographic binding to caller identity | `@enkaku/capability` |
-| H-05 | Missing payload size constraints (protocol) | `@enkaku/protocol` |
-| H-06 | additionalProperties: true allows arbitrary fields | `@enkaku/protocol` |
+| ~~H-05~~ | ~~Missing payload size constraints (protocol)~~ | ~~`@enkaku/protocol`~~ — **Resolved** in `2026-01-29-protocol-schema-hardening` |
+| ~~H-06~~ | ~~additionalProperties: true allows arbitrary fields~~ | ~~`@enkaku/protocol`~~ — **Resolved** in `2026-01-29-protocol-schema-hardening` |
 | H-07 | Unsafe reference resolution (prototype pollution) | `@enkaku/schema` |
 | H-08 | JSON.parse() without depth limits | `@enkaku/codec` |
 | H-09 | No request timeout (HTTP transport) | `@enkaku/http-server-transport` |
@@ -68,7 +68,7 @@
 | T-01 | Token package — remaining error path tests | HIGH (partially fixed) |
 | T-04 | Transport packages — zero coverage | CRITICAL |
 | T-05 | Keystore packages — zero coverage | CRITICAL |
-| T-06 | Schema/protocol — validation tests missing | HIGH |
+| T-06 | Schema/protocol — validation tests missing | HIGH (H-05/H-06 unsigned path covered; signed path still missing) |
 | T-07 | Utility packages — security tests missing | HIGH |
 
 ## Performance Issues (open)

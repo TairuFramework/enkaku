@@ -1098,10 +1098,10 @@ if (char.charCodeAt(0) > 32) { ... }
 2. ~~C-02, C-03: Capability authorization~~ DONE
 3. ~~C-05, C-06, C-07: Server resource limits~~ DONE (includes H-13, H-14, H-15, M-10, M-11, M-12)
 4. ~~C-12: Browser keystore encryption~~ Won't Fix (non-extractable keys already provide strongest browser protection; wrapping would require extractable keys, reducing security)
-5. H-05, H-06: Protocol schema hardening
+5. ~~H-05, H-06: Protocol schema hardening~~ DONE (see `archive/2026-01-29-protocol-schema-hardening.md`)
 
 ### Phase 2: High Priority Security
-1. ~~H-01~~, ~~H-04~~, ~~H-13~~, ~~H-14~~, ~~H-15~~: Fixed; H-02, H-03, H-05 through H-12, H-16, H-17, H-18: Remaining high severity issues
+1. ~~H-01~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-13~~, ~~H-14~~, ~~H-15~~: Fixed; H-02, H-03, H-07 through H-12, H-16, H-17, H-18: Remaining high severity issues
 2. T-01 (partial): Remaining token error paths; ~~T-02~~: Fixed; ~~T-03~~: Fixed; T-04 through T-07: Test coverage gaps
 
 ### Phase 3: Performance
