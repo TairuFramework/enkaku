@@ -54,6 +54,9 @@ type DecryptingIdentity = Identity & {
 // Full bundle
 type FullIdentity = SigningIdentity & DecryptingIdentity
 
+// With private key access (for key generation / test utilities)
+type OwnIdentity = FullIdentity & { privateKey: Uint8Array }
+
 // Type guards
 function isSigningIdentity(identity: Identity): identity is SigningIdentity
 function isDecryptingIdentity(identity: Identity): identity is DecryptingIdentity
@@ -70,7 +73,19 @@ function createFullIdentity(privateKey: Uint8Array | CryptoKeyPair): FullIdentit
 
 // From keystore entry
 function provideFullIdentity(entry: KeyEntry): Promise<FullIdentity>
+
+// Generate a random identity (exposes private key for storage/export)
+function randomIdentity(): OwnIdentity
 ```
+
+### Removed Types
+
+The following low-level types are removed from the public API:
+
+- `TokenSigner` -- replaced by `SigningIdentity`
+- `OwnTokenSigner` -- replaced by `OwnIdentity`
+- `GenericSigner` -- removed (internal implementation detail of identity factories)
+- `OwnSigner` -- removed (replaced by `OwnIdentity` for private key access)
 
 ### TokenEncrypter (separate from identity hierarchy)
 
@@ -373,20 +388,94 @@ Each keystore preserves its existing sync/async pattern:
 | `@enkaku/node-keystore` | `provideTokenSigner()`, `provideTokenSignerAsync()` | `provideFullIdentity()` (sync, lazy), `provideFullIdentityAsync()` (async, eager) |
 | `@enkaku/electron-keystore` | `provideTokenSigner()`, `provideTokenSignerAsync()` | `provideFullIdentity()` (sync, lazy), `provideFullIdentityAsync()` (async, eager) |
 | `@enkaku/expo-keystore` | `provideTokenSigner()`, `provideTokenSignerAsync()` | `provideFullIdentity()` (sync, lazy), `provideFullIdentityAsync()` (async, eager) |
-| `@enkaku/browser-keystore` | `provideTokenSigner()` | `provideFullIdentity()` (async only, returns `Promise<FullIdentity>`) |
+| `@enkaku/browser-keystore` | `provideTokenSigner()`, `getSigner()` | `provideFullIdentity()` (async only, returns `Promise<FullIdentity>`) |
 
 ### All Package Changes
 
 | Package | Removals | Additions |
 |---------|----------|-----------|
-| `@enkaku/token` | `TokenSigner`, `toTokenSigner()`, `getSigner()` | Identity types, JWE operations, `TokenEncrypter` |
-| `@enkaku/protocol` | -- | `EncryptionPolicy`, `ProcedureAccessConfig`, updated message types |
+| `@enkaku/token` | `TokenSigner`, `OwnTokenSigner`, `GenericSigner`, `OwnSigner`, `toTokenSigner()`, `getSigner()`, `getTokenSigner()`, `randomTokenSigner()`, `randomSigner()` | Identity types (`Identity`, `SigningIdentity`, `DecryptingIdentity`, `FullIdentity`, `OwnIdentity`), type guards, factory functions (`createSigningIdentity`, `createDecryptingIdentity`, `createFullIdentity`, `randomIdentity`), JWE operations (`encryptToken`, `decryptToken`, `wrapEnvelope`, `unwrapEnvelope`), `TokenEncrypter`, `EnvelopeMode`, `UnwrappedEnvelope` |
+| `@enkaku/token` | `signToken(signer: TokenSigner, ...)` | `signToken(signer: SigningIdentity, ...)` (parameter type change) |
+| `@enkaku/protocol` | -- | `EncryptionPolicy`, `ProcedureAccessConfig`, updated message schemas (JWE detection at boundary) |
 | `@enkaku/client` | `signer` param | `identity`, `envelopeMode`, `encrypter` params |
 | `@enkaku/server` | `id` param | `identity`, `encryptionPolicy`, `responseEnvelopeMode` params |
+| `@enkaku/capability` | `createCapability(signer: TokenSigner, ...)` | `createCapability(signer: SigningIdentity, ...)` (parameter type change) |
+| `@enkaku/standalone` | `StandaloneOptions.signer` | `StandaloneOptions.identity` (derives server ID from `identity.id`, passes `identity` to both server and client) |
+| `@enkaku/electron-rpc` | -- | Transitive change: `RendererClientOptions` extends `ClientParams`, so `signer` becomes `identity` automatically |
+
+---
+
+## Message Type & Boundary Unwrap
+
+The `Message` type stays as-is:
+
+```typescript
+type Message<Payload extends Record<string, unknown>> =
+  | SignedToken<SignedPayload & Payload>
+  | UnsignedToken<Payload>
+```
+
+JWE wrapping/unwrapping happens at the client/server boundary, **not** in the type system:
+
+- **Client outbound:** Creates a `Message` (signed or unsigned), then calls `wrapEnvelope()` to produce the wire format (opaque string for JWE modes, or the message object for plain/JWS modes).
+- **Server inbound:** Receives from transport, detects envelope mode, calls `unwrapEnvelope()` to get the inner `Message`. From this point on, the existing processing pipeline handles it.
+- **Server outbound / Client inbound:** Same pattern in reverse.
+
+The transport layer carries either structured `Message` objects or opaque strings. The client/server layer is responsible for envelope logic. This avoids expanding the `Message` union type and keeps all encryption concerns out of the transport and handler layers.
+
+### Protocol Schema Validation
+
+`createMessageSchema()` in `@enkaku/protocol` currently generates JSON schemas for signed/unsigned message validation. With JWE:
+
+- For `plain` and `jws` modes: existing schema validation applies (message is a structured object).
+- For `jws-in-jwe` and `jwe-in-jws` modes: the server unwraps the envelope first, then validates the inner message against existing schemas.
+- Schema validation always runs on the **unwrapped** message, never on the JWE envelope itself.
+
+---
+
+## Test Utility Changes
+
+Test files extensively use `randomTokenSigner()` to create test identities. Replacements:
+
+| Old | New |
+|-----|-----|
+| `randomTokenSigner()` | `randomIdentity()` -- returns `OwnIdentity` (includes `privateKey` for test assertions) |
+| `signer.id` | `identity.id` |
+| `signer.createToken(payload)` | `identity.signToken(payload)` |
+| `getTokenSigner(privateKey)` | `createFullIdentity(privateKey)` |
+
+### E2E Test Updates
+
+| Test | Old API | New API |
+|------|---------|---------|
+| `tests/e2e-web/src/App.tsx` | `provideTokenSigner('test')` from `@enkaku/browser-keystore` | `provideFullIdentity('test')` |
+| `tests/e2e-expo/App.tsx` | `provideTokenSigner('test')` from `@enkaku/expo-keystore` | `provideFullIdentity('test')` |
+| `tests/e2e-electron/src/main.ts` | `provideTokenSignerAsync('EnkakuKeystore', keyID)` from `@enkaku/electron-keystore` | `provideFullIdentityAsync('EnkakuKeystore', keyID)` |
+
+---
+
+## Documentation Updates
+
+The following documentation files reference old APIs and must be updated:
+
+| File | APIs to update |
+|------|---------------|
+| `docs/skills/auth.skill.md` | `randomTokenSigner`, `provideTokenSignerAsync`, `provideTokenSigner`, `signer.createToken`, `signer.id` |
+| `docs/capabilities/domains/authentication.md` | All keystore `provideTokenSigner`/`provideTokenSignerAsync` signatures, `getSigner`, `toTokenSigner` |
+| `docs/capabilities/use-cases/securing-endpoints.md` | `provideTokenSignerAsync`, `provideTokenSigner` |
+| `website/docs/api/token/index.md` | `toTokenSigner()`, `getSigner()`, `TokenSigner` type |
+| `website/docs/api/browser-keystore/index.md` | `provideTokenSigner()`, `getSigner()` |
+| `website/docs/api/node-keystore/index.md` | `provideTokenSigner()`, `provideTokenSignerAsync()` |
+| `website/docs/api/electron-keystore/index.md` | `provideTokenSigner()`, `provideTokenSignerAsync()` |
+| `website/docs/api/expo-keystore/index.md` | `provideTokenSigner()`, `provideTokenSignerAsync()` |
+| `website/docs/api/server/index.md` | `ProcedureAccessRecord`, server `id` param |
+| `website/docs/api/standalone/index.md` | `ProcedureAccessRecord`, `signer` param |
 
 ### Downstream Impact
 
 Kubun and Mokei depend on Enkaku and will need to update:
-- `provideTokenSigner()` calls -> `provideFullIdentity()`
+- `provideTokenSigner()` / `provideTokenSignerAsync()` calls -> `provideFullIdentity()` / `provideFullIdentityAsync()`
 - `signer` params -> `identity`
-- `id` params -> `identity`
+- `id` params (server) -> `identity`
+- `signer.id` references -> `identity.id`
+- `signer.createToken()` calls -> `identity.signToken()`
