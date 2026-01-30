@@ -1,5 +1,5 @@
 import { equals } from 'uint8arrays'
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 
 import {
   b64uFromJSON,
@@ -38,4 +38,19 @@ test('JSON to base64url encoding and decoding', () => {
   const encoded = b64uFromJSON(data)
   const decoded = b64uToJSON(encoded)
   expect(decoded).toEqual(data)
+})
+
+describe('b64uToJSON()', () => {
+  test('rejects deeply nested JSON exceeding depth limit', () => {
+    const depth = 200
+    const nested = '{"a":'.repeat(depth) + '1' + '}'.repeat(depth)
+    const encoded = b64uFromUTF(nested)
+    expect(() => b64uToJSON(encoded)).toThrow('exceeds maximum nesting depth')
+  })
+
+  test('accepts JSON within depth limit', () => {
+    const obj = { a: { b: { c: { d: 'value' } } } }
+    const encoded = b64uFromJSON(obj)
+    expect(b64uToJSON(encoded)).toEqual(obj)
+  })
 })
