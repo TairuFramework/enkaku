@@ -5,7 +5,10 @@ import { ed25519, x25519 } from '@noble/curves/ed25519.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 
 import { getSignatureInfo } from './did.js'
-import type { DecryptingIdentity } from './identity.js'
+import type { DecryptingIdentity, SigningIdentity } from './identity.js'
+import { createUnsignedToken, isUnsignedToken, verifyToken } from './token.js'
+import { stringifyToken } from './utils.js'
+import type { Verifiers } from './verifier.js'
 
 export type ConcatKDFParams = {
   sharedSecret: Uint8Array
@@ -235,4 +238,95 @@ export async function decryptToken(
   // Decrypt with AES-256-GCM
   const cipher = gcm(cek, iv, aad)
   return cipher.decrypt(ciphertextWithTag)
+}
+
+export type EnvelopeMode = 'plain' | 'jws' | 'jws-in-jwe' | 'jwe-in-jws'
+
+export type UnwrappedEnvelope = {
+  payload: Record<string, unknown>
+  mode: EnvelopeMode
+}
+
+export type WrapOptions = {
+  signer?: SigningIdentity
+  encrypter?: TokenEncrypter
+  header?: Record<string, unknown>
+}
+
+export type UnwrapOptions = {
+  decrypter?: DecryptingIdentity
+  verifiers?: Verifiers
+}
+
+/**
+ * Wrap a payload into a token string according to the specified envelope mode.
+ */
+export async function wrapEnvelope(
+  mode: EnvelopeMode,
+  payload: Record<string, unknown>,
+  options: WrapOptions,
+): Promise<string> {
+  switch (mode) {
+    case 'plain': {
+      const token = createUnsignedToken(payload, options.header)
+      // Append empty signature segment for RFC 7519 unsecured JWT format (header.payload.)
+      return `${stringifyToken(token)}.`
+    }
+    case 'jws': {
+      if (options.signer == null) throw new Error('Signer required for jws mode')
+      const token = await options.signer.signToken(payload, options.header)
+      return stringifyToken(token)
+    }
+    case 'jws-in-jwe': {
+      if (options.signer == null) throw new Error('Signer required for jws-in-jwe mode')
+      if (options.encrypter == null) throw new Error('Encrypter required for jws-in-jwe mode')
+      const signed = await options.signer.signToken(payload, options.header)
+      const jwsString = stringifyToken(signed)
+      return encryptToken(options.encrypter, new TextEncoder().encode(jwsString))
+    }
+    case 'jwe-in-jws': {
+      if (options.signer == null) throw new Error('Signer required for jwe-in-jws mode')
+      if (options.encrypter == null) throw new Error('Encrypter required for jwe-in-jws mode')
+      const plaintext = new TextEncoder().encode(JSON.stringify(payload))
+      const jwe = await encryptToken(options.encrypter, plaintext)
+      const signed = await options.signer.signToken({ jwe }, options.header)
+      return stringifyToken(signed)
+    }
+  }
+}
+
+/**
+ * Unwrap a token string, auto-detecting the envelope mode from its structure.
+ */
+export async function unwrapEnvelope(
+  message: string,
+  options: UnwrapOptions,
+): Promise<UnwrappedEnvelope> {
+  const parts = message.split('.')
+  if (parts.length === 5) {
+    // JWE outer → jws-in-jwe mode
+    if (options.decrypter == null) throw new Error('Decrypter required for JWE message')
+    const decrypted = await decryptToken(options.decrypter, message)
+    const jwsString = new TextDecoder().decode(decrypted)
+    const token = await verifyToken(jwsString, options.verifiers)
+    return { payload: token.payload as Record<string, unknown>, mode: 'jws-in-jwe' }
+  }
+  if (parts.length === 3) {
+    // JWT: could be plain, jws, or jwe-in-jws
+    const token = await verifyToken(message, options.verifiers)
+    if (isUnsignedToken(token)) {
+      return { payload: token.payload as Record<string, unknown>, mode: 'plain' }
+    }
+    // Check if payload contains a JWE (jwe-in-jws)
+    if ('jwe' in token.payload && typeof token.payload.jwe === 'string') {
+      if (options.decrypter == null) throw new Error('Decrypter required for jwe-in-jws message')
+      const decrypted = await decryptToken(options.decrypter, token.payload.jwe as string)
+      const innerPayload = JSON.parse(new TextDecoder().decode(decrypted))
+      return { payload: innerPayload, mode: 'jwe-in-jws' }
+    }
+    return { payload: token.payload as Record<string, unknown>, mode: 'jws' }
+  }
+  throw new Error(
+    `Invalid envelope format: expected 3 or 5 dot-separated parts, got ${parts.length}`,
+  )
 }

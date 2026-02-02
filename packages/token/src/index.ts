@@ -28,6 +28,24 @@ export type {
   SigningIdentity,
 } from './identity.js'
 export {
+  concatKDF,
+  createTokenEncrypter,
+  decryptToken,
+  encryptToken,
+  unwrapEnvelope,
+  wrapEnvelope,
+} from './jwe.js'
+export type {
+  ConcatKDFParams,
+  EncryptOptions,
+  EnvelopeMode,
+  JWEHeader,
+  TokenEncrypter,
+  UnwrapOptions,
+  UnwrappedEnvelope,
+  WrapOptions,
+} from './jwe.js'
+export {
   capabilitySchema,
   type SignatureAlgorithm,
   type SignedHeader,
