@@ -1,9 +1,9 @@
-import { provideTokenSigner } from '@enkaku/browser-keystore'
+import { provideSigningIdentity } from '@enkaku/browser-keystore'
 import { type Token, verifyToken } from '@enkaku/token'
 import { useState } from 'react'
 import { Button, StyleSheet, Text, View } from 'react-native'
 
-const signerPromise = provideTokenSigner('test')
+const identityPromise = provideSigningIdentity('test')
 
 type Data = {
   test: string
@@ -19,7 +19,7 @@ export default function App() {
       <Button
         title="Sign token"
         onPress={() => {
-          signerPromise.then((signer) => signer.createToken({ test: 'OK' })).then(setSignedToken)
+          identityPromise.then((identity) => identity.signToken({ test: 'OK' })).then(setSignedToken)
         }}
       />
     )
