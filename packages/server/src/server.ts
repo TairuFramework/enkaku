@@ -14,7 +14,7 @@ import {
   ValidationError,
   type Validator,
 } from '@enkaku/schema'
-import { createUnsignedToken, isSignedToken, type SignedToken, type Token } from '@enkaku/token'
+import { createUnsignedToken, type Identity, isSignedToken, type SignedToken, type Token } from '@enkaku/token'
 
 import { checkClientToken, type ProcedureAccessRecord } from './access-control.js'
 import { HandlerError } from './error.js'
@@ -311,7 +311,7 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
 export type ServerParams<Protocol extends ProtocolDefinition> = {
   access?: ProcedureAccessRecord
   handlers: ProcedureHandlers<Protocol>
-  id?: string
+  identity?: Identity
   limits?: Partial<ResourceLimits>
   logger?: Logger
   protocol?: Protocol
@@ -372,21 +372,22 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#abortController = new AbortController()
     this.#events = new EventEmitter<ServerEvents>()
     this.#handlers = params.handlers
+    const serverID = params.identity?.id
     this.#logger =
-      params.logger ?? getEnkakuLogger('server', { serverID: params.id ?? crypto.randomUUID() })
+      params.logger ?? getEnkakuLogger('server', { serverID: serverID ?? crypto.randomUUID() })
 
-    if (params.id == null) {
+    if (serverID == null) {
       if (params.public) {
         this.#accessControl = { public: true, access: params.access }
       } else {
         throw new Error(
-          'Invalid server parameters: either the server "id" must be provided or the "public" parameter must be set to true',
+          'Invalid server parameters: either the server "identity" must be provided or the "public" parameter must be set to true',
         )
       }
     } else {
       this.#accessControl = {
         public: !!params.public,
-        serverID: params.id,
+        serverID,
         access: params.access ?? {},
       }
     }

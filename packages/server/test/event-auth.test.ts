@@ -1,5 +1,5 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { createUnsignedToken, randomTokenSigner } from '@enkaku/token'
+import { createUnsignedToken, randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
 import { describe, expect, test, vi } from 'vitest'
 
@@ -15,7 +15,7 @@ describe('Event auth error', () => {
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
-    const signer = randomTokenSigner()
+    const signer = randomIdentity()
     const handler = vi.fn()
     const handlers = { notify: handler } as ProcedureHandlers<Protocol>
 
@@ -28,7 +28,7 @@ describe('Event auth error', () => {
 
     const server = serve<Protocol>({
       handlers,
-      id: signer.id,
+      identity: signer,
       public: false,
       access: { notify: true },
       transport: transports.server,
@@ -71,7 +71,7 @@ describe('Event auth error', () => {
     type Protocol = typeof protocol
 
     const expiresAt = Math.floor(Date.now() / 1000) + 300
-    const signer = randomTokenSigner()
+    const signer = randomIdentity()
     const handler = vi.fn()
     const handlers = { notify: handler } as ProcedureHandlers<Protocol>
 
@@ -83,7 +83,7 @@ describe('Event auth error', () => {
 
     const server = serve<Protocol>({
       handlers,
-      id: signer.id,
+      identity: signer,
       public: false,
       access: { notify: true },
       transport: transports.server,
@@ -91,7 +91,7 @@ describe('Event auth error', () => {
     server.events.on('eventAuthError', eventAuthHandler)
 
     // Send valid signed event
-    const message = await signer.createToken({
+    const message = await signer.signToken({
       typ: 'event',
       aud: signer.id,
       prc: 'notify',
