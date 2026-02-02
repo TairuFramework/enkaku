@@ -3,7 +3,7 @@ import type { AnyClientPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 import { randomIdentity, stringifyToken } from '@enkaku/token'
 import { describe, expect, test } from 'vitest'
 
-import { checkClientToken } from '../src/access-control.js'
+import { checkClientToken, type ProcedureAccessConfig } from '../src/access-control.js'
 
 type Payload = AnyClientPayloadOf<ProtocolDefinition>
 
@@ -69,6 +69,63 @@ describe('access control', () => {
       await expect(
         checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': true }, token),
       ).resolves.toBeUndefined()
+    })
+  })
+
+  describe('ProcedureAccessConfig with encryption', () => {
+    test('config with allow: true acts as public access', async () => {
+      const serverSigner = randomIdentity()
+      const clientSigner = randomIdentity()
+      const token = await clientSigner.signToken({
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload)
+      const config: ProcedureAccessConfig = { allow: true, encryption: 'required' }
+      await expect(
+        checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': config }, token),
+      ).resolves.toBeUndefined()
+    })
+
+    test('config with allow: false denies access', async () => {
+      const serverSigner = randomIdentity()
+      const clientSigner = randomIdentity()
+      const token = await clientSigner.signToken({
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload)
+      const config: ProcedureAccessConfig = { allow: false, encryption: 'optional' }
+      await expect(
+        checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': config }, token),
+      ).rejects.toThrow('Access denied')
+    })
+
+    test('config with allow-list works like array access', async () => {
+      const serverSigner = randomIdentity()
+      const clientSigner = randomIdentity()
+      const token = await clientSigner.signToken({
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload)
+      const config: ProcedureAccessConfig = {
+        allow: [clientSigner.id],
+        encryption: 'required',
+      }
+      await expect(
+        checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': config }, token),
+      ).resolves.toBeUndefined()
+    })
+
+    test('config without allow defaults to deny', async () => {
+      const serverSigner = randomIdentity()
+      const clientSigner = randomIdentity()
+      const token = await clientSigner.signToken({
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload)
+      const config: ProcedureAccessConfig = { encryption: 'required' }
+      await expect(
+        checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': config }, token),
+      ).rejects.toThrow('Access denied')
     })
   })
 
