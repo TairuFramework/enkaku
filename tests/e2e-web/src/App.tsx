@@ -19,7 +19,9 @@ export default function App() {
       <Button
         title="Sign token"
         onPress={() => {
-          identityPromise.then((identity) => identity.signToken({ test: 'OK' })).then(setSignedToken)
+          identityPromise
+            .then((identity) => identity.signToken({ test: 'OK' }))
+            .then(setSignedToken)
         }}
       />
     )
