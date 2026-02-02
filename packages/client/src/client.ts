@@ -17,7 +17,7 @@ import type {
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
 import { createPipe, writeTo } from '@enkaku/stream'
-import { createUnsignedToken, type TokenSigner } from '@enkaku/token'
+import { createUnsignedToken, type Identity, isSigningIdentity, type SigningIdentity } from '@enkaku/token'
 
 import { RequestError } from './error.js'
 
@@ -189,16 +189,21 @@ type CreateMessage<Protocol extends ProtocolDefinition> = (
 ) => AnyClientMessageOf<Protocol> | Promise<AnyClientMessageOf<Protocol>>
 
 function getCreateMessage<Protocol extends ProtocolDefinition>(
-  signer?: TokenSigner | Promise<TokenSigner>,
+  identity?: Identity | Promise<Identity>,
   aud?: string,
 ): CreateMessage<Protocol> {
-  if (signer == null) {
+  if (identity == null) {
     return createUnsignedToken
   }
 
-  const signerPromise = Promise.resolve(signer)
+  const identityPromise = Promise.resolve(identity)
   const createToken = (payload: Record<string, unknown>, header?: AnyHeader) => {
-    return signerPromise.then((s) => s.createToken(payload, header))
+    return identityPromise.then((id) => {
+      if (!isSigningIdentity(id)) {
+        throw new Error('Identity does not support signing')
+      }
+      return id.signToken(payload, header)
+    })
   }
 
   return (
@@ -219,7 +224,7 @@ export type ClientParams<Protocol extends ProtocolDefinition> = {
   logger?: Logger
   transport: ClientTransportOf<Protocol>
   serverID?: string
-  signer?: TokenSigner | Promise<TokenSigner>
+  identity?: Identity | Promise<Identity>
 }
 
 export class Client<
@@ -244,7 +249,7 @@ export class Client<
         this.#logger.debug('disposed')
       },
     })
-    this.#createMessage = getCreateMessage<Protocol>(params.signer, params.serverID)
+    this.#createMessage = getCreateMessage<Protocol>(params.identity, params.serverID)
     this.#getRandomID = params.getRandomID ?? defaultRandomID
     this.#handleTransportDisposed = params.handleTransportDisposed
     this.#handleTransportError = params.handleTransportError

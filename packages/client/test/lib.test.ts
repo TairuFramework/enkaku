@@ -10,7 +10,7 @@ import type {
   StreamPayloadOf,
 } from '@enkaku/protocol'
 import { createArraySink } from '@enkaku/stream'
-import { randomTokenSigner, createUnsignedToken as unsignedToken } from '@enkaku/token'
+import { randomIdentity, createUnsignedToken as unsignedToken } from '@enkaku/token'
 import { DirectTransports, Transport } from '@enkaku/transport'
 import { describe, expect, test, vi } from 'vitest'
 
@@ -288,8 +288,8 @@ describe('Client', () => {
   })
 
   test('sendEvent()', async () => {
-    const serverSigner = randomTokenSigner()
-    const clientSigner = randomTokenSigner()
+    const serverIdentity = randomIdentity()
+    const clientIdentity = randomIdentity()
 
     const protocol = {
       'test/event': {
@@ -315,14 +315,14 @@ describe('Client', () => {
     >()
     const client = new Client<Protocol>({
       logger,
-      serverID: serverSigner.id,
-      signer: clientSigner,
+      serverID: serverIdentity.id,
+      identity: clientIdentity,
       transport: transports.client,
     })
 
     await client.sendEvent('test/event', { data: { hello: 'world' } })
-    const signedMessage = await clientSigner.createToken({
-      aud: serverSigner.id,
+    const signedMessage = await clientIdentity.signToken({
+      aud: serverIdentity.id,
       typ: 'event',
       prc: 'test/event',
       data: { hello: 'world' },
