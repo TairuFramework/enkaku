@@ -15,7 +15,7 @@ import {
   type SignedHeader,
   type SignedPayload,
   type SignedToken,
-  type TokenSigner,
+  type SigningIdentity,
   verifyToken,
 } from '@enkaku/token'
 
@@ -118,7 +118,7 @@ export async function createCapability<
   Payload extends SignCapabilityPayload = SignCapabilityPayload,
   HeaderParams extends Record<string, unknown> = Record<string, unknown>,
 >(
-  signer: TokenSigner,
+  signer: SigningIdentity,
   payload: Payload,
   header?: HeaderParams,
   options?: CreateCapabilityOptions,
@@ -127,7 +127,7 @@ export async function createCapability<
 
   // If signer is the subject, no parent validation needed (root capability)
   if (payload.sub === signerId) {
-    return await signer.createToken(payload, header)
+    return await signer.signToken(payload, header)
   }
 
   // Signer is delegating on behalf of someone else - validate authorization
@@ -168,7 +168,7 @@ export async function createCapability<
     throw new Error('Invalid capability: delegated permission exceeds parent capability')
   }
 
-  return await signer.createToken(payload, header)
+  return await signer.signToken(payload, header)
 }
 
 export function isMatch(expected: string, actual: string): boolean {
