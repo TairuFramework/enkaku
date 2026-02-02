@@ -428,30 +428,26 @@ for await (const event of stream.readable) {
 Require signed tokens for access:
 
 ```typescript
-import { TokenSigner } from '@enkaku/token'
-import { NodeKeyStore } from '@enkaku/node-keystore'
+import { randomIdentity } from '@enkaku/token'
+import { provideFullIdentityAsync } from '@enkaku/node-keystore'
 
-// Server: Disable public access
+// Server: Disable public access, provide identity
+const serverIdentity = await provideFullIdentityAsync('my-app', 'server-key')
+
 const server = new Server({
   protocol,
   transport,
   handlers,
-  public: false,  // Require authentication
-  id: 'my-server-id'
+  identity: serverIdentity
 })
 
 // Client: Sign requests
-const keyStore = new NodeKeyStore()
-const signer = new TokenSigner({
-  id: 'my-client-id',
-  keyStore,
-  audience: 'my-server-id'
-})
+const clientIdentity = randomIdentity()
 
 const client = new Client({
   transport,
-  signer,
-  serverID: 'my-server-id'
+  identity: clientIdentity,
+  serverID: serverIdentity.id
 })
 ```
 

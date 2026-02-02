@@ -67,7 +67,7 @@ const protocol = {
 - Each request/stream/channel gets a unique request ID (rid)
 - Supports abort signals for cancellation
 - Handles transport disconnection and errors
-- Can sign messages with TokenSigner for authentication
+- Can sign messages with Identity for authentication
 
 **Key methods**:
 - `sendEvent(procedure, data)` - Send fire-and-forget event
@@ -762,7 +762,7 @@ class Client<Protocol extends ProtocolDefinition> {
     handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
     handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
     serverID?: string
-    signer?: TokenSigner | Promise<TokenSigner>
+    identity?: SigningIdentity | Promise<SigningIdentity>
   })
 
   sendEvent<Procedure>(
@@ -799,7 +799,7 @@ class Server<Protocol extends ProtocolDefinition> {
   constructor(params: {
     handlers: ProcedureHandlers<Protocol>
     access?: ProcedureAccessRecord
-    id?: string
+    identity?: SigningIdentity
     protocol?: Protocol
     public?: boolean
     signal?: AbortSignal
@@ -830,7 +830,7 @@ function standalone<Protocol extends ProtocolDefinition>(
     getRandomID?: () => string
     protocol?: Protocol
     signal?: AbortSignal
-    signer?: TokenSigner
+    identity?: SigningIdentity
   }
 ): Client<Protocol>
 ```
