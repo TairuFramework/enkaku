@@ -11,6 +11,13 @@
  */
 
 export { CODECS, getAlgorithmAndPublicKey, getDID, getSignatureInfo } from './did.js'
+export type {
+  DecryptingIdentity,
+  FullIdentity,
+  Identity,
+  OwnIdentity,
+  SigningIdentity,
+} from './identity.js'
 export {
   createDecryptingIdentity,
   createFullIdentity,
@@ -21,21 +28,6 @@ export {
   randomIdentity,
 } from './identity.js'
 export type {
-  DecryptingIdentity,
-  FullIdentity,
-  Identity,
-  OwnIdentity,
-  SigningIdentity,
-} from './identity.js'
-export {
-  concatKDF,
-  createTokenEncrypter,
-  decryptToken,
-  encryptToken,
-  unwrapEnvelope,
-  wrapEnvelope,
-} from './jwe.js'
-export type {
   ConcatKDFParams,
   EncryptOptions,
   EnvelopeMode,
@@ -44,6 +36,14 @@ export type {
   UnwrapOptions,
   UnwrappedEnvelope,
   WrapOptions,
+} from './jwe.js'
+export {
+  concatKDF,
+  createTokenEncrypter,
+  decryptToken,
+  encryptToken,
+  unwrapEnvelope,
+  wrapEnvelope,
 } from './jwe.js'
 export {
   capabilitySchema,

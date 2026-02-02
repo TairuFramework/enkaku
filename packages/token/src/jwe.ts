@@ -82,10 +82,7 @@ export function concatKDF(params: ConcatKDFParams): Uint8Array {
   return sha256(hashInput).slice(0, keyLength / 8)
 }
 
-function encryptWithX25519(
-  recipientPublicKey: Uint8Array,
-  plaintext: Uint8Array,
-): string {
+function encryptWithX25519(recipientPublicKey: Uint8Array, plaintext: Uint8Array): string {
   // Generate ephemeral X25519 key pair
   const ephemeralPrivateKey = x25519.utils.randomSecretKey()
   const ephemeralPublicKey = x25519.getPublicKey(ephemeralPrivateKey)
@@ -150,10 +147,7 @@ function resolveX25519Key(recipient: Uint8Array | string): { key: Uint8Array; id
 /**
  * Create a token encrypter for a recipient identified by X25519 public key or DID string.
  */
-export function createTokenEncrypter(
-  recipient: Uint8Array,
-  options: EncryptOptions,
-): TokenEncrypter
+export function createTokenEncrypter(recipient: Uint8Array, options: EncryptOptions): TokenEncrypter
 export function createTokenEncrypter(recipient: string): TokenEncrypter
 export function createTokenEncrypter(
   recipient: Uint8Array | string,

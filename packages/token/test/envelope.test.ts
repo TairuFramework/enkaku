@@ -59,8 +59,8 @@ describe('wrapEnvelope / unwrapEnvelope', () => {
   test('wrapEnvelope throws if encrypted mode but no encrypter', async () => {
     const identity = randomIdentity()
     const payload = { typ: 'request', prc: 'test', rid: '1' }
-    await expect(
-      wrapEnvelope('jws-in-jwe', payload, { signer: identity }),
-    ).rejects.toThrow('Encrypter required')
+    await expect(wrapEnvelope('jws-in-jwe', payload, { signer: identity })).rejects.toThrow(
+      'Encrypter required',
+    )
   })
 })

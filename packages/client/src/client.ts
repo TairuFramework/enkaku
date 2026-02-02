@@ -17,7 +17,7 @@ import type {
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
 import { createPipe, writeTo } from '@enkaku/stream'
-import { createUnsignedToken, type Identity, isSigningIdentity, type SigningIdentity } from '@enkaku/token'
+import { createUnsignedToken, type Identity, isSigningIdentity } from '@enkaku/token'
 
 import { RequestError } from './error.js'
 

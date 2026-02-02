@@ -1,5 +1,11 @@
 import { b64uFromJSON, fromUTF, toB64U } from '@enkaku/codec'
-import { CODECS, getDID, type SignedHeader, type SigningIdentity, type SignedToken } from '@enkaku/token'
+import {
+  CODECS,
+  getDID,
+  type SignedHeader,
+  type SignedToken,
+  type SigningIdentity,
+} from '@enkaku/token'
 
 import { BrowserKeyStore } from './store.js'
 import { getPublicKey } from './utils.js'

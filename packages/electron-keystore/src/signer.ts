@@ -6,10 +6,7 @@ function getStore(store: ElectronKeyStore | string): ElectronKeyStore {
   return typeof store === 'string' ? ElectronKeyStore.open(store) : store
 }
 
-export function provideFullIdentity(
-  store: ElectronKeyStore | string,
-  keyID: string,
-): FullIdentity {
+export function provideFullIdentity(store: ElectronKeyStore | string, keyID: string): FullIdentity {
   const key = getStore(store).entry(keyID).provide()
   return createFullIdentity(decodePrivateKey(key))
 }
