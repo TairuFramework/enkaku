@@ -1,9 +1,10 @@
 import { b64uFromJSON, b64uToJSON, fromB64U, toB64U } from '@enkaku/codec'
 import { gcm } from '@noble/ciphers/aes.js'
 import { randomBytes } from '@noble/ciphers/utils.js'
-import { x25519 } from '@noble/curves/ed25519.js'
+import { ed25519, x25519 } from '@noble/curves/ed25519.js'
 import { sha256 } from '@noble/hashes/sha2.js'
 
+import { getSignatureInfo } from './did.js'
 import type { DecryptingIdentity } from './identity.js'
 
 export type ConcatKDFParams = {
@@ -131,20 +132,40 @@ function encryptWithX25519(
   return [encodedHeader, '', toB64U(iv), toB64U(ciphertext), toB64U(tag)].join('.')
 }
 
-/**
- * Create a token encrypter for a recipient's X25519 public key.
- */
-export function createTokenEncrypter(
-  recipientPublicKey: Uint8Array,
-  options: EncryptOptions,
-): TokenEncrypter {
-  if (options.algorithm !== 'X25519') {
-    throw new Error(`Unsupported algorithm: ${options.algorithm}`)
+function resolveX25519Key(recipient: Uint8Array | string): { key: Uint8Array; id?: string } {
+  if (typeof recipient !== 'string') {
+    return { key: recipient }
   }
 
+  const [algorithm, publicKey] = getSignatureInfo(recipient)
+  if (algorithm === 'EdDSA') {
+    return { key: ed25519.utils.toMontgomery(publicKey), id: recipient }
+  }
+  throw new Error(`Unsupported DID algorithm for encryption: ${algorithm}`)
+}
+
+/**
+ * Create a token encrypter for a recipient identified by X25519 public key or DID string.
+ */
+export function createTokenEncrypter(
+  recipient: Uint8Array,
+  options: EncryptOptions,
+): TokenEncrypter
+export function createTokenEncrypter(recipient: string): TokenEncrypter
+export function createTokenEncrypter(
+  recipient: Uint8Array | string,
+  options?: EncryptOptions,
+): TokenEncrypter {
+  if (typeof recipient !== 'string' && options?.algorithm !== 'X25519') {
+    throw new Error(`Unsupported algorithm: ${options?.algorithm}`)
+  }
+
+  const { key, id } = resolveX25519Key(recipient)
+
   return {
+    recipientID: id,
     async encrypt(plaintext: Uint8Array): Promise<string> {
-      return encryptWithX25519(recipientPublicKey, plaintext)
+      return encryptWithX25519(key, plaintext)
     },
   }
 }

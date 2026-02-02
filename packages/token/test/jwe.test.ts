@@ -1,7 +1,7 @@
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { describe, expect, test } from 'vitest'
 
-import { createDecryptingIdentity } from '../src/identity.js'
+import { createDecryptingIdentity, randomIdentity } from '../src/identity.js'
 import { concatKDF, createTokenEncrypter, decryptToken, encryptToken } from '../src/jwe.js'
 
 describe('concatKDF', () => {
@@ -105,6 +105,19 @@ describe('JWE encrypt and decrypt', () => {
     const jwe = await encryptToken(encrypter, plaintext)
 
     await expect(decryptToken(decrypter, jwe)).rejects.toThrow()
+  })
+})
+
+describe('createTokenEncrypter from DID', () => {
+  test('creates encrypter from Ed25519 DID string', async () => {
+    const identity = randomIdentity()
+    const encrypter = createTokenEncrypter(identity.id)
+    expect(encrypter.recipientID).toBe(identity.id)
+
+    const plaintext = new TextEncoder().encode('from DID')
+    const jwe = await encryptToken(encrypter, plaintext)
+    const decrypted = await decryptToken(identity, jwe)
+    expect(new TextDecoder().decode(decrypted)).toBe('from DID')
   })
 })
 
