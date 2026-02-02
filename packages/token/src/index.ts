@@ -64,12 +64,7 @@ export {
 export {
   decodePrivateKey,
   encodePrivateKey,
-  getSigner,
-  getTokenSigner,
   randomPrivateKey,
-  randomSigner,
-  randomTokenSigner,
-  toTokenSigner,
 } from './signer.js'
 export {
   assertTimeClaimsValid,
