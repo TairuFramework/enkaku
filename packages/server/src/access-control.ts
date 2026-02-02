@@ -19,11 +19,29 @@ function getAllowValue(access: ProcedureAccessValue): boolean | Array<string> {
   return access.allow ?? false
 }
 
-function getEncryptionPolicy(access: ProcedureAccessValue): EncryptionPolicy {
+function getEncryptionPolicy(access: ProcedureAccessValue): EncryptionPolicy | undefined {
   if (typeof access === 'boolean' || Array.isArray(access)) {
-    return 'none'
+    return undefined
   }
-  return access.encryption ?? 'none'
+  return access.encryption
+}
+
+export function resolveEncryptionPolicy(
+  procedure: string,
+  record: ProcedureAccessRecord | undefined,
+  globalPolicy: EncryptionPolicy,
+): EncryptionPolicy {
+  if (record != null) {
+    for (const [pattern, accessValue] of Object.entries(record)) {
+      if (hasPartsMatch(procedure, pattern)) {
+        const procedurePolicy = getEncryptionPolicy(accessValue)
+        if (procedurePolicy != null) {
+          return procedurePolicy
+        }
+      }
+    }
+  }
+  return globalPolicy
 }
 
 export type ProcedureAccessPayload = {
