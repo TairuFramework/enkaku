@@ -12,6 +12,22 @@
 
 export { CODECS, getAlgorithmAndPublicKey, getDID, getSignatureInfo } from './did.js'
 export {
+  createDecryptingIdentity,
+  createFullIdentity,
+  createSigningIdentity,
+  isDecryptingIdentity,
+  isFullIdentity,
+  isSigningIdentity,
+  randomIdentity,
+} from './identity.js'
+export type {
+  DecryptingIdentity,
+  FullIdentity,
+  Identity,
+  OwnIdentity,
+  SigningIdentity,
+} from './identity.js'
+export {
   capabilitySchema,
   type SignatureAlgorithm,
   type SignedHeader,

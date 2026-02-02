@@ -10,7 +10,8 @@ import {
   validateUnsignedHeader,
 } from './schemas.js'
 import { assertTimeClaimsValid, type TimeValidationOptions } from './time.js'
-import type { SignedToken, Token, TokenSigner, UnsignedToken, VerifiedToken } from './types.js'
+import type { SigningIdentity } from './identity.js'
+import type { SignedToken, Token, UnsignedToken, VerifiedToken } from './types.js'
 import { getVerifier, type Verifiers } from './verifier.js'
 
 /**
@@ -83,10 +84,10 @@ export function createUnsignedToken<
 export async function signToken<
   Payload extends Record<string, unknown>,
   Header extends Record<string, unknown>,
->(signer: TokenSigner, token: Token<Payload, Header>): Promise<SignedToken<Payload, Header>> {
+>(signer: SigningIdentity, token: Token<Payload, Header>): Promise<SignedToken<Payload, Header>> {
   return isSignedToken(token)
     ? (token as SignedToken<Payload, Header>)
-    : await signer.createToken(token.payload, token.header)
+    : await signer.signToken(token.payload, token.header)
 }
 
 /**
