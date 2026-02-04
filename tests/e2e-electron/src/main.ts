@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { provideTokenSignerAsync } from '@enkaku/electron-keystore'
+import { provideFullIdentityAsync } from '@enkaku/electron-keystore'
 import { serveProcess } from '@enkaku/electron-rpc'
 import { stringifyToken } from '@enkaku/token'
 import { app, BrowserWindow } from 'electron'
@@ -9,8 +9,8 @@ import type { Protocol } from './protocol'
 serveProcess<Protocol>({
   handlers: {
     sign: async ({ param }) => {
-      const signer = await provideTokenSignerAsync('EnkakuKeystore', param.keyID ?? 'test')
-      const token = await signer.createToken(param.payload)
+      const identity = await provideFullIdentityAsync('EnkakuKeystore', param.keyID ?? 'test')
+      const token = await identity.signToken(param.payload)
       return stringifyToken(token)
     },
   },

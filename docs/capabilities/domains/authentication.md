@@ -13,12 +13,11 @@ The token system uses standard JWT structure (header.payload.signature) but with
 **Purpose**: JWT-like token generation and verification with DID-based identity.
 
 **Key exports**:
-- `randomTokenSigner()` - Generate signer with random private key
-- `getTokenSigner(privateKey)` - Create signer from existing key
-- `toTokenSigner(signer)` - Convert GenericSigner to TokenSigner
+- `randomIdentity()` - Generate identity with random private key
+- `createFullIdentity(privateKey)` - Create identity from existing key
 - `verifyToken(token)` - Verify token signature and return verified token
 - `createUnsignedToken(payload)` - Create unsigned token object
-- `signToken(signer, token)` - Sign an unsigned token
+- `signToken(identity, token)` - Sign an unsigned token
 - `isSignedToken(token)` - Type guard for signed tokens
 - `isVerifiedToken(token)` - Type guard for verified tokens
 - `getDID(codec, publicKey)` - Create DID from public key
@@ -37,9 +36,9 @@ The token system uses standard JWT structure (header.payload.signature) but with
 
 **Type system**:
 ```typescript
-type TokenSigner = {
-  id: string // DID of the signer
-  createToken: <Payload, Header>(
+type SigningIdentity = {
+  id: string // DID of the identity
+  signToken: <Payload, Header>(
     payload: Payload,
     header?: Header
   ) => Promise<SignedToken<Payload, Header>>
@@ -74,8 +73,8 @@ type SignedPayload = {
 **Key exports**:
 - `NodeKeyStore` - Keystore class for managing keys
 - `NodeKeyEntry` - Individual key entry with get/set/provide/remove
-- `provideTokenSigner(store, keyID)` - Get TokenSigner from keystore
-- `provideTokenSignerAsync(store, keyID)` - Async version
+- `provideFullIdentity(store, keyID)` - Get Identity from keystore
+- `provideFullIdentityAsync(store, keyID)` - Async version
 
 **Dependencies**: `@napi-rs/keyring`, `@enkaku/token`, `@enkaku/protocol`
 
@@ -97,7 +96,7 @@ type SignedPayload = {
 
 **Example usage**:
 ```typescript
-import { NodeKeyStore, provideTokenSignerAsync } from '@enkaku/node-keystore'
+import { NodeKeyStore, provideFullIdentityAsync } from '@enkaku/node-keystore'
 
 const store = NodeKeyStore.open('my-app')
 const entry = store.entry('server-key')
@@ -105,8 +104,8 @@ const entry = store.entry('server-key')
 // Get or create key
 const key = await entry.provideAsync()
 
-// Get token signer
-const signer = await provideTokenSignerAsync(store, 'server-key')
+// Get identity
+const identity = await provideFullIdentityAsync(store, 'server-key')
 
 // List all keys
 const entries = await store.listAsync()
@@ -122,9 +121,8 @@ await entry.removeAsync()
 **Key exports**:
 - `BrowserKeyStore` - Keystore using IndexedDB
 - `BrowserKeyEntry` - Key entry with async operations
-- `provideTokenSigner(keyID, store?)` - Get TokenSigner (creates key if needed)
+- `provideSigningIdentity(keyID, store?)` - Get SigningIdentity (creates key if needed)
 - `randomKeyPair()` - Generate ES256 CryptoKeyPair
-- `getSigner(keyPair)` - Create GenericSigner from CryptoKeyPair
 - `getPublicKey(keyPair)` - Extract compressed public key
 
 **Dependencies**: `@enkaku/token`, `@enkaku/protocol`, `@enkaku/async`
@@ -147,17 +145,17 @@ await entry.removeAsync()
 
 **Example usage**:
 ```typescript
-import { BrowserKeyStore, provideTokenSigner } from '@enkaku/browser-keystore'
+import { BrowserKeyStore, provideSigningIdentity } from '@enkaku/browser-keystore'
 
 // Open keystore (returns promise)
 const store = await BrowserKeyStore.open('my-app-keys')
 
-// Get token signer
-const signer = await provideTokenSigner('user-session', store)
+// Get identity
+const identity = await provideSigningIdentity('user-session', store)
 
 // Use with client
 import { Client } from '@enkaku/client'
-const client = new Client({ transport, signer })
+const client = new Client({ transport, identity })
 
 // Clean up
 await store.entry('user-session').removeAsync()
@@ -170,8 +168,8 @@ await store.entry('user-session').removeAsync()
 **Key exports**:
 - `ExpoKeyStore` - Simple keystore for Expo apps
 - `ExpoKeyEntry` - Key entry with sync and async operations
-- `provideTokenSigner(keyID)` - Sync version
-- `provideTokenSignerAsync(keyID)` - Async version
+- `provideFullIdentity(keyID)` - Sync version
+- `provideFullIdentityAsync(keyID)` - Async version
 - `randomPrivateKey()` / `randomPrivateKeyAsync()` - Generate keys using Expo Crypto
 
 **Dependencies**: `expo-secure-store`, `expo-crypto`, `@enkaku/token`, `@enkaku/protocol`
@@ -190,14 +188,14 @@ await store.entry('user-session').removeAsync()
 
 **Example usage**:
 ```typescript
-import { ExpoKeyStore, provideTokenSignerAsync } from '@enkaku/expo-keystore'
+import { ExpoKeyStore, provideFullIdentityAsync } from '@enkaku/expo-keystore'
 
-// Get signer (creates key if doesn't exist)
-const signer = await provideTokenSignerAsync('device-identity')
+// Get identity (creates key if doesn't exist)
+const identity = await provideFullIdentityAsync('device-identity')
 
 // Use with client
 import { Client } from '@enkaku/client'
-const client = new Client({ transport, signer })
+const client = new Client({ transport, identity })
 
 // Access entry for manual operations
 const entry = ExpoKeyStore.entry('device-identity')
@@ -214,8 +212,8 @@ await entry.removeAsync()
 **Key exports**:
 - `ElectronKeyStore` - Keystore for Electron main process
 - `ElectronKeyEntry` - Key entry with sync and async operations
-- `provideTokenSigner(store, keyID)` - Sync version
-- `provideTokenSignerAsync(store, keyID)` - Async version
+- `provideFullIdentity(store, keyID)` - Sync version
+- `provideFullIdentityAsync(store, keyID)` - Async version
 
 **Dependencies**: `electron` (safeStorage), `electron-store`, `@enkaku/token`, `@enkaku/protocol`
 
@@ -239,16 +237,16 @@ await entry.removeAsync()
 
 **Example usage**:
 ```typescript
-import { ElectronKeyStore, provideTokenSignerAsync } from '@enkaku/electron-keystore'
+import { ElectronKeyStore, provideFullIdentityAsync } from '@enkaku/electron-keystore'
 
 // Open keystore
 const store = ElectronKeyStore.open('my-app-keystore')
 
-// Get token signer
-const signer = await provideTokenSignerAsync(store, 'main-process-key')
+// Get identity
+const identity = await provideFullIdentityAsync(store, 'main-process-key')
 
 // Use for IPC authentication
-const token = await signer.createToken({
+const token = await identity.signToken({
   sub: 'renderer-process',
   aud: 'main-process'
 })
@@ -268,7 +266,7 @@ await store.entry('main-process-key').removeAsync()
 ```typescript
 import { Server } from '@enkaku/server'
 import { ServerTransport } from '@enkaku/http-server-transport'
-import { provideTokenSignerAsync } from '@enkaku/node-keystore'
+import { provideFullIdentityAsync } from '@enkaku/node-keystore'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 
 const protocol = {
@@ -286,17 +284,17 @@ const protocol = {
 
 type Protocol = typeof protocol
 
-// Get server's token signer from keystore
-const serverSigner = await provideTokenSignerAsync('my-app', 'server-key')
-console.log('Server DID:', serverSigner.id)
+// Get server's identity from keystore
+const serverIdentity = await provideFullIdentityAsync('my-app', 'server-key')
+console.log('Server DID:', serverIdentity.id)
 
 const transport = new ServerTransport<Protocol>()
 
 const server = new Server<Protocol>({
   protocol,
   transport,
-  // Provide server's signer for authentication
-  signer: serverSigner,
+  // Provide server's identity for authentication
+  identity: serverIdentity,
   // Access control: public procedures and allow-lists
   access: {
     '*': false, // All procedures private by default
@@ -322,7 +320,7 @@ const server = new Server<Protocol>({
 ```
 
 **Key points**:
-- Server creates its own TokenSigner with stable identity
+- Server creates its own Identity with stable DID
 - Client tokens must have `aud` field matching server DID
 - Access control via `access` map: `true` = public, `[...dids]` = allow-list, `false` = private
 - Server DID can access all procedures (self-authentication)
@@ -338,11 +336,11 @@ const server = new Server<Protocol>({
 ```typescript
 import { Client } from '@enkaku/client'
 import { ClientTransport } from '@enkaku/http-client-transport'
-import { provideTokenSigner } from '@enkaku/browser-keystore'
+import { provideSigningIdentity } from '@enkaku/browser-keystore'
 
-// Get or create client signer
-const clientSigner = await provideTokenSigner('user-session')
-console.log('Client DID:', clientSigner.id)
+// Get or create client identity
+const clientIdentity = await provideSigningIdentity('user-session')
+console.log('Client DID:', clientIdentity.id)
 
 const transport = new ClientTransport({
   url: 'https://api.example.com/rpc'
@@ -350,7 +348,7 @@ const transport = new ClientTransport({
 
 const client = new Client({
   transport,
-  signer: clientSigner, // Automatically signs all requests
+  identity: clientIdentity, // Automatically signs all requests
   serverID: 'did:key:z...server-did...' // Server's DID for aud field
 })
 
@@ -360,14 +358,14 @@ const data = await client.request('user/getData', {
 })
 
 // Token includes:
-// - iss: clientSigner.id (client's DID)
+// - iss: clientIdentity.id (client's DID)
 // - aud: serverID (server's DID)
 // - sub: Can be set per-request
 // - signature: Signed by client's private key
 ```
 
 **Key points**:
-- Client provides its TokenSigner to Client constructor
+- Client provides its Identity to Client constructor
 - Client automatically signs all requests with its private key
 - Server verifies signature using public key from client's DID
 - `serverID` parameter sets `aud` field (audience) in tokens
@@ -381,18 +379,18 @@ const data = await client.request('user/getData', {
 **Implementation**:
 
 ```typescript
-import { NodeKeyStore, provideTokenSignerAsync } from '@enkaku/node-keystore'
+import { NodeKeyStore, provideFullIdentityAsync } from '@enkaku/node-keystore'
 
 const store = NodeKeyStore.open('my-app')
 
 // Generate new key with new ID
 const newKeyID = `server-key-${Date.now()}`
-const newSigner = await provideTokenSignerAsync(store, newKeyID)
+const newIdentity = await provideFullIdentityAsync(store, newKeyID)
 
-console.log('New server DID:', newSigner.id)
+console.log('New server DID:', newIdentity.id)
 
-// Update server configuration to use new signer
-server.updateSigner(newSigner)
+// Update server configuration to use new identity
+server.updateIdentity(newIdentity)
 
 // Keep old key for a grace period to verify old tokens
 const oldEntry = store.entry('server-key-previous')
@@ -414,7 +412,7 @@ if (oldKey) {
 - Generate new key with timestamp-based ID
 - Keep old key during grace period for old tokens
 - Update server to sign new tokens with new key
-- Old tokens still verify with old DID (if you store old signer)
+- Old tokens still verify with old DID (if you store old identity)
 - Clients need to know new server DID
 - Coordinate rotation across distributed services
 
@@ -426,28 +424,28 @@ if (oldKey) {
 
 ```typescript
 import { createCapability } from '@enkaku/capability'
-import { randomTokenSigner, stringifyToken } from '@enkaku/token'
+import { randomIdentity, stringifyToken } from '@enkaku/token'
 
 // Service owner (has full access)
-const serviceSigner = randomTokenSigner()
+const serviceIdentity = randomIdentity()
 
 // Third-party client (needs limited access)
-const clientSigner = randomTokenSigner()
+const clientIdentity = randomIdentity()
 
 // Create capability delegation
-const capability = await createCapability(serviceSigner, {
-  aud: clientSigner.id, // Delegate to this client
-  sub: serviceSigner.id, // Delegator is subject
+const capability = await createCapability(serviceIdentity, {
+  aud: clientIdentity.id, // Delegate to this client
+  sub: serviceIdentity.id, // Delegator is subject
   act: 'enkaku:data/read', // Only read action
-  res: serviceSigner.id, // Resource owner
+  res: serviceIdentity.id, // Resource owner
   exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour
 })
 
 // Client creates token with capability
-const clientToken = await clientSigner.createToken({
+const clientToken = await clientIdentity.signToken({
   prc: 'enkaku:data/read', // Procedure matches capability
-  aud: serviceSigner.id, // Audience is service owner
-  sub: serviceSigner.id, // Subject is delegator
+  aud: serviceIdentity.id, // Audience is service owner
+  sub: serviceIdentity.id, // Subject is delegator
   cap: stringifyToken(capability) // Include capability
 })
 
@@ -473,30 +471,30 @@ await verifyToken(clientToken)
 
 ```typescript
 // Web (browser)
-import { provideTokenSigner as browserSigner } from '@enkaku/browser-keystore'
+import { provideSigningIdentity as browserIdentity } from '@enkaku/browser-keystore'
 
-const webSigner = await browserSigner('user-identity')
+const webIdentity = await browserIdentity('user-identity')
 // DID: did:key:zES256_public_key (ES256)
 
 // Mobile (React Native)
-import { provideTokenSignerAsync as expoSigner } from '@enkaku/expo-keystore'
+import { provideFullIdentityAsync as expoIdentity } from '@enkaku/expo-keystore'
 
-const mobileSigner = await expoSigner('user-identity')
+const mobileIdentity = await expoIdentity('user-identity')
 // DID: did:key:zEdDSA_public_key (EdDSA)
 
 // Desktop (Electron)
-import { provideTokenSignerAsync as electronSigner } from '@enkaku/electron-keystore'
+import { provideFullIdentityAsync as electronIdentity } from '@enkaku/electron-keystore'
 
-const desktopSigner = await electronSigner(store, 'user-identity')
+const desktopIdentity = await electronIdentity(store, 'user-identity')
 // DID: did:key:zEdDSA_public_key (EdDSA)
 
 // Server tracks DIDs per user account
 const userAccount = {
   userId: 'user-123',
   authorizedDIDs: [
-    webSigner.id,
-    mobileSigner.id,
-    desktopSigner.id
+    webIdentity.id,
+    mobileIdentity.id,
+    desktopIdentity.id
   ]
 }
 
@@ -529,14 +527,14 @@ handlers: {
 **Implementation**:
 
 ```typescript
-import { randomTokenSigner, stringifyToken, verifyToken } from '@enkaku/token'
+import { randomIdentity, stringifyToken, verifyToken } from '@enkaku/token'
 
-// Offline: Create signer and tokens
-const signer = randomTokenSigner()
+// Offline: Create identity and tokens
+const identity = randomIdentity()
 
 const tokens = []
 for (let i = 0; i < 100; i++) {
-  const token = await signer.createToken({
+  const token = await identity.signToken({
     sub: `task-${i}`,
     iat: Math.floor(Date.now() / 1000)
   })
@@ -546,16 +544,16 @@ for (let i = 0; i < 100; i++) {
   tokens.push(serialized)
 }
 
-// Store signer DID for later verification
-const signerDID = signer.id
+// Store identity DID for later verification
+const identityDID = identity.id
 
-// Later: Online verification (no need for signer)
+// Later: Online verification (no need for identity)
 for (const tokenString of tokens) {
   try {
     const verified = await verifyToken(tokenString)
 
     // Check issuer matches expected DID
-    if (verified.payload.iss === signerDID) {
+    if (verified.payload.iss === identityDID) {
       console.log('Valid token for task:', verified.payload.sub)
     }
   } catch (error) {
@@ -593,44 +591,44 @@ type KeyEntry<PrivateKeyType> = {
   removeAsync(): Promise<void>
 }
 
-// Each keystore provides helper to get TokenSigner
-provideTokenSigner(keyID: string): Promise<TokenSigner>
+// Each keystore provides helper to get Identity
+provideFullIdentity(keyID: string): Promise<Identity>
 ```
 
 Node, Expo, and Electron keystores store `Uint8Array` keys (EdDSA), while Browser keystore stores `CryptoKeyPair` (ES256).
 
 ### Token and Client
 
-The `Client` class accepts an optional `signer` parameter:
+The `Client` class accepts an optional `identity` parameter:
 
 ```typescript
 import { Client } from '@enkaku/client'
-import type { TokenSigner } from '@enkaku/token'
+import type { SigningIdentity } from '@enkaku/token'
 
 const client = new Client({
   transport,
-  signer: tokenSigner, // Optional
-  serverID: 'did:key:z...' // Required if signer provided
+  identity: signingIdentity, // Optional
+  serverID: 'did:key:z...' // Required if identity provided
 })
 ```
 
-When a signer is provided:
+When an identity is provided:
 - Client automatically signs all requests, streams, channels, and events
 - Signature added to message payload as `token` field
 - Server can verify using `verifyToken()` or automatic validation
 
 ### Token and Server
 
-The `Server` class uses signer for authentication:
+The `Server` class uses identity for authentication:
 
 ```typescript
 import { Server } from '@enkaku/server'
-import type { TokenSigner } from '@enkaku/token'
+import type { SigningIdentity } from '@enkaku/token'
 
 const server = new Server({
   protocol,
   transport,
-  signer: tokenSigner, // Optional but recommended
+  identity: signingIdentity, // Optional but recommended
   access: {
     '*': false, // Require auth by default
     'public/endpoint': true // Public access
@@ -641,7 +639,7 @@ const server = new Server({
 })
 ```
 
-When a signer is provided:
+When an identity is provided:
 - Server verifies client tokens before invoking handlers
 - Checks `aud` field matches server DID
 - Validates signature using public key from client's DID
@@ -653,10 +651,10 @@ When a signer is provided:
 ### @enkaku/token
 
 ```typescript
-// Signer creation
-function randomTokenSigner(): OwnTokenSigner
-function getTokenSigner(privateKey: Uint8Array | string): TokenSigner
-function toTokenSigner(signer: GenericSigner): TokenSigner
+// Identity creation
+function randomIdentity(): OwnIdentity
+function createFullIdentity(privateKey: Uint8Array | string): Identity
+function createSigningIdentity(signer: GenericSigner): SigningIdentity
 
 // Token operations
 function verifyToken<Payload>(
@@ -670,7 +668,7 @@ function createUnsignedToken<Payload, Header>(
 ): UnsignedToken<Payload, Header>
 
 function signToken<Payload, Header>(
-  signer: TokenSigner,
+  identity: SigningIdentity,
   token: Token<Payload, Header>
 ): Promise<SignedToken<Payload, Header>>
 
@@ -716,15 +714,15 @@ class NodeKeyEntry {
   removeAsync(): Promise<void>
 }
 
-function provideTokenSigner(
+function provideFullIdentity(
   store: NodeKeyStore | string,
   keyID: string
-): TokenSigner
+): Identity
 
-function provideTokenSignerAsync(
+function provideFullIdentityAsync(
   store: NodeKeyStore | string,
   keyID: string
-): Promise<TokenSigner>
+): Promise<Identity>
 ```
 
 ### @enkaku/browser-keystore
@@ -745,14 +743,13 @@ class BrowserKeyEntry {
   removeAsync(): Promise<void>
 }
 
-function provideTokenSigner(
+function provideSigningIdentity(
   keyID: string,
   useStore?: BrowserKeyStore | Promise<BrowserKeyStore> | string
-): Promise<TokenSigner>
+): Promise<SigningIdentity>
 
 // Utilities
 function randomKeyPair(): Promise<CryptoKeyPair>
-function getSigner(keyPair: CryptoKeyPair): Promise<GenericSigner>
 function getPublicKey(keyPair: CryptoKeyPair): Promise<Uint8Array>
 ```
 
@@ -773,9 +770,9 @@ class ExpoKeyEntry {
   removeAsync(): Promise<void>
 }
 
-function provideTokenSigner(keyID: string): TokenSigner
+function provideFullIdentity(keyID: string): Identity
 
-function provideTokenSignerAsync(keyID: string): Promise<TokenSigner>
+function provideFullIdentityAsync(keyID: string): Promise<Identity>
 
 // Utilities
 function randomPrivateKey(): Uint8Array
@@ -804,15 +801,15 @@ class ElectronKeyEntry {
   removeAsync(): Promise<void>
 }
 
-function provideTokenSigner(
+function provideFullIdentity(
   store: ElectronKeyStore | string,
   keyID: string
-): TokenSigner
+): Identity
 
-function provideTokenSignerAsync(
+function provideFullIdentityAsync(
   store: ElectronKeyStore | string,
   keyID: string
-): Promise<TokenSigner>
+): Promise<Identity>
 ```
 
 ## Examples by Scenario
@@ -826,22 +823,22 @@ function provideTokenSignerAsync(
 ```typescript
 import { Server } from '@enkaku/server'
 import { ServerTransport } from '@enkaku/http-server-transport'
-import { NodeKeyStore, provideTokenSignerAsync } from '@enkaku/node-keystore'
+import { NodeKeyStore, provideFullIdentityAsync } from '@enkaku/node-keystore'
 
 const keystore = NodeKeyStore.open('saas-app')
 
-// Server's master signing key
-const serverSigner = await provideTokenSignerAsync(keystore, 'server-master')
+// Server's master identity
+const serverIdentity = await provideFullIdentityAsync(keystore, 'server-master')
 
-// Tenant-specific signers (lazy-loaded)
-const tenantSigners = new Map<string, TokenSigner>()
+// Tenant-specific identities (lazy-loaded)
+const tenantIdentities = new Map<string, Identity>()
 
-async function getTenantSigner(tenantID: string): Promise<TokenSigner> {
-  if (!tenantSigners.has(tenantID)) {
-    const signer = await provideTokenSignerAsync(keystore, `tenant-${tenantID}`)
-    tenantSigners.set(tenantID, signer)
+async function getTenantIdentity(tenantID: string): Promise<Identity> {
+  if (!tenantIdentities.has(tenantID)) {
+    const identity = await provideFullIdentityAsync(keystore, `tenant-${tenantID}`)
+    tenantIdentities.set(tenantID, identity)
   }
-  return tenantSigners.get(tenantID)!
+  return tenantIdentities.get(tenantID)!
 }
 
 const transport = new ServerTransport()
@@ -849,7 +846,7 @@ const transport = new ServerTransport()
 const server = new Server({
   protocol,
   transport,
-  signer: serverSigner,
+  identity: serverIdentity,
   handlers: {
     'tenant/getData': async ({ param, message }) => {
       // Extract tenant ID from token subject
@@ -860,9 +857,9 @@ const server = new Server({
       }
 
       // Verify request is from correct tenant
-      const tenantSigner = await getTenantSigner(tenantID)
+      const tenantIdentity = await getTenantIdentity(tenantID)
 
-      if (message.token.payload.iss !== tenantSigner.id) {
+      if (message.token.payload.iss !== tenantIdentity.id) {
         throw new Error('Invalid tenant credentials')
       }
 
@@ -890,10 +887,10 @@ const server = new Server({
 // Mobile app (React Native)
 import { Client } from '@enkaku/client'
 import { ClientTransport } from '@enkaku/http-client-transport'
-import { ExpoKeyStore, provideTokenSignerAsync } from '@enkaku/expo-keystore'
+import { ExpoKeyStore, provideFullIdentityAsync } from '@enkaku/expo-keystore'
 
 // Generate device identity on first launch
-const deviceSigner = await provideTokenSignerAsync('device-identity')
+const deviceIdentity = await provideFullIdentityAsync('device-identity')
 
 // Registration: Send DID to server with user credentials
 async function registerDevice(username: string, password: string) {
@@ -904,7 +901,7 @@ async function registerDevice(username: string, password: string) {
     body: JSON.stringify({
       username,
       password,
-      deviceDID: deviceSigner.id // Send device's public identity
+      deviceDID: deviceIdentity.id // Send device's public identity
     })
   })
 
@@ -914,14 +911,14 @@ async function registerDevice(username: string, password: string) {
   await AsyncStorage.setItem('userID', userID)
 }
 
-// Subsequent requests: Use device signer
+// Subsequent requests: Use device identity
 const transport = new ClientTransport({
   url: 'https://api.example.com/rpc'
 })
 
 const client = new Client({
   transport,
-  signer: deviceSigner,
+  identity: deviceIdentity,
   serverID: 'did:key:z...server...'
 })
 
@@ -962,17 +959,17 @@ handlers: {
 
 ```typescript
 // Background script (background.js)
-import { provideTokenSigner } from '@enkaku/browser-keystore'
+import { provideSigningIdentity } from '@enkaku/browser-keystore'
 import { stringifyToken } from '@enkaku/token'
 
 // Extension's persistent identity
-const extensionSigner = await provideTokenSigner('extension-identity')
+const extensionIdentity = await provideSigningIdentity('extension-identity')
 
 // Listen for token requests from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'REQUEST_TOKEN') {
     // Create short-lived token for content script
-    extensionSigner.createToken({
+    extensionIdentity.signToken({
       sub: sender.tab.id.toString(),
       aud: 'api-server',
       exp: Math.floor(Date.now() / 1000) + 300 // 5 minutes
@@ -1023,10 +1020,10 @@ async function makeAuthenticatedRequest() {
 
 **Solutions**:
 ```typescript
-// Verify the issuer DID matches expected signer
-const token = await signer.createToken({ sub: 'test' })
+// Verify the issuer DID matches expected identity
+const token = await identity.signToken({ sub: 'test' })
 console.log('Token issuer:', token.payload.iss)
-console.log('Signer DID:', signer.id)
+console.log('Identity DID:', identity.id)
 // These must match!
 
 // Check token hasn't been corrupted
@@ -1139,7 +1136,7 @@ import { Server } from '@enkaku/server'
 const server = new Server({
   protocol,
   transport,
-  signer: serverSigner,
+  identity: serverIdentity,
   handlers: {
     myHandler: async ({ message }) => {
       const token = message.token
@@ -1170,7 +1167,7 @@ const server = new Server({
 })
 
 // Client: Create token with proper expiration
-const token = await signer.createToken({
+const token = await identity.signToken({
   sub: 'user-123',
   exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour from now (seconds!)
 })
@@ -1203,17 +1200,17 @@ export SERVER_PRIVATE_KEY="base64encodedkey..."
 
 ```typescript
 // Fallback to environment variables on Linux
-import { getTokenSigner, decodePrivateKey } from '@enkaku/token'
+import { createFullIdentity, decodePrivateKey } from '@enkaku/token'
 
-let signer: TokenSigner
+let identity: Identity
 
 if (process.env.SERVER_PRIVATE_KEY) {
   // Use environment variable
   const privateKey = decodePrivateKey(process.env.SERVER_PRIVATE_KEY)
-  signer = getTokenSigner(privateKey)
+  identity = createFullIdentity(privateKey)
 } else {
   // Use keystore
-  signer = await provideTokenSignerAsync('my-app', 'server-key')
+  identity = await provideFullIdentityAsync('my-app', 'server-key')
 }
 ```
 

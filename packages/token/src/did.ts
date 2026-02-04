@@ -11,6 +11,7 @@ export const CODECS: Record<SignatureAlgorithm, Uint8Array> = {
 const PREFIX = 'did:key:z'
 
 function isCodecMatch(codec: Uint8Array, bytes: Uint8Array): boolean {
+  if (bytes.length < codec.length) return false
   for (let i = 0; i < codec.length; i++) {
     if (bytes[i] !== codec[i]) {
       return false

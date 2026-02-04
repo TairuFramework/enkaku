@@ -1,6 +1,6 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import type { ChannelHandler, EventHandler, RequestHandler, StreamHandler } from '@enkaku/server'
-import { randomTokenSigner } from '@enkaku/token'
+import { randomIdentity } from '@enkaku/token'
 import { describe, expect, test, vi } from 'vitest'
 
 import { standalone } from '../src'
@@ -8,7 +8,7 @@ import { standalone } from '../src'
 describe('standalone', () => {
   describe('events', () => {
     test('handles events', async () => {
-      const signer = randomTokenSigner()
+      const identity = randomIdentity()
 
       const protocol = {
         test: {
@@ -24,11 +24,11 @@ describe('standalone', () => {
       type Protocol = typeof protocol
 
       const handler = vi.fn<EventHandler<Protocol, 'test'>>()
-      const client = standalone<Protocol>({ test: handler }, { signer })
+      const client = standalone<Protocol>({ test: handler }, { identity })
 
       await client.sendEvent('test', { data: { hello: 'world' } })
-      const message = await signer.createToken({
-        aud: signer.id,
+      const message = await identity.signToken({
+        aud: identity.id,
         typ: 'event',
         prc: 'test',
         data: { hello: 'world' },

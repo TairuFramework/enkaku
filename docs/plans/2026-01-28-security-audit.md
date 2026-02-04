@@ -8,6 +8,9 @@
 - Token expiration validation (C-01, H-01) — `docs/plans/archive/2026-01-28-token-expiration-validation.md`
 - Capability authorization hardening (C-02, C-03, H-04, M-04) — `docs/plans/archive/2026-01-28-capability-authorization.md`
 - Server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) — `docs/plans/archive/2026-01-28-server-resource-limits.md`
+- Input validation hardening (H-02, H-07, H-08, H-12, H-16, H-18) — `docs/plans/archive/2026-01-30-input-validation-hardening.md`
+- HTTP server transport hardening (C-08, C-09, H-09, H-10) — `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md`
+- Transport package test suites (T-04) — `docs/plans/archive/2026-01-30-transport-package-tests.complete.md`
 
 ---
 
@@ -15,8 +18,8 @@
 
 | Severity | Count | Status |
 |----------|-------|--------|
-| CRITICAL | 12 | 6 Fixed (C-01, C-02, C-03, C-05, C-06, C-07), 1 Won't Fix (C-12) |
-| HIGH | 18 | 5 Fixed (H-01, H-04, H-13, H-14, H-15), 1 Partial (T-01) |
+| CRITICAL | 12 | 8 Fixed (C-01, C-02, C-03, C-05, C-06, C-07, C-08, C-09), 1 Won't Fix (C-12) |
+| HIGH | 18 | 13 Fixed (H-01, H-02, H-04, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-18), 1 Partial (T-01) |
 | MEDIUM | 14 | 4 Fixed (M-04, M-11, M-12), 1 Mitigated (M-10) |
 | LOW | 3 | Pending |
 
@@ -157,7 +160,8 @@ Authorization bypass for all channel communications after initial handshake.
 ### C-08: Session Resource Exhaustion (HTTP Transport)
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:45-46, 149-169`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md` (Task 1)
 
 **Description:**
 Unbounded session creation with no limits. Sessions stored in Map with no expiration or cleanup mechanism except on client abort. No rate limiting on session creation.
@@ -165,17 +169,18 @@ Unbounded session creation with no limits. Sessions stored in Map with no expira
 **Impact:**
 Slowloris attack variant - create unlimited sessions, exhaust server memory.
 
-**Recommendation:**
-- Implement session limits per client/IP
-- Add session timeout (e.g., 5 minutes)
-- Implement garbage collection for stale sessions
+**Fix Applied:**
+- `maxSessions` option (default: 1,000) enforces session creation limit — excess requests rejected with 503
+- `sessionTimeoutMs` option (default: 5 minutes) with periodic cleanup of expired sessions
+- SSE connect refreshes session timeout; expired sessions have their SSE controllers closed
 
 ---
 
 ### C-09: Inflight Request Exhaustion (HTTP Transport)
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:45-46`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md` (Task 2)
 
 **Description:**
 Unbounded inflight request tracking. Entries deleted only when responses arrive. No cleanup for abandoned requests.
@@ -183,8 +188,10 @@ Unbounded inflight request tracking. Entries deleted only when responses arrive.
 **Impact:**
 Inflight requests accumulate if responses never arrive → memory exhaustion.
 
-**Recommendation:**
-Implement request timeout and auto-cleanup mechanism.
+**Fix Applied:**
+- `maxInflightRequests` option (default: 10,000) enforces inflight request limit — excess requests rejected with 503
+- `requestTimeoutMs` option (default: 30 seconds) auto-resolves timed-out requests with 504 and cleans up inflight/timer maps
+- Normal responses clear their associated timeout timer
 
 ---
 
@@ -271,7 +278,8 @@ if (parts.length !== 3) {
 ### H-02: Codec Comparison Missing Bounds Check
 - **Package:** `@enkaku/token`
 - **File:** `packages/token/src/did.ts:13-20`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 1)
 
 **Description:**
 `isCodecMatch()` function accesses `bytes[i]` where `i >= bytes.length` when `bytes` is shorter than `codec.length`, returning `undefined`.
@@ -355,7 +363,8 @@ Change all message payload schemas to `additionalProperties: false`.
 ### H-07: Unsafe Reference Resolution (Prototype Pollution Risk)
 - **Package:** `@enkaku/schema`
 - **File:** `packages/schema/src/utils.ts:3-20`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 2)
 
 **Description:**
 `resolveReference()` has no `__proto__` / `constructor` / `prototype` filtering. Unbounded traversal depth. No validation that resolved schema is actually a Schema.
@@ -372,7 +381,8 @@ if (['__proto__', 'constructor', 'prototype'].includes(segment)) {
 ### H-08: JSON.parse() Without Depth Limits
 - **Package:** `@enkaku/codec`
 - **File:** `packages/codec/src/index.ts:90`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 3)
 
 **Description:**
 `b64uToJSON()` uses `JSON.parse()` without any depth or size limits. Vulnerable to stack exhaustion from deeply nested objects.
@@ -388,20 +398,23 @@ Implement custom JSON parser with depth limits: `MAX_DEPTH = 100`.
 ### H-09: No Request Timeout (HTTP Transport)
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:198-204`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md` (Task 2)
 
 **Description:**
 Requests wait indefinitely for responses. If handler never responds, request hangs forever.
 
-**Recommendation:**
-Add configurable timeout (default 30s), reject with 504 on timeout.
+**Fix Applied:**
+- `requestTimeoutMs` option (default: 30 seconds) applies a per-request timeout — timed-out requests resolve with 504 `{ error: 'Request timeout' }`
+- Timer cleared on normal response arrival
 
 ---
 
 ### H-10: Header Injection via Origin Reflection
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:108-126`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md` (Task 3)
 
 **Description:**
 Origin header is directly reflected back in CORS responses without validation. If `allowedOrigins` includes '*', any origin is accepted and reflected.
@@ -409,8 +422,10 @@ Origin header is directly reflected back in CORS responses without validation. I
 **Impact:**
 HTTP Header Injection, cache poisoning.
 
-**Recommendation:**
-Validate origin format (URL parse) before reflecting; only return whitelisted origins.
+**Fix Applied:**
+- `isValidOrigin()` helper validates origin by parsing with `new URL()` and checking for http:/https: scheme
+- Invalid origins in wildcard mode rejected with 403
+- Non-http/https schemes (e.g., `javascript:`) rejected
 
 ---
 
@@ -433,7 +448,8 @@ Add message sequence numbers, implement deduplication.
 ### H-12: No Input Validation on Message Payload Type
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:190-217`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 6)
 
 **Description:**
 Payload type (`typ` field) validated only via switch statement. Type is user-controlled string from JSON.
@@ -497,7 +513,8 @@ When authorization fails for events, only `events.emit('handlerError')` is calle
 ### H-16: Handler Error Messages Sent to Clients
 - **Package:** `@enkaku/server`
 - **File:** `packages/server/src/utils.ts:40`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 4)
 
 **Description:**
 Raw error message from handler exception sent in response payload. Developers might include sensitive info in error messages.
@@ -520,7 +537,8 @@ When `params.public = true`, the entire authentication check is skipped. ALL mes
 ### H-18: No Payload Size Limits (Stream JSON Lines)
 - **Package:** `@enkaku/stream`
 - **File:** `packages/stream/src/json-lines.ts:63-102`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 5)
 
 **Description:**
 No buffer size limits in JSON parsing. Accumulates chunks indefinitely.
@@ -757,23 +775,23 @@ The following fixes will require breaking changes:
 
 | Package | Test Files | Coverage | Critical Gaps |
 |---------|-----------|----------|---------------|
-| `@enkaku/token` | 2 | ~30% | 11 error paths untested |
+| `@enkaku/token` | 3 | ~40% | 8 error paths untested (3 tested: H-02) |
 | `@enkaku/capability` | 1 | ~90% | Auth bypass fixed and tested (C-02, C-03, H-04, M-04) |
 | `@enkaku/client` | 1 | ~70% | Memory leak paths untested |
 | `@enkaku/server` | 16 | ~85% | Resource limits tested (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) |
-| `@enkaku/http-server-transport` | 1 | ~30% | Session exhaustion untested |
-| `@enkaku/http-client-transport` | 0 | 0% | **NO TESTS** |
-| `@enkaku/socket-transport` | 0 | 0% | **NO TESTS** |
-| `@enkaku/message-transport` | 0 | 0% | **NO TESTS** |
+| `@enkaku/http-server-transport` | 4 | ~60% | Session limits, inflight limits, origin validation tested (C-08, C-09, H-09, H-10) |
+| `@enkaku/http-client-transport` | 1 | ~70% | Connection lifecycle, SSE session, message routing tested (T-04) |
+| `@enkaku/socket-transport` | 1 | ~80% | Connection, JSON-lines, Transport class, error handling tested (T-04) |
+| `@enkaku/message-transport` | 1 | ~80% | Stream creation, source resolution, Transport class tested (T-04) |
 | `@enkaku/node-streams-transport` | 1 | ~20% | Error paths untested |
-| `@enkaku/schema` | 1 | ~15% | Reference resolution untested (H-07) |
+| `@enkaku/schema` | 2 | ~40% | Reference resolution tested (H-07) |
 | `@enkaku/protocol` | 1 | ~20% | Size constraints untested (H-05) |
 | `@enkaku/node-keystore` | 0 | 0% | **NO TESTS** |
 | `@enkaku/browser-keystore` | 0 | 0% | **NO TESTS** |
 | `@enkaku/expo-keystore` | 0 | 0% | **NO TESTS** |
 | `@enkaku/electron-keystore` | 0 | 0% | **NO TESTS** |
-| `@enkaku/codec` | 1 | ~60% | Depth limits untested (H-08) |
-| `@enkaku/stream` | 4 | ~70% | Size limits untested (H-18) |
+| `@enkaku/codec` | 1 | ~70% | Depth limits tested (H-08) |
+| `@enkaku/stream` | 4 | ~75% | Size limits tested (H-18) |
 | `@enkaku/async` | 4 | ~85% | Good coverage |
 | `@enkaku/result` | 3 | ~90% | Excellent coverage |
 | `@enkaku/event` | 1 | ~65% | Error handling untested |
@@ -784,10 +802,10 @@ The following fixes will require breaking changes:
 ### T-01: Token Package - Missing Error Path Tests
 - **Package:** `@enkaku/token`
 - **Priority:** HIGH
-- **Status:** Partially fixed — Malformed JWT and time validation paths now tested. Remaining error paths still need coverage.
-- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md` (Tasks 1, 3, 4, 6)
+- **Status:** Partially fixed — Malformed JWT, time validation, and DID error paths now tested. Remaining error paths still need coverage.
+- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md` (Tasks 1, 3, 4, 6), `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 1)
 
-**Untested Error Paths:**
+**Error Paths:**
 | Function | Location | Error Case | Status |
 |----------|----------|------------|--------|
 | `verifyToken()` | token.ts:113 | Malformed JWT (not 3 parts) | TESTED (H-01) |
@@ -797,9 +815,9 @@ The following fixes will require breaking changes:
 | `verifyToken()` | token.ts:124-126 | Missing signature | Untested |
 | `verifyToken()` | token.ts:145 | Unsupported algorithm | Untested |
 | `verifySignedPayload()` | token.ts:31-32 | Invalid signature | Untested |
-| `getSignatureInfo()` | did.ts:47 | Invalid DID prefix | Untested |
-| `getSignatureInfo()` | did.ts:53 | Unsupported codec | Untested |
-| `isCodecMatch()` | did.ts:13-20 | Bytes shorter than codec | Untested |
+| `getSignatureInfo()` | did.ts:47 | Invalid DID prefix | TESTED (H-02) |
+| `getSignatureInfo()` | did.ts:53 | Unsupported codec | TESTED (H-02) |
+| `isCodecMatch()` | did.ts:13-20 | Bytes shorter than codec | TESTED (H-02) |
 | `signToken()` | signer.ts:50-52 | Issuer mismatch | Untested |
 | `toTokenSigner()` | signer.ts:39-42 | Unsupported algorithm | Untested |
 | `getVerifier()` | verifier.ts:29-30 | No verifier for algorithm | Untested |
@@ -849,13 +867,17 @@ The following fixes will require breaking changes:
 ### T-04: Transport Packages - Zero Coverage
 - **Packages:** `@enkaku/http-client-transport`, `@enkaku/socket-transport`, `@enkaku/message-transport`
 - **Priority:** CRITICAL
+- **Status:** [x] Fixed — message-transport (8 tests), socket-transport (9 tests), http-client-transport (11 tests)
+- **Plan:** `docs/plans/2026-01-30-transport-package-tests.md`
 
-**Complete test suites needed for:**
+**Test suites cover:**
 - Connection lifecycle (connect, disconnect, error)
-- Session management (create, timeout, cleanup)
-- Message framing (valid, malformed, oversized)
-- Backpressure handling
-- Abort signal propagation
+- Message flow (send, receive, multiple messages)
+- Source resolution (direct, Promise, factory function)
+- Transport class interface (read, write, async iteration, dispose)
+- SSE session handling (lazy connection, session ID headers, dispose)
+- HTTP message routing (event/request/stream/channel type dispatch)
+- Error propagation (fetch failures, socket close)
 
 ---
 
@@ -874,12 +896,13 @@ The following fixes will require breaking changes:
 ### T-06: Schema/Protocol - Validation Tests Missing
 - **Package:** `@enkaku/schema`, `@enkaku/protocol`
 - **Priority:** HIGH
+- **Status:** Partially fixed — `resolveReference()` and `resolveSchema()` now tested (H-07). Schema helper and size constraint tests still needed.
 
 **Untested:**
 | Function | Location | Issue |
 |----------|----------|-------|
-| `resolveReference()` | utils.ts:3-20 | Prototype pollution (H-07) |
-| `resolveSchema()` | utils.ts:23-26 | Never tested |
+| `resolveReference()` | utils.ts:3-20 | Prototype pollution — TESTED (H-07) |
+| `resolveSchema()` | utils.ts:23-26 | TESTED (H-07) |
 | All helper functions | client.ts, server.ts | Only main schemas tested |
 | Size constraints | All schemas | H-05 not enforced |
 
@@ -888,12 +911,13 @@ The following fixes will require breaking changes:
 ### T-07: Utility Packages - Security Tests Missing
 - **Packages:** `@enkaku/codec`, `@enkaku/stream`
 - **Priority:** HIGH
+- **Status:** Partially fixed — JSON depth limits (H-08) and payload size limits (H-18) now tested. Base64 validation (M-03) still needed.
 
 **Untested Security Scenarios:**
 | Issue | Location | Test Needed |
 |-------|----------|-------------|
-| JSON depth limits | codec/index.ts:90 | 10,000+ nesting (H-08) |
-| Payload size limits | stream/json-lines.ts:74 | 10MB+ payloads (H-18) |
+| JSON depth limits | codec/index.ts:90 | TESTED — depth >128 rejected (H-08) |
+| Payload size limits | stream/json-lines.ts:74 | TESTED — maxBufferSize/maxMessageSize (H-18) |
 | Base64 validation | codec/index.ts:33 | Invalid padding (M-03) |
 
 ---
@@ -903,7 +927,7 @@ The following fixes will require breaking changes:
 ### Priority 1: Security-Critical (Before v1)
 1. [x] T-02: Capability authorization bypass tests — DONE
 2. [x] T-03: Server resource limit tests — DONE (62 tests across 16 files)
-3. [ ] T-04: Transport package test suites
+3. [x] T-04: Transport package test suites — DONE (28 tests across 3 packages)
 4. [ ] T-05: Keystore package test suites
 
 ### Priority 2: High Severity
@@ -984,10 +1008,11 @@ if (char.charCodeAt(0) > 32) { ... }
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:45-46`
 - **Impact:** HIGH - DoS vector
+- **Status:** [x] Fixed — See C-08, C-09
 
 **Issue:** Sessions and inflight requests accumulate without cleanup.
 
-**Recommendation:** Add session timeout (5 min) and inflight request timeout (30s).
+**Fix Applied:** Session limits (`maxSessions`, `sessionTimeoutMs`) and inflight request limits (`maxInflightRequests`, `requestTimeoutMs`).
 
 ---
 
@@ -1079,7 +1104,7 @@ if (char.charCodeAt(0) > 32) { ... }
 | P0 | P-01: String concat in JSON-L | stream | 10-50x slower | Low |
 | ~~P0~~ | ~~P-04: Unbounded controllers~~ | ~~server~~ | ~~Memory leak~~ | ~~DONE~~ |
 | P1 | P-02: Triple regex replace | codec | 3x slower | Low |
-| P1 | P-05: Session map growth | http-transport | DoS risk | Medium |
+| ~~P1~~ | ~~P-05: Session map growth~~ | ~~http-transport~~ | ~~DoS risk~~ | ~~DONE~~ |
 | P1 | P-06: Buffer growth | stream | OOM risk | Low |
 | P1 | P-07: No backpressure | stream | Overflow | Medium |
 | P2 | P-03: Regex in hot loop | stream | 2-5x slower | Low |
@@ -1101,8 +1126,8 @@ if (char.charCodeAt(0) > 32) { ... }
 5. ~~H-05, H-06: Protocol schema hardening~~ DONE (see `archive/2026-01-29-protocol-schema-hardening.md`)
 
 ### Phase 2: High Priority Security
-1. ~~H-01~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-13~~, ~~H-14~~, ~~H-15~~: Fixed; H-02, H-03, H-07 through H-12, H-16, H-17, H-18: Remaining high severity issues
-2. T-01 (partial): Remaining token error paths; ~~T-02~~: Fixed; ~~T-03~~: Fixed; T-04 through T-07: Test coverage gaps
+1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-09~~, ~~H-10~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-18~~: Fixed; H-03, H-11, H-17: Remaining high severity issues
+2. T-01 (partial): Remaining token error paths; ~~T-02~~: Fixed; ~~T-03~~: Fixed; ~~T-04~~: Fixed (28 tests); T-05 through T-07: Test coverage gaps
 
 ### Phase 3: Performance
 1. P-01, P-02, P-03: Serialization quick wins
@@ -1126,6 +1151,9 @@ if (char.charCodeAt(0) > 32) { ... }
 | C-06 | Handler concurrency limits (EK04) | Handle rejection errors; configure `maxConcurrentHandlers` |
 | C-07 | Channel send auth required | Sign channel send messages in non-public mode |
 | H-13/H-14 | Per-message size limit (EK06) | `maxPayloadSize` renamed to `maxMessageSize`; applied per-message to all types |
+| C-08 | Session limits enforced (503) | Configure `maxSessions`, `sessionTimeoutMs` |
+| C-09 | Inflight request limits enforced (503/504) | Configure `maxInflightRequests`, `requestTimeoutMs` |
+| H-10 | Origin validation in wildcard CORS | Invalid origins now rejected with 403 |
 | M-12 | Dispose cleanup timeout | Configure `cleanupTimeoutMs` |
 | ~~C-12~~ | ~~Browser keys encrypted~~ | Won't Fix — non-extractable keys are the correct approach |
 | H-05 | Field size limits | Reduce payload sizes |

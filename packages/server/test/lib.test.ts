@@ -1,6 +1,6 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { ValidationError } from '@enkaku/schema'
-import { randomTokenSigner } from '@enkaku/token'
+import { randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
 import { describe, expect, test, vi } from 'vitest'
 
@@ -36,16 +36,16 @@ describe('serve()', () => {
       AnyClientMessageOf<Protocol>
     >()
 
-    const signer = randomTokenSigner()
+    const signer = randomIdentity()
     const server = serve<Protocol>({
       handlers,
-      id: signer.id,
+      identity: signer,
       protocol,
       transport: transports.server,
     })
     const invalidMessageEventPromise = server.events.once('invalidMessage')
 
-    const invalidMessage = await signer.createToken({
+    const invalidMessage = await signer.signToken({
       typ: 'event',
       aud: signer.id,
       prc: 'invalid',
@@ -60,7 +60,7 @@ describe('serve()', () => {
     expect(emittedError.error.message).toBe('Invalid protocol message')
     expect(emittedError.error.cause).toBeInstanceOf(ValidationError)
 
-    const message = await signer.createToken({
+    const message = await signer.signToken({
       typ: 'event',
       aud: signer.id,
       prc: 'test',
@@ -100,15 +100,15 @@ describe('serve()', () => {
       AnyClientMessageOf<Protocol>
     >()
 
-    const signer = randomTokenSigner()
+    const signer = randomIdentity()
     const server = serve<Protocol>({
       handlers,
-      id: signer.id,
+      identity: signer,
       protocol,
       transport: transports.server,
     })
 
-    const message = await signer.createToken({
+    const message = await signer.signToken({
       typ: 'event',
       aud: signer.id,
       prc: 'test',
@@ -151,10 +151,10 @@ describe('serve()', () => {
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
-    const signer = randomTokenSigner()
-    serve<Protocol>({ handlers, id: signer.id, protocol, transport: transports.server })
+    const signer = randomIdentity()
+    serve<Protocol>({ handlers, identity: signer, protocol, transport: transports.server })
 
-    const message = (await signer.createToken({
+    const message = (await signer.signToken({
       typ: 'request',
       iss: signer.id,
       prc: 'test',
@@ -202,10 +202,10 @@ describe('serve()', () => {
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
-    const signer = randomTokenSigner()
-    serve<Protocol>({ handlers, id: signer.id, protocol, transport: transports.server })
+    const signer = randomIdentity()
+    serve<Protocol>({ handlers, identity: signer, protocol, transport: transports.server })
 
-    const message = await signer.createToken({
+    const message = await signer.signToken({
       typ: 'stream',
       prc: 'test',
       rid: '1',
@@ -260,10 +260,10 @@ describe('serve()', () => {
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
-    const signer = randomTokenSigner()
-    serve<Protocol>({ handlers, id: signer.id, protocol, transport: transports.server })
+    const signer = randomIdentity()
+    serve<Protocol>({ handlers, identity: signer, protocol, transport: transports.server })
 
-    const message = await signer.createToken({
+    const message = await signer.signToken({
       typ: 'channel',
       prc: 'test',
       rid: '1',
@@ -275,7 +275,7 @@ describe('serve()', () => {
     async function sendNext() {
       const val = send.shift()
       if (val != null) {
-        const sendMsg = await signer.createToken({
+        const sendMsg = await signer.signToken({
           typ: 'send',
           prc: 'test',
           rid: '1',

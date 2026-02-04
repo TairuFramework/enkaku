@@ -1,7 +1,48 @@
 import { assertNonExpired, checkCapability, hasPartsMatch } from '@enkaku/capability'
 import type { SignedToken } from '@enkaku/token'
 
-export type ProcedureAccessRecord = Record<string, boolean | Array<string>>
+export type EncryptionPolicy = 'required' | 'optional' | 'none'
+
+export type ProcedureAccessConfig = {
+  allow?: boolean | Array<string>
+  encryption?: EncryptionPolicy
+}
+
+export type ProcedureAccessValue = boolean | Array<string> | ProcedureAccessConfig
+
+export type ProcedureAccessRecord = Record<string, ProcedureAccessValue>
+
+function getAllowValue(access: ProcedureAccessValue): boolean | Array<string> {
+  if (typeof access === 'boolean' || Array.isArray(access)) {
+    return access
+  }
+  return access.allow ?? false
+}
+
+function getEncryptionPolicy(access: ProcedureAccessValue): EncryptionPolicy | undefined {
+  if (typeof access === 'boolean' || Array.isArray(access)) {
+    return undefined
+  }
+  return access.encryption
+}
+
+export function resolveEncryptionPolicy(
+  procedure: string,
+  record: ProcedureAccessRecord | undefined,
+  globalPolicy: EncryptionPolicy,
+): EncryptionPolicy {
+  if (record != null) {
+    for (const [pattern, accessValue] of Object.entries(record)) {
+      if (hasPartsMatch(procedure, pattern)) {
+        const procedurePolicy = getEncryptionPolicy(accessValue)
+        if (procedurePolicy != null) {
+          return procedurePolicy
+        }
+      }
+    }
+  }
+  return globalPolicy
+}
 
 export type ProcedureAccessPayload = {
   iss: string
@@ -22,21 +63,22 @@ export async function checkProcedureAccess(
     throw new Error('No procedure to check')
   }
 
-  for (const [procedure, access] of Object.entries(record)) {
+  for (const [procedure, accessValue] of Object.entries(record)) {
     if (hasPartsMatch(payload.prc, procedure)) {
-      if (access === true) {
+      const allow = getAllowValue(accessValue)
+      if (allow === true) {
         // Procedure can be publicly accessed
         return
       }
-      if (access === false) {
+      if (allow === false) {
         // Procedure cannot be accessed
         continue
       }
-      if (access.includes(payload.iss)) {
+      if (allow.includes(payload.iss)) {
         // Issuer is allowed directly
         return
       }
-      if (payload.sub == null || !access.includes(payload.sub)) {
+      if (payload.sub == null || !allow.includes(payload.sub)) {
         // Subject is not allowed to access this procedure
         continue
       }

@@ -1,4 +1,4 @@
-import { randomTokenSigner, stringifyToken } from '@enkaku/token'
+import { randomIdentity, stringifyToken } from '@enkaku/token'
 import { describe, expect, test } from 'vitest'
 
 import {
@@ -320,10 +320,10 @@ describe('checkDelegationChain()', () => {
   })
 
   test('validates the full chain', async () => {
-    const signerA = randomTokenSigner()
-    const signerB = randomTokenSigner()
-    const signerC = randomTokenSigner()
-    const signerD = randomTokenSigner()
+    const signerA = randomIdentity()
+    const signerB = randomIdentity()
+    const signerC = randomIdentity()
+    const signerD = randomIdentity()
     const delegateToB = await createCapability(signerA, {
       sub: signerA.id,
       aud: signerB.id,
@@ -363,10 +363,10 @@ describe('checkDelegationChain()', () => {
 
 describe('checkCapability()', () => {
   test('validates the full chain', async () => {
-    const signerA = randomTokenSigner()
-    const signerB = randomTokenSigner()
-    const signerC = randomTokenSigner()
-    const signerD = randomTokenSigner()
+    const signerA = randomIdentity()
+    const signerB = randomIdentity()
+    const signerC = randomIdentity()
+    const signerD = randomIdentity()
     const delegateToB = await createCapability(signerA, {
       sub: signerA.id,
       aud: signerB.id,
@@ -395,7 +395,7 @@ describe('checkCapability()', () => {
       undefined,
       { parentCapability: stringifyToken(delegateToC) },
     )
-    const token = await signerD.createToken({
+    const token = await signerD.signToken({
       sub: signerA.id,
       prc: 'test/call',
       cap: [stringifyToken(delegateToD), stringifyToken(delegateToC), stringifyToken(delegateToB)],
@@ -407,8 +407,8 @@ describe('checkCapability()', () => {
 
   test('rejects expired capability token', async () => {
     const fixedTime = 1700000000
-    const alice = randomTokenSigner()
-    const bob = randomTokenSigner()
+    const alice = randomIdentity()
+    const bob = randomIdentity()
 
     // Create an expired capability
     const capability = await createCapability(alice, {
@@ -419,7 +419,7 @@ describe('checkCapability()', () => {
       exp: fixedTime - 100, // Expired
     })
 
-    const bobToken = await bob.createToken({
+    const bobToken = await bob.signToken({
       sub: alice.id,
       act: 'test/read',
       res: 'foo/bar',
@@ -434,10 +434,10 @@ describe('checkCapability()', () => {
 
 describe('checkCapability() - self-issued tokens (C-02)', () => {
   test('validates permissions even for self-issued tokens', async () => {
-    const alice = randomTokenSigner()
+    const alice = randomIdentity()
 
     // Alice creates a self-issued token claiming only 'read' permission
-    const token = await alice.createToken({
+    const token = await alice.signToken({
       sub: alice.id,
       act: 'test/read',
       res: 'foo/bar',
@@ -456,9 +456,9 @@ describe('checkCapability() - self-issued tokens (C-02)', () => {
   })
 
   test('validates resource even for self-issued tokens', async () => {
-    const alice = randomTokenSigner()
+    const alice = randomIdentity()
 
-    const token = await alice.createToken({
+    const token = await alice.signToken({
       sub: alice.id,
       act: 'test/read',
       res: 'foo/bar',
@@ -471,9 +471,9 @@ describe('checkCapability() - self-issued tokens (C-02)', () => {
   })
 
   test('respects wildcard permissions for self-issued tokens', async () => {
-    const alice = randomTokenSigner()
+    const alice = randomIdentity()
 
-    const token = await alice.createToken({
+    const token = await alice.signToken({
       sub: alice.id,
       act: '*',
       res: 'foo/*',
@@ -491,10 +491,10 @@ describe('checkCapability() - self-issued tokens (C-02)', () => {
   })
 
   test('requires act and res claims for self-issued tokens', async () => {
-    const alice = randomTokenSigner()
+    const alice = randomIdentity()
 
     // Token without act/res claims
-    const token = await alice.createToken({
+    const token = await alice.signToken({
       sub: alice.id,
     })
 
@@ -505,7 +505,7 @@ describe('checkCapability() - self-issued tokens (C-02)', () => {
 })
 
 describe('checkDelegationChain() - depth limits (H-04)', () => {
-  async function buildDelegationChain(signers: Array<ReturnType<typeof randomTokenSigner>>) {
+  async function buildDelegationChain(signers: Array<ReturnType<typeof randomIdentity>>) {
     const capabilities: Array<string> = []
     for (let i = 0; i < signers.length - 1; i++) {
       const parentOption = i > 0 ? { parentCapability: capabilities[i - 1] } : undefined
@@ -526,7 +526,7 @@ describe('checkDelegationChain() - depth limits (H-04)', () => {
   }
 
   test('rejects delegation chains exceeding max depth', async () => {
-    const signers = Array.from({ length: 25 }, () => randomTokenSigner())
+    const signers = Array.from({ length: 25 }, () => randomIdentity())
 
     // Build a chain of 24 delegations (exceeds default limit of 20)
     const capabilities = await buildDelegationChain(signers)
@@ -545,7 +545,7 @@ describe('checkDelegationChain() - depth limits (H-04)', () => {
   })
 
   test('accepts delegation chains within max depth', async () => {
-    const signers = Array.from({ length: 5 }, () => randomTokenSigner())
+    const signers = Array.from({ length: 5 }, () => randomIdentity())
 
     const capabilities = await buildDelegationChain(signers)
 
@@ -563,7 +563,7 @@ describe('checkDelegationChain() - depth limits (H-04)', () => {
   })
 
   test('respects custom maxDepth option', async () => {
-    const signers = Array.from({ length: 5 }, () => randomTokenSigner())
+    const signers = Array.from({ length: 5 }, () => randomIdentity())
 
     const capabilities = await buildDelegationChain(signers)
 
@@ -687,7 +687,7 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
 
 describe('createCapability() - delegation validation (C-03)', () => {
   test('creates capability when signer is the subject (root capability)', async () => {
-    const alice = randomTokenSigner()
+    const alice = randomIdentity()
 
     // Alice creates a capability for herself - always allowed
     const cap = await createCapability(alice, {
@@ -702,8 +702,8 @@ describe('createCapability() - delegation validation (C-03)', () => {
   })
 
   test('creates capability with parent validation when delegating', async () => {
-    const alice = randomTokenSigner()
-    const bob = randomTokenSigner()
+    const alice = randomIdentity()
+    const bob = randomIdentity()
 
     // Alice creates root capability for Bob
     const rootCap = await createCapability(alice, {
@@ -714,7 +714,7 @@ describe('createCapability() - delegation validation (C-03)', () => {
     })
 
     // Bob can delegate to Carol with valid parent
-    const carol = randomTokenSigner()
+    const carol = randomIdentity()
     const delegatedCap = await createCapability(
       bob,
       {
@@ -732,8 +732,8 @@ describe('createCapability() - delegation validation (C-03)', () => {
   })
 
   test('rejects delegation that exceeds parent permissions', async () => {
-    const alice = randomTokenSigner()
-    const bob = randomTokenSigner()
+    const alice = randomIdentity()
+    const bob = randomIdentity()
 
     const rootCap = await createCapability(alice, {
       sub: alice.id,
@@ -742,7 +742,7 @@ describe('createCapability() - delegation validation (C-03)', () => {
       res: 'foo/bar',
     })
 
-    const carol = randomTokenSigner()
+    const carol = randomIdentity()
 
     // Bob tries to delegate 'write' which he doesn't have
     await expect(
@@ -761,8 +761,8 @@ describe('createCapability() - delegation validation (C-03)', () => {
   })
 
   test('rejects delegation without parentCapability when signer is not subject', async () => {
-    const alice = randomTokenSigner()
-    const bob = randomTokenSigner()
+    const alice = randomIdentity()
+    const bob = randomIdentity()
 
     // Bob tries to delegate for Alice without providing a parent capability
     await expect(
@@ -776,9 +776,9 @@ describe('createCapability() - delegation validation (C-03)', () => {
   })
 
   test('rejects delegation when signer is not the parent audience', async () => {
-    const alice = randomTokenSigner()
-    const bob = randomTokenSigner()
-    const eve = randomTokenSigner() // Attacker
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const eve = randomIdentity() // Attacker
 
     const rootCap = await createCapability(alice, {
       sub: alice.id,

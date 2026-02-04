@@ -37,7 +37,7 @@ export async function executeHandler<
   } catch (cause) {
     const error = HandlerError.from(cause, {
       code: 'EK01',
-      message: (cause as Error).message ?? 'Handler execution failed',
+      message: 'Handler execution failed',
     })
     if (canSend(controller.signal)) {
       context.logger.trace('send error to {type} {procedure} with ID {rid}', {

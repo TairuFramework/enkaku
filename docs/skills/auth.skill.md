@@ -16,14 +16,14 @@ description: Authentication & security patterns - token generation, key manageme
 ### Pattern 1: Generating and Verifying Tokens
 
 ```typescript
-import { randomTokenSigner, verifyToken } from '@enkaku/token'
+import { randomIdentity, verifyToken } from '@enkaku/token'
 
-// Generate a token signer with random private key
-const signer = randomTokenSigner()
-console.log('Signer DID:', signer.id) // did:key:z...
+// Generate an identity with random private key
+const identity = randomIdentity()
+console.log('Identity DID:', identity.id) // did:key:z...
 
 // Create a signed token
-const token = await signer.createToken({
+const token = await identity.signToken({
   sub: 'user-123',
   exp: Math.floor(Date.now() / 1000) + 3600 // 1 hour
 })
@@ -46,7 +46,7 @@ const verifiedFromString = await verifyToken(tokenString)
 
 **Key points**:
 - Tokens use EdDSA or ES256 signature algorithms
-- Issuer (`iss`) is automatically set to signer's DID (decentralized identifier)
+- Issuer (`iss`) is automatically set to identity's DID (decentralized identifier)
 - DIDs encode both algorithm and public key: `did:key:z<base58-encoded>`
 - Token verification extracts public key from DID and validates signature
 - Supports standard JWT claims: `iss`, `sub`, `aud`, `exp`, `nbf`, `iat`, `cap`
@@ -55,7 +55,7 @@ const verifiedFromString = await verifyToken(tokenString)
 ### Pattern 2: Using Node.js Keystore for Secure Storage
 
 ```typescript
-import { NodeKeyStore, provideTokenSignerAsync } from '@enkaku/node-keystore'
+import { NodeKeyStore, provideFullIdentityAsync } from '@enkaku/node-keystore'
 
 // Open a keystore (uses OS-level credential storage)
 const store = NodeKeyStore.open('my-app')
@@ -74,11 +74,11 @@ if (existingKey) {
   console.log('New key created:', newKey)
 }
 
-// Convenience: Get token signer directly from keystore
-const signer = await provideTokenSignerAsync(store, 'user-auth-key')
+// Convenience: Get identity directly from keystore
+const identity = await provideFullIdentityAsync(store, 'user-auth-key')
 
 // Create tokens using stored key
-const token = await signer.createToken({
+const token = await identity.signToken({
   sub: 'user-456',
   aud: 'my-service',
   exp: Math.floor(Date.now() / 1000) + 86400 // 24 hours
@@ -102,21 +102,21 @@ await entry.removeAsync()
 - Synchronous and async APIs available (prefer async in production)
 - Each service can have multiple keys identified by keyID
 - Keys are stored as base64-encoded private keys
-- `provideTokenSigner()` helper creates TokenSigner from keystore entry
+- `provideFullIdentity()` helper creates an Identity from keystore entry
 - Thread-safe for multi-process Node.js applications
 
 ### Pattern 3: Browser Keystore with IndexedDB
 
 ```typescript
-import { BrowserKeyStore, provideTokenSigner } from '@enkaku/browser-keystore'
+import { BrowserKeyStore, provideSigningIdentity } from '@enkaku/browser-keystore'
 
 // Open browser keystore (uses IndexedDB)
 const store = await BrowserKeyStore.open('my-app-keys')
 
-// Get token signer for a key (creates if doesn't exist)
-const signer = await provideTokenSigner('session-key', store)
+// Get identity for a key (creates if doesn't exist)
+const identity = await provideSigningIdentity('session-key', store)
 
-// Use signer in client
+// Use identity in client
 import { Client } from '@enkaku/client'
 import { ClientTransport } from '@enkaku/http-client-transport'
 
@@ -126,7 +126,7 @@ const transport = new ClientTransport({
 
 const client = new Client({
   transport,
-  signer // Automatically signs all requests
+  identity // Automatically signs all requests
 })
 
 // All requests now include signed tokens
@@ -154,10 +154,10 @@ await entry.removeAsync()
 ### Pattern 4: Multi-Platform Mobile with Expo Keystore
 
 ```typescript
-import { ExpoKeyStore, provideTokenSignerAsync } from '@enkaku/expo-keystore'
+import { ExpoKeyStore, provideFullIdentityAsync } from '@enkaku/expo-keystore'
 
 // Expo keystore uses SecureStore (encrypted storage on device)
-const signer = await provideTokenSignerAsync('device-key')
+const identity = await provideFullIdentityAsync('device-key')
 
 // Use with RPC client
 import { Client } from '@enkaku/client'
@@ -165,7 +165,7 @@ import { ClientTransport } from '@enkaku/http-client-transport'
 
 const client = new Client({
   transport: new ClientTransport({ url: 'https://api.example.com/rpc' }),
-  signer
+  identity
 })
 
 // Keys are securely stored on iOS Keychain and Android Keystore
@@ -193,13 +193,13 @@ await entry.removeAsync()
 ### Pattern 5: Electron App with Encrypted Storage
 
 ```typescript
-import { ElectronKeyStore, provideTokenSignerAsync } from '@enkaku/electron-keystore'
+import { ElectronKeyStore, provideFullIdentityAsync } from '@enkaku/electron-keystore'
 
 // Open keystore (uses electron-store with safeStorage)
 const store = ElectronKeyStore.open('app-keystore')
 
-// Get token signer
-const signer = await provideTokenSignerAsync(store, 'main-window-key')
+// Get identity
+const identity = await provideFullIdentityAsync(store, 'main-window-key')
 
 // Keys are encrypted using OS-level encryption
 // macOS: Keychain
@@ -212,11 +212,11 @@ import { ClientTransport } from '@enkaku/http-client-transport'
 
 const client = new Client({
   transport: new ClientTransport({ url: 'https://api.example.com/rpc' }),
-  signer
+  identity
 })
 
 // Create tokens for IPC with renderer
-const ipcToken = await signer.createToken({
+const ipcToken = await identity.signToken({
   sub: 'renderer-window',
   aud: 'main-process',
   exp: Math.floor(Date.now() / 1000) + 300 // 5 minutes

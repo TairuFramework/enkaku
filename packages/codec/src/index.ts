@@ -83,9 +83,41 @@ export function b64uToUTF(base64url: string): string {
   return toUTF(fromB64U(base64url))
 }
 
+const MAX_JSON_DEPTH = 128
+
+function checkJSONDepth(json: string): void {
+  let depth = 0
+  let inString = false
+  let isEscaped = false
+  for (let i = 0; i < json.length; i++) {
+    const char = json[i]
+    if (isEscaped) {
+      isEscaped = false
+      continue
+    }
+    if (inString) {
+      if (char === '\\') isEscaped = true
+      else if (char === '"') inString = false
+      continue
+    }
+    if (char === '"') {
+      inString = true
+    } else if (char === '{' || char === '[') {
+      depth++
+      if (depth > MAX_JSON_DEPTH) {
+        throw new Error(`JSON exceeds maximum nesting depth of ${MAX_JSON_DEPTH}`)
+      }
+    } else if (char === '}' || char === ']') {
+      depth--
+    }
+  }
+}
+
 /**
  * Convert a base64url-encoded string to a JSON object.
  */
 export function b64uToJSON<T = Record<string, unknown>>(base64url: string): T {
-  return JSON.parse(b64uToUTF(base64url))
+  const json = b64uToUTF(base64url)
+  checkJSONDepth(json)
+  return JSON.parse(json)
 }
