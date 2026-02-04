@@ -56,7 +56,11 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
       dispose: async () => {
         if (this._stream != null) {
           const writer = await this._getWriter()
-          await writer.close()
+          try {
+            await writer.close()
+          } catch {
+            // Ignore error closing writer in case it's already closed
+          }
         }
       },
     })

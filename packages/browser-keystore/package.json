@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/browser-keystore",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Enkaku key store for browser",
@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@enkaku/async": "workspace:^",
-    "@enkaku/codec": "catalog:",
+    "@enkaku/codec": "workspace:^",
     "@enkaku/token": "workspace:^"
   },
   "devDependencies": {
