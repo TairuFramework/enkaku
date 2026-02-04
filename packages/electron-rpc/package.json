@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/electron-rpc",
-  "version": "0.12.2",
+  "version": "0.13.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Enkaku RPC using Electron IPC",
