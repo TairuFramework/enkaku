@@ -1,4 +1,4 @@
-import { getTokenSigner, type TokenSigner } from '@enkaku/token'
+import { createFullIdentity, type FullIdentity } from '@enkaku/token'
 
 import { NodeKeyStore } from './store.js'
 
@@ -6,15 +6,15 @@ function getStore(store: NodeKeyStore | string): NodeKeyStore {
   return typeof store === 'string' ? NodeKeyStore.open(store) : store
 }
 
-export function provideTokenSigner(store: NodeKeyStore | string, keyID: string): TokenSigner {
+export function provideFullIdentity(store: NodeKeyStore | string, keyID: string): FullIdentity {
   const key = getStore(store).entry(keyID).provide()
-  return getTokenSigner(key)
+  return createFullIdentity(key)
 }
 
-export async function provideTokenSignerAsync(
+export async function provideFullIdentityAsync(
   store: NodeKeyStore | string,
   keyID: string,
-): Promise<TokenSigner> {
+): Promise<FullIdentity> {
   const key = await getStore(store).entry(keyID).provideAsync()
-  return getTokenSigner(key)
+  return createFullIdentity(key)
 }

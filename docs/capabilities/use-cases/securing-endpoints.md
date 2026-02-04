@@ -22,18 +22,18 @@ Configure secure key storage for the server using the platform-appropriate keyst
 
 ```typescript
 // server/keystore.ts
-import { NodeKeyStore, provideTokenSignerAsync } from '@enkaku/node-keystore'
+import { NodeKeyStore, provideFullIdentityAsync } from '@enkaku/node-keystore'
 
 // Open keystore (uses OS credential manager)
 // macOS: Keychain, Windows: Credential Manager, Linux: Secret Service
 const keystore = NodeKeyStore.open('my-secure-app')
 
-// Get or create server's signing key
+// Get or create server's identity
 // This creates a persistent key that survives server restart
-export const serverSigner = await provideTokenSignerAsync(keystore, 'server-key')
+export const serverIdentity = await provideFullIdentityAsync(keystore, 'server-key')
 
 // Server's DID (Decentralized Identifier) - share with clients
-export const serverDID = serverSigner.id
+export const serverDID = serverIdentity.id
 console.log('Server DID:', serverDID)
 // Example output: did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK
 ```
@@ -41,7 +41,7 @@ console.log('Server DID:', serverDID)
 **Key points:**
 - `NodeKeyStore.open()` creates or opens a keystore with a service name
 - Keys are stored securely in OS-level credential storage
-- `provideTokenSignerAsync()` retrieves existing key or generates new one
+- `provideFullIdentityAsync()` retrieves existing key or generates new one
 - Server's DID contains its public key - clients use this for `aud` field
 - Same key persists across server restarts
 
@@ -157,7 +157,7 @@ Set up the server with authentication and define which endpoints require which l
 import { Server } from '@enkaku/server'
 import { ServerTransport } from '@enkaku/http-server-transport'
 import { apiProtocol, type ApiProtocol } from '../shared/protocol'
-import { serverSigner, serverDID } from './keystore'
+import { serverIdentity, serverDID } from './keystore'
 
 // Admin DIDs - only these can call admin endpoints
 const ADMIN_DIDS = [
@@ -192,7 +192,7 @@ const transport = new ServerTransport<ApiProtocol>({
 const server = new Server<ApiProtocol>({
   protocol: apiProtocol,
   transport,
-  signer: serverSigner, // Server's token signer for verification
+  identity: serverIdentity, // Server's identity for verification
 
   // Access control configuration
   access: {
@@ -298,7 +298,7 @@ process.on('SIGTERM', async () => {
 ```
 
 **Key points:**
-- `signer` parameter enables token verification
+- `identity` parameter enables token verification
 - `access` map defines per-procedure access rules
 - `true` = public (no auth), `false` = any authenticated user
 - Array of DIDs = only those specific identities allowed
@@ -314,16 +314,16 @@ Set up a Node.js client that signs all requests with a persistent identity.
 // client/node-client.ts
 import { Client } from '@enkaku/client'
 import { ClientTransport } from '@enkaku/http-client-transport'
-import { provideTokenSignerAsync } from '@enkaku/node-keystore'
+import { provideFullIdentityAsync } from '@enkaku/node-keystore'
 import type { ApiProtocol } from '../shared/protocol'
 
 async function main() {
   // Server's DID (get from server on startup or environment variable)
   const SERVER_DID = 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK'
 
-  // Get or create client's signing key
-  const clientSigner = await provideTokenSignerAsync('my-secure-app', 'client-key')
-  console.log('Client DID:', clientSigner.id)
+  // Get or create client's identity
+  const clientIdentity = await provideFullIdentityAsync('my-secure-app', 'client-key')
+  console.log('Client DID:', clientIdentity.id)
 
   // Create transport
   const transport = new ClientTransport<ApiProtocol>({
@@ -333,7 +333,7 @@ async function main() {
   // Create authenticated client
   const client = new Client<ApiProtocol>({
     transport,
-    signer: clientSigner, // Sign all requests automatically
+    identity: clientIdentity, // Sign all requests automatically
     serverID: SERVER_DID // Server's DID for token audience
   })
 
@@ -383,7 +383,7 @@ main().catch(console.error)
 **Key points:**
 - Client stores persistent key using `NodeKeyStore`
 - Same key used across all requests (stable identity)
-- `signer` parameter enables automatic request signing
+- `identity` parameter enables automatic request signing
 - `serverID` sets the audience field in tokens
 - All requests signed even if endpoint is public
 - Server verifies signature before calling handler
@@ -396,7 +396,7 @@ Set up a browser client with persistent identity stored in IndexedDB.
 // client/browser-client.ts
 import { Client } from '@enkaku/client'
 import { ClientTransport } from '@enkaku/http-client-transport'
-import { provideTokenSigner } from '@enkaku/browser-keystore'
+import { provideSigningIdentity } from '@enkaku/browser-keystore'
 import type { ApiProtocol } from '../shared/protocol'
 
 async function initClient() {
@@ -404,8 +404,8 @@ async function initClient() {
   const SERVER_DID = 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK'
 
   // Get or create browser identity (stored in IndexedDB)
-  const clientSigner = await provideTokenSigner('user-session')
-  console.log('Browser Client DID:', clientSigner.id)
+  const clientIdentity = await provideSigningIdentity('user-session')
+  console.log('Browser Client DID:', clientIdentity.id)
 
   const transport = new ClientTransport<ApiProtocol>({
     url: 'https://api.example.com/rpc'
@@ -413,11 +413,11 @@ async function initClient() {
 
   const client = new Client<ApiProtocol>({
     transport,
-    signer: clientSigner,
+    identity: clientIdentity,
     serverID: SERVER_DID
   })
 
-  return { client, clientDID: clientSigner.id }
+  return { client, clientDID: clientIdentity.id }
 }
 
 // Initialize and use client
@@ -496,11 +496,11 @@ Understand how tokens are created and verified under the hood.
 
 ```typescript
 // server/token-details.ts
-import { verifyToken, type TokenSigner } from '@enkaku/token'
+import { verifyToken, type SigningIdentity } from '@enkaku/token'
 
 // Example: Manual token creation (client does this automatically)
-async function createManualToken(signer: TokenSigner, serverDID: string) {
-  const token = await signer.createToken({
+async function createManualToken(identity: SigningIdentity, serverDID: string) {
+  const token = await identity.signToken({
     aud: serverDID, // Audience: server's DID
     sub: 'user-123', // Subject: user identifier (optional)
     exp: Math.floor(Date.now() / 1000) + 3600, // Expires in 1 hour
@@ -557,7 +557,7 @@ async function verifyManualToken(tokenString: string, expectedAudience: string) 
 - `aud` field is server's DID (audience)
 - `exp` field is expiration timestamp (seconds since epoch)
 - Signature verifies token hasn't been tampered with
-- Server automatically handles verification when `signer` is provided
+- Server automatically handles verification when `identity` is provided
 
 ### Step 7: Advanced Authorization Patterns
 
@@ -711,7 +711,7 @@ import { ClientTransport } from '@enkaku/http-client-transport'
 import { ServerTransport } from '@enkaku/http-server-transport'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import { Server } from '@enkaku/server'
-import { randomTokenSigner } from '@enkaku/token'
+import { randomIdentity } from '@enkaku/token'
 
 // 1. Define protocol
 const protocol = {
@@ -736,13 +736,13 @@ const protocol = {
 type Protocol = typeof protocol
 
 // 2. Create server with authentication
-const serverSigner = randomTokenSigner()
+const serverIdentity = randomIdentity()
 const serverTransport = new ServerTransport<Protocol>()
 
 const server = new Server<Protocol>({
   protocol,
   transport: serverTransport,
-  signer: serverSigner,
+  identity: serverIdentity,
   access: {
     '*': false, // Require auth by default
     'public/hello': true // Public endpoint
@@ -766,21 +766,21 @@ const httpServer = Bun.serve({
 })
 
 console.log('Secure server running on http://localhost:3001')
-console.log('Server DID:', serverSigner.id)
+console.log('Server DID:', serverIdentity.id)
 
 // 4. Create authenticated client
-const clientSigner = randomTokenSigner()
+const clientIdentity = randomIdentity()
 const clientTransport = new ClientTransport<Protocol>({
   url: 'http://localhost:3001'
 })
 
 const client = new Client<Protocol>({
   transport: clientTransport,
-  signer: clientSigner,
-  serverID: serverSigner.id
+  identity: clientIdentity,
+  serverID: serverIdentity.id
 })
 
-console.log('Client DID:', clientSigner.id)
+console.log('Client DID:', clientIdentity.id)
 
 // 5. Test endpoints
 const publicResult = await client.request('public/hello')
@@ -792,7 +792,7 @@ console.log('Protected endpoint:', protectedResult.secret)
 // 6. Test without authentication (should fail)
 const unauthClient = new Client<Protocol>({
   transport: new ClientTransport<Protocol>({ url: 'http://localhost:3001' })
-  // No signer provided
+  // No identity provided
 })
 
 try {
@@ -882,12 +882,12 @@ const keystore = NodeKeyStore.open('my-app')
 
 // Generate new server key
 const newKeyID = `server-key-${Date.now()}`
-const newSigner = await provideTokenSignerAsync(keystore, newKeyID)
+const newIdentity = await provideFullIdentityAsync(keystore, newKeyID)
 
-console.log('New server DID:', newSigner.id)
+console.log('New server DID:', newIdentity.id)
 
-// Update server to use new key
-server.updateSigner(newSigner)
+// Update server to use new identity
+server.updateIdentity(newIdentity)
 
 // Keep old key for grace period to verify old tokens
 const oldKeyEntry = keystore.entry('server-key-old')
@@ -913,7 +913,7 @@ import { createCapability } from '@enkaku/capability'
 import { stringifyToken } from '@enkaku/token'
 
 // Service owner delegates read access to third party
-const capability = await serviceOwnerSigner.createToken({
+const capability = await serviceOwnerIdentity.signToken({
   aud: thirdPartyDID, // Delegate to this DID
   sub: serviceOwnerDID, // Resource owner
   cap: {
@@ -924,7 +924,7 @@ const capability = await serviceOwnerSigner.createToken({
 })
 
 // Third party includes capability in requests
-const token = await thirdPartySigner.createToken({
+const token = await thirdPartyIdentity.signToken({
   aud: serverDID,
   cap: stringifyToken(capability) // Include capability
 })
@@ -967,7 +967,7 @@ handlers: {
     }
 
     // Short-lived access token (15 minutes)
-    const accessToken = await serverSigner.createToken({
+    const accessToken = await serverIdentity.signToken({
       sub: user.userId,
       exp: Math.floor(Date.now() / 1000) + 900
     })
@@ -994,7 +994,7 @@ handlers: {
       throw new Error('Invalid or expired refresh token')
     }
 
-    const accessToken = await serverSigner.createToken({
+    const accessToken = await serverIdentity.signToken({
       sub: stored.userId,
       exp: Math.floor(Date.now() / 1000) + 900
     })

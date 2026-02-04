@@ -1,4 +1,4 @@
-import { provideTokenSigner } from '@enkaku/expo-keystore'
+import { provideFullIdentity } from '@enkaku/expo-keystore'
 import { type SignedToken, type Token, verifyToken } from '@enkaku/token'
 import { StatusBar } from 'expo-status-bar'
 import { useState } from 'react'
@@ -9,7 +9,7 @@ type Data = {
 }
 
 export default function App() {
-  const [signer] = useState(() => provideTokenSigner('test'))
+  const [identity] = useState(() => provideFullIdentity('test'))
   const [signedToken, setSignedToken] = useState<SignedToken<Data> | null>(null)
   const [verifiedToken, setVerifiedToken] = useState<Token<Data> | null>(null)
 
@@ -19,7 +19,7 @@ export default function App() {
       <Button
         title="Sign token"
         onPress={() => {
-          signer.createToken({ test: 'OK' }).then(setSignedToken)
+          identity.signToken({ test: 'OK' }).then(setSignedToken)
         }}
       />
     )

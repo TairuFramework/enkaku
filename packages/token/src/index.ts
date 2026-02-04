@@ -11,6 +11,40 @@
  */
 
 export { CODECS, getAlgorithmAndPublicKey, getDID, getSignatureInfo } from './did.js'
+export type {
+  DecryptingIdentity,
+  FullIdentity,
+  Identity,
+  OwnIdentity,
+  SigningIdentity,
+} from './identity.js'
+export {
+  createDecryptingIdentity,
+  createFullIdentity,
+  createSigningIdentity,
+  isDecryptingIdentity,
+  isFullIdentity,
+  isSigningIdentity,
+  randomIdentity,
+} from './identity.js'
+export type {
+  ConcatKDFParams,
+  EncryptOptions,
+  EnvelopeMode,
+  JWEHeader,
+  TokenEncrypter,
+  UnwrapOptions,
+  UnwrappedEnvelope,
+  WrapOptions,
+} from './jwe.js'
+export {
+  concatKDF,
+  createTokenEncrypter,
+  decryptToken,
+  encryptToken,
+  unwrapEnvelope,
+  wrapEnvelope,
+} from './jwe.js'
 export {
   capabilitySchema,
   type SignatureAlgorithm,
@@ -30,12 +64,7 @@ export {
 export {
   decodePrivateKey,
   encodePrivateKey,
-  getSigner,
-  getTokenSigner,
   randomPrivateKey,
-  randomSigner,
-  randomTokenSigner,
-  toTokenSigner,
 } from './signer.js'
 export {
   assertTimeClaimsValid,

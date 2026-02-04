@@ -171,7 +171,7 @@ describe('useRequest', () => {
       wrapper: errorWrapper,
     })
 
-    await expect(result.current).rejects.toThrow('Handler error')
+    await expect(result.current).rejects.toThrow('Handler execution failed')
     expect(errorHandler).toHaveBeenCalled()
   })
 

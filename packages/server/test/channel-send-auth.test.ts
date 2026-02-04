@@ -1,5 +1,5 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { createUnsignedToken, randomTokenSigner } from '@enkaku/token'
+import { createUnsignedToken, randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
 import { describe, expect, test, vi } from 'vitest'
 
@@ -62,7 +62,7 @@ describe('Channel send authorization', () => {
     type Protocol = typeof protocol
 
     const expiresAt = Math.floor(Date.now() / 1000) + 300
-    const signer = randomTokenSigner()
+    const signer = randomIdentity()
     const receivedValues: Array<unknown> = []
 
     const handler = vi.fn(async (ctx) => {
@@ -79,14 +79,14 @@ describe('Channel send authorization', () => {
     >()
     const server = serve<Protocol>({
       handlers,
-      id: signer.id,
+      identity: signer,
       public: false,
       access: { chat: true },
       transport: transports.server,
     })
 
     // Establish channel with valid signed token
-    const channelMsg = await signer.createToken({
+    const channelMsg = await signer.signToken({
       typ: 'channel',
       aud: signer.id,
       prc: 'chat',

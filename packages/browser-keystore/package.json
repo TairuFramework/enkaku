@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@enkaku/async": "workspace:^",
+    "@enkaku/codec": "catalog:",
     "@enkaku/token": "workspace:^"
   },
   "devDependencies": {

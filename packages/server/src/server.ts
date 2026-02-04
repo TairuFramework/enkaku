@@ -14,9 +14,20 @@ import {
   ValidationError,
   type Validator,
 } from '@enkaku/schema'
-import { createUnsignedToken, isSignedToken, type SignedToken, type Token } from '@enkaku/token'
+import {
+  createUnsignedToken,
+  type Identity,
+  isSignedToken,
+  type SignedToken,
+  type Token,
+} from '@enkaku/token'
 
-import { checkClientToken, type ProcedureAccessRecord } from './access-control.js'
+import {
+  checkClientToken,
+  type EncryptionPolicy,
+  type ProcedureAccessRecord,
+  resolveEncryptionPolicy,
+} from './access-control.js'
 import { HandlerError } from './error.js'
 import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'
 import { type EventMessageOf, handleEvent } from './handlers/event.js'
@@ -38,9 +49,10 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
   | StreamMessageOf<Protocol>
   | ChannelMessageOf<Protocol>
 
-export type AccessControlParams =
+export type AccessControlParams = (
   | { public: true; serverID?: string; access?: ProcedureAccessRecord }
   | { public: false; serverID: string; access: ProcedureAccessRecord }
+) & { encryptionPolicy?: EncryptionPolicy }
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
   events: ServerEmitter
@@ -185,8 +197,47 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
   }
 
+  function checkMessageEncryption(message: ProcessMessageOf<Protocol>): boolean {
+    const globalPolicy = params.encryptionPolicy ?? 'none'
+    if (globalPolicy === 'none') {
+      return true
+    }
+
+    const procedure = (message.payload as Record<string, unknown>).prc as string | undefined
+    const effectivePolicy =
+      procedure != null
+        ? resolveEncryptionPolicy(procedure, params.access, globalPolicy)
+        : globalPolicy
+
+    if (effectivePolicy !== 'required') {
+      return true
+    }
+
+    // Detect if message was encrypted: jwe-in-jws mode has a 'jwe' field in the payload
+    const payload = message.payload as Record<string, unknown>
+    return 'jwe' in payload && typeof payload.jwe === 'string'
+  }
+
+  function handleEncryptionViolation(message: ProcessMessageOf<Protocol>): void {
+    const error = new HandlerError({
+      code: 'EK07',
+      message: 'Encryption required but message is not encrypted',
+    })
+    if (message.payload.typ === 'event') {
+      events.emit('handlerError', { error, payload: message.payload })
+    } else {
+      context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>)
+    }
+  }
+
   const process = params.public
-    ? processHandler
+    ? (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
+        if (!checkMessageEncryption(message)) {
+          handleEncryptionViolation(message)
+          return
+        }
+        processHandler(message, handle)
+      }
     : async (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
         try {
           if (!params.public) {
@@ -211,6 +262,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           } else {
             context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>)
           }
+          return
+        }
+        if (!checkMessageEncryption(message)) {
+          handleEncryptionViolation(message)
           return
         }
         processHandler(message, handle)
@@ -310,8 +365,9 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
 
 export type ServerParams<Protocol extends ProtocolDefinition> = {
   access?: ProcedureAccessRecord
+  encryptionPolicy?: EncryptionPolicy
   handlers: ProcedureHandlers<Protocol>
-  id?: string
+  identity?: Identity
   limits?: Partial<ResourceLimits>
   logger?: Logger
   protocol?: Protocol
@@ -372,22 +428,28 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#abortController = new AbortController()
     this.#events = new EventEmitter<ServerEvents>()
     this.#handlers = params.handlers
+    const serverID = params.identity?.id
     this.#logger =
-      params.logger ?? getEnkakuLogger('server', { serverID: params.id ?? crypto.randomUUID() })
+      params.logger ?? getEnkakuLogger('server', { serverID: serverID ?? crypto.randomUUID() })
 
-    if (params.id == null) {
+    if (serverID == null) {
       if (params.public) {
-        this.#accessControl = { public: true, access: params.access }
+        this.#accessControl = {
+          public: true,
+          access: params.access,
+          encryptionPolicy: params.encryptionPolicy,
+        }
       } else {
         throw new Error(
-          'Invalid server parameters: either the server "id" must be provided or the "public" parameter must be set to true',
+          'Invalid server parameters: either the server "identity" must be provided or the "public" parameter must be set to true',
         )
       }
     } else {
       this.#accessControl = {
         public: !!params.public,
-        serverID: params.id,
+        serverID,
         access: params.access ?? {},
+        encryptionPolicy: params.encryptionPolicy,
       }
     }
 
@@ -416,15 +478,17 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const logger =
       options.logger ?? this.#logger.getChild('handler').with({ transportID: crypto.randomUUID() })
 
+    const encryptionPolicy = this.#accessControl.encryptionPolicy
+
     let accessControl: AccessControlParams
     if (publicAccess) {
-      accessControl = { public: true, access }
+      accessControl = { public: true, access, encryptionPolicy }
     } else {
       const serverID = this.#accessControl.serverID
       if (serverID == null) {
         return Promise.reject(new Error('Server ID is required to enable access control'))
       }
-      accessControl = { public: false, serverID, access }
+      accessControl = { public: false, serverID, access, encryptionPolicy }
     }
 
     const done = handleMessages<Protocol>({

@@ -8,6 +8,7 @@ import type { ErrorReplyPayload } from '@enkaku/protocol'
  * - EK04: Server handler concurrency limit reached
  * - EK05: Request timeout (controller expired)
  * - EK06: Message exceeds maximum size
+ * - EK07: Encryption required but message is not encrypted
  */
 
 export type HandlerErrorParams<
