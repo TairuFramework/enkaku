@@ -16,7 +16,7 @@ Enkaku is a modern, type-safe RPC framework for TypeScript applications. It prov
 
 **Transport Layer**: The framework supports multiple transport mechanisms (HTTP, WebSocket, Node.js streams, custom message-based transports). Transport implementations are modular and can be swapped based on application needs.
 
-**Authentication & Security**: Built-in token system provides JWT-like authentication with signing and verification. Keystore abstractions enable secure key management across different environments (Node.js, browser, React Native). Access control is enforced at the procedure level.
+**Authentication & Security**: Built-in token system provides JWT-like authentication with signing and verification, plus JWE message-level encryption using ECDH-ES key agreement and A256GCM. Keystore abstractions enable secure key management across different environments (Node.js, browser, React Native, Electron). Access control and encryption policy are enforced at the procedure level.
 
 **Type Safety**: Heavy use of TypeScript generics ensures end-to-end type safety from protocol definitions through client calls to server handlers. Schema validation using JSON Schema and AJV provides runtime safety.
 
@@ -89,7 +89,7 @@ packages/[package-name]/
 - **client**: Client-side RPC implementation with typed procedure calls
 - **server**: Server-side RPC implementation with handler registration
 - **transport**: Transport layer abstractions (http, socket, node-streams)
-- **token**: JWT-like token system for authentication
+- **token**: JWT-like token system for authentication and JWE message encryption
 - **stream**: Stream utilities for data flow management
 - **execution**: Execution chain management for procedures
 - **keystore**: Key management for different environments (node, browser, expo)
