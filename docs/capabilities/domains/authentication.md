@@ -13,19 +13,24 @@ The token system uses standard JWT structure (header.payload.signature) but with
 **Purpose**: JWT-like token generation and verification with DID-based identity.
 
 **Key exports**:
-- `randomIdentity()` - Generate identity with random private key
-- `createFullIdentity(privateKey)` - Create identity from existing key
+- `randomIdentity()` - Generate identity with random private key (returns `OwnIdentity`)
+- `createSigningIdentity(privateKey)` - Create signing-only identity from Ed25519 key
+- `createDecryptingIdentity(privateKey)` - Create decryption-only identity from Ed25519 key
+- `createFullIdentity(privateKey)` - Create identity with signing + decryption from Ed25519 key
+- `isSigningIdentity(identity)` / `isDecryptingIdentity(identity)` / `isFullIdentity(identity)` - Type guards
 - `verifyToken(token)` - Verify token signature and return verified token
 - `createUnsignedToken(payload)` - Create unsigned token object
 - `signToken(identity, token)` - Sign an unsigned token
-- `isSignedToken(token)` - Type guard for signed tokens
-- `isVerifiedToken(token)` - Type guard for verified tokens
+- `isSignedToken(token)` / `isUnsignedToken(token)` / `isVerifiedToken(token)` - Type guards
+- `createTokenEncrypter(recipient)` - Create encrypter targeting a DID or public key
+- `encryptToken(encrypter, plaintext)` / `decryptToken(decrypter, jwe)` - JWE encrypt/decrypt
+- `wrapEnvelope(mode, payload, options)` / `unwrapEnvelope(message, options)` - Envelope operations
 - `getDID(codec, publicKey)` - Create DID from public key
 - `getSignatureInfo(did)` - Extract algorithm and public key from DID
 - `randomPrivateKey()` - Generate random Ed25519 private key
 - `encodePrivateKey(key)` / `decodePrivateKey(encoded)` - Base64 encode/decode
 
-**Dependencies**: `@enkaku/codec`, `@enkaku/schema`, `@noble/curves`
+**Dependencies**: `@enkaku/codec`, `@enkaku/schema`, `@noble/curves`, `@noble/ciphers`
 
 **Core concepts**:
 - **DID format**: `did:key:z<base58-multicodec-pubkey>`
@@ -33,22 +38,45 @@ The token system uses standard JWT structure (header.payload.signature) but with
 - **Token structure**: `{ header, payload, signature, data }`
 - **Verification**: Extract public key from DID in `iss` claim, verify signature
 - **Capabilities**: Tokens can contain capability delegations in `cap` field
+- **JWE encryption**: ECDH-ES (X25519) + A256GCM content encryption for message confidentiality
+- **Envelope modes**: `plain`, `jws`, `jws-in-jwe`, `jwe-in-jws` for different security levels
 
 **Type system**:
 ```typescript
-type SigningIdentity = {
-  id: string // DID of the identity
+// Identity hierarchy (composable via intersection types)
+type Identity = { readonly id: string }
+
+type SigningIdentity = Identity & {
   signToken: <Payload, Header>(
     payload: Payload,
-    header?: Header
+    header?: Header,
   ) => Promise<SignedToken<Payload, Header>>
 }
 
+type DecryptingIdentity = Identity & {
+  decrypt(jwe: string): Promise<Uint8Array>
+  agreeKey(ephemeralPublicKey: Uint8Array): Promise<Uint8Array>
+}
+
+type FullIdentity = SigningIdentity & DecryptingIdentity
+
+type OwnIdentity = FullIdentity & { privateKey: Uint8Array }
+
+// Token encrypter (targets a recipient, not your own identity)
+type TokenEncrypter = {
+  recipientID?: string
+  encrypt(plaintext: Uint8Array): Promise<string>
+}
+
+// Envelope modes
+type EnvelopeMode = 'plain' | 'jws' | 'jws-in-jwe' | 'jwe-in-jws'
+
+// Token types
 type SignedToken<Payload, Header> = {
-  data: string // "header.payload" for signing
+  data: string
   header: SignedHeader & Header
   payload: SignedPayload & Payload
-  signature: string // Base64url signature
+  signature: string
 }
 
 type VerifiedToken<Payload, Header> = SignedToken<Payload, Header> & {
@@ -56,13 +84,13 @@ type VerifiedToken<Payload, Header> = SignedToken<Payload, Header> & {
 }
 
 type SignedPayload = {
-  iss: string // DID of issuer (required)
-  sub?: string // Subject
-  aud?: string // Audience
-  cap?: string | Array<string> // Capabilities
-  exp?: number // Expiration (Unix timestamp)
-  nbf?: number // Not before (Unix timestamp)
-  iat?: number // Issued at (Unix timestamp)
+  iss: string
+  sub?: string
+  aud?: string
+  cap?: string | Array<string>
+  exp?: number
+  nbf?: number
+  iat?: number
 }
 ```
 
@@ -653,8 +681,14 @@ When an identity is provided:
 ```typescript
 // Identity creation
 function randomIdentity(): OwnIdentity
-function createFullIdentity(privateKey: Uint8Array | string): Identity
-function createSigningIdentity(signer: GenericSigner): SigningIdentity
+function createSigningIdentity(privateKey: Uint8Array): SigningIdentity
+function createDecryptingIdentity(privateKey: Uint8Array): DecryptingIdentity
+function createFullIdentity(privateKey: Uint8Array): FullIdentity
+
+// Identity type guards
+function isSigningIdentity(identity: Identity): identity is SigningIdentity
+function isDecryptingIdentity(identity: Identity): identity is DecryptingIdentity
+function isFullIdentity(identity: Identity): identity is FullIdentity
 
 // Token operations
 function verifyToken<Payload>(
@@ -672,14 +706,32 @@ function signToken<Payload, Header>(
   token: Token<Payload, Header>
 ): Promise<SignedToken<Payload, Header>>
 
-// Type guards
+// Token type guards
 function isSignedToken(token: unknown): token is SignedToken
 function isUnsignedToken(token: Token): token is UnsignedToken
 function isVerifiedToken(token: unknown): token is VerifiedToken
 
+// JWE encryption
+function createTokenEncrypter(recipient: string): TokenEncrypter
+function createTokenEncrypter(recipient: Uint8Array, options: EncryptOptions): TokenEncrypter
+function encryptToken(encrypter: TokenEncrypter, plaintext: Uint8Array): Promise<string>
+function decryptToken(decrypter: DecryptingIdentity, jwe: string): Promise<Uint8Array>
+
+// Envelope wrapping
+function wrapEnvelope(
+  mode: EnvelopeMode,
+  payload: Record<string, unknown>,
+  options: WrapOptions,
+): Promise<string>
+
+function unwrapEnvelope(
+  message: string,
+  options: UnwrapOptions,
+): Promise<UnwrappedEnvelope>
+
 // Key operations
 function randomPrivateKey(): Uint8Array
-function encodePrivateKey(key: Uint8Array): string // Base64
+function encodePrivateKey(key: Uint8Array): string
 function decodePrivateKey(encoded: string): Uint8Array
 
 // DID operations
