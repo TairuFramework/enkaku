@@ -241,6 +241,62 @@ await entry.removeAsync()
 - Keys survive app restart and system reboot
 - Automatic encryption key managed by OS
 
+### Pattern 6: Message-Level Encryption with JWE
+
+```typescript
+import {
+  createTokenEncrypter,
+  encryptToken,
+  decryptToken,
+  wrapEnvelope,
+  unwrapEnvelope,
+  randomIdentity,
+} from '@enkaku/token'
+
+// Sender and recipient identities
+const sender = randomIdentity()
+const recipient = randomIdentity()
+
+// Create encrypter targeting recipient's DID
+const encrypter = createTokenEncrypter(recipient.id)
+
+// Low-level: Encrypt raw bytes
+const plaintext = new TextEncoder().encode('secret message')
+const jwe = await encryptToken(encrypter, plaintext)
+// jwe is a JWE compact serialization string (5 dot-separated parts)
+
+const decrypted = await decryptToken(recipient, jwe)
+new TextDecoder().decode(decrypted) // 'secret message'
+
+// High-level: Envelope wrapping (combines signing + encryption)
+// jws-in-jwe: sign then encrypt (hides sender identity)
+const wrapped = await wrapEnvelope('jws-in-jwe', {
+  typ: 'request',
+  prc: 'secret',
+  rid: '1',
+  prm: {},
+}, {
+  signer: sender,
+  encrypter,
+})
+
+const { payload, mode } = await unwrapEnvelope(wrapped, { decrypter: recipient })
+console.log(mode) // 'jws-in-jwe'
+console.log(payload.prc) // 'secret'
+```
+
+**Use case**: End-to-end encryption where intermediaries (proxies, logs) cannot read payloads
+
+**Key points**:
+- Uses ECDH-ES (X25519) key agreement with A256GCM content encryption
+- `createTokenEncrypter` accepts a DID string or raw X25519 public key
+- JWE compact serialization: `header.encryptedKey.iv.ciphertext.tag`
+- For ECDH-ES direct, the encrypted key segment is empty (key derived directly)
+- Fresh ephemeral key pair per encryption (forward secrecy)
+- Four envelope modes: `plain`, `jws`, `jws-in-jwe`, `jwe-in-jws`
+- `jws-in-jwe` hides sender identity; `jwe-in-jws` allows routing by sender
+- Ed25519 keys are auto-converted to X25519 for ECDH
+
 ## When to Use What
 
 **Use @enkaku/token** when:
@@ -249,6 +305,8 @@ await entry.removeAsync()
 - Working with DIDs and decentralized identity
 - Need low-level token operations
 - Building authentication middleware
+- Need to encrypt RPC payloads beyond transport-level TLS
+- Working with envelope modes (plain, jws, jws-in-jwe, jwe-in-jws)
 
 **Use @enkaku/node-keystore** when:
 - Building Node.js servers or CLI tools
