@@ -1,13 +1,15 @@
 {
-  "enabledPlugins": {
-    "superpowers@superpowers-marketplace": true
-  },
-  "extraKnownMarketplaces": {
-    "superpowers-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "obra/superpowers-marketplace"
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/typecheck.sh"
+          }
+        ]
       }
-    }
+    ]
   }
 }

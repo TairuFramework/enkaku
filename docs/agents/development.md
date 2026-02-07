@@ -9,6 +9,7 @@ Build system, testing, and development workflow for the Enkaku codebase.
 All repos use **pnpm workspaces** with **Turbo** for build orchestration.
 
 ### Package Management
+- **Always use `pnpm` instead of `npm`** and **`pnpx` instead of `npx`** for all commands
 - Use `workspace:^` protocol for internal package dependencies
 - Add shared dependency versions to the **pnpm catalog** (defined in `pnpm-workspace.yaml`) when possible
 - Each package should be buildable independently

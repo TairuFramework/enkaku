@@ -27,8 +27,11 @@
 | Multi-recipient | JWE JSON Serialization via token utilities | `@enkaku/token` exposes multi-recipient utilities for consumers |
 | ECDH-ES variants | `ECDH-ES` direct (compact) + `ECDH-ES+A256KW` (JSON/multi) | Direct for protocol simplicity, key wrapping for multi-recipient |
 | Content encryption | A256GCM only | Fast, authenticated, Web Crypto native, `@noble/ciphers` for Node |
+| Key discovery | DID-derived by default, explicit override | Leverages existing DID infrastructure, escape hatch for key separation |
 | Identity types | All in `@enkaku/token` | Avoids circular dependency with a separate identity package |
 | Breaking changes | Clean cut, no deprecated APIs | Remove `TokenSigner`, `provideTokenSigner()` entirely |
+| Encryption direction | Independently configurable per direction | Client-to-server and server-to-client encryption are separate concerns |
+| Server signing | Supported via `SigningIdentity` on server | Server can sign responses using same identity hierarchy |
 
 ---
 
@@ -38,12 +41,12 @@
 
 Replaced `TokenSigner` with a composable identity type hierarchy:
 
-```
-Identity (base: DID holder)
-  -> SigningIdentity (+ signToken)
-  -> DecryptingIdentity (+ decrypt, agreeKey)
-  -> FullIdentity (signing + decryption)
-  -> OwnIdentity (+ privateKey access)
+```typescript
+type Identity = { readonly id: string }
+type SigningIdentity = Identity & { signToken(...): Promise<SignedToken> }
+type DecryptingIdentity = Identity & { decrypt(jwe: string): Promise<Uint8Array>; agreeKey(epk: Uint8Array): Promise<Uint8Array> }
+type FullIdentity = SigningIdentity & DecryptingIdentity
+type OwnIdentity = FullIdentity & { privateKey: Uint8Array }
 ```
 
 Factory functions: `createSigningIdentity`, `createDecryptingIdentity`, `createFullIdentity`, `randomIdentity`
@@ -52,11 +55,41 @@ Type guards: `isSigningIdentity`, `isDecryptingIdentity`, `isFullIdentity`
 
 ### JWE crypto primitives (`@enkaku/token`)
 
-- **Concat KDF** (RFC 7518 Section 4.6.2) with SHA-256
-- **ECDH-ES direct** key agreement (X25519) + **AES-256-GCM** content encryption
-- **TokenEncrypter** factory with DID-based recipient key resolution
+- **Concat KDF** (RFC 7518 Section 4.6.2) with SHA-256 -- single iteration for 256-bit keys
+- **ECDH-ES direct** key agreement (X25519) + **AES-256-GCM** content encryption (12-byte random IV, 128-bit auth tag)
+- **TokenEncrypter** factory with DID-based recipient key resolution and cached public key
 - **Envelope wrapping/unwrapping** for all four modes (`plain`, `jws`, `jws-in-jwe`, `jwe-in-jws`)
 - Dependencies: `@noble/curves` (existing), `@noble/ciphers` (new)
+
+Key conversion: Ed25519 -> X25519 via `edwardsToMontgomeryPriv`/`edwardsToMontgomeryPub` from `@noble/curves/ed25519`. P-256 keys need no conversion (same key for ECDSA + ECDH).
+
+### Envelope modes
+
+| Mode | Wire format | Processing order | Use case |
+|------|------------|-----------------|----------|
+| `plain` | Unsigned token (`alg: 'none'`) | Direct parse | Public, trusted transport |
+| `jws` | Signed token | Verify signature | Authentication without confidentiality |
+| `jws-in-jwe` | JWE wrapping a JWS | Decrypt -> verify | Full privacy: signer identity hidden |
+| `jwe-in-jws` | JWS wrapping a JWE | Verify -> decrypt | Routable: intermediaries authenticate sender |
+
+### JWE wire format
+
+Compact serialization (protocol messages): `BASE64URL(header).BASE64URL(encryptedKey).BASE64URL(iv).BASE64URL(ciphertext).BASE64URL(tag)`. For ECDH-ES direct, the `encryptedKey` component is empty.
+
+JWE header: `{ alg: 'ECDH-ES' | 'ECDH-ES+A256KW', enc: 'A256GCM', epk: JSONWebKey, kid?, apu?, apv? }`
+
+### TokenEncrypter
+
+Encryption targets a recipient's public key (separate from the sender's identity):
+
+```typescript
+type TokenEncrypter = {
+  readonly recipientID: string
+  encrypt(payload: Uint8Array, options?: EncryptOptions): Promise<string>
+}
+
+function createTokenEncrypter(recipient: string | Uint8Array, options?: { algorithm?: 'X25519' | 'P-256' }): TokenEncrypter
+```
 
 ### Consumer migrations
 
@@ -80,6 +113,18 @@ All packages updated from `TokenSigner`/`signer` to `Identity`/`identity`:
 - Server rejects unencrypted messages when policy is `'required'` (error code `EK07`)
 - Works for both public and non-public servers
 
+### Server message processing pipeline
+
+1. Receive message from transport
+2. Detect envelope mode from token structure (JWE 5-part / JWS 3-part / `alg: 'none'`)
+3. If encrypted outer layer: decrypt
+4. If signed (outer or inner): verify signature
+5. If encrypted inner layer (for `jwe-in-jws`): decrypt
+6. Check encryption policy: if `required` and message was not encrypted, reject with `ENCRYPTION_REQUIRED`
+7. Schema validation and dispatch (existing flow)
+
+Schema validation always runs on the **unwrapped** message, never on the JWE envelope.
+
 ### Removed APIs
 
 `TokenSigner`, `OwnTokenSigner`, `GenericSigner`, `OwnSigner`, `getSigner`, `toTokenSigner`, `getTokenSigner`, `randomTokenSigner`, `randomSigner`, `provideTokenSigner`, `provideTokenSignerAsync` (all keystores)
@@ -91,6 +136,7 @@ All packages updated from `TokenSigner`/`signer` to `Identity`/`identity`:
 - **Browser keystore limitation:** Web Crypto ECDSA keys (P-256) cannot perform ECDH without separate key generation. The browser keystore provides `SigningIdentity` only (not `FullIdentity`). The function is named `provideSigningIdentity` to reflect this.
 - **Web Crypto ECDSA format:** P-256 signatures use IEEE P1363 format (64-byte r||s), compatible with `@noble/curves` `p256.verify`.
 - **Error masking:** `HandlerError.from()` intentionally replaces non-HandlerError exception messages with generic text (`'Handler execution failed'`) to prevent leaking sensitive info (DB connection strings, etc.).
+- **Forward secrecy:** Each encryption generates a fresh ephemeral key pair; the ephemeral private key is discarded after ECDH.
 
 ---
 
