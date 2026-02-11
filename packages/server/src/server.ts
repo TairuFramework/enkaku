@@ -49,6 +49,10 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
   | StreamMessageOf<Protocol>
   | ChannelMessageOf<Protocol>
 
+function defaultRandomID(): string {
+  return globalThis.crypto.randomUUID()
+}
+
 export type AccessControlParams = (
   | { public: true; serverID?: string; access?: ProcedureAccessRecord }
   | { public: false; serverID: string; access: ProcedureAccessRecord }
@@ -366,6 +370,7 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
 export type ServerParams<Protocol extends ProtocolDefinition> = {
   access?: ProcedureAccessRecord
   encryptionPolicy?: EncryptionPolicy
+  getRandomID?: () => string
   handlers: ProcedureHandlers<Protocol>
   identity?: Identity
   limits?: Partial<ResourceLimits>
@@ -382,6 +387,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #abortController: AbortController
   #accessControl: AccessControlParams
   #events: ServerEmitter
+  #getRandomID: () => string
   #handlers: ProcedureHandlers<Protocol>
   #handling: Array<HandlingTransport<Protocol>> = []
   #limiter: ResourceLimiter
@@ -427,10 +433,11 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     })
     this.#abortController = new AbortController()
     this.#events = new EventEmitter<ServerEvents>()
+    this.#getRandomID = params.getRandomID ?? defaultRandomID
     this.#handlers = params.handlers
     const serverID = params.identity?.id
     this.#logger =
-      params.logger ?? getEnkakuLogger('server', { serverID: serverID ?? crypto.randomUUID() })
+      params.logger ?? getEnkakuLogger('server', { serverID: serverID ?? this.#getRandomID() })
 
     if (serverID == null) {
       if (params.public) {
@@ -476,7 +483,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const publicAccess = options.public ?? this.#accessControl.public
     const access = options.access ?? this.#accessControl.access ?? {}
     const logger =
-      options.logger ?? this.#logger.getChild('handler').with({ transportID: crypto.randomUUID() })
+      options.logger ?? this.#logger.getChild('handler').with({ transportID: this.#getRandomID() })
 
     const encryptionPolicy = this.#accessControl.encryptionPolicy
 
