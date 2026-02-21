@@ -3,7 +3,7 @@
 echo "Running pre-commit checks..."
 
 echo "Linting staged files..."
-pnpm biome check --staged --no-errors-on-unmatched
+pnpm biome check --write --staged --no-errors-on-unmatched
 if [ $? -ne 0 ]; then
   echo "Lint check failed. Fix errors before committing."
   exit 1
