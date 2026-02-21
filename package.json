@@ -13,6 +13,7 @@
     }
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks",
     "lint": "biome check --write ./packages ./tests",
     "test": "turbo run test:unit",
     "build:js": "turbo run build:js",
