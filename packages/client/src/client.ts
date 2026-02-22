@@ -330,7 +330,7 @@ export class Client<
       switch (msg.payload.typ) {
         case 'error': {
           const error = RequestError.fromPayload(msg.payload)
-          this.#logger.debug('error reply for {type} {procedure} with ID {rid}', {
+          this.#logger.debug('error reply for {type} {procedure} with ID {rid}: {error}', {
             type: controller.type,
             procedure: controller.procedure,
             rid: msg.payload.rid,
@@ -341,7 +341,7 @@ export class Client<
           break
         }
         case 'receive':
-          this.#logger.trace('receive reply for {type} {procedure} with ID {rid}', {
+          this.#logger.trace('receive reply for {type} {procedure} with ID {rid}: {receive}', {
             type: controller.type,
             procedure: controller.procedure,
             rid: msg.payload.rid,
@@ -350,7 +350,7 @@ export class Client<
           void (controller as StreamController<unknown, unknown>).receive?.write(msg.payload.val)
           break
         case 'result':
-          this.#logger.trace('result reply for {type} {procedure} with ID {rid}', {
+          this.#logger.trace('result reply for {type} {procedure} with ID {rid}: {result}', {
             type: controller.type,
             procedure: controller.procedure,
             rid: msg.payload.rid,
@@ -383,7 +383,7 @@ export class Client<
       'abort',
       () => {
         const reason = signal.reason.name ?? signal.reason
-        this.#logger.trace('abort {type} {procedure} with ID {rid}', {
+        this.#logger.trace('abort {type} {procedure} with ID {rid} and reason: {reason}', {
           type: controller.type,
           procedure: controller.procedure,
           rid,
@@ -419,7 +419,11 @@ export class Client<
     const config = args[0] ?? {}
     const data = config.data
     const payload = data ? { typ: 'event', prc: procedure, data } : { typ: 'event', prc: procedure }
-    this.#logger.trace('send event {procedure}', { procedure, data })
+    if (data == null) {
+      this.#logger.trace('send event {procedure} without data', { procedure })
+    } else {
+      this.#logger.trace('send event {procedure} with data: {data}', { procedure, data })
+    }
     await this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
   }
 
@@ -442,7 +446,7 @@ export class Client<
 
     const providedSignal = config.signal
     if (providedSignal?.aborted) {
-      this.#logger.debug('reject aborted request {procedure} with ID { rid }', { procedure, rid })
+      this.#logger.debug('reject aborted request {procedure} with ID {rid}', { procedure, rid })
       return createRequest({
         id: rid,
         controller,
@@ -456,7 +460,15 @@ export class Client<
     const payload = prm
       ? { typ: 'request', rid, prc: procedure, prm }
       : { typ: 'request', rid, prc: procedure }
-    this.#logger.trace('send request {procedure} with ID {rid}', { procedure, rid, param: prm })
+    if (prm == null) {
+      this.#logger.trace('send request {procedure} with ID {rid}', { procedure, rid })
+    } else {
+      this.#logger.trace('send request {procedure} with ID {rid} and param: {param}', {
+        procedure,
+        rid,
+        param: prm,
+      })
+    }
     const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
     const signal = this.#handleSignal(rid, controller, providedSignal)
     return createRequest({ id: rid, controller, signal, sent })
@@ -502,7 +514,15 @@ export class Client<
     const payload = prm
       ? { typ: 'stream', rid, prc: procedure, prm }
       : { typ: 'stream', rid, prc: procedure }
-    this.#logger.trace('create stream {procedure} with ID {rid}', { procedure, rid, param: prm })
+    if (prm == null) {
+      this.#logger.trace('create stream {procedure} with ID {rid}', { procedure, rid })
+    } else {
+      this.#logger.trace('create stream {procedure} with ID {rid} and param: {param}', {
+        procedure,
+        rid,
+        param: prm,
+      })
+    }
     const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
@@ -560,12 +580,20 @@ export class Client<
     const payload = prm
       ? { typ: 'channel', rid, prc: procedure, prm }
       : { typ: 'channel', rid, prc: procedure }
-    this.#logger.trace('create channel {procedure} with ID {rid}', { procedure, rid, param: prm })
+    if (prm == null) {
+      this.#logger.trace('create channel {procedure} with ID {rid}', { procedure, rid })
+    } else {
+      this.#logger.trace('create channel {procedure} with ID {rid} and param: {param}', {
+        procedure,
+        rid,
+        param: prm,
+      })
+    }
     const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
     const send = async (val: T['Send']) => {
-      this.#logger.trace('send value to channel {procedure} with ID {rid}', {
+      this.#logger.trace('send value to channel {procedure} with ID {rid}: {value}', {
         procedure,
         rid,
         value: val,
