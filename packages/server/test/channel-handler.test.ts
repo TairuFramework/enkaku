@@ -79,9 +79,10 @@ describe('handleChannel()', () => {
       clientToken,
     )
 
-    expect(trace).toBeCalledWith('handle channel {procedure} with ID {rid}', {
+    expect(trace).toBeCalledWith('handle channel {procedure} with ID {rid} and param: {param}', {
       procedure: 'test',
       rid: '1',
+      param: { test: true },
     })
     expect(send).toHaveBeenCalledTimes(4)
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
@@ -126,9 +127,10 @@ describe('handleChannel()', () => {
       clientToken,
     )
 
-    expect(trace).toBeCalledWith('handle channel {procedure} with ID {rid}', {
+    expect(trace).toBeCalledWith('handle channel {procedure} with ID {rid} and param: {param}', {
       procedure: 'test',
       rid: '1',
+      param: { test: true },
     })
     expect(send).toHaveBeenCalledTimes(2)
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
@@ -167,9 +169,10 @@ describe('handleChannel()', () => {
     await controllers['1'].writer.write(2)
     await resultPromise
 
-    expect(trace).toBeCalledWith('handle channel {procedure} with ID {rid}', {
+    expect(trace).toBeCalledWith('handle channel {procedure} with ID {rid} and param: {param}', {
       procedure: 'test',
       rid: '1',
+      param: { test: true },
     })
     expect(send).toHaveBeenCalledTimes(4)
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })

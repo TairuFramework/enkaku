@@ -61,7 +61,7 @@ describe('handleEvent()', () => {
         clientToken,
       ),
     ).resolves.toBeUndefined()
-    expect(logger.trace).toHaveBeenCalledWith('handle event {procedure}', {
+    expect(logger.trace).toHaveBeenCalledWith('handle event {procedure} with data: {data}', {
       procedure: 'test',
       data: { test: true },
     })
@@ -70,11 +70,14 @@ describe('handleEvent()', () => {
     const emittedError = await handlerError
     expect(emittedError.error.message).toBe('Failed!')
     expect(emittedError.payload).toEqual(clientToken.payload)
-    expect(logger.debug).toHaveBeenCalledWith('handler error for event {procedure}', {
-      procedure: 'test',
-      data: { test: true },
-      error: emittedError.error,
-    })
+    expect(logger.debug).toHaveBeenCalledWith(
+      'handler error for event {procedure} with data {data}: {error}',
+      {
+        procedure: 'test',
+        data: { test: true },
+        error: emittedError.error,
+      },
+    )
   })
 
   test('successfully calls the event handler', async () => {
@@ -97,7 +100,7 @@ describe('handleEvent()', () => {
         clientToken,
       ),
     ).resolves.toBeUndefined()
-    expect(logger.trace).toHaveBeenCalledWith('handle event {procedure}', {
+    expect(logger.trace).toHaveBeenCalledWith('handle event {procedure} with data: {data}', {
       procedure: 'test',
       data: { test: true },
     })

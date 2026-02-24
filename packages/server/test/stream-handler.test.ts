@@ -72,10 +72,14 @@ describe('handleStream()', () => {
       clientToken,
     )
 
-    expect(trace).toHaveBeenCalledWith('handle stream {procedure} with ID {rid}', {
-      procedure: 'test',
-      rid: '1',
-    })
+    expect(trace).toHaveBeenCalledWith(
+      'handle stream {procedure} with ID {rid} and param: {param}',
+      {
+        procedure: 'test',
+        rid: '1',
+        param: { test: true },
+      },
+    )
     expect(send).toHaveBeenCalledTimes(4)
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })
@@ -119,10 +123,14 @@ describe('handleStream()', () => {
       clientToken,
     )
 
-    expect(trace).toHaveBeenCalledWith('handle stream {procedure} with ID {rid}', {
-      procedure: 'test',
-      rid: '1',
-    })
+    expect(trace).toHaveBeenCalledWith(
+      'handle stream {procedure} with ID {rid} and param: {param}',
+      {
+        procedure: 'test',
+        rid: '1',
+        param: { test: true },
+      },
+    )
     expect(send).toHaveBeenCalledTimes(2)
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })

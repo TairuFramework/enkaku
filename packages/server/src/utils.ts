@@ -22,7 +22,7 @@ export async function executeHandler<
   try {
     const val = await toPromise(execute)
     if (canSend(controller.signal)) {
-      context.logger.trace('send result to {type} {procedure} with ID {rid}', {
+      context.logger.trace('send result to {type} {procedure} with ID {rid}: {result}', {
         type: payload.typ,
         procedure: payload.prc,
         rid: payload.rid,
@@ -40,7 +40,7 @@ export async function executeHandler<
       message: 'Handler execution failed',
     })
     if (canSend(controller.signal)) {
-      context.logger.trace('send error to {type} {procedure} with ID {rid}', {
+      context.logger.trace('send error to {type} {procedure} with ID {rid}: {error}', {
         type: payload.typ,
         procedure: payload.prc,
         rid: payload.rid,
@@ -49,7 +49,7 @@ export async function executeHandler<
       context.send(error.toPayload(payload.rid) as AnyServerPayloadOf<Protocol>)
     } else {
       context.logger.debug(
-        'handler error for {type} {procedure} with ID {rid} cannot be sent to client',
+        'handler error for {type} {procedure} with ID {rid} cannot be sent to client: {error}',
         {
           type: payload.typ,
           procedure: payload.prc,

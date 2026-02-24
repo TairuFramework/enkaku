@@ -18,25 +18,40 @@ export function handleEvent<
     return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
-  ctx.logger.trace('handle event {procedure}', {
-    procedure: msg.payload.prc,
-    data: msg.payload.data,
-  })
+  const data = msg.payload.data
+  if (data == null) {
+    ctx.logger.trace('handle event {procedure} without data', {
+      procedure: msg.payload.prc,
+    })
+  } else {
+    ctx.logger.trace('handle event {procedure} with data: {data}', {
+      procedure: msg.payload.prc,
+      data: msg.payload.data,
+    })
+  }
 
-  const handlerContext = {
-    message: msg,
-    data: msg.payload.data,
-  } as unknown as EventHandlerContext<Protocol, Procedure>
+  const handlerContext = { message: msg, data } as unknown as EventHandlerContext<
+    Protocol,
+    Procedure
+  >
   return toPromise(() => handler(handlerContext)).catch((cause) => {
     const error = HandlerError.from(cause, {
       code: 'EK01',
       message: (cause as Error).message ?? 'Handler execution failed',
     })
-    ctx.logger.debug('handler error for event {procedure}', {
-      procedure: msg.payload.prc,
-      data: msg.payload.data,
-      error,
-    })
+    if (data == null) {
+      ctx.logger.debug('handler error for event {procedure} without data: {error}', {
+        procedure: msg.payload.prc,
+        error,
+      })
+    } else {
+      ctx.logger.debug('handler error for event {procedure} with data {data}: {error}', {
+        procedure: msg.payload.prc,
+        data,
+        error,
+      })
+    }
+
     ctx.events.emit('handlerError', { error, payload: msg.payload })
   })
 }

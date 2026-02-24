@@ -32,10 +32,19 @@ export function handleChannel<
     return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
-  ctx.logger.trace('handle channel {procedure} with ID {rid}', {
-    procedure: msg.payload.prc,
-    rid: msg.payload.rid,
-  })
+  const param = msg.payload.prm
+  if (param == null) {
+    ctx.logger.trace('handle channel {procedure} with ID {rid}', {
+      procedure: msg.payload.prc,
+      rid: msg.payload.rid,
+    })
+  } else {
+    ctx.logger.trace('handle channel {procedure} with ID {rid} and param: {param}', {
+      procedure: msg.payload.prc,
+      rid: msg.payload.rid,
+      param,
+    })
+  }
 
   const sendStream = createPipe<SendType<Protocol, Procedure>>()
   const controller: ChannelController<SendType<Protocol, Procedure>> = Object.assign(
@@ -53,9 +62,10 @@ export function handleChannel<
       if (controller.signal.aborted) {
         return
       }
-      ctx.logger.trace('send value to channel {procedure} with ID {rid}', {
+      ctx.logger.trace('send value to channel {procedure} with ID {rid}: {val}', {
         procedure: msg.payload.prc,
         rid: msg.payload.rid,
+        val,
       })
       await ctx.send({
         typ: 'receive',
@@ -67,7 +77,7 @@ export function handleChannel<
 
   const readable = sendStream.readable.pipeThrough(
     tap((value) => {
-      ctx.logger.trace('received value from channel {procedure} with ID {rid}', {
+      ctx.logger.trace('received value from channel {procedure} with ID {rid}: {value}', {
         procedure: msg.payload.prc,
         rid: msg.payload.rid,
         value,
@@ -77,7 +87,7 @@ export function handleChannel<
 
   const handlerContext = {
     message: msg,
-    param: msg.payload.prm,
+    param,
     readable,
     signal: controller.signal,
     writable: receiveStream.writable,

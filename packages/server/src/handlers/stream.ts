@@ -23,10 +23,19 @@ export function handleStream<
     return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
-  ctx.logger.trace('handle stream {procedure} with ID {rid}', {
-    procedure: msg.payload.prc,
-    rid: msg.payload.rid,
-  })
+  const param = msg.payload.prm
+  if (param == null) {
+    ctx.logger.trace('handle stream {procedure} with ID {rid}', {
+      procedure: msg.payload.prc,
+      rid: msg.payload.rid,
+    })
+  } else {
+    ctx.logger.trace('handle stream {procedure} with ID {rid} and param: {param}', {
+      procedure: msg.payload.prc,
+      rid: msg.payload.rid,
+      param,
+    })
+  }
 
   const controller = new AbortController()
   ctx.controllers[msg.payload.rid] = controller
@@ -37,9 +46,10 @@ export function handleStream<
       if (controller.signal.aborted) {
         return
       }
-      ctx.logger.trace('send value to stream {procedure} with ID {rid}', {
+      ctx.logger.trace('send value to stream {procedure} with ID {rid}: {val}', {
         procedure: msg.payload.prc,
         rid: msg.payload.rid,
+        val,
       })
       await ctx.send({
         typ: 'receive',

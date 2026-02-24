@@ -20,11 +20,19 @@ export function handleRequest<
     return new Error(`No handler for procedure: ${msg.payload.prc}`)
   }
 
-  ctx.logger.trace('handle request {procedure} with ID {rid}', {
-    procedure: msg.payload.prc,
-    rid: msg.payload.rid,
-    param: msg.payload.prm,
-  })
+  const param = msg.payload.prm
+  if (param == null) {
+    ctx.logger.trace('handle request {procedure} with ID {rid}', {
+      procedure: msg.payload.prc,
+      rid: msg.payload.rid,
+    })
+  } else {
+    ctx.logger.trace('handle request {procedure} with ID {rid} and param: {param}', {
+      procedure: msg.payload.prc,
+      rid: msg.payload.rid,
+      param,
+    })
+  }
 
   const controller = new AbortController()
   ctx.controllers[msg.payload.rid] = controller

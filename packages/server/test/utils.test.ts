@@ -61,12 +61,15 @@ describe('executeHandler()', () => {
     expect(emittedError.error.message).toBe('Request failed')
     expect(emittedError.payload).toEqual(payload)
     expect(controllers).toEqual({})
-    expect(logger.trace).toHaveBeenCalledWith('send error to {type} {procedure} with ID {rid}', {
-      type: 'request',
-      procedure: payload.prc,
-      rid: payload.rid,
-      error,
-    })
+    expect(logger.trace).toHaveBeenCalledWith(
+      'send error to {type} {procedure} with ID {rid}: {error}',
+      {
+        type: 'request',
+        procedure: payload.prc,
+        rid: payload.rid,
+        error,
+      },
+    )
   })
 
   test('sends an error response if the abort signal is triggered with the "Close" reason', async () => {
@@ -113,12 +116,15 @@ describe('executeHandler()', () => {
     expect(emittedError.error.message).toBe('Request failed')
     expect(emittedError.payload).toEqual(payload)
     expect(controllers).toEqual({})
-    expect(logger.trace).toHaveBeenCalledWith('send error to {type} {procedure} with ID {rid}', {
-      type: 'request',
-      procedure: payload.prc,
-      rid: payload.rid,
-      error,
-    })
+    expect(logger.trace).toHaveBeenCalledWith(
+      'send error to {type} {procedure} with ID {rid}: {error}',
+      {
+        type: 'request',
+        procedure: payload.prc,
+        rid: payload.rid,
+        error,
+      },
+    )
   })
 
   test('does not send an error response if the abort signal is triggered with a reason other than "Close"', async () => {
@@ -159,7 +165,7 @@ describe('executeHandler()', () => {
     expect(emittedError.payload).toEqual(payload)
     expect(controllers).toEqual({})
     expect(logger.debug).toHaveBeenCalledWith(
-      'handler error for {type} {procedure} with ID {rid} cannot be sent to client',
+      'handler error for {type} {procedure} with ID {rid} cannot be sent to client: {error}',
       {
         type: 'request',
         procedure: payload.prc,
@@ -192,12 +198,15 @@ describe('executeHandler()', () => {
     expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
-    expect(logger.trace).toHaveBeenCalledWith('send result to {type} {procedure} with ID {rid}', {
-      type: 'request',
-      procedure: payload.prc,
-      rid: payload.rid,
-      result: 'OK',
-    })
+    expect(logger.trace).toHaveBeenCalledWith(
+      'send result to {type} {procedure} with ID {rid}: {result}',
+      {
+        type: 'request',
+        procedure: payload.prc,
+        rid: payload.rid,
+        result: 'OK',
+      },
+    )
   })
 
   test('sends a result response if the abort signal is triggered with the "Close" reason', async () => {
@@ -233,12 +242,15 @@ describe('executeHandler()', () => {
     expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
-    expect(logger.trace).toHaveBeenCalledWith('send result to {type} {procedure} with ID {rid}', {
-      type: 'request',
-      procedure: payload.prc,
-      rid: payload.rid,
-      result: 'OK',
-    })
+    expect(logger.trace).toHaveBeenCalledWith(
+      'send result to {type} {procedure} with ID {rid}: {result}',
+      {
+        type: 'request',
+        procedure: payload.prc,
+        rid: payload.rid,
+        result: 'OK',
+      },
+    )
   })
 
   test('does not send a result response if the abort signal is triggered with a reason other than "Close"', async () => {
