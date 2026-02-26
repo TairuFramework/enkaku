@@ -5,22 +5,22 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
+    "android": "expo run:android",
     "android:release": "expo run:android --no-bundler --variant release",
-    "ios": "expo start --ios",
+    "ios": "expo run:ios",
     "ios:release": "expo run:ios --no-bundler --configuration Release",
     "test": "MAESTRO_CLI_NO_ANALYTICS=true MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED=true maestro test .maestro/"
   },
   "dependencies": {
     "@enkaku/expo-keystore": "workspace:^",
     "@enkaku/token": "workspace:^",
-    "expo": "catalog:expo",
-    "expo-status-bar": "catalog:expo",
-    "react": "catalog:expo",
-    "react-native": "catalog:expo"
+    "expo": "~55.0.2",
+    "expo-status-bar": "~55.0.4",
+    "react": "catalog:",
+    "react-native": "0.83.2"
   },
   "devDependencies": {
-    "@types/react": "catalog:expo",
+    "@types/react": "catalog:",
     "typescript": "catalog:"
   }
 }
