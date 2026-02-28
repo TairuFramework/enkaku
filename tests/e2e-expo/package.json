@@ -14,7 +14,7 @@
   "dependencies": {
     "@enkaku/expo-keystore": "workspace:^",
     "@enkaku/token": "workspace:^",
-    "expo": "~55.0.2",
+    "expo": "~55.0.4",
     "expo-status-bar": "~55.0.4",
     "react": "catalog:",
     "react-native": "0.83.2"
