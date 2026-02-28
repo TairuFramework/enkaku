@@ -47,9 +47,10 @@ export function handleChannel<
   }
 
   const sendStream = createPipe<SendType<Protocol, Procedure>>()
+  const issuer = (msg.payload as Record<string, unknown>).iss as string | undefined
   const controller: ChannelController<SendType<Protocol, Procedure>> = Object.assign(
     new AbortController(),
-    { writer: sendStream.writable.getWriter() },
+    { issuer, writer: sendStream.writable.getWriter() },
   )
   controller.signal.addEventListener('abort', () => {
     controller.writer.close()

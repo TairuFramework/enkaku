@@ -322,7 +322,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             logger.debug('received send for unknown channel {rid}', { rid: msg.payload.rid })
             break
           }
-          // In non-public mode, validate send messages
+          // In non-public mode, validate send messages against the channel owner
           if (!params.public) {
             if (!isSignedToken(msg as Token)) {
               const error = new HandlerError({
@@ -332,13 +332,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>)
               break
             }
-            try {
-              await checkClientToken(params.serverID, params.access, msg as unknown as SignedToken)
-            } catch (cause) {
+            const sendIssuer = (msg as unknown as SignedToken).payload.iss
+            if (controller.issuer != null && sendIssuer !== controller.issuer) {
               const error = new HandlerError({
-                cause,
                 code: 'EK02',
-                message: (cause as Error).message ?? 'Send authorization denied',
+                message: 'Send issuer does not match channel owner',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>)
               break

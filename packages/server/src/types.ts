@@ -20,6 +20,7 @@ import type { HandlerError } from './error.js'
 export type RequestController = AbortController
 
 export type ChannelController<Send = unknown> = AbortController & {
+  issuer?: string
   writer: WritableStreamDefaultWriter<Send>
 }
 
