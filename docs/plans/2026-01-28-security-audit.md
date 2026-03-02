@@ -19,7 +19,7 @@
 | Severity | Count | Status |
 |----------|-------|--------|
 | CRITICAL | 12 | 8 Fixed (C-01, C-02, C-03, C-05, C-06, C-07, C-08, C-09), 1 Won't Fix (C-12) |
-| HIGH | 18 | 13 Fixed (H-01, H-02, H-04, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-18), 1 Partial (T-01) |
+| HIGH | 18 | 15 Fixed (H-01, H-02, H-04, H-05, H-06, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-18), 1 Partial (T-01) |
 | MEDIUM | 14 | 4 Fixed (M-04, M-11, M-12), 1 Mitigated (M-10) |
 | LOW | 3 | Pending |
 
@@ -331,7 +331,8 @@ Add depth limits: `const MAX_DELEGATION_DEPTH = 20`
 - **Package:** `@enkaku/protocol`
 - **File:** `packages/protocol/src/schemas/client.ts:14-24, 47-57, 73-90, 120-137`
 - **File:** `packages/protocol/src/schemas/server.ts:13-25, 33-49, 52-70, 73-87`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-29-protocol-schema-hardening.md`
 
 **Description:**
 No `maxLength`, `maxItems`, or `maxProperties` constraints defined on string, array, or object payloads. Attacker can send arbitrarily large strings in message fields.
@@ -339,15 +340,18 @@ No `maxLength`, `maxItems`, or `maxProperties` constraints defined on string, ar
 **Impact:**
 Memory exhaustion during JSON parsing, parser DoS.
 
-**Recommendation:**
-Add `maxLength` constraints to all string fields (1KB for protocol fields, 10KB for data fields).
+**Fix Applied:**
+- `maxLength` constraints added to all string fields: `iss`/`sub`/`aud` (256), `rid`/`jti` (128), `signature` (512), `rsn` (1024), `code` (128), `msg` (4096)
+- `maxProperties: 64` on data objects
+- Tests verify rejection of oversized fields
 
 ---
 
 ### H-06: additionalProperties: true Allows Arbitrary Fields
 - **Package:** `@enkaku/protocol`
 - **File:** `packages/protocol/src/schemas/client.ts:14, 23, 42, 56, 88, 103, 135`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `main`
+- **Plan:** `docs/plans/archive/2026-01-29-protocol-schema-hardening.md`
 
 **Description:**
 Message payload schemas allow `additionalProperties: true`, permitting any additional fields in protocol messages.
@@ -355,8 +359,10 @@ Message payload schemas allow `additionalProperties: true`, permitting any addit
 **Impact:**
 Arbitrary fields can carry hidden data, message size grows unboundedly.
 
-**Recommendation:**
-Change all message payload schemas to `additionalProperties: false`.
+**Fix Applied:**
+- All message payload schemas set `additionalProperties: false`
+- Client, server, and message wrapper schemas all reject extra fields
+- Tests verify rejection of messages with additional properties
 
 ---
 
@@ -814,7 +820,7 @@ The following fixes will require breaking changes:
 | `verifyToken()` | token.ts:116-118 | Invalid header type | Untested |
 | `verifyToken()` | token.ts:124-126 | Missing signature | Untested |
 | `verifyToken()` | token.ts:145 | Unsupported algorithm | Untested |
-| `verifySignedPayload()` | token.ts:31-32 | Invalid signature | Untested |
+| `verifySignedPayload()` | token.ts:31-32 | Invalid signature | TESTED (sign-verify.test.ts) |
 | `getSignatureInfo()` | did.ts:47 | Invalid DID prefix | TESTED (H-02) |
 | `getSignatureInfo()` | did.ts:53 | Unsupported codec | TESTED (H-02) |
 | `isCodecMatch()` | did.ts:13-20 | Bytes shorter than codec | TESTED (H-02) |
@@ -884,19 +890,20 @@ The following fixes will require breaking changes:
 ### T-05: Keystore Packages - Zero Coverage
 - **Packages:** All 4 keystore packages
 - **Priority:** CRITICAL
+- **Status:** [x] Fixed — Branch `feat/keystore-tests`
 
-**Test suites needed for:**
-- Key lifecycle: create, retrieve, delete
-- Error handling: platform failures, invalid data
-- Security: encryption (C-12), memory clearing (M-14)
-- Edge cases: empty IDs, large keys, concurrent access
+**Tests added (78 total):**
+- `@enkaku/node-keystore`: 23 tests — NodeKeyEntry lifecycle (sync+async), NodeKeyStore singleton/caching, provideFullIdentity helpers
+- `@enkaku/electron-keystore`: 18 tests — ElectronKeyEntry lifecycle with encryption mocks, ElectronKeyStore singleton, provideFullIdentity
+- `@enkaku/expo-keystore`: 15 tests — ExpoKeyEntry lifecycle, ExpoKeyStore factory, randomPrivateKey utils, provideFullIdentity
+- `@enkaku/browser-keystore`: 22 tests — BrowserKeyEntry with mock IDB, BrowserKeyStore validation/caching, randomKeyPair/getPublicKey (real SubtleCrypto), provideSigningIdentity with real ECDSA P-256 signing
 
 ---
 
 ### T-06: Schema/Protocol - Validation Tests Missing
 - **Package:** `@enkaku/schema`, `@enkaku/protocol`
 - **Priority:** HIGH
-- **Status:** Partially fixed — `resolveReference()` and `resolveSchema()` now tested (H-07). Schema helper and size constraint tests still needed.
+- **Status:** Partially fixed — `resolveReference()` and `resolveSchema()` now tested (H-07). H-05 size constraints and H-06 additionalProperties now tested. Schema helper tests still needed.
 
 **Untested:**
 | Function | Location | Issue |
@@ -904,7 +911,8 @@ The following fixes will require breaking changes:
 | `resolveReference()` | utils.ts:3-20 | Prototype pollution — TESTED (H-07) |
 | `resolveSchema()` | utils.ts:23-26 | TESTED (H-07) |
 | All helper functions | client.ts, server.ts | Only main schemas tested |
-| Size constraints | All schemas | H-05 not enforced |
+| Size constraints | All schemas | TESTED — maxLength on all string fields (H-05) |
+| additionalProperties | All schemas | TESTED — rejects extra fields (H-06) |
 
 ---
 
@@ -928,12 +936,12 @@ The following fixes will require breaking changes:
 1. [x] T-02: Capability authorization bypass tests — DONE
 2. [x] T-03: Server resource limit tests — DONE (62 tests across 16 files)
 3. [x] T-04: Transport package test suites — DONE (28 tests across 3 packages)
-4. [ ] T-05: Keystore package test suites
+4. [x] T-05: Keystore package test suites — DONE (78 tests across 4 packages)
 
 ### Priority 2: High Severity
-1. [ ] T-01: Token error path tests
-2. [ ] T-06: Schema validation tests
-3. [ ] T-07: Codec/stream security tests
+1. [~] T-01: Token error path tests — Partial (7/13 paths tested, 6 remaining)
+2. [~] T-06: Schema validation tests — Partial (H-05, H-06, H-07 tested; schema helpers still needed)
+3. [~] T-07: Codec/stream security tests — Partial (H-08, H-18 tested; M-03 still needed)
 
 ### Priority 3: Coverage Improvement
 1. [ ] Event listener error handling
@@ -1127,7 +1135,7 @@ if (char.charCodeAt(0) > 32) { ... }
 
 ### Phase 2: High Priority Security
 1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-09~~, ~~H-10~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-18~~: Fixed; H-03, H-11, H-17: Remaining high severity issues
-2. T-01 (partial): Remaining token error paths; ~~T-02~~: Fixed; ~~T-03~~: Fixed; ~~T-04~~: Fixed (28 tests); T-05 through T-07: Test coverage gaps
+2. T-01 (partial): Remaining token error paths; ~~T-02~~: Fixed; ~~T-03~~: Fixed; ~~T-04~~: Fixed (28 tests); ~~T-05~~: Fixed (78 tests); T-06 (partial): H-05/H-06/H-07 tested; T-07 (partial): H-08/H-18 tested
 
 ### Phase 3: Performance
 1. P-01, P-02, P-03: Serialization quick wins
