@@ -73,6 +73,59 @@ function isStringOrStringArray(value: unknown): value is string | Array<string> 
   return false
 }
 
+// Valid pattern: alphanumeric, hyphens, underscores, dots, colons, slashes, and trailing wildcard
+// Components are separated by '/'. Wildcard '*' is only valid as the entire last component.
+const VALID_COMPONENT_RE = /^[a-zA-Z0-9_\-.:]+$/
+// biome-ignore lint/suspicious/noControlCharactersInRegex: intentional check for control characters
+const CONTROL_CHAR_RE = /[\x00-\x1f]/
+
+export function assertValidPattern(value: string | Array<string>): void {
+  if (Array.isArray(value)) {
+    for (const v of value) {
+      assertValidPattern(v)
+    }
+    return
+  }
+
+  if (value === '*') {
+    return
+  }
+
+  if (value === '') {
+    throw new Error('Invalid pattern: empty string')
+  }
+
+  if (CONTROL_CHAR_RE.test(value)) {
+    throw new Error('Invalid pattern: contains control characters')
+  }
+
+  if (value.startsWith('/') || value.endsWith('/')) {
+    throw new Error('Invalid pattern: leading or trailing slash')
+  }
+
+  if (value.includes('//')) {
+    throw new Error('Invalid pattern: double slash')
+  }
+
+  if (value.includes('../') || value.includes('./')) {
+    throw new Error('Invalid pattern: path traversal')
+  }
+
+  const parts = value.split('/')
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i]
+    if (part === '*') {
+      if (i !== parts.length - 1) {
+        throw new Error('Invalid pattern: wildcard must be the last component')
+      }
+    } else if (part.includes('*')) {
+      throw new Error('Invalid pattern: wildcard must be a standalone component')
+    } else if (!VALID_COMPONENT_RE.test(part)) {
+      throw new Error('Invalid pattern: invalid characters')
+    }
+  }
+}
+
 export function isCapabilityToken<Payload extends CapabilityPayload>(
   token: unknown,
 ): token is CapabilityToken<Payload> {
@@ -124,6 +177,10 @@ export async function createCapability<
   options?: CreateCapabilityOptions,
 ): Promise<CapabilityToken<Payload & { iss: string }, SignedHeader>> {
   const signerId = signer.id
+
+  // Validate act/res patterns
+  assertValidPattern(payload.act)
+  assertValidPattern(payload.res)
 
   // If signer is the subject, no parent validation needed (root capability)
   if (payload.sub === signerId) {

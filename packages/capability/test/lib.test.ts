@@ -5,6 +5,7 @@ import {
   assertNonExpired,
   assertValidDelegation,
   assertValidIssuedAt,
+  assertValidPattern,
   type CapabilityPayload,
   checkCapability,
   checkDelegationChain,
@@ -753,6 +754,64 @@ describe('TOCTOU time consistency (M-05)', () => {
 
     // Should pass: iat is in the past, no expiration
     await expect(checkDelegationChain(payload, [])).resolves.not.toThrow()
+  })
+})
+
+describe('assertValidPattern() (M-06)', () => {
+  test('accepts simple patterns', () => {
+    expect(() => assertValidPattern('test')).not.toThrow()
+    expect(() => assertValidPattern('test/read')).not.toThrow()
+    expect(() => assertValidPattern('foo/bar/baz')).not.toThrow()
+  })
+
+  test('accepts wildcard patterns', () => {
+    expect(() => assertValidPattern('*')).not.toThrow()
+    expect(() => assertValidPattern('test/*')).not.toThrow()
+    expect(() => assertValidPattern('foo/bar/*')).not.toThrow()
+  })
+
+  test('accepts patterns with hyphens, underscores, dots, colons', () => {
+    expect(() => assertValidPattern('my-action')).not.toThrow()
+    expect(() => assertValidPattern('my_resource')).not.toThrow()
+    expect(() => assertValidPattern('v1.0/api')).not.toThrow()
+    expect(() => assertValidPattern('ns:action')).not.toThrow()
+  })
+
+  test('rejects empty string', () => {
+    expect(() => assertValidPattern('')).toThrow('Invalid pattern')
+  })
+
+  test('rejects path traversal', () => {
+    expect(() => assertValidPattern('../admin')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo/../bar')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('./hidden')).toThrow('Invalid pattern')
+  })
+
+  test('rejects null bytes and control characters', () => {
+    expect(() => assertValidPattern('foo\x00bar')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo\nbar')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo\rbar')).toThrow('Invalid pattern')
+  })
+
+  test('rejects double slashes', () => {
+    expect(() => assertValidPattern('foo//bar')).toThrow('Invalid pattern')
+  })
+
+  test('rejects leading or trailing slashes', () => {
+    expect(() => assertValidPattern('/foo')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo/')).toThrow('Invalid pattern')
+  })
+
+  test('rejects misplaced wildcards', () => {
+    expect(() => assertValidPattern('*/foo')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo/*/bar')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo*')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('*bar')).toThrow('Invalid pattern')
+  })
+
+  test('validates arrays', () => {
+    expect(() => assertValidPattern(['test/read', 'test/write'])).not.toThrow()
+    expect(() => assertValidPattern(['test/read', '../bad'])).toThrow('Invalid pattern')
   })
 })
 
