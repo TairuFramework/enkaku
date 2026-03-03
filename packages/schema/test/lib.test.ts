@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'vitest'
 
-import { assertType, createValidator, isType, ValidationError } from '../src/index.js'
+import {
+  assertType,
+  createValidator,
+  isType,
+  ValidationError,
+  ValidationErrorObject,
+} from '../src/index.js'
 
 describe('createValidator()', () => {
   test('creates a schema validation function', () => {
@@ -22,5 +28,18 @@ describe('createValidator()', () => {
 
     const validateFailure = validator({ test: false, extra: true })
     expect(validateFailure).toBeInstanceOf(ValidationError)
+  })
+})
+
+describe('ValidationErrorObject', () => {
+  test('fallback message does not expose schemaPath', () => {
+    const errObj = new ValidationErrorObject({
+      keyword: 'type',
+      instancePath: '/test',
+      schemaPath: '#/properties/test/type',
+      params: { type: 'string' },
+    } as never)
+    expect(errObj.message).not.toContain('#/properties')
+    expect(errObj.message).toContain('Validation failed')
   })
 })
