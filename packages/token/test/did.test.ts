@@ -46,6 +46,38 @@ describe('getSignatureInfo()', () => {
   test('throws for unsupported codec', () => {
     expect(() => getSignatureInfo('did:key:z1111')).toThrow('Unsupported DID signature codec')
   })
+
+  test('throws for EdDSA key with wrong size', () => {
+    const codec = CODECS.EdDSA
+    const shortKey = new Uint8Array(16)
+    const did = getDID(codec, shortKey)
+    expect(() => getSignatureInfo(did)).toThrow('Invalid public key size')
+  })
+
+  test('throws for ES256 key with wrong size', () => {
+    const codec = CODECS.ES256
+    const wrongKey = new Uint8Array(32)
+    const did = getDID(codec, wrongKey)
+    expect(() => getSignatureInfo(did)).toThrow('Invalid public key size')
+  })
+
+  test('accepts EdDSA key with correct size (32 bytes)', () => {
+    const codec = CODECS.EdDSA
+    const key = new Uint8Array(32).fill(1)
+    const did = getDID(codec, key)
+    const [alg, extractedKey] = getSignatureInfo(did)
+    expect(alg).toBe('EdDSA')
+    expect(extractedKey.length).toBe(32)
+  })
+
+  test('accepts ES256 key with correct size (33 bytes)', () => {
+    const codec = CODECS.ES256
+    const key = new Uint8Array(33).fill(2)
+    const did = getDID(codec, key)
+    const [alg, extractedKey] = getSignatureInfo(did)
+    expect(alg).toBe('ES256')
+    expect(extractedKey.length).toBe(33)
+  })
 })
 
 describe('getDID()', () => {
@@ -58,7 +90,7 @@ describe('getDID()', () => {
 
   test('round-trips through getSignatureInfo', () => {
     const codec = CODECS.EdDSA
-    const publicKey = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8])
+    const publicKey = new Uint8Array(32).fill(42)
     const did = getDID(codec, publicKey)
     const [alg, extractedKey] = getSignatureInfo(did)
     expect(alg).toBe('EdDSA')
