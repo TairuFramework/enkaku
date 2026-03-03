@@ -91,20 +91,14 @@ describe('ServerTransport', () => {
     type Protocol = typeof protocol
 
     describe('handles OPTIONS requests', () => {
-      test('from any origin (implicit "*")', async () => {
+      test('rejects cross-origin when no allowedOrigin is configured (same-origin default)', async () => {
         const transport = new ServerTransport<Protocol>()
         const headers = new Headers()
         headers.set('origin', 'http://example.com')
         const res = await transport.fetch(
           new Request('http://localhost/test', { headers, method: 'OPTIONS' }),
         )
-        expect(res.status).toBe(204)
-        expect(res.headers.get('access-control-allow-origin')).toBe('http://example.com')
-        expect(res.headers.get('access-control-allow-methods')).toBe('GET, POST, OPTIONS')
-        expect(res.headers.get('access-control-allow-headers')).toBe(
-          'Content-Type, enkaku-session-id',
-        )
-        expect(res.headers.get('access-control-max-age')).toBe('86400')
+        expect(res.status).toBe(403)
       })
 
       test('from any origin (explicit "*")', async () => {

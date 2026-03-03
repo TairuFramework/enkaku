@@ -61,7 +61,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
 
   const allowedOrigins = Array.isArray(options.allowedOrigin)
     ? options.allowedOrigin
-    : [options.allowedOrigin ?? '*']
+    : options.allowedOrigin != null
+      ? [options.allowedOrigin]
+      : []
   const maxSessions = options.maxSessions ?? 1000
   const sessionTimeoutMs = options.sessionTimeoutMs ?? 300_000 // 5 minutes
   const maxInflightRequests = options.maxInflightRequests ?? 10_000
@@ -156,8 +158,14 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     return [sid, ctrl]
   }
 
-  function checkRequestOrigin(request: Request): Response | string {
+  function checkRequestOrigin(request: Request): Response | string | null {
     const origin = request.headers.get('origin')
+    if (allowedOrigins.length === 0) {
+      if (origin != null) {
+        return Response.json({ error: 'Origin not allowed' }, { status: 403 })
+      }
+      return null
+    }
     if (allowedOrigins.includes('*')) {
       if (origin == null) {
         return '*'
@@ -187,10 +195,8 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     if (checkedOrigin instanceof Response) {
       return checkedOrigin
     }
-    return new Response(null, {
-      headers: getAccessControlHeaders(checkedOrigin),
-      status: 204,
-    })
+    const headers = checkedOrigin != null ? getAccessControlHeaders(checkedOrigin) : {}
+    return new Response(null, { headers, status: 204 })
   }
 
   function handleGetRequest(request: Request): Response {
@@ -199,7 +205,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       return checkedOrigin
     }
 
-    const headers = getAccessControlHeaders(checkedOrigin)
+    const headers = checkedOrigin != null ? getAccessControlHeaders(checkedOrigin) : {}
 
     // GET request to access the SSE stream
     const url = new URL(request.url)
@@ -249,7 +255,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       return checkedOrigin
     }
 
-    const headers = getAccessControlHeaders(checkedOrigin)
+    const headers = checkedOrigin != null ? getAccessControlHeaders(checkedOrigin) : {}
     try {
       const message = (await request.json()) as Incoming
       if (!VALID_PAYLOAD_TYPES.has(message?.payload?.typ)) {
