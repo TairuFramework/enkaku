@@ -11,6 +11,8 @@
 - Input validation hardening (H-02, H-07, H-08, H-12, H-16, H-18) — `docs/plans/archive/2026-01-30-input-validation-hardening.md`
 - HTTP server transport hardening (C-08, C-09, H-09, H-10) — `docs/plans/archive/2026-01-30-http-transport-hardening.complete.md`
 - Transport package test suites (T-04) — `docs/plans/archive/2026-01-30-transport-package-tests.complete.md`
+- Keystore package test suites (T-05) — `docs/plans/archive/2026-03-02-keystore-package-tests.complete.md`
+- Security hardening waves 4-6 (M-01, M-02, M-03, M-05, M-06, M-07, M-08, M-09, L-03, H-17, T-01, T-06, T-07) — `docs/plans/archive/2026-03-03-security-hardening-waves-4-6.complete.md`
 
 ---
 
@@ -827,7 +829,7 @@ The following fixes will require breaking changes:
 - **Package:** `@enkaku/token`
 - **Priority:** HIGH
 - **Status:** Fixed — JWE/envelope error paths now tested (decryptToken format/algorithm/encryption validation, createTokenEncrypter unsupported algorithm, wrapEnvelope missing signer/encrypter for all modes, unwrapEnvelope missing decrypter and invalid format). 9 new tests added.
-- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md` (Tasks 1, 3, 4, 6), `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 1), `docs/plans/2026-03-03-test-coverage-gaps.md` (Task 1)
+- **Plan:** `docs/plans/2026-01-28-token-expiration-validation.md` (Tasks 1, 3, 4, 6), `docs/plans/archive/2026-01-30-input-validation-hardening.md` (Task 1), `docs/plans/archive/2026-03-03-security-hardening-waves-4-6.complete.md` (Wave 6)
 - **Branch:** `feat/security-hardening-quick-fixes`
 
 **Error Paths:**
