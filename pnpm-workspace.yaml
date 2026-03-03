@@ -16,7 +16,7 @@ catalog:
   '@electron-forge/cli': ^7.11.1
   '@electron-forge/plugin-vite': ^7.11.1
   '@enkaku/codec': ^0.12.0
-  '@hono/node-server': ^1.19.9
+  '@hono/node-server': ^1.19.10
   '@logtape/logtape': ^2.0.2
   '@napi-rs/keyring': ^1.2.0
   '@noble/ciphers': ^2.1.1
