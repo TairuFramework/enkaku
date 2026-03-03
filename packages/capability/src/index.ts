@@ -225,6 +225,12 @@ export function assertNonExpired(payload: { exp?: number }, atTime?: number): vo
   }
 }
 
+export function assertValidIssuedAt(payload: { iat?: number }, atTime?: number): void {
+  if (payload.iat != null && payload.iat > (atTime ?? now())) {
+    throw new Error('Invalid token: issued in the future')
+  }
+}
+
 export function assertValidDelegation(
   from: CapabilityPayload,
   to: CapabilityPayload,
@@ -237,6 +243,7 @@ export function assertValidDelegation(
     throw new Error('Invalid capability: subject mismatch')
   }
   assertNonExpired(from, atTime)
+  assertValidIssuedAt(from, atTime)
   if (!hasPermission(to, from)) {
     throw new Error('Invalid capability: permission mismatch')
   }
@@ -259,6 +266,7 @@ export async function checkDelegationChain(
       throw new Error('Invalid capability: issuer should be subject')
     }
     assertNonExpired(payload, atTime)
+    assertValidIssuedAt(payload, atTime)
     return
   }
 
@@ -284,6 +292,7 @@ export async function checkCapability(
     // Subject is issuer, no delegation required
     // But still need to validate the permission is granted
     assertNonExpired(payload, time)
+    assertValidIssuedAt(payload as { iat?: number }, time)
 
     // Validate that the token grants the requested permission
     const p = payload as Record<string, unknown>

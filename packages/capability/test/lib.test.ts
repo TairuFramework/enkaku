@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest'
 import {
   assertNonExpired,
   assertValidDelegation,
+  assertValidIssuedAt,
   type CapabilityPayload,
   checkCapability,
   checkDelegationChain,
@@ -215,6 +216,38 @@ describe('assertNonExpired()', () => {
     const exp = now() - 1000
     expect(() => assertNonExpired({ exp })).toThrow('Invalid token: expired')
     expect(() => assertNonExpired({ exp: exp - 1000 }, exp)).toThrow('Invalid token: expired')
+  })
+})
+
+describe('assertValidIssuedAt()', () => {
+  test('accepts payload without iat', () => {
+    expect(() => assertValidIssuedAt({})).not.toThrow()
+    expect(() => assertValidIssuedAt({ iat: undefined })).not.toThrow()
+  })
+
+  test('accepts payload with past iat', () => {
+    const iat = now() - 1000
+    expect(() => assertValidIssuedAt({ iat })).not.toThrow()
+  })
+
+  test('accepts payload with current iat', () => {
+    const iat = now()
+    expect(() => assertValidIssuedAt({ iat })).not.toThrow()
+  })
+
+  test('rejects payload with future iat', () => {
+    const iat = now() + 1000
+    expect(() => assertValidIssuedAt({ iat })).toThrow('Invalid token: issued in the future')
+  })
+
+  test('respects atTime parameter', () => {
+    const fixedTime = 1700000000
+    // iat is before atTime — OK
+    expect(() => assertValidIssuedAt({ iat: fixedTime - 100 }, fixedTime)).not.toThrow()
+    // iat is after atTime — rejected
+    expect(() => assertValidIssuedAt({ iat: fixedTime + 100 }, fixedTime)).toThrow(
+      'Invalid token: issued in the future',
+    )
   })
 })
 
