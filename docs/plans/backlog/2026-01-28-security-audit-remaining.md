@@ -6,13 +6,14 @@
 
 ## Summary
 
-40 of 47 issues resolved. 3 issues closed (C-12 won't-fix, L-01/L-02 already handled). 6 issues remain open across security, tests, and performance.
+44 of 47 issues resolved. 3 issues closed (C-12 won't-fix, L-01/L-02 already handled). 3 issues remain open (critical/high only), plus test coverage gaps and performance.
 
 **Resolution history:**
 - Wave 1 (2026-01-28): Token expiration (C-01, H-01), capability authorization (C-02, C-03, H-04, M-04), server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12)
 - Wave 2 (2026-01-29): Protocol schema hardening (H-05, H-06)
 - Wave 3 (2026-01-30): Input validation (H-02, H-07, H-08, H-12, H-16, H-18), HTTP transport hardening (C-08, C-09, H-09, H-10), transport tests (T-04)
 - Wave 4 (2026-03-03): Error message sanitization (M-01, M-08), input validation (M-02, M-03), CORS hardening (M-09), iat validation (L-03), close L-01/L-02
+- Wave 5 (2026-03-03): AJV defaults (M-07), TOCTOU fix (M-05), pattern validation (M-06), public mode warning (H-17)
 
 ---
 
@@ -25,21 +26,17 @@
 | C-11 | Socket transport has no TLS support | `@enkaku/socket-transport` | Open |
 | C-12 | Browser keystore stores keys unencrypted | `@enkaku/browser-keystore` | Won't Fix — non-extractable keys are the correct approach |
 
-## High (3 open)
+## High (2 open)
 
 | ID | Issue | Package |
 |----|-------|---------|
 | H-03 | No cryptographic binding to caller identity | `@enkaku/capability` |
 | H-11 | No message sequence validation | `@enkaku/http-*-transport` |
-| H-17 | Conditional authentication bypass (public mode) | `@enkaku/server` |
 
-## Medium (4 open)
+## Medium (2 open)
 
 | ID | Issue | Package |
 |----|-------|---------|
-| M-05 | TOCTOU race in expiration checks | `@enkaku/capability` |
-| M-06 | No validation of resource/action patterns | `@enkaku/capability` |
-| M-07 | useDefaults: true in AJV | `@enkaku/schema` |
 | M-13 | Socket buffer no backpressure | `@enkaku/socket-transport` |
 | M-14 | No memory clearing in all keystores | All keystores |
 

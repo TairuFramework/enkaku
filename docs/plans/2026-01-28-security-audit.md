@@ -533,10 +533,13 @@ Return generic "Handler execution failed" to clients, log detailed errors server
 ### H-17: Conditional Authentication Bypass (Public Mode)
 - **Package:** `@enkaku/server`
 - **File:** `packages/server/src/server.ts:121`
-- **Status:** [ ] Not Started
+- **Status:** [~] Mitigated — Branch `feat/security-hardening-quick-fixes`
 
 **Description:**
 When `params.public = true`, the entire authentication check is skipped. ALL message types bypass access control in public mode.
+
+**Mitigation Applied:**
+Added logger.warn() when `public: true` is combined with non-empty access control records (which are silently ignored). Warns in both the Server constructor and per-transport `handle()` method. Full per-procedure public access control is a separate architectural effort.
 
 ---
 
@@ -614,36 +617,39 @@ Type checking only validates presence, not format. `aud`, `sub`, `act`, `res` ca
 ### M-05: TOCTOU Race in Expiration Checks
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts:178`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `feat/security-hardening-quick-fixes`
 
 **Description:**
 When `atTime` is not provided, time passes between expiration check and capability use.
 
-**Recommendation:**
-Always require explicit `atTime` parameter from caller.
+**Fix Applied:**
+`assertValidDelegation()` and `checkDelegationChain()` now capture `now()` once at the top and pass the resolved time consistently through all downstream calls, including recursive delegation chain validation.
 
 ---
 
 ### M-06: No Validation of Resource/Action Patterns
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts:78-95`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `feat/security-hardening-quick-fixes`
 
 **Description:**
 No whitelist/validation of resource naming patterns. Allows suspicious patterns like `'../../../'`.
+
+**Fix Applied:**
+Added `assertValidPattern()` that rejects path traversal, control characters, double slashes, leading/trailing slashes, and misplaced wildcards. Called during capability creation in `createCapability()`.
 
 ---
 
 ### M-07: useDefaults: true in AJV (Schema)
 - **Package:** `@enkaku/schema`
 - **File:** `packages/schema/src/validation.ts:9`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `feat/security-hardening-quick-fixes`
 
 **Description:**
 AJV configured with `useDefaults: true`, causing mutation of input objects and implicit type coercion.
 
-**Recommendation:**
-Set `useDefaults: false`.
+**Fix Applied:**
+Changed to `useDefaults: false`. No schemas in the codebase use default values, so no behavior change.
 
 ---
 
