@@ -6,7 +6,7 @@
 
 ## Summary
 
-44 of 47 issues resolved. 3 issues closed (C-12 won't-fix, L-01/L-02 already handled). 3 issues remain open (critical/high only), plus test coverage gaps and performance.
+44 of 47 issues resolved. 3 issues closed (C-12 won't-fix, L-01/L-02 already handled). 3 issues remain open (critical/high only), plus performance issues.
 
 **Resolution history:**
 - Wave 1 (2026-01-28): Token expiration (C-01, H-01), capability authorization (C-02, C-03, H-04, M-04), server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12)
@@ -14,6 +14,7 @@
 - Wave 3 (2026-01-30): Input validation (H-02, H-07, H-08, H-12, H-16, H-18), HTTP transport hardening (C-08, C-09, H-09, H-10), transport tests (T-04)
 - Wave 4 (2026-03-03): Error message sanitization (M-01, M-08), input validation (M-02, M-03), CORS hardening (M-09), iat validation (L-03), close L-01/L-02
 - Wave 5 (2026-03-03): AJV defaults (M-07), TOCTOU fix (M-05), pattern validation (M-06), public mode warning (H-17)
+- Wave 6 (2026-03-03): Test coverage gaps (T-01 error paths, T-06 schema helpers, T-07 codec utils)
 
 ---
 
@@ -48,10 +49,10 @@ All low-priority issues resolved or closed.
 
 | ID | Issue | Priority | Status |
 |----|-------|----------|--------|
-| T-01 | Token package — remaining error path tests (6 untested paths) | HIGH | Partial |
-| T-05 | Keystore packages — zero unit test coverage (all 4 packages) | CRITICAL | Fixed (78 tests) |
-| T-06 | Schema/protocol — schema helper function tests still needed | HIGH | Partial (H-05/H-06/H-07 tested) |
-| T-07 | Utility packages — Base64 validation tests (M-03) | HIGH | Partial (H-08/H-18 tested) |
+| T-01 | Token package — error path tests | HIGH | Fixed (9 error path tests: decryptToken, createTokenEncrypter, wrapEnvelope, unwrapEnvelope) |
+| T-05 | Keystore packages — unit test coverage | CRITICAL | Fixed (78 tests) |
+| T-06 | Schema/protocol — schema helper function tests | HIGH | Fixed (13 tests: asType, toStandardValidator, createStandardValidator, ValidationError/ValidationErrorObject getters) |
+| T-07 | Utility packages — codec utility tests | HIGH | Fixed (13 tests: canonicalStringify, fromUTF/toUTF, b64uFromJSON canonicalize) |
 
 ## Performance Issues (open)
 
