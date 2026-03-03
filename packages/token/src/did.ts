@@ -45,13 +45,13 @@ export function getDID(codec: Uint8Array, publicKey: Uint8Array): string {
 /** @internal */
 export function getSignatureInfo(did: string): [SignatureAlgorithm, Uint8Array] {
   if (!did.startsWith(PREFIX)) {
-    throw new Error(`Invalid DID to decode: ${did}`)
+    throw new Error('Invalid DID format')
   }
 
   const bytes = base58.decode(did.slice(PREFIX.length))
   const info = getAlgorithmAndPublicKey(bytes)
   if (info == null) {
-    throw new Error(`Unsupported DID signature codec: ${did}`)
+    throw new Error('Unsupported DID signature codec')
   }
   return info
 }

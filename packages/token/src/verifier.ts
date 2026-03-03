@@ -27,7 +27,7 @@ export const defaultVerifiers: Verifiers = {
 export function getVerifier(algorithm: SignatureAlgorithm, verifiers: Verifiers = {}): Verifier {
   const verifier = verifiers[algorithm] ?? defaultVerifiers[algorithm]
   if (verifier == null) {
-    throw new Error(`No verifier for algorithm: ${algorithm}`)
+    throw new Error('Unsupported signature algorithm')
   }
   return verifier
 }

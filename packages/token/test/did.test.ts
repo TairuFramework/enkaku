@@ -40,7 +40,7 @@ describe('getAlgorithmAndPublicKey()', () => {
 
 describe('getSignatureInfo()', () => {
   test('throws for invalid DID prefix', () => {
-    expect(() => getSignatureInfo('invalid:key:z123')).toThrow('Invalid DID to decode')
+    expect(() => getSignatureInfo('invalid:key:z123')).toThrow('Invalid DID format')
   })
 
   test('throws for unsupported codec', () => {

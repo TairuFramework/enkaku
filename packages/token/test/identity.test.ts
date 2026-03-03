@@ -79,6 +79,14 @@ describe('createSigningIdentity', () => {
     const verified = await verifyToken(token)
     expect(verified).toBeDefined()
   })
+
+  test('rejects payload with mismatched issuer using generic error', async () => {
+    const privateKey = ed25519.utils.randomSecretKey()
+    const identity = createSigningIdentity(privateKey)
+    await expect(identity.signToken({ iss: 'did:key:wrong' })).rejects.toThrow(
+      'Invalid payload: issuer does not match signer',
+    )
+  })
 })
 
 describe('createFullIdentity', () => {

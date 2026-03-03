@@ -1,3 +1,4 @@
+import { b64uFromJSON } from '@enkaku/codec'
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { equals } from 'uint8arrays'
 import { describe, expect, test } from 'vitest'
@@ -128,4 +129,26 @@ describe('verifyToken with time validation', () => {
       'Token expired',
     )
   })
+})
+
+test('verifyToken uses generic error for invalid header type', async () => {
+  const identity = randomIdentity()
+  const token = await identity.signToken({ test: true })
+  const str = stringifyToken(token)
+  const [, payload, sig] = str.split('.')
+  const badHeader = b64uFromJSON({ typ: 'NOT_JWT', alg: 'EdDSA' })
+  await expect(verifyToken(`${badHeader}.${payload}.${sig}`)).rejects.toThrow(
+    'Invalid token header type',
+  )
+})
+
+test('verifyToken uses generic error for unsupported algorithm', async () => {
+  const identity = randomIdentity()
+  const token = await identity.signToken({ test: true })
+  const str = stringifyToken(token)
+  const [, payload, sig] = str.split('.')
+  const badHeader = b64uFromJSON({ typ: 'JWT', alg: 'RS256' })
+  await expect(verifyToken(`${badHeader}.${payload}.${sig}`)).rejects.toThrow(
+    'Unsupported signature algorithm',
+  )
 })
