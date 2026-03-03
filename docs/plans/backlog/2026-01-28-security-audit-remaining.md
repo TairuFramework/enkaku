@@ -1,42 +1,36 @@
 # Security Audit — Remaining Issues
 
-**Extracted from:** `docs/plans/archive/2026-01-28-security-audit.md`
+**Extracted from:** `docs/plans/2026-01-28-security-audit.md`
+**Last updated:** 2026-03-02
 **Priority:** Varies (see severity ratings below)
 
 ## Summary
 
-17 of 47 issues were resolved across four implementation plans. 1 issue (C-12) was closed as won't-fix. The remaining open issues are listed below, grouped by severity.
+32 of 47 issues resolved. 1 issue (C-12) closed as won't-fix. 14 issues remain open across security, tests, and performance.
+
+**Resolution history:**
+- Wave 1 (2026-01-28): Token expiration (C-01, H-01), capability authorization (C-02, C-03, H-04, M-04), server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12)
+- Wave 2 (2026-01-29): Protocol schema hardening (H-05, H-06)
+- Wave 3 (2026-01-30): Input validation (H-02, H-07, H-08, H-12, H-16, H-18), HTTP transport hardening (C-08, C-09, H-09, H-10), transport tests (T-04)
 
 ---
 
-## Critical (5 open, 1 won't-fix)
+## Critical (2 open, 1 won't-fix)
 
 | ID | Issue | Package | Status |
 |----|-------|---------|--------|
 | C-04 | No capability revocation mechanism | `@enkaku/capability` | Open |
-| C-08 | Session resource exhaustion (HTTP transport) | `@enkaku/http-server-transport` | Open |
-| C-09 | Inflight request exhaustion (HTTP transport) | `@enkaku/http-server-transport` | Open |
 | C-10 | No TLS/HTTPS enforcement | `@enkaku/http-*-transport` | Open |
 | C-11 | Socket transport has no TLS support | `@enkaku/socket-transport` | Open |
-| C-12 | Browser keystore stores keys unencrypted | `@enkaku/browser-keystore` | Won't Fix — non-extractable keys are the correct approach; wrapping would require extractable keys, reducing security |
+| C-12 | Browser keystore stores keys unencrypted | `@enkaku/browser-keystore` | Won't Fix — non-extractable keys are the correct approach |
 
-## High (11 open, 2 resolved)
+## High (3 open)
 
 | ID | Issue | Package |
 |----|-------|---------|
-| H-02 | Codec comparison missing bounds check | `@enkaku/token` |
 | H-03 | No cryptographic binding to caller identity | `@enkaku/capability` |
-| ~~H-05~~ | ~~Missing payload size constraints (protocol)~~ | ~~`@enkaku/protocol`~~ — **Resolved** in `2026-01-29-protocol-schema-hardening` |
-| ~~H-06~~ | ~~additionalProperties: true allows arbitrary fields~~ | ~~`@enkaku/protocol`~~ — **Resolved** in `2026-01-29-protocol-schema-hardening` |
-| H-07 | Unsafe reference resolution (prototype pollution) | `@enkaku/schema` |
-| H-08 | JSON.parse() without depth limits | `@enkaku/codec` |
-| H-09 | No request timeout (HTTP transport) | `@enkaku/http-server-transport` |
-| H-10 | Header injection via origin reflection | `@enkaku/http-server-transport` |
 | H-11 | No message sequence validation | `@enkaku/http-*-transport` |
-| H-12 | No input validation on message payload type | `@enkaku/http-server-transport` |
-| H-16 | Handler error messages sent to clients | `@enkaku/server` |
 | H-17 | Conditional authentication bypass (public mode) | `@enkaku/server` |
-| H-18 | No payload size limits (stream JSON lines) | `@enkaku/stream` |
 
 ## Medium (10 open)
 
@@ -61,15 +55,14 @@
 | L-02 | Missing algorithm constant validation | `@enkaku/token` |
 | L-03 | Missing iat validation | `@enkaku/capability` |
 
-## Test Coverage Gaps (open)
+## Test Coverage Gaps
 
-| ID | Issue | Priority |
-|----|-------|----------|
-| T-01 | Token package — remaining error path tests | HIGH (partially fixed) |
-| T-04 | Transport packages — zero coverage | CRITICAL |
-| T-05 | Keystore packages — zero coverage | CRITICAL |
-| T-06 | Schema/protocol — validation tests missing | HIGH (H-05/H-06 unsigned path covered; signed path still missing) |
-| T-07 | Utility packages — security tests missing | HIGH |
+| ID | Issue | Priority | Status |
+|----|-------|----------|--------|
+| T-01 | Token package — remaining error path tests (6 untested paths) | HIGH | Partial |
+| T-05 | Keystore packages — zero unit test coverage (all 4 packages) | CRITICAL | Fixed (78 tests) |
+| T-06 | Schema/protocol — schema helper function tests still needed | HIGH | Partial (H-05/H-06/H-07 tested) |
+| T-07 | Utility packages — Base64 validation tests (M-03) | HIGH | Partial (H-08/H-18 tested) |
 
 ## Performance Issues (open)
 
@@ -78,7 +71,6 @@
 | P-01 | String concatenation in JSON-Lines parser | HIGH (10-50x slower) |
 | P-02 | Multiple regex replacements in Base64URL | HIGH (3x slower) |
 | P-03 | Regex in hot loop | MEDIUM (2-5x slower) |
-| P-05 | Session map growth without limits | HIGH (DoS) |
 | P-06 | String buffer growth without limits | HIGH (OOM) |
 | P-07 | No backpressure in stream transforms | HIGH (overflow) |
 | P-08 | O(n^2) chain unwinding | MEDIUM |

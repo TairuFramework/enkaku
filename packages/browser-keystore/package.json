@@ -32,7 +32,8 @@
     "build:types:ci": "tsc --emitDeclarationOnly --skipLibCheck --declarationMap false",
     "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
     "test:types": "tsc --noEmit",
-    "test": "pnpm run test:types",
+    "test:unit": "vitest run",
+    "test": "pnpm run test:types && pnpm run test:unit",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
@@ -41,6 +42,7 @@
     "@enkaku/token": "workspace:^"
   },
   "devDependencies": {
-    "@enkaku/protocol": "workspace:^"
+    "@enkaku/protocol": "workspace:^",
+    "vitest": "catalog:"
   }
 }
