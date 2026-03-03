@@ -174,10 +174,17 @@ describe('createTransportStream() SSE session handling', () => {
 
     // Mock EventSource using a class so it can be used with `new`
     const mockClose = vi.fn()
-    const mockAddEventListener = vi.fn()
     globalThis.EventSource = class MockEventSource {
-      addEventListener = mockAddEventListener
+      #listeners: Record<string, Array<(event: unknown) => void>> = {}
       close = mockClose
+      addEventListener(type: string, handler: (event: unknown) => void) {
+        if (this.#listeners[type] == null) {
+          this.#listeners[type] = []
+        }
+        this.#listeners[type].push(handler)
+        // Auto-fire open to simulate successful connection
+        if (type === 'open') queueMicrotask(() => handler({}))
+      }
     } as unknown as typeof EventSource
 
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
@@ -211,8 +218,15 @@ describe('createTransportStream() SSE session handling', () => {
     }) as typeof fetch
 
     globalThis.EventSource = class MockEventSource {
-      addEventListener = vi.fn()
+      #listeners: Record<string, Array<(event: unknown) => void>> = {}
       close = vi.fn()
+      addEventListener(type: string, handler: (event: unknown) => void) {
+        if (this.#listeners[type] == null) {
+          this.#listeners[type] = []
+        }
+        this.#listeners[type].push(handler)
+        if (type === 'open') queueMicrotask(() => handler({}))
+      }
     } as unknown as typeof EventSource
 
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
@@ -240,8 +254,15 @@ describe('createTransportStream() SSE session handling', () => {
     }) as typeof fetch
 
     globalThis.EventSource = class MockEventSource {
-      addEventListener = vi.fn()
+      #listeners: Record<string, Array<(event: unknown) => void>> = {}
       close = mockClose
+      addEventListener(type: string, handler: (event: unknown) => void) {
+        if (this.#listeners[type] == null) {
+          this.#listeners[type] = []
+        }
+        this.#listeners[type].push(handler)
+        if (type === 'open') queueMicrotask(() => handler({}))
+      }
     } as unknown as typeof EventSource
 
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
@@ -251,9 +272,6 @@ describe('createTransportStream() SSE session handling', () => {
       payload: { typ: 'channel', prc: 'test/channel', data: 'init' },
     } as unknown as ClientMessage
     await writer.write(channelMsg)
-
-    // Wait for SSE connection to be established
-    await new Promise((resolve) => setTimeout(resolve, 10))
 
     await writer.close()
     expect(mockClose).toHaveBeenCalled()
@@ -290,7 +308,7 @@ describe('createTransportStream() SSE message reception', () => {
       return new Response(null, { status: 204 })
     }) as typeof fetch
 
-    type EventHandler = (event: { data: string }) => void
+    type EventHandler = (event: unknown) => void
     const listeners: Record<string, Array<EventHandler>> = {}
     globalThis.EventSource = class MockEventSource {
       addEventListener(type: string, handler: EventHandler) {
@@ -298,6 +316,8 @@ describe('createTransportStream() SSE message reception', () => {
           listeners[type] = []
         }
         listeners[type].push(handler)
+        // Auto-fire open to simulate successful connection
+        if (type === 'open') queueMicrotask(() => handler({}))
       }
       close = vi.fn()
     } as unknown as typeof EventSource

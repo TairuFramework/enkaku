@@ -49,6 +49,20 @@ export async function createEventStream(url: string): Promise<EventStream> {
   const sourceURL = new URL(url)
   sourceURL.searchParams.set('id', data.id)
   const source = new EventSource(sourceURL)
+
+  // Wait for the SSE connection to be established before returning.
+  // The server sets the session controller when processing this GET —
+  // without waiting, a subsequent POST can arrive before the controller
+  // exists, causing a "Invalid request" / "Inactive session" error.
+  await new Promise<void>((resolve, reject) => {
+    source.addEventListener('open', () => resolve(), { once: true })
+    source.addEventListener(
+      'error',
+      (event) => reject(new Error('EventSource connection failed', { cause: event })),
+      { once: true },
+    )
+  })
+
   return { id: data.id, source }
 }
 
@@ -101,6 +115,10 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
             streamState = { status: 'connected', stream: eventStream }
 
             eventStream.source.addEventListener('error', (event) => {
+              // Close the EventSource to prevent automatic reconnection —
+              // the server deletes the session on disconnect so reconnecting
+              // to the same URL would always fail with "Invalid ID".
+              eventStream.source.close()
               const error = new Error('EventSource error', { cause: event })
               streamState = { status: 'error', error }
               controller.error(error)
