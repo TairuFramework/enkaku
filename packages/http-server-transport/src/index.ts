@@ -222,6 +222,10 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
 
     // Create SSE feed and track controller, refresh timeout
     const [body, controller] = createReadable<string>()
+    // Send an SSE comment to flush response headers immediately.
+    // Without this, Node.js HTTP frameworks may buffer the response
+    // until the first data chunk, preventing EventSource 'open' from firing.
+    controller.enqueue(':\n\n')
     sessions.set(sessionID, { controller, lastAccess: Date.now() })
 
     request.signal.addEventListener('abort', () => {
