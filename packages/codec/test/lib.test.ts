@@ -40,6 +40,36 @@ test('JSON to base64url encoding and decoding', () => {
   expect(decoded).toEqual(data)
 })
 
+describe('fromB64U()', () => {
+  test('rejects input containing whitespace', () => {
+    expect(() => fromB64U('aGVs bG8')).toThrow('Invalid base64url')
+  })
+
+  test('rejects input containing padding characters', () => {
+    expect(() => fromB64U('aGVsbG8=')).toThrow('Invalid base64url')
+  })
+
+  test('rejects input containing standard base64 characters', () => {
+    expect(() => fromB64U('aGVs+G8')).toThrow('Invalid base64url')
+    expect(() => fromB64U('aGVs/G8')).toThrow('Invalid base64url')
+  })
+
+  test('rejects input containing invalid characters', () => {
+    expect(() => fromB64U('aGVs!G8')).toThrow('Invalid base64url')
+    expect(() => fromB64U('aGVs@bG8#')).toThrow('Invalid base64url')
+  })
+
+  test('accepts valid base64url input', () => {
+    const bytes = new Uint8Array([72, 101, 108, 108, 111])
+    const encoded = toB64U(bytes)
+    expect(() => fromB64U(encoded)).not.toThrow()
+  })
+
+  test('accepts empty string', () => {
+    expect(() => fromB64U('')).not.toThrow()
+  })
+})
+
 describe('b64uToJSON()', () => {
   test('rejects deeply nested JSON exceeding depth limit', () => {
     const depth = 200
