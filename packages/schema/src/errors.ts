@@ -11,10 +11,7 @@ export class ValidationErrorObject extends Error implements StandardSchemaV1.Iss
   #path: Array<string>
 
   constructor(errorObject: ErrorObject) {
-    super(
-      errorObject.message ??
-        `Validation failed for ${errorObject.keyword} at ${errorObject.schemaPath}`,
-    )
+    super(errorObject.message ?? `Validation failed for ${errorObject.keyword}`)
     this.#details = errorObject
     this.#path = errorObject.instancePath.split('/').filter((part) => part !== '')
   }

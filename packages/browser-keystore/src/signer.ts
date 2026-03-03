@@ -19,7 +19,7 @@ async function createBrowserSigningIdentity(keyPair: CryptoKeyPair): Promise<Sig
     Header extends Record<string, unknown> = Record<string, unknown>,
   >(payload: Payload, header?: Header): Promise<SignedToken<Payload, Header>> {
     if (payload.iss != null && payload.iss !== id) {
-      throw new Error(`Invalid payload with issuer ${payload.iss} used with signer ${id}`)
+      throw new Error('Invalid payload: issuer does not match signer')
     }
 
     const fullHeader = { ...header, typ: 'JWT', alg: 'ES256' } as SignedHeader & Header

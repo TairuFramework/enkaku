@@ -73,6 +73,59 @@ function isStringOrStringArray(value: unknown): value is string | Array<string> 
   return false
 }
 
+// Valid pattern: alphanumeric, hyphens, underscores, dots, colons, slashes, and trailing wildcard
+// Components are separated by '/'. Wildcard '*' is only valid as the entire last component.
+const VALID_COMPONENT_RE = /^[a-zA-Z0-9_\-.:]+$/
+// biome-ignore lint/suspicious/noControlCharactersInRegex: intentional check for control characters
+const CONTROL_CHAR_RE = /[\x00-\x1f]/
+
+export function assertValidPattern(value: string | Array<string>): void {
+  if (Array.isArray(value)) {
+    for (const v of value) {
+      assertValidPattern(v)
+    }
+    return
+  }
+
+  if (value === '*') {
+    return
+  }
+
+  if (value === '') {
+    throw new Error('Invalid pattern: empty string')
+  }
+
+  if (CONTROL_CHAR_RE.test(value)) {
+    throw new Error('Invalid pattern: contains control characters')
+  }
+
+  if (value.startsWith('/') || value.endsWith('/')) {
+    throw new Error('Invalid pattern: leading or trailing slash')
+  }
+
+  if (value.includes('//')) {
+    throw new Error('Invalid pattern: double slash')
+  }
+
+  if (value.includes('../') || value.includes('./')) {
+    throw new Error('Invalid pattern: path traversal')
+  }
+
+  const parts = value.split('/')
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i]
+    if (part === '*') {
+      if (i !== parts.length - 1) {
+        throw new Error('Invalid pattern: wildcard must be the last component')
+      }
+    } else if (part.includes('*')) {
+      throw new Error('Invalid pattern: wildcard must be a standalone component')
+    } else if (!VALID_COMPONENT_RE.test(part)) {
+      throw new Error('Invalid pattern: invalid characters')
+    }
+  }
+}
+
 export function isCapabilityToken<Payload extends CapabilityPayload>(
   token: unknown,
 ): token is CapabilityToken<Payload> {
@@ -124,6 +177,10 @@ export async function createCapability<
   options?: CreateCapabilityOptions,
 ): Promise<CapabilityToken<Payload & { iss: string }, SignedHeader>> {
   const signerId = signer.id
+
+  // Validate act/res patterns
+  assertValidPattern(payload.act)
+  assertValidPattern(payload.res)
 
   // If signer is the subject, no parent validation needed (root capability)
   if (payload.sub === signerId) {
@@ -225,18 +282,26 @@ export function assertNonExpired(payload: { exp?: number }, atTime?: number): vo
   }
 }
 
+export function assertValidIssuedAt(payload: { iat?: number }, atTime?: number): void {
+  if (payload.iat != null && payload.iat > (atTime ?? now())) {
+    throw new Error('Invalid token: issued in the future')
+  }
+}
+
 export function assertValidDelegation(
   from: CapabilityPayload,
   to: CapabilityPayload,
   atTime?: number,
 ): void {
+  const time = atTime ?? now()
   if (to.iss !== from.aud) {
     throw new Error('Invalid capability: audience mismatch')
   }
   if (to.sub !== from.sub) {
     throw new Error('Invalid capability: subject mismatch')
   }
-  assertNonExpired(from, atTime)
+  assertNonExpired(from, time)
+  assertValidIssuedAt(from, time)
   if (!hasPermission(to, from)) {
     throw new Error('Invalid capability: permission mismatch')
   }
@@ -248,7 +313,7 @@ export async function checkDelegationChain(
   options?: DelegationChainOptions,
 ): Promise<void> {
   const maxDepth = options?.maxDepth ?? DEFAULT_MAX_DELEGATION_DEPTH
-  const atTime = options?.atTime
+  const atTime = options?.atTime ?? now()
 
   if (capabilities.length > maxDepth) {
     throw new Error(`Invalid capability: delegation chain exceeds maximum depth of ${maxDepth}`)
@@ -259,6 +324,7 @@ export async function checkDelegationChain(
       throw new Error('Invalid capability: issuer should be subject')
     }
     assertNonExpired(payload, atTime)
+    assertValidIssuedAt(payload, atTime)
     return
   }
 
@@ -266,7 +332,7 @@ export async function checkDelegationChain(
   const next = await verifyToken<CapabilityPayload>(head)
   assertCapabilityToken(next)
   assertValidDelegation(next.payload, payload, atTime)
-  await checkDelegationChain(next.payload, tail, options)
+  await checkDelegationChain(next.payload, tail, { ...options, atTime })
 }
 
 export async function checkCapability(
@@ -284,6 +350,7 @@ export async function checkCapability(
     // Subject is issuer, no delegation required
     // But still need to validate the permission is granted
     assertNonExpired(payload, time)
+    assertValidIssuedAt(payload as { iat?: number }, time)
 
     // Validate that the token grants the requested permission
     const p = payload as Record<string, unknown>

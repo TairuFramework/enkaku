@@ -4,6 +4,8 @@ import { describe, expect, test } from 'vitest'
 import {
   assertNonExpired,
   assertValidDelegation,
+  assertValidIssuedAt,
+  assertValidPattern,
   type CapabilityPayload,
   checkCapability,
   checkDelegationChain,
@@ -215,6 +217,38 @@ describe('assertNonExpired()', () => {
     const exp = now() - 1000
     expect(() => assertNonExpired({ exp })).toThrow('Invalid token: expired')
     expect(() => assertNonExpired({ exp: exp - 1000 }, exp)).toThrow('Invalid token: expired')
+  })
+})
+
+describe('assertValidIssuedAt()', () => {
+  test('accepts payload without iat', () => {
+    expect(() => assertValidIssuedAt({})).not.toThrow()
+    expect(() => assertValidIssuedAt({ iat: undefined })).not.toThrow()
+  })
+
+  test('accepts payload with past iat', () => {
+    const iat = now() - 1000
+    expect(() => assertValidIssuedAt({ iat })).not.toThrow()
+  })
+
+  test('accepts payload with current iat', () => {
+    const iat = now()
+    expect(() => assertValidIssuedAt({ iat })).not.toThrow()
+  })
+
+  test('rejects payload with future iat', () => {
+    const iat = now() + 1000
+    expect(() => assertValidIssuedAt({ iat })).toThrow('Invalid token: issued in the future')
+  })
+
+  test('respects atTime parameter', () => {
+    const fixedTime = 1700000000
+    // iat is before atTime — OK
+    expect(() => assertValidIssuedAt({ iat: fixedTime - 100 }, fixedTime)).not.toThrow()
+    // iat is after atTime — rejected
+    expect(() => assertValidIssuedAt({ iat: fixedTime + 100 }, fixedTime)).toThrow(
+      'Invalid token: issued in the future',
+    )
   })
 })
 
@@ -682,6 +716,102 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
       res: 'foo',
     })
     expect(isCapabilityToken(token)).toBe(false)
+  })
+})
+
+describe('TOCTOU time consistency (M-05)', () => {
+  test('assertValidDelegation uses consistent time for expiration and iat checks', () => {
+    const fixedTime = 1700000000
+    const from = {
+      iss: 'did:test:a',
+      aud: 'did:test:b',
+      sub: 'did:test:a',
+      act: '*',
+      res: '*',
+      exp: fixedTime + 100,
+      iat: fixedTime - 100,
+    } as CapabilityPayload
+    const to = {
+      iss: 'did:test:b',
+      sub: 'did:test:a',
+      act: 'test',
+      res: 'foo',
+    } as CapabilityPayload
+
+    // Should pass with explicit atTime
+    expect(() => assertValidDelegation(from, to, fixedTime)).not.toThrow()
+  })
+
+  test('checkDelegationChain captures time once when atTime not provided', async () => {
+    const signer = randomIdentity()
+    const payload = {
+      iss: signer.id,
+      sub: signer.id,
+      act: 'test',
+      res: 'foo',
+      iat: now() - 10,
+    } as CapabilityPayload
+
+    // Should pass: iat is in the past, no expiration
+    await expect(checkDelegationChain(payload, [])).resolves.not.toThrow()
+  })
+})
+
+describe('assertValidPattern() (M-06)', () => {
+  test('accepts simple patterns', () => {
+    expect(() => assertValidPattern('test')).not.toThrow()
+    expect(() => assertValidPattern('test/read')).not.toThrow()
+    expect(() => assertValidPattern('foo/bar/baz')).not.toThrow()
+  })
+
+  test('accepts wildcard patterns', () => {
+    expect(() => assertValidPattern('*')).not.toThrow()
+    expect(() => assertValidPattern('test/*')).not.toThrow()
+    expect(() => assertValidPattern('foo/bar/*')).not.toThrow()
+  })
+
+  test('accepts patterns with hyphens, underscores, dots, colons', () => {
+    expect(() => assertValidPattern('my-action')).not.toThrow()
+    expect(() => assertValidPattern('my_resource')).not.toThrow()
+    expect(() => assertValidPattern('v1.0/api')).not.toThrow()
+    expect(() => assertValidPattern('ns:action')).not.toThrow()
+  })
+
+  test('rejects empty string', () => {
+    expect(() => assertValidPattern('')).toThrow('Invalid pattern')
+  })
+
+  test('rejects path traversal', () => {
+    expect(() => assertValidPattern('../admin')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo/../bar')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('./hidden')).toThrow('Invalid pattern')
+  })
+
+  test('rejects null bytes and control characters', () => {
+    expect(() => assertValidPattern('foo\x00bar')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo\nbar')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo\rbar')).toThrow('Invalid pattern')
+  })
+
+  test('rejects double slashes', () => {
+    expect(() => assertValidPattern('foo//bar')).toThrow('Invalid pattern')
+  })
+
+  test('rejects leading or trailing slashes', () => {
+    expect(() => assertValidPattern('/foo')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo/')).toThrow('Invalid pattern')
+  })
+
+  test('rejects misplaced wildcards', () => {
+    expect(() => assertValidPattern('*/foo')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo/*/bar')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('foo*')).toThrow('Invalid pattern')
+    expect(() => assertValidPattern('*bar')).toThrow('Invalid pattern')
+  })
+
+  test('validates arrays', () => {
+    expect(() => assertValidPattern(['test/read', 'test/write'])).not.toThrow()
+    expect(() => assertValidPattern(['test/read', '../bad'])).toThrow('Invalid pattern')
   })
 })
 

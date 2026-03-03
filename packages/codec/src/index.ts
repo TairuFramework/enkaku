@@ -27,11 +27,16 @@ export function fromB64(base64: string): Uint8Array {
   return Uint8Array.from(atob(base64), (m) => m.codePointAt(0) as number)
 }
 
+const B64U_RE = /^[A-Za-z0-9_-]*$/
+
 /**
  * Convert a base64url-encoded string to a Uint8Array.
  */
-export function fromB64U(base64url: string) {
-  return fromB64(base64url.replace(/-/g, '+').replace(/_/g, '/').replace(/\s/g, ''))
+export function fromB64U(base64url: string): Uint8Array {
+  if (!B64U_RE.test(base64url)) {
+    throw new Error('Invalid base64url encoding')
+  }
+  return fromB64(base64url.replace(/-/g, '+').replace(/_/g, '/'))
 }
 
 /**

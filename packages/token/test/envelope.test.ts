@@ -63,4 +63,40 @@ describe('wrapEnvelope / unwrapEnvelope', () => {
       'Encrypter required',
     )
   })
+
+  test('wrapEnvelope throws if jwe-in-jws mode but no signer', async () => {
+    const recipient = randomIdentity()
+    const encrypter = createTokenEncrypter(recipient.id)
+    const payload = { typ: 'request', prc: 'test', rid: '1' }
+    await expect(wrapEnvelope('jwe-in-jws', payload, { encrypter })).rejects.toThrow(
+      'Signer required',
+    )
+  })
+
+  test('wrapEnvelope throws if jwe-in-jws mode but no encrypter', async () => {
+    const identity = randomIdentity()
+    const payload = { typ: 'request', prc: 'test', rid: '1' }
+    await expect(wrapEnvelope('jwe-in-jws', payload, { signer: identity })).rejects.toThrow(
+      'Encrypter required',
+    )
+  })
+
+  test('wrapEnvelope throws if jws-in-jwe mode but no signer', async () => {
+    const recipient = randomIdentity()
+    const encrypter = createTokenEncrypter(recipient.id)
+    const payload = { typ: 'request', prc: 'test', rid: '1' }
+    await expect(wrapEnvelope('jws-in-jwe', payload, { encrypter })).rejects.toThrow(
+      'Signer required',
+    )
+  })
+
+  test('unwrapEnvelope throws for 5-part message without decrypter', async () => {
+    await expect(unwrapEnvelope('a.b.c.d.e', {})).rejects.toThrow('Decrypter required')
+  })
+
+  test('unwrapEnvelope throws for invalid part count', async () => {
+    await expect(unwrapEnvelope('a.b', {})).rejects.toThrow('Invalid envelope format')
+    await expect(unwrapEnvelope('a.b.c.d', {})).rejects.toThrow('Invalid envelope format')
+    await expect(unwrapEnvelope('a', {})).rejects.toThrow('Invalid envelope format')
+  })
 })

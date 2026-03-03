@@ -55,7 +55,7 @@ export function createSigningIdentity(privateKey: Uint8Array): SigningIdentity {
     Header extends Record<string, unknown> = Record<string, unknown>,
   >(payload: Payload, header?: Header): Promise<SignedToken<Payload, Header>> {
     if (payload.iss != null && payload.iss !== id) {
-      throw new Error(`Invalid payload with issuer ${payload.iss} used with signer ${id}`)
+      throw new Error('Invalid payload: issuer does not match signer')
     }
 
     const fullHeader = { ...header, typ: 'JWT', alg: 'EdDSA' } as SignedHeader & Header

@@ -1,17 +1,20 @@
 # Security Audit — Remaining Issues
 
 **Extracted from:** `docs/plans/2026-01-28-security-audit.md`
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-03
 **Priority:** Varies (see severity ratings below)
 
 ## Summary
 
-32 of 47 issues resolved. 1 issue (C-12) closed as won't-fix. 14 issues remain open across security, tests, and performance.
+44 of 47 issues resolved. 3 issues closed (C-12 won't-fix, L-01/L-02 already handled). 3 issues remain open (critical/high only), plus performance issues.
 
 **Resolution history:**
 - Wave 1 (2026-01-28): Token expiration (C-01, H-01), capability authorization (C-02, C-03, H-04, M-04), server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12)
 - Wave 2 (2026-01-29): Protocol schema hardening (H-05, H-06)
 - Wave 3 (2026-01-30): Input validation (H-02, H-07, H-08, H-12, H-16, H-18), HTTP transport hardening (C-08, C-09, H-09, H-10), transport tests (T-04)
+- Wave 4 (2026-03-03): Error message sanitization (M-01, M-08), input validation (M-02, M-03), CORS hardening (M-09), iat validation (L-03), close L-01/L-02
+- Wave 5 (2026-03-03): AJV defaults (M-07), TOCTOU fix (M-05), pattern validation (M-06), public mode warning (H-17)
+- Wave 6 (2026-03-03): Test coverage gaps (T-01 error paths, T-06 schema helpers, T-07 codec utils)
 
 ---
 
@@ -24,45 +27,32 @@
 | C-11 | Socket transport has no TLS support | `@enkaku/socket-transport` | Open |
 | C-12 | Browser keystore stores keys unencrypted | `@enkaku/browser-keystore` | Won't Fix — non-extractable keys are the correct approach |
 
-## High (3 open)
+## High (2 open)
 
 | ID | Issue | Package |
 |----|-------|---------|
 | H-03 | No cryptographic binding to caller identity | `@enkaku/capability` |
 | H-11 | No message sequence validation | `@enkaku/http-*-transport` |
-| H-17 | Conditional authentication bypass (public mode) | `@enkaku/server` |
 
-## Medium (10 open)
+## Medium (2 open)
 
 | ID | Issue | Package |
 |----|-------|---------|
-| M-01 | Information disclosure in error messages | `@enkaku/token` |
-| M-02 | No public key size validation | `@enkaku/token` |
-| M-03 | Base64URL padding not validated | `@enkaku/codec` |
-| M-05 | TOCTOU race in expiration checks | `@enkaku/capability` |
-| M-06 | No validation of resource/action patterns | `@enkaku/capability` |
-| M-07 | useDefaults: true in AJV | `@enkaku/schema` |
-| M-08 | Schema structure exposure in error objects | `@enkaku/schema` |
-| M-09 | Wildcard CORS default | `@enkaku/http-server-transport` |
 | M-13 | Socket buffer no backpressure | `@enkaku/socket-transport` |
 | M-14 | No memory clearing in all keystores | All keystores |
 
-## Low (3 open)
+## Low (0 open)
 
-| ID | Issue | Package |
-|----|-------|---------|
-| L-01 | Weak DID codec uniqueness | `@enkaku/token` |
-| L-02 | Missing algorithm constant validation | `@enkaku/token` |
-| L-03 | Missing iat validation | `@enkaku/capability` |
+All low-priority issues resolved or closed.
 
 ## Test Coverage Gaps
 
 | ID | Issue | Priority | Status |
 |----|-------|----------|--------|
-| T-01 | Token package — remaining error path tests (6 untested paths) | HIGH | Partial |
-| T-05 | Keystore packages — zero unit test coverage (all 4 packages) | CRITICAL | Fixed (78 tests) |
-| T-06 | Schema/protocol — schema helper function tests still needed | HIGH | Partial (H-05/H-06/H-07 tested) |
-| T-07 | Utility packages — Base64 validation tests (M-03) | HIGH | Partial (H-08/H-18 tested) |
+| T-01 | Token package — error path tests | HIGH | Fixed (9 error path tests: decryptToken, createTokenEncrypter, wrapEnvelope, unwrapEnvelope) |
+| T-05 | Keystore packages — unit test coverage | CRITICAL | Fixed (78 tests) |
+| T-06 | Schema/protocol — schema helper function tests | HIGH | Fixed (13 tests: asType, toStandardValidator, createStandardValidator, ValidationError/ValidationErrorObject getters) |
+| T-07 | Utility packages — codec utility tests | HIGH | Fixed (13 tests: canonicalStringify, fromUTF/toUTF, b64uFromJSON canonicalize) |
 
 ## Performance Issues (open)
 

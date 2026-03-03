@@ -130,7 +130,7 @@ export async function verifyToken<
 
   const header = b64uToJSON(encodedHeader)
   if (header.typ !== 'JWT') {
-    throw new Error(`Invalid token header type: ${header.typ}`)
+    throw new Error('Invalid token header type')
   }
   if (header.alg === 'none') {
     return { header, payload: b64uToJSON<Payload>(encodedPayload) } as UnsignedToken<Payload>
@@ -159,5 +159,5 @@ export async function verifyToken<
     } as Token<Payload>
   }
 
-  throw new Error(`Unsupported signature algorithm: ${header.alg}`)
+  throw new Error('Unsupported signature algorithm')
 }

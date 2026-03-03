@@ -1,3 +1,4 @@
+import { b64uFromJSON } from '@enkaku/codec'
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { describe, expect, test } from 'vitest'
 
@@ -141,5 +142,39 @@ describe('createTokenEncrypter', () => {
     const d2 = await decryptToken(decrypter, jwe2)
     expect(new TextDecoder().decode(d1)).toBe('test')
     expect(new TextDecoder().decode(d2)).toBe('test')
+  })
+})
+
+describe('decryptToken() error paths', () => {
+  test('rejects JWE with wrong number of parts', async () => {
+    const decrypter = createDecryptingIdentity(ed25519.utils.randomSecretKey())
+    await expect(decryptToken(decrypter, 'a.b.c')).rejects.toThrow('Invalid JWE format')
+    await expect(decryptToken(decrypter, 'a.b.c.d')).rejects.toThrow('Invalid JWE format')
+    await expect(decryptToken(decrypter, 'a.b.c.d.e.f')).rejects.toThrow('Invalid JWE format')
+  })
+
+  test('rejects JWE with unsupported algorithm', async () => {
+    const decrypter = createDecryptingIdentity(ed25519.utils.randomSecretKey())
+    const header = { alg: 'RSA-OAEP', enc: 'A256GCM', epk: { kty: 'RSA', crv: '', x: '' } }
+    const encodedHeader = b64uFromJSON(header as unknown as Record<string, unknown>)
+    const jwe = `${encodedHeader}..AAAA.BBBB.CCCC`
+    await expect(decryptToken(decrypter, jwe)).rejects.toThrow('Unsupported JWE algorithm')
+  })
+
+  test('rejects JWE with unsupported encryption', async () => {
+    const decrypter = createDecryptingIdentity(ed25519.utils.randomSecretKey())
+    const header = { alg: 'ECDH-ES', enc: 'A128GCM', epk: { kty: 'OKP', crv: 'X25519', x: '' } }
+    const encodedHeader = b64uFromJSON(header as unknown as Record<string, unknown>)
+    const jwe = `${encodedHeader}..AAAA.BBBB.CCCC`
+    await expect(decryptToken(decrypter, jwe)).rejects.toThrow('Unsupported JWE encryption')
+  })
+})
+
+describe('createTokenEncrypter() error paths', () => {
+  test('rejects Uint8Array recipient with unsupported algorithm', () => {
+    const key = new Uint8Array(32)
+    expect(() => createTokenEncrypter(key, { algorithm: 'RSA' as never })).toThrow(
+      'Unsupported algorithm',
+    )
   })
 })

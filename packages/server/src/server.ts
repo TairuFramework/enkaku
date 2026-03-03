@@ -444,6 +444,11 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
           access: params.access,
           encryptionPolicy: params.encryptionPolicy,
         }
+        if (params.access != null && Object.keys(params.access).length > 0) {
+          this.#logger.warn(
+            'Server is in public mode: access control records are ignored. All procedures are accessible without authentication.',
+          )
+        }
       } else {
         throw new Error(
           'Invalid server parameters: either the server "identity" must be provided or the "public" parameter must be set to true',
@@ -455,6 +460,11 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         serverID,
         access: params.access ?? {},
         encryptionPolicy: params.encryptionPolicy,
+      }
+      if (params.public && params.access != null && Object.keys(params.access).length > 0) {
+        this.#logger.warn(
+          'Server is in public mode: access control records are ignored. All procedures are accessible without authentication.',
+        )
       }
     }
 
@@ -482,6 +492,10 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const access = options.access ?? this.#accessControl.access ?? {}
     const logger =
       options.logger ?? this.#logger.getChild('handler').with({ transportID: this.#getRandomID() })
+
+    if (publicAccess && Object.keys(access).length > 0) {
+      logger.warn('Transport handler is in public mode: access control records are ignored.')
+    }
 
     const encryptionPolicy = this.#accessControl.encryptionPolicy
 
