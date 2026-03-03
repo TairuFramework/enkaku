@@ -29,6 +29,23 @@ describe('createValidator()', () => {
     const validateFailure = validator({ test: false, extra: true })
     expect(validateFailure).toBeInstanceOf(ValidationError)
   })
+
+  test('createValidator does not mutate input object', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        role: { type: 'string', default: 'user' },
+      },
+      required: ['name'],
+      additionalProperties: false,
+    } as const
+    const validator = createValidator(schema)
+    const input = { name: 'test' }
+    const inputCopy = { ...input }
+    validator(input)
+    expect(input).toEqual(inputCopy)
+  })
 })
 
 describe('ValidationErrorObject', () => {

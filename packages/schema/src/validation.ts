@@ -6,7 +6,7 @@ import type { FromSchema } from 'json-schema-to-ts'
 import { ValidationError } from './errors.js'
 import type { Schema } from './types.js'
 
-const ajv = new Ajv({ allErrors: true, useDefaults: true })
+const ajv = new Ajv({ allErrors: true, useDefaults: false })
 // @ts-expect-error missing type definition
 addFormats(ajv)
 
