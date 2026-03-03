@@ -564,36 +564,39 @@ Implement max buffer size (e.g., 10MB), reject oversized messages.
 - **File:** `packages/token/src/did.ts:47-53`
 - **File:** `packages/token/src/signer.ts:41, 51`
 - **File:** `packages/token/src/token.ts:117, 145`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `feat/security-hardening-quick-fixes`
 
 **Description:**
 Error messages expose the full DID string, issuer, and algorithm choices to potential attackers.
 
-**Recommendation:**
-Use generic error messages in security-sensitive contexts.
+**Fix Applied:**
+Replaced all interpolated error messages with generic messages across `did.ts`, `identity.ts`, `token.ts`, `verifier.ts`, and `browser-keystore/signer.ts`.
 
 ---
 
 ### M-02: No Public Key Size Validation
 - **Package:** `@enkaku/token`
 - **File:** `packages/token/src/verifier.ts:18-23`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `feat/security-hardening-quick-fixes`
 
 **Description:**
 Verifiers accept arbitrary-length public keys without validation.
+
+**Fix Applied:**
+Added `EXPECTED_KEY_SIZES` map and validation in `getSignatureInfo()` in `did.ts`. Rejects keys with incorrect sizes for EdDSA (32 bytes) and ES256 (33 bytes).
 
 ---
 
 ### M-03: Base64URL Padding Not Validated
 - **Package:** `@enkaku/codec`
 - **File:** `packages/codec/src/index.ts:47-48`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `feat/security-hardening-quick-fixes`
 
 **Description:**
 `fromB64U()` silently strips whitespace and accepts non-standard formatting.
 
-**Recommendation:**
-Add strict validation: `if (!/^[A-Za-z0-9_-]*$/.test(base64url)) throw Error`
+**Fix Applied:**
+Added `B64U_RE` regex validation in `fromB64U()` to reject invalid characters. Removed whitespace stripping.
 
 ---
 
@@ -647,26 +650,26 @@ Set `useDefaults: false`.
 ### M-08: Schema Structure Exposure in Error Objects
 - **Package:** `@enkaku/schema`
 - **File:** `packages/schema/src/errors.ts:14-27`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `feat/security-hardening-quick-fixes`
 
 **Description:**
 `details` getter returns raw AJV `ErrorObject` which contains keyword, schemaPath, and params.
 
-**Recommendation:**
-Limit exposure of `details` getter, filter `schemaPath` from public errors.
+**Fix Applied:**
+Removed `schemaPath` interpolation from fallback error message in `ValidationError`.
 
 ---
 
 ### M-09: Wildcard CORS Default
 - **Package:** `@enkaku/http-server-transport`
 - **File:** `packages/http-server-transport/src/index.ts:42-44`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `feat/security-hardening-quick-fixes`
 
 **Description:**
 Default allows all origins if no `allowedOrigin` specified.
 
-**Recommendation:**
-Default to same-origin only, require explicit allowedOrigin configuration.
+**Fix Applied:**
+Changed default `allowedOrigins` from `['*']` to `[]` (same-origin only). CORS headers are now only included when `allowedOrigin` is explicitly configured.
 
 ---
 
@@ -737,30 +740,39 @@ Keys remain in memory throughout application lifetime. No clearing after key is 
 ### L-01: Weak DID Codec Uniqueness
 - **Package:** `@enkaku/token`
 - **File:** `packages/token/src/did.ts:6-9`
-- **Status:** [ ] Not Started
+- **Status:** [~] Closed — Follows multicodec standard
 
 **Description:**
 Codec values are only 2 bytes. Unlikely collision in practice due to different key lengths.
+
+**Resolution:**
+These are standard multicodec values from the IPFS/multicodec table (`0xed01` for Ed25519, `0x8024` for P-256). Changing them would break DID interoperability.
 
 ---
 
 ### L-02: Missing Algorithm Constant Validation
 - **Package:** `@enkaku/token`
 - **File:** `packages/token/src/signer.ts:21-24`
-- **Status:** [ ] Not Started
+- **Status:** [~] Closed — Already handled by DID-codec binding
 
 **Description:**
 `getSigner()` hardcodes algorithm as 'EdDSA' without validating key is actually valid for Ed25519.
+
+**Resolution:**
+The algorithm is determined by the DID codec prefix — an EdDSA DID always uses EdDSA signing, an ES256 DID always uses ES256. The `getVerifier()` function dispatches based on the codec. No additional validation needed.
 
 ---
 
 ### L-03: Missing iat Validation
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts:36`
-- **Status:** [ ] Not Started
+- **Status:** [x] Fixed — Branch `feat/security-hardening-quick-fixes`
 
 **Description:**
 `iat` is optional and never validated (no check for `iat > now()`).
+
+**Fix Applied:**
+Added `assertValidIssuedAt()` function that rejects tokens with future `iat` timestamps. Called in `assertValidDelegation`, `checkDelegationChain`, and `checkCapability`.
 
 ---
 

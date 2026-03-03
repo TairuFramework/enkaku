@@ -1,17 +1,18 @@
 # Security Audit — Remaining Issues
 
 **Extracted from:** `docs/plans/2026-01-28-security-audit.md`
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-03
 **Priority:** Varies (see severity ratings below)
 
 ## Summary
 
-32 of 47 issues resolved. 1 issue (C-12) closed as won't-fix. 14 issues remain open across security, tests, and performance.
+40 of 47 issues resolved. 3 issues closed (C-12 won't-fix, L-01/L-02 already handled). 6 issues remain open across security, tests, and performance.
 
 **Resolution history:**
 - Wave 1 (2026-01-28): Token expiration (C-01, H-01), capability authorization (C-02, C-03, H-04, M-04), server resource limits (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12)
 - Wave 2 (2026-01-29): Protocol schema hardening (H-05, H-06)
 - Wave 3 (2026-01-30): Input validation (H-02, H-07, H-08, H-12, H-16, H-18), HTTP transport hardening (C-08, C-09, H-09, H-10), transport tests (T-04)
+- Wave 4 (2026-03-03): Error message sanitization (M-01, M-08), input validation (M-02, M-03), CORS hardening (M-09), iat validation (L-03), close L-01/L-02
 
 ---
 
@@ -32,28 +33,19 @@
 | H-11 | No message sequence validation | `@enkaku/http-*-transport` |
 | H-17 | Conditional authentication bypass (public mode) | `@enkaku/server` |
 
-## Medium (10 open)
+## Medium (4 open)
 
 | ID | Issue | Package |
 |----|-------|---------|
-| M-01 | Information disclosure in error messages | `@enkaku/token` |
-| M-02 | No public key size validation | `@enkaku/token` |
-| M-03 | Base64URL padding not validated | `@enkaku/codec` |
 | M-05 | TOCTOU race in expiration checks | `@enkaku/capability` |
 | M-06 | No validation of resource/action patterns | `@enkaku/capability` |
 | M-07 | useDefaults: true in AJV | `@enkaku/schema` |
-| M-08 | Schema structure exposure in error objects | `@enkaku/schema` |
-| M-09 | Wildcard CORS default | `@enkaku/http-server-transport` |
 | M-13 | Socket buffer no backpressure | `@enkaku/socket-transport` |
 | M-14 | No memory clearing in all keystores | All keystores |
 
-## Low (3 open)
+## Low (0 open)
 
-| ID | Issue | Package |
-|----|-------|---------|
-| L-01 | Weak DID codec uniqueness | `@enkaku/token` |
-| L-02 | Missing algorithm constant validation | `@enkaku/token` |
-| L-03 | Missing iat validation | `@enkaku/capability` |
+All low-priority issues resolved or closed.
 
 ## Test Coverage Gaps
 
