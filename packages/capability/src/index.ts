@@ -236,14 +236,15 @@ export function assertValidDelegation(
   to: CapabilityPayload,
   atTime?: number,
 ): void {
+  const time = atTime ?? now()
   if (to.iss !== from.aud) {
     throw new Error('Invalid capability: audience mismatch')
   }
   if (to.sub !== from.sub) {
     throw new Error('Invalid capability: subject mismatch')
   }
-  assertNonExpired(from, atTime)
-  assertValidIssuedAt(from, atTime)
+  assertNonExpired(from, time)
+  assertValidIssuedAt(from, time)
   if (!hasPermission(to, from)) {
     throw new Error('Invalid capability: permission mismatch')
   }
@@ -255,7 +256,7 @@ export async function checkDelegationChain(
   options?: DelegationChainOptions,
 ): Promise<void> {
   const maxDepth = options?.maxDepth ?? DEFAULT_MAX_DELEGATION_DEPTH
-  const atTime = options?.atTime
+  const atTime = options?.atTime ?? now()
 
   if (capabilities.length > maxDepth) {
     throw new Error(`Invalid capability: delegation chain exceeds maximum depth of ${maxDepth}`)
@@ -274,7 +275,7 @@ export async function checkDelegationChain(
   const next = await verifyToken<CapabilityPayload>(head)
   assertCapabilityToken(next)
   assertValidDelegation(next.payload, payload, atTime)
-  await checkDelegationChain(next.payload, tail, options)
+  await checkDelegationChain(next.payload, tail, { ...options, atTime })
 }
 
 export async function checkCapability(

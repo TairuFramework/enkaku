@@ -718,6 +718,44 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
   })
 })
 
+describe('TOCTOU time consistency (M-05)', () => {
+  test('assertValidDelegation uses consistent time for expiration and iat checks', () => {
+    const fixedTime = 1700000000
+    const from = {
+      iss: 'did:test:a',
+      aud: 'did:test:b',
+      sub: 'did:test:a',
+      act: '*',
+      res: '*',
+      exp: fixedTime + 100,
+      iat: fixedTime - 100,
+    } as CapabilityPayload
+    const to = {
+      iss: 'did:test:b',
+      sub: 'did:test:a',
+      act: 'test',
+      res: 'foo',
+    } as CapabilityPayload
+
+    // Should pass with explicit atTime
+    expect(() => assertValidDelegation(from, to, fixedTime)).not.toThrow()
+  })
+
+  test('checkDelegationChain captures time once when atTime not provided', async () => {
+    const signer = randomIdentity()
+    const payload = {
+      iss: signer.id,
+      sub: signer.id,
+      act: 'test',
+      res: 'foo',
+      iat: now() - 10,
+    } as CapabilityPayload
+
+    // Should pass: iat is in the past, no expiration
+    await expect(checkDelegationChain(payload, [])).resolves.not.toThrow()
+  })
+})
+
 describe('createCapability() - delegation validation (C-03)', () => {
   test('creates capability when signer is the subject (root capability)', async () => {
     const alice = randomIdentity()
