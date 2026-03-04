@@ -27,8 +27,9 @@ describe('end-to-end tracing', () => {
 
   beforeAll(() => {
     exporter = new InMemorySpanExporter()
-    provider = new NodeTracerProvider()
-    provider.addSpanProcessor(new SimpleSpanProcessor(exporter))
+    provider = new NodeTracerProvider({
+      spanProcessors: [new SimpleSpanProcessor(exporter)],
+    })
     provider.register()
   })
 
