@@ -1,4 +1,4 @@
-import { context, ROOT_CONTEXT, TraceFlags, trace } from '@opentelemetry/api'
+import { trace } from '@opentelemetry/api'
 import { describe, expect, test } from 'vitest'
 
 import { extractTraceContext, injectTraceContext } from '../src/context.js'
@@ -46,9 +46,10 @@ describe('extractTraceContext', () => {
     expect(result).toBeDefined()
 
     // Verify the span context extracted from the returned OTel Context
-    const span = trace.getSpan(result!)
+    const otelContext = result as NonNullable<typeof result>
+    const span = trace.getSpan(otelContext)
     expect(span).toBeDefined()
-    const spanCtx = span!.spanContext()
+    const spanCtx = (span as NonNullable<typeof span>).spanContext()
     expect(spanCtx.traceId).toBe('0af7651916cd43dd8448eb211c80319c')
     expect(spanCtx.spanId).toBe('00f067aa0ba902b7')
     expect(spanCtx.isRemote).toBe(true)
