@@ -1,4 +1,3 @@
-import { context, trace } from '@opentelemetry/api'
 import { describe, expect, test } from 'vitest'
 
 import { createTracer, getActiveTraceContext, withSpan } from '../src/tracers.js'
