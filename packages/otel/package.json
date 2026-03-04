@@ -36,6 +36,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/log": "workspace:^",
     "@opentelemetry/api": "catalog:",
     "@opentelemetry/api-logs": "catalog:"
   },

@@ -468,6 +468,9 @@ importers:
 
   packages/otel:
     dependencies:
+      '@enkaku/log':
+        specifier: workspace:^
+        version: link:../log
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.0
