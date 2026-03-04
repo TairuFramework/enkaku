@@ -17,7 +17,7 @@ vi.mock('../src/store.js', () => ({
   },
 }))
 
-import { provideSigningIdentity } from '../src/signer.js'
+import { provideSigningIdentity } from '../src/identity.js'
 
 beforeAll(async () => {
   testKeyPair = (await globalThis.crypto.subtle.generateKey(

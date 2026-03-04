@@ -11,6 +11,6 @@
  */
 
 export { ExpoKeyEntry } from './entry.js'
-export { provideFullIdentity, provideFullIdentityAsync } from './signer.js'
+export { provideFullIdentity, provideFullIdentityAsync } from './identity.js'
 export { ExpoKeyStore } from './store.js'
 export { randomPrivateKey, randomPrivateKeyAsync } from './utils.js'
