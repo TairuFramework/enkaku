@@ -38,7 +38,9 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/otel": "workspace:^",
     "@enkaku/stream": "workspace:^",
-    "@enkaku/transport": "workspace:^"
+    "@enkaku/transport": "workspace:^",
+    "@opentelemetry/api": "catalog:"
   }
 }

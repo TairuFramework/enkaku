@@ -11,5 +11,5 @@
  */
 
 export { ElectronKeyEntry } from './entry.js'
-export { provideFullIdentity, provideFullIdentityAsync } from './signer.js'
+export { provideFullIdentity, provideFullIdentityAsync } from './identity.js'
 export { ElectronKeyStore } from './store.js'

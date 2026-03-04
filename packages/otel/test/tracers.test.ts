@@ -1,0 +1,48 @@
+import { describe, expect, test } from 'vitest'
+
+import { createTracer, getActiveTraceContext, withSpan } from '../src/tracers.js'
+
+describe('createTracer', () => {
+  test('returns a Tracer from the global TracerProvider', () => {
+    const tracer = createTracer('test-module')
+    expect(tracer).toBeDefined()
+    // Without an SDK registered, this returns a no-op tracer
+    expect(typeof tracer.startSpan).toBe('function')
+    expect(typeof tracer.startActiveSpan).toBe('function')
+  })
+})
+
+describe('getActiveTraceContext', () => {
+  test('returns undefined when no span is active', () => {
+    expect(getActiveTraceContext()).toBeUndefined()
+  })
+})
+
+describe('withSpan', () => {
+  test('executes the function and returns its result', async () => {
+    const tracer = createTracer('test')
+    const result = await withSpan(tracer, 'test-span', {}, async () => {
+      return 42
+    })
+    expect(result).toBe(42)
+  })
+
+  test('propagates errors from the function', async () => {
+    const tracer = createTracer('test')
+    await expect(
+      withSpan(tracer, 'test-span', {}, async () => {
+        throw new Error('test error')
+      }),
+    ).rejects.toThrow('test error')
+  })
+
+  test('passes the span to the function', async () => {
+    const tracer = createTracer('test')
+    await withSpan(tracer, 'test-span', {}, async (span) => {
+      expect(span).toBeDefined()
+      expect(typeof span.setAttribute).toBe('function')
+      expect(typeof span.setStatus).toBe('function')
+      expect(typeof span.end).toBe('function')
+    })
+  })
+})

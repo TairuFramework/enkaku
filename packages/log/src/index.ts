@@ -1,7 +1,7 @@
-import type { Config, ConsoleSinkOptions, Logger } from '@logtape/logtape'
+import type { Config, ConsoleSinkOptions, Logger, LogLevel } from '@logtape/logtape'
 import { configureSync, getConsoleSink, getLogger as logtape } from '@logtape/logtape'
 
-export type { Config, ConsoleSinkOptions, Logger }
+export type { Config, ConsoleSinkOptions, Logger, LogLevel }
 export { getConsoleSink }
 
 export function getLogger(

@@ -69,7 +69,6 @@ export class NodeKeyEntry implements KeyEntry<Uint8Array> {
     if (existing != null) {
       return existing
     }
-
     const privateKey = randomPrivateKey()
     this.set(privateKey)
     return privateKey
@@ -80,7 +79,6 @@ export class NodeKeyEntry implements KeyEntry<Uint8Array> {
     if (existing != null) {
       return existing
     }
-
     const privateKey = randomPrivateKey()
     await this.setAsync(privateKey)
     return privateKey

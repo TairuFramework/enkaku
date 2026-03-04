@@ -68,7 +68,6 @@ export class ElectronKeyEntry implements KeyEntry<string> {
     if (existing != null) {
       return existing
     }
-
     const privateKey = toB64(randomPrivateKey())
     this.set(privateKey)
     return privateKey

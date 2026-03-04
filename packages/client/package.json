@@ -40,8 +40,10 @@
     "@enkaku/async": "workspace:^",
     "@enkaku/execution": "workspace:^",
     "@enkaku/log": "workspace:^",
+    "@enkaku/otel": "workspace:^",
     "@enkaku/stream": "workspace:^",
-    "@enkaku/token": "workspace:^"
+    "@enkaku/token": "workspace:^",
+    "@opentelemetry/api": "catalog:"
   },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^",

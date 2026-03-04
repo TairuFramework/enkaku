@@ -38,7 +38,6 @@ export class BrowserKeyEntry implements KeyEntry<CryptoKeyPair> {
     if (existing != null) {
       return existing
     }
-
     const keyPair = await randomKeyPair()
     await this.setAsync(keyPair)
     return keyPair

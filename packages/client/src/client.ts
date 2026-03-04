@@ -1,5 +1,6 @@
 import { Disposer, defer } from '@enkaku/async'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
+import { AttributeKeys, SpanNames, ZERO_TRACE_ID } from '@enkaku/otel'
 import type {
   AnyClientMessageOf,
   AnyClientPayloadOf,
@@ -18,8 +19,11 @@ import type {
 } from '@enkaku/protocol'
 import { createPipe, writeTo } from '@enkaku/stream'
 import { createUnsignedToken, type Identity, isSigningIdentity } from '@enkaku/token'
+import { context, SpanStatusCode, trace } from '@opentelemetry/api'
 
 import { RequestError } from './error.js'
+
+const tracer = trace.getTracer('enkaku.client')
 
 type FilterNever<T> = { [K in keyof T as T[K] extends never ? never : K]: T[K] }
 
@@ -367,8 +371,21 @@ export class Client<
     if (this.signal.aborted) {
       throw new Error('Client aborted', { cause: this.signal.reason })
     }
-    const message = await this.#createMessage(payload, header)
+    const enrichedHeader = this.#injectTraceContext(header)
+    const message = await this.#createMessage(payload, enrichedHeader)
     await this.#transport.write(message)
+  }
+
+  #injectTraceContext(header?: AnyHeader): AnyHeader | undefined {
+    const span = trace.getSpan(context.active())
+    if (span == null) {
+      return header
+    }
+    const ctx = span.spanContext()
+    if (ctx.traceId === ZERO_TRACE_ID) {
+      return header
+    }
+    return { ...(header ?? {}), tid: ctx.traceId, sid: ctx.spanId }
   }
 
   #handleSignal<Result>(
@@ -417,14 +434,39 @@ export class Client<
       : [config: { data: T['Data']; header?: AnyHeader }]
   ): Promise<void> {
     const config = args[0] ?? {}
-    const data = config.data
-    const payload = data ? { typ: 'event', prc: procedure, data } : { typ: 'event', prc: procedure }
-    if (data == null) {
-      this.#logger.trace('send event {procedure} without data', { procedure })
-    } else {
-      this.#logger.trace('send event {procedure} with data: {data}', { procedure, data })
+    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
+      attributes: {
+        [AttributeKeys.RPC_SYSTEM]: 'enkaku',
+        [AttributeKeys.RPC_PROCEDURE]: procedure,
+        [AttributeKeys.RPC_TYPE]: 'event',
+      },
+    })
+    const spanCtx = trace.setSpan(context.active(), span)
+
+    try {
+      const data = config.data
+      const payload = data
+        ? { typ: 'event', prc: procedure, data }
+        : { typ: 'event', prc: procedure }
+      if (data == null) {
+        this.#logger.trace('send event {procedure} without data', { procedure })
+      } else {
+        this.#logger.trace('send event {procedure} with data: {data}', { procedure, data })
+      }
+      await context.with(spanCtx, () =>
+        this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
+      )
+      span.setStatus({ code: SpanStatusCode.OK })
+    } catch (error) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error instanceof Error ? error.message : String(error),
+      })
+      span.recordException(error instanceof Error ? error : new Error(String(error)))
+      throw error
+    } finally {
+      span.end()
     }
-    await this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
   }
 
   request<
@@ -437,15 +479,28 @@ export class Client<
       : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
   ): RequestCall<T['Result']> & Promise<T['Result']> {
     const config = args[0] ?? {}
+    const rid = config.id ?? this.#getRandomID()
+
+    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
+      attributes: {
+        [AttributeKeys.RPC_SYSTEM]: 'enkaku',
+        [AttributeKeys.RPC_PROCEDURE]: procedure,
+        [AttributeKeys.RPC_REQUEST_ID]: rid,
+        [AttributeKeys.RPC_TYPE]: 'request',
+      },
+    })
+    const spanCtx = trace.setSpan(context.active(), span)
+
     const controller = createController<T['Result']>({
       type: 'request',
       procedure,
       header: config.header,
     })
-    const rid = config.id ?? this.#getRandomID()
 
     const providedSignal = config.signal
     if (providedSignal?.aborted) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: 'Aborted before send' })
+      span.end()
       this.#logger.debug('reject aborted request {procedure} with ID {rid}', { procedure, rid })
       return createRequest({
         id: rid,
@@ -469,7 +524,29 @@ export class Client<
         param: prm,
       })
     }
-    const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
+    const sent = context.with(spanCtx, () =>
+      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
+    )
+
+    controller.result.then(
+      () => {
+        span.setStatus({ code: SpanStatusCode.OK })
+        span.end()
+      },
+      (error) => {
+        if (error instanceof RequestError) {
+          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
+        }
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        })
+        span.recordException(error instanceof Error ? error : new Error(String(error)))
+        span.end()
+      },
+    )
+
     const signal = this.#handleSignal(rid, controller, providedSignal)
     return createRequest({ id: rid, controller, signal, sent })
   }
@@ -484,6 +561,18 @@ export class Client<
       : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
   ): StreamCall<T['Receive'], T['Result']> {
     const config = args[0] ?? {}
+    const rid = config.id ?? this.#getRandomID()
+
+    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
+      attributes: {
+        [AttributeKeys.RPC_SYSTEM]: 'enkaku',
+        [AttributeKeys.RPC_PROCEDURE]: procedure,
+        [AttributeKeys.RPC_REQUEST_ID]: rid,
+        [AttributeKeys.RPC_TYPE]: 'stream',
+      },
+    })
+    const spanCtx = trace.setSpan(context.active(), span)
+
     const receive = createPipe<T['Receive']>()
     const writer = receive.writable.getWriter()
     const controller: StreamController<T['Receive'], T['Result']> = Object.assign(
@@ -492,10 +581,11 @@ export class Client<
       ),
       { receive: writer },
     )
-    const rid = config.id ?? this.#getRandomID()
 
     const providedSignal = config.signal
     if (providedSignal?.aborted) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: 'Aborted before send' })
+      span.end()
       this.#logger.debug('reject aborted stream creation {procedure} with ID {rid}', {
         procedure,
         rid,
@@ -523,7 +613,29 @@ export class Client<
         param: prm,
       })
     }
-    const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
+    const sent = context.with(spanCtx, () =>
+      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
+    )
+
+    controller.result.then(
+      () => {
+        span.setStatus({ code: SpanStatusCode.OK })
+        span.end()
+      },
+      (error) => {
+        if (error instanceof RequestError) {
+          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
+        }
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        })
+        span.recordException(error instanceof Error ? error : new Error(String(error)))
+        span.end()
+      },
+    )
+
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
     return createStream({
@@ -545,6 +657,18 @@ export class Client<
       : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
   ): ChannelCall<T['Receive'], T['Send'], T['Result']> {
     const config = args[0] ?? {}
+    const rid = config.id ?? this.#getRandomID()
+
+    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
+      attributes: {
+        [AttributeKeys.RPC_SYSTEM]: 'enkaku',
+        [AttributeKeys.RPC_PROCEDURE]: procedure,
+        [AttributeKeys.RPC_REQUEST_ID]: rid,
+        [AttributeKeys.RPC_TYPE]: 'channel',
+      },
+    })
+    const spanCtx = trace.setSpan(context.active(), span)
+
     const receive = createPipe<T['Receive']>()
     const writer = receive.writable.getWriter()
     const controller: StreamController<T['Receive'], T['Result']> = Object.assign(
@@ -553,10 +677,11 @@ export class Client<
       ),
       { receive: writer },
     )
-    const rid = config.id ?? this.#getRandomID()
 
     const providedSignal = config.signal
     if (providedSignal?.aborted) {
+      span.setStatus({ code: SpanStatusCode.ERROR, message: 'Aborted before send' })
+      span.end()
       this.#logger.debug('reject aborted channel creation {procedure} with ID {rid}', {
         procedure,
         rid,
@@ -589,7 +714,29 @@ export class Client<
         param: prm,
       })
     }
-    const sent = this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
+    const sent = context.with(spanCtx, () =>
+      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
+    )
+
+    controller.result.then(
+      () => {
+        span.setStatus({ code: SpanStatusCode.OK })
+        span.end()
+      },
+      (error) => {
+        if (error instanceof RequestError) {
+          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
+        }
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        })
+        span.recordException(error instanceof Error ? error : new Error(String(error)))
+        span.end()
+      },
+    )
+
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
     const send = async (val: T['Send']) => {

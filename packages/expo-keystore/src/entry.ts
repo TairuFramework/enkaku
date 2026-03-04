@@ -42,7 +42,6 @@ export class ExpoKeyEntry implements KeyEntry<Uint8Array> {
     if (existing != null) {
       return existing
     }
-
     const privateKey = randomPrivateKey()
     this.set(privateKey)
     return privateKey
@@ -53,7 +52,6 @@ export class ExpoKeyEntry implements KeyEntry<Uint8Array> {
     if (existing != null) {
       return existing
     }
-
     const privateKey = await randomPrivateKeyAsync()
     await this.setAsync(privateKey)
     return privateKey
