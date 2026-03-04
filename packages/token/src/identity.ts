@@ -1,4 +1,5 @@
 import { b64uFromJSON, fromUTF, toB64U } from '@enkaku/codec'
+import { AttributeKeys, SpanNames } from '@enkaku/otel'
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { SpanStatusCode, trace } from '@opentelemetry/api'
 
@@ -58,8 +59,8 @@ export function createSigningIdentity(privateKey: Uint8Array): SigningIdentity {
     Header extends Record<string, unknown> = Record<string, unknown>,
   >(payload: Payload, header?: Header): Promise<SignedToken<Payload, Header>> {
     return tracer.startActiveSpan(
-      'enkaku.token.sign',
-      { attributes: { 'enkaku.auth.did': id, 'enkaku.auth.algorithm': 'EdDSA' } },
+      SpanNames.TOKEN_SIGN,
+      { attributes: { [AttributeKeys.AUTH_DID]: id, [AttributeKeys.AUTH_ALGORITHM]: 'EdDSA' } },
       async (span) => {
         try {
           if (payload.iss != null && payload.iss !== id) {

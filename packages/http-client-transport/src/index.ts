@@ -10,6 +10,7 @@
  * @module http-client-transport
  */
 
+import { AttributeKeys, SpanNames } from '@enkaku/otel'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -43,8 +44,8 @@ export type EventStream = {
 }
 
 export async function createEventStream(url: string): Promise<EventStream> {
-  const span = tracer.startSpan('enkaku.transport.http.sse_connect', {
-    attributes: { 'enkaku.transport.type': 'http-sse' },
+  const span = tracer.startSpan(SpanNames.TRANSPORT_HTTP_SSE_CONNECT, {
+    attributes: { [AttributeKeys.TRANSPORT_TYPE]: 'http-sse' },
   })
   let spanEnded = false
   try {
@@ -116,10 +117,10 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     msg: AnyClientMessageOf<Protocol> | TransportMessage,
     sessionID?: string,
   ): Promise<Response> {
-    const span = tracer.startSpan('enkaku.transport.http.request', {
+    const span = tracer.startSpan(SpanNames.TRANSPORT_HTTP_REQUEST, {
       attributes: {
         'http.method': 'POST',
-        'enkaku.transport.type': 'http',
+        [AttributeKeys.TRANSPORT_TYPE]: 'http',
         ...(sessionID != null ? { 'enkaku.transport.session_id': sessionID } : {}),
       },
     })

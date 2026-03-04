@@ -41,6 +41,7 @@
   "dependencies": {
     "@enkaku/codec": "workspace:^",
     "@enkaku/schema": "workspace:^",
+    "@enkaku/otel": "workspace:^",
     "@noble/ciphers": "catalog:",
     "@noble/curves": "catalog:",
     "@noble/hashes": "catalog:",

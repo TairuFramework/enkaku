@@ -1,6 +1,7 @@
 import { DisposeInterruption, Disposer } from '@enkaku/async'
 import { EventEmitter } from '@enkaku/event'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
+import { AttributeKeys, SpanNames } from '@enkaku/otel'
 import {
   type AnyClientMessageOf,
   type AnyServerPayloadOf,
@@ -260,12 +261,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         : undefined
 
     return tracer.startSpan(
-      'enkaku.server.handle',
+      SpanNames.SERVER_HANDLE,
       {
         attributes: {
-          'rpc.system': 'enkaku',
-          ...(procedure != null ? { 'rpc.procedure': procedure } : {}),
-          ...(rid != null ? { 'rpc.request_id': rid } : {}),
+          [AttributeKeys.RPC_SYSTEM]: 'enkaku',
+          ...(procedure != null ? { [AttributeKeys.RPC_PROCEDURE]: procedure } : {}),
+          ...(rid != null ? { [AttributeKeys.RPC_REQUEST_ID]: rid } : {}),
         },
       },
       parentCtx,
@@ -304,7 +305,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         const span = createHandleSpan(message)
 
         if (!checkMessageEncryption(message)) {
-          span.setAttribute('enkaku.auth.reason', 'encryption_required')
+          span.setAttribute(AttributeKeys.AUTH_REASON, 'encryption_required')
           span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
           span.end()
           handleEncryptionViolation(message)
@@ -318,26 +319,26 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
         try {
           if (!isSignedToken(message as Token)) {
-            span.setAttribute('enkaku.auth.reason', 'unsigned_message')
-            span.setAttribute('enkaku.auth.allowed', false)
+            span.setAttribute(AttributeKeys.AUTH_REASON, 'unsigned_message')
+            span.setAttribute(AttributeKeys.AUTH_ALLOWED, false)
             throw new Error('Message is not signed')
           }
           await checkClientToken(params.serverID, params.access, message as unknown as SignedToken)
           const did = (message as unknown as SignedToken).payload.iss
           if (did != null) {
-            span.setAttribute('enkaku.auth.did', did)
+            span.setAttribute(AttributeKeys.AUTH_DID, did)
           }
-          span.setAttribute('enkaku.auth.allowed', true)
+          span.setAttribute(AttributeKeys.AUTH_ALLOWED, true)
         } catch (cause) {
           const did = isSignedToken(message as Token)
             ? (message as unknown as SignedToken).payload.iss
             : undefined
           if (did != null) {
-            span.setAttribute('enkaku.auth.did', did)
+            span.setAttribute(AttributeKeys.AUTH_DID, did)
           }
-          span.setAttribute('enkaku.auth.allowed', false)
+          span.setAttribute(AttributeKeys.AUTH_ALLOWED, false)
           if (!(cause as Error).message?.includes('unsigned')) {
-            span.setAttribute('enkaku.auth.reason', (cause as Error).message)
+            span.setAttribute(AttributeKeys.AUTH_REASON, (cause as Error).message)
           }
 
           const error = new HandlerError({
@@ -359,7 +360,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
 
         if (!checkMessageEncryption(message)) {
-          span.setAttribute('enkaku.auth.reason', 'encryption_required')
+          span.setAttribute(AttributeKeys.AUTH_REASON, 'encryption_required')
           span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
           span.end()
           handleEncryptionViolation(message)

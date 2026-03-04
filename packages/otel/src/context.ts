@@ -1,5 +1,7 @@
 import { type Context, context, ROOT_CONTEXT, TraceFlags, trace } from '@opentelemetry/api'
 
+import { ZERO_TRACE_ID } from './semantic.js'
+
 /**
  * Inject the active span's trace context into a token header.
  * Adds `tid` (trace ID) and `sid` (span ID) fields.
@@ -11,7 +13,7 @@ export function injectTraceContext<T extends Record<string, unknown>>(header: T)
     return header
   }
   const ctx = span.spanContext()
-  if (ctx.traceId === '00000000000000000000000000000000') {
+  if (ctx.traceId === ZERO_TRACE_ID) {
     return header
   }
   return { ...header, tid: ctx.traceId, sid: ctx.spanId }

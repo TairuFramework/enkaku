@@ -1,4 +1,5 @@
 import { b64uToJSON, fromB64U, fromUTF } from '@enkaku/codec'
+import { AttributeKeys, SpanNames } from '@enkaku/otel'
 import { assertType, isType } from '@enkaku/schema'
 import { SpanStatusCode, trace } from '@opentelemetry/api'
 
@@ -170,15 +171,15 @@ export async function verifyToken<
   verifiers?: Verifiers,
   timeOptions?: TimeValidationOptions,
 ): Promise<Token<Payload>> {
-  return tokenTracer.startActiveSpan('enkaku.token.verify', async (span) => {
+  return tokenTracer.startActiveSpan(SpanNames.TOKEN_VERIFY, async (span) => {
     try {
       const result = await verifyTokenInner(token, verifiers, timeOptions)
       if (isSignedToken(result)) {
         span.setAttribute(
-          'enkaku.auth.did',
+          AttributeKeys.AUTH_DID,
           (result.payload as Record<string, unknown>).iss as string,
         )
-        span.setAttribute('enkaku.auth.algorithm', result.header.alg)
+        span.setAttribute(AttributeKeys.AUTH_ALGORITHM, result.header.alg)
       }
       span.setStatus({ code: SpanStatusCode.OK })
       return result

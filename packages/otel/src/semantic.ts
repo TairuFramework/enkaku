@@ -1,3 +1,5 @@
+export const ZERO_TRACE_ID = '00000000000000000000000000000000'
+
 export const SpanNames = {
   // Client
   CLIENT_CALL: 'enkaku.client.call',

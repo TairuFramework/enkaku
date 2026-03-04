@@ -1,6 +1,8 @@
 import type { SpanOptions, Tracer } from '@opentelemetry/api'
 import { context, type Span, SpanStatusCode, trace } from '@opentelemetry/api'
 
+import { ZERO_TRACE_ID } from './semantic.js'
+
 const ENKAKU_VERSION = '0.1.0'
 
 export function createTracer(name: string): Tracer {
@@ -20,7 +22,7 @@ export function getActiveTraceContext(): TraceContext | undefined {
   }
   const ctx = span.spanContext()
   // Check for valid (non-zero) trace ID — no-op spans have all-zero IDs
-  if (ctx.traceId === '00000000000000000000000000000000') {
+  if (ctx.traceId === ZERO_TRACE_ID) {
     return undefined
   }
   return {

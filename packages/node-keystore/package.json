@@ -39,6 +39,7 @@
   "dependencies": {
     "@enkaku/codec": "workspace:^",
     "@enkaku/log": "workspace:^",
+    "@enkaku/otel": "workspace:^",
     "@enkaku/token": "workspace:^",
     "@napi-rs/keyring": "catalog:",
     "@opentelemetry/api": "catalog:"

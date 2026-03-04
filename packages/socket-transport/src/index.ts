@@ -11,6 +11,7 @@
  */
 
 import { createConnection, type Socket } from 'node:net'
+import { AttributeKeys, SpanNames } from '@enkaku/otel'
 import { type FromJSONLinesOptions, fromJSONLines, writeTo } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
 import { SpanStatusCode, trace } from '@opentelemetry/api'
@@ -21,8 +22,8 @@ export type SocketOrPromise = Socket | Promise<Socket>
 export type SocketSource = SocketOrPromise | (() => SocketOrPromise)
 
 export async function connectSocket(path: string): Promise<Socket> {
-  const span = tracer.startSpan('enkaku.transport.socket.connect', {
-    attributes: { 'enkaku.transport.type': 'socket', 'net.peer.name': path },
+  const span = tracer.startSpan(SpanNames.TRANSPORT_WS_CONNECT, {
+    attributes: { [AttributeKeys.TRANSPORT_TYPE]: 'socket', 'net.peer.name': path },
   })
   const socket = createConnection(path)
   return new Promise((resolve, reject) => {

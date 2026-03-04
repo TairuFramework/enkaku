@@ -1,5 +1,6 @@
 import { Disposer, defer } from '@enkaku/async'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
+import { AttributeKeys, SpanNames, ZERO_TRACE_ID } from '@enkaku/otel'
 import type {
   AnyClientMessageOf,
   AnyClientPayloadOf,
@@ -381,7 +382,7 @@ export class Client<
       return header
     }
     const ctx = span.spanContext()
-    if (ctx.traceId === '00000000000000000000000000000000') {
+    if (ctx.traceId === ZERO_TRACE_ID) {
       return header
     }
     return { ...(header ?? {}), tid: ctx.traceId, sid: ctx.spanId }
@@ -433,11 +434,11 @@ export class Client<
       : [config: { data: T['Data']; header?: AnyHeader }]
   ): Promise<void> {
     const config = args[0] ?? {}
-    const span = tracer.startSpan('enkaku.client.call', {
+    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
       attributes: {
-        'rpc.system': 'enkaku',
-        'rpc.procedure': procedure,
-        'rpc.type': 'event',
+        [AttributeKeys.RPC_SYSTEM]: 'enkaku',
+        [AttributeKeys.RPC_PROCEDURE]: procedure,
+        [AttributeKeys.RPC_TYPE]: 'event',
       },
     })
     const spanCtx = trace.setSpan(context.active(), span)
@@ -480,12 +481,12 @@ export class Client<
     const config = args[0] ?? {}
     const rid = config.id ?? this.#getRandomID()
 
-    const span = tracer.startSpan('enkaku.client.call', {
+    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
       attributes: {
-        'rpc.system': 'enkaku',
-        'rpc.procedure': procedure,
-        'rpc.request_id': rid,
-        'rpc.type': 'request',
+        [AttributeKeys.RPC_SYSTEM]: 'enkaku',
+        [AttributeKeys.RPC_PROCEDURE]: procedure,
+        [AttributeKeys.RPC_REQUEST_ID]: rid,
+        [AttributeKeys.RPC_TYPE]: 'request',
       },
     })
     const spanCtx = trace.setSpan(context.active(), span)
@@ -534,8 +535,8 @@ export class Client<
       },
       (error) => {
         if (error instanceof RequestError) {
-          span.setAttribute('enkaku.error.code', error.code)
-          span.setAttribute('enkaku.error.message', error.message)
+          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
         }
         span.setStatus({
           code: SpanStatusCode.ERROR,
@@ -562,12 +563,12 @@ export class Client<
     const config = args[0] ?? {}
     const rid = config.id ?? this.#getRandomID()
 
-    const span = tracer.startSpan('enkaku.client.call', {
+    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
       attributes: {
-        'rpc.system': 'enkaku',
-        'rpc.procedure': procedure,
-        'rpc.request_id': rid,
-        'rpc.type': 'stream',
+        [AttributeKeys.RPC_SYSTEM]: 'enkaku',
+        [AttributeKeys.RPC_PROCEDURE]: procedure,
+        [AttributeKeys.RPC_REQUEST_ID]: rid,
+        [AttributeKeys.RPC_TYPE]: 'stream',
       },
     })
     const spanCtx = trace.setSpan(context.active(), span)
@@ -623,8 +624,8 @@ export class Client<
       },
       (error) => {
         if (error instanceof RequestError) {
-          span.setAttribute('enkaku.error.code', error.code)
-          span.setAttribute('enkaku.error.message', error.message)
+          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
         }
         span.setStatus({
           code: SpanStatusCode.ERROR,
@@ -658,12 +659,12 @@ export class Client<
     const config = args[0] ?? {}
     const rid = config.id ?? this.#getRandomID()
 
-    const span = tracer.startSpan('enkaku.client.call', {
+    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
       attributes: {
-        'rpc.system': 'enkaku',
-        'rpc.procedure': procedure,
-        'rpc.request_id': rid,
-        'rpc.type': 'channel',
+        [AttributeKeys.RPC_SYSTEM]: 'enkaku',
+        [AttributeKeys.RPC_PROCEDURE]: procedure,
+        [AttributeKeys.RPC_REQUEST_ID]: rid,
+        [AttributeKeys.RPC_TYPE]: 'channel',
       },
     })
     const spanCtx = trace.setSpan(context.active(), span)
@@ -724,8 +725,8 @@ export class Client<
       },
       (error) => {
         if (error instanceof RequestError) {
-          span.setAttribute('enkaku.error.code', error.code)
-          span.setAttribute('enkaku.error.message', error.message)
+          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
         }
         span.setStatus({
           code: SpanStatusCode.ERROR,

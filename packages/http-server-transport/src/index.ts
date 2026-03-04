@@ -11,6 +11,7 @@
  */
 
 import { type Deferred, defer } from '@enkaku/async'
+import { AttributeKeys, SpanNames } from '@enkaku/otel'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createReadable, writeTo } from '@enkaku/stream'
 import { Transport, type TransportEvents } from '@enkaku/transport'
@@ -325,10 +326,10 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   }
 
   async function handleRequest(request: Request): Promise<Response> {
-    const span = tracer.startSpan('enkaku.transport.http.handle_request', {
+    const span = tracer.startSpan(SpanNames.TRANSPORT_HTTP_REQUEST, {
       attributes: {
         'http.method': request.method,
-        'enkaku.transport.type': 'http-server',
+        [AttributeKeys.TRANSPORT_TYPE]: 'http-server',
       },
     })
     try {

@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@enkaku/async": "workspace:^",
+    "@enkaku/otel": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/stream": "workspace:^",
     "@enkaku/transport": "workspace:^",

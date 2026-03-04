@@ -40,6 +40,7 @@
     "@enkaku/capability": "workspace:^",
     "@enkaku/event": "workspace:^",
     "@enkaku/log": "workspace:^",
+    "@enkaku/otel": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/schema": "workspace:^",
     "@enkaku/stream": "workspace:^",
