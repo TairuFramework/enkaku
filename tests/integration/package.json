@@ -27,6 +27,8 @@
     "@enkaku/token": "workspace:^",
     "@enkaku/transport": "workspace:^",
     "@hono/node-server": "catalog:",
+    "@opentelemetry/sdk-trace-base": "^1.30.0",
+    "@opentelemetry/sdk-trace-node": "^1.30.0",
     "get-port": "catalog:"
   }
 }
