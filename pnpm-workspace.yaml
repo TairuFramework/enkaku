@@ -22,6 +22,8 @@ catalog:
   '@noble/ciphers': ^2.1.1
   '@noble/curves': ^2.0.1
   '@noble/hashes': ^2.0.0
+  '@opentelemetry/api': ^1.9.0
+  '@opentelemetry/api-logs': ^0.57.0
   '@orama/plugin-docusaurus-v3': ^3.1.18
   '@playwright/test': 1.58.2
   '@scure/base': ^2.0.0

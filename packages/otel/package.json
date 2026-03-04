@@ -1,0 +1,45 @@
+{
+  "name": "@enkaku/otel",
+  "version": "0.1.0",
+  "license": "MIT",
+  "homepage": "https://enkaku.dev",
+  "description": "OpenTelemetry integration for Enkaku RPC",
+  "keywords": [
+    "opentelemetry",
+    "tracing",
+    "observability"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/otel"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "files": [
+    "lib/*"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build:clean": "del lib",
+    "build:js": "swc src -d ./lib --config-file ../../swc.json --strip-leading-paths",
+    "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
+    "build:types:ci": "tsc --emitDeclarationOnly --skipLibCheck --declarationMap false",
+    "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
+    "test:types": "tsc --noEmit --skipLibCheck",
+    "test:unit": "vitest run",
+    "test": "pnpm run test:types && pnpm run test:unit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "catalog:",
+    "@opentelemetry/api-logs": "catalog:"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
+  }
+}
