@@ -1,5 +1,6 @@
 import { b64uToJSON, fromB64U, fromUTF } from '@enkaku/codec'
 import { assertType, isType } from '@enkaku/schema'
+import { SpanStatusCode, trace } from '@opentelemetry/api'
 
 import { getSignatureInfo } from './did.js'
 import type { SigningIdentity } from './identity.js'
@@ -13,6 +14,8 @@ import {
 import { assertTimeClaimsValid, type TimeValidationOptions } from './time.js'
 import type { SignedToken, Token, UnsignedToken, VerifiedToken } from './types.js'
 import { getVerifier, type Verifiers } from './verifier.js'
+
+const tokenTracer = trace.getTracer('enkaku.token')
 
 /**
  * Verify the signature of a signed payload and return the public key of the issuer.
@@ -90,13 +93,7 @@ export async function signToken<
     : await signer.signToken(token.payload, token.header)
 }
 
-/**
- * Verify a token is either unsigned or signed with a valid signature.
- * Also validates time-based claims (exp, nbf) if present.
- */
-export async function verifyToken<
-  Payload extends Record<string, unknown> = Record<string, unknown>,
->(
+async function verifyTokenInner<Payload extends Record<string, unknown> = Record<string, unknown>>(
   token: Token<Payload> | string,
   verifiers?: Verifiers,
   timeOptions?: TimeValidationOptions,
@@ -160,4 +157,40 @@ export async function verifyToken<
   }
 
   throw new Error('Unsupported signature algorithm')
+}
+
+/**
+ * Verify a token is either unsigned or signed with a valid signature.
+ * Also validates time-based claims (exp, nbf) if present.
+ */
+export async function verifyToken<
+  Payload extends Record<string, unknown> = Record<string, unknown>,
+>(
+  token: Token<Payload> | string,
+  verifiers?: Verifiers,
+  timeOptions?: TimeValidationOptions,
+): Promise<Token<Payload>> {
+  return tokenTracer.startActiveSpan('enkaku.token.verify', async (span) => {
+    try {
+      const result = await verifyTokenInner(token, verifiers, timeOptions)
+      if (isSignedToken(result)) {
+        span.setAttribute(
+          'enkaku.auth.did',
+          (result.payload as Record<string, unknown>).iss as string,
+        )
+        span.setAttribute('enkaku.auth.algorithm', result.header.alg)
+      }
+      span.setStatus({ code: SpanStatusCode.OK })
+      return result
+    } catch (error) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error instanceof Error ? error.message : String(error),
+      })
+      span.recordException(error instanceof Error ? error : new Error(String(error)))
+      throw error
+    } finally {
+      span.end()
+    }
+  })
 }
