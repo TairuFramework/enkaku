@@ -38,8 +38,11 @@
   },
   "dependencies": {
     "@enkaku/codec": "workspace:^",
+    "@enkaku/log": "workspace:^",
     "@enkaku/token": "workspace:^",
-    "@napi-rs/keyring": "catalog:"
+    "@noble/curves": "catalog:",
+    "@napi-rs/keyring": "catalog:",
+    "@opentelemetry/api": "catalog:"
   },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^",

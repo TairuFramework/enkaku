@@ -39,7 +39,9 @@
   "dependencies": {
     "@enkaku/async": "workspace:^",
     "@enkaku/codec": "workspace:^",
-    "@enkaku/token": "workspace:^"
+    "@enkaku/log": "workspace:^",
+    "@enkaku/token": "workspace:^",
+    "@opentelemetry/api": "catalog:"
   },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^",

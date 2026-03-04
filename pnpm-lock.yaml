@@ -232,9 +232,15 @@ importers:
       '@enkaku/codec':
         specifier: workspace:^
         version: link:../codec
+      '@enkaku/log':
+        specifier: workspace:^
+        version: link:../log
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
+      '@opentelemetry/api':
+        specifier: 'catalog:'
+        version: 1.9.0
     devDependencies:
       '@enkaku/protocol':
         specifier: workspace:^
@@ -289,9 +295,18 @@ importers:
       '@enkaku/codec':
         specifier: workspace:^
         version: link:../codec
+      '@enkaku/log':
+        specifier: workspace:^
+        version: link:../log
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
+      '@noble/curves':
+        specifier: 'catalog:'
+        version: 2.0.1
+      '@opentelemetry/api':
+        specifier: 'catalog:'
+        version: 1.9.0
       electron-store:
         specifier: 'catalog:'
         version: 11.0.2
@@ -349,9 +364,18 @@ importers:
       '@enkaku/codec':
         specifier: workspace:^
         version: link:../codec
+      '@enkaku/log':
+        specifier: workspace:^
+        version: link:../log
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
+      '@noble/curves':
+        specifier: 'catalog:'
+        version: 2.0.1
+      '@opentelemetry/api':
+        specifier: 'catalog:'
+        version: 1.9.0
       expo-crypto:
         specifier: 'catalog:'
         version: 55.0.8(expo@55.0.4)
@@ -443,12 +467,21 @@ importers:
       '@enkaku/codec':
         specifier: workspace:^
         version: link:../codec
+      '@enkaku/log':
+        specifier: workspace:^
+        version: link:../log
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
       '@napi-rs/keyring':
         specifier: 'catalog:'
         version: 1.2.0
+      '@noble/curves':
+        specifier: 'catalog:'
+        version: 2.0.1
+      '@opentelemetry/api':
+        specifier: 'catalog:'
+        version: 1.9.0
     devDependencies:
       '@enkaku/protocol':
         specifier: workspace:^
