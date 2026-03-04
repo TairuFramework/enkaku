@@ -621,6 +621,9 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
+      '@opentelemetry/api':
+        specifier: 'catalog:'
+        version: 1.9.0
     devDependencies:
       '@enkaku/transport':
         specifier: workspace:^

@@ -43,7 +43,8 @@
     "@enkaku/protocol": "workspace:^",
     "@enkaku/schema": "workspace:^",
     "@enkaku/stream": "workspace:^",
-    "@enkaku/token": "workspace:^"
+    "@enkaku/token": "workspace:^",
+    "@opentelemetry/api": "catalog:"
   },
   "devDependencies": {
     "@enkaku/transport": "workspace:^"

@@ -21,6 +21,7 @@ import {
   type SignedToken,
   type Token,
 } from '@enkaku/token'
+import { context as otelContext, SpanStatusCode, trace } from '@opentelemetry/api'
 
 import {
   checkClientToken,
@@ -48,6 +49,8 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
   | RequestMessageOf<Protocol>
   | StreamMessageOf<Protocol>
   | ChannelMessageOf<Protocol>
+
+const tracer = trace.getTracer('enkaku.server')
 
 function defaultRandomID(): string {
   return globalThis.crypto.randomUUID()
@@ -234,32 +237,117 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
   }
 
+  function extractTraceContext(message: ProcessMessageOf<Protocol>) {
+    const header = message.header as Record<string, unknown>
+    let parentCtx = otelContext.active()
+    if (typeof header.tid === 'string' && typeof header.sid === 'string') {
+      parentCtx = trace.setSpanContext(parentCtx, {
+        traceId: header.tid,
+        spanId: header.sid,
+        isRemote: true,
+        traceFlags: 1,
+      })
+    }
+    return parentCtx
+  }
+
+  function createHandleSpan(message: ProcessMessageOf<Protocol>) {
+    const parentCtx = extractTraceContext(message)
+    const procedure = (message.payload as Record<string, unknown>).prc as string | undefined
+    const rid =
+      'rid' in message.payload
+        ? ((message.payload as Record<string, unknown>).rid as string)
+        : undefined
+
+    return tracer.startSpan(
+      'enkaku.server.handle',
+      {
+        attributes: {
+          'rpc.system': 'enkaku',
+          ...(procedure != null ? { 'rpc.procedure': procedure } : {}),
+          ...(rid != null ? { 'rpc.request_id': rid } : {}),
+        },
+      },
+      parentCtx,
+    )
+  }
+
+  function wrapHandle(
+    span: ReturnType<typeof tracer.startSpan>,
+    handle: () => Error | Promise<void>,
+  ): () => Error | Promise<void> {
+    return () => {
+      const result = handle()
+      if (result instanceof Error) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: result.message })
+        span.recordException(result)
+        span.end()
+        return result
+      }
+      result
+        .then(() => {
+          span.setStatus({ code: SpanStatusCode.OK })
+          span.end()
+        })
+        .catch((err: Error) => {
+          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
+          span.recordException(err)
+          span.end()
+        })
+      return result
+    }
+  }
+
   const process = params.public
     ? (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
+        const span = createHandleSpan(message)
+
         if (!checkMessageEncryption(message)) {
+          span.setAttribute('enkaku.auth.reason', 'encryption_required')
+          span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
+          span.end()
           handleEncryptionViolation(message)
           return
         }
-        processHandler(message, handle)
+
+        processHandler(message, wrapHandle(span, handle))
       }
     : async (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
+        const span = createHandleSpan(message)
+
         try {
-          if (!params.public) {
-            if (!isSignedToken(message as Token)) {
-              throw new Error('Message is not signed')
-            }
-            await checkClientToken(
-              params.serverID,
-              params.access,
-              message as unknown as SignedToken,
-            )
+          if (!isSignedToken(message as Token)) {
+            span.setAttribute('enkaku.auth.reason', 'unsigned_message')
+            span.setAttribute('enkaku.auth.allowed', false)
+            throw new Error('Message is not signed')
           }
+          await checkClientToken(params.serverID, params.access, message as unknown as SignedToken)
+          const did = (message as unknown as SignedToken).payload.iss
+          if (did != null) {
+            span.setAttribute('enkaku.auth.did', did)
+          }
+          span.setAttribute('enkaku.auth.allowed', true)
         } catch (cause) {
+          const did = isSignedToken(message as Token)
+            ? (message as unknown as SignedToken).payload.iss
+            : undefined
+          if (did != null) {
+            span.setAttribute('enkaku.auth.did', did)
+          }
+          span.setAttribute('enkaku.auth.allowed', false)
+          if (!(cause as Error).message?.includes('unsigned')) {
+            span.setAttribute('enkaku.auth.reason', (cause as Error).message)
+          }
+
           const error = new HandlerError({
             cause,
             code: 'EK02',
             message: (cause as Error).message ?? 'Access denied',
           })
+          span.setStatus({ code: SpanStatusCode.ERROR, message: error.message })
+          span.recordException(error)
+          span.end()
+
           if (message.payload.typ === 'event') {
             events.emit('eventAuthError', { error, payload: message.payload })
             events.emit('handlerError', { error, payload: message.payload })
@@ -268,11 +356,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           }
           return
         }
+
         if (!checkMessageEncryption(message)) {
+          span.setAttribute('enkaku.auth.reason', 'encryption_required')
+          span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
+          span.end()
           handleEncryptionViolation(message)
           return
         }
-        processHandler(message, handle)
+
+        processHandler(message, wrapHandle(span, handle))
       }
 
   async function handleNext() {
