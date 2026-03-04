@@ -24,6 +24,60 @@ describe('EventEmitter', () => {
     expect(items).toEqual([2, 4])
   })
 
+  test('on() listener receives raw data, not envelope', async () => {
+    const emitter = new EventEmitter<{ test: string }>()
+    const received: Array<string> = []
+
+    emitter.on('test', (value) => {
+      received.push(value)
+    })
+
+    await emitter.emit('test', 'hello')
+    await emitter.emit('test', 'world')
+
+    expect(received).toEqual(['hello', 'world'])
+  })
+
+  test('on() filter receives raw data', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+    const filterArgs: Array<number> = []
+
+    emitter.on('test', () => {}, {
+      filter: (value) => {
+        filterArgs.push(value)
+        return true
+      },
+    })
+
+    await emitter.emit('test', 42)
+    expect(filterArgs).toEqual([42])
+  })
+
+  test('once() promise form resolves with raw data', async () => {
+    const emitter = new EventEmitter<{ test: string }>()
+
+    const promise = emitter.once('test')
+    await emitter.emit('test', 'hello')
+
+    const result = await promise
+    expect(result).toBe('hello')
+  })
+
+  test('once() listener form receives raw data and only fires once', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+    const received: Array<number> = []
+
+    emitter.once('test', (value) => {
+      received.push(value)
+    })
+
+    await emitter.emit('test', 1)
+    await emitter.emit('test', 2)
+    await emitter.emit('test', 3)
+
+    expect(received).toEqual([1])
+  })
+
   describe('event streams', () => {
     test('events can be listened to using a readable stream', async () => {
       const emitter = new EventEmitter<{ test: number }>()

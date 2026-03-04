@@ -45,7 +45,7 @@ catalog:
   del-cli: ^7.0.0
   electron: ^40.7.0
   electron-store: ^11.0.2
-  emittery: ^1.2.1
+  emittery: ^2.0.0
   expo: ~54.0.8
   expo-crypto: ^55.0.8
   expo-secure-store: ^55.0.8

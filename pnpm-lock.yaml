@@ -127,8 +127,8 @@ catalogs:
       specifier: ^11.0.2
       version: 11.0.2
     emittery:
-      specifier: ^1.2.1
-      version: 1.2.1
+      specifier: ^2.0.0
+      version: 2.0.0
     expo-crypto:
       specifier: ^55.0.8
       version: 55.0.8
@@ -359,7 +359,7 @@ importers:
     dependencies:
       emittery:
         specifier: 'catalog:'
-        version: 1.2.1
+        version: 2.0.0
     devDependencies:
       '@enkaku/stream':
         specifier: workspace:^
@@ -6073,9 +6073,9 @@ packages:
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
-  emittery@1.2.1:
-    resolution: {integrity: sha512-sFz64DCRjirhwHLxofFqxYQm6DCp6o0Ix7jwKQvuCHPn4GMRZNuBZyLPu9Ccmk/QSCAMZt6FOUqA8JZCQvA9fw==}
-    engines: {node: '>=14.16'}
+  emittery@2.0.0:
+    resolution: {integrity: sha512-FLtgn/CGBXiX3ZtPAm5q4LWWepHChOt55J9u01WFu3dyap2U7IwptlrqoE1COR/kxwdy/DOxIBALSxIW449I1g==}
+    engines: {node: '>=22'}
 
   emoji-regex-xs@1.0.0:
     resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
@@ -18052,7 +18052,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  emittery@1.2.1: {}
+  emittery@2.0.0: {}
 
   emoji-regex-xs@1.0.0: {}
 
