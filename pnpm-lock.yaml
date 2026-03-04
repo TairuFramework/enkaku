@@ -310,9 +310,6 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
-      '@noble/curves':
-        specifier: 'catalog:'
-        version: 2.0.1
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.0
@@ -379,9 +376,6 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
-      '@noble/curves':
-        specifier: 'catalog:'
-        version: 2.0.1
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.0
@@ -491,9 +485,6 @@ importers:
       '@napi-rs/keyring':
         specifier: 'catalog:'
         version: 1.2.0
-      '@noble/curves':
-        specifier: 'catalog:'
-        version: 2.0.1
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.9.0

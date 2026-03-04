@@ -44,7 +44,6 @@
     "@enkaku/codec": "workspace:^",
     "@enkaku/log": "workspace:^",
     "@enkaku/token": "workspace:^",
-    "@noble/curves": "catalog:",
     "@opentelemetry/api": "catalog:",
     "electron-store": "catalog:"
   },
