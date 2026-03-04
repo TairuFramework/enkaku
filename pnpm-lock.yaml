@@ -426,6 +426,9 @@ importers:
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@opentelemetry/api':
+        specifier: 'catalog:'
+        version: 1.9.0
     devDependencies:
       undici:
         specifier: 'catalog:'
@@ -445,6 +448,9 @@ importers:
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@opentelemetry/api':
+        specifier: 'catalog:'
+        version: 1.9.0
     devDependencies:
       '@enkaku/server':
         specifier: workspace:^
@@ -637,6 +643,9 @@ importers:
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@opentelemetry/api':
+        specifier: 'catalog:'
+        version: 1.9.0
 
   packages/standalone:
     dependencies:

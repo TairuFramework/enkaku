@@ -14,6 +14,9 @@ import { type Deferred, defer } from '@enkaku/async'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createReadable, writeTo } from '@enkaku/stream'
 import { Transport, type TransportEvents } from '@enkaku/transport'
+import { SpanStatusCode, trace } from '@opentelemetry/api'
+
+const tracer = trace.getTracer('enkaku.transport.http')
 
 export type RequestHandler = (request: Request) => Promise<Response>
 
@@ -322,18 +325,46 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   }
 
   async function handleRequest(request: Request): Promise<Response> {
-    switch (request.method) {
-      case 'OPTIONS':
-        return handleOptionsRequest(request)
-      case 'GET':
-        return handleGetRequest(request)
-      case 'POST':
-        return await handlePostRequest(request)
-      default:
-        return Response.json(
-          { error: 'Method not allowed' },
-          { headers: { Allow: 'GET, POST, OPTIONS' }, status: 405 },
-        )
+    const span = tracer.startSpan('enkaku.transport.http.handle_request', {
+      attributes: {
+        'http.method': request.method,
+        'enkaku.transport.type': 'http-server',
+      },
+    })
+    try {
+      let response: Response
+      switch (request.method) {
+        case 'OPTIONS':
+          response = handleOptionsRequest(request)
+          break
+        case 'GET':
+          response = handleGetRequest(request)
+          break
+        case 'POST':
+          response = await handlePostRequest(request)
+          break
+        default:
+          response = Response.json(
+            { error: 'Method not allowed' },
+            { headers: { Allow: 'GET, POST, OPTIONS' }, status: 405 },
+          )
+      }
+      span.setAttribute('http.status_code', response.status)
+      if (response.status >= 400) {
+        span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${response.status}` })
+      } else {
+        span.setStatus({ code: SpanStatusCode.OK })
+      }
+      return response
+    } catch (error) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error instanceof Error ? error.message : String(error),
+      })
+      span.recordException(error instanceof Error ? error : new Error(String(error)))
+      throw error
+    } finally {
+      span.end()
     }
   }
 
