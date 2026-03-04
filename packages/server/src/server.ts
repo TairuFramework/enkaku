@@ -277,7 +277,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     handle: () => Error | Promise<void>,
   ): () => Error | Promise<void> {
     return () => {
-      const result = handle()
+      const spanCtx = trace.setSpan(otelContext.active(), span)
+      const result = otelContext.with(spanCtx, handle)
       if (result instanceof Error) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: result.message })
         span.recordException(result)
