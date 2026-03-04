@@ -1,23 +1,9 @@
 import { fromB64, toB64 } from '@enkaku/codec'
-import { getEnkakuLogger } from '@enkaku/log'
 import type { KeyEntry } from '@enkaku/protocol'
-import { CODECS, getDID, randomPrivateKey } from '@enkaku/token'
-import { ed25519 } from '@noble/curves/ed25519.js'
-import { SpanStatusCode, trace } from '@opentelemetry/api'
+import { randomPrivateKey } from '@enkaku/token'
 import { safeStorage } from 'electron'
 
 import type { KeyStorage } from './types.js'
-
-const tracer = trace.getTracer('enkaku.keystore')
-const logger = getEnkakuLogger('keystore')
-
-function safeGetDID(base64Key: string): string | null {
-  try {
-    return getDID(CODECS.EdDSA, ed25519.getPublicKey(fromB64(base64Key)))
-  } catch {
-    return null
-  }
-}
 
 function encryptKey(encoded: string): string {
   return toB64(safeStorage.encryptString(encoded))
@@ -78,41 +64,13 @@ export class ElectronKeyEntry implements KeyEntry<string> {
   }
 
   provide(): string {
-    const span = tracer.startSpan('enkaku.keystore.get_or_create', {
-      attributes: { 'enkaku.keystore.store_type': 'electron' },
-    })
-    try {
-      const existing = this.get()
-      if (existing != null) {
-        const did = safeGetDID(existing)
-        if (did != null) {
-          span.setAttribute('enkaku.auth.did', did)
-        }
-        span.setAttribute('enkaku.keystore.key_created', false)
-        span.setStatus({ code: SpanStatusCode.OK })
-        return existing
-      }
-
-      const privateKey = toB64(randomPrivateKey())
-      this.set(privateKey)
-      const did = safeGetDID(privateKey)
-      if (did != null) {
-        span.setAttribute('enkaku.auth.did', did)
-        logger.info`New signing key generated ${{ did }}`
-      }
-      span.setAttribute('enkaku.keystore.key_created', true)
-      span.setStatus({ code: SpanStatusCode.OK })
-      return privateKey
-    } catch (error) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: error instanceof Error ? error.message : String(error),
-      })
-      span.recordException(error instanceof Error ? error : new Error(String(error)))
-      throw error
-    } finally {
-      span.end()
+    const existing = this.get()
+    if (existing != null) {
+      return existing
     }
+    const privateKey = toB64(randomPrivateKey())
+    this.set(privateKey)
+    return privateKey
   }
 
   removeAsync(): Promise<void> {
