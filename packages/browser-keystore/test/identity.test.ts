@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, test, vi } from 'vitest'
 
 // Use vi.hoisted so the mock fn is available inside the hoisted vi.mock factory
-const { mockProvideAsync } = vi.hoisted(() => ({
+const { mockGetAsync, mockProvideAsync } = vi.hoisted(() => ({
+  mockGetAsync: vi.fn(),
   mockProvideAsync: vi.fn(),
 }))
 
@@ -11,6 +12,7 @@ vi.mock('../src/store.js', () => ({
   BrowserKeyStore: {
     open: vi.fn().mockResolvedValue({
       entry: vi.fn().mockReturnValue({
+        getAsync: mockGetAsync,
         provideAsync: mockProvideAsync,
       }),
     }),
