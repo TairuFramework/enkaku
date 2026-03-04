@@ -23,7 +23,9 @@ catalog:
   '@noble/curves': ^2.0.1
   '@noble/hashes': ^2.0.0
   '@opentelemetry/api': ^1.9.0
-  '@opentelemetry/api-logs': ^0.57.0
+  '@opentelemetry/api-logs': ^0.213.0
+  '@opentelemetry/sdk-trace-base': ^2.6.0
+  '@opentelemetry/sdk-trace-node': ^2.6.0
   '@orama/plugin-docusaurus-v3': ^3.1.18
   '@playwright/test': 1.58.2
   '@scure/base': ^2.0.0
@@ -41,7 +43,7 @@ catalog:
   ajv-formats: ^3.0.1
   canonicalize: 2.1.0
   del-cli: ^7.0.0
-  electron: ^40.6.1
+  electron: ^40.7.0
   electron-store: ^11.0.2
   emittery: ^1.2.1
   expo: ~54.0.8
@@ -58,7 +60,7 @@ catalog:
   react-native-electron: ^0.22.1
   react-native-web: 0.21.2
   tsx: ^4.21.0
-  turbo: ^2.8.12
+  turbo: ^2.8.13
   typedoc: ^0.28.17
   typedoc-plugin-markdown: ^4.10.0
   typescript: 5.9.2
