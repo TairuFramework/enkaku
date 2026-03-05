@@ -10,7 +10,7 @@
  * @module http-client-transport
  */
 
-import { AttributeKeys, SpanNames } from '@enkaku/otel'
+import { AttributeKeys, createTracer, SpanNames, SpanStatusCode, withSpan } from '@enkaku/otel'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -19,9 +19,8 @@ import type {
 } from '@enkaku/protocol'
 import { createReadable, writeTo } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
-import { SpanStatusCode, trace } from '@opentelemetry/api'
 
-const tracer = trace.getTracer('enkaku.transport.http')
+const tracer = createTracer('transport.http')
 
 const HEADERS = { accept: 'application/json', 'content-type': 'application/json' }
 
@@ -44,52 +43,34 @@ export type EventStream = {
 }
 
 export async function createEventStream(url: string): Promise<EventStream> {
-  const span = tracer.startSpan(SpanNames.TRANSPORT_HTTP_SSE_CONNECT, {
-    attributes: { [AttributeKeys.TRANSPORT_TYPE]: 'http-sse' },
-  })
-  let spanEnded = false
-  try {
-    const res = await fetch(url)
-    if (!res.ok) {
-      span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${res.status}` })
-      span.end()
-      spanEnded = true
-      throw new ResponseError(res)
-    }
+  return withSpan(
+    tracer,
+    SpanNames.TRANSPORT_HTTP_SSE_CONNECT,
+    { attributes: { [AttributeKeys.TRANSPORT_TYPE]: 'http-sse' } },
+    async (span) => {
+      const res = await fetch(url)
+      if (!res.ok) {
+        throw new ResponseError(res)
+      }
 
-    const data = (await res.json()) as { id: string }
-    span.setAttribute('enkaku.transport.session_id', data.id)
-    const sourceURL = new URL(url)
-    sourceURL.searchParams.set('id', data.id)
-    const source = new EventSource(sourceURL)
+      const data = (await res.json()) as { id: string }
+      span.setAttribute(AttributeKeys.TRANSPORT_SESSION_ID, data.id)
+      const sourceURL = new URL(url)
+      sourceURL.searchParams.set('id', data.id)
+      const source = new EventSource(sourceURL)
 
-    // Wait for the SSE connection to be established before returning.
-    // The server sets the session controller when processing this GET —
-    // without waiting, a subsequent POST can arrive before the controller
-    // exists, causing a "Invalid request" / "Inactive session" error.
-    await new Promise<void>((resolve, reject) => {
-      source.addEventListener('open', () => resolve(), { once: true })
-      source.addEventListener(
-        'error',
-        (event) => reject(new Error('EventSource connection failed', { cause: event })),
-        { once: true },
-      )
-    })
-
-    span.setStatus({ code: SpanStatusCode.OK })
-    span.end()
-    return { id: data.id, source }
-  } catch (error) {
-    if (!spanEnded) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: error instanceof Error ? error.message : String(error),
+      await new Promise<void>((resolve, reject) => {
+        source.addEventListener('open', () => resolve(), { once: true })
+        source.addEventListener(
+          'error',
+          (event) => reject(new Error('EventSource connection failed', { cause: event })),
+          { once: true },
+        )
       })
-      span.recordException(error instanceof Error ? error : new Error(String(error)))
-      span.end()
-    }
-    throw error
-  }
+
+      return { id: data.id, source }
+    },
+  )
 }
 
 type EventStreamState =
@@ -119,9 +100,9 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
   ): Promise<Response> {
     const span = tracer.startSpan(SpanNames.TRANSPORT_HTTP_REQUEST, {
       attributes: {
-        'http.method': 'POST',
+        [AttributeKeys.HTTP_METHOD]: 'POST',
         [AttributeKeys.TRANSPORT_TYPE]: 'http',
-        ...(sessionID != null ? { 'enkaku.transport.session_id': sessionID } : {}),
+        ...(sessionID != null ? { [AttributeKeys.TRANSPORT_SESSION_ID]: sessionID } : {}),
       },
     })
     try {
@@ -130,7 +111,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
         body: JSON.stringify(msg),
         headers: sessionID ? { ...HEADERS, 'enkaku-session-id': sessionID } : HEADERS,
       })
-      span.setAttribute('http.status_code', res.status)
+      span.setAttribute(AttributeKeys.HTTP_STATUS_CODE, res.status)
       if (!res.ok) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${res.status}` })
         controller.error(new ResponseError(res))
