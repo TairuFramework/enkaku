@@ -3,7 +3,7 @@ import { serve } from '@enkaku/server'
 
 serve({
   handlers: { test: (ctx) => `Hello ${ctx.param}` },
-  public: true,
+  accessControl: false,
   transport: new NodeStreamsTransport({
     streams: { readable: process.stdin, writable: process.stdout },
   }),

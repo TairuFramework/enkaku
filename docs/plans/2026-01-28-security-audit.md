@@ -21,7 +21,7 @@
 | Severity | Count | Status |
 |----------|-------|--------|
 | CRITICAL | 12 | 8 Fixed (C-01, C-02, C-03, C-05, C-06, C-07, C-08, C-09), 3 Won't Fix (C-10, C-11, C-12), 1 Planned (C-04) |
-| HIGH | 18 | 15 Fixed (H-01, H-02, H-04, H-05, H-06, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-18), 1 Planned (H-17), 2 Won't Fix (H-03, H-11) |
+| HIGH | 18 | 16 Fixed (H-01, H-02, H-04, H-05, H-06, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-17, H-18), 2 Won't Fix (H-03, H-11) |
 | MEDIUM | 14 | 11 Fixed (M-01, M-02, M-03, M-04, M-05, M-06, M-07, M-08, M-09, M-11, M-12), 1 Mitigated (M-10), 2 Won't Fix (M-13, M-14) |
 | LOW | 3 | 1 Fixed (L-03), 2 Closed (L-01, L-02) |
 
@@ -546,7 +546,7 @@ Return generic "Handler execution failed" to clients, log detailed errors server
 ### H-17: Conditional Authentication Bypass (Public Mode)
 - **Package:** `@enkaku/server`
 - **File:** `packages/server/src/server.ts:121`
-- **Status:** [~] Planned — `docs/plans/2026-03-05-access-control-refactor.md`
+- **Status:** [x] Fixed — Branch `chore/audit-changes`
 
 **Description:**
 When `params.public = true`, the entire authentication check is skipped. ALL message types bypass access control in public mode. The `public` and `access` params can be combined in contradictory ways (e.g., `public: true` with access records silently ignores the records).
@@ -554,8 +554,8 @@ When `params.public = true`, the entire authentication check is skipped. ALL mes
 **Previous Mitigation:**
 Added logger.warn() when `public: true` is combined with non-empty access control records.
 
-**Planned Fix:**
-Replace `public` boolean + `access` record with a unified `accessControl` parameter:
+**Fix:**
+Replaced `public` boolean + `access` record with a unified `accessControl` parameter:
 - `accessControl: false` — public, no auth (replaces `public: true`)
 - `accessControl: true` or omitted with identity — server-only access (default)
 - `accessControl: ProcedureAccessRecord` — granular per-procedure rules (replaces `access: {...}`)
@@ -820,7 +820,7 @@ Breaking changes already applied:
 4. ~~**C-12**~~: Browser keystore — Won't Fix
 
 Remaining breaking changes:
-5. **H-17**: Server `accessControl` API refactor — Planned (`docs/plans/2026-03-05-access-control-refactor.md`)
+5. ~~**H-17**~~: Server `accessControl` API refactor — Fixed (branch `chore/audit-changes`)
 
 Non-breaking planned changes:
 6. **C-04**: Capability verification hook — Planned (`docs/plans/2026-03-05-capability-verification-hook.md`)
@@ -1198,7 +1198,7 @@ The sync methods exist for convenience in startup/initialization paths. Deprecat
 5. ~~H-05, H-06: Protocol schema hardening~~ DONE (see `archive/2026-01-29-protocol-schema-hardening.md`)
 
 ### Phase 2: High Priority Security
-1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-09~~, ~~H-10~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-18~~: Fixed; ~~H-03~~, ~~H-11~~: Won't Fix; H-17: Planned (`docs/plans/2026-03-05-access-control-refactor.md`)
+1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-09~~, ~~H-10~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-17~~, ~~H-18~~: Fixed; ~~H-03~~, ~~H-11~~: Won't Fix
 2. ~~T-01~~: Fixed (9 tests); ~~T-02~~: Fixed; ~~T-03~~: Fixed; ~~T-04~~: Fixed (28 tests); ~~T-05~~: Fixed (78 tests); ~~T-06~~: Fixed (13 tests); ~~T-07~~: Fixed (13 tests)
 
 ### Phase 3: Performance

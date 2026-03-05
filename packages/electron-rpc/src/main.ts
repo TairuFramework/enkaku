@@ -63,6 +63,6 @@ export function serveProcess<Protocol extends ProtocolDefinition>(
     const transport = new Transport({
       stream: createMainTransportStream(port),
     }) as ServerTransportOf<Protocol>
-    server = serve<Protocol>({ accessControl: false, transport, ...serverParams })
+    server = serve<Protocol>({ transport, ...serverParams })
   })
 }
