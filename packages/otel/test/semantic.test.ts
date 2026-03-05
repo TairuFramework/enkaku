@@ -73,6 +73,26 @@ describe('AttributeKeys', () => {
     expect(AttributeKeys.NET_PEER_NAME).toBe('net.peer.name')
   })
 
+  test('has stream message index attribute', () => {
+    expect(AttributeKeys.STREAM_MESSAGE_INDEX).toBe('enkaku.stream.message_index')
+  })
+
+  test('has channel message index attribute', () => {
+    expect(AttributeKeys.CHANNEL_MESSAGE_INDEX).toBe('enkaku.channel.message_index')
+  })
+
+  test('has message direction attribute', () => {
+    expect(AttributeKeys.MESSAGE_DIRECTION).toBe('enkaku.message.direction')
+  })
+
+  test('has validation success attribute', () => {
+    expect(AttributeKeys.VALIDATION_SUCCESS).toBe('enkaku.validation.success')
+  })
+
+  test('has validation error attribute', () => {
+    expect(AttributeKeys.VALIDATION_ERROR).toBe('enkaku.validation.error')
+  })
+
   test('has error attributes', () => {
     expect(AttributeKeys.ERROR_CODE).toBe('enkaku.error.code')
     expect(AttributeKeys.ERROR_MESSAGE).toBe('enkaku.error.message')

@@ -54,6 +54,15 @@ export const AttributeKeys = {
   // Network
   NET_PEER_NAME: 'net.peer.name',
 
+  // Stream/Channel messaging
+  STREAM_MESSAGE_INDEX: 'enkaku.stream.message_index',
+  CHANNEL_MESSAGE_INDEX: 'enkaku.channel.message_index',
+  MESSAGE_DIRECTION: 'enkaku.message.direction',
+
+  // Validation
+  VALIDATION_SUCCESS: 'enkaku.validation.success',
+  VALIDATION_ERROR: 'enkaku.validation.error',
+
   // Error
   ERROR_CODE: 'enkaku.error.code',
   ERROR_MESSAGE: 'enkaku.error.message',
