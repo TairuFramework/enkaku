@@ -23,6 +23,7 @@ export const SpanNames = {
   TRANSPORT_HTTP_SSE_CONNECT: 'enkaku.transport.http.sse_connect',
   TRANSPORT_WS_CONNECT: 'enkaku.transport.ws.connect',
   TRANSPORT_WS_MESSAGE: 'enkaku.transport.ws.message',
+  TRANSPORT_SOCKET_CONNECT: 'enkaku.transport.socket.connect',
 } as const
 
 export const AttributeKeys = {
@@ -44,6 +45,14 @@ export const AttributeKeys = {
 
   // Transport
   TRANSPORT_TYPE: 'enkaku.transport.type',
+  TRANSPORT_SESSION_ID: 'enkaku.transport.session_id',
+
+  // HTTP (standard OTel)
+  HTTP_METHOD: 'http.method',
+  HTTP_STATUS_CODE: 'http.status_code',
+
+  // Network
+  NET_PEER_NAME: 'net.peer.name',
 
   // Error
   ERROR_CODE: 'enkaku.error.code',
