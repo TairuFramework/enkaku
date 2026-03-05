@@ -9,6 +9,7 @@ import {
   SpanNames,
   SpanStatusCode,
   setSpanOnContext,
+  TraceFlags,
   type Tracer,
   withActiveContext,
 } from '@enkaku/otel'
@@ -271,6 +272,22 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         ? ((message.payload as Record<string, unknown>).rid as string)
         : undefined
 
+    // Build span links from client trace context
+    const header = message.header as Record<string, unknown>
+    const links: Array<{
+      context: { traceId: string; spanId: string; traceFlags: number; isRemote: boolean }
+    }> = []
+    if (typeof header.tid === 'string' && typeof header.sid === 'string') {
+      links.push({
+        context: {
+          traceId: header.tid,
+          spanId: header.sid,
+          traceFlags: TraceFlags.SAMPLED,
+          isRemote: true,
+        },
+      })
+    }
+
     return params.tracer.startSpan(
       SpanNames.SERVER_HANDLE,
       {
@@ -279,6 +296,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           ...(procedure != null ? { [AttributeKeys.RPC_PROCEDURE]: procedure } : {}),
           ...(rid != null ? { [AttributeKeys.RPC_REQUEST_ID]: rid } : {}),
         },
+        links,
       },
       parentCtx,
     )
