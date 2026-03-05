@@ -1,7 +1,16 @@
 import { DisposeInterruption, Disposer } from '@enkaku/async'
 import { EventEmitter } from '@enkaku/event'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
-import { AttributeKeys, SpanNames } from '@enkaku/otel'
+import {
+  AttributeKeys,
+  createTracer,
+  extractTraceContext,
+  type Span,
+  SpanNames,
+  SpanStatusCode,
+  setSpanOnContext,
+  withActiveContext,
+} from '@enkaku/otel'
 import {
   type AnyClientMessageOf,
   type AnyServerPayloadOf,
@@ -22,7 +31,6 @@ import {
   type SignedToken,
   type Token,
 } from '@enkaku/token'
-import { context as otelContext, SpanStatusCode, trace } from '@opentelemetry/api'
 
 import {
   checkClientToken,
@@ -51,7 +59,7 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
   | StreamMessageOf<Protocol>
   | ChannelMessageOf<Protocol>
 
-const tracer = trace.getTracer('enkaku.server')
+const tracer = createTracer('server')
 
 function defaultRandomID(): string {
   return globalThis.crypto.randomUUID()
@@ -238,22 +246,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
   }
 
-  function extractTraceContext(message: ProcessMessageOf<Protocol>) {
+  function getParentContext(message: ProcessMessageOf<Protocol>) {
     const header = message.header as Record<string, unknown>
-    let parentCtx = otelContext.active()
-    if (typeof header.tid === 'string' && typeof header.sid === 'string') {
-      parentCtx = trace.setSpanContext(parentCtx, {
-        traceId: header.tid,
-        spanId: header.sid,
-        isRemote: true,
-        traceFlags: 1,
-      })
-    }
-    return parentCtx
+    return extractTraceContext(header)
   }
 
   function createHandleSpan(message: ProcessMessageOf<Protocol>) {
-    const parentCtx = extractTraceContext(message)
+    const parentCtx = getParentContext(message)
     const procedure = (message.payload as Record<string, unknown>).prc as string | undefined
     const rid =
       'rid' in message.payload
@@ -274,12 +273,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   }
 
   function wrapHandle(
-    span: ReturnType<typeof tracer.startSpan>,
+    span: Span,
     handle: () => Error | Promise<void>,
   ): () => Error | Promise<void> {
     return () => {
-      const spanCtx = trace.setSpan(otelContext.active(), span)
-      const result = otelContext.with(spanCtx, handle)
+      const spanCtx = setSpanOnContext(undefined, span)
+      const result = withActiveContext(spanCtx, handle)
       if (result instanceof Error) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: result.message })
         span.recordException(result)
