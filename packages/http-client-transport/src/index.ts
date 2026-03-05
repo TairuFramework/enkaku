@@ -10,7 +10,15 @@
  * @module http-client-transport
  */
 
-import { AttributeKeys, createTracer, SpanNames, SpanStatusCode, withSpan } from '@enkaku/otel'
+import {
+  AttributeKeys,
+  createTracer,
+  formatTraceparent,
+  getActiveTraceContext,
+  SpanNames,
+  SpanStatusCode,
+  withSpan,
+} from '@enkaku/otel'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -106,10 +114,22 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       },
     })
     try {
+      const traceCtx = getActiveTraceContext()
+      const headers: Record<string, string> = { ...HEADERS }
+      if (traceCtx != null) {
+        headers.traceparent = formatTraceparent(
+          traceCtx.traceID,
+          traceCtx.spanID,
+          traceCtx.traceFlags,
+        )
+      }
+      if (sessionID != null) {
+        headers['enkaku-session-id'] = sessionID
+      }
       const res = await fetch(params.url, {
         method: 'POST',
         body: JSON.stringify(msg),
-        headers: sessionID ? { ...HEADERS, 'enkaku-session-id': sessionID } : HEADERS,
+        headers,
       })
       span.setAttribute(AttributeKeys.HTTP_STATUS_CODE, res.status)
       if (!res.ok) {
