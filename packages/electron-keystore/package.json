@@ -45,7 +45,6 @@
     "@enkaku/log": "workspace:^",
     "@enkaku/otel": "workspace:^",
     "@enkaku/token": "workspace:^",
-    "@opentelemetry/api": "catalog:",
     "electron-store": "catalog:"
   },
   "devDependencies": {
