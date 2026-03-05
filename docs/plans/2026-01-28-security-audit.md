@@ -1013,7 +1013,7 @@ Non-breaking changes:
 - **Package:** `@enkaku/stream`
 - **File:** `packages/stream/src/json-lines.ts:37, 42, 47, 52, 57, 81`
 - **Impact:** HIGH - 10-50x slower for large payloads
-- **Status:** [ ] Planned
+- **Status:** [x] Fixed — array buffer + charCode comparison (branch `chore/audit-changes`)
 
 **Issue:** `output += char` in hot loop creates thousands of intermediate strings.
 
@@ -1032,7 +1032,7 @@ Note: P-03 (regex in hot loop) is part of the same character-by-character parsin
 - **Package:** `@enkaku/codec`
 - **File:** `packages/codec/src/index.ts:48`
 - **Impact:** HIGH - 3x slower encoding
-- **Status:** [ ] Planned
+- **Status:** [x] Fixed — single regex with alternation (branch `chore/audit-changes`)
 
 **Issue:** Three sequential `.replace()` calls create 3 intermediate strings.
 
@@ -1047,7 +1047,7 @@ return toB64(bytes).replace(/[=+/]/g, m => m === '=' ? '' : m === '+' ? '-' : '_
 - **Package:** `@enkaku/stream`
 - **File:** `packages/stream/src/json-lines.ts:56`
 - **Impact:** MEDIUM - 2-5x slower per message
-- **Status:** [ ] Planned — address together with P-01
+- **Status:** [x] Fixed — charCode comparison (branch `chore/audit-changes`, with P-01)
 
 **Issue:** `/\S/.test(char)` regex executed for every character.
 
@@ -1113,7 +1113,7 @@ if (char.charCodeAt(0) > 32) { ... }
 - **Package:** `@enkaku/execution`
 - **File:** `packages/execution/src/execution.ts:134-139`
 - **Impact:** MEDIUM - Slow iteration
-- **Status:** [ ] Planned
+- **Status:** [x] Fixed — push+reverse (branch `chore/audit-changes`)
 
 **Issue:** `unshift()` is O(n) per call, making chain traversal O(n²).
 
@@ -1125,7 +1125,7 @@ if (char.charCodeAt(0) > 32) { ... }
 - **Package:** `@enkaku/execution`
 - **File:** `packages/execution/src/execution.ts:80-86`
 - **Impact:** MEDIUM - Extra listeners
-- **Status:** [ ] Planned
+- **Status:** [x] Fixed — deduplicated signal combining (branch `chore/audit-changes`)
 
 **Issue:** `AbortSignal.any()` called twice with overlapping signals.
 
@@ -1174,14 +1174,14 @@ The sync methods exist for convenience in startup/initialization paths. Deprecat
 
 | Priority | Issue | Package | Impact | Status |
 |----------|-------|---------|--------|--------|
-| P0 | P-01: String concat in JSON-L (+ P-03) | stream | 10-50x slower | Planned |
+| ~~P0~~ | ~~P-01: String concat in JSON-L (+ P-03)~~ | ~~stream~~ | ~~10-50x slower~~ | ~~DONE~~ |
 | ~~P0~~ | ~~P-04: Unbounded controllers~~ | ~~server~~ | ~~Memory leak~~ | ~~DONE~~ |
-| P1 | P-02: Triple regex replace | codec | 3x slower | Planned |
+| ~~P1~~ | ~~P-02: Triple regex replace~~ | ~~codec~~ | ~~3x slower~~ | ~~DONE~~ |
 | ~~P1~~ | ~~P-05: Session map growth~~ | ~~http-transport~~ | ~~DoS risk~~ | ~~DONE~~ |
 | ~~P1~~ | ~~P-06: Buffer growth~~ | ~~stream~~ | ~~OOM risk~~ | ~~DONE (H-18)~~ |
 | P1 | P-07: No backpressure | stream | Overflow | Deferred |
-| P2 | P-08: O(n²) chain unwind | execution | Slow iteration | Planned |
-| P2 | P-09: Redundant signals | execution | Extra overhead | Planned |
+| ~~P2~~ | ~~P-08: O(n²) chain unwind~~ | ~~execution~~ | ~~Slow iteration~~ | ~~DONE~~ |
+| ~~P2~~ | ~~P-09: Redundant signals~~ | ~~execution~~ | ~~Extra overhead~~ | ~~DONE~~ |
 | P2 | P-10: Sequential verify | capability | O(n) time | Deferred |
 | P3 | P-11: Redundant decode | token | Extra decode | Deferred |
 | ~~P3~~ | ~~P-12: Sync keyring~~ | ~~node-keystore~~ | ~~Blocking~~ | ~~Won't Fix~~ |
@@ -1202,9 +1202,9 @@ The sync methods exist for convenience in startup/initialization paths. Deprecat
 2. ~~T-01~~: Fixed (9 tests); ~~T-02~~: Fixed; ~~T-03~~: Fixed; ~~T-04~~: Fixed (28 tests); ~~T-05~~: Fixed (78 tests); ~~T-06~~: Fixed (13 tests); ~~T-07~~: Fixed (13 tests)
 
 ### Phase 3: Performance
-1. P-01 + P-03, P-02: Serialization quick wins — Planned
+1. ~~P-01 + P-03, P-02~~: Serialization quick wins — DONE
 2. ~~P-04~~, ~~P-05~~, ~~P-06~~: Memory limits — DONE
-3. P-08, P-09: Execution package quick wins — Planned
+3. ~~P-08, P-09~~: Execution package quick wins — DONE
 4. P-07, P-10, P-11: Deferred (low priority, revisit if needed)
 
 ### Phase 4: Medium Security + Polish
