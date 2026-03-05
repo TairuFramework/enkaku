@@ -82,8 +82,10 @@ export class Execution<V, E extends Error = Error>
           chainSignals.length === 1 ? chainSignals[0] : AbortSignal.any(chainSignals)
       }
 
-      const allSignals = [...chainSignals, ...executableSignals]
-      const signal = allSignals.length === 1 ? allSignals[0] : AbortSignal.any(allSignals)
+      const signalSources = this.#chainSignal
+        ? [this.#chainSignal, ...executableSignals]
+        : executableSignals
+      const signal = signalSources.length === 1 ? signalSources[0] : AbortSignal.any(signalSources)
       this.#signal = signal
 
       if (signal.aborted) {
@@ -134,9 +136,10 @@ export class Execution<V, E extends Error = Error>
     const chain: Array<Execution<unknown, Error | Interruption>> = []
     let current: Execution<unknown, Error | Interruption> | undefined = this
     while (current) {
-      chain.unshift(current)
+      chain.push(current)
       current = current.#previous
     }
+    chain.reverse()
 
     let previous: Result<unknown, Error | Interruption> | undefined
     for (const execution of chain) {
