@@ -16,7 +16,7 @@ catalog:
   '@electron-forge/cli': ^7.11.1
   '@electron-forge/plugin-vite': ^7.11.1
   '@enkaku/codec': ^0.12.0
-  '@hono/node-server': ^1.19.10
+  '@hono/node-server': ^1.19.11
   '@logtape/logtape': ^2.0.2
   '@napi-rs/keyring': ^1.2.0
   '@noble/ciphers': ^2.1.1
@@ -46,8 +46,8 @@ catalog:
   electron: ^40.7.0
   electron-store: ^11.0.2
   emittery: ^2.0.0
-  expo: ~54.0.8
-  expo-crypto: ^55.0.8
+  expo: ~55.0.5
+  expo-crypto: ^55.0.9
   expo-secure-store: ^55.0.8
   expo-status-bar: ~55.0.4
   get-port: ^7.1.0

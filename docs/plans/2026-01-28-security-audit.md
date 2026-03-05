@@ -20,10 +20,10 @@
 
 | Severity | Count | Status |
 |----------|-------|--------|
-| CRITICAL | 12 | 8 Fixed (C-01, C-02, C-03, C-05, C-06, C-07, C-08, C-09), 1 Won't Fix (C-12) |
-| HIGH | 18 | 16 Fixed (H-01, H-02, H-04, H-05, H-06, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-17, H-18) |
-| MEDIUM | 14 | 4 Fixed (M-04, M-11, M-12), 1 Mitigated (M-10) |
-| LOW | 3 | Pending |
+| CRITICAL | 12 | 8 Fixed (C-01, C-02, C-03, C-05, C-06, C-07, C-08, C-09), 3 Won't Fix (C-10, C-11, C-12), 1 Planned (C-04) |
+| HIGH | 18 | 15 Fixed (H-01, H-02, H-04, H-05, H-06, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-18), 1 Planned (H-17), 2 Won't Fix (H-03, H-11) |
+| MEDIUM | 14 | 11 Fixed (M-01, M-02, M-03, M-04, M-05, M-06, M-07, M-08, M-09, M-11, M-12), 1 Mitigated (M-10), 2 Won't Fix (M-13, M-14) |
+| LOW | 3 | 1 Fixed (L-03), 2 Closed (L-01, L-02) |
 
 ---
 
@@ -91,7 +91,7 @@ Verify signer has authority to delegate requested permissions before creating ca
 ### C-04: No Capability Revocation Mechanism
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts` (entire file)
-- **Status:** [ ] Not Started
+- **Status:** [~] Planned — `docs/plans/2026-03-05-capability-verification-hook.md`
 
 **Description:**
 There is no revocation mechanism for capabilities. Once issued, a capability cannot be revoked early, must wait for natural expiration, has no `jti` (JWT ID) based revocation list support.
@@ -99,8 +99,8 @@ There is no revocation mechanism for capabilities. Once issued, a capability can
 **Impact:**
 If a capability token is stolen, it remains valid until `exp` regardless of actual compromise.
 
-**Recommendation:**
-Implement `jti`-based revocation list or add a revocation callback mechanism.
+**Planned Fix:**
+Instead of building a revocation system into the library, add an optional `verifyToken` hook to `DelegationChainOptions`. The hook receives both the parsed `CapabilityToken` and raw token string, and is called for each verified token during `checkCapability()` and `checkDelegationChain()`. Consumers can implement revocation (e.g., `jti` lookup), custom authorization, or audit logging. The server exposes this via `ServerParams.verifyToken`. This is a non-breaking, additive change that keeps the library stateless.
 
 ---
 
@@ -201,32 +201,28 @@ Inflight requests accumulate if responses never arrive → memory exhaustion.
 - **Package:** `@enkaku/http-server-transport`, `@enkaku/http-client-transport`
 - **File:** `packages/http-server-transport/src/index.ts:1-266`
 - **File:** `packages/http-client-transport/src/index.ts:1-182`
-- **Status:** [ ] Not Started
+- **Status:** [—] Won't Fix
+- **Severity downgraded:** CRITICAL → Informational
 
 **Description:**
 HTTP transport packages use standard Fetch API with no built-in HTTPS/TLS enforcement. No certificate validation options provided.
 
-**Impact:**
-Man-in-the-middle attacks, credential interception, message tampering.
-
-**Recommendation:**
-Enforce HTTPS in production, provide certificate validation options.
+**Rationale for won't-fix:**
+TLS enforcement is a deployment concern, not a library concern. The transport wraps standard Fetch API — HTTPS is configured at the infrastructure layer (reverse proxy, load balancer, platform). Most RPC frameworks (gRPC, tRPC) follow the same model.
 
 ---
 
 ### C-11: Socket Transport Has No TLS Support
 - **Package:** `@enkaku/socket-transport`
 - **File:** `packages/socket-transport/src/index.ts:13, 21`
-- **Status:** [ ] Not Started
+- **Status:** [—] Won't Fix
+- **Severity downgraded:** CRITICAL → Informational
 
 **Description:**
 Uses only `node:net` module, no TLS option available. Only IPC sockets supported.
 
-**Impact:**
-Unencrypted communication over network sockets, credential exposure.
-
-**Recommendation:**
-Support TLS connections via `node:tls.connect()`, add security options.
+**Rationale for won't-fix:**
+Socket transport is designed for IPC (local inter-process communication), not network transport. TLS is unnecessary for local sockets. If network transport is needed, the HTTP transport with deployment-level TLS is the correct choice.
 
 ---
 
@@ -299,16 +295,27 @@ function isCodecMatch(codec: Uint8Array, bytes: Uint8Array): boolean {
 ### H-03: No Cryptographic Binding to Caller Identity
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts:169-199`
-- **Status:** [ ] Not Started
+- **Status:** [—] Won't Fix
+- **Severity downgraded:** HIGH → Informational
 
 **Description:**
 The final token in capability chain doesn't have to match the entity actually performing the action. No binding between who is calling `checkCapability()` and who the token was issued to.
 
-**Impact:**
-Token replay attacks - token issued to user B can be replayed by any third party.
-
-**Recommendation:**
+**Original recommendation:**
 Require the caller identity in capability checks.
+
+**Rationale for won't-fix:**
+The cryptographic binding already exists implicitly through two mechanisms working together:
+
+1. **Message signature verification.** The server verifies every message is a `SignedToken` before calling `checkClientToken()`. The `iss` field is cryptographically bound to the signer's private key — an attacker cannot forge a different `iss`.
+2. **`assertValidDelegation()` already checks `to.iss !== from.aud`.** This means the message issuer must be the audience of the capability token. Combined with signature verification, this ensures only the intended recipient can use a capability.
+
+The described replay attack (token issued to user B replayed by a third party) is not feasible because:
+- The replayer cannot change `iss` (signature would be invalid)
+- If they replay the original message unchanged, the action executes as the original signer — no privilege escalation occurs
+- Intercepting signed tokens requires breaking transport security (addressed separately by C-10/C-11)
+
+An explicit caller identity parameter in `checkCapability()` would be redundant with the existing signature + delegation chain validation.
 
 ---
 
@@ -440,16 +447,20 @@ HTTP Header Injection, cache poisoning.
 ### H-11: No Message Sequence Validation
 - **Package:** `@enkaku/http-server-transport`, `@enkaku/http-client-transport`
 - **File:** `packages/http-server-transport/src/index.ts:48-87`
-- **Status:** [ ] Not Started
+- **Status:** [—] Won't Fix
+- **Severity downgraded:** HIGH → Informational
 
 **Description:**
 No sequence numbers or message ordering guarantees. Messages identified only by `rid`. Duplicate RIDs could overwrite previous entries.
 
-**Impact:**
-Message duplication, replay attacks, out-of-order execution.
-
-**Recommendation:**
+**Original recommendation:**
 Add message sequence numbers, implement deduplication.
+
+**Rationale for won't-fix:**
+1. **Transport layer guarantees ordering.** TCP (underlying HTTP and WebSocket) provides in-order delivery. Node.js streams are ordered. No current transport uses at-least-once or unordered delivery semantics.
+2. **`rid` already provides request correlation.** Duplicate RID injection would require bypassing auth, which is separately addressed.
+3. **Replay attacks are better solved at the auth layer.** Token expiration (C-01, fixed) and capability revocation (C-04) are the correct defenses. Sequence numbers are a weak replay mitigation by comparison.
+4. **Adding sequence numbers would break the wire protocol** for a problem that doesn't exist with the current transports, introducing complexity without meaningful security benefit.
 
 ---
 
@@ -535,13 +546,21 @@ Return generic "Handler execution failed" to clients, log detailed errors server
 ### H-17: Conditional Authentication Bypass (Public Mode)
 - **Package:** `@enkaku/server`
 - **File:** `packages/server/src/server.ts:121`
-- **Status:** [~] Mitigated — Branch `feat/security-hardening-quick-fixes`
+- **Status:** [~] Planned — `docs/plans/2026-03-05-access-control-refactor.md`
 
 **Description:**
-When `params.public = true`, the entire authentication check is skipped. ALL message types bypass access control in public mode.
+When `params.public = true`, the entire authentication check is skipped. ALL message types bypass access control in public mode. The `public` and `access` params can be combined in contradictory ways (e.g., `public: true` with access records silently ignores the records).
 
-**Mitigation Applied:**
-Added logger.warn() when `public: true` is combined with non-empty access control records (which are silently ignored). Warns in both the Server constructor and per-transport `handle()` method. Full per-procedure public access control is a separate architectural effort.
+**Previous Mitigation:**
+Added logger.warn() when `public: true` is combined with non-empty access control records.
+
+**Planned Fix:**
+Replace `public` boolean + `access` record with a unified `accessControl` parameter:
+- `accessControl: false` — public, no auth (replaces `public: true`)
+- `accessControl: true` or omitted with identity — server-only access (default)
+- `accessControl: ProcedureAccessRecord` — granular per-procedure rules (replaces `access: {...}`)
+
+Eliminates the contradictory state by construction. No identity without explicit `accessControl: false` throws an error instead of silently defaulting.
 
 ---
 
@@ -727,19 +746,27 @@ When server disposes, if handler ignores abort signal and takes 10 seconds, serv
 ### M-13: Socket Buffer No Backpressure
 - **Package:** `@enkaku/socket-transport`
 - **File:** `packages/socket-transport/src/index.ts:38-45`
-- **Status:** [ ] Not Started
+- **Status:** [—] Won't Fix
+- **Severity downgraded:** MEDIUM → Informational
 
 **Description:**
 No backpressure handling. Could buffer unlimited data in memory.
+
+**Rationale for won't-fix:**
+Socket transport is designed for local IPC only (see C-11). For local inter-process communication, the OS kernel buffer provides natural backpressure. The producer and consumer are on the same machine, making unbounded buffering a theoretical rather than practical concern.
 
 ---
 
 ### M-14: No Memory Clearing in All Keystores
 - **Package:** `@enkaku/node-keystore`, `@enkaku/browser-keystore`, `@enkaku/expo-keystore`, `@enkaku/electron-keystore`
-- **Status:** [ ] Not Started
+- **Status:** [—] Won't Fix
+- **Severity downgraded:** MEDIUM → Informational
 
 **Description:**
 Keys remain in memory throughout application lifetime. No clearing after key is used. Vulnerable to process memory dump attacks.
+
+**Rationale for won't-fix:**
+JavaScript runtimes do not provide reliable memory clearing. Strings are immutable and may be interned, the GC copies objects during compaction, and `ArrayBuffer` zeroing can be optimized away. The browser keystore already uses non-extractable `CryptoKeyPair` handles where key material lives in the browser's crypto engine, not JS-accessible memory. For Node.js keystores, the signer must retain the private key for the lifetime of signing operations. The practical mitigations are short-lived processes and OS-level memory protection (e.g., encrypted swap).
 
 ---
 
@@ -786,12 +813,17 @@ Added `assertValidIssuedAt()` function that rejects tokens with future `iat` tim
 
 ## Breaking Changes Recommended
 
-The following fixes will require breaking changes:
+Breaking changes already applied:
+1. ~~**C-01, C-02, C-03**~~: Token/capability validation — DONE
+2. ~~**C-05, C-06, C-07**~~: Server resource limits and authorization — DONE
+3. ~~**H-05, H-06**~~: Protocol schema hardening — DONE
+4. ~~**C-12**~~: Browser keystore — Won't Fix
 
-1. **C-01, C-02, C-03, C-04**: Token/capability API changes for proper validation
-2. **C-05, C-06, C-07**: Server API changes for resource limits and authorization
-3. **H-05, H-06**: Protocol schema changes (additionalProperties, maxLength)
-4. **C-12**: Browser keystore storage format change (encrypted keys)
+Remaining breaking changes:
+5. **H-17**: Server `accessControl` API refactor — Planned (`docs/plans/2026-03-05-access-control-refactor.md`)
+
+Non-breaking planned changes:
+6. **C-04**: Capability verification hook — Planned (`docs/plans/2026-03-05-capability-verification-hook.md`)
 
 ---
 
@@ -981,6 +1013,7 @@ The following fixes will require breaking changes:
 - **Package:** `@enkaku/stream`
 - **File:** `packages/stream/src/json-lines.ts:37, 42, 47, 52, 57, 81`
 - **Impact:** HIGH - 10-50x slower for large payloads
+- **Status:** [ ] Planned
 
 **Issue:** `output += char` in hot loop creates thousands of intermediate strings.
 
@@ -991,12 +1024,15 @@ output.push(char)  // Instead of output += char
 output.join('')    // Join once at end
 ```
 
+Note: P-03 (regex in hot loop) is part of the same character-by-character parsing and should be addressed together.
+
 ---
 
 #### P-02: Multiple Regex Replacements in Base64URL
 - **Package:** `@enkaku/codec`
 - **File:** `packages/codec/src/index.ts:48`
 - **Impact:** HIGH - 3x slower encoding
+- **Status:** [ ] Planned
 
 **Issue:** Three sequential `.replace()` calls create 3 intermediate strings.
 
@@ -1011,6 +1047,7 @@ return toB64(bytes).replace(/[=+/]/g, m => m === '=' ? '' : m === '+' ? '-' : '_
 - **Package:** `@enkaku/stream`
 - **File:** `packages/stream/src/json-lines.ts:56`
 - **Impact:** MEDIUM - 2-5x slower per message
+- **Status:** [ ] Planned — address together with P-01
 
 **Issue:** `/\S/.test(char)` regex executed for every character.
 
@@ -1051,10 +1088,11 @@ if (char.charCodeAt(0) > 32) { ... }
 - **Package:** `@enkaku/stream`
 - **File:** `packages/stream/src/json-lines.ts:21-22`
 - **Impact:** HIGH - OOM on large inputs
+- **Status:** [x] Fixed — See H-18 (maxBufferSize/maxMessageSize added)
 
 **Issue:** `input` and `output` buffers grow unbounded.
 
-**Recommendation:** Add `MAX_BUFFER_SIZE` (1MB) and `MAX_OUTPUT_SIZE` (10MB).
+**Fix Applied:** Buffer size limits added as part of H-18 (payload size limits for stream JSON lines).
 
 ---
 
@@ -1075,6 +1113,7 @@ if (char.charCodeAt(0) > 32) { ... }
 - **Package:** `@enkaku/execution`
 - **File:** `packages/execution/src/execution.ts:134-139`
 - **Impact:** MEDIUM - Slow iteration
+- **Status:** [ ] Planned
 
 **Issue:** `unshift()` is O(n) per call, making chain traversal O(n²).
 
@@ -1086,6 +1125,7 @@ if (char.charCodeAt(0) > 32) { ... }
 - **Package:** `@enkaku/execution`
 - **File:** `packages/execution/src/execution.ts:80-86`
 - **Impact:** MEDIUM - Extra listeners
+- **Status:** [ ] Planned
 
 **Issue:** `AbortSignal.any()` called twice with overlapping signals.
 
@@ -1121,29 +1161,30 @@ if (char.charCodeAt(0) > 32) { ... }
 - **Package:** `@enkaku/node-keystore`
 - **File:** `packages/node-keystore/src/entry.ts:37, 58, 90`
 - **Impact:** HIGH - Event loop blocking
+- **Status:** [—] Won't Fix
 
 **Issue:** Sync methods block event loop.
 
-**Recommendation:** Document preference for async variants; deprecate sync in v1.
+**Rationale for won't-fix:**
+The sync methods exist for convenience in startup/initialization paths. Deprecating them is a breaking change for a non-critical issue. Consumers who need async can already use the async variants.
 
 ---
 
 ### Performance Priority Matrix
 
-| Priority | Issue | Package | Impact | Effort |
+| Priority | Issue | Package | Impact | Status |
 |----------|-------|---------|--------|--------|
-| P0 | P-01: String concat in JSON-L | stream | 10-50x slower | Low |
+| P0 | P-01: String concat in JSON-L (+ P-03) | stream | 10-50x slower | Planned |
 | ~~P0~~ | ~~P-04: Unbounded controllers~~ | ~~server~~ | ~~Memory leak~~ | ~~DONE~~ |
-| P1 | P-02: Triple regex replace | codec | 3x slower | Low |
+| P1 | P-02: Triple regex replace | codec | 3x slower | Planned |
 | ~~P1~~ | ~~P-05: Session map growth~~ | ~~http-transport~~ | ~~DoS risk~~ | ~~DONE~~ |
-| P1 | P-06: Buffer growth | stream | OOM risk | Low |
-| P1 | P-07: No backpressure | stream | Overflow | Medium |
-| P2 | P-03: Regex in hot loop | stream | 2-5x slower | Low |
-| P2 | P-08: O(n²) chain unwind | execution | Slow iteration | Low |
-| P2 | P-10: Sequential verify | capability | O(n) time | Medium |
-| P3 | P-09: Redundant signals | execution | Extra overhead | Low |
-| P3 | P-11: Redundant decode | token | Extra decode | Medium |
-| P3 | P-12: Sync keyring | node-keystore | Blocking | Low |
+| ~~P1~~ | ~~P-06: Buffer growth~~ | ~~stream~~ | ~~OOM risk~~ | ~~DONE (H-18)~~ |
+| P1 | P-07: No backpressure | stream | Overflow | Deferred |
+| P2 | P-08: O(n²) chain unwind | execution | Slow iteration | Planned |
+| P2 | P-09: Redundant signals | execution | Extra overhead | Planned |
+| P2 | P-10: Sequential verify | capability | O(n) time | Deferred |
+| P3 | P-11: Redundant decode | token | Extra decode | Deferred |
+| ~~P3~~ | ~~P-12: Sync keyring~~ | ~~node-keystore~~ | ~~Blocking~~ | ~~Won't Fix~~ |
 
 ---
 
@@ -1157,18 +1198,18 @@ if (char.charCodeAt(0) > 32) { ... }
 5. ~~H-05, H-06: Protocol schema hardening~~ DONE (see `archive/2026-01-29-protocol-schema-hardening.md`)
 
 ### Phase 2: High Priority Security
-1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-09~~, ~~H-10~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-18~~: Fixed; H-03, H-11, H-17: Remaining high severity issues
+1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-09~~, ~~H-10~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-18~~: Fixed; ~~H-03~~, ~~H-11~~: Won't Fix; H-17: Planned (`docs/plans/2026-03-05-access-control-refactor.md`)
 2. ~~T-01~~: Fixed (9 tests); ~~T-02~~: Fixed; ~~T-03~~: Fixed; ~~T-04~~: Fixed (28 tests); ~~T-05~~: Fixed (78 tests); ~~T-06~~: Fixed (13 tests); ~~T-07~~: Fixed (13 tests)
 
 ### Phase 3: Performance
-1. P-01, P-02, P-03: Serialization quick wins
-2. P-04, P-05, P-06: Memory limits
-3. P-07: Stream backpressure
+1. P-01 + P-03, P-02: Serialization quick wins — Planned
+2. ~~P-04~~, ~~P-05~~, ~~P-06~~: Memory limits — DONE
+3. P-08, P-09: Execution package quick wins — Planned
+4. P-07, P-10, P-11: Deferred (low priority, revisit if needed)
 
 ### Phase 4: Medium Security + Polish
-1. M-01 through M-14: Medium severity issues
-2. L-01 through L-03: Low severity issues
-3. P-08 through P-12: Remaining performance
+1. ~~M-01~~, ~~M-02~~, ~~M-03~~, ~~M-04~~, ~~M-05~~, ~~M-06~~, ~~M-07~~, ~~M-08~~, ~~M-09~~, ~~M-11~~, ~~M-12~~: Fixed; ~~M-10~~: Mitigated; ~~M-13~~, ~~M-14~~: Won't Fix — **COMPLETE**
+2. ~~L-01~~, ~~L-02~~: Closed; ~~L-03~~: Fixed — **COMPLETE**
 
 ---
 
@@ -1189,4 +1230,5 @@ if (char.charCodeAt(0) > 32) { ... }
 | ~~C-12~~ | ~~Browser keys encrypted~~ | Won't Fix — non-extractable keys are the correct approach |
 | H-05 | Field size limits | Reduce payload sizes |
 | H-06 | additionalProperties: false | Remove extra fields |
-| P-12 | Sync keyring deprecated | Use async variants |
+| H-17 | `public`/`access` replaced with `accessControl` | `public: true` → `accessControl: false`; `access: {...}` → `accessControl: {...}` |
+| ~~P-12~~ | ~~Sync keyring deprecated~~ | Won't Fix — sync methods kept for convenience |
