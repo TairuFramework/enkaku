@@ -127,6 +127,44 @@ describe('EventEmitter', () => {
     await expect(emitter.emit('test', 1)).rejects.toThrow('filtered error')
   })
 
+  test('emit() runs multiple listeners in parallel', async () => {
+    const emitter = new EventEmitter<{ test: string }>()
+    const order: Array<string> = []
+
+    emitter.on('test', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50))
+      order.push('slow')
+    })
+    emitter.on('test', async () => {
+      order.push('fast')
+    })
+
+    await emitter.emit('test', 'hello')
+    // If parallel, 'fast' finishes before 'slow'
+    expect(order).toEqual(['fast', 'slow'])
+  })
+
+  test('emit() aggregates errors from multiple listeners', async () => {
+    const emitter = new EventEmitter<{ test: string }>()
+
+    emitter.on('test', () => {
+      throw new Error('error 1')
+    })
+    emitter.on('test', () => {
+      throw new Error('error 2')
+    })
+
+    await expect(emitter.emit('test', 'hello')).rejects.toThrow(AggregateError)
+    try {
+      await emitter.emit('test', 'hello')
+    } catch (err) {
+      expect(err).toBeInstanceOf(AggregateError)
+      expect((err as AggregateError).errors).toHaveLength(2)
+      expect((err as AggregateError).errors[0]).toEqual(new Error('error 1'))
+      expect((err as AggregateError).errors[1]).toEqual(new Error('error 2'))
+    }
+  })
+
   test('on() unsubscribes when signal is aborted', async () => {
     const emitter = new EventEmitter<{ test: number }>()
     const controller = new AbortController()
