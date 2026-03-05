@@ -50,7 +50,7 @@ export function toB64(bytes: Uint8Array): string {
  * Convert a Uint8Array to a base64url-encoded string.
  */
 export function toB64U(bytes: Uint8Array) {
-  return toB64(bytes).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_')
+  return toB64(bytes).replace(/[=+/]/g, (m) => (m === '+' ? '-' : m === '/' ? '_' : ''))
 }
 
 /**
