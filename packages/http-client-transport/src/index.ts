@@ -67,6 +67,10 @@ export async function createEventStream(url: string): Promise<EventStream> {
       sourceURL.searchParams.set('id', data.id)
       const source = new EventSource(sourceURL)
 
+      // Wait for the SSE connection to be established before returning.
+      // The server sets the session controller when processing this GET —
+      // without waiting, a subsequent POST can arrive before the controller
+      // exists, causing a "Invalid request" / "Inactive session" error.
       await new Promise<void>((resolve, reject) => {
         source.addEventListener('open', () => resolve(), { once: true })
         source.addEventListener(

@@ -29,7 +29,7 @@ export function provideFullIdentity(store: ElectronKeyStore | string, keyID: str
       const identity = createFullIdentity(decodePrivateKey(key))
       span.setAttribute(AttributeKeys.AUTH_DID, identity.id)
       span.setAttribute(AttributeKeys.KEYSTORE_KEY_CREATED, true)
-      logger.info('New signing key generated {did}', { did: identity.id })
+      logger.info('New identity generated: {did}', { did: identity.id })
       return identity
     },
   )
@@ -56,7 +56,7 @@ export async function provideFullIdentityAsync(
       const identity = createFullIdentity(decodePrivateKey(key))
       span.setAttribute(AttributeKeys.AUTH_DID, identity.id)
       span.setAttribute(AttributeKeys.KEYSTORE_KEY_CREATED, true)
-      logger.info('New signing key generated {did}', { did: identity.id })
+      logger.info('New identity generated: {did}', { did: identity.id })
       return identity
     },
   )
