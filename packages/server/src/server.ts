@@ -295,6 +295,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         const handlerResult = handle()
 
         if (handlerResult instanceof Error) {
+          if ('code' in handlerResult) {
+            handlerSpan.setAttribute(
+              AttributeKeys.ERROR_CODE,
+              (handlerResult as Record<string, unknown>).code as string,
+            )
+          }
+          handlerSpan.setAttribute(AttributeKeys.ERROR_MESSAGE, handlerResult.message)
           handlerSpan.setStatus({ code: SpanStatusCode.ERROR, message: handlerResult.message })
           handlerSpan.recordException(handlerResult)
           handlerSpan.end()
@@ -307,6 +314,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             handlerSpan.end()
           })
           .catch((err: Error) => {
+            if ('code' in err) {
+              handlerSpan.setAttribute(
+                AttributeKeys.ERROR_CODE,
+                (err as Record<string, unknown>).code as string,
+              )
+            }
+            handlerSpan.setAttribute(AttributeKeys.ERROR_MESSAGE, err.message)
             handlerSpan.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
             handlerSpan.recordException(err)
             handlerSpan.end()
@@ -316,6 +330,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       })
 
       if (result instanceof Error) {
+        if ('code' in result) {
+          span.setAttribute(
+            AttributeKeys.ERROR_CODE,
+            (result as Record<string, unknown>).code as string,
+          )
+        }
+        span.setAttribute(AttributeKeys.ERROR_MESSAGE, result.message)
         span.setStatus({ code: SpanStatusCode.ERROR, message: result.message })
         span.recordException(result)
         span.end()
@@ -327,6 +348,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           span.end()
         })
         .catch((err: Error) => {
+          if ('code' in err) {
+            span.setAttribute(
+              AttributeKeys.ERROR_CODE,
+              (err as Record<string, unknown>).code as string,
+            )
+          }
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, err.message)
           span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
           span.recordException(err)
           span.end()
@@ -346,6 +374,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
         if (!checkMessageEncryption(message)) {
           span.setAttribute(AttributeKeys.AUTH_REASON, 'encryption_required')
+          span.setAttribute(AttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, 'Encryption required')
           span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
           span.end()
           handleEncryptionViolation(message)
@@ -391,6 +421,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             code: 'EK02',
             message: (cause as Error).message ?? 'Access denied',
           })
+          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
           span.setStatus({ code: SpanStatusCode.ERROR, message: error.message })
           span.recordException(error)
           span.end()
@@ -406,6 +438,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
         if (!checkMessageEncryption(message)) {
           span.setAttribute(AttributeKeys.AUTH_REASON, 'encryption_required')
+          span.setAttribute(AttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, 'Encryption required')
           span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
           span.end()
           handleEncryptionViolation(message)
