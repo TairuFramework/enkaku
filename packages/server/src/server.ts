@@ -280,7 +280,31 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   ): () => Error | Promise<void> {
     return () => {
       const spanCtx = setSpanOnContext(undefined, span)
-      const result = withActiveContext(spanCtx, handle)
+      const result = withActiveContext(spanCtx, () => {
+        const handlerSpan = params.tracer.startSpan(SpanNames.SERVER_HANDLER)
+        const handlerResult = handle()
+
+        if (handlerResult instanceof Error) {
+          handlerSpan.setStatus({ code: SpanStatusCode.ERROR, message: handlerResult.message })
+          handlerSpan.recordException(handlerResult)
+          handlerSpan.end()
+          return handlerResult
+        }
+
+        handlerResult
+          .then(() => {
+            handlerSpan.setStatus({ code: SpanStatusCode.OK })
+            handlerSpan.end()
+          })
+          .catch((err: Error) => {
+            handlerSpan.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
+            handlerSpan.recordException(err)
+            handlerSpan.end()
+          })
+
+        return handlerResult
+      })
+
       if (result instanceof Error) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: result.message })
         span.recordException(result)
