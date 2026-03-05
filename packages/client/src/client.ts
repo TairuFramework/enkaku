@@ -1,6 +1,16 @@
 import { Disposer, defer } from '@enkaku/async'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
-import { AttributeKeys, SpanNames, ZERO_TRACE_ID } from '@enkaku/otel'
+import {
+  AttributeKeys,
+  createTracer,
+  injectTraceContext as otelInjectTraceContext,
+  SpanNames,
+  SpanStatusCode,
+  setSpanOnContext,
+  type Tracer,
+  withActiveContext,
+  withSpan,
+} from '@enkaku/otel'
 import type {
   AnyClientMessageOf,
   AnyClientPayloadOf,
@@ -19,11 +29,9 @@ import type {
 } from '@enkaku/protocol'
 import { createPipe, writeTo } from '@enkaku/stream'
 import { createUnsignedToken, type Identity, isSigningIdentity } from '@enkaku/token'
-import { context, SpanStatusCode, trace } from '@opentelemetry/api'
-
 import { RequestError } from './error.js'
 
-const tracer = trace.getTracer('enkaku.client')
+const defaultTracer = createTracer('client')
 
 type FilterNever<T> = { [K in keyof T as T[K] extends never ? never : K]: T[K] }
 
@@ -226,6 +234,7 @@ export type ClientParams<Protocol extends ProtocolDefinition> = {
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
   logger?: Logger
+  tracer?: Tracer
   transport: ClientTransportOf<Protocol>
   serverID?: string
   identity?: Identity | Promise<Identity>
@@ -243,6 +252,7 @@ export class Client<
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   #handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
   #logger: Logger
+  #tracer: Tracer
   #transport: ClientTransportOf<Protocol>
 
   constructor(params: ClientParams<Protocol>) {
@@ -258,6 +268,7 @@ export class Client<
     this.#handleTransportDisposed = params.handleTransportDisposed
     this.#handleTransportError = params.handleTransportError
     this.#logger = params.logger ?? getEnkakuLogger('client', { clientID: this.#getRandomID() })
+    this.#tracer = params.tracer ?? defaultTracer
     this.#transport = params.transport
     // Start reading from transport
     this.#setupTransport()
@@ -371,21 +382,11 @@ export class Client<
     if (this.signal.aborted) {
       throw new Error('Client aborted', { cause: this.signal.reason })
     }
-    const enrichedHeader = this.#injectTraceContext(header)
-    const message = await this.#createMessage(payload, enrichedHeader)
+    const baseHeader = header ?? {}
+    const enrichedHeader = otelInjectTraceContext(baseHeader)
+    const finalHeader = Object.keys(enrichedHeader).length > 0 ? enrichedHeader : undefined
+    const message = await this.#createMessage(payload, finalHeader)
     await this.#transport.write(message)
-  }
-
-  #injectTraceContext(header?: AnyHeader): AnyHeader | undefined {
-    const span = trace.getSpan(context.active())
-    if (span == null) {
-      return header
-    }
-    const ctx = span.spanContext()
-    if (ctx.traceId === ZERO_TRACE_ID) {
-      return header
-    }
-    return { ...(header ?? {}), tid: ctx.traceId, sid: ctx.spanId }
   }
 
   #handleSignal<Result>(
@@ -434,39 +435,29 @@ export class Client<
       : [config: { data: T['Data']; header?: AnyHeader }]
   ): Promise<void> {
     const config = args[0] ?? {}
-    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
-      attributes: {
-        [AttributeKeys.RPC_SYSTEM]: 'enkaku',
-        [AttributeKeys.RPC_PROCEDURE]: procedure,
-        [AttributeKeys.RPC_TYPE]: 'event',
+    return withSpan(
+      this.#tracer,
+      SpanNames.CLIENT_CALL,
+      {
+        attributes: {
+          [AttributeKeys.RPC_SYSTEM]: 'enkaku',
+          [AttributeKeys.RPC_PROCEDURE]: procedure,
+          [AttributeKeys.RPC_TYPE]: 'event',
+        },
       },
-    })
-    const spanCtx = trace.setSpan(context.active(), span)
-
-    try {
-      const data = config.data
-      const payload = data
-        ? { typ: 'event', prc: procedure, data }
-        : { typ: 'event', prc: procedure }
-      if (data == null) {
-        this.#logger.trace('send event {procedure} without data', { procedure })
-      } else {
-        this.#logger.trace('send event {procedure} with data: {data}', { procedure, data })
-      }
-      await context.with(spanCtx, () =>
-        this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
-      )
-      span.setStatus({ code: SpanStatusCode.OK })
-    } catch (error) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: error instanceof Error ? error.message : String(error),
-      })
-      span.recordException(error instanceof Error ? error : new Error(String(error)))
-      throw error
-    } finally {
-      span.end()
-    }
+      async () => {
+        const data = config.data
+        const payload = data
+          ? { typ: 'event', prc: procedure, data }
+          : { typ: 'event', prc: procedure }
+        if (data == null) {
+          this.#logger.trace('send event {procedure} without data', { procedure })
+        } else {
+          this.#logger.trace('send event {procedure} with data: {data}', { procedure, data })
+        }
+        await this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header)
+      },
+    )
   }
 
   request<
@@ -481,7 +472,7 @@ export class Client<
     const config = args[0] ?? {}
     const rid = config.id ?? this.#getRandomID()
 
-    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
+    const span = this.#tracer.startSpan(SpanNames.CLIENT_CALL, {
       attributes: {
         [AttributeKeys.RPC_SYSTEM]: 'enkaku',
         [AttributeKeys.RPC_PROCEDURE]: procedure,
@@ -489,7 +480,7 @@ export class Client<
         [AttributeKeys.RPC_TYPE]: 'request',
       },
     })
-    const spanCtx = trace.setSpan(context.active(), span)
+    const spanCtx = setSpanOnContext(undefined, span)
 
     const controller = createController<T['Result']>({
       type: 'request',
@@ -524,7 +515,7 @@ export class Client<
         param: prm,
       })
     }
-    const sent = context.with(spanCtx, () =>
+    const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
     )
 
@@ -563,7 +554,7 @@ export class Client<
     const config = args[0] ?? {}
     const rid = config.id ?? this.#getRandomID()
 
-    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
+    const span = this.#tracer.startSpan(SpanNames.CLIENT_CALL, {
       attributes: {
         [AttributeKeys.RPC_SYSTEM]: 'enkaku',
         [AttributeKeys.RPC_PROCEDURE]: procedure,
@@ -571,7 +562,7 @@ export class Client<
         [AttributeKeys.RPC_TYPE]: 'stream',
       },
     })
-    const spanCtx = trace.setSpan(context.active(), span)
+    const spanCtx = setSpanOnContext(undefined, span)
 
     const receive = createPipe<T['Receive']>()
     const writer = receive.writable.getWriter()
@@ -613,7 +604,7 @@ export class Client<
         param: prm,
       })
     }
-    const sent = context.with(spanCtx, () =>
+    const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
     )
 
@@ -659,7 +650,7 @@ export class Client<
     const config = args[0] ?? {}
     const rid = config.id ?? this.#getRandomID()
 
-    const span = tracer.startSpan(SpanNames.CLIENT_CALL, {
+    const span = this.#tracer.startSpan(SpanNames.CLIENT_CALL, {
       attributes: {
         [AttributeKeys.RPC_SYSTEM]: 'enkaku',
         [AttributeKeys.RPC_PROCEDURE]: procedure,
@@ -667,7 +658,7 @@ export class Client<
         [AttributeKeys.RPC_TYPE]: 'channel',
       },
     })
-    const spanCtx = trace.setSpan(context.active(), span)
+    const spanCtx = setSpanOnContext(undefined, span)
 
     const receive = createPipe<T['Receive']>()
     const writer = receive.writable.getWriter()
@@ -714,7 +705,7 @@ export class Client<
         param: prm,
       })
     }
-    const sent = context.with(spanCtx, () =>
+    const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
     )
 
