@@ -44,11 +44,14 @@ Client and Server accept optional `tracer` in constructor options (same pattern 
 
 HTTP transports inject/extract `traceparent` headers alongside existing `tid`/`sid` propagation. When both are present, `tid`/`sid` takes precedence. Enables interoperability with reverse proxies and non-Enkaku services.
 
+### New Instrumentation
+
+- **Stream/channel lifecycle span events**: Client and server both emit span events (`stream.message.received`, `stream.message.sent`, `channel.message.received`, `channel.message.sent`) for each message, with direction attributes. Server handlers capture the active span during sync setup for use in async stream callbacks.
+- **SERVER_HANDLER span**: Child span of `SERVER_HANDLE` wrapping just handler execution, distinct from the full request processing which includes auth and encryption checks.
+- **Schema validation events**: `enkaku.validation` span events with success/failure status. Validation failures create a short-lived span with error details.
+- **Systematic error enrichment**: All server error paths (auth rejection, encryption violation, handler errors) set `enkaku.error.code` and `enkaku.error.message` attributes consistently.
+- **Span links**: `SERVER_HANDLE` span links back to the client's `CLIENT_CALL` span via extracted `tid`/`sid` for explicit cross-service correlation in trace viewers.
+
 ## Not Implemented (Future Work)
 
-- Stream/channel lifecycle spans (parent span per stream, events for messages)
-- `SERVER_HANDLER` span wrapping handler execution (distinct from `SERVER_HANDLE`)
-- Schema validation span events
-- Systematic error enrichment with `enkaku.error.code` / `enkaku.error.message`
-- Span links from server back to client span
 - Tracer injection for transports and keystores (only client/server have it)
