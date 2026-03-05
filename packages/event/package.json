@@ -3,7 +3,7 @@
   "version": "0.13.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Simple events emitter based on Emittery",
+  "description": "Simple events emitter",
   "keywords": [
     "event",
     "promise",
@@ -34,9 +34,6 @@
     "test:unit": "vitest run",
     "test": "pnpm run test:types && pnpm run test:unit",
     "prepublishOnly": "pnpm run build"
-  },
-  "dependencies": {
-    "emittery": "catalog:"
   },
   "devDependencies": {
     "@enkaku/stream": "workspace:^"

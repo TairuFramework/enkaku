@@ -126,9 +126,6 @@ catalogs:
     electron-store:
       specifier: ^11.0.2
       version: 11.0.2
-    emittery:
-      specifier: ^2.0.0
-      version: 2.0.0
     expo:
       specifier: ~55.0.5
       version: 55.0.5
@@ -350,10 +347,6 @@ importers:
         version: 40.7.0
 
   packages/event:
-    dependencies:
-      emittery:
-        specifier: 'catalog:'
-        version: 2.0.0
     devDependencies:
       '@enkaku/stream':
         specifier: workspace:^
@@ -6045,10 +6038,6 @@ packages:
     resolution: {integrity: sha512-oQe76S/3V1rcb0+i45hAxnCH8udkRZSaHUNwglzNAEKbB94LSJ1qwbFo8+uRc2UsYZgCqSIMRcyX40GyOkD+Xw==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
-
-  emittery@2.0.0:
-    resolution: {integrity: sha512-FLtgn/CGBXiX3ZtPAm5q4LWWepHChOt55J9u01WFu3dyap2U7IwptlrqoE1COR/kxwdy/DOxIBALSxIW449I1g==}
-    engines: {node: '>=22'}
 
   emoji-regex-xs@1.0.0:
     resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
@@ -18024,8 +18013,6 @@ snapshots:
       extract-zip: 2.0.1
     transitivePeerDependencies:
       - supports-color
-
-  emittery@2.0.0: {}
 
   emoji-regex-xs@1.0.0: {}
 
