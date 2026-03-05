@@ -68,7 +68,7 @@ function defaultRandomID(): string {
 }
 
 export type AccessControlParams = (
-  | { public: true; serverID?: string; access?: ProcedureAccessRecord }
+  | { public: true; serverID?: string; access: ProcedureAccessRecord }
   | { public: false; serverID: string; access: ProcedureAccessRecord }
 ) & { encryptionPolicy?: EncryptionPolicy }
 
@@ -558,7 +558,7 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
 }
 
 export type ServerParams<Protocol extends ProtocolDefinition> = {
-  access?: ProcedureAccessRecord
+  accessControl?: false | true | ProcedureAccessRecord
   encryptionPolicy?: EncryptionPolicy
   getRandomID?: () => string
   handlers: ProcedureHandlers<Protocol>
@@ -566,13 +566,15 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   limits?: Partial<ResourceLimits>
   logger?: Logger
   protocol?: Protocol
-  public?: boolean
   tracer?: Tracer
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
 }
 
-export type HandleOptions = { access?: ProcedureAccessRecord; logger?: Logger; public?: boolean }
+export type HandleOptions = {
+  accessControl?: false | true | ProcedureAccessRecord
+  logger?: Logger
+}
 
 export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #abortController: AbortController
@@ -632,34 +634,36 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       params.logger ?? getEnkakuLogger('server', { serverID: serverID ?? this.#getRandomID() })
     this.#tracer = params.tracer ?? defaultTracer
 
+    const accessControl = params.accessControl
+
     if (serverID == null) {
-      if (params.public) {
-        this.#accessControl = {
-          public: true,
-          access: params.access,
-          encryptionPolicy: params.encryptionPolicy,
-        }
-        if (params.access != null && Object.keys(params.access).length > 0) {
-          this.#logger.warn(
-            'Server is in public mode: access control records are ignored. All procedures are accessible without authentication.',
-          )
-        }
-      } else {
+      // No identity: accessControl must be explicitly false
+      if (accessControl !== false) {
         throw new Error(
-          'Invalid server parameters: either the server "identity" must be provided or the "public" parameter must be set to true',
+          'Invalid server parameters: either "identity" must be provided or "accessControl" must be set to false',
         )
       }
-    } else {
       this.#accessControl = {
-        public: !!params.public,
-        serverID,
-        access: params.access ?? {},
+        public: true,
+        access: {},
         encryptionPolicy: params.encryptionPolicy,
       }
-      if (params.public && params.access != null && Object.keys(params.access).length > 0) {
-        this.#logger.warn(
-          'Server is in public mode: access control records are ignored. All procedures are accessible without authentication.',
-        )
+    } else if (accessControl === false) {
+      // Has identity but public access
+      this.#accessControl = {
+        public: true,
+        serverID,
+        access: {},
+        encryptionPolicy: params.encryptionPolicy,
+      }
+    } else {
+      // Has identity with access control (true = server-only, record = granular)
+      const access = accessControl === true || accessControl == null ? {} : accessControl
+      this.#accessControl = {
+        public: false,
+        serverID,
+        access,
+        encryptionPolicy: params.encryptionPolicy,
       }
     }
 
@@ -683,26 +687,32 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   }
 
   handle(transport: ServerTransportOf<Protocol>, options: HandleOptions = {}): Promise<void> {
-    const publicAccess = options.public ?? this.#accessControl.public
-    const access = options.access ?? this.#accessControl.access ?? {}
+    const accessControlOverride = options.accessControl
     const logger =
       options.logger ?? this.#logger.getChild('handler').with({ transportID: this.#getRandomID() })
-
-    if (publicAccess && Object.keys(access).length > 0) {
-      logger.warn('Transport handler is in public mode: access control records are ignored.')
-    }
 
     const encryptionPolicy = this.#accessControl.encryptionPolicy
 
     let accessControl: AccessControlParams
-    if (publicAccess) {
-      accessControl = { public: true, access, encryptionPolicy }
-    } else {
+    if (accessControlOverride === false) {
+      accessControl = {
+        public: true,
+        access: this.#accessControl.access ?? {},
+        encryptionPolicy,
+      }
+    } else if (accessControlOverride != null) {
+      // Override with true or ProcedureAccessRecord
       const serverID = this.#accessControl.serverID
       if (serverID == null) {
-        return Promise.reject(new Error('Server ID is required to enable access control'))
+        return Promise.reject(
+          new Error('Server identity is required to enable access control on transport'),
+        )
       }
+      const access = accessControlOverride === true ? {} : accessControlOverride
       accessControl = { public: false, serverID, access, encryptionPolicy }
+    } else {
+      // Use server-level defaults
+      accessControl = { ...this.#accessControl }
     }
 
     const done = handleMessages<Protocol>({
