@@ -35,33 +35,66 @@ export class EventEmitter<Events extends Record<string, unknown>> {
       ? (event: unknown) => {
           const data = (event as { data: Events[Name] }).data
           if (filter(data)) {
-            listener(data)
+            return listener(data)
           }
         }
       : (event: unknown) => {
-          listener((event as { data: Events[Name] }).data)
+          return listener((event as { data: Events[Name] }).data)
         }
-    return this.#emitter.on(name, wrappedListener)
+    const off = this.#emitter.on(name, wrappedListener)
+    const signal = options?.signal
+    if (signal) {
+      if (signal.aborted) {
+        off()
+      } else {
+        signal.addEventListener('abort', () => off(), { once: true })
+      }
+    }
+    return off
   }
 
   once<Name extends keyof Events>(
     name: Name,
     options?: ListenerOptions<Events[Name]>,
   ): Promise<Events[Name]> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      const signal = options?.signal
+      if (signal?.aborted) {
+        reject(signal.reason)
+        return
+      }
+      const onAbort = signal
+        ? () => {
+            off()
+            reject(signal.reason)
+          }
+        : undefined
       const off = this.on(
         name,
         (data) => {
           off()
+          if (onAbort) {
+            signal?.removeEventListener('abort', onAbort)
+          }
           resolve(data)
         },
-        options,
+        { filter: options?.filter },
       )
+      if (onAbort) {
+        signal?.addEventListener('abort', onAbort, { once: true })
+      }
     })
   }
 
   async emit<Name extends keyof Events>(eventName: Name, eventData: Events[Name]): Promise<void> {
-    await this.#emitter.emit(eventName, eventData)
+    try {
+      await this.#emitter.emit(eventName, eventData)
+    } catch (error) {
+      if (error instanceof AggregateError && error.errors.length === 1) {
+        throw error.errors[0]
+      }
+      throw error
+    }
   }
 
   readable<Name extends keyof Events>(
@@ -76,19 +109,22 @@ export class EventEmitter<Events extends Record<string, unknown>> {
     let isClosed = false
     return new ReadableStream({
       start: (controller) => {
-        if (!signal.aborted) {
-          const off = this.on(name, (data) => controller.enqueue(data), {
-            filter: options.filter,
-            signal,
-          })
-          signal.addEventListener('abort', () => {
-            off()
-            if (!isClosed) {
-              isClosed = true
-              controller.close()
-            }
-          })
+        if (signal.aborted) {
+          isClosed = true
+          controller.close()
+          return
         }
+        const off = this.on(name, (data) => controller.enqueue(data), {
+          filter: options.filter,
+          signal,
+        })
+        signal.addEventListener('abort', () => {
+          off()
+          if (!isClosed) {
+            isClosed = true
+            controller.close()
+          }
+        })
       },
       cancel() {
         isClosed = true

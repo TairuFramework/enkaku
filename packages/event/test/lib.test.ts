@@ -75,7 +75,108 @@ describe('EventEmitter', () => {
     expect(result).toBe(4)
   })
 
+  test('emit() waits for async listeners to resolve', async () => {
+    const emitter = new EventEmitter<{ test: string }>()
+    const order: Array<string> = []
+
+    emitter.on('test', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50))
+      order.push('listener done')
+    })
+
+    await emitter.emit('test', 'hello')
+    order.push('emit done')
+
+    expect(order).toEqual(['listener done', 'emit done'])
+  })
+
+  test('emit() propagates sync listener errors', async () => {
+    const emitter = new EventEmitter<{ test: string }>()
+
+    emitter.on('test', () => {
+      throw new Error('sync error')
+    })
+
+    await expect(emitter.emit('test', 'hello')).rejects.toThrow('sync error')
+  })
+
+  test('emit() propagates async listener errors', async () => {
+    const emitter = new EventEmitter<{ test: string }>()
+
+    emitter.on('test', async () => {
+      throw new Error('async error')
+    })
+
+    await expect(emitter.emit('test', 'hello')).rejects.toThrow('async error')
+  })
+
+  test('emit() propagates errors from filtered listeners', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+
+    emitter.on(
+      'test',
+      () => {
+        throw new Error('filtered error')
+      },
+      { filter: (value) => value > 0 },
+    )
+
+    // Should not throw when filter rejects
+    await emitter.emit('test', -1)
+    // Should throw when filter matches and listener throws
+    await expect(emitter.emit('test', 1)).rejects.toThrow('filtered error')
+  })
+
+  test('on() unsubscribes when signal is aborted', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+    const controller = new AbortController()
+    const received: Array<number> = []
+
+    emitter.on('test', (value) => received.push(value), { signal: controller.signal })
+
+    await emitter.emit('test', 1)
+    controller.abort()
+    await emitter.emit('test', 2)
+
+    expect(received).toEqual([1])
+  })
+
+  test('on() with already-aborted signal never fires', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+    const received: Array<number> = []
+
+    emitter.on('test', (value) => received.push(value), { signal: AbortSignal.abort() })
+
+    await emitter.emit('test', 1)
+    expect(received).toEqual([])
+  })
+
+  test('once() rejects when aborted via signal', async () => {
+    const emitter = new EventEmitter<{ test: string }>()
+    const controller = new AbortController()
+
+    const promise = emitter.once('test', { signal: controller.signal })
+    controller.abort()
+
+    await expect(promise).rejects.toThrow()
+  })
+
+  test('once() with already-aborted signal rejects immediately', async () => {
+    const emitter = new EventEmitter<{ test: string }>()
+
+    const promise = emitter.once('test', { signal: AbortSignal.abort() })
+    await expect(promise).rejects.toThrow()
+  })
+
   describe('event streams', () => {
+    test('readable() with pre-aborted signal closes immediately', async () => {
+      const emitter = new EventEmitter<{ test: number }>()
+      const reader = emitter.readable('test', { signal: AbortSignal.abort() }).getReader()
+
+      const result = await reader.read()
+      expect(result).toEqual({ done: true, value: undefined })
+    })
+
     test('events can be listened to using a readable stream', async () => {
       const emitter = new EventEmitter<{ test: number }>()
       const controller = new AbortController()
