@@ -165,6 +165,35 @@ describe('EventEmitter', () => {
     }
   })
 
+  test('emit() works without data argument for void events', async () => {
+    const emitter = new EventEmitter<{ ping: void; pong: string }>()
+    let called = false
+
+    emitter.on('ping', () => {
+      called = true
+    })
+
+    await emitter.emit('ping')
+    expect(called).toBe(true)
+
+    const received: Array<string> = []
+    emitter.on('pong', (value) => received.push(value))
+    await emitter.emit('pong', 'hello')
+    expect(received).toEqual(['hello'])
+  })
+
+  test('emit() works without data argument for undefined events', async () => {
+    const emitter = new EventEmitter<{ ping: undefined; pong: string }>()
+    let called = false
+
+    emitter.on('ping', () => {
+      called = true
+    })
+
+    await emitter.emit('ping')
+    expect(called).toBe(true)
+  })
+
   test('on() unsubscribes when signal is aborted', async () => {
     const emitter = new EventEmitter<{ test: number }>()
     const controller = new AbortController()

@@ -19,6 +19,10 @@ export type ListenerOptions<Data> = {
   signal?: AbortSignal
 }
 
+export type DatalessEventNames<Events extends Record<string, unknown>> = {
+  [Key in keyof Events]: Events[Key] extends void ? Key : never
+}[keyof Events]
+
 export class EventEmitter<Events extends Record<string, unknown>> {
   #listeners = new Map<keyof Events, Set<(data: unknown) => void | Promise<void>>>()
 
@@ -93,7 +97,9 @@ export class EventEmitter<Events extends Record<string, unknown>> {
     })
   }
 
-  async emit<Name extends keyof Events>(name: Name, data: Events[Name]): Promise<void> {
+  emit<Name extends DatalessEventNames<Events>>(name: Name): Promise<void>
+  emit<Name extends keyof Events>(name: Name, data: Events[Name]): Promise<void>
+  async emit<Name extends keyof Events>(name: Name, data?: Events[Name]): Promise<void> {
     const listeners = this.#listeners.get(name)
     if (!listeners || listeners.size === 0) return
     const results = await Promise.allSettled(
