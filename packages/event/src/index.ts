@@ -1,7 +1,7 @@
 /**
  *
  *
- * Simple events emitter based on Emittery.
+ * Simple events emitter.
  *
  * ## Installation
  *
@@ -12,10 +12,7 @@
  * @module event
  */
 
-import type { UnsubscribeFunction } from 'emittery'
-import Emittery from 'emittery'
-
-export type { UnsubscribeFunction } from 'emittery'
+export type UnsubscribeFunction = () => void
 
 export type ListenerOptions<Data> = {
   filter?: (data: Data) => boolean
@@ -23,7 +20,7 @@ export type ListenerOptions<Data> = {
 }
 
 export class EventEmitter<Events extends Record<string, unknown>> {
-  #emitter = new Emittery<Events>()
+  #listeners = new Map<keyof Events, Set<(data: unknown) => void | Promise<void>>>()
 
   on<Name extends keyof Events>(
     name: Name,
@@ -32,16 +29,26 @@ export class EventEmitter<Events extends Record<string, unknown>> {
   ): UnsubscribeFunction {
     const filter = options?.filter
     const wrappedListener = filter
-      ? (event: unknown) => {
-          const data = (event as { data: Events[Name] }).data
-          if (filter(data)) {
-            return listener(data)
+      ? (data: unknown) => {
+          if (filter(data as Events[Name])) {
+            return listener(data as Events[Name])
           }
         }
-      : (event: unknown) => {
-          return listener((event as { data: Events[Name] }).data)
+      : (data: unknown) => {
+          return listener(data as Events[Name])
         }
-    const off = this.#emitter.on(name, wrappedListener)
+
+    let listeners = this.#listeners.get(name)
+    if (!listeners) {
+      listeners = new Set()
+      this.#listeners.set(name, listeners)
+    }
+    listeners.add(wrappedListener)
+
+    const off = () => {
+      listeners.delete(wrappedListener)
+    }
+
     const signal = options?.signal
     if (signal) {
       if (signal.aborted) {
@@ -86,15 +93,23 @@ export class EventEmitter<Events extends Record<string, unknown>> {
     })
   }
 
-  async emit<Name extends keyof Events>(eventName: Name, eventData: Events[Name]): Promise<void> {
-    try {
-      await this.#emitter.emit(eventName, eventData)
-    } catch (error) {
-      if (error instanceof AggregateError && error.errors.length === 1) {
-        throw error.errors[0]
-      }
-      throw error
-    }
+  async emit<Name extends keyof Events>(name: Name, data: Events[Name]): Promise<void> {
+    const listeners = this.#listeners.get(name)
+    if (!listeners || listeners.size === 0) return
+    const results = await Promise.allSettled(
+      [...listeners].map((fn) => {
+        try {
+          return fn(data)
+        } catch (err) {
+          return Promise.reject(err)
+        }
+      }),
+    )
+    const errors = results
+      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+      .map((r) => r.reason)
+    if (errors.length === 1) throw errors[0]
+    if (errors.length > 1) throw new AggregateError(errors)
   }
 
   readable<Name extends keyof Events>(
