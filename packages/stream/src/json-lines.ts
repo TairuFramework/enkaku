@@ -21,7 +21,7 @@ export function fromJSONLines<T = unknown>(
   const { decode = JSON.parse, maxBufferSize, maxMessageSize, onInvalidJSON } = options
 
   let input = ''
-  let output = ''
+  let output: Array<string> = []
   let nestingDepth = 0
   let isInString = false
   let isEscapingChar = false
@@ -36,27 +36,27 @@ export function fromJSONLines<T = unknown>(
         }
         isEscapingChar = false
       }
-      output += char
+      output.push(char)
     } else {
       switch (char) {
         case '"':
           isInString = true
-          output += char
+          output.push(char)
           break
         case '{':
         case '[':
           nestingDepth++
-          output += char
+          output.push(char)
           break
         case '}':
         case ']':
           nestingDepth--
-          output += char
+          output.push(char)
           break
         default:
-          // Ignore whitespace
-          if (/\S/.test(char)) {
-            output += char
+          // Ignore whitespace using charCode comparison instead of regex
+          if (char.charCodeAt(0) > 32) {
+            output.push(char)
           }
       }
     }
@@ -84,17 +84,17 @@ export function fromJSONLines<T = unknown>(
           for (const char of input.slice(0, newLineIndex)) {
             processChar(char)
           }
-          if (nestingDepth === 0 && !isInString && output !== '') {
+          if (nestingDepth === 0 && !isInString && output.length > 0) {
             checkOutputSize()
             try {
-              controller.enqueue(decode(output))
+              controller.enqueue(decode(output.join('')))
             } catch {
-              onInvalidJSON?.(output, controller)
+              onInvalidJSON?.(output.join(''), controller)
             }
-            output = ''
+            output = []
           } else if (isInString) {
             // If we're in a string, we need to keep the newline in the output
-            output += '\\n'
+            output.push('\\n')
           }
           input = input.slice(newLineIndex + SEPARATOR.length)
           newLineIndex = input.indexOf(SEPARATOR)
@@ -110,12 +110,12 @@ export function fromJSONLines<T = unknown>(
       for (const char of input) {
         processChar(char)
       }
-      if (nestingDepth === 0 && !isInString && output !== '') {
+      if (nestingDepth === 0 && !isInString && output.length > 0) {
         checkOutputSize()
         try {
-          controller.enqueue(decode(output))
+          controller.enqueue(decode(output.join('')))
         } catch {
-          onInvalidJSON?.(output, controller)
+          onInvalidJSON?.(output.join(''), controller)
         }
       }
     },
