@@ -1,4 +1,11 @@
-import { type Context, context, ROOT_CONTEXT, TraceFlags, trace } from '@opentelemetry/api'
+import {
+  type Context,
+  context,
+  ROOT_CONTEXT,
+  type Span,
+  TraceFlags,
+  trace,
+} from '@opentelemetry/api'
 
 import { ZERO_TRACE_ID } from './semantic.js'
 
@@ -36,4 +43,14 @@ export function extractTraceContext(header: Record<string, unknown>): Context | 
     traceFlags: TraceFlags.SAMPLED,
   })
   return remoteContext
+}
+
+export function withActiveContext<T>(parentContext: Context | undefined, fn: () => T): T {
+  const ctx = parentContext ?? context.active()
+  return context.with(ctx, fn)
+}
+
+export function setSpanOnContext(parentContext: Context | undefined, span: Span): Context {
+  const ctx = parentContext ?? context.active()
+  return trace.setSpan(ctx, span)
 }

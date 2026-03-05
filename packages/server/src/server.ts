@@ -1,7 +1,18 @@
 import { DisposeInterruption, Disposer } from '@enkaku/async'
 import { EventEmitter } from '@enkaku/event'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
-import { AttributeKeys, SpanNames } from '@enkaku/otel'
+import {
+  AttributeKeys,
+  createTracer,
+  extractTraceContext,
+  type Span,
+  SpanNames,
+  SpanStatusCode,
+  setSpanOnContext,
+  TraceFlags,
+  type Tracer,
+  withActiveContext,
+} from '@enkaku/otel'
 import {
   type AnyClientMessageOf,
   type AnyServerPayloadOf,
@@ -22,7 +33,6 @@ import {
   type SignedToken,
   type Token,
 } from '@enkaku/token'
-import { context as otelContext, SpanStatusCode, trace } from '@opentelemetry/api'
 
 import {
   checkClientToken,
@@ -51,7 +61,7 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
   | StreamMessageOf<Protocol>
   | ChannelMessageOf<Protocol>
 
-const tracer = trace.getTracer('enkaku.server')
+const defaultTracer = createTracer('server')
 
 function defaultRandomID(): string {
   return globalThis.crypto.randomUUID()
@@ -68,6 +78,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
   limiter: ResourceLimiter
   logger: Logger
   signal: AbortSignal
+  tracer: Tracer
   transport: ServerTransportOf<Protocol>
   validator?: Validator<AnyClientMessageOf<Protocol>>
 }
@@ -137,6 +148,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     ? (message: unknown) => {
         const result = validator(message)
         if (result instanceof ValidationError) {
+          const validationSpan = params.tracer.startSpan(SpanNames.SERVER_HANDLE, {
+            attributes: { [AttributeKeys.RPC_SYSTEM]: 'enkaku' },
+          })
+          validationSpan.addEvent('enkaku.validation', {
+            [AttributeKeys.VALIDATION_SUCCESS]: false,
+            [AttributeKeys.VALIDATION_ERROR]: result.message,
+          })
+          validationSpan.setStatus({ code: SpanStatusCode.ERROR, message: 'Validation failed' })
+          validationSpan.end()
+
           logger.debug('received invalid message', { error: result })
           events.emit('invalidMessage', {
             error: new Error('Invalid protocol message', { cause: result }),
@@ -238,29 +259,36 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
   }
 
-  function extractTraceContext(message: ProcessMessageOf<Protocol>) {
+  function getParentContext(message: ProcessMessageOf<Protocol>) {
     const header = message.header as Record<string, unknown>
-    let parentCtx = otelContext.active()
-    if (typeof header.tid === 'string' && typeof header.sid === 'string') {
-      parentCtx = trace.setSpanContext(parentCtx, {
-        traceId: header.tid,
-        spanId: header.sid,
-        isRemote: true,
-        traceFlags: 1,
-      })
-    }
-    return parentCtx
+    return extractTraceContext(header)
   }
 
   function createHandleSpan(message: ProcessMessageOf<Protocol>) {
-    const parentCtx = extractTraceContext(message)
+    const parentCtx = getParentContext(message)
     const procedure = (message.payload as Record<string, unknown>).prc as string | undefined
     const rid =
       'rid' in message.payload
         ? ((message.payload as Record<string, unknown>).rid as string)
         : undefined
 
-    return tracer.startSpan(
+    // Build span links from client trace context
+    const header = message.header as Record<string, unknown>
+    const links: Array<{
+      context: { traceId: string; spanId: string; traceFlags: number; isRemote: boolean }
+    }> = []
+    if (typeof header.tid === 'string' && typeof header.sid === 'string') {
+      links.push({
+        context: {
+          traceId: header.tid,
+          spanId: header.sid,
+          traceFlags: TraceFlags.SAMPLED,
+          isRemote: true,
+        },
+      })
+    }
+
+    return params.tracer.startSpan(
       SpanNames.SERVER_HANDLE,
       {
         attributes: {
@@ -268,19 +296,65 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           ...(procedure != null ? { [AttributeKeys.RPC_PROCEDURE]: procedure } : {}),
           ...(rid != null ? { [AttributeKeys.RPC_REQUEST_ID]: rid } : {}),
         },
+        links,
       },
       parentCtx,
     )
   }
 
   function wrapHandle(
-    span: ReturnType<typeof tracer.startSpan>,
+    span: Span,
     handle: () => Error | Promise<void>,
   ): () => Error | Promise<void> {
     return () => {
-      const spanCtx = trace.setSpan(otelContext.active(), span)
-      const result = otelContext.with(spanCtx, handle)
+      const spanCtx = setSpanOnContext(undefined, span)
+      const result = withActiveContext(spanCtx, () => {
+        const handlerSpan = params.tracer.startSpan(SpanNames.SERVER_HANDLER)
+        const handlerResult = handle()
+
+        if (handlerResult instanceof Error) {
+          if ('code' in handlerResult) {
+            handlerSpan.setAttribute(
+              AttributeKeys.ERROR_CODE,
+              (handlerResult as Record<string, unknown>).code as string,
+            )
+          }
+          handlerSpan.setAttribute(AttributeKeys.ERROR_MESSAGE, handlerResult.message)
+          handlerSpan.setStatus({ code: SpanStatusCode.ERROR, message: handlerResult.message })
+          handlerSpan.recordException(handlerResult)
+          handlerSpan.end()
+          return handlerResult
+        }
+
+        handlerResult
+          .then(() => {
+            handlerSpan.setStatus({ code: SpanStatusCode.OK })
+            handlerSpan.end()
+          })
+          .catch((err: Error) => {
+            if ('code' in err) {
+              handlerSpan.setAttribute(
+                AttributeKeys.ERROR_CODE,
+                (err as Record<string, unknown>).code as string,
+              )
+            }
+            handlerSpan.setAttribute(AttributeKeys.ERROR_MESSAGE, err.message)
+            handlerSpan.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
+            handlerSpan.recordException(err)
+            handlerSpan.end()
+          })
+
+        return handlerResult
+      })
+
       if (result instanceof Error) {
+        if ('code' in result) {
+          span.setAttribute(
+            AttributeKeys.ERROR_CODE,
+            (result as Record<string, unknown>).code as string,
+          )
+        }
+        span.setAttribute(AttributeKeys.ERROR_MESSAGE, result.message)
         span.setStatus({ code: SpanStatusCode.ERROR, message: result.message })
         span.recordException(result)
         span.end()
@@ -292,6 +366,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           span.end()
         })
         .catch((err: Error) => {
+          if ('code' in err) {
+            span.setAttribute(
+              AttributeKeys.ERROR_CODE,
+              (err as Record<string, unknown>).code as string,
+            )
+          }
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, err.message)
           span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
           span.recordException(err)
           span.end()
@@ -303,9 +384,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   const process = params.public
     ? (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
         const span = createHandleSpan(message)
+        if (validator != null) {
+          span.addEvent('enkaku.validation', {
+            [AttributeKeys.VALIDATION_SUCCESS]: true,
+          })
+        }
 
         if (!checkMessageEncryption(message)) {
           span.setAttribute(AttributeKeys.AUTH_REASON, 'encryption_required')
+          span.setAttribute(AttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, 'Encryption required')
           span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
           span.end()
           handleEncryptionViolation(message)
@@ -316,6 +404,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       }
     : async (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
         const span = createHandleSpan(message)
+        if (validator != null) {
+          span.addEvent('enkaku.validation', {
+            [AttributeKeys.VALIDATION_SUCCESS]: true,
+          })
+        }
 
         try {
           if (!isSignedToken(message as Token)) {
@@ -346,6 +439,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             code: 'EK02',
             message: (cause as Error).message ?? 'Access denied',
           })
+          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
           span.setStatus({ code: SpanStatusCode.ERROR, message: error.message })
           span.recordException(error)
           span.end()
@@ -361,6 +456,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
         if (!checkMessageEncryption(message)) {
           span.setAttribute(AttributeKeys.AUTH_REASON, 'encryption_required')
+          span.setAttribute(AttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, 'Encryption required')
           span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
           span.end()
           handleEncryptionViolation(message)
@@ -470,6 +567,7 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   logger?: Logger
   protocol?: Protocol
   public?: boolean
+  tracer?: Tracer
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
 }
@@ -485,6 +583,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #handling: Array<HandlingTransport<Protocol>> = []
   #limiter: ResourceLimiter
   #logger: Logger
+  #tracer: Tracer
   #validator?: Validator<AnyClientMessageOf<Protocol>>
 
   constructor(params: ServerParams<Protocol>) {
@@ -531,6 +630,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const serverID = params.identity?.id
     this.#logger =
       params.logger ?? getEnkakuLogger('server', { serverID: serverID ?? this.#getRandomID() })
+    this.#tracer = params.tracer ?? defaultTracer
 
     if (serverID == null) {
       if (params.public) {
@@ -611,6 +711,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       limiter: this.#limiter,
       logger,
       signal: this.#abortController.signal,
+      tracer: this.#tracer,
       transport,
       validator: this.#validator,
       ...accessControl,

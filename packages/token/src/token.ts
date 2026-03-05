@@ -1,7 +1,6 @@
 import { b64uToJSON, fromB64U, fromUTF } from '@enkaku/codec'
-import { AttributeKeys, SpanNames } from '@enkaku/otel'
+import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
 import { assertType, isType } from '@enkaku/schema'
-import { SpanStatusCode, trace } from '@opentelemetry/api'
 
 import { getSignatureInfo } from './did.js'
 import type { SigningIdentity } from './identity.js'
@@ -16,7 +15,7 @@ import { assertTimeClaimsValid, type TimeValidationOptions } from './time.js'
 import type { SignedToken, Token, UnsignedToken, VerifiedToken } from './types.js'
 import { getVerifier, type Verifiers } from './verifier.js'
 
-const tokenTracer = trace.getTracer('enkaku.token')
+const tokenTracer = createTracer('token')
 
 /**
  * Verify the signature of a signed payload and return the public key of the issuer.
@@ -171,27 +170,15 @@ export async function verifyToken<
   verifiers?: Verifiers,
   timeOptions?: TimeValidationOptions,
 ): Promise<Token<Payload>> {
-  return tokenTracer.startActiveSpan(SpanNames.TOKEN_VERIFY, async (span) => {
-    try {
-      const result = await verifyTokenInner(token, verifiers, timeOptions)
-      if (isSignedToken(result)) {
-        span.setAttribute(
-          AttributeKeys.AUTH_DID,
-          (result.payload as Record<string, unknown>).iss as string,
-        )
-        span.setAttribute(AttributeKeys.AUTH_ALGORITHM, result.header.alg)
-      }
-      span.setStatus({ code: SpanStatusCode.OK })
-      return result
-    } catch (error) {
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: error instanceof Error ? error.message : String(error),
-      })
-      span.recordException(error instanceof Error ? error : new Error(String(error)))
-      throw error
-    } finally {
-      span.end()
+  return withSpan(tokenTracer, SpanNames.TOKEN_VERIFY, {}, async (span) => {
+    const result = await verifyTokenInner(token, verifiers, timeOptions)
+    if (isSignedToken(result)) {
+      span.setAttribute(
+        AttributeKeys.AUTH_DID,
+        (result.payload as Record<string, unknown>).iss as string,
+      )
+      span.setAttribute(AttributeKeys.AUTH_ALGORITHM, result.header.alg)
     }
+    return result
   })
 }

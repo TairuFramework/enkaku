@@ -1,3 +1,4 @@
+import { AttributeKeys, getActiveSpan } from '@enkaku/otel'
 import type {
   AnyServerPayloadOf,
   ChannelPayloadOf,
@@ -46,6 +47,8 @@ export function handleChannel<
     })
   }
 
+  const activeSpan = getActiveSpan()
+
   const sendStream = createPipe<SendType<Protocol, Procedure>>()
   const issuer = (msg.payload as Record<string, unknown>).iss as string | undefined
   const controller: ChannelController<SendType<Protocol, Procedure>> = Object.assign(
@@ -63,6 +66,11 @@ export function handleChannel<
       if (controller.signal.aborted) {
         return
       }
+      if (activeSpan != null) {
+        activeSpan.addEvent('channel.message.sent', {
+          [AttributeKeys.MESSAGE_DIRECTION]: 'send',
+        })
+      }
       ctx.logger.trace('send value to channel {procedure} with ID {rid}: {val}', {
         procedure: msg.payload.prc,
         rid: msg.payload.rid,
@@ -78,6 +86,11 @@ export function handleChannel<
 
   const readable = sendStream.readable.pipeThrough(
     tap((value) => {
+      if (activeSpan != null) {
+        activeSpan.addEvent('channel.message.received', {
+          [AttributeKeys.MESSAGE_DIRECTION]: 'receive',
+        })
+      }
       ctx.logger.trace('received value from channel {procedure} with ID {rid}: {value}', {
         procedure: msg.payload.prc,
         rid: msg.payload.rid,

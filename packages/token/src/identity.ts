@@ -1,13 +1,12 @@
 import { b64uFromJSON, fromUTF, toB64U } from '@enkaku/codec'
-import { AttributeKeys, SpanNames } from '@enkaku/otel'
+import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
 import { ed25519 } from '@noble/curves/ed25519.js'
-import { SpanStatusCode, trace } from '@opentelemetry/api'
 
 import { CODECS, getDID } from './did.js'
 import type { SignedHeader } from './schemas.js'
 import type { SignedToken } from './types.js'
 
-const tracer = trace.getTracer('enkaku.token')
+const tracer = createTracer('token')
 
 export type Identity = { readonly id: string }
 
@@ -58,36 +57,24 @@ export function createSigningIdentity(privateKey: Uint8Array): SigningIdentity {
     Payload extends Record<string, unknown> = Record<string, unknown>,
     Header extends Record<string, unknown> = Record<string, unknown>,
   >(payload: Payload, header?: Header): Promise<SignedToken<Payload, Header>> {
-    return tracer.startActiveSpan(
+    return withSpan(
+      tracer,
       SpanNames.TOKEN_SIGN,
       { attributes: { [AttributeKeys.AUTH_DID]: id, [AttributeKeys.AUTH_ALGORITHM]: 'EdDSA' } },
-      async (span) => {
-        try {
-          if (payload.iss != null && payload.iss !== id) {
-            throw new Error('Invalid payload: issuer does not match signer')
-          }
+      async () => {
+        if (payload.iss != null && payload.iss !== id) {
+          throw new Error('Invalid payload: issuer does not match signer')
+        }
 
-          const fullHeader = { ...header, typ: 'JWT', alg: 'EdDSA' } as SignedHeader & Header
-          const fullPayload = { ...payload, iss: id }
-          const data = `${b64uFromJSON(fullHeader)}.${b64uFromJSON(fullPayload)}`
+        const fullHeader = { ...header, typ: 'JWT', alg: 'EdDSA' } as SignedHeader & Header
+        const fullPayload = { ...payload, iss: id }
+        const data = `${b64uFromJSON(fullHeader)}.${b64uFromJSON(fullPayload)}`
 
-          const result: SignedToken<Payload, Header> = {
-            header: fullHeader,
-            payload: fullPayload,
-            signature: toB64U(ed25519.sign(fromUTF(data), privateKey)),
-            data,
-          }
-          span.setStatus({ code: SpanStatusCode.OK })
-          return result
-        } catch (error) {
-          span.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: error instanceof Error ? error.message : String(error),
-          })
-          span.recordException(error instanceof Error ? error : new Error(String(error)))
-          throw error
-        } finally {
-          span.end()
+        return {
+          header: fullHeader,
+          payload: fullPayload,
+          signature: toB64U(ed25519.sign(fromUTF(data), privateKey)),
+          data,
         }
       },
     )

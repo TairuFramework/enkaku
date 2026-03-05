@@ -45,7 +45,6 @@
     "@noble/ciphers": "catalog:",
     "@noble/curves": "catalog:",
     "@noble/hashes": "catalog:",
-    "@opentelemetry/api": "catalog:",
     "@scure/base": "catalog:"
   },
   "devDependencies": {

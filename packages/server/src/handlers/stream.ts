@@ -1,3 +1,4 @@
+import { AttributeKeys, getActiveSpan } from '@enkaku/otel'
 import type {
   AnyServerPayloadOf,
   ClientMessage,
@@ -37,6 +38,8 @@ export function handleStream<
     })
   }
 
+  const activeSpan = getActiveSpan()
+
   const controller = new AbortController()
   ctx.controllers[msg.payload.rid] = controller
 
@@ -45,6 +48,11 @@ export function handleStream<
     writeTo<ReceiveType<Protocol, Procedure>>(async (val) => {
       if (controller.signal.aborted) {
         return
+      }
+      if (activeSpan != null) {
+        activeSpan.addEvent('stream.message.sent', {
+          [AttributeKeys.MESSAGE_DIRECTION]: 'send',
+        })
       }
       ctx.logger.trace('send value to stream {procedure} with ID {rid}: {val}', {
         procedure: msg.payload.prc,

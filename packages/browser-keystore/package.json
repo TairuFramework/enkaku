@@ -41,8 +41,7 @@
     "@enkaku/codec": "workspace:^",
     "@enkaku/log": "workspace:^",
     "@enkaku/otel": "workspace:^",
-    "@enkaku/token": "workspace:^",
-    "@opentelemetry/api": "catalog:"
+    "@enkaku/token": "workspace:^"
   },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^",

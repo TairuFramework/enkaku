@@ -1,7 +1,13 @@
 import { trace } from '@opentelemetry/api'
 import { describe, expect, test } from 'vitest'
 
-import { extractTraceContext, injectTraceContext } from '../src/context.js'
+import {
+  extractTraceContext,
+  injectTraceContext,
+  setSpanOnContext,
+  withActiveContext,
+} from '../src/context.js'
+import { createTracer } from '../src/tracers.js'
 
 describe('injectTraceContext', () => {
   test('returns header unchanged when no active span', () => {
@@ -53,5 +59,22 @@ describe('extractTraceContext', () => {
     expect(spanCtx.traceId).toBe('0af7651916cd43dd8448eb211c80319c')
     expect(spanCtx.spanId).toBe('00f067aa0ba902b7')
     expect(spanCtx.isRemote).toBe(true)
+  })
+})
+
+describe('withActiveContext', () => {
+  test('executes function and returns its result', () => {
+    const result = withActiveContext(undefined, () => 42)
+    expect(result).toBe(42)
+  })
+})
+
+describe('setSpanOnContext', () => {
+  test('returns a Context object', () => {
+    const tracer = createTracer('test')
+    const span = tracer.startSpan('test')
+    const ctx = setSpanOnContext(undefined, span)
+    expect(ctx).toBeDefined()
+    span.end()
   })
 })

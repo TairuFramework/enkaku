@@ -30,6 +30,10 @@ describe('SpanNames', () => {
     expect(SpanNames.TRANSPORT_WS_CONNECT).toBe('enkaku.transport.ws.connect')
     expect(SpanNames.TRANSPORT_WS_MESSAGE).toBe('enkaku.transport.ws.message')
   })
+
+  test('has socket transport span name', () => {
+    expect(SpanNames.TRANSPORT_SOCKET_CONNECT).toBe('enkaku.transport.socket.connect')
+  })
 })
 
 describe('AttributeKeys', () => {
@@ -54,6 +58,39 @@ describe('AttributeKeys', () => {
 
   test('has transport attributes', () => {
     expect(AttributeKeys.TRANSPORT_TYPE).toBe('enkaku.transport.type')
+  })
+
+  test('has transport session ID attribute', () => {
+    expect(AttributeKeys.TRANSPORT_SESSION_ID).toBe('enkaku.transport.session_id')
+  })
+
+  test('has HTTP attributes', () => {
+    expect(AttributeKeys.HTTP_METHOD).toBe('http.method')
+    expect(AttributeKeys.HTTP_STATUS_CODE).toBe('http.status_code')
+  })
+
+  test('has network attributes', () => {
+    expect(AttributeKeys.NET_PEER_NAME).toBe('net.peer.name')
+  })
+
+  test('has stream message index attribute', () => {
+    expect(AttributeKeys.STREAM_MESSAGE_INDEX).toBe('enkaku.stream.message_index')
+  })
+
+  test('has channel message index attribute', () => {
+    expect(AttributeKeys.CHANNEL_MESSAGE_INDEX).toBe('enkaku.channel.message_index')
+  })
+
+  test('has message direction attribute', () => {
+    expect(AttributeKeys.MESSAGE_DIRECTION).toBe('enkaku.message.direction')
+  })
+
+  test('has validation success attribute', () => {
+    expect(AttributeKeys.VALIDATION_SUCCESS).toBe('enkaku.validation.success')
+  })
+
+  test('has validation error attribute', () => {
+    expect(AttributeKeys.VALIDATION_ERROR).toBe('enkaku.validation.error')
   })
 
   test('has error attributes', () => {

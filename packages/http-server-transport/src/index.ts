@@ -11,13 +11,20 @@
  */
 
 import { type Deferred, defer } from '@enkaku/async'
-import { AttributeKeys, SpanNames } from '@enkaku/otel'
+import {
+  AttributeKeys,
+  type Context,
+  createTracer,
+  extractTraceContext,
+  parseTraceparent,
+  SpanNames,
+  SpanStatusCode,
+} from '@enkaku/otel'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { createReadable, writeTo } from '@enkaku/stream'
 import { Transport, type TransportEvents } from '@enkaku/transport'
-import { SpanStatusCode, trace } from '@opentelemetry/api'
 
-const tracer = trace.getTracer('enkaku.transport.http')
+const tracer = createTracer('transport.http')
 
 export type RequestHandler = (request: Request) => Promise<Response>
 
@@ -326,12 +333,28 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   }
 
   async function handleRequest(request: Request): Promise<Response> {
-    const span = tracer.startSpan(SpanNames.TRANSPORT_HTTP_REQUEST, {
-      attributes: {
-        'http.method': request.method,
-        [AttributeKeys.TRANSPORT_TYPE]: 'http-server',
+    const traceparentHeader = request.headers.get('traceparent')
+    const traceparentData =
+      traceparentHeader != null ? parseTraceparent(traceparentHeader) : undefined
+
+    let parentCtx: Context | undefined
+    if (traceparentData != null) {
+      parentCtx = extractTraceContext({
+        tid: traceparentData.traceID,
+        sid: traceparentData.spanID,
+      })
+    }
+
+    const span = tracer.startSpan(
+      SpanNames.TRANSPORT_HTTP_REQUEST,
+      {
+        attributes: {
+          [AttributeKeys.HTTP_METHOD]: request.method,
+          [AttributeKeys.TRANSPORT_TYPE]: 'http-server',
+        },
       },
-    })
+      parentCtx,
+    )
     try {
       let response: Response
       switch (request.method) {
@@ -350,7 +373,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             { headers: { Allow: 'GET, POST, OPTIONS' }, status: 405 },
           )
       }
-      span.setAttribute('http.status_code', response.status)
+      span.setAttribute(AttributeKeys.HTTP_STATUS_CODE, response.status)
       if (response.status >= 400) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${response.status}` })
       } else {
