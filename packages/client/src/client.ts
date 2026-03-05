@@ -248,6 +248,7 @@ export class Client<
   #controllers: Record<string, AnyClientController> = {}
   #createMessage: CreateMessage<Protocol>
   #getRandomID: () => string
+  #spans: Record<string, Span> = {}
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   #handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
@@ -305,11 +306,12 @@ export class Client<
     this.#read()
   }
 
-  #endSpanOnResult(span: Span, result: Promise<unknown>): void {
+  #endSpanOnResult(span: Span, result: Promise<unknown>, rid?: string): void {
     result.then(
       () => {
         span.setStatus({ code: SpanStatusCode.OK })
         span.end()
+        if (rid != null) delete this.#spans[rid]
       },
       (error) => {
         if (error instanceof RequestError) {
@@ -322,6 +324,7 @@ export class Client<
         })
         span.recordException(error instanceof Error ? error : new Error(String(error)))
         span.end()
+        if (rid != null) delete this.#spans[rid]
       },
     )
   }
@@ -377,15 +380,22 @@ export class Client<
           delete this.#controllers[msg.payload.rid]
           break
         }
-        case 'receive':
+        case 'receive': {
           this.#logger.trace('receive reply for {type} {procedure} with ID {rid}: {receive}', {
             type: controller.type,
             procedure: controller.procedure,
             rid: msg.payload.rid,
             receive: msg.payload.val,
           })
+          const receiveSpan = this.#spans[msg.payload.rid]
+          if (receiveSpan != null) {
+            receiveSpan.addEvent('stream.message.received', {
+              [AttributeKeys.MESSAGE_DIRECTION]: 'receive',
+            })
+          }
           void (controller as StreamController<unknown, unknown>).receive?.write(msg.payload.val)
           break
+        }
         case 'result':
           this.#logger.trace('result reply for {type} {procedure} with ID {rid}: {result}', {
             type: controller.type,
@@ -596,6 +606,7 @@ export class Client<
     }
 
     this.#controllers[rid] = controller
+    this.#spans[rid] = span
     const prm = config.param
     const payload = prm
       ? { typ: 'stream', rid, prc: procedure, prm }
@@ -613,7 +624,7 @@ export class Client<
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
     )
 
-    this.#endSpanOnResult(span, controller.result)
+    this.#endSpanOnResult(span, controller.result, rid)
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
@@ -680,6 +691,7 @@ export class Client<
     }
 
     this.#controllers[rid] = controller
+    this.#spans[rid] = span
     const prm = config.param
     const payload = prm
       ? { typ: 'channel', rid, prc: procedure, prm }
@@ -697,11 +709,17 @@ export class Client<
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
     )
 
-    this.#endSpanOnResult(span, controller.result)
+    this.#endSpanOnResult(span, controller.result, rid)
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
     const send = async (val: T['Send']) => {
+      const channelSpan = this.#spans[rid]
+      if (channelSpan != null) {
+        channelSpan.addEvent('channel.message.sent', {
+          [AttributeKeys.MESSAGE_DIRECTION]: 'send',
+        })
+      }
       this.#logger.trace('send value to channel {procedure} with ID {rid}: {value}', {
         procedure,
         rid,
