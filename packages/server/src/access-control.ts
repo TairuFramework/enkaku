@@ -1,4 +1,9 @@
-import { assertNonExpired, checkCapability, hasPartsMatch } from '@enkaku/capability'
+import {
+  assertNonExpired,
+  checkCapability,
+  type DelegationChainOptions,
+  hasPartsMatch,
+} from '@enkaku/capability'
 import type { SignedToken } from '@enkaku/token'
 
 export type EncryptionPolicy = 'required' | 'optional' | 'none'
@@ -57,6 +62,7 @@ export async function checkProcedureAccess(
   record: ProcedureAccessRecord,
   token: SignedToken<ProcedureAccessPayload>,
   atTime?: number,
+  options?: DelegationChainOptions,
 ): Promise<void> {
   const payload = token.payload
   if (payload.prc == null) {
@@ -84,9 +90,18 @@ export async function checkProcedureAccess(
       }
       try {
         // Check delegation from subject
-        await checkCapability({ act: payload.prc, res: serverID }, payload, atTime)
+        await checkCapability({ act: payload.prc, res: serverID }, payload, atTime, options)
         return
-      } catch {}
+      } catch (err) {
+        const message = err instanceof Error ? err.message : ''
+        if (
+          !message.startsWith('Invalid capability') &&
+          !message.startsWith('Invalid payload') &&
+          !message.startsWith('Invalid token')
+        ) {
+          throw err
+        }
+      }
     }
   }
 
@@ -98,6 +113,7 @@ export async function checkClientToken(
   record: ProcedureAccessRecord,
   token: SignedToken,
   atTime?: number,
+  options?: DelegationChainOptions,
 ): Promise<void> {
   const payload = token.payload
   const procedure = (payload as ProcedureAccessPayload).prc
@@ -118,12 +134,18 @@ export async function checkClientToken(
 
   if (payload.sub === serverID) {
     // If subject is the server, check capability directly
-    await checkCapability({ act: procedure, res: serverID }, payload, atTime)
+    await checkCapability({ act: procedure, res: serverID }, payload, atTime, options)
     return
   }
 
   if (payload.aud !== serverID) {
     throw new Error('Invalid audience')
   }
-  await checkProcedureAccess(serverID, record, token as SignedToken<ProcedureAccessPayload>, atTime)
+  await checkProcedureAccess(
+    serverID,
+    record,
+    token as SignedToken<ProcedureAccessPayload>,
+    atTime,
+    options,
+  )
 }
