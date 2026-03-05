@@ -147,6 +147,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     ? (message: unknown) => {
         const result = validator(message)
         if (result instanceof ValidationError) {
+          const validationSpan = params.tracer.startSpan(SpanNames.SERVER_HANDLE, {
+            attributes: { [AttributeKeys.RPC_SYSTEM]: 'enkaku' },
+          })
+          validationSpan.addEvent('enkaku.validation', {
+            [AttributeKeys.VALIDATION_SUCCESS]: false,
+            [AttributeKeys.VALIDATION_ERROR]: result.message,
+          })
+          validationSpan.setStatus({ code: SpanStatusCode.ERROR, message: 'Validation failed' })
+          validationSpan.end()
+
           logger.debug('received invalid message', { error: result })
           events.emit('invalidMessage', {
             error: new Error('Invalid protocol message', { cause: result }),
@@ -328,6 +338,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   const process = params.public
     ? (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
         const span = createHandleSpan(message)
+        if (validator != null) {
+          span.addEvent('enkaku.validation', {
+            [AttributeKeys.VALIDATION_SUCCESS]: true,
+          })
+        }
 
         if (!checkMessageEncryption(message)) {
           span.setAttribute(AttributeKeys.AUTH_REASON, 'encryption_required')
@@ -341,6 +356,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       }
     : async (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
         const span = createHandleSpan(message)
+        if (validator != null) {
+          span.addEvent('enkaku.validation', {
+            [AttributeKeys.VALIDATION_SUCCESS]: true,
+          })
+        }
 
         try {
           if (!isSignedToken(message as Token)) {
