@@ -20,7 +20,7 @@
 
 | Severity | Count | Status |
 |----------|-------|--------|
-| CRITICAL | 12 | 8 Fixed (C-01, C-02, C-03, C-05, C-06, C-07, C-08, C-09), 3 Won't Fix (C-10, C-11, C-12), 1 Planned (C-04) |
+| CRITICAL | 12 | 9 Fixed (C-01, C-02, C-03, C-04, C-05, C-06, C-07, C-08, C-09), 3 Won't Fix (C-10, C-11, C-12) |
 | HIGH | 18 | 16 Fixed (H-01, H-02, H-04, H-05, H-06, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-17, H-18), 2 Won't Fix (H-03, H-11) |
 | MEDIUM | 14 | 11 Fixed (M-01, M-02, M-03, M-04, M-05, M-06, M-07, M-08, M-09, M-11, M-12), 1 Mitigated (M-10), 2 Won't Fix (M-13, M-14) |
 | LOW | 3 | 1 Fixed (L-03), 2 Closed (L-01, L-02) |
@@ -91,16 +91,16 @@ Verify signer has authority to delegate requested permissions before creating ca
 ### C-04: No Capability Revocation Mechanism
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts` (entire file)
-- **Status:** [~] Planned — `docs/plans/2026-03-05-capability-verification-hook.md`
+- **Status:** [x] Fixed — verifyToken hook in DelegationChainOptions
 
 **Description:**
-There is no revocation mechanism for capabilities. Once issued, a capability cannot be revoked early, must wait for natural expiration, has no `jti` (JWT ID) based revocation list support.
+Added optional `verifyToken` hook to `DelegationChainOptions`, called for each verified token in the delegation chain. Consumers can implement revocation by checking token jti against a revocation store. The server exposes this via `ServerParams.verifyToken`.
 
 **Impact:**
 If a capability token is stolen, it remains valid until `exp` regardless of actual compromise.
 
-**Planned Fix:**
-Instead of building a revocation system into the library, add an optional `verifyToken` hook to `DelegationChainOptions`. The hook receives both the parsed `CapabilityToken` and raw token string, and is called for each verified token during `checkCapability()` and `checkDelegationChain()`. Consumers can implement revocation (e.g., `jti` lookup), custom authorization, or audit logging. The server exposes this via `ServerParams.verifyToken`. This is a non-breaking, additive change that keeps the library stateless.
+**Fix:**
+Instead of building a revocation system into the library, an optional `verifyToken` hook was added to `DelegationChainOptions`. The hook receives both the parsed `CapabilityToken` and raw token string, and is called for each verified token during `checkCapability()` and `checkDelegationChain()`. Consumers can implement revocation (e.g., `jti` lookup), custom authorization, or audit logging. The server exposes this via `ServerParams.verifyToken`. This is a non-breaking, additive change that keeps the library stateless.
 
 ---
 
@@ -822,8 +822,8 @@ Breaking changes already applied:
 Remaining breaking changes:
 5. ~~**H-17**~~: Server `accessControl` API refactor — Fixed (branch `chore/audit-changes`)
 
-Non-breaking planned changes:
-6. **C-04**: Capability verification hook — Planned (`docs/plans/2026-03-05-capability-verification-hook.md`)
+Non-breaking changes:
+6. ~~**C-04**~~: Capability verification hook — Fixed (verifyToken hook in DelegationChainOptions)
 
 ---
 
