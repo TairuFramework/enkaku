@@ -13,6 +13,7 @@
 - Transport package test suites (T-04) — `docs/plans/archive/2026-01-30-transport-package-tests.complete.md`
 - Keystore package test suites (T-05) — `docs/plans/archive/2026-03-02-keystore-package-tests.complete.md`
 - Security hardening waves 4-6 (M-01, M-02, M-03, M-05, M-06, M-07, M-08, M-09, L-03, H-17, T-01, T-06, T-07) — `docs/plans/archive/2026-03-03-security-hardening-waves-4-6.complete.md`
+- Access control refactor, capability verification hook, performance quick wins (H-17, C-04, P-01, P-02, P-03, P-08, P-09) — `docs/plans/archive/2026-03-05-security-audit-final-items.complete.md`
 
 ---
 
@@ -836,7 +837,7 @@ Non-breaking changes:
 | `@enkaku/token` | 3 | ~40% | 8 error paths untested (3 tested: H-02) |
 | `@enkaku/capability` | 1 | ~90% | Auth bypass fixed and tested (C-02, C-03, H-04, M-04) |
 | `@enkaku/client` | 1 | ~70% | Memory leak paths untested |
-| `@enkaku/server` | 16 | ~85% | Resource limits tested (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) |
+| `@enkaku/server` | 19 | ~85% | Resource limits tested (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) |
 | `@enkaku/http-server-transport` | 4 | ~60% | Session limits, inflight limits, origin validation tested (C-08, C-09, H-09, H-10) |
 | `@enkaku/http-client-transport` | 1 | ~70% | Connection lifecycle, SSE session, message routing tested (T-04) |
 | `@enkaku/socket-transport` | 1 | ~80% | Connection, JSON-lines, Transport class, error handling tested (T-04) |
