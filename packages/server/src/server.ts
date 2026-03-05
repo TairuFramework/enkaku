@@ -1,4 +1,5 @@
 import { DisposeInterruption, Disposer } from '@enkaku/async'
+import type { DelegationChainOptions } from '@enkaku/capability'
 import { EventEmitter } from '@enkaku/event'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
 import {
@@ -70,7 +71,7 @@ function defaultRandomID(): string {
 export type AccessControlParams = (
   | { public: true; serverID?: string; access: ProcedureAccessRecord }
   | { public: false; serverID: string; access: ProcedureAccessRecord }
-) & { encryptionPolicy?: EncryptionPolicy }
+) & { encryptionPolicy?: EncryptionPolicy; delegationOptions?: DelegationChainOptions }
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
   events: ServerEmitter
@@ -416,7 +417,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             span.setAttribute(AttributeKeys.AUTH_ALLOWED, false)
             throw new Error('Message is not signed')
           }
-          await checkClientToken(params.serverID, params.access, message as unknown as SignedToken)
+          await checkClientToken(
+            params.serverID,
+            params.access,
+            message as unknown as SignedToken,
+            undefined,
+            params.delegationOptions,
+          )
           const did = (message as unknown as SignedToken).payload.iss
           if (did != null) {
             span.setAttribute(AttributeKeys.AUTH_DID, did)
@@ -569,11 +576,13 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   tracer?: Tracer
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
+  verifyToken?: DelegationChainOptions['verifyToken']
 }
 
 export type HandleOptions = {
   accessControl?: false | true | ProcedureAccessRecord
   logger?: Logger
+  verifyToken?: DelegationChainOptions['verifyToken']
 }
 
 export class Server<Protocol extends ProtocolDefinition> extends Disposer {
@@ -647,6 +656,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         public: true,
         access: {},
         encryptionPolicy: params.encryptionPolicy,
+        delegationOptions:
+          params.verifyToken != null ? { verifyToken: params.verifyToken } : undefined,
       }
     } else if (accessControl === false) {
       // Has identity but public access
@@ -655,6 +666,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         serverID,
         access: {},
         encryptionPolicy: params.encryptionPolicy,
+        delegationOptions:
+          params.verifyToken != null ? { verifyToken: params.verifyToken } : undefined,
       }
     } else {
       // Has identity with access control (true = server-only, record = granular)
@@ -664,6 +677,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         serverID,
         access,
         encryptionPolicy: params.encryptionPolicy,
+        delegationOptions:
+          params.verifyToken != null ? { verifyToken: params.verifyToken } : undefined,
       }
     }
 
@@ -715,6 +730,11 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       accessControl = { ...this.#accessControl }
     }
 
+    const delegationOptions: DelegationChainOptions | undefined =
+      options.verifyToken != null
+        ? { verifyToken: options.verifyToken }
+        : this.#accessControl.delegationOptions
+
     const done = handleMessages<Protocol>({
       events: this.#events,
       handlers: this.#handlers,
@@ -725,6 +745,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       transport,
       validator: this.#validator,
       ...accessControl,
+      delegationOptions,
     })
     this.#handling.push({ done, transport })
 
