@@ -247,9 +247,6 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
-      '@opentelemetry/api':
-        specifier: 'catalog:'
-        version: 1.9.0
     devDependencies:
       '@enkaku/protocol':
         specifier: workspace:^
@@ -319,9 +316,6 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
-      '@opentelemetry/api':
-        specifier: 'catalog:'
-        version: 1.9.0
       electron-store:
         specifier: 'catalog:'
         version: 11.0.2
@@ -388,9 +382,6 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
-      '@opentelemetry/api':
-        specifier: 'catalog:'
-        version: 1.9.0
       expo-crypto:
         specifier: 'catalog:'
         version: 55.0.8(expo@55.0.4)
@@ -506,9 +497,6 @@ importers:
       '@napi-rs/keyring':
         specifier: 'catalog:'
         version: 1.2.0
-      '@opentelemetry/api':
-        specifier: 'catalog:'
-        version: 1.9.0
     devDependencies:
       '@enkaku/protocol':
         specifier: workspace:^
@@ -667,9 +655,6 @@ importers:
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
-      '@opentelemetry/api':
-        specifier: 'catalog:'
-        version: 1.9.0
 
   packages/standalone:
     dependencies:
@@ -716,9 +701,6 @@ importers:
       '@noble/hashes':
         specifier: 'catalog:'
         version: 2.0.1
-      '@opentelemetry/api':
-        specifier: 'catalog:'
-        version: 1.9.0
       '@scure/base':
         specifier: 'catalog:'
         version: 2.0.0

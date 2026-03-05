@@ -11,34 +11,30 @@
  */
 
 import { createConnection, type Socket } from 'node:net'
-import { AttributeKeys, SpanNames } from '@enkaku/otel'
+import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
 import { type FromJSONLinesOptions, fromJSONLines, writeTo } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
-import { SpanStatusCode, trace } from '@opentelemetry/api'
 
-const tracer = trace.getTracer('enkaku.transport.socket')
+const tracer = createTracer('transport.socket')
 
 export type SocketOrPromise = Socket | Promise<Socket>
 export type SocketSource = SocketOrPromise | (() => SocketOrPromise)
 
 export async function connectSocket(path: string): Promise<Socket> {
-  const span = tracer.startSpan(SpanNames.TRANSPORT_WS_CONNECT, {
-    attributes: { [AttributeKeys.TRANSPORT_TYPE]: 'socket', 'net.peer.name': path },
-  })
-  const socket = createConnection(path)
-  return new Promise((resolve, reject) => {
-    socket.on('connect', () => {
-      span.setStatus({ code: SpanStatusCode.OK })
-      span.end()
-      resolve(socket)
-    })
-    socket.on('error', (err) => {
-      span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
-      span.recordException(err)
-      span.end()
-      reject(err)
-    })
-  })
+  return withSpan(
+    tracer,
+    SpanNames.TRANSPORT_SOCKET_CONNECT,
+    {
+      attributes: { [AttributeKeys.TRANSPORT_TYPE]: 'socket', [AttributeKeys.NET_PEER_NAME]: path },
+    },
+    async () => {
+      const socket = createConnection(path)
+      return new Promise<Socket>((resolve, reject) => {
+        socket.on('connect', () => resolve(socket))
+        socket.on('error', (err) => reject(err))
+      })
+    },
+  )
 }
 
 export async function createTransportStream<R, W>(
