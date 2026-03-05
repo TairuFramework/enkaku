@@ -30,7 +30,7 @@ describe('Server dispose timeout', () => {
 
     const server = serve<Protocol>({
       handlers,
-      public: true,
+      accessControl: false,
       transport: transports.server,
       limits: { cleanupTimeoutMs: 100 },
     })

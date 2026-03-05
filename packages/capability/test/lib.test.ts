@@ -1,5 +1,5 @@
 import { randomIdentity, stringifyToken } from '@enkaku/token'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import {
   assertNonExpired,
@@ -461,7 +461,9 @@ describe('checkCapability()', () => {
     })
 
     await expect(
-      checkCapability({ act: 'test/read', res: 'foo/bar' }, bobToken.payload, fixedTime),
+      checkCapability({ act: 'test/read', res: 'foo/bar' }, bobToken.payload, {
+        atTime: fixedTime,
+      }),
     ).rejects.toThrow('Token expired')
   })
 })
@@ -931,5 +933,208 @@ describe('createCapability() - delegation validation (C-03)', () => {
         { parentCapability: stringifyToken(rootCap) },
       ),
     ).rejects.toThrow('audience')
+  })
+})
+
+describe('verifyToken hook', () => {
+  test('checkDelegationChain calls verifyToken for each token in the chain', async () => {
+    const signerA = randomIdentity()
+    const signerB = randomIdentity()
+    const signerC = randomIdentity()
+
+    const delegateToB = await createCapability(signerA, {
+      sub: signerA.id,
+      aud: signerB.id,
+      act: '*',
+      res: '*',
+    })
+    const delegateToC = await createCapability(
+      signerB,
+      {
+        sub: signerA.id,
+        aud: signerC.id,
+        act: 'test/*',
+        res: 'foo/*',
+      },
+      undefined,
+      { parentCapability: stringifyToken(delegateToB) },
+    )
+
+    const verified: Array<string> = []
+    const verifyToken = vi.fn((_token: unknown, raw: string) => {
+      verified.push(raw)
+    })
+
+    await checkDelegationChain(delegateToC.payload, [stringifyToken(delegateToB)], { verifyToken })
+
+    expect(verifyToken).toHaveBeenCalledTimes(1)
+    expect(verified[0]).toBe(stringifyToken(delegateToB))
+  })
+
+  test('checkDelegationChain rejects when verifyToken throws', async () => {
+    const signerA = randomIdentity()
+    const signerB = randomIdentity()
+
+    const delegateToB = await createCapability(signerA, {
+      sub: signerA.id,
+      aud: signerB.id,
+      act: '*',
+      res: '*',
+    })
+
+    const verifyToken = vi.fn(() => {
+      throw new Error('Token revoked')
+    })
+
+    await expect(
+      checkDelegationChain(delegateToB.payload, [stringifyToken(delegateToB)], { verifyToken }),
+    ).rejects.toThrow('Token revoked')
+  })
+
+  test('checkCapability calls verifyToken for capability tokens', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const capability = await createCapability(alice, {
+      sub: alice.id,
+      aud: bob.id,
+      act: 'test/read',
+      res: 'foo/bar',
+    })
+
+    const capString = stringifyToken(capability)
+    const token = await bob.signToken({
+      sub: alice.id,
+      prc: 'test/read',
+      cap: capString,
+    })
+
+    const verifyTokenHook = vi.fn()
+
+    await checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, {
+      verifyToken: verifyTokenHook,
+    })
+
+    expect(verifyTokenHook).toHaveBeenCalledTimes(1)
+    expect(verifyTokenHook).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({ iss: alice.id, aud: bob.id }),
+      }),
+      capString,
+    )
+  })
+
+  test('checkCapability rejects when verifyToken throws for capability', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const capability = await createCapability(alice, {
+      sub: alice.id,
+      aud: bob.id,
+      act: 'test/read',
+      res: 'foo/bar',
+    })
+
+    const token = await bob.signToken({
+      sub: alice.id,
+      prc: 'test/read',
+      cap: stringifyToken(capability),
+    })
+
+    const verifyTokenHook = vi.fn(() => {
+      throw new Error('Token revoked')
+    })
+
+    await expect(
+      checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, {
+        verifyToken: verifyTokenHook,
+      }),
+    ).rejects.toThrow('Token revoked')
+  })
+
+  test('checkCapability does not call verifyToken for self-issued tokens', async () => {
+    const alice = randomIdentity()
+
+    const token = await alice.signToken({
+      sub: alice.id,
+      act: 'test/read',
+      res: 'foo/bar',
+    })
+
+    const verifyTokenHook = vi.fn()
+
+    await checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, {
+      verifyToken: verifyTokenHook,
+    })
+
+    expect(verifyTokenHook).not.toHaveBeenCalled()
+  })
+
+  test('checkCapability calls verifyToken for full delegation chain', async () => {
+    const signerA = randomIdentity()
+    const signerB = randomIdentity()
+    const signerC = randomIdentity()
+
+    const delegateToB = await createCapability(signerA, {
+      sub: signerA.id,
+      aud: signerB.id,
+      act: '*',
+      res: 'foo/*',
+    })
+    const delegateToC = await createCapability(
+      signerB,
+      {
+        sub: signerA.id,
+        aud: signerC.id,
+        act: 'test/*',
+        res: 'foo/bar',
+      },
+      undefined,
+      { parentCapability: stringifyToken(delegateToB) },
+    )
+
+    const token = await signerC.signToken({
+      sub: signerA.id,
+      prc: 'test/call',
+      cap: [stringifyToken(delegateToC), stringifyToken(delegateToB)],
+    })
+
+    const verifyTokenHook = vi.fn()
+
+    await checkCapability({ act: 'test/call', res: 'foo/bar' }, token.payload, {
+      verifyToken: verifyTokenHook,
+    })
+
+    // Should be called for both tokens in the chain
+    expect(verifyTokenHook).toHaveBeenCalledTimes(2)
+  })
+
+  test('checkCapability supports async verifyToken', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const capability = await createCapability(alice, {
+      sub: alice.id,
+      aud: bob.id,
+      act: 'test/read',
+      res: 'foo/bar',
+    })
+
+    const token = await bob.signToken({
+      sub: alice.id,
+      prc: 'test/read',
+      cap: stringifyToken(capability),
+    })
+
+    const verifyTokenHook = vi.fn(async () => {
+      // Simulate async revocation check
+      await new Promise((resolve) => setTimeout(resolve, 1))
+    })
+
+    await checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, {
+      verifyToken: verifyTokenHook,
+    })
+
+    expect(verifyTokenHook).toHaveBeenCalledTimes(1)
   })
 })

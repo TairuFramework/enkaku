@@ -1,4 +1,5 @@
 import { DisposeInterruption, Disposer } from '@enkaku/async'
+import type { VerifyTokenHook } from '@enkaku/capability'
 import { EventEmitter } from '@enkaku/event'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
 import {
@@ -68,9 +69,9 @@ function defaultRandomID(): string {
 }
 
 export type AccessControlParams = (
-  | { public: true; serverID?: string; access?: ProcedureAccessRecord }
-  | { public: false; serverID: string; access: ProcedureAccessRecord }
-) & { encryptionPolicy?: EncryptionPolicy }
+  | { requireAuth: false; serverID?: string; access: ProcedureAccessRecord }
+  | { requireAuth: true; serverID: string; access: ProcedureAccessRecord }
+) & { encryptionPolicy?: EncryptionPolicy; verifyToken?: VerifyTokenHook }
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
   events: ServerEmitter
@@ -381,7 +382,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
   }
 
-  const process = params.public
+  const process = !params.requireAuth
     ? (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
         const span = createHandleSpan(message)
         if (validator != null) {
@@ -416,7 +417,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             span.setAttribute(AttributeKeys.AUTH_ALLOWED, false)
             throw new Error('Message is not signed')
           }
-          await checkClientToken(params.serverID, params.access, message as unknown as SignedToken)
+          await checkClientToken(
+            params.serverID,
+            params.access,
+            message as unknown as SignedToken,
+            params.verifyToken != null ? { verifyToken: params.verifyToken } : undefined,
+          )
           const did = (message as unknown as SignedToken).payload.iss
           if (did != null) {
             span.setAttribute(AttributeKeys.AUTH_DID, did)
@@ -514,8 +520,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             logger.debug('received send for unknown channel {rid}', { rid: msg.payload.rid })
             break
           }
-          // In non-public mode, validate send messages against the channel owner
-          if (!params.public) {
+          // In authenticated mode, validate send messages against the channel owner
+          if (params.requireAuth) {
             if (!isSignedToken(msg as Token)) {
               const error = new HandlerError({
                 code: 'EK02',
@@ -558,7 +564,7 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
 }
 
 export type ServerParams<Protocol extends ProtocolDefinition> = {
-  access?: ProcedureAccessRecord
+  accessControl?: false | true | ProcedureAccessRecord
   encryptionPolicy?: EncryptionPolicy
   getRandomID?: () => string
   handlers: ProcedureHandlers<Protocol>
@@ -566,13 +572,17 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   limits?: Partial<ResourceLimits>
   logger?: Logger
   protocol?: Protocol
-  public?: boolean
   tracer?: Tracer
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
+  verifyToken?: VerifyTokenHook
 }
 
-export type HandleOptions = { access?: ProcedureAccessRecord; logger?: Logger; public?: boolean }
+export type HandleOptions = {
+  accessControl?: false | true | ProcedureAccessRecord
+  logger?: Logger
+  verifyToken?: VerifyTokenHook
+}
 
 export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #abortController: AbortController
@@ -632,34 +642,39 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       params.logger ?? getEnkakuLogger('server', { serverID: serverID ?? this.#getRandomID() })
     this.#tracer = params.tracer ?? defaultTracer
 
+    const accessControl = params.accessControl
+
     if (serverID == null) {
-      if (params.public) {
-        this.#accessControl = {
-          public: true,
-          access: params.access,
-          encryptionPolicy: params.encryptionPolicy,
-        }
-        if (params.access != null && Object.keys(params.access).length > 0) {
-          this.#logger.warn(
-            'Server is in public mode: access control records are ignored. All procedures are accessible without authentication.',
-          )
-        }
-      } else {
+      // No identity: accessControl must be explicitly false
+      if (accessControl !== false) {
         throw new Error(
-          'Invalid server parameters: either the server "identity" must be provided or the "public" parameter must be set to true',
+          'Invalid server parameters: either "identity" must be provided or "accessControl" must be set to false',
         )
+      }
+      this.#accessControl = {
+        requireAuth: false,
+        access: {},
+        encryptionPolicy: params.encryptionPolicy,
+        verifyToken: params.verifyToken,
+      }
+    } else if (accessControl === false) {
+      // Has identity but public access
+      this.#accessControl = {
+        requireAuth: false,
+        serverID,
+        access: {},
+        encryptionPolicy: params.encryptionPolicy,
+        verifyToken: params.verifyToken,
       }
     } else {
+      // Has identity with access control (true = server-only, record = granular)
+      const access = accessControl === true || accessControl == null ? {} : accessControl
       this.#accessControl = {
-        public: !!params.public,
+        requireAuth: true,
         serverID,
-        access: params.access ?? {},
+        access,
         encryptionPolicy: params.encryptionPolicy,
-      }
-      if (params.public && params.access != null && Object.keys(params.access).length > 0) {
-        this.#logger.warn(
-          'Server is in public mode: access control records are ignored. All procedures are accessible without authentication.',
-        )
+        verifyToken: params.verifyToken,
       }
     }
 
@@ -683,26 +698,42 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   }
 
   handle(transport: ServerTransportOf<Protocol>, options: HandleOptions = {}): Promise<void> {
-    const publicAccess = options.public ?? this.#accessControl.public
-    const access = options.access ?? this.#accessControl.access ?? {}
+    const accessControlOverride = options.accessControl
     const logger =
       options.logger ?? this.#logger.getChild('handler').with({ transportID: this.#getRandomID() })
-
-    if (publicAccess && Object.keys(access).length > 0) {
-      logger.warn('Transport handler is in public mode: access control records are ignored.')
-    }
 
     const encryptionPolicy = this.#accessControl.encryptionPolicy
 
     let accessControl: AccessControlParams
-    if (publicAccess) {
-      accessControl = { public: true, access, encryptionPolicy }
-    } else {
+    if (accessControlOverride === false) {
+      accessControl = {
+        requireAuth: false,
+        access: this.#accessControl.access ?? {},
+        encryptionPolicy,
+        verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
+      }
+    } else if (accessControlOverride != null) {
+      // Override with true or ProcedureAccessRecord
       const serverID = this.#accessControl.serverID
       if (serverID == null) {
-        return Promise.reject(new Error('Server ID is required to enable access control'))
+        return Promise.reject(
+          new Error('Server identity is required to enable access control on transport'),
+        )
       }
-      accessControl = { public: false, serverID, access, encryptionPolicy }
+      const access = accessControlOverride === true ? {} : accessControlOverride
+      accessControl = {
+        requireAuth: true,
+        serverID,
+        access,
+        encryptionPolicy,
+        verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
+      }
+    } else {
+      // Use server-level defaults
+      accessControl = {
+        ...this.#accessControl,
+        verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
+      }
     }
 
     const done = handleMessages<Protocol>({

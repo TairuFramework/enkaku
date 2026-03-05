@@ -47,7 +47,7 @@ describe('Controller timeout cleanup', () => {
     const timeoutHandler = vi.fn()
     const server = serve<Protocol>({
       handlers,
-      public: true,
+      accessControl: false,
       transport: transports.server,
       limits: { controllerTimeoutMs: 50 },
     })

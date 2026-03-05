@@ -1,7 +1,7 @@
 import { createCapability } from '@enkaku/capability'
 import type { AnyClientPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 import { randomIdentity, stringifyToken } from '@enkaku/token'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { checkClientToken, type ProcedureAccessConfig } from '../src/access-control.js'
 
@@ -170,6 +170,70 @@ describe('access control', () => {
           token,
         ),
       ).resolves.toBeUndefined()
+    })
+  })
+
+  describe('verifyToken hook', () => {
+    test('checkClientToken passes verifyToken option to checkCapability', async () => {
+      const serverSigner = randomIdentity()
+      const delegationSigner = randomIdentity()
+      const clientSigner = randomIdentity()
+
+      const delegation = await createCapability(delegationSigner, {
+        aud: clientSigner.id,
+        sub: delegationSigner.id,
+        act: 'enkaku:graph/*',
+        res: serverSigner.id,
+      })
+      const token = await clientSigner.signToken({
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+        sub: delegationSigner.id,
+        cap: stringifyToken(delegation),
+      } as unknown as Payload)
+
+      const verifyToken = vi.fn()
+
+      await checkClientToken(
+        serverSigner.id,
+        { '*': false, 'enkaku:graph/test': [delegationSigner.id] },
+        token,
+        { verifyToken },
+      )
+
+      expect(verifyToken).toHaveBeenCalledTimes(1)
+    })
+
+    test('checkClientToken rejects when verifyToken hook throws', async () => {
+      const serverSigner = randomIdentity()
+      const delegationSigner = randomIdentity()
+      const clientSigner = randomIdentity()
+
+      const delegation = await createCapability(delegationSigner, {
+        aud: clientSigner.id,
+        sub: delegationSigner.id,
+        act: 'enkaku:graph/*',
+        res: serverSigner.id,
+      })
+      const token = await clientSigner.signToken({
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+        sub: delegationSigner.id,
+        cap: stringifyToken(delegation),
+      } as unknown as Payload)
+
+      const verifyToken = vi.fn(() => {
+        throw new Error('Token revoked')
+      })
+
+      await expect(
+        checkClientToken(
+          serverSigner.id,
+          { '*': false, 'enkaku:graph/test': [delegationSigner.id] },
+          token,
+          { verifyToken },
+        ),
+      ).rejects.toThrow('Token revoked')
     })
   })
 })

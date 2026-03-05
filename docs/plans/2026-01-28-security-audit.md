@@ -13,6 +13,7 @@
 - Transport package test suites (T-04) — `docs/plans/archive/2026-01-30-transport-package-tests.complete.md`
 - Keystore package test suites (T-05) — `docs/plans/archive/2026-03-02-keystore-package-tests.complete.md`
 - Security hardening waves 4-6 (M-01, M-02, M-03, M-05, M-06, M-07, M-08, M-09, L-03, H-17, T-01, T-06, T-07) — `docs/plans/archive/2026-03-03-security-hardening-waves-4-6.complete.md`
+- Access control refactor, capability verification hook, performance quick wins (H-17, C-04, P-01, P-02, P-03, P-08, P-09) — `docs/plans/archive/2026-03-05-security-audit-final-items.complete.md`
 
 ---
 
@@ -20,8 +21,8 @@
 
 | Severity | Count | Status |
 |----------|-------|--------|
-| CRITICAL | 12 | 8 Fixed (C-01, C-02, C-03, C-05, C-06, C-07, C-08, C-09), 3 Won't Fix (C-10, C-11, C-12), 1 Planned (C-04) |
-| HIGH | 18 | 15 Fixed (H-01, H-02, H-04, H-05, H-06, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-18), 1 Planned (H-17), 2 Won't Fix (H-03, H-11) |
+| CRITICAL | 12 | 9 Fixed (C-01, C-02, C-03, C-04, C-05, C-06, C-07, C-08, C-09), 3 Won't Fix (C-10, C-11, C-12) |
+| HIGH | 18 | 16 Fixed (H-01, H-02, H-04, H-05, H-06, H-07, H-08, H-09, H-10, H-12, H-13, H-14, H-15, H-16, H-17, H-18), 2 Won't Fix (H-03, H-11) |
 | MEDIUM | 14 | 11 Fixed (M-01, M-02, M-03, M-04, M-05, M-06, M-07, M-08, M-09, M-11, M-12), 1 Mitigated (M-10), 2 Won't Fix (M-13, M-14) |
 | LOW | 3 | 1 Fixed (L-03), 2 Closed (L-01, L-02) |
 
@@ -91,16 +92,16 @@ Verify signer has authority to delegate requested permissions before creating ca
 ### C-04: No Capability Revocation Mechanism
 - **Package:** `@enkaku/capability`
 - **File:** `packages/capability/src/index.ts` (entire file)
-- **Status:** [~] Planned — `docs/plans/2026-03-05-capability-verification-hook.md`
+- **Status:** [x] Fixed — verifyToken hook in DelegationChainOptions
 
 **Description:**
-There is no revocation mechanism for capabilities. Once issued, a capability cannot be revoked early, must wait for natural expiration, has no `jti` (JWT ID) based revocation list support.
+Added optional `verifyToken` hook to `DelegationChainOptions`, called for each verified token in the delegation chain. Consumers can implement revocation by checking token jti against a revocation store. The server exposes this via `ServerParams.verifyToken`.
 
 **Impact:**
 If a capability token is stolen, it remains valid until `exp` regardless of actual compromise.
 
-**Planned Fix:**
-Instead of building a revocation system into the library, add an optional `verifyToken` hook to `DelegationChainOptions`. The hook receives both the parsed `CapabilityToken` and raw token string, and is called for each verified token during `checkCapability()` and `checkDelegationChain()`. Consumers can implement revocation (e.g., `jti` lookup), custom authorization, or audit logging. The server exposes this via `ServerParams.verifyToken`. This is a non-breaking, additive change that keeps the library stateless.
+**Fix:**
+Instead of building a revocation system into the library, an optional `verifyToken` hook was added to `DelegationChainOptions`. The hook receives both the parsed `CapabilityToken` and raw token string, and is called for each verified token during `checkCapability()` and `checkDelegationChain()`. Consumers can implement revocation (e.g., `jti` lookup), custom authorization, or audit logging. The server exposes this via `ServerParams.verifyToken`. This is a non-breaking, additive change that keeps the library stateless.
 
 ---
 
@@ -546,7 +547,7 @@ Return generic "Handler execution failed" to clients, log detailed errors server
 ### H-17: Conditional Authentication Bypass (Public Mode)
 - **Package:** `@enkaku/server`
 - **File:** `packages/server/src/server.ts:121`
-- **Status:** [~] Planned — `docs/plans/2026-03-05-access-control-refactor.md`
+- **Status:** [x] Fixed — Branch `chore/audit-changes`
 
 **Description:**
 When `params.public = true`, the entire authentication check is skipped. ALL message types bypass access control in public mode. The `public` and `access` params can be combined in contradictory ways (e.g., `public: true` with access records silently ignores the records).
@@ -554,8 +555,8 @@ When `params.public = true`, the entire authentication check is skipped. ALL mes
 **Previous Mitigation:**
 Added logger.warn() when `public: true` is combined with non-empty access control records.
 
-**Planned Fix:**
-Replace `public` boolean + `access` record with a unified `accessControl` parameter:
+**Fix:**
+Replaced `public` boolean + `access` record with a unified `accessControl` parameter:
 - `accessControl: false` — public, no auth (replaces `public: true`)
 - `accessControl: true` or omitted with identity — server-only access (default)
 - `accessControl: ProcedureAccessRecord` — granular per-procedure rules (replaces `access: {...}`)
@@ -820,10 +821,10 @@ Breaking changes already applied:
 4. ~~**C-12**~~: Browser keystore — Won't Fix
 
 Remaining breaking changes:
-5. **H-17**: Server `accessControl` API refactor — Planned (`docs/plans/2026-03-05-access-control-refactor.md`)
+5. ~~**H-17**~~: Server `accessControl` API refactor — Fixed (branch `chore/audit-changes`)
 
-Non-breaking planned changes:
-6. **C-04**: Capability verification hook — Planned (`docs/plans/2026-03-05-capability-verification-hook.md`)
+Non-breaking changes:
+6. ~~**C-04**~~: Capability verification hook — Fixed (verifyToken hook in DelegationChainOptions)
 
 ---
 
@@ -836,7 +837,7 @@ Non-breaking planned changes:
 | `@enkaku/token` | 3 | ~40% | 8 error paths untested (3 tested: H-02) |
 | `@enkaku/capability` | 1 | ~90% | Auth bypass fixed and tested (C-02, C-03, H-04, M-04) |
 | `@enkaku/client` | 1 | ~70% | Memory leak paths untested |
-| `@enkaku/server` | 16 | ~85% | Resource limits tested (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) |
+| `@enkaku/server` | 19 | ~85% | Resource limits tested (C-05, C-06, C-07, H-13, H-14, H-15, M-10, M-11, M-12) |
 | `@enkaku/http-server-transport` | 4 | ~60% | Session limits, inflight limits, origin validation tested (C-08, C-09, H-09, H-10) |
 | `@enkaku/http-client-transport` | 1 | ~70% | Connection lifecycle, SSE session, message routing tested (T-04) |
 | `@enkaku/socket-transport` | 1 | ~80% | Connection, JSON-lines, Transport class, error handling tested (T-04) |
@@ -1013,7 +1014,7 @@ Non-breaking planned changes:
 - **Package:** `@enkaku/stream`
 - **File:** `packages/stream/src/json-lines.ts:37, 42, 47, 52, 57, 81`
 - **Impact:** HIGH - 10-50x slower for large payloads
-- **Status:** [ ] Planned
+- **Status:** [x] Fixed — array buffer + charCode comparison (branch `chore/audit-changes`)
 
 **Issue:** `output += char` in hot loop creates thousands of intermediate strings.
 
@@ -1032,7 +1033,7 @@ Note: P-03 (regex in hot loop) is part of the same character-by-character parsin
 - **Package:** `@enkaku/codec`
 - **File:** `packages/codec/src/index.ts:48`
 - **Impact:** HIGH - 3x slower encoding
-- **Status:** [ ] Planned
+- **Status:** [x] Fixed — single regex with alternation (branch `chore/audit-changes`)
 
 **Issue:** Three sequential `.replace()` calls create 3 intermediate strings.
 
@@ -1047,7 +1048,7 @@ return toB64(bytes).replace(/[=+/]/g, m => m === '=' ? '' : m === '+' ? '-' : '_
 - **Package:** `@enkaku/stream`
 - **File:** `packages/stream/src/json-lines.ts:56`
 - **Impact:** MEDIUM - 2-5x slower per message
-- **Status:** [ ] Planned — address together with P-01
+- **Status:** [x] Fixed — charCode comparison (branch `chore/audit-changes`, with P-01)
 
 **Issue:** `/\S/.test(char)` regex executed for every character.
 
@@ -1113,7 +1114,7 @@ if (char.charCodeAt(0) > 32) { ... }
 - **Package:** `@enkaku/execution`
 - **File:** `packages/execution/src/execution.ts:134-139`
 - **Impact:** MEDIUM - Slow iteration
-- **Status:** [ ] Planned
+- **Status:** [x] Fixed — push+reverse (branch `chore/audit-changes`)
 
 **Issue:** `unshift()` is O(n) per call, making chain traversal O(n²).
 
@@ -1125,7 +1126,7 @@ if (char.charCodeAt(0) > 32) { ... }
 - **Package:** `@enkaku/execution`
 - **File:** `packages/execution/src/execution.ts:80-86`
 - **Impact:** MEDIUM - Extra listeners
-- **Status:** [ ] Planned
+- **Status:** [x] Fixed — deduplicated signal combining (branch `chore/audit-changes`)
 
 **Issue:** `AbortSignal.any()` called twice with overlapping signals.
 
@@ -1174,14 +1175,14 @@ The sync methods exist for convenience in startup/initialization paths. Deprecat
 
 | Priority | Issue | Package | Impact | Status |
 |----------|-------|---------|--------|--------|
-| P0 | P-01: String concat in JSON-L (+ P-03) | stream | 10-50x slower | Planned |
+| ~~P0~~ | ~~P-01: String concat in JSON-L (+ P-03)~~ | ~~stream~~ | ~~10-50x slower~~ | ~~DONE~~ |
 | ~~P0~~ | ~~P-04: Unbounded controllers~~ | ~~server~~ | ~~Memory leak~~ | ~~DONE~~ |
-| P1 | P-02: Triple regex replace | codec | 3x slower | Planned |
+| ~~P1~~ | ~~P-02: Triple regex replace~~ | ~~codec~~ | ~~3x slower~~ | ~~DONE~~ |
 | ~~P1~~ | ~~P-05: Session map growth~~ | ~~http-transport~~ | ~~DoS risk~~ | ~~DONE~~ |
 | ~~P1~~ | ~~P-06: Buffer growth~~ | ~~stream~~ | ~~OOM risk~~ | ~~DONE (H-18)~~ |
 | P1 | P-07: No backpressure | stream | Overflow | Deferred |
-| P2 | P-08: O(n²) chain unwind | execution | Slow iteration | Planned |
-| P2 | P-09: Redundant signals | execution | Extra overhead | Planned |
+| ~~P2~~ | ~~P-08: O(n²) chain unwind~~ | ~~execution~~ | ~~Slow iteration~~ | ~~DONE~~ |
+| ~~P2~~ | ~~P-09: Redundant signals~~ | ~~execution~~ | ~~Extra overhead~~ | ~~DONE~~ |
 | P2 | P-10: Sequential verify | capability | O(n) time | Deferred |
 | P3 | P-11: Redundant decode | token | Extra decode | Deferred |
 | ~~P3~~ | ~~P-12: Sync keyring~~ | ~~node-keystore~~ | ~~Blocking~~ | ~~Won't Fix~~ |
@@ -1198,13 +1199,13 @@ The sync methods exist for convenience in startup/initialization paths. Deprecat
 5. ~~H-05, H-06: Protocol schema hardening~~ DONE (see `archive/2026-01-29-protocol-schema-hardening.md`)
 
 ### Phase 2: High Priority Security
-1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-09~~, ~~H-10~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-18~~: Fixed; ~~H-03~~, ~~H-11~~: Won't Fix; H-17: Planned (`docs/plans/2026-03-05-access-control-refactor.md`)
+1. ~~H-01~~, ~~H-02~~, ~~H-04~~, ~~H-05~~, ~~H-06~~, ~~H-07~~, ~~H-08~~, ~~H-09~~, ~~H-10~~, ~~H-12~~, ~~H-13~~, ~~H-14~~, ~~H-15~~, ~~H-16~~, ~~H-17~~, ~~H-18~~: Fixed; ~~H-03~~, ~~H-11~~: Won't Fix
 2. ~~T-01~~: Fixed (9 tests); ~~T-02~~: Fixed; ~~T-03~~: Fixed; ~~T-04~~: Fixed (28 tests); ~~T-05~~: Fixed (78 tests); ~~T-06~~: Fixed (13 tests); ~~T-07~~: Fixed (13 tests)
 
 ### Phase 3: Performance
-1. P-01 + P-03, P-02: Serialization quick wins — Planned
+1. ~~P-01 + P-03, P-02~~: Serialization quick wins — DONE
 2. ~~P-04~~, ~~P-05~~, ~~P-06~~: Memory limits — DONE
-3. P-08, P-09: Execution package quick wins — Planned
+3. ~~P-08, P-09~~: Execution package quick wins — DONE
 4. P-07, P-10, P-11: Deferred (low priority, revisit if needed)
 
 ### Phase 4: Medium Security + Polish

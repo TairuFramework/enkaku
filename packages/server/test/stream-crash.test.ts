@@ -28,7 +28,7 @@ describe('Stream crash cleanup', () => {
     const errorHandler = vi.fn()
     const server = serve<Protocol>({
       handlers,
-      public: true,
+      accessControl: false,
       transport: transports.server,
     })
     server.events.on('handlerError', errorHandler)
@@ -73,7 +73,7 @@ describe('Stream crash cleanup', () => {
     const errorHandler = vi.fn()
     const server = serve<Protocol>({
       handlers,
-      public: true,
+      accessControl: false,
       transport: transports.server,
     })
     server.events.on('handlerError', errorHandler)

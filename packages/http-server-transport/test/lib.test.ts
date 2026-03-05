@@ -35,7 +35,7 @@ describe('ServerTransport', () => {
       'test/request': testRequestHandler,
     }
     const transport = new ServerTransport<Protocol>()
-    const server = serve<Protocol>({ handlers, public: true, transport })
+    const server = serve<Protocol>({ handlers, accessControl: false, transport })
 
     const headers = new Headers()
     headers.set('content-type', 'application/json')
@@ -153,7 +153,7 @@ describe('ServerTransport', () => {
         'test/request': testRequestHandler,
       }
       const transport = new ServerTransport<Protocol>({ allowedOrigin: 'http://example.com' })
-      const server = serve<Protocol>({ handlers, public: true, transport })
+      const server = serve<Protocol>({ handlers, accessControl: false, transport })
 
       const headers = new Headers()
       headers.set('content-type', 'application/json')
@@ -189,7 +189,7 @@ describe('ServerTransport', () => {
     //     'test/request': testRequestHandler,
     //   }
     //   const transport = new ServerTransport<Protocol>({ allowedOrigin: 'http://example.com' })
-    //   const server = serve<Protocol>({ handlers, public: true, transport })
+    //   const server = serve<Protocol>({ handlers, accessControl: false, transport })
 
     //   const headers = new Headers()
     //   headers.set('content-type', 'application/json')

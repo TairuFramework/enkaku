@@ -17,7 +17,7 @@ import type { Identity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
 
 export type StandaloneOptions<Protocol extends ProtocolDefinition> = {
-  access?: ProcedureAccessRecord
+  accessControl?: false | true | ProcedureAccessRecord
   getRandomID?: () => string
   protocol?: Protocol
   signal?: AbortSignal
@@ -28,7 +28,7 @@ export function standalone<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,
   options: StandaloneOptions<Protocol> = {},
 ): Client<Protocol> {
-  const { access, getRandomID, protocol, signal, identity } = options
+  const { accessControl, getRandomID, protocol, signal, identity } = options
   const transports = new DirectTransports<
     AnyServerMessageOf<Protocol>,
     AnyClientMessageOf<Protocol>
@@ -36,11 +36,10 @@ export function standalone<Protocol extends ProtocolDefinition>(
 
   const serverID = identity ? identity.id : undefined
   serve<Protocol>({
-    access,
+    accessControl: accessControl ?? (serverID == null ? false : undefined),
     handlers,
     identity,
     protocol,
-    public: serverID == null,
     signal,
     transport: transports.server,
   })

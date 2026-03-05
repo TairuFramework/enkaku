@@ -26,12 +26,17 @@ export function now(): number {
 /** Default maximum delegation chain depth */
 export const DEFAULT_MAX_DELEGATION_DEPTH = 20
 
+/** Hook called for each token during verification. Throw to reject. */
+export type VerifyTokenHook = (token: CapabilityToken, raw: string) => void | Promise<void>
+
 /** Options for delegation chain validation */
 export type DelegationChainOptions = {
   /** Time to use for expiration checks (seconds since epoch). Defaults to now(). */
   atTime?: number
   /** Maximum depth of delegation chain. Defaults to 20. */
   maxDepth?: number
+  /** Optional hook called for each token in the chain after verification. Can be used for revocation checks. */
+  verifyToken?: VerifyTokenHook
 }
 
 /** Options for capability creation */
@@ -331,6 +336,9 @@ export async function checkDelegationChain(
   const [head, ...tail] = capabilities
   const next = await verifyToken<CapabilityPayload>(head)
   assertCapabilityToken(next)
+  if (options?.verifyToken != null) {
+    await options.verifyToken(next, head)
+  }
   assertValidDelegation(next.payload, payload, atTime)
   await checkDelegationChain(next.payload, tail, { ...options, atTime })
 }
@@ -338,14 +346,13 @@ export async function checkDelegationChain(
 export async function checkCapability(
   permission: Permission,
   payload: SignedPayload,
-  atTime?: number,
   options?: DelegationChainOptions,
 ): Promise<void> {
   if (payload.sub == null) {
     throw new Error('Invalid payload: no subject')
   }
 
-  const time = atTime ?? now()
+  const time = options?.atTime ?? now()
   if (payload.iss === payload.sub) {
     // Subject is issuer, no delegation required
     // But still need to validate the permission is granted
@@ -378,6 +385,9 @@ export async function checkCapability(
   }
   const capability = await verifyToken<CapabilityPayload>(head)
   assertCapabilityToken(capability)
+  if (options?.verifyToken != null) {
+    await options.verifyToken(capability, head)
+  }
 
   const toCapability = { ...payload, ...permission } as CapabilityPayload
   assertValidDelegation(capability.payload, toCapability, time)
