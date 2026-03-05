@@ -9,6 +9,7 @@ import {
   SpanNames,
   SpanStatusCode,
   setSpanOnContext,
+  type Tracer,
   withActiveContext,
 } from '@enkaku/otel'
 import {
@@ -76,6 +77,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
   limiter: ResourceLimiter
   logger: Logger
   signal: AbortSignal
+  tracer: Tracer
   transport: ServerTransportOf<Protocol>
   validator?: Validator<AnyClientMessageOf<Protocol>>
 }
@@ -259,7 +261,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         ? ((message.payload as Record<string, unknown>).rid as string)
         : undefined
 
-    return tracer.startSpan(
+    return params.tracer.startSpan(
       SpanNames.SERVER_HANDLE,
       {
         attributes: {
@@ -469,6 +471,7 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   logger?: Logger
   protocol?: Protocol
   public?: boolean
+  tracer?: Tracer
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
 }
@@ -484,6 +487,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #handling: Array<HandlingTransport<Protocol>> = []
   #limiter: ResourceLimiter
   #logger: Logger
+  #tracer: Tracer
   #validator?: Validator<AnyClientMessageOf<Protocol>>
 
   constructor(params: ServerParams<Protocol>) {
@@ -530,6 +534,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const serverID = params.identity?.id
     this.#logger =
       params.logger ?? getEnkakuLogger('server', { serverID: serverID ?? this.#getRandomID() })
+    this.#tracer = params.tracer ?? tracer
 
     if (serverID == null) {
       if (params.public) {
@@ -610,6 +615,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       limiter: this.#limiter,
       logger,
       signal: this.#abortController.signal,
+      tracer: this.#tracer,
       transport,
       validator: this.#validator,
       ...accessControl,
