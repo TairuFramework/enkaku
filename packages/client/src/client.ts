@@ -4,6 +4,7 @@ import {
   AttributeKeys,
   createTracer,
   injectTraceContext as otelInjectTraceContext,
+  type Span,
   SpanNames,
   SpanStatusCode,
   setSpanOnContext,
@@ -304,6 +305,27 @@ export class Client<
     this.#read()
   }
 
+  #endSpanOnResult(span: Span, result: Promise<unknown>): void {
+    result.then(
+      () => {
+        span.setStatus({ code: SpanStatusCode.OK })
+        span.end()
+      },
+      (error) => {
+        if (error instanceof RequestError) {
+          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
+        }
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: error instanceof Error ? error.message : String(error),
+        })
+        span.recordException(error instanceof Error ? error : new Error(String(error)))
+        span.end()
+      },
+    )
+  }
+
   async #read() {
     while (true) {
       let msg: AnyServerMessageOf<Protocol>
@@ -519,24 +541,7 @@ export class Client<
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
     )
 
-    controller.result.then(
-      () => {
-        span.setStatus({ code: SpanStatusCode.OK })
-        span.end()
-      },
-      (error) => {
-        if (error instanceof RequestError) {
-          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
-          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
-        }
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: error instanceof Error ? error.message : String(error),
-        })
-        span.recordException(error instanceof Error ? error : new Error(String(error)))
-        span.end()
-      },
-    )
+    this.#endSpanOnResult(span, controller.result)
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
     return createRequest({ id: rid, controller, signal, sent })
@@ -608,24 +613,7 @@ export class Client<
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
     )
 
-    controller.result.then(
-      () => {
-        span.setStatus({ code: SpanStatusCode.OK })
-        span.end()
-      },
-      (error) => {
-        if (error instanceof RequestError) {
-          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
-          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
-        }
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: error instanceof Error ? error.message : String(error),
-        })
-        span.recordException(error instanceof Error ? error : new Error(String(error)))
-        span.end()
-      },
-    )
+    this.#endSpanOnResult(span, controller.result)
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
@@ -709,24 +697,7 @@ export class Client<
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
     )
 
-    controller.result.then(
-      () => {
-        span.setStatus({ code: SpanStatusCode.OK })
-        span.end()
-      },
-      (error) => {
-        if (error instanceof RequestError) {
-          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
-          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
-        }
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: error instanceof Error ? error.message : String(error),
-        })
-        span.recordException(error instanceof Error ? error : new Error(String(error)))
-        span.end()
-      },
-    )
+    this.#endSpanOnResult(span, controller.result)
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 

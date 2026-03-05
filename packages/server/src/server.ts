@@ -60,7 +60,7 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
   | StreamMessageOf<Protocol>
   | ChannelMessageOf<Protocol>
 
-const tracer = createTracer('server')
+const defaultTracer = createTracer('server')
 
 function defaultRandomID(): string {
   return globalThis.crypto.randomUUID()
@@ -534,7 +534,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const serverID = params.identity?.id
     this.#logger =
       params.logger ?? getEnkakuLogger('server', { serverID: serverID ?? this.#getRandomID() })
-    this.#tracer = params.tracer ?? tracer
+    this.#tracer = params.tracer ?? defaultTracer
 
     if (serverID == null) {
       if (params.public) {
