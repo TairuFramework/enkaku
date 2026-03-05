@@ -17,13 +17,18 @@ import Emittery from 'emittery'
 
 export type { UnsubscribeFunction } from 'emittery'
 
+export type ListenerOptions<Data> = {
+  filter?: (data: Data) => boolean
+  signal?: AbortSignal
+}
+
 export class EventEmitter<Events extends Record<string, unknown>> {
   #emitter = new Emittery<Events>()
 
   on<Name extends keyof Events>(
-    eventName: Name | readonly Name[],
-    listener: (eventData: Events[Name]) => void | Promise<void>,
-    options?: { filter?: (eventData: Events[Name]) => boolean; signal?: AbortSignal },
+    name: Name,
+    listener: (data: Events[Name]) => void | Promise<void>,
+    options?: ListenerOptions<Events[Name]>,
   ): UnsubscribeFunction {
     const filter = options?.filter
     const wrappedListener = filter
@@ -36,36 +41,22 @@ export class EventEmitter<Events extends Record<string, unknown>> {
       : (event: unknown) => {
           listener((event as { data: Events[Name] }).data)
         }
-    return (this.#emitter.on as unknown as (...args: Array<unknown>) => UnsubscribeFunction)(
-      eventName,
-      wrappedListener,
-      options ? { signal: options.signal } : undefined,
-    )
+    return this.#emitter.on(name, wrappedListener)
   }
 
-  once<Name extends keyof Events>(eventName: Name | readonly Name[]): Promise<Events[Name]>
   once<Name extends keyof Events>(
-    eventName: Name | readonly Name[],
-    listener: (eventData: Events[Name]) => void | Promise<void>,
-  ): UnsubscribeFunction
-  once<Name extends keyof Events>(
-    eventName: Name | readonly Name[],
-    listener?: (eventData: Events[Name]) => void | Promise<void>,
-  ): Promise<Events[Name]> | UnsubscribeFunction {
-    if (listener) {
-      let off: UnsubscribeFunction
-      off = this.on(eventName, (data) => {
-        off()
-        listener(data)
-      })
-      return off
-    }
-    return new Promise<Events[Name]>((resolve) => {
-      let off: UnsubscribeFunction
-      off = this.on(eventName, (data) => {
-        off()
-        resolve(data)
-      })
+    name: Name,
+    options?: ListenerOptions<Events[Name]>,
+  ): Promise<Events[Name]> {
+    return new Promise((resolve) => {
+      const off = this.on(
+        name,
+        (data) => {
+          off()
+          resolve(data)
+        },
+        options,
+      )
     })
   }
 
@@ -75,7 +66,7 @@ export class EventEmitter<Events extends Record<string, unknown>> {
 
   readable<Name extends keyof Events>(
     name: Name,
-    options: { filter?: (eventData: Events[Name]) => boolean; signal?: AbortSignal } = {},
+    options: ListenerOptions<Events[Name]> = {},
   ): ReadableStream<Events[Name]> {
     const abortController = new AbortController()
     const signal = options.signal
@@ -108,8 +99,8 @@ export class EventEmitter<Events extends Record<string, unknown>> {
 
   writable<Name extends keyof Events>(name: Name): WritableStream<Events[Name]> {
     return new WritableStream({
-      write: async (detail) => {
-        await this.emit(name, detail)
+      write: async (data) => {
+        await this.emit(name, data)
       },
     })
   }

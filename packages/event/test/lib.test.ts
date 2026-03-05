@@ -63,19 +63,16 @@ describe('EventEmitter', () => {
     expect(result).toBe('hello')
   })
 
-  test('once() listener form receives raw data and only fires once', async () => {
+  test('once() with filter resolves with first matching event', async () => {
     const emitter = new EventEmitter<{ test: number }>()
-    const received: Array<number> = []
 
-    emitter.once('test', (value) => {
-      received.push(value)
-    })
-
+    const promise = emitter.once('test', { filter: (value) => value % 2 === 0 })
     await emitter.emit('test', 1)
-    await emitter.emit('test', 2)
     await emitter.emit('test', 3)
+    await emitter.emit('test', 4)
 
-    expect(received).toEqual([1])
+    const result = await promise
+    expect(result).toBe(4)
   })
 
   describe('event streams', () => {
