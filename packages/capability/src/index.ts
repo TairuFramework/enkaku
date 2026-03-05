@@ -32,6 +32,8 @@ export type DelegationChainOptions = {
   atTime?: number
   /** Maximum depth of delegation chain. Defaults to 20. */
   maxDepth?: number
+  /** Optional hook called for each token in the chain after verification. Can be used for revocation checks. */
+  verifyToken?: (token: CapabilityToken, raw: string) => void | Promise<void>
 }
 
 /** Options for capability creation */
@@ -331,6 +333,9 @@ export async function checkDelegationChain(
   const [head, ...tail] = capabilities
   const next = await verifyToken<CapabilityPayload>(head)
   assertCapabilityToken(next)
+  if (options?.verifyToken != null) {
+    await options.verifyToken(next, head)
+  }
   assertValidDelegation(next.payload, payload, atTime)
   await checkDelegationChain(next.payload, tail, { ...options, atTime })
 }

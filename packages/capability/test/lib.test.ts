@@ -1,5 +1,5 @@
 import { randomIdentity, stringifyToken } from '@enkaku/token'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import {
   assertNonExpired,
@@ -931,5 +931,61 @@ describe('createCapability() - delegation validation (C-03)', () => {
         { parentCapability: stringifyToken(rootCap) },
       ),
     ).rejects.toThrow('audience')
+  })
+})
+
+describe('verifyToken hook', () => {
+  test('checkDelegationChain calls verifyToken for each token in the chain', async () => {
+    const signerA = randomIdentity()
+    const signerB = randomIdentity()
+    const signerC = randomIdentity()
+
+    const delegateToB = await createCapability(signerA, {
+      sub: signerA.id,
+      aud: signerB.id,
+      act: '*',
+      res: '*',
+    })
+    const delegateToC = await createCapability(
+      signerB,
+      {
+        sub: signerA.id,
+        aud: signerC.id,
+        act: 'test/*',
+        res: 'foo/*',
+      },
+      undefined,
+      { parentCapability: stringifyToken(delegateToB) },
+    )
+
+    const verified: Array<string> = []
+    const verifyToken = vi.fn((_token: unknown, raw: string) => {
+      verified.push(raw)
+    })
+
+    await checkDelegationChain(delegateToC.payload, [stringifyToken(delegateToB)], { verifyToken })
+
+    expect(verifyToken).toHaveBeenCalledTimes(1)
+    expect(verified[0]).toBe(stringifyToken(delegateToB))
+  })
+
+  test('checkDelegationChain rejects when verifyToken throws', async () => {
+    const signerA = randomIdentity()
+    const signerB = randomIdentity()
+
+    const delegateToB = await createCapability(signerA, {
+      sub: signerA.id,
+      aud: signerB.id,
+      act: '*',
+      res: '*',
+    })
+
+    const verifyToken = vi.fn(() => {
+      throw new Error('Token revoked')
+    })
+
+    await expect(
+      checkDelegationChain(delegateToB.payload, [stringifyToken(delegateToB)], { verifyToken }),
+    ).rejects.toThrow('Token revoked')
   })
 })
