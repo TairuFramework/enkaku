@@ -198,7 +198,6 @@ describe('access control', () => {
         serverSigner.id,
         { '*': false, 'enkaku:graph/test': [delegationSigner.id] },
         token,
-        undefined,
         { verifyToken },
       )
 
@@ -232,7 +231,6 @@ describe('access control', () => {
           serverSigner.id,
           { '*': false, 'enkaku:graph/test': [delegationSigner.id] },
           token,
-          undefined,
           { verifyToken },
         ),
       ).rejects.toThrow('Token revoked')

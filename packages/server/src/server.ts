@@ -1,5 +1,5 @@
 import { DisposeInterruption, Disposer } from '@enkaku/async'
-import type { DelegationChainOptions } from '@enkaku/capability'
+import type { VerifyTokenHook } from '@enkaku/capability'
 import { EventEmitter } from '@enkaku/event'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
 import {
@@ -69,9 +69,9 @@ function defaultRandomID(): string {
 }
 
 export type AccessControlParams = (
-  | { public: true; serverID?: string; access: ProcedureAccessRecord }
-  | { public: false; serverID: string; access: ProcedureAccessRecord }
-) & { encryptionPolicy?: EncryptionPolicy; delegationOptions?: DelegationChainOptions }
+  | { requireAuth: false; serverID?: string; access: ProcedureAccessRecord }
+  | { requireAuth: true; serverID: string; access: ProcedureAccessRecord }
+) & { encryptionPolicy?: EncryptionPolicy; verifyToken?: VerifyTokenHook }
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
   events: ServerEmitter
@@ -382,7 +382,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
   }
 
-  const process = params.public
+  const process = !params.requireAuth
     ? (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
         const span = createHandleSpan(message)
         if (validator != null) {
@@ -421,8 +421,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             params.serverID,
             params.access,
             message as unknown as SignedToken,
-            undefined,
-            params.delegationOptions,
+            params.verifyToken != null ? { verifyToken: params.verifyToken } : undefined,
           )
           const did = (message as unknown as SignedToken).payload.iss
           if (did != null) {
@@ -521,8 +520,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             logger.debug('received send for unknown channel {rid}', { rid: msg.payload.rid })
             break
           }
-          // In non-public mode, validate send messages against the channel owner
-          if (!params.public) {
+          // In authenticated mode, validate send messages against the channel owner
+          if (params.requireAuth) {
             if (!isSignedToken(msg as Token)) {
               const error = new HandlerError({
                 code: 'EK02',
@@ -576,13 +575,13 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   tracer?: Tracer
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
-  verifyToken?: DelegationChainOptions['verifyToken']
+  verifyToken?: VerifyTokenHook
 }
 
 export type HandleOptions = {
   accessControl?: false | true | ProcedureAccessRecord
   logger?: Logger
-  verifyToken?: DelegationChainOptions['verifyToken']
+  verifyToken?: VerifyTokenHook
 }
 
 export class Server<Protocol extends ProtocolDefinition> extends Disposer {
@@ -653,32 +652,29 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         )
       }
       this.#accessControl = {
-        public: true,
+        requireAuth: false,
         access: {},
         encryptionPolicy: params.encryptionPolicy,
-        delegationOptions:
-          params.verifyToken != null ? { verifyToken: params.verifyToken } : undefined,
+        verifyToken: params.verifyToken,
       }
     } else if (accessControl === false) {
       // Has identity but public access
       this.#accessControl = {
-        public: true,
+        requireAuth: false,
         serverID,
         access: {},
         encryptionPolicy: params.encryptionPolicy,
-        delegationOptions:
-          params.verifyToken != null ? { verifyToken: params.verifyToken } : undefined,
+        verifyToken: params.verifyToken,
       }
     } else {
       // Has identity with access control (true = server-only, record = granular)
       const access = accessControl === true || accessControl == null ? {} : accessControl
       this.#accessControl = {
-        public: false,
+        requireAuth: true,
         serverID,
         access,
         encryptionPolicy: params.encryptionPolicy,
-        delegationOptions:
-          params.verifyToken != null ? { verifyToken: params.verifyToken } : undefined,
+        verifyToken: params.verifyToken,
       }
     }
 
@@ -711,9 +707,10 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     let accessControl: AccessControlParams
     if (accessControlOverride === false) {
       accessControl = {
-        public: true,
+        requireAuth: false,
         access: this.#accessControl.access ?? {},
         encryptionPolicy,
+        verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
       }
     } else if (accessControlOverride != null) {
       // Override with true or ProcedureAccessRecord
@@ -724,16 +721,20 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         )
       }
       const access = accessControlOverride === true ? {} : accessControlOverride
-      accessControl = { public: false, serverID, access, encryptionPolicy }
+      accessControl = {
+        requireAuth: true,
+        serverID,
+        access,
+        encryptionPolicy,
+        verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
+      }
     } else {
       // Use server-level defaults
-      accessControl = { ...this.#accessControl }
+      accessControl = {
+        ...this.#accessControl,
+        verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
+      }
     }
-
-    const delegationOptions: DelegationChainOptions | undefined =
-      options.verifyToken != null
-        ? { verifyToken: options.verifyToken }
-        : this.#accessControl.delegationOptions
 
     const done = handleMessages<Protocol>({
       events: this.#events,
@@ -745,7 +746,6 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       transport,
       validator: this.#validator,
       ...accessControl,
-      delegationOptions,
     })
     this.#handling.push({ done, transport })
 

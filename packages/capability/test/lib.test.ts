@@ -461,7 +461,9 @@ describe('checkCapability()', () => {
     })
 
     await expect(
-      checkCapability({ act: 'test/read', res: 'foo/bar' }, bobToken.payload, fixedTime),
+      checkCapability({ act: 'test/read', res: 'foo/bar' }, bobToken.payload, {
+        atTime: fixedTime,
+      }),
     ).rejects.toThrow('Token expired')
   })
 })
@@ -1009,7 +1011,7 @@ describe('verifyToken hook', () => {
 
     const verifyTokenHook = vi.fn()
 
-    await checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, undefined, {
+    await checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, {
       verifyToken: verifyTokenHook,
     })
 
@@ -1044,7 +1046,7 @@ describe('verifyToken hook', () => {
     })
 
     await expect(
-      checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, undefined, {
+      checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, {
         verifyToken: verifyTokenHook,
       }),
     ).rejects.toThrow('Token revoked')
@@ -1061,7 +1063,7 @@ describe('verifyToken hook', () => {
 
     const verifyTokenHook = vi.fn()
 
-    await checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, undefined, {
+    await checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, {
       verifyToken: verifyTokenHook,
     })
 
@@ -1099,7 +1101,7 @@ describe('verifyToken hook', () => {
 
     const verifyTokenHook = vi.fn()
 
-    await checkCapability({ act: 'test/call', res: 'foo/bar' }, token.payload, undefined, {
+    await checkCapability({ act: 'test/call', res: 'foo/bar' }, token.payload, {
       verifyToken: verifyTokenHook,
     })
 
@@ -1129,7 +1131,7 @@ describe('verifyToken hook', () => {
       await new Promise((resolve) => setTimeout(resolve, 1))
     })
 
-    await checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, undefined, {
+    await checkCapability({ act: 'test/read', res: 'foo/bar' }, token.payload, {
       verifyToken: verifyTokenHook,
     })
 

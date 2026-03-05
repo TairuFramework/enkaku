@@ -61,7 +61,6 @@ export async function checkProcedureAccess(
   serverID: string,
   record: ProcedureAccessRecord,
   token: SignedToken<ProcedureAccessPayload>,
-  atTime?: number,
   options?: DelegationChainOptions,
 ): Promise<void> {
   const payload = token.payload
@@ -90,7 +89,7 @@ export async function checkProcedureAccess(
       }
       try {
         // Check delegation from subject
-        await checkCapability({ act: payload.prc, res: serverID }, payload, atTime, options)
+        await checkCapability({ act: payload.prc, res: serverID }, payload, options)
         return
       } catch (err) {
         const message = err instanceof Error ? err.message : ''
@@ -112,7 +111,6 @@ export async function checkClientToken(
   serverID: string,
   record: ProcedureAccessRecord,
   token: SignedToken,
-  atTime?: number,
   options?: DelegationChainOptions,
 ): Promise<void> {
   const payload = token.payload
@@ -127,14 +125,14 @@ export async function checkClientToken(
       throw new Error('Invalid audience')
     }
     if (payload.exp != null) {
-      assertNonExpired(payload, atTime)
+      assertNonExpired(payload, options?.atTime)
     }
     return
   }
 
   if (payload.sub === serverID) {
     // If subject is the server, check capability directly
-    await checkCapability({ act: procedure, res: serverID }, payload, atTime, options)
+    await checkCapability({ act: procedure, res: serverID }, payload, options)
     return
   }
 
@@ -145,7 +143,6 @@ export async function checkClientToken(
     serverID,
     record,
     token as SignedToken<ProcedureAccessPayload>,
-    atTime,
     options,
   )
 }
