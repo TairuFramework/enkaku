@@ -4,7 +4,7 @@ packages:
   - website
 
 catalog:
-  '@biomejs/biome': ^2.4.5
+  '@biomejs/biome': ^2.4.6
   '@dipakparmar/docusaurus-plugin-umami': ^2.4.0
   '@docusaurus/core': ^3.9.2
   '@docusaurus/faster': ^3.9.2
@@ -80,3 +80,7 @@ onlyBuiltDependencies:
   - electron
   - esbuild
   - unrs-resolver
+
+supportedArchitectures:
+  cpu: [current]
+  os: [current]
