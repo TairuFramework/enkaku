@@ -383,6 +383,9 @@ export async function checkCapability(
   }
   const capability = await verifyToken<CapabilityPayload>(head)
   assertCapabilityToken(capability)
+  if (options?.verifyToken != null) {
+    await options.verifyToken(capability, head)
+  }
 
   const toCapability = { ...payload, ...permission } as CapabilityPayload
   assertValidDelegation(capability.payload, toCapability, time)
