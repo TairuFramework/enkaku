@@ -43,6 +43,7 @@ catalog:
   ajv-formats: ^3.0.1
   canonicalize: 2.1.0
   del-cli: ^7.0.0
+  eventsource-parser: ^3.0.0
   electron: ^40.7.0
   electron-store: ^11.0.2
   expo: ~55.0.5

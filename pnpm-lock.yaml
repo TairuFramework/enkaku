@@ -126,6 +126,9 @@ catalogs:
     electron-store:
       specifier: ^11.0.2
       version: 11.0.2
+    eventsource-parser:
+      specifier: ^3.0.0
+      version: 3.0.6
     expo:
       specifier: ~55.0.5
       version: 55.0.5
@@ -174,9 +177,6 @@ catalogs:
     uint8arrays:
       specifier: ^5.1.0
       version: 5.1.0
-    undici:
-      specifier: ^7.22.0
-      version: 7.22.0
     vite:
       specifier: ^7.3.1
       version: 7.3.1
@@ -425,10 +425,9 @@ importers:
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
-    devDependencies:
-      undici:
+      eventsource-parser:
         specifier: 'catalog:'
-        version: 7.22.0
+        version: 3.0.6
 
   packages/http-server-transport:
     dependencies:
@@ -6242,6 +6241,10 @@ packages:
     resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
     engines: {node: '>=0.8.x'}
 
+  eventsource-parser@3.0.6:
+    resolution: {integrity: sha512-Vo1ab+QXPzZ4tCa8SwIHJFaSzy4R6SHf7BY79rFBDf0idraZWAkYrDjDj8uWaSm3S2TK+hJ7/t1CEmZ7jXw+pg==}
+    engines: {node: '>=18.0.0'}
+
   execa@1.0.0:
     resolution: {integrity: sha512-adbxcyWV46qiHyvSp50TKt05tB4tK3HcmF7/nxfAdhnox83seTDbwnaqKO4sXRy7roHAIFqJP/Rw/AuEbX61LA==}
     engines: {node: '>=6'}
@@ -10599,10 +10602,6 @@ packages:
 
   undici-types@7.18.2:
     resolution: {integrity: sha512-AsuCzffGHJybSaRrmr5eHr81mwJU3kjw6M+uprWvCXiNeN9SOGwQ3Jn8jb8m3Z6izVgknn1R0FTCEAP2QrLY/w==}
-
-  undici@7.22.0:
-    resolution: {integrity: sha512-RqslV2Us5BrllB+JeiZnK4peryVTndy9Dnqq62S3yYRRTj0tFQCwEniUy2167skdGOy3vqRzEvl1Dm4sV2ReDg==}
-    engines: {node: '>=20.18.1'}
 
   unicode-canonical-property-names-ecmascript@2.0.1:
     resolution: {integrity: sha512-dA8WbNeb2a6oQzAQ55YlT5vQAWGV9WXOsi3SskE3bcCdM0P4SDd+24zS/OCacdRq5BkdsRj9q3Pg6YyQoxIGqg==}
@@ -18210,6 +18209,8 @@ snapshots:
 
   events@3.3.0: {}
 
+  eventsource-parser@3.0.6: {}
+
   execa@1.0.0:
     dependencies:
       cross-spawn: 6.0.6
@@ -23802,8 +23803,6 @@ snapshots:
   undici-types@7.16.0: {}
 
   undici-types@7.18.2: {}
-
-  undici@7.22.0: {}
 
   unicode-canonical-property-names-ecmascript@2.0.1: {}
 

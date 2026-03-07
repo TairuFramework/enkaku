@@ -40,9 +40,7 @@
     "@enkaku/otel": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/stream": "workspace:^",
-    "@enkaku/transport": "workspace:^"
-  },
-  "devDependencies": {
-    "undici": "catalog:"
+    "@enkaku/transport": "workspace:^",
+    "eventsource-parser": "catalog:"
   }
 }
