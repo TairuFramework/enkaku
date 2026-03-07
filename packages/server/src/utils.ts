@@ -1,26 +1,30 @@
 import { toPromise } from '@enkaku/async'
-import type { AnyServerPayloadOf, ProtocolDefinition, RequestPayloadOf } from '@enkaku/protocol'
+import type { AnyServerPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 
 import { HandlerError } from './error.js'
-import type { HandlerContext, ResultType } from './types.js'
+import type { HandlerContext } from './types.js'
 
 function canSend(signal: AbortSignal): boolean {
   return !signal.aborted || signal.reason === 'Close'
 }
 
-// @ts-expect-error type instantiation too deep
-export async function executeHandler<
-  Protocol extends ProtocolDefinition,
-  Procedure extends keyof Protocol & string,
-  Result extends ResultType<Protocol, Procedure> = ResultType<Protocol, Procedure>,
->(
-  context: HandlerContext<Protocol>,
-  payload: RequestPayloadOf<Procedure, Protocol[Procedure]>,
-  execute: () => Result | Promise<Result>,
+export type ExecuteHandlerParams<Protocol extends ProtocolDefinition> = {
+  context: HandlerContext<Protocol>
+  payload: { typ: string; prc: string; rid: string }
+  execute: () => unknown
+  beforeEnd?: () => Promise<void>
+}
+
+export async function executeHandler<Protocol extends ProtocolDefinition>(
+  params: ExecuteHandlerParams<Protocol>,
 ): Promise<void> {
+  const { context, payload, execute, beforeEnd } = params
   const controller = context.controllers[payload.rid]
   try {
     const val = await toPromise(execute)
+    if (beforeEnd != null) {
+      await beforeEnd()
+    }
     if (canSend(controller.signal)) {
       context.logger.trace('send result to {type} {procedure} with ID {rid}: {result}', {
         type: payload.typ,
@@ -35,6 +39,9 @@ export async function executeHandler<
       } as unknown as AnyServerPayloadOf<Protocol>)
     }
   } catch (cause) {
+    if (beforeEnd != null) {
+      await beforeEnd()
+    }
     const error = HandlerError.from(cause, {
       code: 'EK01',
       message: 'Handler execution failed',

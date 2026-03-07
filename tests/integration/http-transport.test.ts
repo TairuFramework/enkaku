@@ -1,7 +1,7 @@
 import { setTimeout } from 'node:timers/promises'
-import { Client } from '@enkaku/client'
+import { Client, RequestError } from '@enkaku/client'
 import { ClientTransport } from '@enkaku/http-client-transport'
-import { ServerTransport } from '@enkaku/http-server-transport'
+import { ServerTransport, type ServerTransportOptions } from '@enkaku/http-server-transport'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import {
   type ChannelHandler,
@@ -25,10 +25,11 @@ type TestContext<Protocol extends ProtocolDefinition> = {
 
 async function createContext<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,
+  serverOptions?: ServerTransportOptions,
 ): Promise<TestContext<Protocol>> {
   const port = await getPort()
 
-  const serverTransport = new ServerTransport<Protocol>()
+  const serverTransport = new ServerTransport<Protocol>(serverOptions)
   const server = serve<Protocol>({ handlers, accessControl: false, transport: serverTransport })
   const httpServer = serveHTTP({ fetch: serverTransport.fetch, port })
 
@@ -194,6 +195,276 @@ describe('HTTP transports', () => {
 
       expect(received).toEqual([10, 8, 15])
       await expect(channel).resolves.toBe('END')
+
+      await dispose()
+    })
+  })
+
+  describe('SSE-specific flows', () => {
+    test('handles request handler errors', async () => {
+      const protocol = {
+        test: {
+          type: 'request',
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
+
+      const handler = vi.fn(() => {
+        throw new Error('handler failure')
+      }) as RequestHandler<Protocol, 'test'>
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
+
+      await expect(client.request('test')).rejects.toThrow(RequestError)
+
+      await dispose()
+    })
+
+    test('handles stream handler errors', async () => {
+      const protocol = {
+        test: {
+          type: 'stream',
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
+
+      const handler = vi.fn(() => {
+        throw new Error('stream handler failure')
+      }) as StreamHandler<Protocol, 'test'>
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
+
+      const stream = client.createStream('test')
+      await expect(stream).rejects.toThrow(RequestError)
+
+      await dispose()
+    })
+
+    test('handles multiple concurrent requests', async () => {
+      const protocol = {
+        test: {
+          type: 'request',
+          param: { type: 'number' },
+          result: { type: 'number' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
+
+      const handler = vi.fn(async (ctx) => {
+        await setTimeout(10)
+        return ctx.param * 2
+      }) as RequestHandler<Protocol, 'test'>
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
+
+      const results = await Promise.all([
+        client.request('test', { param: 1 }),
+        client.request('test', { param: 2 }),
+        client.request('test', { param: 3 }),
+      ])
+      expect(results).toEqual([2, 4, 6])
+
+      await dispose()
+    })
+
+    test('handles stream with many SSE events', async () => {
+      const protocol = {
+        test: {
+          type: 'stream',
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
+
+      const eventCount = 50
+      const handler = vi.fn(async (ctx) => {
+        const writer = ctx.writable.getWriter()
+        for (let i = 0; i < eventCount; i++) {
+          await writer.write(i)
+        }
+        return 'DONE'
+      }) as StreamHandler<Protocol, 'test'>
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
+
+      const stream = client.createStream('test')
+      const reader = stream.readable.getReader()
+      const received: Array<number> = []
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        received.push(value)
+      }
+
+      expect(received).toEqual(Array.from({ length: eventCount }, (_, i) => i))
+      await expect(stream).resolves.toBe('DONE')
+
+      await dispose()
+    })
+
+    test('handles client abort during active stream', async () => {
+      const protocol = {
+        test: {
+          type: 'stream',
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
+
+      const handlerAborted = vi.fn()
+      const abortedPromise = new Promise<void>((resolve) => {
+        handlerAborted.mockImplementation(() => resolve())
+      })
+
+      const handler = vi.fn((ctx) => {
+        return new Promise<string>((handlerResolve) => {
+          const writer = ctx.writable.getWriter()
+          let count = 0
+          const timer = setInterval(() => {
+            writer.write(count++).catch(() => {})
+          }, 20)
+          ctx.signal.addEventListener('abort', () => {
+            clearInterval(timer)
+            handlerAborted()
+            handlerResolve('ABORTED')
+          })
+        })
+      }) as StreamHandler<Protocol, 'test'>
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
+
+      const stream = client.createStream('test')
+      // Catch the expected rejection when we abort
+      stream.then(
+        () => {},
+        () => {},
+      )
+      const reader = stream.readable.getReader()
+      // Read a couple of events then abort
+      await reader.read()
+      await reader.read()
+      stream.abort('test abort')
+
+      await abortedPromise
+      expect(handlerAborted).toHaveBeenCalled()
+
+      await dispose()
+    })
+
+    test('handles mixed procedure types on same transport', async () => {
+      const protocol = {
+        greet: {
+          type: 'event',
+          data: {
+            type: 'object',
+            properties: { name: { type: 'string' } },
+            required: ['name'],
+            additionalProperties: false,
+          },
+        },
+        add: {
+          type: 'request',
+          param: { type: 'number' },
+          result: { type: 'number' },
+        },
+        count: {
+          type: 'stream',
+          param: { type: 'number' },
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
+
+      const greetHandler = vi.fn() as EventHandler<Protocol, 'greet'>
+      const addHandler = vi.fn((ctx) => ctx.param + 10) as RequestHandler<Protocol, 'add'>
+      const countHandler = vi.fn(async (ctx) => {
+        const writer = ctx.writable.getWriter()
+        for (let i = 0; i < ctx.param; i++) {
+          await writer.write(i)
+        }
+        return 'DONE'
+      }) as StreamHandler<Protocol, 'count'>
+
+      const { client, dispose } = await createContext<Protocol>({
+        greet: greetHandler,
+        add: addHandler,
+        count: countHandler,
+      })
+
+      // Send event
+      await client.sendEvent('greet', { data: { name: 'world' } })
+      await setTimeout(50)
+      expect(greetHandler).toHaveBeenCalled()
+
+      // Make request
+      await expect(client.request('add', { param: 5 })).resolves.toBe(15)
+
+      // Create stream (triggers SSE session)
+      const stream = client.createStream('count', { param: 3 })
+      const reader = stream.readable.getReader()
+      const received: Array<number> = []
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        received.push(value)
+      }
+      expect(received).toEqual([0, 1, 2])
+      await expect(stream).resolves.toBe('DONE')
+
+      // Request still works after stream completes
+      await expect(client.request('add', { param: 20 })).resolves.toBe(30)
+
+      await dispose()
+    })
+
+    test('handles channel abort from client', async () => {
+      const protocol = {
+        test: {
+          type: 'channel',
+          send: { type: 'number' },
+          receive: { type: 'number' },
+          result: { type: 'string' },
+        },
+      } as const satisfies ProtocolDefinition
+      type Protocol = typeof protocol
+
+      const serverAborted = vi.fn()
+      const abortedPromise = new Promise<void>((resolve) => {
+        serverAborted.mockImplementation(() => resolve())
+      })
+
+      const handler = vi.fn(async (ctx) => {
+        const reader = ctx.readable.getReader()
+        const writer = ctx.writable.getWriter()
+        ctx.signal.addEventListener('abort', () => {
+          serverAborted()
+        })
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+            await writer.write(value * 2)
+          }
+        } catch {}
+        return 'END'
+      }) as ChannelHandler<Protocol, 'test'>
+      const { client, dispose } = await createContext<Protocol>({ test: handler })
+
+      const channel = client.createChannel('test')
+      // Catch the expected rejection when we abort
+      channel.then(
+        () => {},
+        () => {},
+      )
+      await channel.send(5)
+      const reader = channel.readable.getReader()
+      const { value } = await reader.read()
+      expect(value).toBe(10)
+
+      channel.abort('client abort')
+      await abortedPromise
+      expect(serverAborted).toHaveBeenCalled()
 
       await dispose()
     })

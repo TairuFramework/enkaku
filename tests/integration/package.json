@@ -15,7 +15,7 @@
   ],
   "sideEffects": false,
   "scripts": {
-    "test": "NODE_OPTIONS='--experimental-eventsource' vitest run"
+    "test": "vitest run"
   },
   "devDependencies": {
     "@enkaku/client": "workspace:^",

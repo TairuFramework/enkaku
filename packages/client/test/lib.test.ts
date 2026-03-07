@@ -549,7 +549,7 @@ describe('Client', () => {
         rid: request.id,
         rsn: 'external',
       })
-      await expect(request).rejects.toBeInstanceOf(AbortSignal)
+      await expect(request).rejects.toBe('external')
 
       await transports.dispose()
     })
@@ -583,7 +583,7 @@ describe('Client', () => {
         rid: payload.rid,
         rsn: 'test',
       })
-      await expect(request).rejects.toBeInstanceOf(AbortSignal)
+      await expect(request).rejects.toBe('test')
       expect(logger.trace).toHaveBeenCalledWith(
         'abort {type} {procedure} with ID {rid} and reason: {reason}',
         {
@@ -737,7 +737,7 @@ describe('Client', () => {
         rid: payload.rid,
         rsn: 'test',
       })
-      await expect(stream).rejects.toBeInstanceOf(AbortSignal)
+      await expect(stream).rejects.toBe('test')
       expect(logger.trace).toHaveBeenCalledWith(
         'abort {type} {procedure} with ID {rid} and reason: {reason}',
         {
@@ -771,7 +771,7 @@ describe('Client', () => {
       await pipeDone
       await expect(receivedPromise).resolves.toEqual([1, 2])
       stream.catch((reason) => {
-        expect(reason).toBeInstanceOf(AbortSignal)
+        expect(reason).toBeInstanceOf(DOMException)
       })
 
       await transports.dispose()
@@ -1074,7 +1074,7 @@ describe('Client', () => {
         rid: payload.rid,
         rsn: 'test',
       })
-      await expect(channel).rejects.toBeInstanceOf(AbortSignal)
+      await expect(channel).rejects.toBe('test')
       expect(logger.trace).toHaveBeenCalledWith(
         'abort {type} {procedure} with ID {rid} and reason: {reason}',
         {
