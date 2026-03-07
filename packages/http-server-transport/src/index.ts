@@ -150,25 +150,6 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
   })
 
-  function getRequestSessionController(
-    request: Request,
-  ): [string, ReadableStreamDefaultController<string>] {
-    const sid = request.headers.get('enkaku-session-id')
-    if (!sid) {
-      throw new Error('Missing session ID header for stateful request')
-    }
-    const session = sessions.get(sid)
-    if (session == null) {
-      throw new Error('Invalid session ID')
-    }
-    const ctrl = session.controller
-    if (ctrl == null) {
-      // The client hasn't connected to the SSE stream yet
-      throw new Error('Inactive session')
-    }
-    return [sid, ctrl]
-  }
-
   function checkRequestOrigin(request: Request): Response | string | null {
     const origin = request.headers.get('origin')
     if (allowedOrigins.length === 0) {
@@ -317,12 +298,51 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         // Stateful response message
         case 'channel':
         case 'stream': {
-          const [sid] = getRequestSessionController(request)
-          // Client is ready to receive replies, keep track of request and provide sink to the SSE stream
-          inflight.set(message.payload.rid, { type: 'stream', sessionID: sid })
+          const sid = request.headers.get('enkaku-session-id')
+          if (sid != null) {
+            // Existing session — validate and route through it
+            const session = sessions.get(sid)
+            if (session == null) {
+              return Response.json({ error: 'Invalid session ID' }, { headers, status: 400 })
+            }
+            if (session.controller == null) {
+              return Response.json({ error: 'Inactive session' }, { headers, status: 400 })
+            }
+            session.lastAccess = Date.now()
+            inflight.set(message.payload.rid, { type: 'stream', sessionID: sid })
+            controller.enqueue(message)
+            return new Response(null, { headers, status: 204 })
+          }
+
+          // No session — create one and return SSE stream
+          if (sessions.size >= maxSessions) {
+            return Response.json({ error: 'Session limit reached' }, { headers, status: 503 })
+          }
+          const sessionID = globalThis.crypto.randomUUID()
+          const [body, sseController] = createReadable<string>()
+          // Send an SSE comment to flush response headers immediately.
+          sseController.enqueue(':\n\n')
+          sessions.set(sessionID, { controller: sseController, lastAccess: Date.now() })
+
+          request.signal.addEventListener('abort', () => {
+            try {
+              sseController.close()
+            } catch {}
+            sessions.delete(sessionID)
+          })
+
+          inflight.set(message.payload.rid, { type: 'stream', sessionID })
           controller.enqueue(message)
-          // Replies will be send to the SSE stream, no content is returned here
-          return new Response(null, { headers, status: 204 })
+
+          return new Response(body.pipeThrough(new TextEncoderStream()), {
+            headers: {
+              ...headers,
+              'Content-Type': 'text/event-stream',
+              'Cache-Control': 'no-store',
+              'enkaku-session-id': sessionID,
+            },
+            status: 200,
+          })
         }
         default:
           throw new Error('Invalid payload')

@@ -4,7 +4,7 @@ import { serve } from '@enkaku/server'
 import { createUnsignedToken } from '@enkaku/token'
 import { describe, expect, test, vi } from 'vitest'
 
-import { ServerTransport } from '../src/index.js'
+import { createServerBridge, ServerTransport } from '../src/index.js'
 
 describe('ServerTransport', () => {
   test('handles protocol messages', async () => {
@@ -179,47 +179,164 @@ describe('ServerTransport', () => {
 
       await server.dispose()
     })
+  })
+})
 
-    // test('handles POST requests', async () => {
-    //   const testRequestHandler = vi.fn(() => {
-    //     return setTimeout(100, 'hello')
-    //   })
+describe('POST-based SSE sessions', () => {
+  type Protocol = {
+    'test/stream': {
+      type: 'stream'
+      param: { type: 'string' }
+      receive: { type: 'number' }
+      result: { type: 'string' }
+    }
+    'test/channel': {
+      type: 'channel'
+      param: { type: 'string' }
+      send: { type: 'string' }
+      receive: { type: 'number' }
+      result: { type: 'string' }
+    }
+  }
 
-    //   const handlers = {
-    //     'test/request': testRequestHandler,
-    //   }
-    //   const transport = new ServerTransport<Protocol>({ allowedOrigin: 'http://example.com' })
-    //   const server = serve<Protocol>({ handlers, accessControl: false, transport })
+  function postMessage(
+    handleRequest: (request: Request) => Promise<Response>,
+    message: unknown,
+    sessionID?: string,
+  ): Promise<Response> {
+    const headers = new Headers()
+    headers.set('content-type', 'application/json')
+    if (sessionID != null) {
+      headers.set('enkaku-session-id', sessionID)
+    }
+    return handleRequest(
+      new Request('http://localhost/test', {
+        headers,
+        body: JSON.stringify(message),
+        method: 'POST',
+      }),
+    )
+  }
 
-    //   const headers = new Headers()
-    //   headers.set('content-type', 'application/json')
-    //   headers.set('origin', 'http://example.com')
+  test('first stream POST creates SSE session', async () => {
+    const bridge = createServerBridge<Protocol>()
+    const message = createUnsignedToken({
+      typ: 'stream',
+      prc: 'test/stream',
+      rid: 'r1',
+      prm: 'hello',
+    })
+    const response = await postMessage(bridge.handleRequest, message)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('text/event-stream')
+    expect(response.headers.get('enkaku-session-id')).toBeTruthy()
+    expect(response.headers.get('cache-control')).toBe('no-store')
+  })
 
-    //   const optionsResponse = await transport.fetch(
-    //     new Request('http://localhost/test', {
-    //       headers,
-    //       method: 'OPTIONS',
-    //     }),
-    //   )
-    //   expect(optionsResponse.headers.get('access-control-allow-origin')).toBe('http://example.com')
-    //   expect(optionsResponse.headers.get('access-control-allow-methods')).toBe('GET, POST, OPTIONS')
-    //   expect(optionsResponse.headers.get('access-control-allow-headers')).toBe(
-    //     'Content-Type, enkaku-session-id',
-    //   )
+  test('first channel POST creates SSE session', async () => {
+    const bridge = createServerBridge<Protocol>()
+    const message = createUnsignedToken({
+      typ: 'channel',
+      prc: 'test/channel',
+      rid: 'r1',
+      prm: 'hello',
+    })
+    const response = await postMessage(bridge.handleRequest, message)
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('text/event-stream')
+    expect(response.headers.get('enkaku-session-id')).toBeTruthy()
+    expect(response.headers.get('cache-control')).toBe('no-store')
+  })
 
-    //   const requestMessage = createUnsignedToken({ typ: 'request', prc: 'test/request' })
-    //   const response = await transport.fetch(
-    //     new Request('http://localhost/test', {
-    //       headers,
-    //       body: JSON.stringify(requestMessage),
-    //       method: 'POST',
-    //     }),
-    //   )
-    //   await expect(response.json()).resolves.toEqual(
-    //     createUnsignedToken({ typ: 'result', val: 'hello' }),
-    //   )
+  test('subsequent stream POST with session ID returns 204', async () => {
+    const bridge = createServerBridge<Protocol>()
+    const message1 = createUnsignedToken({
+      typ: 'stream',
+      prc: 'test/stream',
+      rid: 'r1',
+      prm: 'hello',
+    })
+    const response1 = await postMessage(bridge.handleRequest, message1)
+    expect(response1.status).toBe(200)
+    const sessionID = response1.headers.get('enkaku-session-id')!
 
-    //   await server.dispose()
-    // })
+    const message2 = createUnsignedToken({
+      typ: 'stream',
+      prc: 'test/stream',
+      rid: 'r2',
+      prm: 'world',
+    })
+    const response2 = await postMessage(bridge.handleRequest, message2, sessionID)
+    expect(response2.status).toBe(204)
+  })
+
+  test('stream POST with invalid session ID returns 400', async () => {
+    const bridge = createServerBridge<Protocol>()
+    const message = createUnsignedToken({
+      typ: 'stream',
+      prc: 'test/stream',
+      rid: 'r1',
+      prm: 'hello',
+    })
+    const response = await postMessage(bridge.handleRequest, message, 'nonexistent')
+    expect(response.status).toBe(400)
+  })
+
+  test('routes responses through SSE stream', async () => {
+    const bridge = createServerBridge<Protocol>()
+    const message = createUnsignedToken({
+      typ: 'stream',
+      prc: 'test/stream',
+      rid: 'r1',
+      prm: 'hello',
+    })
+    const response = await postMessage(bridge.handleRequest, message)
+    expect(response.status).toBe(200)
+
+    // Read the client message from the bridge's readable stream
+    const reader = bridge.stream.readable.getReader()
+    const { value: clientMessage } = await reader.read()
+    expect(clientMessage).toEqual(message)
+    reader.releaseLock()
+
+    // Write a response through the bridge's writable stream
+    const writer = bridge.stream.writable.getWriter()
+    const serverResponse = createUnsignedToken({ typ: 'receive', rid: 'r1', val: 42 })
+    await writer.write(serverResponse as never)
+    writer.releaseLock()
+
+    // Read SSE data from the response body
+    const body = response.body!
+    const textReader = body.pipeThrough(new TextDecoderStream()).getReader()
+
+    // First chunk is the SSE comment flush
+    const { value: firstChunk } = await textReader.read()
+    expect(firstChunk).toBe(':\n\n')
+
+    // Second chunk should be the data event
+    const { value: dataChunk } = await textReader.read()
+    expect(dataChunk).toBe(`data: ${JSON.stringify(serverResponse)}\n\n`)
+    textReader.releaseLock()
+  })
+
+  test('rejects session creation when maxSessions reached', async () => {
+    const bridge = createServerBridge<Protocol>({ maxSessions: 1 })
+    const message1 = createUnsignedToken({
+      typ: 'stream',
+      prc: 'test/stream',
+      rid: 'r1',
+      prm: 'hello',
+    })
+    const response1 = await postMessage(bridge.handleRequest, message1)
+    expect(response1.status).toBe(200)
+
+    const message2 = createUnsignedToken({
+      typ: 'stream',
+      prc: 'test/stream',
+      rid: 'r2',
+      prm: 'world',
+    })
+    const response2 = await postMessage(bridge.handleRequest, message2)
+    expect(response2.status).toBe(503)
   })
 })
