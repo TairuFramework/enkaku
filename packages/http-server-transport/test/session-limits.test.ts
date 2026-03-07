@@ -63,7 +63,7 @@ describe('session limits', () => {
 
       // Create session
       const res1 = await bridge.handleRequest(createStreamPost('r1'))
-      const sessionID = res1.headers.get('enkaku-session-id')!
+      const sessionID = res1.headers.get('enkaku-session-id') as string
 
       // Advance partway (800ms)
       vi.advanceTimersByTime(800)

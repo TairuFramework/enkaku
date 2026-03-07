@@ -261,7 +261,7 @@ describe('POST-based SSE sessions', () => {
     })
     const response1 = await postMessage(bridge.handleRequest, message1)
     expect(response1.status).toBe(200)
-    const sessionID = response1.headers.get('enkaku-session-id')!
+    const sessionID = response1.headers.get('enkaku-session-id') as string
 
     const message2 = createUnsignedToken({
       typ: 'stream',
@@ -309,7 +309,7 @@ describe('POST-based SSE sessions', () => {
     writer.releaseLock()
 
     // Read SSE data from the response body
-    const body = response.body!
+    const body = response.body as ReadableStream<Uint8Array>
     const textReader = body.pipeThrough(new TextDecoderStream()).getReader()
 
     // First chunk is the SSE comment flush
