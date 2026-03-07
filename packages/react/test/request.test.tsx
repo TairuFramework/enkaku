@@ -92,8 +92,7 @@ describe('useSendRequest', () => {
       call?.abort()
     })
 
-    // The promise should reject with an AbortSignal
-    await expect(call).rejects.toBeInstanceOf(AbortSignal)
+    await expect(call).rejects.toBeInstanceOf(DOMException)
     expect(abortableHandler).toHaveBeenCalled()
   })
 })
@@ -154,7 +153,7 @@ describe('useRequest', () => {
     act(() => {
       call.abort()
     })
-    await expect(call).rejects.toBeInstanceOf(AbortSignal)
+    await expect(call).rejects.toBeInstanceOf(DOMException)
     expect(abortableHandler).toHaveBeenCalled()
   })
 
