@@ -176,8 +176,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   function getAccessControlHeaders(origin: string) {
     return {
       'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, enkaku-session-id',
+      'Access-Control-Expose-Headers': 'enkaku-session-id',
       'Access-Control-Max-Age': '86400', // 24 hours
     }
   }
@@ -189,56 +190,6 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
     const headers = checkedOrigin != null ? getAccessControlHeaders(checkedOrigin) : {}
     return new Response(null, { headers, status: 204 })
-  }
-
-  function handleGetRequest(request: Request): Response {
-    const checkedOrigin = checkRequestOrigin(request)
-    if (checkedOrigin instanceof Response) {
-      return checkedOrigin
-    }
-
-    const headers = checkedOrigin != null ? getAccessControlHeaders(checkedOrigin) : {}
-
-    // GET request to access the SSE stream
-    const url = new URL(request.url)
-    const sessionID = url.searchParams.get('id')
-    if (sessionID == null) {
-      // No session ID, create one and return its ID to the client
-      if (sessions.size >= maxSessions) {
-        return Response.json({ error: 'Session limit reached' }, { headers, status: 503 })
-      }
-      const id = globalThis.crypto.randomUUID()
-      sessions.set(id, { controller: null, lastAccess: Date.now() })
-      return Response.json({ id }, { headers })
-    }
-
-    const existing = sessions.get(sessionID)
-    if (existing == null) {
-      // Unknown session ID
-      return Response.json({ error: 'Invalid ID' }, { headers, status: 400 })
-    }
-
-    // Create SSE feed and track controller, refresh timeout
-    const [body, controller] = createReadable<string>()
-    // Send an SSE comment to flush response headers immediately.
-    // Without this, Node.js HTTP frameworks may buffer the response
-    // until the first data chunk, preventing EventSource 'open' from firing.
-    controller.enqueue(':\n\n')
-    sessions.set(sessionID, { controller, lastAccess: Date.now() })
-
-    request.signal.addEventListener('abort', () => {
-      controller.close()
-      sessions.delete(sessionID)
-    })
-
-    return new Response(body.pipeThrough(new TextEncoderStream()), {
-      headers: {
-        ...headers,
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-store',
-      },
-      status: 200,
-    })
   }
 
   async function handlePostRequest(request: Request): Promise<Response> {
@@ -381,16 +332,13 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         case 'OPTIONS':
           response = handleOptionsRequest(request)
           break
-        case 'GET':
-          response = handleGetRequest(request)
-          break
         case 'POST':
           response = await handlePostRequest(request)
           break
         default:
           response = Response.json(
             { error: 'Method not allowed' },
-            { headers: { Allow: 'GET, POST, OPTIONS' }, status: 405 },
+            { headers: { Allow: 'POST, OPTIONS' }, status: 405 },
           )
       }
       span.setAttribute(AttributeKeys.HTTP_STATUS_CODE, response.status)

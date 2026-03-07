@@ -77,7 +77,7 @@ describe('ServerTransport', () => {
     const transport = new ServerTransport()
     const res = await transport.fetch(new Request('http://localhost/test', { method: 'HEAD' }))
     expect(res.status).toBe(405)
-    expect(res.headers.get('allow')).toBe('GET, POST, OPTIONS')
+    expect(res.headers.get('allow')).toBe('POST, OPTIONS')
     await expect(res.json()).resolves.toEqual({ error: 'Method not allowed' })
   })
 
@@ -110,10 +110,11 @@ describe('ServerTransport', () => {
         )
         expect(res.status).toBe(204)
         expect(res.headers.get('access-control-allow-origin')).toBe('http://example.com')
-        expect(res.headers.get('access-control-allow-methods')).toBe('GET, POST, OPTIONS')
+        expect(res.headers.get('access-control-allow-methods')).toBe('POST, OPTIONS')
         expect(res.headers.get('access-control-allow-headers')).toBe(
           'Content-Type, enkaku-session-id',
         )
+        expect(res.headers.get('access-control-expose-headers')).toBe('enkaku-session-id')
         expect(res.headers.get('access-control-max-age')).toBe('86400')
       })
 
@@ -126,10 +127,11 @@ describe('ServerTransport', () => {
         )
         expect(res.status).toBe(204)
         expect(res.headers.get('access-control-allow-origin')).toBe('http://example.com')
-        expect(res.headers.get('access-control-allow-methods')).toBe('GET, POST, OPTIONS')
+        expect(res.headers.get('access-control-allow-methods')).toBe('POST, OPTIONS')
         expect(res.headers.get('access-control-allow-headers')).toBe(
           'Content-Type, enkaku-session-id',
         )
+        expect(res.headers.get('access-control-expose-headers')).toBe('enkaku-session-id')
         expect(res.headers.get('access-control-max-age')).toBe('86400')
       })
 
@@ -171,10 +173,11 @@ describe('ServerTransport', () => {
         createUnsignedToken({ typ: 'result', val: 'hello' }),
       )
       expect(response.headers.get('access-control-allow-origin')).toBe('http://example.com')
-      expect(response.headers.get('access-control-allow-methods')).toBe('GET, POST, OPTIONS')
+      expect(response.headers.get('access-control-allow-methods')).toBe('POST, OPTIONS')
       expect(response.headers.get('access-control-allow-headers')).toBe(
         'Content-Type, enkaku-session-id',
       )
+      expect(response.headers.get('access-control-expose-headers')).toBe('enkaku-session-id')
       expect(response.headers.get('access-control-max-age')).toBe('86400')
 
       await server.dispose()
