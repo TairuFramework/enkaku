@@ -120,8 +120,12 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
   function consumeSSEStream(response: Response): void {
     const parser = createParser({
       onEvent: (event) => {
-        const message = JSON.parse(event.data) as AnyServerMessageOf<Protocol>
-        controller.enqueue(message)
+        try {
+          const message = JSON.parse(event.data) as AnyServerMessageOf<Protocol>
+          controller.enqueue(message)
+        } catch (cause) {
+          controller.error(new Error('Failed to parse SSE event data', { cause }))
+        }
       },
     })
 
@@ -195,7 +199,10 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     }
     const res = await sendMessage(msg, headers)
     if (res.ok && res.status !== 204) {
-      res.json().then((msg) => controller.enqueue(msg))
+      res.json().then(
+        (msg) => controller.enqueue(msg),
+        (cause) => controller.error(new Error('Failed to parse response', { cause })),
+      )
     }
   }
 
