@@ -44,7 +44,7 @@ export function handleStream<
   ctx.controllers[msg.payload.rid] = controller
 
   const receiveStream = createPipe<ReceiveType<Protocol, Procedure>>()
-  receiveStream.readable.pipeTo(
+  const pipePromise = receiveStream.readable.pipeTo(
     writeTo<ReceiveType<Protocol, Procedure>>(async (val) => {
       if (controller.signal.aborted) {
         return
@@ -74,17 +74,11 @@ export function handleStream<
     writable: receiveStream.writable,
   }
 
-  // Wrap execution to ensure stream cleanup on handler crash
-  return (async () => {
-    try {
-      // @ts-expect-error context and handler types
-      await executeHandler(ctx, msg.payload, () => handler(handlerContext))
-    } finally {
-      try {
-        await receiveStream.writable.close()
-      } catch {
-        // Stream may already be closed
-      }
-    }
-  })()
+  return executeHandler({
+    context: ctx,
+    payload: msg.payload,
+    // @ts-expect-error handler context types
+    execute: () => handler(handlerContext),
+    beforeEnd: () => receiveStream.drain(pipePromise),
+  })
 }

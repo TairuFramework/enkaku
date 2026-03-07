@@ -166,7 +166,7 @@ describe('EventEmitter', () => {
   })
 
   test('emit() works without data argument for void events', async () => {
-    const emitter = new EventEmitter<{ ping: void; pong: string }>()
+    const emitter = new EventEmitter<{ ping: undefined; pong: string }>()
     let called = false
 
     emitter.on('ping', () => {

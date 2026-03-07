@@ -23,6 +23,28 @@ describe('createPipe()', () => {
     expect(values).toEqual(['one', 'two'])
   })
 
+  test('drain closes readable and flushes buffered values', async () => {
+    const pipe = createPipe<string>()
+
+    const received: Array<string> = []
+    const pipePromise = pipe.readable.pipeTo(
+      new WritableStream({
+        write(chunk) {
+          received.push(chunk)
+        },
+      }),
+    )
+
+    const writer = pipe.writable.getWriter()
+    await writer.write('one')
+    await writer.write('two')
+
+    // Drain bypasses the writer lock and waits for pipeTo to flush
+    await pipe.drain(pipePromise)
+
+    expect(received).toEqual(['one', 'two'])
+  })
+
   test('write and read loop', async () => {
     const values = ['one', 'two', 'three']
     const { readable, writable } = createPipe()

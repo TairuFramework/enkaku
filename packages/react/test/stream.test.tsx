@@ -265,7 +265,7 @@ describe('useCreateStream', () => {
       streamCall.abort()
     })
 
-    await expect(streamCall).rejects.toBeInstanceOf(AbortSignal)
+    await expect(streamCall).rejects.toBeInstanceOf(DOMException)
     expect(abortableHandler).toHaveBeenCalled()
   })
 })

@@ -154,7 +154,7 @@ function createController<T>(
       onDone?.()
     },
     aborted: (signal: AbortSignal) => {
-      deferred.reject(signal)
+      deferred.reject(signal.reason)
       onDone?.()
     },
   })

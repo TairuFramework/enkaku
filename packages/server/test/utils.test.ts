@@ -37,9 +37,8 @@ describe('executeHandler()', () => {
     const send = vi.fn()
     const handlerError = events.once('handlerError')
 
-    // @ts-expect-error type instantiation too deep
-    await executeHandler(
-      {
+    await executeHandler({
+      context: {
         controllers,
         events,
         handlers: { test: handler },
@@ -47,8 +46,8 @@ describe('executeHandler()', () => {
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
-      () => handler(),
-    )
+      execute: () => handler(),
+    })
     expect(send).toHaveBeenCalledWith({
       typ: 'error',
       rid: '1',
@@ -89,9 +88,8 @@ describe('executeHandler()', () => {
     const send = vi.fn()
     const handlerError = events.once('handlerError')
 
-    // @ts-expect-error type instantiation too deep
-    const requestPromise = executeHandler(
-      {
+    const requestPromise = executeHandler({
+      context: {
         controllers,
         events,
         handlers: { test: handler },
@@ -99,8 +97,8 @@ describe('executeHandler()', () => {
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
-      () => handler(),
-    )
+      execute: () => handler(),
+    })
     controllers['1']?.abort('Close')
     await requestPromise
 
@@ -144,9 +142,8 @@ describe('executeHandler()', () => {
     const send = vi.fn()
     const handlerError = events.once('handlerError')
 
-    // @ts-expect-error type instantiation too deep
-    const requestPromise = executeHandler(
-      {
+    const requestPromise = executeHandler({
+      context: {
         controllers,
         events,
         handlers: { test: handler },
@@ -154,8 +151,8 @@ describe('executeHandler()', () => {
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
-      () => handler(),
-    )
+      execute: () => handler(),
+    })
     controllers['1']?.abort()
     await requestPromise
 
@@ -184,8 +181,8 @@ describe('executeHandler()', () => {
     const reject = vi.fn()
     const send = vi.fn()
 
-    await executeHandler(
-      {
+    await executeHandler({
+      context: {
         controllers,
         handlers: { test: handler },
         logger,
@@ -193,8 +190,8 @@ describe('executeHandler()', () => {
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
-      () => handler(),
-    )
+      execute: () => handler(),
+    })
     expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
@@ -224,9 +221,8 @@ describe('executeHandler()', () => {
     const reject = vi.fn()
     const send = vi.fn()
 
-    // @ts-expect-error type instantiation too deep
-    const requestPromise = executeHandler(
-      {
+    const requestPromise = executeHandler({
+      context: {
         controllers,
         handlers: { test: handler },
         logger,
@@ -234,8 +230,8 @@ describe('executeHandler()', () => {
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
-      () => handler(),
-    )
+      execute: () => handler(),
+    })
     controllers['1']?.abort('Close')
     await requestPromise
 
@@ -268,9 +264,8 @@ describe('executeHandler()', () => {
     const reject = vi.fn()
     const send = vi.fn()
 
-    // @ts-expect-error type instantiation too deep
-    const requestPromise = executeHandler(
-      {
+    const requestPromise = executeHandler({
+      context: {
         controllers,
         handlers: { test: handler },
         logger,
@@ -278,8 +273,8 @@ describe('executeHandler()', () => {
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
-      () => handler(),
-    )
+      execute: () => handler(),
+    })
     controllers['1']?.abort()
     await requestPromise
 
@@ -300,9 +295,8 @@ describe('executeHandler()', () => {
     } as unknown as Logger
     const send = vi.fn()
 
-    // @ts-expect-error type instantiation too deep
-    await executeHandler(
-      {
+    await executeHandler({
+      context: {
         controllers,
         events,
         handlers: { test: handler },
@@ -310,8 +304,8 @@ describe('executeHandler()', () => {
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
-      () => handler(),
-    )
+      execute: () => handler(),
+    })
     expect(send).toHaveBeenCalledWith(
       expect.objectContaining({
         typ: 'error',
@@ -333,9 +327,8 @@ describe('executeHandler()', () => {
     } as unknown as Logger
     const send = vi.fn()
 
-    // @ts-expect-error type instantiation too deep
-    await executeHandler(
-      {
+    await executeHandler({
+      context: {
         controllers,
         events,
         handlers: { test: handler },
@@ -343,8 +336,8 @@ describe('executeHandler()', () => {
         send,
       } as unknown as HandlerContext<Protocol>,
       payload,
-      () => handler(),
-    )
+      execute: () => handler(),
+    })
     expect(send).toHaveBeenCalledWith(
       expect.objectContaining({
         typ: 'error',
@@ -352,5 +345,63 @@ describe('executeHandler()', () => {
         msg: 'User not found',
       }),
     )
+  })
+
+  test('calls beforeEnd before sending result on success', async () => {
+    const controllers = { '1': new AbortController() }
+    const logger = { trace: vi.fn() } as unknown as Logger
+    const send = vi.fn()
+    const callOrder: Array<string> = []
+
+    await executeHandler({
+      context: {
+        controllers,
+        handlers: {},
+        logger,
+        send: (...args: Array<unknown>) => {
+          callOrder.push('send')
+          return send(...args)
+        },
+      } as unknown as HandlerContext<Protocol>,
+      payload,
+      execute: () => 'OK',
+      beforeEnd: async () => {
+        callOrder.push('beforeEnd')
+      },
+    })
+
+    expect(callOrder).toEqual(['beforeEnd', 'send'])
+    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
+  })
+
+  test('calls beforeEnd before sending error on failure', async () => {
+    const controllers = { '1': new AbortController() }
+    const events = new EventEmitter<ServerEvents>()
+    const logger = { trace: vi.fn() } as unknown as Logger
+    const send = vi.fn()
+    const callOrder: Array<string> = []
+
+    await executeHandler({
+      context: {
+        controllers,
+        events,
+        handlers: {},
+        logger,
+        send: (...args: Array<unknown>) => {
+          callOrder.push('send')
+          return send(...args)
+        },
+      } as unknown as HandlerContext<Protocol>,
+      payload,
+      execute: () => {
+        throw new Error('boom')
+      },
+      beforeEnd: async () => {
+        callOrder.push('beforeEnd')
+      },
+    })
+
+    expect(callOrder).toEqual(['beforeEnd', 'send'])
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ typ: 'error', rid: '1' }))
   })
 })

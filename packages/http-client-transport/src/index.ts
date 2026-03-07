@@ -27,6 +27,7 @@ import type {
 } from '@enkaku/protocol'
 import { createReadable, writeTo } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
+import { createParser } from 'eventsource-parser'
 
 const tracer = createTracer('transport.http')
 
@@ -45,50 +46,10 @@ export class ResponseError extends Error {
   }
 }
 
-export type EventStream = {
-  id: string
-  source: EventSource
-}
-
-export async function createEventStream(url: string): Promise<EventStream> {
-  return withSpan(
-    tracer,
-    SpanNames.TRANSPORT_HTTP_SSE_CONNECT,
-    { attributes: { [AttributeKeys.TRANSPORT_TYPE]: 'http-sse' } },
-    async (span) => {
-      const res = await fetch(url)
-      if (!res.ok) {
-        throw new ResponseError(res)
-      }
-
-      const data = (await res.json()) as { id: string }
-      span.setAttribute(AttributeKeys.TRANSPORT_SESSION_ID, data.id)
-      const sourceURL = new URL(url)
-      sourceURL.searchParams.set('id', data.id)
-      const source = new EventSource(sourceURL)
-
-      // Wait for the SSE connection to be established before returning.
-      // The server sets the session controller when processing this GET —
-      // without waiting, a subsequent POST can arrive before the controller
-      // exists, causing a "Invalid request" / "Inactive session" error.
-      await new Promise<void>((resolve, reject) => {
-        source.addEventListener('open', () => resolve(), { once: true })
-        source.addEventListener(
-          'error',
-          (event) => reject(new Error('EventSource connection failed', { cause: event })),
-          { once: true },
-        )
-      })
-
-      return { id: data.id, source }
-    },
-  )
-}
-
-type EventStreamState =
+type SSESessionState =
   | { status: 'idle' }
-  | { status: 'connecting'; promise: Promise<EventStream> }
-  | { status: 'connected'; stream: EventStream }
+  | { status: 'connecting'; promise: Promise<string> }
+  | { status: 'connected'; sessionID: string }
   | { status: 'error'; error: Error }
 
 export type TransportStreamParams = {
@@ -104,12 +65,15 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
   params: TransportStreamParams,
 ): TransportStream<Protocol> {
   const [readable, controller] = createReadable<AnyServerMessageOf<Protocol>>()
-  let streamState: EventStreamState = { status: 'idle' }
+  let sessionState: SSESessionState = { status: 'idle' }
+  const abortController = new AbortController()
 
   async function sendMessage(
     msg: AnyClientMessageOf<Protocol> | TransportMessage,
-    sessionID?: string,
+    headers: Record<string, string>,
+    signal?: AbortSignal,
   ): Promise<Response> {
+    const sessionID = headers['enkaku-session-id']
     const span = tracer.startSpan(SpanNames.TRANSPORT_HTTP_REQUEST, {
       attributes: {
         [AttributeKeys.HTTP_METHOD]: 'POST',
@@ -119,21 +83,19 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     })
     try {
       const traceCtx = getActiveTraceContext()
-      const headers: Record<string, string> = { ...HEADERS }
+      const requestHeaders: Record<string, string> = { ...headers }
       if (traceCtx != null) {
-        headers.traceparent = formatTraceparent(
+        requestHeaders.traceparent = formatTraceparent(
           traceCtx.traceID,
           traceCtx.spanID,
           traceCtx.traceFlags,
         )
       }
-      if (sessionID != null) {
-        headers['enkaku-session-id'] = sessionID
-      }
       const res = await fetch(params.url, {
         method: 'POST',
         body: JSON.stringify(msg),
-        headers,
+        headers: requestHeaders,
+        signal,
       })
       span.setAttribute(AttributeKeys.HTTP_STATUS_CODE, res.status)
       if (!res.ok) {
@@ -155,49 +117,75 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     }
   }
 
-  // Lazily get the SSE stream:
-  // - Only connect if there is a stateful request (channel or stream)
-  // - Only create a single SSE connection for all requests
-  function getEventStream(): EventStream | Promise<EventStream> {
-    switch (streamState.status) {
+  function consumeSSEStream(response: Response): void {
+    const parser = createParser({
+      onEvent: (event) => {
+        try {
+          const message = JSON.parse(event.data) as AnyServerMessageOf<Protocol>
+          controller.enqueue(message)
+        } catch (cause) {
+          controller.error(new Error('Failed to parse SSE event data', { cause }))
+        }
+      },
+    })
+
+    const body = response.body
+    if (body == null) return
+    const reader = body.getReader()
+    const decoder = new TextDecoder()
+
+    async function pump(): Promise<void> {
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          parser.feed(decoder.decode(value, { stream: true }))
+        }
+      } catch {
+        // Stream ended (e.g. aborted) — nothing to do
+      }
+    }
+
+    pump()
+  }
+
+  function connectSSESession(msg: AnyClientMessageOf<Protocol>): Promise<string> {
+    return withSpan(
+      tracer,
+      SpanNames.TRANSPORT_HTTP_SSE_CONNECT,
+      { attributes: { [AttributeKeys.TRANSPORT_TYPE]: 'http-sse' } },
+      async (span) => {
+        const headers: Record<string, string> = {
+          accept: 'text/event-stream',
+          'content-type': 'application/json',
+        }
+        const res = await sendMessage(msg, headers, abortController.signal)
+        if (!res.ok) {
+          throw new ResponseError(res)
+        }
+        const sessionID = res.headers.get('enkaku-session-id')
+        if (sessionID == null) {
+          throw new Error('Missing enkaku-session-id header in SSE response')
+        }
+        span.setAttribute(AttributeKeys.TRANSPORT_SESSION_ID, sessionID)
+        consumeSSEStream(res)
+        return sessionID
+      },
+    )
+  }
+
+  function getSessionID(): string | Promise<string> {
+    switch (sessionState.status) {
       case 'idle': {
-        const promise = createEventStream(params.url)
-        streamState = { status: 'connecting', promise }
-        promise
-          .then((eventStream) => {
-            streamState = { status: 'connected', stream: eventStream }
-
-            eventStream.source.addEventListener('error', (event) => {
-              // Close the EventSource to prevent automatic reconnection —
-              // the server deletes the session on disconnect so reconnecting
-              // to the same URL would always fail with "Invalid ID".
-              eventStream.source.close()
-              const error = new Error('EventSource error', { cause: event })
-              streamState = { status: 'error', error }
-              controller.error(error)
-            })
-
-            eventStream.source.addEventListener('message', (event) => {
-              if (streamState.status !== 'connected') {
-                return
-              }
-              const message = JSON.parse(event.data) as AnyServerMessageOf<Protocol>
-              controller.enqueue(message)
-            })
-          })
-          .catch((cause) => {
-            const error = new Error('Failed to create EventSource', { cause })
-            streamState = { status: 'error', error }
-            controller.error(error)
-          })
-        return promise
+        // Should not be called directly — use ensureSession
+        throw new Error('Session not initialized')
       }
       case 'connecting':
-        return streamState.promise
+        return sessionState.promise
       case 'connected':
-        return streamState.stream
+        return sessionState.sessionID
       case 'error':
-        throw streamState.error
+        throw sessionState.error
     }
   }
 
@@ -205,9 +193,16 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     msg: AnyClientMessageOf<Protocol>,
     sessionID?: string,
   ): Promise<void> {
-    const res = await sendMessage(msg, sessionID)
+    const headers: Record<string, string> = { ...HEADERS }
+    if (sessionID != null) {
+      headers['enkaku-session-id'] = sessionID
+    }
+    const res = await sendMessage(msg, headers)
     if (res.ok && res.status !== 204) {
-      res.json().then((msg) => controller.enqueue(msg))
+      res.json().then(
+        (msg) => controller.enqueue(msg),
+        (cause) => controller.error(new Error('Failed to parse response', { cause })),
+      )
     }
   }
 
@@ -215,8 +210,25 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     async (msg) => {
       try {
         if (msg.payload.typ === 'channel' || msg.payload.typ === 'stream') {
-          const session = await getEventStream()
-          await sendClientMessage(msg, session.id)
+          if (sessionState.status === 'idle') {
+            // First stream/channel message — connect SSE session
+            const promise = connectSSESession(msg)
+            sessionState = { status: 'connecting', promise }
+            promise
+              .then((sessionID) => {
+                sessionState = { status: 'connected', sessionID }
+              })
+              .catch((cause) => {
+                const error = new Error('Failed to connect SSE session', { cause })
+                sessionState = { status: 'error', error }
+                controller.error(error)
+              })
+            await promise
+          } else {
+            // Subsequent stream/channel messages — wait for session and send with ID
+            const sessionID = await getSessionID()
+            await sendClientMessage(msg, sessionID)
+          }
         } else {
           await sendClientMessage(msg)
         }
@@ -226,13 +238,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     },
     // The transport will call this method when disposing
     async () => {
-      // Close the SSE stream if active
-      if (streamState.status === 'connecting') {
-        const eventStream = await streamState.promise
-        eventStream.source.close()
-      } else if (streamState.status === 'connected') {
-        streamState.stream.source.close()
-      }
+      abortController.abort()
     },
   )
 

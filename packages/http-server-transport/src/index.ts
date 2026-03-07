@@ -150,25 +150,6 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
   })
 
-  function getRequestSessionController(
-    request: Request,
-  ): [string, ReadableStreamDefaultController<string>] {
-    const sid = request.headers.get('enkaku-session-id')
-    if (!sid) {
-      throw new Error('Missing session ID header for stateful request')
-    }
-    const session = sessions.get(sid)
-    if (session == null) {
-      throw new Error('Invalid session ID')
-    }
-    const ctrl = session.controller
-    if (ctrl == null) {
-      // The client hasn't connected to the SSE stream yet
-      throw new Error('Inactive session')
-    }
-    return [sid, ctrl]
-  }
-
   function checkRequestOrigin(request: Request): Response | string | null {
     const origin = request.headers.get('origin')
     if (allowedOrigins.length === 0) {
@@ -195,8 +176,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   function getAccessControlHeaders(origin: string) {
     return {
       'Access-Control-Allow-Origin': origin,
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, enkaku-session-id',
+      'Access-Control-Expose-Headers': 'enkaku-session-id',
       'Access-Control-Max-Age': '86400', // 24 hours
     }
   }
@@ -208,56 +190,6 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
     const headers = checkedOrigin != null ? getAccessControlHeaders(checkedOrigin) : {}
     return new Response(null, { headers, status: 204 })
-  }
-
-  function handleGetRequest(request: Request): Response {
-    const checkedOrigin = checkRequestOrigin(request)
-    if (checkedOrigin instanceof Response) {
-      return checkedOrigin
-    }
-
-    const headers = checkedOrigin != null ? getAccessControlHeaders(checkedOrigin) : {}
-
-    // GET request to access the SSE stream
-    const url = new URL(request.url)
-    const sessionID = url.searchParams.get('id')
-    if (sessionID == null) {
-      // No session ID, create one and return its ID to the client
-      if (sessions.size >= maxSessions) {
-        return Response.json({ error: 'Session limit reached' }, { headers, status: 503 })
-      }
-      const id = globalThis.crypto.randomUUID()
-      sessions.set(id, { controller: null, lastAccess: Date.now() })
-      return Response.json({ id }, { headers })
-    }
-
-    const existing = sessions.get(sessionID)
-    if (existing == null) {
-      // Unknown session ID
-      return Response.json({ error: 'Invalid ID' }, { headers, status: 400 })
-    }
-
-    // Create SSE feed and track controller, refresh timeout
-    const [body, controller] = createReadable<string>()
-    // Send an SSE comment to flush response headers immediately.
-    // Without this, Node.js HTTP frameworks may buffer the response
-    // until the first data chunk, preventing EventSource 'open' from firing.
-    controller.enqueue(':\n\n')
-    sessions.set(sessionID, { controller, lastAccess: Date.now() })
-
-    request.signal.addEventListener('abort', () => {
-      controller.close()
-      sessions.delete(sessionID)
-    })
-
-    return new Response(body.pipeThrough(new TextEncoderStream()), {
-      headers: {
-        ...headers,
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-store',
-      },
-      status: 200,
-    })
   }
 
   async function handlePostRequest(request: Request): Promise<Response> {
@@ -317,12 +249,51 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         // Stateful response message
         case 'channel':
         case 'stream': {
-          const [sid] = getRequestSessionController(request)
-          // Client is ready to receive replies, keep track of request and provide sink to the SSE stream
-          inflight.set(message.payload.rid, { type: 'stream', sessionID: sid })
+          const sid = request.headers.get('enkaku-session-id')
+          if (sid != null) {
+            // Existing session — validate and route through it
+            const session = sessions.get(sid)
+            if (session == null) {
+              return Response.json({ error: 'Invalid session ID' }, { headers, status: 400 })
+            }
+            if (session.controller == null) {
+              return Response.json({ error: 'Inactive session' }, { headers, status: 400 })
+            }
+            session.lastAccess = Date.now()
+            inflight.set(message.payload.rid, { type: 'stream', sessionID: sid })
+            controller.enqueue(message)
+            return new Response(null, { headers, status: 204 })
+          }
+
+          // No session — create one and return SSE stream
+          if (sessions.size >= maxSessions) {
+            return Response.json({ error: 'Session limit reached' }, { headers, status: 503 })
+          }
+          const sessionID = globalThis.crypto.randomUUID()
+          const [body, sseController] = createReadable<string>()
+          // Send an SSE comment to flush response headers immediately.
+          sseController.enqueue(':\n\n')
+          sessions.set(sessionID, { controller: sseController, lastAccess: Date.now() })
+
+          request.signal.addEventListener('abort', () => {
+            try {
+              sseController.close()
+            } catch {}
+            sessions.delete(sessionID)
+          })
+
+          inflight.set(message.payload.rid, { type: 'stream', sessionID })
           controller.enqueue(message)
-          // Replies will be send to the SSE stream, no content is returned here
-          return new Response(null, { headers, status: 204 })
+
+          return new Response(body.pipeThrough(new TextEncoderStream()), {
+            headers: {
+              ...headers,
+              'Content-Type': 'text/event-stream',
+              'Cache-Control': 'no-store',
+              'enkaku-session-id': sessionID,
+            },
+            status: 200,
+          })
         }
         default:
           throw new Error('Invalid payload')
@@ -361,16 +332,13 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         case 'OPTIONS':
           response = handleOptionsRequest(request)
           break
-        case 'GET':
-          response = handleGetRequest(request)
-          break
         case 'POST':
           response = await handlePostRequest(request)
           break
         default:
           response = Response.json(
             { error: 'Method not allowed' },
-            { headers: { Allow: 'GET, POST, OPTIONS' }, status: 405 },
+            { headers: { Allow: 'POST, OPTIONS' }, status: 405 },
           )
       }
       span.setAttribute(AttributeKeys.HTTP_STATUS_CODE, response.status)
