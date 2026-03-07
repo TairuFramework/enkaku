@@ -33,6 +33,7 @@ describe('executeHandler()', () => {
     })
     const logger = {
       trace: vi.fn(),
+      warn: vi.fn(),
     } as unknown as Logger
     const send = vi.fn()
     const handlerError = events.once('handlerError')
@@ -84,6 +85,7 @@ describe('executeHandler()', () => {
     })
     const logger = {
       trace: vi.fn(),
+      warn: vi.fn(),
     } as unknown as Logger
     const send = vi.fn()
     const handlerError = events.once('handlerError')
@@ -138,6 +140,7 @@ describe('executeHandler()', () => {
     })
     const logger = {
       debug: vi.fn(),
+      warn: vi.fn(),
     } as unknown as Logger
     const send = vi.fn()
     const handlerError = events.once('handlerError')
@@ -292,6 +295,7 @@ describe('executeHandler()', () => {
     })
     const logger = {
       trace: vi.fn(),
+      warn: vi.fn(),
     } as unknown as Logger
     const send = vi.fn()
 
@@ -313,6 +317,15 @@ describe('executeHandler()', () => {
         msg: 'Handler execution failed',
       }),
     )
+    // Original error details are logged server-side even though client gets generic message
+    expect(logger.warn).toHaveBeenCalledWith(
+      'handler {procedure} (rid={rid}) threw: {message}',
+      expect.objectContaining({
+        procedure: 'test',
+        rid: '1',
+        message: 'Connection failed: postgres://admin:secret@internal-db:5432/users',
+      }),
+    )
   })
 
   test('preserves error message for HandlerError exceptions', async () => {
@@ -324,6 +337,7 @@ describe('executeHandler()', () => {
     })
     const logger = {
       trace: vi.fn(),
+      warn: vi.fn(),
     } as unknown as Logger
     const send = vi.fn()
 
@@ -377,7 +391,7 @@ describe('executeHandler()', () => {
   test('calls beforeEnd before sending error on failure', async () => {
     const controllers = { '1': new AbortController() }
     const events = new EventEmitter<ServerEvents>()
-    const logger = { trace: vi.fn() } as unknown as Logger
+    const logger = { trace: vi.fn(), warn: vi.fn() } as unknown as Logger
     const send = vi.fn()
     const callOrder: Array<string> = []
 

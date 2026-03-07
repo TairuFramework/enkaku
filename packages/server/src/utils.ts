@@ -46,6 +46,12 @@ export async function executeHandler<Protocol extends ProtocolDefinition>(
       code: 'EK01',
       message: 'Handler execution failed',
     })
+    context.logger.warn('handler {procedure} (rid={rid}) threw: {message}', {
+      procedure: payload.prc,
+      rid: payload.rid,
+      message: cause instanceof Error ? cause.message : String(cause),
+      cause,
+    })
     if (canSend(controller.signal)) {
       context.logger.trace('send error to {type} {procedure} with ID {rid}: {error}', {
         type: payload.typ,
