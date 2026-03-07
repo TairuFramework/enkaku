@@ -33,6 +33,8 @@ const tracer = createTracer('transport.http')
 
 const HEADERS = { accept: 'application/json', 'content-type': 'application/json' }
 
+export type FetchFunction = typeof globalThis.fetch
+
 export class ResponseError extends Error {
   #response: Response
 
@@ -54,6 +56,7 @@ type SSESessionState =
 
 export type TransportStreamParams = {
   url: string
+  fetch?: FetchFunction
 }
 
 export type TransportStream<Protocol extends ProtocolDefinition> = ReadableWritablePair<
@@ -67,6 +70,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
   const [readable, controller] = createReadable<AnyServerMessageOf<Protocol>>()
   let sessionState: SSESessionState = { status: 'idle' }
   const abortController = new AbortController()
+  const fetchFn = params.fetch ?? globalThis.fetch
 
   async function sendMessage(
     msg: AnyClientMessageOf<Protocol> | TransportMessage,
@@ -91,7 +95,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
           traceCtx.traceFlags,
         )
       }
-      const res = await fetch(params.url, {
+      const res = await fetchFn(params.url, {
         method: 'POST',
         body: JSON.stringify(msg),
         headers: requestHeaders,
@@ -130,7 +134,12 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     })
 
     const body = response.body
-    if (body == null) return
+    if (body == null) {
+      controller.error(
+        new Error('Response body is null — streaming may not be supported by this environment'),
+      )
+      return
+    }
     const reader = body.getReader()
     const decoder = new TextDecoder()
 
@@ -247,6 +256,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
 
 export type ClientTransportParams = {
   url: string
+  fetch?: FetchFunction
 }
 
 export class ClientTransport<Protocol extends ProtocolDefinition> extends Transport<

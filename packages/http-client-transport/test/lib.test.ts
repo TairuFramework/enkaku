@@ -122,6 +122,31 @@ describe('createTransportStream()', () => {
     await writer.close()
   })
 
+  test('uses custom fetch function when provided', async () => {
+    const globalFetchSpy = vi.fn()
+    globalThis.fetch = globalFetchSpy as typeof fetch
+
+    const customFetch = vi.fn(async () => {
+      return new Response(null, { status: 204 })
+    }) as unknown as typeof fetch
+
+    const stream = createTransportStream<Protocol>({
+      url: 'http://localhost/rpc',
+      fetch: customFetch,
+    })
+
+    const writer = stream.writable.getWriter()
+    const eventMsg = {
+      payload: { typ: 'event', prc: 'test/event', data: 'hello' },
+    } as unknown as ClientMessage
+    await writer.write(eventMsg)
+
+    expect(customFetch).toHaveBeenCalledTimes(1)
+    expect(globalFetchSpy).not.toHaveBeenCalled()
+
+    await writer.close()
+  })
+
   test('errors the readable stream when POST returns non-ok response', async () => {
     globalThis.fetch = vi.fn(async () => {
       return new Response('Server Error', { status: 500, statusText: 'Internal Server Error' })
@@ -352,6 +377,48 @@ describe('createTransportStream() SSE disposal', () => {
   })
 })
 
+describe('createTransportStream() null response body', () => {
+  let originalFetch: typeof globalThis.fetch
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  test('errors readable stream when SSE response body is null', async () => {
+    globalThis.fetch = vi.fn(async () => {
+      return new Response(null, {
+        status: 200,
+        headers: {
+          'content-type': 'text/event-stream',
+          'enkaku-session-id': 'null-body-test',
+        },
+      })
+    }) as typeof fetch
+
+    const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
+
+    const writer = stream.writable.getWriter()
+    const streamMsg = {
+      payload: { typ: 'stream', prc: 'test/stream' },
+    } as unknown as ClientMessage
+    await writer.write(streamMsg)
+
+    // Wait for consumeSSEStream to process
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    const reader = stream.readable.getReader()
+    await expect(reader.read()).rejects.toThrow(
+      'Response body is null — streaming may not be supported by this environment',
+    )
+
+    await writer.close()
+  })
+})
+
 describe('ClientTransport', () => {
   let originalFetch: typeof globalThis.fetch
 
@@ -383,6 +450,37 @@ describe('ClientTransport', () => {
 
     const result = await transport.read()
     expect(result.value).toEqual(responsePayload)
+
+    await transport.dispose()
+  })
+
+  test('accepts custom fetch function', async () => {
+    const responsePayload = { payload: { typ: 'result', val: 'custom' } }
+    const globalFetchSpy = vi.fn()
+    globalThis.fetch = globalFetchSpy as typeof fetch
+
+    const customFetch = vi.fn(async () => {
+      return new Response(JSON.stringify(responsePayload), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }) as unknown as typeof fetch
+
+    const { ClientTransport } = await import('../src/index.js')
+    const transport = new ClientTransport<Protocol>({
+      url: 'http://localhost/rpc',
+      fetch: customFetch,
+    })
+
+    const requestMsg = {
+      payload: { typ: 'request', prc: 'test/request' },
+    } as unknown as ClientMessage
+    await transport.write(requestMsg)
+
+    const result = await transport.read()
+    expect(result.value).toEqual(responsePayload)
+    expect(customFetch).toHaveBeenCalledTimes(1)
+    expect(globalFetchSpy).not.toHaveBeenCalled()
 
     await transport.dispose()
   })
