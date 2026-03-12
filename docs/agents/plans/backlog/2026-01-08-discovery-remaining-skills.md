@@ -1,6 +1,6 @@
 # Remaining Discovery System Skills
 
-**Extracted from:** `docs/plans/archive/2026-01-08-llm-discovery-system-design.md`
+**Extracted from:** `docs/agents/plans/completed/2026-01-08-llm-discovery-system-design.md`
 **Priority:** Low
 
 ## Missing Domain Skills

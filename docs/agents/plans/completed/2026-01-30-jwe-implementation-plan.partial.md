@@ -2,7 +2,7 @@
 
 **Status:** partial -- Phases 1-6 (Tasks 1-21) complete. Phase 7 (Tasks 22-23: multi-recipient JWE) deferred to backlog.
 
-**Remaining work:** `docs/plans/backlog/2026-01-30-jwe-multi-recipient.md`
+**Remaining work:** `docs/agents/plans/backlog/2026-01-30-jwe-multi-recipient.md`
 
 **Branch:** `feature/jwe-message-encryption`
 

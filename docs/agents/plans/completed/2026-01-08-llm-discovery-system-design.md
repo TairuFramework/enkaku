@@ -13,7 +13,7 @@
 - All 5 domain capability docs (`docs/capabilities/domains/`)
 - All 5 use-case docs (`docs/capabilities/use-cases/`)
 
-**Remaining work (moved to `docs/plans/backlog/`):**
+**Remaining work (moved to `docs/agents/plans/backlog/`):**
 - `/enkaku:execution` skill (referenced in discover.skill.md but not created)
 - `/enkaku:utilities` skill
 - `/enkaku:platform` skill

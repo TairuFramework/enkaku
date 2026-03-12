@@ -1,6 +1,6 @@
 # JWE Multi-Recipient Encryption
 
-**Extracted from:** `docs/plans/archive/2026-01-30-jwe-implementation-plan.partial.md` (Phase 7, Tasks 22-23)
+**Extracted from:** `docs/agents/plans/completed/2026-01-30-jwe-implementation-plan.partial.md` (Phase 7, Tasks 22-23)
 
 **Priority:** Low -- single-recipient JWE (ECDH-ES direct + A256GCM) is already implemented. Multi-recipient adds `ECDH-ES+A256KW` key wrapping and JWE JSON Serialization for scenarios where a message must be decryptable by multiple parties.
 

@@ -34,7 +34,7 @@ catalog:
   '@swc/core': ^1.15.18
   '@testing-library/jest-dom': ^6.9.1
   '@testing-library/react': ^16.3.2
-  '@types/node': 25.3.5
+  '@types/node': 25.4.0
   '@types/react': ^19.2.14
   '@types/react-dom': ^19.2.3
   '@vitejs/plugin-react-swc': ^4.2.3
@@ -43,7 +43,7 @@ catalog:
   ajv-formats: ^3.0.1
   canonicalize: 2.1.0
   del-cli: ^7.0.0
-  electron: ^40.8.0
+  electron: ^41.0.0
   electron-store: ^11.0.2
   eventsource-parser: ^3.0.0
   expo: ~55.0.5
@@ -60,7 +60,7 @@ catalog:
   react-native-electron: ^0.22.1
   react-native-web: 0.21.2
   tsx: ^4.21.0
-  turbo: ^2.8.14
+  turbo: ^2.8.16
   typedoc: ^0.28.17
   typedoc-plugin-markdown: ^4.10.0
   typescript: 5.9.2
@@ -83,5 +83,5 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 supportedArchitectures:
-  cpu: [current]
-  os: [current]
+  cpu: [ current ]
+  os: [ current ]

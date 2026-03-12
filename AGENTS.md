@@ -54,3 +54,11 @@ Load these files based on your current task:
 | Planning | `docs/agents/architecture.md` |
 | Implementation | `docs/agents/conventions.md`, `docs/agents/development.md` |
 | Review | `docs/agents/conventions.md`, `docs/agents/architecture.md`, `docs/agents/development.md` |
+
+## Workflow Skills
+
+| Skill | Purpose |
+|-------|---------|
+| `/dev-loop` | Orchestrate the full development cycle with session resumption |
+| `/complete` | Summarise finished plan, move to `completed/`, clean up ephemeral files |
+| `/archive` | Consolidate unreferenced completed plans into monthly summaries |
