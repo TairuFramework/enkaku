@@ -56,7 +56,7 @@ encryptMulti(
 ): Promise<JWEJSONSerialization>
 ```
 
-The `JWEJSONSerialization` type is already defined in `packages/token/src/jwe.ts` but `encryptMulti` is not yet implemented.
+**Note (2026-03-13 triage):** The `JWEJSONSerialization` type is NOT currently defined in `packages/token/src/jwe.ts` — both the type and `encryptMulti` need to be created from scratch.
 
 ---
 

@@ -24,7 +24,7 @@ Navigate to specific technical domains to explore packages, patterns, and implem
   Ensure type safety and runtime validation with Enkaku's schema system. Define schemas using JSON Schema, generate TypeScript types automatically, and validate data at runtime using the codec system powered by AJV. The schema system bridges compile-time and runtime type safety, catching errors early in development while preventing invalid data at runtime. Use `/enkaku:validation` to learn about schema definition, validation strategies, type generation workflows, and how to maintain consistency between your types and runtime validators.
 
 - **Execution & Middleware** - Execution chains, capabilities
-  Build composable procedure handlers with execution chains and capability-based patterns. The execution system lets you implement middleware, compose handlers, and manage request/response processing pipelines. Middleware can handle cross-cutting concerns like logging, authentication, rate limiting, and error handling in a composable way. Use `/enkaku:execution` to explore execution patterns, understand how to build flexible procedure implementations, and learn best practices for middleware composition and capability management.
+  Build composable procedure handlers with execution chains and capability-based patterns. The execution system lets you implement middleware, compose handlers, and manage request/response processing pipelines. Middleware can handle cross-cutting concerns like logging, authentication, rate limiting, and error handling in a composable way. See `packages/execution/` and `packages/capability/` for the implementation.
 
 → Use: /enkaku:transport, /enkaku:auth, etc.
 
