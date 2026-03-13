@@ -114,9 +114,11 @@ const result = await client.request('greet', {
 - Event: `{ data, message }`
 
 **Access control**:
-- `public: true` - No authentication required
-- `public: false` - Requires signed tokens with server ID
-- Per-procedure access rules via `access` parameter
+- `accessControl: false` - Public access, no authentication required
+- `accessControl: true` - All procedures require authentication (must provide `identity`)
+- `accessControl: ProcedureAccessRecord` - Granular per-procedure access control
+- Per-procedure values: `boolean`, `Array<string>` (allowed DIDs), or `ProcedureAccessConfig` with `allow` and `encryption` fields
+- `encryptionPolicy?: 'required' | 'optional' | 'none'` - Global encryption policy, overridable per-procedure
 
 ### Standalone Package: @enkaku/standalone
 
@@ -371,7 +373,7 @@ import { Server } from '@enkaku/server'
 import type { StreamHandler, ChannelHandler } from '@enkaku/server'
 
 const server = new Server<MyProtocol>({
-  public: true,
+  accessControl: false,
   handlers: {
     // Stream: Server pushes data to client
     'metrics/live': async ({ writable, signal }) => {
@@ -488,7 +490,7 @@ const transport = new ServerTransport<MyProtocol>()
 const server = new Server<MyProtocol>({
   protocol: myProtocol, // Enable validation
   transport,
-  public: true,
+  accessControl: false,
   handlers: {
     'math/add': async ({ param }) => {
       // param is guaranteed to match schema
@@ -798,17 +800,17 @@ class Client<Protocol extends ProtocolDefinition> {
 class Server<Protocol extends ProtocolDefinition> {
   constructor(params: {
     handlers: ProcedureHandlers<Protocol>
-    access?: ProcedureAccessRecord
-    identity?: SigningIdentity
+    accessControl?: false | true | ProcedureAccessRecord
+    encryptionPolicy?: EncryptionPolicy
+    identity?: Identity
     protocol?: Protocol
-    public?: boolean
     signal?: AbortSignal
     transports?: Array<ServerTransportOf<Protocol>>
   })
 
   handle(
     transport: ServerTransportOf<Protocol>,
-    options?: { public?: boolean; access?: ProcedureAccessRecord }
+    options?: { accessControl?: false | true | ProcedureAccessRecord }
   ): Promise<void>
 
   get events(): ServerEmitter
@@ -826,11 +828,11 @@ class Server<Protocol extends ProtocolDefinition> {
 function standalone<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,
   options?: {
-    access?: ProcedureAccessRecord
+    accessControl?: false | true | ProcedureAccessRecord
     getRandomID?: () => string
     protocol?: Protocol
     signal?: AbortSignal
-    identity?: SigningIdentity
+    identity?: Identity
   }
 ): Client<Protocol>
 ```
@@ -900,7 +902,7 @@ const transport = new ServerTransport<ApiProtocol>()
 const server = new Server<ApiProtocol>({
   protocol: apiProtocol,
   transport,
-  public: true,
+  accessControl: false,
   handlers: {
     'users/list': async () => {
       return await db.users.findMany()
@@ -999,7 +1001,7 @@ type StreamProtocol = typeof streamProtocol
 
 // server.ts
 const server = new Server<StreamProtocol>({
-  public: true,
+  accessControl: false,
   handlers: {
     'stock/watch': async ({ param, writable, signal }) => {
       const writer = writable.getWriter()
@@ -1109,7 +1111,7 @@ type ChatProtocol = typeof chatProtocol
 const rooms = new Map<string, Set<WritableStreamDefaultWriter>>()
 
 const server = new Server<ChatProtocol>({
-  public: true,
+  accessControl: false,
   handlers: {
     'chat/room': async ({ param, readable, writable, signal }) => {
       const writer = writable.getWriter()

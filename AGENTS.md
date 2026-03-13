@@ -22,7 +22,7 @@ Use the progressive discovery system to explore capabilities:
 /enkaku:discover
 ```
 
-Domain skills: `/enkaku:transport`, `/enkaku:auth`, `/enkaku:streaming`, `/enkaku:validation`, `/enkaku:execution`, `/enkaku:core-rpc`, `/enkaku:utilities`, `/enkaku:platform`
+Domain skills: `/enkaku:transport`, `/enkaku:auth`, `/enkaku:streaming`, `/enkaku:validation`, `/enkaku:core-rpc`
 
 ## Commands
 

@@ -37,11 +37,12 @@ The Transport layer in Enkaku provides the communication foundation for RPC syst
 
 **How it works**:
 - Simple requests: POST request with immediate JSON response
-- Streams/channels: POST request + SSE connection for server push
-- Lazy SSE: Only connects when first stream/channel is opened
-- Automatic session management with server
+- Streams/channels: POST request establishes SSE session; server returns `enkaku-session-id` header
+- Lazy sessions: Only created when first stream/channel is opened
+- Subsequent messages include session ID header for routing to the SSE stream
+- Uses `fetch` + `eventsource-parser` (not EventSource API) for SSE consumption, allowing custom fetch functions and better stream control
 
-**Browser compatibility**: Works in all modern browsers with fetch and EventSource
+**Browser compatibility**: Works in all modern browsers with fetch API
 
 ### HTTP Server Transport: @enkaku/http-server-transport
 
@@ -55,11 +56,12 @@ The Transport layer in Enkaku provides the communication foundation for RPC syst
 **Dependencies**: `@enkaku/async`, `@enkaku/protocol`, `@enkaku/stream`, `@enkaku/transport`
 
 **How it works**:
-- Handles GET, POST, and OPTIONS requests
+- Handles POST and OPTIONS requests
 - CORS support with configurable allowed origins
-- Session management for stateful streams
-- SSE feed for server-to-client streaming
-- Request deduplication and inflight tracking
+- POST-based session protocol: first stream/channel POST creates a session with UUID, returns SSE response with `enkaku-session-id` header
+- Subsequent POSTs include session ID for routing responses to the correct SSE stream
+- Session cleanup: automatic expiry after 5 minutes of inactivity, periodic sweep every 60 seconds
+- Inflight request tracking with 30-second timeout for request-response messages
 
 **Configuration options**:
 - `allowedOrigin`: String or array of allowed CORS origins (default: '*')
@@ -177,11 +179,11 @@ const response = await serverTransport.fetch(request)
 ```
 
 **Key points**:
-- Single SSE connection shared across all streams/channels
+- Single SSE session shared across all streams/channels per client
 - CORS handled automatically by server transport
 - Compatible with Bun, Deno, Cloudflare Workers, Node.js
-- Client automatically manages connection state
-- Server tracks sessions for stateful operations
+- Client automatically manages session lifecycle (lazy creation, ID tracking)
+- Server tracks sessions with automatic timeout and cleanup
 
 **Gotchas**:
 - SSE connections require keep-alive or will timeout

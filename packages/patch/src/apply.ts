@@ -21,7 +21,7 @@ function assertValidPath(path: string): void {
   }
 }
 
-function assertValidArrayIndex(target: unknown[], index: number): void {
+function assertValidArrayIndex(target: Array<unknown>, index: number): void {
   if (index < 0 || index > target.length) {
     throw new PatchError(
       `Array index ${index} out of bounds (length: ${target.length})`,

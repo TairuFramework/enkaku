@@ -92,7 +92,9 @@ packages/[package-name]/
 - **token**: JWT-like token system for authentication and JWE message encryption
 - **stream**: Stream utilities for data flow management
 - **execution**: Execution chain management for procedures
-- **keystore**: Key management for different environments (node, browser, expo)
+- **keystore**: Key management for different environments (node, browser, expo, electron)
+- **otel**: OpenTelemetry integration with tracer utilities, span helpers, semantic constants, and trace context propagation
+- **log**: Logging wrapper around LogTape providing namespaced loggers and console sink configuration
 
 ---
 
@@ -105,14 +107,7 @@ The progressive discovery system provides focused guidance for specific domains.
 
 ### Domain Skills
 - `/enkaku:transport` - HTTP, WebSocket, streams, custom transports
-- `/enkaku:auth` - Tokens, keystores, signing, verification
+- `/enkaku:auth` - Tokens, keystores, signing, verification, encryption
 - `/enkaku:streaming` - Stream utilities, async patterns, data flow
 - `/enkaku:validation` - Schema, codec, type generation
-- `/enkaku:execution` - Execution chains, middleware, capabilities
 - `/enkaku:core-rpc` - Protocol, client, server basics
-- `/enkaku:utilities` - Result types, patches, generator
-
-### Platform (Optional)
-- `/enkaku:platform` - React, Electron integrations
-
-**Note**: This discovery system is under active development. If a skill isn't available yet, explore the codebase directly or ask for guidance.
