@@ -118,6 +118,8 @@ docs/agents/plans/
   backlog/          # Low-priority improvements -- no committed timeline
   completed/        # Recently finished -- individual summaries, still referenced by active work
   archive/          # Long-term -- monthly summaries of plans no longer actively referenced
+  roadmap.md        # Project roadmap -- repo-local, not propagated from agents repo
+  project-loop-state.md  # Project-loop activity timestamps -- repo-local
 ```
 
 ### Discovery
@@ -140,11 +142,12 @@ docs/agents/plans/
 
 ### Skills
 
-Three shared skills manage the plan lifecycle:
+Four shared skills manage the plan and project lifecycle:
 
 | Skill | Purpose |
 |-------|---------|
 | `/dev-loop` | Orchestrate the full development cycle with session resumption |
+| `/project-loop` | Manage project priorities, roadmap, architecture review, and triage |
 | `/complete` | Summarise finished plan, move to `completed/`, clean up ephemeral files |
 | `/archive` | Consolidate unreferenced completed plans into monthly summaries |
 

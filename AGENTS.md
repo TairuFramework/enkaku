@@ -60,5 +60,6 @@ Load these files based on your current task:
 | Skill | Purpose |
 |-------|---------|
 | `/dev-loop` | Orchestrate the full development cycle with session resumption |
+| `/project-loop` | Manage project priorities, roadmap, architecture review, and triage |
 | `/complete` | Summarise finished plan, move to `completed/`, clean up ephemeral files |
 | `/archive` | Consolidate unreferenced completed plans into monthly summaries |
