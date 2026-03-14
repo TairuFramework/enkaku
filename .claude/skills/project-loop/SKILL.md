@@ -18,7 +18,7 @@ Check project state and present a concise summary:
 
 1. Check for in-flight dev work (`docs/superpowers/specs/`, `docs/superpowers/plans/`). If found, suggest `/dev-loop` instead, but don't force it.
 2. Read `docs/agents/plans/project-loop-state.md` for last activity timestamps. If it doesn't exist, note this (first run).
-3. Scan `docs/agents/plans/next/`, `docs/agents/plans/backlog/`, `docs/agents/plans/completed/`, `docs/agents/plans/roadmap.md`.
+3. Scan `docs/agents/plans/next/`, `docs/agents/plans/backlog/`, `docs/agents/plans/completed/`, `docs/agents/plans/roadmap.md`, `docs/agents/plans/milestones/`.
 4. Present summary as a few bullet points (not a wall of text).
 
 Based on findings, suggest relevant modes:
@@ -86,7 +86,7 @@ After executing:
 4. Write approved version to `docs/agents/plans/roadmap.md`
 
 **If roadmap exists:**
-1. Read current roadmap
+1. Read current roadmap and any milestone docs it references (`docs/agents/plans/milestones/`)
 2. Read next/, backlog/, recent completed/ and archive/ summaries
 3. Compare roadmap against current state
 4. Flag: completed goals, new gaps, stale items, priority shifts
@@ -132,6 +132,7 @@ Format:
 | `docs/agents/plans/backlog/` | Future work |
 | `docs/agents/plans/completed/` | Recent completions |
 | `docs/agents/plans/archive/` | Historical summaries |
+| `docs/agents/plans/milestones/` | Detailed design docs for current focus areas |
 | `docs/superpowers/specs/` | In-flight design specs |
 | `docs/superpowers/plans/` | In-flight implementation plans |
 | `docs/agents/architecture.md` | Architecture documentation |

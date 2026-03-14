@@ -4,7 +4,7 @@ packages:
   - website
 
 catalog:
-  '@biomejs/biome': ^2.4.6
+  '@biomejs/biome': ^2.4.7
   '@dipakparmar/docusaurus-plugin-umami': ^2.4.0
   '@docusaurus/core': ^3.9.2
   '@docusaurus/faster': ^3.9.2
@@ -46,7 +46,7 @@ catalog:
   electron: ^41.0.2
   electron-store: ^11.0.2
   eventsource-parser: ^3.0.0
-  expo: ~55.0.5
+  expo: ~55.0.6
   expo-crypto: ^55.0.9
   expo-secure-store: ^55.0.8
   expo-status-bar: ~55.0.4
@@ -60,7 +60,7 @@ catalog:
   react-native-electron: ^0.22.1
   react-native-web: 0.21.2
   tsx: ^4.21.0
-  turbo: ^2.8.16
+  turbo: ^2.8.17
   typedoc: ^0.28.17
   typedoc-plugin-markdown: ^4.10.0
   typescript: 5.9.2

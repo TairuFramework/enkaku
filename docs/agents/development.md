@@ -118,7 +118,8 @@ docs/agents/plans/
   backlog/          # Low-priority improvements -- no committed timeline
   completed/        # Recently finished -- individual summaries, still referenced by active work
   archive/          # Long-term -- monthly summaries of plans no longer actively referenced
-  roadmap.md        # Project roadmap -- repo-local, not propagated from agents repo
+  milestones/       # Detailed design docs for current focus areas (e.g., mvp-desktop-app.md)
+  roadmap.md        # Project roadmap -- repo-local, references milestones for detail
   project-loop-state.md  # Project-loop activity timestamps -- repo-local
 ```
 

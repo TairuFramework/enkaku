@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/electron-keystore",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Enkaku Electron keystore",
@@ -38,7 +38,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "peerDependencies": {
-    "electron": "catalog:"
+    "electron": ">=40.0.0"
   },
   "dependencies": {
     "@enkaku/codec": "workspace:^",

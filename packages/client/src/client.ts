@@ -393,7 +393,9 @@ export class Client<
               [AttributeKeys.MESSAGE_DIRECTION]: 'receive',
             })
           }
-          void (controller as StreamController<unknown, unknown>).receive?.write(msg.payload.val)
+          void (controller as StreamController<unknown, unknown>).receive
+            ?.write(msg.payload.val)
+            .catch(() => {})
           break
         }
         case 'result':
