@@ -478,11 +478,42 @@ importers:
         specifier: workspace:^
         version: link:../token
 
+  packages/hub-client:
+    dependencies:
+      '@enkaku/client':
+        specifier: workspace:^
+        version: link:../client
+      '@enkaku/hub-protocol':
+        specifier: workspace:^
+        version: link:../hub-protocol
+
   packages/hub-protocol:
     dependencies:
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
+
+  packages/hub-server:
+    dependencies:
+      '@enkaku/hub-protocol':
+        specifier: workspace:^
+        version: link:../hub-protocol
+      '@enkaku/protocol':
+        specifier: workspace:^
+        version: link:../protocol
+      '@enkaku/server':
+        specifier: workspace:^
+        version: link:../server
+      '@enkaku/stream':
+        specifier: workspace:^
+        version: link:../stream
+    devDependencies:
+      '@enkaku/client':
+        specifier: workspace:^
+        version: link:../client
+      '@enkaku/transport':
+        specifier: workspace:^
+        version: link:../transport
 
   packages/log:
     dependencies:
