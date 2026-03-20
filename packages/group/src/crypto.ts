@@ -260,6 +260,9 @@ function makeHpke(hpkeAlg: HpkeAlg): Hpke {
   }
 
   function unwrapKey(key: unknown): Uint8Array {
+    if (key == null || typeof key !== 'object' || !('raw' in key)) {
+      throw new Error('Invalid key: expected a wrapped key object with raw Uint8Array')
+    }
     return (key as NobleKey).raw
   }
 

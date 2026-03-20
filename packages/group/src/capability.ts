@@ -6,7 +6,7 @@ import {
   createCapability,
   type DelegationChainOptions,
 } from '@enkaku/capability'
-import type { SigningIdentity } from '@enkaku/token'
+import { type SigningIdentity, verifyToken } from '@enkaku/token'
 
 export type GroupPermission = 'admin' | 'member' | 'read'
 
@@ -76,7 +76,6 @@ export async function validateGroupCapability(
   delegationChain?: Array<string>,
   options?: DelegationChainOptions,
 ): Promise<CapabilityToken> {
-  const { verifyToken } = await import('@enkaku/token')
   const token = await verifyToken<CapabilityPayload>(tokenData)
   assertCapabilityToken(token)
 

@@ -48,7 +48,17 @@ export function credentialToMLSIdentity(credential: MemberCredential): Uint8Arra
  */
 export function mlsIdentityToSerializedCredential(identity: Uint8Array): SerializedCredential {
   const json = new TextDecoder().decode(identity)
-  return JSON.parse(json) as SerializedCredential
+  const parsed: unknown = JSON.parse(json)
+  if (
+    parsed == null ||
+    typeof parsed !== 'object' ||
+    typeof (parsed as Record<string, unknown>).did !== 'string' ||
+    typeof (parsed as Record<string, unknown>).groupID !== 'string' ||
+    !Array.isArray((parsed as Record<string, unknown>).capabilityChain)
+  ) {
+    throw new Error('Invalid MLS credential: malformed serialized credential')
+  }
+  return parsed as SerializedCredential
 }
 
 /**

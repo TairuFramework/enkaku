@@ -4,6 +4,7 @@ export type ClientEntry = {
   did: string
   groups: Set<string>
   sendMessage: ((message: RoutedMessage) => void) | null
+  tunnelWriters: Map<string, (data: { data: string }) => void>
 }
 
 /**
@@ -17,9 +18,17 @@ export class HubClientRegistry {
   register(did: string): ClientEntry {
     const existing = this.#clients.get(did)
     if (existing != null) {
+      // Re-registration: clear stale state from previous connection
+      existing.sendMessage = null
+      existing.tunnelWriters.clear()
       return existing
     }
-    const entry: ClientEntry = { did, groups: new Set(), sendMessage: null }
+    const entry: ClientEntry = {
+      did,
+      groups: new Set(),
+      sendMessage: null,
+      tunnelWriters: new Map(),
+    }
     this.#clients.set(did, entry)
     return entry
   }
@@ -38,6 +47,7 @@ export class HubClientRegistry {
         }
       }
     }
+    entry.tunnelWriters.clear()
     this.#clients.delete(did)
   }
 
@@ -52,6 +62,32 @@ export class HubClientRegistry {
     const entry = this.#clients.get(did)
     if (entry != null) {
       entry.sendMessage = null
+    }
+  }
+
+  setTunnelWriter(
+    clientDID: string,
+    peerDID: string,
+    write: (data: { data: string }) => void,
+  ): void {
+    const entry = this.#clients.get(clientDID)
+    if (entry != null) {
+      entry.tunnelWriters.set(peerDID, write)
+    }
+  }
+
+  clearTunnelWriter(clientDID: string, peerDID: string): void {
+    const entry = this.#clients.get(clientDID)
+    if (entry != null) {
+      entry.tunnelWriters.delete(peerDID)
+    }
+  }
+
+  sendTunnelData(targetDID: string, fromDID: string, data: { data: string }): void {
+    const entry = this.#clients.get(targetDID)
+    const writer = entry?.tunnelWriters.get(fromDID)
+    if (writer != null) {
+      writer(data)
     }
   }
 

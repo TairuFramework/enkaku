@@ -40,7 +40,8 @@
     "@enkaku/hub-protocol": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
-    "@enkaku/stream": "workspace:^"
+    "@enkaku/stream": "workspace:^",
+    "@enkaku/token": "workspace:^"
   },
   "devDependencies": {
     "@enkaku/client": "workspace:^",

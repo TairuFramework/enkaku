@@ -1,4 +1,4 @@
-import type { SigningIdentity } from '@enkaku/token'
+import type { OwnIdentity, SigningIdentity } from '@enkaku/token'
 import { stringifyToken, verifyToken } from '@enkaku/token'
 import { ed25519 } from '@noble/curves/ed25519.js'
 import {
@@ -39,16 +39,12 @@ async function resolveCiphersuite(options?: GroupOptions): Promise<CiphersuiteIm
   return await getCiphersuiteImpl(cs, provider)
 }
 
-function getSignatureKeys(identity: SigningIdentity): {
+function getSignatureKeys(identity: OwnIdentity): {
   signKey: Uint8Array
   publicKey: Uint8Array
 } {
-  const ownIdentity = identity as { privateKey?: Uint8Array }
-  if (ownIdentity.privateKey == null) {
-    throw new Error('Identity must have a privateKey for MLS operations')
-  }
-  const publicKey = ed25519.getPublicKey(ownIdentity.privateKey)
-  return { signKey: ownIdentity.privateKey, publicKey }
+  const publicKey = ed25519.getPublicKey(identity.privateKey)
+  return { signKey: identity.privateKey, publicKey }
 }
 
 function makeMLSCredential(did: string): Credential {
@@ -174,7 +170,7 @@ export type CreateGroupResult = {
  * Create a new MLS group. The identity becomes the sole member and admin.
  */
 export async function createGroup(
-  identity: SigningIdentity,
+  identity: OwnIdentity,
   groupID: string,
   options?: GroupOptions,
 ): Promise<CreateGroupResult> {
@@ -301,7 +297,7 @@ export type ProcessWelcomeResult = {
  * Process a Welcome message to join a group.
  */
 export async function processWelcome(
-  identity: SigningIdentity,
+  identity: OwnIdentity,
   invite: Invite,
   welcome: unknown,
   keyPackageBundle: KeyPackageBundle,
@@ -309,6 +305,15 @@ export async function processWelcome(
   options?: GroupOptions,
 ): Promise<ProcessWelcomeResult> {
   const impl = await resolveCiphersuite(options)
+
+  // Validate the invite's capability chain before trusting it
+  const { validateGroupCapability } = await import('./capability.js')
+  await validateGroupCapability(
+    invite.capabilityToken,
+    invite.groupID,
+    invite.capabilityChain.length > 1 ? invite.capabilityChain.slice(0, -1) : undefined,
+  )
+
   const capToken = await verifyToken(invite.capabilityToken)
 
   const state = await mlsJoinGroup(
@@ -332,7 +337,11 @@ export async function processWelcome(
     state,
     credential,
     ciphersuite: impl,
-    rootCapability: invite.capabilityChain[0] ?? invite.capabilityToken,
+    rootCapability:
+      invite.capabilityChain[0] ??
+      (() => {
+        throw new Error('Invalid invite: capability chain must not be empty')
+      })(),
   })
 
   return { group, credential }
@@ -374,7 +383,7 @@ export async function removeMember(
  * Generate a key package for joining groups.
  */
 export async function createKeyPackageBundle(
-  identity: SigningIdentity,
+  identity: OwnIdentity,
   options?: GroupOptions,
 ): Promise<KeyPackageBundle> {
   const impl = await resolveCiphersuite(options)

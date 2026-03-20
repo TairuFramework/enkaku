@@ -507,6 +507,9 @@ importers:
       '@enkaku/stream':
         specifier: workspace:^
         version: link:../stream
+      '@enkaku/token':
+        specifier: workspace:^
+        version: link:../token
     devDependencies:
       '@enkaku/client':
         specifier: workspace:^
