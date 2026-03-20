@@ -13,3 +13,19 @@ export {
   type SerializedCredential,
 } from './credential.js'
 export { nobleCryptoProvider } from './crypto.js'
+export {
+  type CommitInviteResult,
+  type CreateGroupResult,
+  type CreateInviteResult,
+  commitInvite,
+  createGroup,
+  createInvite,
+  createKeyPackageBundle,
+  GroupHandle,
+  type GroupHandleParams,
+  type ProcessWelcomeResult,
+  processWelcome,
+  type RemoveMemberResult,
+  removeMember,
+} from './group.js'
+export type { GroupOptions, GroupSyncScope, Invite, KeyPackageBundle } from './types.js'
