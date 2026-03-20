@@ -478,6 +478,12 @@ importers:
         specifier: workspace:^
         version: link:../token
 
+  packages/hub-protocol:
+    dependencies:
+      '@enkaku/protocol':
+        specifier: workspace:^
+        version: link:../protocol
+
   packages/log:
     dependencies:
       '@logtape/logtape':
