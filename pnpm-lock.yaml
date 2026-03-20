@@ -831,6 +831,9 @@ importers:
       '@enkaku/expo-keystore':
         specifier: workspace:^
         version: link:../../packages/expo-keystore
+      '@enkaku/group':
+        specifier: workspace:^
+        version: link:../../packages/group
       '@enkaku/token':
         specifier: workspace:^
         version: link:../../packages/token
