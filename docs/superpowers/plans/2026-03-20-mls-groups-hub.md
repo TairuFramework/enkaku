@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-20
 **Spec:** `docs/superpowers/specs/2026-03-20-mls-groups-hub-design.md`
-**Stage:** executing
+**Stage:** reviewing
 
 ## Overview
 
