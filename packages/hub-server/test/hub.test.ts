@@ -95,6 +95,8 @@ describe('hub server', () => {
     expect(sendResult.delivered).toBe(0)
 
     streamA.close()
+    // Allow the abort to propagate through the server before tearing down transport
+    await new Promise((resolve) => setTimeout(resolve, 50))
     await transportA.dispose()
   })
 
