@@ -29,16 +29,17 @@ describe('GroupHandle lifecycle', () => {
 
     const { group: aliceGroup } = await createGroup(alice, 'invite-group')
 
-    // Create invite for Bob
-    const { invite } = await createInvite(aliceGroup, alice, bob.id, 'member')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
     expect(invite.groupID).toBe('invite-group')
     expect(invite.permission).toBe('member')
     expect(invite.inviterDID).toBe(alice.id)
 
-    // Bob generates a key package
     const bobKeyBundle = await createKeyPackageBundle(bob)
-
-    // Alice commits the invite with Bob's key package
     const { welcomeMessage, newGroup: updatedAliceGroup } = await commitInvite(
       aliceGroup,
       bobKeyBundle.publicPackage,
@@ -48,14 +49,13 @@ describe('GroupHandle lifecycle', () => {
     expect(updatedAliceGroup.memberCount).toBe(2)
     expect(welcomeMessage).toBeDefined()
 
-    // Bob processes the Welcome to join
-    const { group: bobGroup, credential: bobCred } = await processWelcome(
-      bob,
+    const { group: bobGroup, credential: bobCred } = await processWelcome({
+      identity: bob,
       invite,
-      welcomeMessage,
-      bobKeyBundle,
-      updatedAliceGroup.state.ratchetTree,
-    )
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKeyBundle,
+      ratchetTree: updatedAliceGroup.state.ratchetTree,
+    })
 
     expect(bobGroup.epoch).toBe(1n)
     expect(bobGroup.memberCount).toBe(2)
@@ -67,31 +67,33 @@ describe('GroupHandle lifecycle', () => {
     const alice = randomIdentity()
     const bob = randomIdentity()
 
-    // Setup group
     const { group: aliceGroup } = await createGroup(alice, 'msg-group')
-    const { invite } = await createInvite(aliceGroup, alice, bob.id, 'member')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
     const bobKeyBundle = await createKeyPackageBundle(bob)
     const { welcomeMessage, newGroup: updatedAliceGroup } = await commitInvite(
       aliceGroup,
       bobKeyBundle.publicPackage,
     )
-    const { group: bobGroup } = await processWelcome(
-      bob,
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
       invite,
-      welcomeMessage,
-      bobKeyBundle,
-      updatedAliceGroup.state.ratchetTree,
-    )
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKeyBundle,
+      ratchetTree: updatedAliceGroup.state.ratchetTree,
+    })
 
     // Alice sends to Bob
-    const plaintext = new TextEncoder().encode('hello bob')
-    const { message } = await updatedAliceGroup.encrypt(plaintext)
+    const { message } = await updatedAliceGroup.encrypt(new TextEncoder().encode('hello bob'))
     const decrypted = await bobGroup.decrypt(message)
     expect(new TextDecoder().decode(decrypted)).toBe('hello bob')
 
     // Bob sends to Alice
-    const reply = new TextEncoder().encode('hello alice')
-    const { message: replyMsg } = await bobGroup.encrypt(reply)
+    const { message: replyMsg } = await bobGroup.encrypt(new TextEncoder().encode('hello alice'))
     const decryptedReply = await updatedAliceGroup.decrypt(replyMsg)
     expect(new TextDecoder().decode(decryptedReply)).toBe('hello alice')
   })
@@ -100,28 +102,30 @@ describe('GroupHandle lifecycle', () => {
     const alice = randomIdentity()
     const bob = randomIdentity()
 
-    // Setup
     const { group: aliceGroup } = await createGroup(alice, 'remove-group')
-    const { invite } = await createInvite(aliceGroup, alice, bob.id, 'member')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
     const bobKeyBundle = await createKeyPackageBundle(bob)
     const { welcomeMessage, newGroup: groupWithBob } = await commitInvite(
       aliceGroup,
       bobKeyBundle.publicPackage,
     )
-    const { group: bobGroup } = await processWelcome(
-      bob,
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
       invite,
-      welcomeMessage,
-      bobKeyBundle,
-      groupWithBob.state.ratchetTree,
-    )
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKeyBundle,
+      ratchetTree: groupWithBob.state.ratchetTree,
+    })
 
-    // Remove Bob (leaf index 1)
     const { newGroup: groupAfterRemoval } = await removeMember(groupWithBob, 1)
     expect(groupAfterRemoval.epoch).toBe(2n)
     expect(groupAfterRemoval.memberCount).toBe(1)
 
-    // Post-removal message — Bob cannot decrypt
     const { message: secretMsg } = await groupAfterRemoval.encrypt(
       new TextEncoder().encode('secret'),
     )
@@ -132,27 +136,27 @@ describe('GroupHandle lifecycle', () => {
     const alice = randomIdentity()
     const aliceDevice2 = randomIdentity()
 
-    // Create personal device group
     const { group } = await createGroup(alice, 'alice-devices')
-
-    // Self-invite: alice invites "another device"
-    // In a real scenario, both devices share the same user DID but have different device keys
-    const { invite } = await createInvite(group, alice, aliceDevice2.id, 'admin')
+    const { invite } = await createInvite({
+      group,
+      identity: alice,
+      recipientDID: aliceDevice2.id,
+      permission: 'admin',
+    })
     const device2KeyBundle = await createKeyPackageBundle(aliceDevice2)
     const { welcomeMessage, newGroup: updatedGroup } = await commitInvite(
       group,
       device2KeyBundle.publicPackage,
     )
 
-    const { group: device2Group } = await processWelcome(
-      aliceDevice2,
+    const { group: device2Group } = await processWelcome({
+      identity: aliceDevice2,
       invite,
-      welcomeMessage,
-      device2KeyBundle,
-      updatedGroup.state.ratchetTree,
-    )
+      welcome: welcomeMessage,
+      keyPackageBundle: device2KeyBundle,
+      ratchetTree: updatedGroup.state.ratchetTree,
+    })
 
-    // Both devices can communicate
     const { message } = await updatedGroup.encrypt(new TextEncoder().encode('sync data'))
     const data = await device2Group.decrypt(message)
     expect(new TextDecoder().decode(data)).toBe('sync data')
@@ -165,38 +169,48 @@ describe('GroupHandle lifecycle', () => {
 
     const { group: aliceGroup } = await createGroup(alice, '3-member')
 
-    // Add Bob
-    const { invite: bobInvite } = await createInvite(aliceGroup, alice, bob.id, 'member')
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
     const bobKP = await createKeyPackageBundle(bob)
     const { welcomeMessage: bobWelcome, newGroup: groupWithBob } = await commitInvite(
       aliceGroup,
       bobKP.publicPackage,
     )
-    await processWelcome(bob, bobInvite, bobWelcome, bobKP, groupWithBob.state.ratchetTree)
+    await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: bobWelcome,
+      keyPackageBundle: bobKP,
+      ratchetTree: groupWithBob.state.ratchetTree,
+    })
 
-    // Add Charlie
-    const { invite: charlieInvite } = await createInvite(groupWithBob, alice, charlie.id, 'member')
+    const { invite: charlieInvite } = await createInvite({
+      group: groupWithBob,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
     const charlieKP = await createKeyPackageBundle(charlie)
     const { welcomeMessage: charlieWelcome, newGroup: groupWith3 } = await commitInvite(
       groupWithBob,
       charlieKP.publicPackage,
     )
-    const { group: charlieGroup } = await processWelcome(
-      charlie,
-      charlieInvite,
-      charlieWelcome,
-      charlieKP,
-      groupWith3.state.ratchetTree,
-    )
-
-    // Bob must process the commit that added Charlie to advance his state
-    // (In a real system, the commit would be sent via the hub)
+    const { group: charlieGroup } = await processWelcome({
+      identity: charlie,
+      invite: charlieInvite,
+      welcome: charlieWelcome,
+      keyPackageBundle: charlieKP,
+      ratchetTree: groupWith3.state.ratchetTree,
+    })
 
     expect(groupWith3.memberCount).toBe(3)
     expect(charlieGroup.memberCount).toBe(3)
     expect(groupWith3.epoch).toBe(2n)
 
-    // Alice sends to all — Charlie can decrypt
     const { message } = await groupWith3.encrypt(new TextEncoder().encode('hello everyone'))
     const decrypted = await charlieGroup.decrypt(message)
     expect(new TextDecoder().decode(decrypted)).toBe('hello everyone')
@@ -207,34 +221,33 @@ describe('GroupHandle lifecycle', () => {
     const bob = randomIdentity()
 
     const { group: aliceGroup } = await createGroup(alice, 'epoch-test')
-    const { invite } = await createInvite(aliceGroup, alice, bob.id, 'member')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
     const bobKP = await createKeyPackageBundle(bob)
     const { welcomeMessage, newGroup: epoch1Group } = await commitInvite(
       aliceGroup,
       bobKP.publicPackage,
     )
-    const { group: bobGroup } = await processWelcome(
-      bob,
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
       invite,
-      welcomeMessage,
-      bobKP,
-      epoch1Group.state.ratchetTree,
-    )
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: epoch1Group.state.ratchetTree,
+    })
 
-    // Message at epoch 1
     const { message: msg1 } = await epoch1Group.encrypt(new TextEncoder().encode('epoch-1-msg'))
     expect(new TextDecoder().decode(await bobGroup.decrypt(msg1))).toBe('epoch-1-msg')
 
-    // Add a third member to advance epoch
     const charlie = randomIdentity()
     const charlieKP = await createKeyPackageBundle(charlie)
     const { newGroup: epoch2Group } = await commitInvite(epoch1Group, charlieKP.publicPackage)
-
     expect(epoch2Group.epoch).toBe(2n)
 
-    // Message at epoch 2 — Bob needs to process the commit first
-    // but since he wasn't notified, he can't decrypt epoch 2 messages
-    // This verifies epoch separation works
     const { message: msg2 } = await epoch2Group.encrypt(new TextEncoder().encode('epoch-2-msg'))
     await expect(bobGroup.decrypt(msg2)).rejects.toThrow()
   })
@@ -256,7 +269,13 @@ describe('GroupHandle lifecycle', () => {
     }
 
     await expect(
-      processWelcome(bob, badInvite, welcomeMessage, bobKP, aliceGroup.state.ratchetTree),
+      processWelcome({
+        identity: bob,
+        invite: badInvite,
+        welcome: welcomeMessage,
+        keyPackageBundle: bobKP,
+        ratchetTree: aliceGroup.state.ratchetTree,
+      }),
     ).rejects.toThrow()
   })
 })

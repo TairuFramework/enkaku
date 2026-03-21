@@ -26,7 +26,11 @@ describe('group capabilities', () => {
     const rootCap = await createGroupCapability(alice, 'test-group')
     const rootCapStr = stringifyToken(rootCap)
 
-    const memberCap = await delegateGroupMembership(alice, 'test-group', bob.id, 'member', {
+    const memberCap = await delegateGroupMembership({
+      identity: alice,
+      groupID: 'test-group',
+      recipientDID: bob.id,
+      permission: 'member',
       parentCapability: rootCapStr,
     })
 
@@ -45,7 +49,11 @@ describe('group capabilities', () => {
     const rootCapStr = stringifyToken(rootCap)
 
     const futureTime = Math.floor(Date.now() / 1000) + 3600
-    const memberCap = await delegateGroupMembership(alice, 'test-group', bob.id, 'member', {
+    const memberCap = await delegateGroupMembership({
+      identity: alice,
+      groupID: 'test-group',
+      recipientDID: bob.id,
+      permission: 'member',
       parentCapability: rootCapStr,
       expiration: futureTime,
     })
@@ -58,7 +66,10 @@ describe('group capabilities', () => {
     const rootCap = await createGroupCapability(alice, 'test-group')
     const rootCapStr = stringifyToken(rootCap)
 
-    const validated = await validateGroupCapability(rootCapStr, 'test-group')
+    const validated = await validateGroupCapability({
+      tokenData: rootCapStr,
+      groupID: 'test-group',
+    })
     expect(validated.payload.sub).toBe(alice.id)
   })
 
@@ -69,12 +80,20 @@ describe('group capabilities', () => {
     const rootCap = await createGroupCapability(alice, 'test-group')
     const rootCapStr = stringifyToken(rootCap)
 
-    const memberCap = await delegateGroupMembership(alice, 'test-group', bob.id, 'member', {
+    const memberCap = await delegateGroupMembership({
+      identity: alice,
+      groupID: 'test-group',
+      recipientDID: bob.id,
+      permission: 'member',
       parentCapability: rootCapStr,
     })
     const memberCapStr = stringifyToken(memberCap)
 
-    const validated = await validateGroupCapability(memberCapStr, 'test-group', [rootCapStr])
+    const validated = await validateGroupCapability({
+      tokenData: memberCapStr,
+      groupID: 'test-group',
+      delegationChain: [rootCapStr],
+    })
     expect(validated.payload.sub).toBe(alice.id)
     expect(validated.payload.aud).toBe(bob.id)
   })
@@ -84,9 +103,9 @@ describe('group capabilities', () => {
     const rootCap = await createGroupCapability(alice, 'group-a')
     const rootCapStr = stringifyToken(rootCap)
 
-    await expect(validateGroupCapability(rootCapStr, 'group-b')).rejects.toThrow(
-      'does not grant access to group group-b',
-    )
+    await expect(
+      validateGroupCapability({ tokenData: rootCapStr, groupID: 'group-b' }),
+    ).rejects.toThrow('does not grant access to group group-b')
   })
 
   test('rejects capability from non-owner without chain', async () => {
@@ -103,8 +122,8 @@ describe('group capabilities', () => {
     })
     const fakeCapStr = stringifyToken(fakeCap)
 
-    await expect(validateGroupCapability(fakeCapStr, 'test-group')).rejects.toThrow(
-      'delegation chain required',
-    )
+    await expect(
+      validateGroupCapability({ tokenData: fakeCapStr, groupID: 'test-group' }),
+    ).rejects.toThrow('delegation chain required')
   })
 })

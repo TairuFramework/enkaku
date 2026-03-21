@@ -31,7 +31,11 @@ export async function createGroupCapability(
   })
 }
 
-export type DelegateGroupMembershipOptions = {
+export type DelegateGroupMembershipParams = {
+  identity: SigningIdentity
+  groupID: string
+  recipientDID: string
+  permission: GroupPermission
   expiration?: number
   parentCapability?: string
 }
@@ -41,12 +45,9 @@ export type DelegateGroupMembershipOptions = {
  * The signer must be an admin with a valid capability chain.
  */
 export async function delegateGroupMembership(
-  identity: SigningIdentity,
-  groupID: string,
-  recipientDID: string,
-  permission: GroupPermission,
-  options?: DelegateGroupMembershipOptions,
+  params: DelegateGroupMembershipParams,
 ): Promise<CapabilityToken> {
+  const { identity, groupID, recipientDID, permission, expiration, parentCapability } = params
   // In Enkaku's capability model, `sub` is the resource owner (stays the same
   // through the chain) and `aud` is who can exercise the capability (the recipient).
   const payload: Record<string, unknown> = {
@@ -55,27 +56,32 @@ export async function delegateGroupMembership(
     act: [permission],
     res: [`group/${groupID}/*`],
   }
-  if (options?.expiration != null) {
-    payload.exp = options.expiration
+  if (expiration != null) {
+    payload.exp = expiration
   }
 
   return await createCapability(
     identity,
     payload as CapabilityPayload,
     undefined,
-    options?.parentCapability != null ? { parentCapability: options.parentCapability } : undefined,
+    parentCapability != null ? { parentCapability } : undefined,
   )
+}
+
+export type ValidateGroupCapabilityParams = {
+  tokenData: string
+  groupID: string
+  delegationChain?: Array<string>
+  options?: DelegationChainOptions
 }
 
 /**
  * Validates that a capability token grants the specified permission for a group.
  */
 export async function validateGroupCapability(
-  tokenData: string,
-  groupID: string,
-  delegationChain?: Array<string>,
-  options?: DelegationChainOptions,
+  params: ValidateGroupCapabilityParams,
 ): Promise<CapabilityToken> {
+  const { tokenData, groupID, delegationChain, options } = params
   const token = await verifyToken<CapabilityPayload>(tokenData)
   assertCapabilityToken(token)
 

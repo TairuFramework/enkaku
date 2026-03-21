@@ -47,8 +47,8 @@ describe('HubClient', () => {
   test('uploadKeyPackages and fetchKeyPackages', async () => {
     const { client, transports } = createTestHub()
 
-    const stored = await client.uploadKeyPackages(['kp1', 'kp2'])
-    expect(stored).toBe(2)
+    const result = await client.uploadKeyPackages(['kp1', 'kp2'])
+    expect(result.stored).toBe(2)
 
     const fetched = await client.fetchKeyPackages(
       // fetch uses the identity DID from the signed token

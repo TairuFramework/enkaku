@@ -178,14 +178,17 @@ export async function createGroup(
   const keys = getSignatureKeys(identity)
 
   const mlsCredential = makeMLSCredential(identity.id)
-  const keyPackage = await generateKeyPackageWithKey(
-    mlsCredential,
-    defaultCapabilities(),
-    defaultLifetime,
-    [],
-    keys,
-    impl,
-  )
+  const [keyPackage, rootCap] = await Promise.all([
+    generateKeyPackageWithKey(
+      mlsCredential,
+      defaultCapabilities(),
+      defaultLifetime,
+      [],
+      keys,
+      impl,
+    ),
+    createGroupCapability(identity, groupID),
+  ])
 
   const state = await mlsCreateGroup(
     new TextEncoder().encode(groupID),
@@ -194,8 +197,6 @@ export async function createGroup(
     [],
     impl,
   )
-
-  const rootCap = await createGroupCapability(identity, groupID)
   const rootCapStr = stringifyToken(rootCap)
 
   const credential: MemberCredential = {
@@ -216,6 +217,13 @@ export async function createGroup(
   return { group, credential }
 }
 
+export type CreateInviteParams = {
+  group: GroupHandle
+  identity: SigningIdentity
+  recipientDID: string
+  permission: GroupPermission
+}
+
 export type CreateInviteResult = {
   invite: Invite
 }
@@ -224,19 +232,15 @@ export type CreateInviteResult = {
  * Create an invite for a new member.
  * Does NOT add them to the group — call commitInvite with their key package to do that.
  */
-export async function createInvite(
-  group: GroupHandle,
-  identity: SigningIdentity,
-  recipientDID: string,
-  permission: GroupPermission,
-): Promise<CreateInviteResult> {
-  const memberCap = await delegateGroupMembership(
+export async function createInvite(params: CreateInviteParams): Promise<CreateInviteResult> {
+  const { group, identity, recipientDID, permission } = params
+  const memberCap = await delegateGroupMembership({
     identity,
-    group.groupID,
+    groupID: group.groupID,
     recipientDID,
     permission,
-    { parentCapability: group.rootCapability },
-  )
+    parentCapability: group.rootCapability,
+  })
   const memberCapStr = stringifyToken(memberCap)
 
   const invite: Invite = {
@@ -293,26 +297,30 @@ export type ProcessWelcomeResult = {
   credential: MemberCredential
 }
 
+export type ProcessWelcomeParams = {
+  identity: OwnIdentity
+  invite: Invite
+  welcome: unknown
+  keyPackageBundle: KeyPackageBundle
+  ratchetTree: unknown
+  options?: GroupOptions
+}
+
 /**
  * Process a Welcome message to join a group.
  */
-export async function processWelcome(
-  identity: OwnIdentity,
-  invite: Invite,
-  welcome: unknown,
-  keyPackageBundle: KeyPackageBundle,
-  ratchetTree: unknown,
-  options?: GroupOptions,
-): Promise<ProcessWelcomeResult> {
+export async function processWelcome(params: ProcessWelcomeParams): Promise<ProcessWelcomeResult> {
+  const { identity, invite, welcome, keyPackageBundle, ratchetTree, options } = params
   const impl = await resolveCiphersuite(options)
 
   // Validate the invite's capability chain before trusting it
   const { validateGroupCapability } = await import('./capability.js')
-  await validateGroupCapability(
-    invite.capabilityToken,
-    invite.groupID,
-    invite.capabilityChain.length > 1 ? invite.capabilityChain.slice(0, -1) : undefined,
-  )
+  await validateGroupCapability({
+    tokenData: invite.capabilityToken,
+    groupID: invite.groupID,
+    delegationChain:
+      invite.capabilityChain.length > 1 ? invite.capabilityChain.slice(0, -1) : undefined,
+  })
 
   const capToken = await verifyToken(invite.capabilityToken)
 

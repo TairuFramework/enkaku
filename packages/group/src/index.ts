@@ -1,8 +1,9 @@
 export {
   createGroupCapability,
-  type DelegateGroupMembershipOptions,
+  type DelegateGroupMembershipParams,
   delegateGroupMembership,
   type GroupPermission,
+  type ValidateGroupCapabilityParams,
   validateGroupCapability,
 } from './capability.js'
 export {
@@ -20,6 +21,7 @@ export {
 export {
   type CommitInviteResult,
   type CreateGroupResult,
+  type CreateInviteParams,
   type CreateInviteResult,
   commitInvite,
   createGroup,
@@ -27,6 +29,7 @@ export {
   createKeyPackageBundle,
   GroupHandle,
   type GroupHandleParams,
+  type ProcessWelcomeParams,
   type ProcessWelcomeResult,
   processWelcome,
   type RemoveMemberResult,

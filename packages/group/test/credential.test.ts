@@ -53,7 +53,11 @@ describe('credential', () => {
     const rootCap = await createGroupCapability(alice, 'test-group')
     const rootCapStr = stringifyToken(rootCap)
 
-    const memberCap = await delegateGroupMembership(alice, 'test-group', bob.id, 'member', {
+    const memberCap = await delegateGroupMembership({
+      identity: alice,
+      groupID: 'test-group',
+      recipientDID: bob.id,
+      permission: 'member',
       parentCapability: rootCapStr,
     })
     expect(extractPermission(memberCap)).toBe('member')
@@ -65,7 +69,11 @@ describe('credential', () => {
     const rootCap = await createGroupCapability(alice, 'test-group')
     const rootCapStr = stringifyToken(rootCap)
 
-    const readCap = await delegateGroupMembership(alice, 'test-group', bob.id, 'read', {
+    const readCap = await delegateGroupMembership({
+      identity: alice,
+      groupID: 'test-group',
+      recipientDID: bob.id,
+      permission: 'read',
       parentCapability: rootCapStr,
     })
     expect(extractPermission(readCap)).toBe('read')

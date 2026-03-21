@@ -22,7 +22,12 @@ async function createGroupMessage(): Promise<string> {
   const { group: aliceGroup } = await createGroup(alice, 'e2e-test', options)
 
   // Create invite for Bob
-  const { invite } = await createInvite(aliceGroup, alice, bob.id, 'member')
+  const { invite } = await createInvite({
+    group: aliceGroup,
+    identity: alice,
+    recipientDID: bob.id,
+    permission: 'member',
+  })
 
   // Bob generates a key package
   const bobKP = await createKeyPackageBundle(bob, options)
@@ -31,14 +36,14 @@ async function createGroupMessage(): Promise<string> {
   const { welcomeMessage, newGroup } = await commitInvite(aliceGroup, bobKP.publicPackage)
 
   // Bob joins via Welcome
-  const { group: bobGroup } = await processWelcome(
-    bob,
+  const { group: bobGroup } = await processWelcome({
+    identity: bob,
     invite,
-    welcomeMessage,
-    bobKP,
-    newGroup.state.ratchetTree,
+    welcome: welcomeMessage,
+    keyPackageBundle: bobKP,
+    ratchetTree: newGroup.state.ratchetTree,
     options,
-  )
+  })
 
   // Alice encrypts, Bob decrypts
   const msg = new TextEncoder().encode('hello from expo')

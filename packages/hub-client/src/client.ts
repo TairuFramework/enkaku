@@ -1,8 +1,22 @@
-import type { Client } from '@enkaku/client'
+import type { Client, RequestCall, StreamCall } from '@enkaku/client'
 import type { HubProtocol, RoutedMessage } from '@enkaku/hub-protocol'
 
 export type HubClientParams = {
   client: Client<HubProtocol>
+}
+
+type SendResult = { delivered: number; queued: number }
+type JoinResult = { joined: boolean }
+type LeaveResult = { left: boolean }
+type UploadResult = { stored: number }
+type FetchResult = { keyPackages: Array<string> }
+
+type HubReceive = {
+  senderDID: string
+  groupID: string
+  epoch: number
+  contentType: 'commit' | 'proposal' | 'welcome' | 'application'
+  payload: string
 }
 
 /**
@@ -22,8 +36,8 @@ export class HubClient {
   /**
    * Send an encrypted message to a group.
    */
-  async send(message: RoutedMessage): Promise<{ delivered: number; queued: number }> {
-    return await this.#client.request('hub/send', {
+  send(message: RoutedMessage): RequestCall<SendResult> {
+    return this.#client.request('hub/send', {
       param: {
         groupID: message.groupID,
         epoch: message.epoch,
@@ -35,26 +49,18 @@ export class HubClient {
 
   /**
    * Start receiving messages for the given groups.
-   * Returns a readable stream of RoutedMessage.
    */
-  receive(groups: Array<string>): {
-    readable: ReadableStream<RoutedMessage>
-    close: () => void
-  } {
-    const stream = this.#client.createStream('hub/receive', {
+  receive(groups: Array<string>): StreamCall<HubReceive, unknown> {
+    return this.#client.createStream('hub/receive', {
       param: { groups },
     })
-    return {
-      readable: stream.readable as ReadableStream<RoutedMessage>,
-      close: () => stream.close(),
-    }
   }
 
   /**
    * Join a group on the hub.
    */
-  async joinGroup(groupID: string, credential?: string): Promise<void> {
-    await this.#client.request('hub/group/join', {
+  joinGroup(groupID: string, credential?: string): RequestCall<JoinResult> {
+    return this.#client.request('hub/group/join', {
       param: { groupID, credential: credential ?? '' },
     })
   }
@@ -62,27 +68,25 @@ export class HubClient {
   /**
    * Leave a group on the hub.
    */
-  async leaveGroup(groupID: string): Promise<void> {
-    await this.#client.request('hub/group/leave', { param: { groupID } })
+  leaveGroup(groupID: string): RequestCall<LeaveResult> {
+    return this.#client.request('hub/group/leave', { param: { groupID } })
   }
 
   /**
    * Upload key packages to the hub.
    */
-  async uploadKeyPackages(keyPackages: Array<string>): Promise<number> {
-    const result = await this.#client.request('hub/keypackage/upload', {
+  uploadKeyPackages(keyPackages: Array<string>): RequestCall<UploadResult> {
+    return this.#client.request('hub/keypackage/upload', {
       param: { keyPackages },
     })
-    return result.stored
   }
 
   /**
    * Fetch key packages for a DID.
    */
-  async fetchKeyPackages(did: string, count?: number): Promise<Array<string>> {
-    const result = await this.#client.request('hub/keypackage/fetch', {
+  fetchKeyPackages(did: string, count?: number): RequestCall<FetchResult> {
+    return this.#client.request('hub/keypackage/fetch', {
       param: { did, count },
     })
-    return result.keyPackages
   }
 }
