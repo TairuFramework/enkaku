@@ -1,4 +1,3 @@
-import { Client } from '@enkaku/client'
 import type { ProcedureHandlers } from '@enkaku/server'
 import { describe, expect, test } from 'vitest'
 

@@ -1,3 +1,4 @@
+import type { Welcome } from 'ts-mls'
 import {
   type Credential,
   createApplicationMessage,
@@ -18,6 +19,11 @@ import { describe, expect, test } from 'vitest'
 import { nobleCryptoProvider } from '../src/crypto.js'
 
 const CIPHERSUITE_NAME = 'MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519' as const
+
+function requireWelcome(welcome: Welcome | undefined): Welcome {
+  if (welcome == null) throw new Error('Expected welcome message')
+  return welcome
+}
 
 async function getCiphersuiteImpl() {
   const cs = getCiphersuiteFromName(CIPHERSUITE_NAME)
@@ -71,7 +77,7 @@ describe('nobleCryptoProvider', () => {
     expect(commitResult.welcome).toBeDefined()
 
     const bobState = await joinGroup(
-      commitResult.welcome!,
+      requireWelcome(commitResult.welcome),
       bob.publicPackage,
       bob.privatePackage,
       emptyPskIndex,
@@ -113,7 +119,7 @@ describe('nobleCryptoProvider', () => {
     aliceState = addResult.newState
 
     let bobState = await joinGroup(
-      addResult.welcome!,
+      requireWelcome(addResult.welcome),
       bob.publicPackage,
       bob.privatePackage,
       emptyPskIndex,
@@ -182,7 +188,7 @@ describe('nobleCryptoProvider', () => {
     )
     aliceState = addBob.newState
     const bobState = await joinGroup(
-      addBob.welcome!,
+      requireWelcome(addBob.welcome),
       bob.publicPackage,
       bob.privatePackage,
       emptyPskIndex,

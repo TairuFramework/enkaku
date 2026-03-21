@@ -1,4 +1,5 @@
 import { ed25519 } from '@noble/curves/ed25519.js'
+import type { Welcome } from 'ts-mls'
 import {
   type ClientState,
   type Credential,
@@ -22,6 +23,11 @@ import {
 import { describe, expect, test } from 'vitest'
 
 const CIPHERSUITE_NAME = 'MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519' as const
+
+function requireWelcome(welcome: Welcome | undefined): Welcome {
+  if (welcome == null) throw new Error('Expected welcome message')
+  return welcome
+}
 
 async function getCiphersuiteImpl() {
   const cs = getCiphersuiteFromName(CIPHERSUITE_NAME)
@@ -92,7 +98,7 @@ describe('ts-mls integration spike', () => {
 
     // Bob joins via Welcome
     const bobState = await joinGroup(
-      commitResult.welcome!,
+      requireWelcome(commitResult.welcome),
       bob.publicPackage,
       bob.privatePackage,
       emptyPskIndex,
@@ -139,7 +145,7 @@ describe('ts-mls integration spike', () => {
     aliceState = addResult.newState
 
     let bobState = await joinGroup(
-      addResult.welcome!,
+      requireWelcome(addResult.welcome),
       bob.publicPackage,
       bob.privatePackage,
       emptyPskIndex,
@@ -245,7 +251,7 @@ describe('ts-mls integration spike', () => {
     )
     aliceState = addBob.newState
     const bobState = await joinGroup(
-      addBob.welcome!,
+      requireWelcome(addBob.welcome),
       bob.publicPackage,
       bob.privatePackage,
       emptyPskIndex,
@@ -314,7 +320,7 @@ describe('ts-mls integration spike', () => {
 
     // Encode welcome for transport
     const welcomeMsg = encodeMlsMessage({
-      welcome: addResult.welcome!,
+      welcome: requireWelcome(addResult.welcome),
       wireformat: 'mls_welcome',
       version: 'mls10',
     })
@@ -322,8 +328,8 @@ describe('ts-mls integration spike', () => {
 
     // Decode welcome — decoder returns [value, bytesConsumed] tuple
     const decodeResult = decodeMlsMessage(welcomeMsg, 0)
-    expect(decodeResult).toBeDefined()
-    const [decoded] = decodeResult!
+    if (decodeResult == null) throw new Error('Expected decode result')
+    const [decoded] = decodeResult
 
     expect(decoded.wireformat).toBe('mls_welcome')
     if (decoded.wireformat === 'mls_welcome') {

@@ -146,7 +146,7 @@ export function createHub(params: CreateHubParams): HubInstance {
       })
 
       // Read from this client and forward to peer's tunnel writer
-      const readLoop = (async () => {
+      void (async () => {
         try {
           while (true) {
             const { done, value } = await reader.read()
@@ -202,7 +202,7 @@ export function createHub(params: CreateHubParams): HubInstance {
     }) as RequestHandler<HubProtocol, 'hub/keypackage/fetch'>,
 
     'hub/group/join': (async (ctx) => {
-      const { groupID, credential } = ctx.param
+      const { groupID, credential: _credential } = ctx.param
       const clientDID = getClientDID(ctx)
 
       // TODO: Validate credential against @enkaku/group when accessControl is enabled.

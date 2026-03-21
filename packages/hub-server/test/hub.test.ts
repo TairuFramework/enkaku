@@ -63,7 +63,7 @@ describe('hub server', () => {
       AnyServerMessageOf<HubProtocol>,
       AnyClientMessageOf<HubProtocol>
     >()
-    const hubA = createHub({
+    createHub({
       transport: transportA.server,
       store,
       accessControl: false,
@@ -79,7 +79,7 @@ describe('hub server', () => {
     const streamA = clientA.createStream('hub/receive', {
       param: { groups: ['msg-group'] },
     })
-    const readerA = streamA.readable.getReader()
+    streamA.readable.getReader()
 
     // Client A sends a message
     const sendResult = await clientA.request('hub/send', {
