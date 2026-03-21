@@ -325,4 +325,27 @@ describe('nobleCryptoProvider', () => {
     )
     expect(recipientSecret).toEqual(secret)
   })
+
+  test('HPKE open rejects with invalid key object', async () => {
+    const impl = await getCiphersuiteImpl()
+    await expect(
+      impl.hpke.open('not-a-key', new Uint8Array(32), new Uint8Array(32), new Uint8Array(0)),
+    ).rejects.toThrow('Invalid key')
+  })
+
+  test('createNobleCryptoProvider uses custom randomBytes', async () => {
+    const { createNobleCryptoProvider } = await import('../src/crypto.js')
+    let callCount = 0
+    const customRandom = (n: number): Uint8Array => {
+      callCount++
+      return crypto.getRandomValues(new Uint8Array(n))
+    }
+    const provider = createNobleCryptoProvider({ randomBytes: customRandom })
+    const cs = getCiphersuiteFromName(CIPHERSUITE_NAME)
+    const customImpl = await getImpl(cs, provider)
+
+    // RNG should use our custom function
+    customImpl.rng.randomBytes(16)
+    expect(callCount).toBe(1)
+  })
 })

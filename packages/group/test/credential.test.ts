@@ -9,6 +9,15 @@ import {
   mlsIdentityToSerializedCredential,
 } from '../src/credential.js'
 
+function makeSignedTokenWithAct(act: Array<string>) {
+  return {
+    header: { typ: 'JWT' as const, alg: 'EdDSA' as const },
+    payload: { iss: 'did:key:z...', sub: 'did:key:z...', aud: 'did:key:z...', act, res: ['*'] },
+    signature: 'fake',
+    data: 'fake',
+  }
+}
+
 describe('credential', () => {
   test('round-trips credential through MLS identity', async () => {
     const alice = randomIdentity()
@@ -60,5 +69,29 @@ describe('credential', () => {
       parentCapability: rootCapStr,
     })
     expect(extractPermission(readCap)).toBe('read')
+  })
+
+  test('extractPermission throws for unrecognized action', () => {
+    const token = makeSignedTokenWithAct(['write'])
+    expect(() => extractPermission(token)).toThrow('no recognized permission level')
+  })
+
+  test('mlsIdentityToSerializedCredential throws on non-JSON input', () => {
+    const badBytes = new TextEncoder().encode('not json')
+    expect(() => mlsIdentityToSerializedCredential(badBytes)).toThrow()
+  })
+
+  test('mlsIdentityToSerializedCredential throws when required fields are missing', () => {
+    const incomplete = new TextEncoder().encode(JSON.stringify({ did: 'test' }))
+    expect(() => mlsIdentityToSerializedCredential(incomplete)).toThrow(
+      'malformed serialized credential',
+    )
+  })
+
+  test('mlsIdentityToSerializedCredential throws when capabilityChain is not an array', () => {
+    const bad = new TextEncoder().encode(
+      JSON.stringify({ did: 'test', groupID: 'g1', capabilityChain: 'not-array' }),
+    )
+    expect(() => mlsIdentityToSerializedCredential(bad)).toThrow('malformed serialized credential')
   })
 })

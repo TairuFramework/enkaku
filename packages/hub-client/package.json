@@ -38,5 +38,11 @@
   "dependencies": {
     "@enkaku/client": "workspace:^",
     "@enkaku/hub-protocol": "workspace:^"
+  },
+  "devDependencies": {
+    "@enkaku/hub-server": "workspace:^",
+    "@enkaku/protocol": "workspace:^",
+    "@enkaku/token": "workspace:^",
+    "@enkaku/transport": "workspace:^"
   }
 }

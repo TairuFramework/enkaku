@@ -157,4 +157,106 @@ describe('GroupHandle lifecycle', () => {
     const data = await device2Group.decrypt(message)
     expect(new TextDecoder().decode(data)).toBe('sync data')
   })
+
+  test('three-member group with fan-out', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, '3-member')
+
+    // Add Bob
+    const { invite: bobInvite } = await createInvite(aliceGroup, alice, bob.id, 'member')
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage: bobWelcome, newGroup: groupWithBob } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+    await processWelcome(bob, bobInvite, bobWelcome, bobKP, groupWithBob.state.ratchetTree)
+
+    // Add Charlie
+    const { invite: charlieInvite } = await createInvite(groupWithBob, alice, charlie.id, 'member')
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const { welcomeMessage: charlieWelcome, newGroup: groupWith3 } = await commitInvite(
+      groupWithBob,
+      charlieKP.publicPackage,
+    )
+    const { group: charlieGroup } = await processWelcome(
+      charlie,
+      charlieInvite,
+      charlieWelcome,
+      charlieKP,
+      groupWith3.state.ratchetTree,
+    )
+
+    // Bob must process the commit that added Charlie to advance his state
+    // (In a real system, the commit would be sent via the hub)
+
+    expect(groupWith3.memberCount).toBe(3)
+    expect(charlieGroup.memberCount).toBe(3)
+    expect(groupWith3.epoch).toBe(2n)
+
+    // Alice sends to all — Charlie can decrypt
+    const { message } = await groupWith3.encrypt(new TextEncoder().encode('hello everyone'))
+    const decrypted = await charlieGroup.decrypt(message)
+    expect(new TextDecoder().decode(decrypted)).toBe('hello everyone')
+  })
+
+  test('multi-epoch message exchange', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'epoch-test')
+    const { invite } = await createInvite(aliceGroup, alice, bob.id, 'member')
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage, newGroup: epoch1Group } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+    const { group: bobGroup } = await processWelcome(
+      bob,
+      invite,
+      welcomeMessage,
+      bobKP,
+      epoch1Group.state.ratchetTree,
+    )
+
+    // Message at epoch 1
+    const { message: msg1 } = await epoch1Group.encrypt(new TextEncoder().encode('epoch-1-msg'))
+    expect(new TextDecoder().decode(await bobGroup.decrypt(msg1))).toBe('epoch-1-msg')
+
+    // Add a third member to advance epoch
+    const charlie = randomIdentity()
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const { newGroup: epoch2Group } = await commitInvite(epoch1Group, charlieKP.publicPackage)
+
+    expect(epoch2Group.epoch).toBe(2n)
+
+    // Message at epoch 2 — Bob needs to process the commit first
+    // but since he wasn't notified, he can't decrypt epoch 2 messages
+    // This verifies epoch separation works
+    const { message: msg2 } = await epoch2Group.encrypt(new TextEncoder().encode('epoch-2-msg'))
+    await expect(bobGroup.decrypt(msg2)).rejects.toThrow()
+  })
+
+  test('processWelcome throws on invite with empty capability chain', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'empty-chain')
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage } = await commitInvite(aliceGroup, bobKP.publicPackage)
+
+    const badInvite = {
+      groupID: 'empty-chain',
+      capabilityToken: 'invalid',
+      capabilityChain: [],
+      permission: 'member' as const,
+      inviterDID: alice.id,
+    }
+
+    await expect(
+      processWelcome(bob, badInvite, welcomeMessage, bobKP, aliceGroup.state.ratchetTree),
+    ).rejects.toThrow()
+  })
 })
