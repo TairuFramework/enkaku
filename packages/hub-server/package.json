@@ -1,0 +1,50 @@
+{
+  "name": "@enkaku/hub-server",
+  "version": "0.14.0",
+  "license": "MIT",
+  "homepage": "https://enkaku.dev",
+  "description": "Hub server for Enkaku E2EE group message routing",
+  "keywords": [
+    "hub",
+    "server",
+    "e2ee",
+    "routing"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/hub-server"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "files": [
+    "lib/*"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build:clean": "del lib",
+    "build:js": "swc src -d ./lib --config-file ../../swc.json --strip-leading-paths",
+    "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
+    "build:types:ci": "tsc --emitDeclarationOnly --skipLibCheck --declarationMap false",
+    "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
+    "test:types": "tsc --noEmit --skipLibCheck",
+    "test:unit": "vitest run",
+    "test": "pnpm run test:types && pnpm run test:unit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@enkaku/hub-protocol": "workspace:^",
+    "@enkaku/protocol": "workspace:^",
+    "@enkaku/server": "workspace:^",
+    "@enkaku/stream": "workspace:^",
+    "@enkaku/token": "workspace:^"
+  },
+  "devDependencies": {
+    "@enkaku/client": "workspace:^",
+    "@enkaku/transport": "workspace:^"
+  }
+}

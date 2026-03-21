@@ -1,0 +1,5 @@
+appId: dev.enkaku.e2e
+---
+- launchApp
+- tapOn: "Group E2EE"
+- assertVisible: "Group E2EE: OK"
