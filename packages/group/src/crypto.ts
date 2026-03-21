@@ -135,10 +135,15 @@ function makeSignature(sigName: string): Signature {
 // RNG
 // ---------------------------------------------------------------------------
 
-const rng: Rng = {
-  randomBytes(n: number): Uint8Array {
-    return crypto.getRandomValues(new Uint8Array(n))
-  },
+function makeRng(customRandomBytes?: (n: number) => Uint8Array): Rng {
+  if (customRandomBytes != null) {
+    return { randomBytes: customRandomBytes }
+  }
+  return {
+    randomBytes(n: number): Uint8Array {
+      return crypto.getRandomValues(new Uint8Array(n))
+    },
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -464,15 +469,30 @@ type CiphersuiteInput = {
   name: string
 }
 
-export const nobleCryptoProvider: CryptoProvider = {
-  async getCiphersuiteImpl(cs: CiphersuiteInput): Promise<CiphersuiteImpl> {
-    return {
-      hash: makeHash(cs.hash),
-      kdf: makeKdf(cs.hpke.kdf),
-      signature: makeSignature(cs.signature),
-      hpke: makeHpke(cs.hpke),
-      rng,
-      name: cs.name,
-    } as CiphersuiteImpl
-  },
+export type NobleCryptoProviderOptions = {
+  /** Custom random bytes function. Defaults to crypto.getRandomValues.
+   * On React Native (Hermes), polyfill crypto.getRandomValues before use
+   * (e.g., via expo-crypto's getRandomValues). */
+  randomBytes?: (n: number) => Uint8Array
 }
+
+export function createNobleCryptoProvider(options?: NobleCryptoProviderOptions): CryptoProvider {
+  const rng = makeRng(options?.randomBytes)
+  return {
+    async getCiphersuiteImpl(cs: CiphersuiteInput): Promise<CiphersuiteImpl> {
+      return {
+        hash: makeHash(cs.hash),
+        kdf: makeKdf(cs.hpke.kdf),
+        signature: makeSignature(cs.signature),
+        hpke: makeHpke(cs.hpke),
+        rng,
+        name: cs.name,
+      } as CiphersuiteImpl
+    },
+  }
+}
+
+/** Default noble CryptoProvider using crypto.getRandomValues for RNG.
+ * On Hermes, polyfill crypto.getRandomValues before importing this
+ * (e.g., via expo-crypto). */
+export const nobleCryptoProvider: CryptoProvider = createNobleCryptoProvider()

@@ -12,7 +12,11 @@ export {
   mlsIdentityToSerializedCredential,
   type SerializedCredential,
 } from './credential.js'
-export { nobleCryptoProvider } from './crypto.js'
+export {
+  createNobleCryptoProvider,
+  type NobleCryptoProviderOptions,
+  nobleCryptoProvider,
+} from './crypto.js'
 export {
   type CommitInviteResult,
   type CreateGroupResult,

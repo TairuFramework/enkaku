@@ -1,4 +1,4 @@
-import type { CryptoProvider } from 'ts-mls'
+import type { CryptoProvider, KeyPackage, PrivateKeyPackage } from 'ts-mls'
 
 import type { GroupPermission } from './capability.js'
 
@@ -31,9 +31,9 @@ export type Invite = {
 
 export type KeyPackageBundle = {
   /** MLS key package (binary) */
-  publicPackage: unknown
+  publicPackage: KeyPackage
   /** Private key material (keep secret) */
-  privatePackage: unknown
+  privatePackage: PrivateKeyPackage
   /** The DID of the key package owner */
   ownerDID: string
 }

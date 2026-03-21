@@ -2,6 +2,4 @@ appId: dev.enkaku.e2e
 ---
 - launchApp
 - tapOn: "Group E2EE"
-- assertVisible:
-    text: "Group E2EE: OK"
-    timeout: 30000
+- assertVisible: "Group E2EE: OK"
