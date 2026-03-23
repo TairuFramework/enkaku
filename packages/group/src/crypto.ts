@@ -462,11 +462,27 @@ function makeHpke(hpkeAlg: HpkeAlg): Hpke {
 // CryptoProvider
 // ---------------------------------------------------------------------------
 
-type CiphersuiteInput = {
+type CiphersuiteConfig = {
   hash: string
   hpke: HpkeAlg
   signature: string
-  name: string
+}
+
+// Lookup from numeric ciphersuite ID to algorithm configuration.
+// We only support the ciphersuites that use X25519 + Ed25519 (noble-compatible).
+const CIPHERSUITE_CONFIGS: Record<number, CiphersuiteConfig> = {
+  // MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519
+  1: {
+    hash: 'SHA-256',
+    hpke: { kem: 'DHKEM-X25519-HKDF-SHA256', kdf: 'HKDF-SHA256', aead: 'AES128GCM' },
+    signature: 'Ed25519',
+  },
+  // MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519
+  3: {
+    hash: 'SHA-256',
+    hpke: { kem: 'DHKEM-X25519-HKDF-SHA256', kdf: 'HKDF-SHA256', aead: 'CHACHA20POLY1305' },
+    signature: 'Ed25519',
+  },
 }
 
 export type NobleCryptoProviderOptions = {
@@ -479,15 +495,21 @@ export type NobleCryptoProviderOptions = {
 export function createNobleCryptoProvider(options?: NobleCryptoProviderOptions): CryptoProvider {
   const rng = makeRng(options?.randomBytes)
   return {
-    async getCiphersuiteImpl(cs: CiphersuiteInput): Promise<CiphersuiteImpl> {
+    async getCiphersuiteImpl(id: number): Promise<CiphersuiteImpl> {
+      const config = CIPHERSUITE_CONFIGS[id]
+      if (config == null) {
+        throw new Error(
+          `Unsupported ciphersuite ID: ${id}. Only X25519+Ed25519 suites (IDs 1, 3) are supported.`,
+        )
+      }
       return {
-        hash: makeHash(cs.hash),
-        kdf: makeKdf(cs.hpke.kdf),
-        signature: makeSignature(cs.signature),
-        hpke: makeHpke(cs.hpke),
+        hash: makeHash(config.hash),
+        kdf: makeKdf(config.hpke.kdf),
+        signature: makeSignature(config.signature),
+        hpke: makeHpke(config.hpke),
         rng,
-        name: cs.name,
-      } as CiphersuiteImpl
+        id,
+      }
     },
   }
 }
