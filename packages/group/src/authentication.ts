@@ -33,14 +33,16 @@ function extractDIDFromIdentity(identity: Uint8Array): string | null {
 }
 
 /**
- * Compares two Uint8Array values for equality.
+ * Constant-time comparison of two Uint8Array values.
  */
-function uint8ArrayEqual(a: Uint8Array, b: Uint8Array): boolean {
+function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false
+  let diff = 0
   for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false
+    // biome-ignore lint/style/noNonNullAssertion: index is within bounds
+    diff |= a[i]! ^ b[i]!
   }
-  return true
+  return diff === 0
 }
 
 /**
@@ -63,6 +65,7 @@ export function createDIDAuthenticationService(): AuthenticationService {
       }
 
       // Extract the DID from identity bytes
+      // Cast needed: CredentialCustom's credentialType is `number`, preventing full narrowing
       const did = extractDIDFromIdentity((credential as { identity: Uint8Array }).identity)
       if (did == null) {
         return false
@@ -71,7 +74,7 @@ export function createDIDAuthenticationService(): AuthenticationService {
       // Derive the expected public key from the DID
       try {
         const [, publicKeyFromDID] = getSignatureInfo(did)
-        return uint8ArrayEqual(publicKeyFromDID, signaturePublicKey)
+        return constantTimeEqual(publicKeyFromDID, signaturePublicKey)
       } catch {
         return false
       }

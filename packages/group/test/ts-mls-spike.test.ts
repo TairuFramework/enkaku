@@ -5,6 +5,7 @@ import {
   createApplicationMessage,
   createCommit,
   createGroup,
+  type DefaultProposal,
   decode,
   defaultCapabilities,
   defaultCredentialTypes,
@@ -21,7 +22,6 @@ import {
   mlsMessageEncoder,
   nobleCryptoProvider,
   nodeTypes,
-  type Proposal,
   processPrivateMessage,
   protocolVersions,
   unsafeTestingAuthenticationService,
@@ -91,7 +91,7 @@ describe('ts-mls integration spike', () => {
     })
 
     // Add Bob via proposal + commit
-    const addProposal: Proposal = {
+    const addProposal: DefaultProposal = {
       proposalType: defaultProposalTypes.add,
       add: { keyPackage: bob.publicPackage },
     }
@@ -286,7 +286,7 @@ describe('ts-mls integration spike', () => {
     })
 
     // Remove Bob
-    const removeProposal: Proposal = {
+    const removeProposal: DefaultProposal = {
       proposalType: defaultProposalTypes.remove,
       remove: { removed: 1 }, // Bob is at leaf index 1
     }

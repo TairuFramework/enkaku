@@ -336,6 +336,12 @@ describe('nobleCryptoProvider', () => {
     ).rejects.toThrow('Invalid key')
   })
 
+  test('rejects unsupported ciphersuite ID', async () => {
+    const { createNobleCryptoProvider } = await import('../src/crypto.js')
+    const provider = createNobleCryptoProvider()
+    await expect(provider.getCiphersuiteImpl(99)).rejects.toThrow('Unsupported ciphersuite ID')
+  })
+
   test('createNobleCryptoProvider uses custom randomBytes', async () => {
     const { createNobleCryptoProvider } = await import('../src/crypto.js')
     let callCount = 0
