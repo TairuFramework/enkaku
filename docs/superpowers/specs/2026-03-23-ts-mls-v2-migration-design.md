@@ -17,7 +17,8 @@ ts-mls v2 is in RC and introduces a cleaner API surface: single params objects i
 | `packages/group/src/authentication.ts` | New — `AuthenticationService` implementation |
 | `packages/group/src/group.ts` | Major — all ts-mls call sites |
 | `packages/group/src/crypto.ts` | Minor — adapt to v2 `CryptoProvider`/`CiphersuiteImpl` interface |
-| `packages/group/src/types.ts` | Minor — type import updates |
+| `packages/group/src/credential.ts` | Minor — reused by `AuthenticationService` (no direct ts-mls imports) |
+| `packages/group/src/types.ts` | Minor — type import updates, extension type tightening |
 | `packages/group/test/ts-mls-spike.test.ts` | Major — all direct ts-mls calls |
 | `packages/group/test/crypto.test.ts` | Major — all direct ts-mls calls |
 | `packages/group/test/group.test.ts` | Minor — only if public API fields change |
@@ -31,7 +32,7 @@ ts-mls v2 is in RC and introduces a cleaner API surface: single params objects i
 
 New file implementing ts-mls v2's `AuthenticationService` interface. Performs signature-only validation at the MLS layer:
 
-- Extracts the DID string from the MLS basic credential's `identity` bytes
+- Extracts the DID string from the MLS basic credential's `identity` bytes using the existing `mlsIdentityToSerializedCredential` from `credential.ts` (avoids duplicating parsing logic)
 - Derives the expected Ed25519 public key from the DID (using `@enkaku/token`)
 - Compares against the signing public key presented in the MLS leaf node
 
@@ -40,7 +41,7 @@ Capability-chain validation remains a separate concern, already handled in `proc
 - The MLS auth layer prevents DID impersonation within the group (checked during MLS operations)
 - Both checks are enforced; an attacker would need to bypass both
 
-Dependencies: `@enkaku/token` (DID-to-key resolution), `@noble/curves/ed25519` (already in use).
+Dependencies: `@enkaku/token` (DID-to-key resolution), `@noble/curves/ed25519` (already in use), `credential.ts` (existing DID extraction).
 
 Usage: Created internally by `resolveCiphersuite` — callers of `createGroup`, `processWelcome`, etc. don't provide it. Tests use `unsafeTestingAuthenticationService` from ts-mls.
 
@@ -50,7 +51,9 @@ Usage: Created internally by `resolveCiphersuite` — callers of `createGroup`, 
 
 Remove the two-step `getCiphersuiteFromName` + `getCiphersuiteImpl(cs, provider)` pattern. In v2, `getCiphersuiteImpl` takes a `CiphersuiteName` string directly.
 
-Return both the `CiphersuiteImpl` and a fully-formed `MlsContext` (containing `cipherSuite` + `authService`) since every v2 call needs this pair.
+Return both the `CiphersuiteImpl` and a fully-formed `MlsContext` (containing `cipherSuite` and `authService`) since every v2 call needs this pair.
+
+**`GroupHandle` stores `MlsContext`:** Instead of storing just `CiphersuiteImpl`, `GroupHandle` should store the full `MlsContext` so it doesn't need to be reconstructed for every encrypt/decrypt/commit operation. The `ciphersuite` field becomes `context: MlsContext`.
 
 #### Function-by-function transforms
 
@@ -74,16 +77,17 @@ generateKeyPackageWithKey({ credential, keys, cipherSuite })
 **`createApplicationMessage` (in `GroupHandle.encrypt`):**
 ```typescript
 // v1
-createApplicationMessage(state, plaintext, cipherSuite)
-// v2
-createApplicationMessage({ context, state, message: plaintext })
+const { newState, privateMessage, consumed } = await createApplicationMessage(state, plaintext, cipherSuite)
+// v2 — return field renamed: privateMessage → message
+const { newState, message } = await createApplicationMessage({ context, state, message: plaintext })
 ```
+Note: The `consumed` field may also be renamed or removed — verify during implementation.
 
 **`processPrivateMessage` (in `GroupHandle.decrypt`/`processMessage`):**
 ```typescript
 // v1
 processPrivateMessage(state, privateMessage, emptyPskIndex, cipherSuite)
-// v2
+// v2 — externalPsks replaces emptyPskIndex, passed via context
 processPrivateMessage({ context, state, privateMessage })
 ```
 
@@ -93,16 +97,24 @@ processPrivateMessage({ context, state, privateMessage })
 createCommit({ state, cipherSuite }, { extraProposals: [...] })
 // v2
 createCommit({ context, state, extraProposals: [...] })
-// Welcome is now wrapped: result.welcome!.welcome
 ```
+Welcome is now wrapped as `MlsWelcomeMessage`. When passing to `joinGroup`, unwrap via `result.welcome!.welcome`. The `commitInvite` function should return the unwrapped welcome (inner payload) since consumers pass it to `processWelcome` which passes it to `joinGroup`.
 
 **`joinGroup` (in `processWelcome`):**
 ```typescript
 // v1
 mlsJoinGroup(welcome, publicPackage, privatePackage, emptyPskIndex, impl, ratchetTree)
-// v2
+// v2 — externalPsks replaces emptyPskIndex, passed via context
 mlsJoinGroup({ context, welcome, keyPackage: publicPackage, privateKeys: privatePackage, ratchetTree })
 ```
+
+#### `MlsContext` and `externalPsks`
+
+The v2 migration guide consistently shows `externalPsks` in the context for `joinGroup`, `processPrivateMessage`, `createApplicationMessage`, and `processPublicMessage`. Since Enkaku does not currently use external PSKs, the context will pass `externalPsks` as an empty map or omit it if optional. Verify during implementation whether `externalPsks` is required or optional in the `MlsContext` type.
+
+#### `processMessage` / `processPublicMessage`
+
+These functions also migrate to params objects in v2 but are **not used** in the Enkaku codebase. They are intentionally excluded from this migration scope.
 
 #### Literal enum replacements
 
@@ -120,6 +132,14 @@ mlsJoinGroup({ context, welcome, keyPackage: publicPackage, privateKeys: private
 
 **Update:** `defaultLifetime` usage — call as `defaultLifetime()` (now a function).
 
+#### Extension type tightening
+
+v2 splits the generic `Extension` type into `CustomExtension`, `GroupContextExtension`, `GroupInfoExtension`, and `LeafNodeExtension`. The `GroupOptions.extensions` type in `types.ts` (currently `Array<unknown>`) should be tightened to `Array<GroupContextExtension>` since `createGroup` passes extensions as group context extensions.
+
+#### String-literal node types
+
+Check whether `nodeType === 'leaf'` (used in `GroupHandle.memberCount` and test helpers) is affected by the v2 string-literal-to-constant migration. If `nodeType` values became numeric, update comparisons accordingly.
+
 ### 3. CryptoProvider Adaptation (`crypto.ts`)
 
 **Known change:** `CiphersuiteImpl.name` field type changes from `CiphersuiteName` (string) to `CiphersuiteId` (numeric). The `createNobleCryptoProvider` sets `name: cs.name` — needs updating to match v2's field name/type.
@@ -133,18 +153,20 @@ mlsJoinGroup({ context, welcome, keyPackage: publicPackage, privateKeys: private
 ### 4. Test Migration
 
 **`ts-mls-spike.test.ts`** — Heaviest changes. All ts-mls function calls migrate to params objects. Additional changes:
-- `getCiphersuiteImpl(cs, provider)` → `getCiphersuiteImpl(CIPHERSUITE_NAME)`
-- `encodeMlsMessage`/`decodeMlsMessage` → `encode(mlsMessageEncoder, ...)`/`decode(mlsMessageDecoder, ...)`
+- `getCiphersuiteImpl(cs, provider)` → `getCiphersuiteImpl(CIPHERSUITE_NAME)` (no more `getCiphersuiteFromName` step)
+- `encodeMlsMessage`/`decodeMlsMessage` → `encode(mlsMessageEncoder, ...)`/`decode(mlsMessageDecoder, ...)` — note: `decodeMlsMessage` currently takes a byte offset (`0`) as second arg; verify if `decode()` handles this differently
 - Wireformat strings → constants (`wireformats.mls_welcome`, `protocolVersions.mls10`)
 - `defaultLifetime` → `defaultLifetime()`
 - All proposal/credential literals → constant references
 - `emptyPskIndex` removed (PSKs via context)
-- Welcome unwrapping for `joinGroup` calls
+- Welcome unwrapping: `commitResult.welcome` → `commitResult.welcome!.welcome` when passing to `joinGroup`
 - `unsafeTestingAuthenticationService` in all `MlsContext` objects
+- `Welcome` type import may change to `MlsWelcomeMessage` — verify against v2 types
+- This test imports `nobleCryptoProvider` from `ts-mls` (not from `@enkaku/group`). If v2 still exports it, keep as-is; otherwise switch to the Enkaku provider. Note: with v2's `getCiphersuiteImpl(name)` signature (no provider arg), this test may not need an explicit provider at all.
 
-**`crypto.test.ts`** — Same call-site transforms. Primitive tests (HPKE, AEAD, KDF, signature, hash) unaffected.
+**`crypto.test.ts`** — Same call-site transforms as above. Uses `nobleCryptoProvider` from `../src/crypto.js` (Enkaku's custom provider). Primitive tests (HPKE, AEAD, KDF, signature, hash) test the `CiphersuiteImpl` object directly and should be unaffected.
 
-**`group.test.ts`** — Tests `@enkaku/group` public API. Only changes if public API field names are renamed for alignment.
+**`group.test.ts`** — Tests `@enkaku/group` public API. Only changes if public API field names are renamed for alignment (e.g. `welcomeMessage` in `CommitInviteResult`).
 
 **`e2e-expo`** — No direct ts-mls imports. Only changes if `@enkaku/group` public API changes.
 
