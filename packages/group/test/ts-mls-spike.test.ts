@@ -1,95 +1,105 @@
 import { ed25519 } from '@noble/curves/ed25519.js'
-import type { Welcome } from 'ts-mls'
 import {
   type ClientState,
   type Credential,
   createApplicationMessage,
   createCommit,
   createGroup,
-  decodeMlsMessage,
+  decode,
   defaultCapabilities,
+  defaultCredentialTypes,
   defaultLifetime,
-  emptyPskIndex,
-  encodeMlsMessage,
+  defaultProposalTypes,
+  encode,
   generateKeyPackage,
   generateKeyPackageWithKey,
-  getCiphersuiteFromName,
   getCiphersuiteImpl as getImpl,
   joinGroup,
+  type MlsContext,
+  type MlsWelcomeMessage,
+  mlsMessageDecoder,
+  mlsMessageEncoder,
   nobleCryptoProvider,
+  nodeTypes,
   type Proposal,
   processPrivateMessage,
+  protocolVersions,
+  unsafeTestingAuthenticationService,
+  wireformats,
 } from 'ts-mls'
 import { describe, expect, test } from 'vitest'
 
 const CIPHERSUITE_NAME = 'MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519' as const
 
-function requireWelcome(welcome: Welcome | undefined): Welcome {
+function requireWelcome(welcome: MlsWelcomeMessage | undefined): MlsWelcomeMessage {
   if (welcome == null) throw new Error('Expected welcome message')
   return welcome
 }
 
 async function getCiphersuiteImpl() {
-  const cs = getCiphersuiteFromName(CIPHERSUITE_NAME)
-  return await getImpl(cs, nobleCryptoProvider)
+  return await getImpl(CIPHERSUITE_NAME, nobleCryptoProvider)
+}
+
+function makeContext(impl: Awaited<ReturnType<typeof getCiphersuiteImpl>>): MlsContext {
+  return { cipherSuite: impl, authService: unsafeTestingAuthenticationService }
 }
 
 function makeCredential(name: string): Credential {
   return {
-    credentialType: 'basic',
+    credentialType: defaultCredentialTypes.basic,
     identity: new TextEncoder().encode(name),
   }
 }
 
 function countLeafNodes(state: ClientState): number {
-  return state.ratchetTree.filter((node) => node !== undefined && node.nodeType === 'leaf').length
+  return state.ratchetTree.filter((node) => node !== undefined && node.nodeType === nodeTypes.leaf)
+    .length
 }
 
 describe('ts-mls integration spike', () => {
   test('creates a group and adds a member', async () => {
     const impl = await getCiphersuiteImpl()
+    const context = makeContext(impl)
 
     // Create Alice's credential and key package
     const aliceCredential = makeCredential('alice')
-    const alice = await generateKeyPackage(
-      aliceCredential,
-      defaultCapabilities(),
-      defaultLifetime,
-      [],
-      impl,
-    )
+    const alice = await generateKeyPackage({
+      credential: aliceCredential,
+      capabilities: defaultCapabilities(),
+      lifetime: defaultLifetime(),
+      cipherSuite: impl,
+    })
 
     // Create group with Alice as sole member
-    let aliceState = await createGroup(
-      new TextEncoder().encode('test-group'),
-      alice.publicPackage,
-      alice.privatePackage,
-      [],
-      impl,
-    )
+    let aliceState = await createGroup({
+      context,
+      groupId: new TextEncoder().encode('test-group'),
+      keyPackage: alice.publicPackage,
+      privateKeyPackage: alice.privatePackage,
+    })
 
     expect(aliceState.groupContext.epoch).toBe(0n)
     expect(countLeafNodes(aliceState)).toBe(1)
 
     // Create Bob's key package
     const bobCredential = makeCredential('bob')
-    const bob = await generateKeyPackage(
-      bobCredential,
-      defaultCapabilities(),
-      defaultLifetime,
-      [],
-      impl,
-    )
+    const bob = await generateKeyPackage({
+      credential: bobCredential,
+      capabilities: defaultCapabilities(),
+      lifetime: defaultLifetime(),
+      cipherSuite: impl,
+    })
 
     // Add Bob via proposal + commit
     const addProposal: Proposal = {
-      proposalType: 'add',
+      proposalType: defaultProposalTypes.add,
       add: { keyPackage: bob.publicPackage },
     }
-    const commitResult = await createCommit(
-      { state: aliceState, cipherSuite: impl },
-      { extraProposals: [addProposal] },
-    )
+    const commitResult = await createCommit({
+      context,
+      state: aliceState,
+      extraProposals: [addProposal],
+    })
     aliceState = commitResult.newState
 
     expect(aliceState.groupContext.epoch).toBe(1n)
@@ -97,14 +107,13 @@ describe('ts-mls integration spike', () => {
     expect(commitResult.welcome).toBeDefined()
 
     // Bob joins via Welcome
-    const bobState = await joinGroup(
-      requireWelcome(commitResult.welcome),
-      bob.publicPackage,
-      bob.privatePackage,
-      emptyPskIndex,
-      impl,
-      aliceState.ratchetTree,
-    )
+    const bobState = await joinGroup({
+      context,
+      welcome: requireWelcome(commitResult.welcome).welcome,
+      keyPackage: bob.publicPackage,
+      privateKeys: bob.privatePackage,
+      ratchetTree: aliceState.ratchetTree,
+    })
 
     expect(bobState.groupContext.epoch).toBe(1n)
     expect(countLeafNodes(bobState)).toBe(2)
@@ -112,58 +121,66 @@ describe('ts-mls integration spike', () => {
 
   test('encrypts and decrypts application messages', async () => {
     const impl = await getCiphersuiteImpl()
+    const context = makeContext(impl)
 
     // Setup: Alice creates group, adds Bob
-    const alice = await generateKeyPackage(
-      makeCredential('alice'),
-      defaultCapabilities(),
-      defaultLifetime,
-      [],
-      impl,
-    )
-    let aliceState = await createGroup(
-      new TextEncoder().encode('msg-group'),
-      alice.publicPackage,
-      alice.privatePackage,
-      [],
-      impl,
-    )
+    const alice = await generateKeyPackage({
+      credential: makeCredential('alice'),
+      capabilities: defaultCapabilities(),
+      lifetime: defaultLifetime(),
+      cipherSuite: impl,
+    })
+    let aliceState = await createGroup({
+      context,
+      groupId: new TextEncoder().encode('msg-group'),
+      keyPackage: alice.publicPackage,
+      privateKeyPackage: alice.privatePackage,
+    })
 
-    const bob = await generateKeyPackage(
-      makeCredential('bob'),
-      defaultCapabilities(),
-      defaultLifetime,
-      [],
-      impl,
-    )
-    const addResult = await createCommit(
-      { state: aliceState, cipherSuite: impl },
-      {
-        extraProposals: [{ proposalType: 'add', add: { keyPackage: bob.publicPackage } }],
-      },
-    )
+    const bob = await generateKeyPackage({
+      credential: makeCredential('bob'),
+      capabilities: defaultCapabilities(),
+      lifetime: defaultLifetime(),
+      cipherSuite: impl,
+    })
+    const addResult = await createCommit({
+      context,
+      state: aliceState,
+      extraProposals: [
+        { proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } },
+      ],
+    })
     aliceState = addResult.newState
 
-    let bobState = await joinGroup(
-      requireWelcome(addResult.welcome),
-      bob.publicPackage,
-      bob.privatePackage,
-      emptyPskIndex,
-      impl,
-      aliceState.ratchetTree,
-    )
+    let bobState = await joinGroup({
+      context,
+      welcome: requireWelcome(addResult.welcome).welcome,
+      keyPackage: bob.publicPackage,
+      privateKeys: bob.privatePackage,
+      ratchetTree: aliceState.ratchetTree,
+    })
 
     // Alice encrypts a message
     const plaintext = new TextEncoder().encode('hello from alice')
-    const { newState: aliceState2, privateMessage } = await createApplicationMessage(
-      aliceState,
-      plaintext,
-      impl,
-    )
-    aliceState = aliceState2
+    const aliceMsg = await createApplicationMessage({
+      context,
+      state: aliceState,
+      message: plaintext,
+    })
+    aliceState = aliceMsg.newState
 
-    // Bob decrypts the message
-    const result = await processPrivateMessage(bobState, privateMessage, emptyPskIndex, impl)
+    // Bob decrypts the message — extract privateMessage from the MlsFramedMessage
+    const privateMsg =
+      aliceMsg.message.wireformat === wireformats.mls_private_message
+        ? aliceMsg.message.privateMessage
+        : (() => {
+            throw new Error('Expected private message')
+          })()
+    const result = await processPrivateMessage({
+      context,
+      state: bobState,
+      privateMessage: privateMsg,
+    })
     expect(result.kind).toBe('applicationMessage')
     if (result.kind === 'applicationMessage') {
       expect(new TextDecoder().decode(result.message)).toBe('hello from alice')
@@ -172,15 +189,25 @@ describe('ts-mls integration spike', () => {
 
     // Bob encrypts a reply
     const reply = new TextEncoder().encode('hello from bob')
-    const { newState: bobState2, privateMessage: bobMsg } = await createApplicationMessage(
-      bobState,
-      reply,
-      impl,
-    )
-    bobState = bobState2
+    const bobMsg = await createApplicationMessage({
+      context,
+      state: bobState,
+      message: reply,
+    })
+    bobState = bobMsg.newState
 
     // Alice decrypts the reply
-    const aliceResult = await processPrivateMessage(aliceState, bobMsg, emptyPskIndex, impl)
+    const bobPrivateMsg =
+      bobMsg.message.wireformat === wireformats.mls_private_message
+        ? bobMsg.message.privateMessage
+        : (() => {
+            throw new Error('Expected private message')
+          })()
+    const aliceResult = await processPrivateMessage({
+      context,
+      state: aliceState,
+      privateMessage: bobPrivateMsg,
+    })
     expect(aliceResult.kind).toBe('applicationMessage')
     if (aliceResult.kind === 'applicationMessage') {
       expect(new TextDecoder().decode(aliceResult.message)).toBe('hello from bob')
@@ -189,85 +216,85 @@ describe('ts-mls integration spike', () => {
 
   test('uses Enkaku Ed25519 keys via generateKeyPackageWithKey', async () => {
     const impl = await getCiphersuiteImpl()
+    const context = makeContext(impl)
 
     // Generate Ed25519 key pair the same way Enkaku does (via @noble/curves)
     const privateKey = ed25519.utils.randomSecretKey()
     const publicKey = ed25519.getPublicKey(privateKey)
 
     const credential = makeCredential('enkaku-user')
-    const keyPackage = await generateKeyPackageWithKey(
+    const keyPackage = await generateKeyPackageWithKey({
       credential,
-      defaultCapabilities(),
-      defaultLifetime,
-      [],
-      { signKey: privateKey, publicKey },
-      impl,
-    )
+      capabilities: defaultCapabilities(),
+      lifetime: defaultLifetime(),
+      signatureKeyPair: { signKey: privateKey, publicKey },
+      cipherSuite: impl,
+    })
 
     expect(keyPackage.publicPackage).toBeDefined()
     expect(keyPackage.privatePackage).toBeDefined()
     expect(keyPackage.privatePackage.signaturePrivateKey).toEqual(privateKey)
 
     // Verify this key package can be used to create a group
-    const state = await createGroup(
-      new TextEncoder().encode('enkaku-group'),
-      keyPackage.publicPackage,
-      keyPackage.privatePackage,
-      [],
-      impl,
-    )
+    const state = await createGroup({
+      context,
+      groupId: new TextEncoder().encode('enkaku-group'),
+      keyPackage: keyPackage.publicPackage,
+      privateKeyPackage: keyPackage.privatePackage,
+    })
     expect(state.groupContext.epoch).toBe(0n)
   })
 
   test('removes a member and verifies forward secrecy', async () => {
     const impl = await getCiphersuiteImpl()
+    const context = makeContext(impl)
 
     // Setup: Alice creates group with Bob
-    const alice = await generateKeyPackage(
-      makeCredential('alice'),
-      defaultCapabilities(),
-      defaultLifetime,
-      [],
-      impl,
-    )
-    let aliceState = await createGroup(
-      new TextEncoder().encode('fs-group'),
-      alice.publicPackage,
-      alice.privatePackage,
-      [],
-      impl,
-    )
+    const alice = await generateKeyPackage({
+      credential: makeCredential('alice'),
+      capabilities: defaultCapabilities(),
+      lifetime: defaultLifetime(),
+      cipherSuite: impl,
+    })
+    let aliceState = await createGroup({
+      context,
+      groupId: new TextEncoder().encode('fs-group'),
+      keyPackage: alice.publicPackage,
+      privateKeyPackage: alice.privatePackage,
+    })
 
-    const bob = await generateKeyPackage(
-      makeCredential('bob'),
-      defaultCapabilities(),
-      defaultLifetime,
-      [],
-      impl,
-    )
-    const addBob = await createCommit(
-      { state: aliceState, cipherSuite: impl },
-      { extraProposals: [{ proposalType: 'add', add: { keyPackage: bob.publicPackage } }] },
-    )
+    const bob = await generateKeyPackage({
+      credential: makeCredential('bob'),
+      capabilities: defaultCapabilities(),
+      lifetime: defaultLifetime(),
+      cipherSuite: impl,
+    })
+    const addBob = await createCommit({
+      context,
+      state: aliceState,
+      extraProposals: [
+        { proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } },
+      ],
+    })
     aliceState = addBob.newState
-    const bobState = await joinGroup(
-      requireWelcome(addBob.welcome),
-      bob.publicPackage,
-      bob.privatePackage,
-      emptyPskIndex,
-      impl,
-      aliceState.ratchetTree,
-    )
+    const bobState = await joinGroup({
+      context,
+      welcome: requireWelcome(addBob.welcome).welcome,
+      keyPackage: bob.publicPackage,
+      privateKeys: bob.privatePackage,
+      ratchetTree: aliceState.ratchetTree,
+    })
 
     // Remove Bob
     const removeProposal: Proposal = {
-      proposalType: 'remove',
+      proposalType: defaultProposalTypes.remove,
       remove: { removed: 1 }, // Bob is at leaf index 1
     }
-    const removeResult = await createCommit(
-      { state: aliceState, cipherSuite: impl },
-      { extraProposals: [removeProposal] },
-    )
+    const removeResult = await createCommit({
+      context,
+      state: aliceState,
+      extraProposals: [removeProposal],
+    })
     aliceState = removeResult.newState
 
     // Epoch advanced
@@ -275,73 +302,83 @@ describe('ts-mls integration spike', () => {
     expect(countLeafNodes(aliceState)).toBe(1)
 
     // Alice sends message in new epoch — Bob's old state cannot decrypt
-    const { privateMessage } = await createApplicationMessage(
-      aliceState,
-      new TextEncoder().encode('secret after removal'),
-      impl,
-    )
+    const aliceMsg = await createApplicationMessage({
+      context,
+      state: aliceState,
+      message: new TextEncoder().encode('secret after removal'),
+    })
+
+    const privateMsg =
+      aliceMsg.message.wireformat === wireformats.mls_private_message
+        ? aliceMsg.message.privateMessage
+        : (() => {
+            throw new Error('Expected private message')
+          })()
 
     // Bob tries to decrypt with old state — should fail
     await expect(
-      processPrivateMessage(bobState, privateMessage, emptyPskIndex, impl),
+      processPrivateMessage({
+        context,
+        state: bobState,
+        privateMessage: privateMsg,
+      }),
     ).rejects.toThrow()
   })
 
   test('message encoding round-trip', async () => {
     const impl = await getCiphersuiteImpl()
+    const context = makeContext(impl)
 
-    const alice = await generateKeyPackage(
-      makeCredential('alice'),
-      defaultCapabilities(),
-      defaultLifetime,
-      [],
-      impl,
-    )
-    let aliceState = await createGroup(
-      new TextEncoder().encode('codec-group'),
-      alice.publicPackage,
-      alice.privatePackage,
-      [],
-      impl,
-    )
+    const alice = await generateKeyPackage({
+      credential: makeCredential('alice'),
+      capabilities: defaultCapabilities(),
+      lifetime: defaultLifetime(),
+      cipherSuite: impl,
+    })
+    let aliceState = await createGroup({
+      context,
+      groupId: new TextEncoder().encode('codec-group'),
+      keyPackage: alice.publicPackage,
+      privateKeyPackage: alice.privatePackage,
+    })
 
-    const bob = await generateKeyPackage(
-      makeCredential('bob'),
-      defaultCapabilities(),
-      defaultLifetime,
-      [],
-      impl,
-    )
-    const addResult = await createCommit(
-      { state: aliceState, cipherSuite: impl },
-      { extraProposals: [{ proposalType: 'add', add: { keyPackage: bob.publicPackage } }] },
-    )
+    const bob = await generateKeyPackage({
+      credential: makeCredential('bob'),
+      capabilities: defaultCapabilities(),
+      lifetime: defaultLifetime(),
+      cipherSuite: impl,
+    })
+    const addResult = await createCommit({
+      context,
+      state: aliceState,
+      extraProposals: [
+        { proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } },
+      ],
+    })
     aliceState = addResult.newState
 
     // Encode welcome for transport
-    const welcomeMsg = encodeMlsMessage({
-      welcome: requireWelcome(addResult.welcome),
-      wireformat: 'mls_welcome',
-      version: 'mls10',
+    const welcomeWrapper = requireWelcome(addResult.welcome)
+    const welcomeMsg = encode(mlsMessageEncoder, {
+      welcome: welcomeWrapper.welcome,
+      wireformat: wireformats.mls_welcome,
+      version: protocolVersions.mls10,
     })
     expect(welcomeMsg).toBeInstanceOf(Uint8Array)
 
-    // Decode welcome — decoder returns [value, bytesConsumed] tuple
-    const decodeResult = decodeMlsMessage(welcomeMsg, 0)
-    if (decodeResult == null) throw new Error('Expected decode result')
-    const [decoded] = decodeResult
+    // Decode welcome
+    const decoded = decode(mlsMessageDecoder, welcomeMsg)
 
-    expect(decoded.wireformat).toBe('mls_welcome')
-    if (decoded.wireformat === 'mls_welcome') {
+    expect(decoded.wireformat).toBe(wireformats.mls_welcome)
+    if (decoded.wireformat === wireformats.mls_welcome) {
       // Use decoded welcome to join
-      const bobState = await joinGroup(
-        decoded.welcome,
-        bob.publicPackage,
-        bob.privatePackage,
-        emptyPskIndex,
-        impl,
-        aliceState.ratchetTree,
-      )
+      const bobState = await joinGroup({
+        context,
+        welcome: decoded.welcome,
+        keyPackage: bob.publicPackage,
+        privateKeys: bob.privatePackage,
+        ratchetTree: aliceState.ratchetTree,
+      })
       expect(bobState.groupContext.epoch).toBe(1n)
     }
   })
