@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-03-23-ts-mls-v2-migration-design.md`
 
-**Stage:** planning
+**Stage:** executing
 
 ---
 
