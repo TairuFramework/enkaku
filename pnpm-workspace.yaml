@@ -29,7 +29,7 @@ catalog:
   '@orama/plugin-docusaurus-v3': ^3.1.18
   '@playwright/test': 1.58.2
   '@scure/base': ^2.0.0
-  ts-mls: ^1.6.2
+  ts-mls: 2.0.0-rc.10
   '@standard-schema/spec': ^1.1.0
   '@swc/cli': ^0.8.0
   '@swc/core': ^1.15.18

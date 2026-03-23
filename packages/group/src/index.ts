@@ -1,3 +1,4 @@
+export { createDIDAuthenticationService } from './authentication.js'
 export {
   createGroupCapability,
   type DelegateGroupMembershipParams,

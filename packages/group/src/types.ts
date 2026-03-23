@@ -1,4 +1,4 @@
-import type { CryptoProvider, KeyPackage, PrivateKeyPackage } from 'ts-mls'
+import type { CryptoProvider, GroupContextExtension, KeyPackage, PrivateKeyPackage } from 'ts-mls'
 
 import type { GroupPermission } from './capability.js'
 
@@ -8,7 +8,7 @@ export type GroupOptions = {
   /** Ciphersuite name. Defaults to MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519. */
   ciphersuiteName?: string
   /** Group extensions. */
-  extensions?: Array<unknown>
+  extensions?: Array<GroupContextExtension>
 }
 
 export type GroupSyncScope = {
