@@ -328,14 +328,13 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
 
   const capToken = await verifyToken(invite.capabilityToken)
 
+  type JoinGroupParams = Parameters<typeof mlsJoinGroup>[0]
   const state = await mlsJoinGroup({
     context,
-    welcome: welcome as Parameters<typeof mlsJoinGroup>[0]['welcome'],
-    keyPackage: keyPackageBundle.publicPackage as Parameters<typeof mlsJoinGroup>[0]['keyPackage'],
-    privateKeys: keyPackageBundle.privatePackage as Parameters<
-      typeof mlsJoinGroup
-    >[0]['privateKeys'],
-    ratchetTree: ratchetTree as Parameters<typeof mlsJoinGroup>[0]['ratchetTree'],
+    welcome: welcome as JoinGroupParams['welcome'],
+    keyPackage: keyPackageBundle.publicPackage as JoinGroupParams['keyPackage'],
+    privateKeys: keyPackageBundle.privatePackage as JoinGroupParams['privateKeys'],
+    ratchetTree: ratchetTree as JoinGroupParams['ratchetTree'],
   })
 
   const credential: MemberCredential = {
