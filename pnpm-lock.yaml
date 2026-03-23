@@ -160,8 +160,8 @@ catalogs:
       specifier: 0.21.2
       version: 0.21.2
     ts-mls:
-      specifier: ^1.6.2
-      version: 1.6.2
+      specifier: 2.0.0-rc.10
+      version: 2.0.0-rc.10
     tsx:
       specifier: ^4.21.0
       version: 4.21.0
@@ -433,7 +433,7 @@ importers:
         version: 2.0.1
       ts-mls:
         specifier: 'catalog:'
-        version: 1.6.2(@noble/ciphers@2.1.1)(@noble/curves@2.0.1)
+        version: 2.0.0-rc.10(@noble/ciphers@2.1.1)(@noble/curves@2.0.1)
 
   packages/http-client-transport:
     dependencies:
@@ -2904,8 +2904,8 @@ packages:
     resolution: {integrity: sha512-moJwhmtLtuxiUzzNp1jpfBfx8yefKoO9D/RCR9dmwrnc7qjJqId1rEtQz+lSlU5cabX8daToMSx/7HayXOiaFw==}
     engines: {node: '>=16.0.0'}
 
-  '@hpke/core@1.8.0':
-    resolution: {integrity: sha512-yHuo+2q4HSPUFuxcg87Kiy7QZRk4IeR+cwBB0qW8fHnr71bnRCArM39Cq1bWHBt75gTyeERGD/v1H14yPB2wyw==}
+  '@hpke/core@1.9.0':
+    resolution: {integrity: sha512-pFxWl1nNJeQCSUFs7+GAblHvXBCjn9EPN65vdKlYQil2aURaRxfGMO6vBKGqm1YHTKwiAxJQNEI70PbSowMP9Q==}
     engines: {node: '>=16.0.0'}
 
   '@iconify/types@2.0.0':
@@ -10785,13 +10785,13 @@ packages:
     resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
     engines: {node: '>=6.10'}
 
-  ts-mls@1.6.2:
-    resolution: {integrity: sha512-Li0Ow/IkcV3x2Jk9zi7QaQlqPIegOFUtM1mfBvvJdCysU/byifYFKWpCkKfKpu2wRa9/RH8MaT+rq/JSheUYTQ==}
+  ts-mls@2.0.0-rc.10:
+    resolution: {integrity: sha512-4FFbkysQkJlVaUv4fs7ZC4wuiwTOCgX/bEMo2fFGngy/QofC/lvWWgsScKuGxEIhEf4e2Q8APfJ7DknP0VRCoA==}
     peerDependencies:
-      '@hpke/chacha20poly1305': 1.7.1
-      '@hpke/dhkem-x448': 1.7.0
-      '@hpke/hybridkem-x-wing': 0.6.1
-      '@hpke/ml-kem': 0.2.1
+      '@hpke/chacha20poly1305': 1.8.0
+      '@hpke/dhkem-x448': 1.8.0
+      '@hpke/hybridkem-x-wing': 0.7.0
+      '@hpke/ml-kem': 0.3.0
       '@noble/ciphers': 2.1.1
       '@noble/curves': 2.0.1
       '@noble/post-quantum': 0.5.2
@@ -14727,7 +14727,7 @@ snapshots:
 
   '@hpke/common@1.10.1': {}
 
-  '@hpke/core@1.8.0':
+  '@hpke/core@1.9.0':
     dependencies:
       '@hpke/common': 1.10.1
 
@@ -24247,9 +24247,9 @@ snapshots:
 
   ts-dedent@2.2.0: {}
 
-  ts-mls@1.6.2(@noble/ciphers@2.1.1)(@noble/curves@2.0.1):
+  ts-mls@2.0.0-rc.10(@noble/ciphers@2.1.1)(@noble/curves@2.0.1):
     dependencies:
-      '@hpke/core': 1.8.0
+      '@hpke/core': 1.9.0
       '@noble/ciphers': 2.1.1
     optionalDependencies:
       '@noble/curves': 2.0.1
