@@ -17,8 +17,8 @@ import {
   type MlsContext,
   createGroup as mlsCreateGroup,
   joinGroup as mlsJoinGroup,
+  processMessage as mlsProcessMessage,
   nodeTypes,
-  processPrivateMessage,
 } from 'ts-mls'
 
 import { createDIDAuthenticationService } from './authentication.js'
@@ -132,12 +132,10 @@ export class GroupHandle {
    * Decrypt an application message from the group.
    */
   async decrypt(privateMessage: unknown): Promise<Uint8Array> {
-    const result = await processPrivateMessage({
+    const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
-      privateMessage: privateMessage as Parameters<
-        typeof processPrivateMessage
-      >[0]['privateMessage'],
+      message: privateMessage as Parameters<typeof mlsProcessMessage>[0]['message'],
     })
     if (result.kind === 'applicationMessage') {
       this.#state = result.newState
@@ -152,12 +150,10 @@ export class GroupHandle {
    * Process a received MLS message (Commit, Proposal, or application).
    */
   async processMessage(privateMessage: unknown): Promise<Uint8Array | null> {
-    const result = await processPrivateMessage({
+    const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
-      privateMessage: privateMessage as Parameters<
-        typeof processPrivateMessage
-      >[0]['privateMessage'],
+      message: privateMessage as Parameters<typeof mlsProcessMessage>[0]['message'],
     })
     this.#state = result.newState
     if (result.kind === 'applicationMessage') {
