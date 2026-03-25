@@ -17,7 +17,7 @@ describe('Per-message size limits', () => {
     type Protocol = typeof protocol
 
     const handler = vi.fn((ctx) => ctx.param)
-    const handlers = { echo: handler } as ProcedureHandlers<Protocol>
+    const handlers = { echo: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -38,7 +38,7 @@ describe('Per-message size limits', () => {
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('error')
     expect(response.value?.payload.rid).toBe('r1')
-    expect(response.value?.payload.code).toBe('EK06')
+    expect((response.value?.payload as Record<string, unknown>).code).toBe('EK06')
     expect(handler).not.toHaveBeenCalled()
 
     await server.dispose()
@@ -59,7 +59,7 @@ describe('Per-message size limits', () => {
     const handler = vi.fn(async () => {
       return 'done'
     })
-    const handlers = { data: handler } as ProcedureHandlers<Protocol>
+    const handlers = { data: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -79,7 +79,7 @@ describe('Per-message size limits', () => {
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('error')
     expect(response.value?.payload.rid).toBe('s1')
-    expect(response.value?.payload.code).toBe('EK06')
+    expect((response.value?.payload as Record<string, unknown>).code).toBe('EK06')
     expect(handler).not.toHaveBeenCalled()
 
     await server.dispose()
@@ -101,7 +101,7 @@ describe('Per-message size limits', () => {
     const handler = vi.fn(async () => {
       return 'done'
     })
-    const handlers = { chat: handler } as ProcedureHandlers<Protocol>
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -121,7 +121,7 @@ describe('Per-message size limits', () => {
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('error')
     expect(response.value?.payload.rid).toBe('c1')
-    expect(response.value?.payload.code).toBe('EK06')
+    expect((response.value?.payload as Record<string, unknown>).code).toBe('EK06')
     expect(handler).not.toHaveBeenCalled()
 
     await server.dispose()
@@ -132,13 +132,13 @@ describe('Per-message size limits', () => {
     const protocol = {
       notify: {
         type: 'event',
-        data: { type: 'string' },
+        data: { type: 'object' },
       },
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
     const handler = vi.fn()
-    const handlers = { notify: handler } as ProcedureHandlers<Protocol>
+    const handlers = { notify: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -157,7 +157,11 @@ describe('Per-message size limits', () => {
     })
 
     await transports.client.write(
-      createUnsignedToken({ typ: 'event', prc: 'notify', dat: 'x'.repeat(200) }),
+      createUnsignedToken({
+        typ: 'event',
+        prc: 'notify',
+        dat: 'x'.repeat(200),
+      }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
     // Wait for the message to be processed
@@ -182,7 +186,7 @@ describe('Per-message size limits', () => {
     type Protocol = typeof protocol
 
     const handler = vi.fn((ctx) => ctx.param)
-    const handlers = { echo: handler } as ProcedureHandlers<Protocol>
+    const handlers = { echo: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -201,7 +205,7 @@ describe('Per-message size limits', () => {
 
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('result')
-    expect(response.value?.payload.val).toBe('hello')
+    expect((response.value?.payload as Record<string, unknown>).val).toBe('hello')
 
     await server.dispose()
     await transports.dispose()

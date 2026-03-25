@@ -30,3 +30,7 @@ jobs:
       - name: Integration tests
         working-directory: tests/integration
         run: pnpm run test
+
+      - name: TS 7 readiness check (stableTypeOrdering)
+        run: pnpm -r exec tsc --noEmit --skipLibCheck --stableTypeOrdering
+        continue-on-error: true

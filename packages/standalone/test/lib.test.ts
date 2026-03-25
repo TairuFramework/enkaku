@@ -3,7 +3,7 @@ import type { ChannelHandler, EventHandler, RequestHandler, StreamHandler } from
 import { randomIdentity } from '@enkaku/token'
 import { describe, expect, test, vi } from 'vitest'
 
-import { standalone } from '../src'
+import { standalone } from '../src/index.js'
 
 describe('standalone', () => {
   describe('events', () => {

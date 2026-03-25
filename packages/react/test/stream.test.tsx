@@ -6,6 +6,11 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { EnkakuProvider, useCreateStream, useReceiveAll, useReceiveLatest } from '../src/index.js'
 
+type AnyStreamCall = StreamCall<
+  { value: number } | { message: string },
+  { total: number } | { count: number }
+>
+
 type Protocol = {
   numbers: {
     type: 'stream'
@@ -120,8 +125,8 @@ const messagesHandler = vi.fn(
 )
 
 const mockClient = standalone<Protocol>({
-  numbers: numbersHandler,
-  messages: messagesHandler,
+  numbers: numbersHandler as never,
+  messages: messagesHandler as never,
 })
 
 const wrapper = ({ children }: PropsWithChildren) => (
@@ -146,7 +151,7 @@ describe('useCreateStream', () => {
     const { result } = renderHook(() => useCreateStream<Protocol>('numbers'), { wrapper })
     const [createStream] = result.current
 
-    let streamCall: StreamCall<{ value: number }, { total: number }>
+    let streamCall!: AnyStreamCall
     await act(() => {
       streamCall = createStream({ count: 3 })
       return Promise.resolve()
@@ -166,9 +171,9 @@ describe('useCreateStream', () => {
     const { result } = renderHook(() => useCreateStream<Protocol>('messages'), { wrapper })
     const [createStream] = result.current
 
-    let streamCall: StreamCall<{ message: string }, { count: number }>
+    let streamCall!: AnyStreamCall
     await act(() => {
-      streamCall = createStream()
+      streamCall = createStream(undefined as never)
       return Promise.resolve()
     })
 
@@ -185,7 +190,7 @@ describe('useCreateStream', () => {
     const [createStream] = result.current
 
     // Create first stream
-    let firstCall: StreamCall<{ value: number }, { total: number }>
+    let firstCall!: AnyStreamCall
     await act(() => {
       firstCall = createStream({ count: 2 })
       return Promise.resolve()
@@ -197,7 +202,7 @@ describe('useCreateStream', () => {
     })
 
     // Create second stream
-    let secondCall: StreamCall<{ value: number }, { total: number }>
+    let secondCall!: AnyStreamCall
     await act(() => {
       secondCall = createStream({ count: 5 })
       return Promise.resolve()
@@ -243,8 +248,8 @@ describe('useCreateStream', () => {
     )
 
     const abortClient = standalone<Protocol>({
-      numbers: abortableHandler,
-      messages: messagesHandler,
+      numbers: abortableHandler as never,
+      messages: messagesHandler as never,
     })
     const abortWrapper = ({ children }: PropsWithChildren) => (
       <EnkakuProvider client={abortClient}>{children}</EnkakuProvider>
@@ -255,7 +260,7 @@ describe('useCreateStream', () => {
     })
     const [createStream] = result.current
 
-    let streamCall: StreamCall<{ value: number }, { total: number }>
+    let streamCall!: AnyStreamCall
     act(() => {
       streamCall = createStream({ count: 3 })
     })
@@ -428,7 +433,7 @@ describe('useReceiveAll', () => {
     )
 
     await act(() => {
-      result.current.createStream()
+      result.current.createStream(undefined as never)
       return Promise.resolve()
     })
 
@@ -541,8 +546,8 @@ describe('Stream caching and reference counting', () => {
     )
 
     // Create two streams with identical parameters from the same hook
-    let call1: StreamCall<{ value: number }, { total: number }>
-    let call2: StreamCall<{ value: number }, { total: number }>
+    let call1!: AnyStreamCall
+    let call2!: AnyStreamCall
 
     await act(() => {
       call1 = result.current.createStream({ count: 3 })
@@ -565,8 +570,8 @@ describe('Stream caching and reference counting', () => {
       { wrapper },
     )
 
-    let call1: StreamCall<{ value: number }, { total: number }>
-    let call2: StreamCall<{ value: number }, { total: number }>
+    let call1!: AnyStreamCall
+    let call2!: AnyStreamCall
 
     await act(() => {
       call1 = result.current.createStream({ count: 3 })
@@ -588,7 +593,7 @@ describe('Stream caching and reference counting', () => {
       { wrapper },
     )
 
-    let streamCall: StreamCall<{ value: number }, { total: number }>
+    let streamCall!: AnyStreamCall
     await act(() => {
       streamCall = result.current.createStream({ count: 3 })
       return Promise.resolve()
@@ -649,7 +654,7 @@ describe('Stream hooks integration', () => {
     const { createStream } = result.current
 
     await act(() => {
-      createStream()
+      createStream(undefined as never)
       return Promise.resolve()
     })
 

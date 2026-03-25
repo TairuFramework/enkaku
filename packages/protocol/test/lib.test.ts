@@ -6,7 +6,7 @@ import {
   createClientMessageSchema,
   createServerMessageSchema,
   type ProtocolDefinition,
-} from '../src'
+} from '../src/index.js'
 
 const protocol = {
   'test/event': {

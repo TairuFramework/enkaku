@@ -26,7 +26,7 @@ describe('Server resource limits', () => {
         ctx.signal.addEventListener('abort', () => resolve('aborted'))
       })
     })
-    const handlers = { slow: handler } as ProcedureHandlers<Protocol>
+    const handlers = { slow: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -40,15 +40,33 @@ describe('Server resource limits', () => {
     })
 
     // Send 3 requests - only 2 should be accepted
-    await transports.client.write(createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'r1' }))
-    await transports.client.write(createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'r2' }))
-    await transports.client.write(createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'r3' }))
+    await transports.client.write(
+      createUnsignedToken({
+        typ: 'request',
+        prc: 'slow',
+        rid: 'r1',
+      }) as AnyClientMessageOf<Protocol>,
+    )
+    await transports.client.write(
+      createUnsignedToken({
+        typ: 'request',
+        prc: 'slow',
+        rid: 'r2',
+      }) as AnyClientMessageOf<Protocol>,
+    )
+    await transports.client.write(
+      createUnsignedToken({
+        typ: 'request',
+        prc: 'slow',
+        rid: 'r3',
+      }) as AnyClientMessageOf<Protocol>,
+    )
 
     // Wait for r3 rejection
     const r3Error = await transports.client.read()
     expect(r3Error.value?.payload.typ).toBe('error')
     expect(r3Error.value?.payload.rid).toBe('r3')
-    expect(r3Error.value?.payload.msg).toContain('limit')
+    expect((r3Error.value?.payload as Record<string, unknown>).msg).toContain('limit')
 
     // Only 2 handlers should have been called
     expect(handlerCalls).toEqual(['r1', 'r2'])
@@ -81,7 +99,7 @@ describe('Server resource limits', () => {
         ctx.signal.addEventListener('abort', () => resolve('aborted'))
       })
     })
-    const handlers = { tracked: handler } as ProcedureHandlers<Protocol>
+    const handlers = { tracked: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -109,7 +127,7 @@ describe('Server resource limits', () => {
     const r3Error = await transports.client.read()
     expect(r3Error.value?.payload.typ).toBe('error')
     expect(r3Error.value?.payload.rid).toBe('r3')
-    expect(r3Error.value?.payload.msg).toContain('handler limit')
+    expect((r3Error.value?.payload as Record<string, unknown>).msg).toContain('handler limit')
 
     // Only first two handlers should have started
     expect(handlerStarts).toEqual(['first', 'second'])

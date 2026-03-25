@@ -15,7 +15,7 @@ describe('encryption policy enforcement', () => {
     },
     notify: {
       type: 'event',
-      data: { type: 'string' },
+      data: { type: 'object' },
     },
   } as const satisfies ProtocolDefinition
   type Protocol = typeof protocol
@@ -23,7 +23,10 @@ describe('encryption policy enforcement', () => {
   test('rejects request when encryptionPolicy is required and message is not encrypted', async () => {
     const handler = vi.fn<RequestHandler<Protocol, 'test'>>(() => 'OK')
     const notifyHandler = vi.fn()
-    const handlers = { test: handler, notify: notifyHandler } as ProcedureHandlers<Protocol>
+    const handlers = {
+      test: handler,
+      notify: notifyHandler,
+    } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -46,7 +49,7 @@ describe('encryption policy enforcement', () => {
     const read = await transports.client.read()
 
     expect(read.value?.payload.typ).toBe('error')
-    expect(read.value?.payload.code).toBe('EK07')
+    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK07')
     expect(handler).not.toHaveBeenCalled()
 
     await transports.dispose()
@@ -55,7 +58,10 @@ describe('encryption policy enforcement', () => {
   test('allows request when encryptionPolicy is optional and message is not encrypted', async () => {
     const handler = vi.fn<RequestHandler<Protocol, 'test'>>(() => 'OK')
     const notifyHandler = vi.fn()
-    const handlers = { test: handler, notify: notifyHandler } as ProcedureHandlers<Protocol>
+    const handlers = {
+      test: handler,
+      notify: notifyHandler,
+    } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -78,7 +84,7 @@ describe('encryption policy enforcement', () => {
     const read = await transports.client.read()
 
     expect(read.value?.payload.typ).toBe('result')
-    expect(read.value?.payload.val).toBe('OK')
+    expect((read.value?.payload as Record<string, unknown>).val).toBe('OK')
 
     await transports.dispose()
   })
@@ -86,7 +92,10 @@ describe('encryption policy enforcement', () => {
   test('allows request when no encryptionPolicy is set', async () => {
     const handler = vi.fn<RequestHandler<Protocol, 'test'>>(() => 'OK')
     const notifyHandler = vi.fn()
-    const handlers = { test: handler, notify: notifyHandler } as ProcedureHandlers<Protocol>
+    const handlers = {
+      test: handler,
+      notify: notifyHandler,
+    } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -108,7 +117,7 @@ describe('encryption policy enforcement', () => {
     const read = await transports.client.read()
 
     expect(read.value?.payload.typ).toBe('result')
-    expect(read.value?.payload.val).toBe('OK')
+    expect((read.value?.payload as Record<string, unknown>).val).toBe('OK')
 
     await transports.dispose()
   })
@@ -116,7 +125,10 @@ describe('encryption policy enforcement', () => {
   test('rejects event when encryptionPolicy is required', async () => {
     const handler = vi.fn()
     const notifyHandler = vi.fn()
-    const handlers = { test: handler, notify: notifyHandler } as ProcedureHandlers<Protocol>
+    const handlers = {
+      test: handler,
+      notify: notifyHandler,
+    } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -140,7 +152,7 @@ describe('encryption policy enforcement', () => {
       data: 'hello',
       exp: expiresAt,
     } as const)
-    await transports.client.write(message)
+    await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
     // Wait for processing
     await new Promise((resolve) => setTimeout(resolve, 50))
@@ -159,7 +171,10 @@ describe('encryption policy enforcement', () => {
   test('per-procedure encryption policy overrides global policy', async () => {
     const handler = vi.fn<RequestHandler<Protocol, 'test'>>(() => 'OK')
     const notifyHandler = vi.fn()
-    const handlers = { test: handler, notify: notifyHandler } as ProcedureHandlers<Protocol>
+    const handlers = {
+      test: handler,
+      notify: notifyHandler,
+    } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -186,7 +201,7 @@ describe('encryption policy enforcement', () => {
     const read = await transports.client.read()
 
     expect(read.value?.payload.typ).toBe('result')
-    expect(read.value?.payload.val).toBe('OK')
+    expect((read.value?.payload as Record<string, unknown>).val).toBe('OK')
 
     await transports.dispose()
   })
@@ -194,7 +209,10 @@ describe('encryption policy enforcement', () => {
   test('public server enforces encryption policy', async () => {
     const handler = vi.fn<RequestHandler<Protocol, 'test'>>(() => 'OK')
     const notifyHandler = vi.fn()
-    const handlers = { test: handler, notify: notifyHandler } as ProcedureHandlers<Protocol>
+    const handlers = {
+      test: handler,
+      notify: notifyHandler,
+    } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -217,7 +235,7 @@ describe('encryption policy enforcement', () => {
     const read = await transports.client.read()
 
     expect(read.value?.payload.typ).toBe('error')
-    expect(read.value?.payload.code).toBe('EK07')
+    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK07')
     expect(handler).not.toHaveBeenCalled()
 
     await transports.dispose()

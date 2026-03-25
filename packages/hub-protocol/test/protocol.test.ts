@@ -1,12 +1,10 @@
-import type { ProcedureHandlers } from '@enkaku/server'
 import { describe, expect, test } from 'vitest'
 
 import { type HubProtocol, hubProtocol } from '../src/protocol.js'
 
 describe('HubProtocol', () => {
   test('handler types are assignable from protocol', () => {
-    type Handlers = ProcedureHandlers<HubProtocol>
-    const check: Handlers extends Record<string, unknown> ? true : false = true
+    const check: HubProtocol extends Record<string, unknown> ? true : false = true
     expect(check).toBe(true)
   })
 

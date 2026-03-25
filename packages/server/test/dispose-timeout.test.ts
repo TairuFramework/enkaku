@@ -21,7 +21,7 @@ describe('Server dispose timeout', () => {
           // Handler ignores abort signal and never returns
         }),
     )
-    const handlers = { stuck: handler } as ProcedureHandlers<Protocol>
+    const handlers = { stuck: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -35,7 +35,13 @@ describe('Server dispose timeout', () => {
       limits: { cleanupTimeoutMs: 100 },
     })
 
-    await transports.client.write(createUnsignedToken({ typ: 'request', prc: 'stuck', rid: 'r1' }))
+    await transports.client.write(
+      createUnsignedToken({
+        typ: 'request',
+        prc: 'stuck',
+        rid: 'r1',
+      }) as AnyClientMessageOf<Protocol>,
+    )
 
     // Wait for handler to start
     await new Promise((resolve) => setTimeout(resolve, 20))

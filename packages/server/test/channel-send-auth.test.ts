@@ -24,7 +24,7 @@ describe('Channel send authorization', () => {
       }
       return 'done'
     })
-    const handlers = { chat: handler } as ProcedureHandlers<Protocol>
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -38,7 +38,12 @@ describe('Channel send authorization', () => {
 
     // Send to non-existent channel - should be ignored
     await transports.client.write(
-      createUnsignedToken({ typ: 'send', prc: 'chat', rid: 'unknown', val: 'hello' }),
+      createUnsignedToken({
+        typ: 'send',
+        prc: 'chat',
+        rid: 'unknown',
+        val: 'hello',
+      }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
     // Give time for processing
@@ -61,7 +66,7 @@ describe('Channel send authorization', () => {
       }
       return 'done'
     })
-    const handlers = { chat: handler } as ProcedureHandlers<Protocol>
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -83,21 +88,26 @@ describe('Channel send authorization', () => {
       prm: undefined,
       exp: expiresAt,
     } as const)
-    await transports.client.write(channelMsg)
+    await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel to be established
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Send unsigned message - should be rejected
     await transports.client.write(
-      createUnsignedToken({ typ: 'send', prc: 'chat', rid: 'ch1', val: 'unauthorized' }),
+      createUnsignedToken({
+        typ: 'send',
+        prc: 'chat',
+        rid: 'ch1',
+        val: 'unauthorized',
+      }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
     // Should receive error
     const errorMsg = await transports.client.read()
     expect(errorMsg.value?.payload.typ).toBe('error')
     expect(errorMsg.value?.payload.rid).toBe('ch1')
-    expect(errorMsg.value?.payload.msg).toContain('signed')
+    expect((errorMsg.value?.payload as Record<string, unknown>).msg).toContain('signed')
 
     // Value should not have been received by handler
     expect(receivedValues).toEqual([])
@@ -117,7 +127,7 @@ describe('Channel send authorization', () => {
       }
       return 'done'
     })
-    const handlers = { chat: handler } as ProcedureHandlers<Protocol>
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -139,7 +149,7 @@ describe('Channel send authorization', () => {
       prm: undefined,
       exp: expiresAt,
     } as const)
-    await transports.client.write(channelMsg)
+    await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel to be established
     await new Promise((resolve) => setTimeout(resolve, 50))
@@ -150,7 +160,7 @@ describe('Channel send authorization', () => {
       rid: 'ch1',
       val: 'hello from owner',
     } as const)
-    await transports.client.write(sendMsg)
+    await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for processing
     await new Promise((resolve) => setTimeout(resolve, 50))
@@ -174,7 +184,7 @@ describe('Channel send authorization', () => {
       }
       return 'done'
     })
-    const handlers = { chat: handler } as ProcedureHandlers<Protocol>
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -196,7 +206,7 @@ describe('Channel send authorization', () => {
       prm: undefined,
       exp: expiresAt,
     } as const)
-    await transports.client.write(channelMsg)
+    await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel to be established
     await new Promise((resolve) => setTimeout(resolve, 50))
@@ -207,7 +217,7 @@ describe('Channel send authorization', () => {
       rid: 'ch1',
       val: 'hello from intruder',
     } as const)
-    await transports.client.write(sendMsg)
+    await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Should receive error
     const errorMsg = await transports.client.read()
@@ -230,7 +240,7 @@ describe('Channel send authorization', () => {
       }
       return 'done'
     })
-    const handlers = { chat: handler } as ProcedureHandlers<Protocol>
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -244,7 +254,12 @@ describe('Channel send authorization', () => {
 
     // Establish channel
     await transports.client.write(
-      createUnsignedToken({ typ: 'channel', prc: 'chat', rid: 'ch1', prm: undefined }),
+      createUnsignedToken({
+        typ: 'channel',
+        prc: 'chat',
+        rid: 'ch1',
+        prm: undefined,
+      }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
     // Give time for channel to be established
@@ -252,7 +267,11 @@ describe('Channel send authorization', () => {
 
     // Send unsigned message in public mode - should work
     await transports.client.write(
-      createUnsignedToken({ typ: 'send', rid: 'ch1', val: 'hello public' }),
+      createUnsignedToken({
+        typ: 'send',
+        rid: 'ch1',
+        val: 'hello public',
+      }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
     // Give time for processing

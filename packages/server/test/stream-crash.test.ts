@@ -19,7 +19,7 @@ describe('Stream crash cleanup', () => {
     const handler = vi.fn(async () => {
       throw new Error('handler crashed')
     })
-    const handlers = { failing: handler } as ProcedureHandlers<Protocol>
+    const handlers = { failing: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -34,7 +34,12 @@ describe('Stream crash cleanup', () => {
     server.events.on('handlerError', errorHandler)
 
     await transports.client.write(
-      createUnsignedToken({ typ: 'stream', prc: 'failing', rid: 's1', prm: undefined }),
+      createUnsignedToken({
+        typ: 'stream',
+        prc: 'failing',
+        rid: 's1',
+        prm: undefined,
+      }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
     // Read the error response
@@ -64,7 +69,7 @@ describe('Stream crash cleanup', () => {
     const handler = vi.fn(async () => {
       throw new Error('handler crashed')
     })
-    const handlers = { failing: handler } as ProcedureHandlers<Protocol>
+    const handlers = { failing: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -79,7 +84,12 @@ describe('Stream crash cleanup', () => {
     server.events.on('handlerError', errorHandler)
 
     await transports.client.write(
-      createUnsignedToken({ typ: 'channel', prc: 'failing', rid: 'c1', prm: undefined }),
+      createUnsignedToken({
+        typ: 'channel',
+        prc: 'failing',
+        rid: 'c1',
+        prm: undefined,
+      }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
     // Read the error response

@@ -310,7 +310,9 @@ describe('POST-based SSE sessions', () => {
 
     // Read SSE data from the response body
     const body = response.body as ReadableStream<Uint8Array>
-    const textReader = body.pipeThrough(new TextDecoderStream()).getReader()
+    const textReader = body
+      .pipeThrough(new TextDecoderStream() as ReadableWritablePair<string, Uint8Array>)
+      .getReader()
 
     // First chunk is the SSE comment flush
     const { value: firstChunk } = await textReader.read()
