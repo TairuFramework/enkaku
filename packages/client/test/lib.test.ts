@@ -490,7 +490,12 @@ describe('Client', () => {
         Protocol['test/request']
       >
       await transports.server.write(
-        unsignedToken({ typ: 'error', rid: payload.rid, code: 'NOT_FOUND', msg: 'Not found' }),
+        unsignedToken({
+          typ: 'error',
+          rid: payload.rid,
+          code: 'NOT_FOUND',
+          msg: 'Not found',
+        }) as unknown as AnyServerMessageOf<Protocol>,
       )
 
       await expect(request).rejects.toThrow(RequestError)
@@ -885,7 +890,12 @@ describe('Client', () => {
 
       await transports.server.read()
       await transports.server.write(
-        unsignedToken({ typ: 'error', rid: stream.id, code: 'FAILED', msg: 'Stream failed' }),
+        unsignedToken({
+          typ: 'error',
+          rid: stream.id,
+          code: 'FAILED',
+          msg: 'Stream failed',
+        }) as unknown as AnyServerMessageOf<Protocol>,
       )
 
       await expect(stream).rejects.toThrow(RequestError)
@@ -1186,7 +1196,12 @@ describe('Client', () => {
 
       await transports.server.read()
       await transports.server.write(
-        unsignedToken({ typ: 'error', rid: channel.id, code: 'FAILED', msg: 'Channel failed' }),
+        unsignedToken({
+          typ: 'error',
+          rid: channel.id,
+          code: 'FAILED',
+          msg: 'Channel failed',
+        }) as unknown as AnyServerMessageOf<Protocol>,
       )
 
       await expect(channel).rejects.toThrow(RequestError)

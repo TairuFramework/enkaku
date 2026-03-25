@@ -5,10 +5,15 @@ import { createTransportStream, ResponseError } from '../src/index.js'
 
 // Minimal protocol for testing
 const protocol = {
-  'test/event': { type: 'event', data: { type: 'string' } },
+  'test/event': { type: 'event', data: { type: 'object' } },
   'test/request': { type: 'request', result: { type: 'string' } },
-  'test/stream': { type: 'stream', result: { type: 'string' } },
-  'test/channel': { type: 'channel', data: { type: 'string' }, result: { type: 'string' } },
+  'test/stream': { type: 'stream', receive: { type: 'string' }, result: { type: 'string' } },
+  'test/channel': {
+    type: 'channel',
+    send: { type: 'string' },
+    receive: { type: 'string' },
+    result: { type: 'string' },
+  },
 } as const satisfies ProtocolDefinition
 type Protocol = typeof protocol
 type ClientMessage = AnyClientMessageOf<Protocol>

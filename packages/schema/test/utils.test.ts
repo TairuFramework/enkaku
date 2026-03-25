@@ -3,7 +3,7 @@ import type { Schema } from '../src/types.js'
 import { resolveReference, resolveSchema } from '../src/utils.js'
 
 describe('resolveReference()', () => {
-  const root: Schema = {
+  const root = {
     type: 'object',
     properties: {
       name: { type: 'string' },
@@ -16,7 +16,7 @@ describe('resolveReference()', () => {
         },
       },
     },
-  }
+  } as unknown as Schema
 
   test('resolves a valid $ref path', () => {
     const result = resolveReference(root, '#/$defs/Address')
@@ -84,11 +84,11 @@ describe('resolveSchema()', () => {
   })
 
   test('resolves schema with $ref', () => {
-    const root: Schema = {
+    const root = {
       $defs: {
         Name: { type: 'string', maxLength: 100 },
       },
-    }
+    } as unknown as Schema
     const schema: Schema = { $ref: '#/$defs/Name' }
     expect(resolveSchema(root, schema)).toEqual({ type: 'string', maxLength: 100 })
   })

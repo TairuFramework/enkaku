@@ -11,6 +11,7 @@ import {
   joinGroup,
   type MlsContext,
   type MlsWelcomeMessage,
+  type PrivateKey,
   processMessage,
   unsafeTestingAuthenticationService,
 } from 'ts-mls'
@@ -332,7 +333,12 @@ describe('nobleCryptoProvider', () => {
   test('HPKE open rejects with invalid key object', async () => {
     const impl = await getCiphersuiteImpl()
     await expect(
-      impl.hpke.open('not-a-key', new Uint8Array(32), new Uint8Array(32), new Uint8Array(0)),
+      impl.hpke.open(
+        'not-a-key' as unknown as PrivateKey,
+        new Uint8Array(32),
+        new Uint8Array(32),
+        new Uint8Array(0),
+      ),
     ).rejects.toThrow('Invalid key')
   })
 

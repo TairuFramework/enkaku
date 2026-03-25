@@ -29,7 +29,6 @@ describe('handleEvent()', () => {
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const payload = { typ: 'event', prc: 'unknown' }
-    // @ts-expect-error type instantiation too deep
     const returned = handleEvent({ handlers: {} } as unknown as HandlerContext<Protocol>, {
       // @ts-expect-error
       payload,
@@ -88,7 +87,7 @@ describe('handleEvent()', () => {
       trace: vi.fn(),
     } as unknown as Logger
     const handlerErrorListener = vi.fn()
-    events.once('handlerError', handlerErrorListener)
+    events.on('handlerError', handlerErrorListener)
 
     await expect(
       handleEvent(

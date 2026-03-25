@@ -9,8 +9,8 @@ import { type ProcedureHandlers, serve } from '../src/index.js'
 const protocol = {
   test: {
     type: 'request',
-    input: { type: 'string' },
-    output: { type: 'string' },
+    param: { type: 'string' },
+    result: { type: 'string' },
   },
 } as const satisfies ProtocolDefinition
 type Protocol = typeof protocol
@@ -25,7 +25,7 @@ describe('Server verifyToken hook', () => {
 
     const handlers = {
       test: vi.fn(async () => 'ok'),
-    } as ProcedureHandlers<Protocol>
+    } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -59,7 +59,7 @@ describe('Server verifyToken hook', () => {
       sub: delegatorSigner.id,
       cap: stringifyToken(capability),
     } as const)
-    await transports.client.write(msg)
+    await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
 
     // Wait for response
     const response = await transports.client.read()
@@ -81,7 +81,7 @@ describe('Server verifyToken hook', () => {
     })
 
     const handler = vi.fn(async () => 'ok')
-    const handlers = { test: handler } as ProcedureHandlers<Protocol>
+    const handlers = { test: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -113,7 +113,7 @@ describe('Server verifyToken hook', () => {
       sub: delegatorSigner.id,
       cap: stringifyToken(capability),
     } as const)
-    await transports.client.write(msg)
+    await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
 
     // Should get error response
     const response = await transports.client.read()

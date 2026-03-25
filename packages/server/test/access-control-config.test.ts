@@ -8,12 +8,12 @@ import { type ProcedureHandlers, Server } from '../src/index.js'
 const protocol = {
   test: {
     type: 'event',
-    data: { type: 'string' },
+    data: { type: 'object' },
   },
 } as const satisfies ProtocolDefinition
 type Protocol = typeof protocol
 
-const handlers = { test: vi.fn() } as ProcedureHandlers<Protocol>
+const handlers = { test: vi.fn() } as unknown as ProcedureHandlers<Protocol>
 
 describe('Server accessControl configuration', () => {
   test('throws when no identity and no accessControl', () => {

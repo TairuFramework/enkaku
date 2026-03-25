@@ -30,7 +30,7 @@ describe('sign and verify', () => {
     const token = await identity.signToken({ test: true })
     const verified = await verifyToken(token)
     expect(verified.payload.test).toBe(true)
-    expect(verified.payload.iss).toBe(identity.id)
+    expect((verified.payload as Record<string, unknown>).iss).toBe(identity.id)
   })
 
   test('EdDSA low-level signature', async () => {

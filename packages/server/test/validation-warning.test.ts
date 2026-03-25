@@ -8,7 +8,7 @@ describe('Validation warning', () => {
     const protocol = {
       test: {
         type: 'event',
-        data: { type: 'string' },
+        data: { type: 'object' },
       },
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
@@ -38,7 +38,7 @@ describe('Validation warning', () => {
     const protocol = {
       test: {
         type: 'event',
-        data: { type: 'string' },
+        data: { type: 'object' },
       },
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol

@@ -1,8 +1,10 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "lib": ["es2025", "dom"],
     "types": ["node"],
     "rootDir": ".",
+    "skipLibCheck": true,
     "noEmit": true
   },
   "include": ["./src/**/*", "./test/**/*"]

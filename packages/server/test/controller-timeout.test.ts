@@ -37,7 +37,7 @@ describe('Controller timeout cleanup', () => {
         ctx.signal.addEventListener('abort', () => resolve('aborted'))
       })
     })
-    const handlers = { slow: handler } as ProcedureHandlers<Protocol>
+    const handlers = { slow: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -53,7 +53,13 @@ describe('Controller timeout cleanup', () => {
     })
     server.events.on('handlerTimeout', timeoutHandler)
 
-    await transports.client.write(createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'r1' }))
+    await transports.client.write(
+      createUnsignedToken({
+        typ: 'request',
+        prc: 'slow',
+        rid: 'r1',
+      }) as AnyClientMessageOf<Protocol>,
+    )
 
     // Wait for handler to start
     await new Promise((resolve) => setTimeout(resolve, 20))
@@ -63,7 +69,7 @@ describe('Controller timeout cleanup', () => {
     await new Promise((resolve) => setTimeout(resolve, 200))
 
     expect(timeoutHandler).toHaveBeenCalledWith({ rid: 'r1' })
-    expect(handlerAbortSignal?.aborted).toBe(true)
+    expect(handlerAbortSignal!.aborted).toBe(true)
 
     await server.dispose()
     await transports.dispose()

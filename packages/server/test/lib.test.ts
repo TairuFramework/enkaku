@@ -162,7 +162,7 @@ describe('serve()', () => {
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
-    expect(read.value?.payload.val).toBe('OK')
+    expect((read.value?.payload as Record<string, unknown>).val).toBe('OK')
 
     await transports.dispose()
   })

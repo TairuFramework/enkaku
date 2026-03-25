@@ -1,12 +1,14 @@
 import { MessageChannel } from 'node:worker_threads'
 import { describe, expect, test } from 'vitest'
 
-import { createTransportStream, MessageTransport } from '../src/index.js'
+import { createTransportStream, MessageTransport, type PortSource } from '../src/index.js'
 
 describe('createTransportStream()', () => {
   test('receives messages from a MessagePort', async () => {
     const { port1, port2 } = new MessageChannel()
-    const stream = await createTransportStream<{ value: string }, unknown>(port1)
+    const stream = await createTransportStream<{ value: string }, unknown>(
+      port1 as unknown as PortSource,
+    )
 
     const reader = stream.readable.getReader()
     port2.postMessage({ value: 'hello' })
@@ -20,7 +22,9 @@ describe('createTransportStream()', () => {
 
   test('sends messages through a MessagePort', async () => {
     const { port1, port2 } = new MessageChannel()
-    const stream = await createTransportStream<unknown, { value: string }>(port1)
+    const stream = await createTransportStream<unknown, { value: string }>(
+      port1 as unknown as PortSource,
+    )
 
     const received = new Promise<{ value: string }>((resolve) => {
       port2.on('message', resolve)
@@ -39,7 +43,7 @@ describe('createTransportStream()', () => {
 
   test('handles multiple messages in sequence', async () => {
     const { port1, port2 } = new MessageChannel()
-    const stream = await createTransportStream<number, number>(port1)
+    const stream = await createTransportStream<number, number>(port1 as unknown as PortSource)
 
     const reader = stream.readable.getReader()
 
@@ -62,7 +66,9 @@ describe('createTransportStream()', () => {
 describe('createTransportStream() source resolution', () => {
   test('accepts a Promise<MessagePort>', async () => {
     const { port1, port2 } = new MessageChannel()
-    const stream = await createTransportStream<{ n: number }, unknown>(Promise.resolve(port1))
+    const stream = await createTransportStream<{ n: number }, unknown>(
+      Promise.resolve(port1) as unknown as PortSource,
+    )
 
     const reader = stream.readable.getReader()
     port2.postMessage({ n: 42 })
@@ -76,7 +82,9 @@ describe('createTransportStream() source resolution', () => {
 
   test('accepts a factory function returning MessagePort', async () => {
     const { port1, port2 } = new MessageChannel()
-    const stream = await createTransportStream<{ n: number }, unknown>(() => port1)
+    const stream = await createTransportStream<{ n: number }, unknown>(
+      (() => port1) as unknown as PortSource,
+    )
 
     const reader = stream.readable.getReader()
     port2.postMessage({ n: 99 })
@@ -90,7 +98,8 @@ describe('createTransportStream() source resolution', () => {
 
   test('accepts a factory function returning Promise<MessagePort>', async () => {
     const { port1, port2 } = new MessageChannel()
-    const stream = await createTransportStream<{ n: number }, unknown>(() => Promise.resolve(port1))
+    const stream = await createTransportStream<{ n: number }, unknown>((() =>
+      Promise.resolve(port1)) as unknown as PortSource)
 
     const reader = stream.readable.getReader()
     port2.postMessage({ n: 7 })
@@ -106,7 +115,7 @@ describe('createTransportStream() source resolution', () => {
 describe('MessageTransport', () => {
   test('reads and writes messages via Transport interface', async () => {
     const { port1, port2 } = new MessageChannel()
-    const transport = new MessageTransport<string, string>({ port: port1 })
+    const transport = new MessageTransport<string, string>({ port: port1 as unknown as PortSource })
 
     // Write a message via the transport
     const received = new Promise<string>((resolve) => {
@@ -127,7 +136,9 @@ describe('MessageTransport', () => {
 
   test('supports async iteration', async () => {
     const { port1, port2 } = new MessageChannel()
-    const transport = new MessageTransport<number, unknown>({ port: port1 })
+    const transport = new MessageTransport<number, unknown>({
+      port: port1 as unknown as PortSource,
+    })
 
     port2.postMessage(10)
     port2.postMessage(20)

@@ -10,14 +10,14 @@ describe('Event auth error', () => {
     const protocol = {
       notify: {
         type: 'event',
-        data: { type: 'string' },
+        data: { type: 'object' },
       },
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
 
     const signer = randomIdentity()
     const handler = vi.fn()
-    const handlers = { notify: handler } as ProcedureHandlers<Protocol>
+    const handlers = { notify: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -37,7 +37,11 @@ describe('Event auth error', () => {
 
     // Send unsigned event - should fail auth
     await transports.client.write(
-      createUnsignedToken({ typ: 'event', prc: 'notify', data: 'hello' }),
+      createUnsignedToken({
+        typ: 'event',
+        prc: 'notify',
+        data: 'hello',
+      }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
     // Wait for processing
@@ -64,7 +68,7 @@ describe('Event auth error', () => {
     const protocol = {
       notify: {
         type: 'event',
-        data: { type: 'string' },
+        data: { type: 'object' },
       },
     } as const satisfies ProtocolDefinition
     type Protocol = typeof protocol
@@ -72,7 +76,7 @@ describe('Event auth error', () => {
     const expiresAt = Math.floor(Date.now() / 1000) + 300
     const signer = randomIdentity()
     const handler = vi.fn()
-    const handlers = { notify: handler } as ProcedureHandlers<Protocol>
+    const handlers = { notify: handler } as unknown as ProcedureHandlers<Protocol>
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
@@ -96,7 +100,7 @@ describe('Event auth error', () => {
       data: 'hello',
       exp: expiresAt,
     } as const)
-    await transports.client.write(message)
+    await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
     await server.dispose()
     await transports.dispose()
