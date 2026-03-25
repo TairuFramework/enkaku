@@ -6,7 +6,7 @@ import { HDKeyStore } from '../src/store.js'
 
 // Deterministic seed for testing
 const SEED = Uint8Array.from(
-  '000102030405060708090a0b0c0d0e0f'.match(/.{2}/g)!.map((b) => Number.parseInt(b, 16)),
+  '000102030405060708090a0b0c0d0e0f'.match(/.{2}/g)?.map((b) => Number.parseInt(b, 16)) ?? [],
 )
 
 describe('HDKeyEntry', () => {
@@ -19,7 +19,7 @@ describe('HDKeyEntry', () => {
     const entry = new HDKeyEntry({ seed: SEED, path: "m/44'/903'/0'" })
     const key = await entry.getAsync()
     expect(key).toBeInstanceOf(Uint8Array)
-    expect(key!.length).toBe(32)
+    expect(key?.length).toBe(32)
     // Should match direct derivation
     expect(key).toEqual(derivePrivateKey(SEED, "m/44'/903'/0'"))
   })
