@@ -1,4 +1,4 @@
-import react from '@vitejs/plugin-react-swc'
+import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 // https://vitejs.dev/config
@@ -9,22 +9,21 @@ export default defineConfig({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
   },
   optimizeDeps: {
-    esbuildOptions: {
-      resolveExtensions: [
-        '.web.js',
-        '.web.jsx',
-        '.web.ts',
-        '.web.tsx',
-        '.mjs',
-        '.js',
-        '.mts',
-        '.ts',
-        '.jsx',
-        '.tsx',
-        '.json',
-      ],
-      loader: {
-        '.js': 'jsx',
+    rolldownOptions: {
+      resolve: {
+        extensions: [
+          '.web.js',
+          '.web.jsx',
+          '.web.ts',
+          '.web.tsx',
+          '.mjs',
+          '.js',
+          '.mts',
+          '.ts',
+          '.jsx',
+          '.tsx',
+          '.json',
+        ],
       },
     },
   },

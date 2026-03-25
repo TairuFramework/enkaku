@@ -28,7 +28,7 @@
     "@enkaku/protocol": "workspace:*",
     "@playwright/test": "catalog:",
     "@types/node": "catalog:",
-    "@vitejs/plugin-react-swc": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
     "electron": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:"
