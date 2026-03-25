@@ -370,8 +370,8 @@ describe('ts-mls integration spike', () => {
     const decoded = decode(mlsMessageDecoder, welcomeMsg)
     expect(decoded).toBeDefined()
 
-    expect(decoded!.wireformat).toBe(wireformats.mls_welcome)
-    if (decoded!.wireformat === wireformats.mls_welcome) {
+    expect(decoded?.wireformat).toBe(wireformats.mls_welcome)
+    if (decoded?.wireformat === wireformats.mls_welcome) {
       // Use decoded welcome to join
       const bobState = await joinGroup({
         context,

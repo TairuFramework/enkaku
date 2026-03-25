@@ -69,7 +69,7 @@ describe('Controller timeout cleanup', () => {
     await new Promise((resolve) => setTimeout(resolve, 200))
 
     expect(timeoutHandler).toHaveBeenCalledWith({ rid: 'r1' })
-    expect(handlerAbortSignal!.aborted).toBe(true)
+    expect(handlerAbortSignal?.aborted).toBe(true)
 
     await server.dispose()
     await transports.dispose()
