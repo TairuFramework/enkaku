@@ -29,6 +29,10 @@ export type FullIdentity = SigningIdentity & DecryptingIdentity
 
 export type OwnIdentity = FullIdentity & { privateKey: Uint8Array }
 
+export type IdentityProvider<T extends SigningIdentity = SigningIdentity> = {
+  provideIdentity(keyID: string): Promise<T>
+}
+
 export function isSigningIdentity(identity: Identity): identity is SigningIdentity {
   return 'signToken' in identity && typeof (identity as SigningIdentity).signToken === 'function'
 }
@@ -92,8 +96,9 @@ export function createDecryptingIdentity(privateKey: Uint8Array): DecryptingIden
   const id = getDID(CODECS.EdDSA, publicKey)
   const x25519Private = ed25519.utils.toMontgomerySecret(privateKey)
 
-  async function decrypt(_jwe: string): Promise<Uint8Array> {
-    throw new Error('Not implemented')
+  async function decrypt(jwe: string): Promise<Uint8Array> {
+    const { decryptToken } = await import('./jwe.js')
+    return decryptToken({ id, decrypt, agreeKey }, jwe)
   }
 
   async function agreeKey(ephemeralPublicKey: Uint8Array): Promise<Uint8Array> {
