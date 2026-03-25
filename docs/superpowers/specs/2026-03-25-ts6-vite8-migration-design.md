@@ -32,7 +32,9 @@ Removed from current config:
 - `declarationMap` — IDE navigation handled by path aliases; not shipped to consumers
 - `esModuleInterop` — always-on in TS 6
 - `allowSyntheticDefaultImports` — always-on in TS 6
-- `"dom"` from `lib` — only browser packages should have DOM types
+- `"dom"` from `lib` — only browser/web-API packages should have DOM types
+
+Note: `module` changes from `"es2022"` to `"nodenext"`. This enforces `.js` extension requirements in imports and `package.json` `exports` field resolution. All 34 packages already use `.js` extensions in relative imports and have proper `exports` fields, so this should be safe. Validate during implementation.
 
 ### Root `tsconfig.json` — IDE / workspace type-checking
 
@@ -51,7 +53,7 @@ Unchanged in structure. `baseUrl` is deprecated as a module resolution root in T
 
 ### Per-package `tsconfig.json` — source compilation
 
-Three variants depending on target environment:
+All variants include `rootDir: "./src"` — required because TS 6 changes the `rootDir` default from "inferred common root" to `"."` (tsconfig directory). Without this, declarations would be emitted to `lib/src/` instead of `lib/`, breaking all `"types": "lib/index.d.ts"` entries.
 
 **Node packages** — add `types: ["node"]`:
 
@@ -60,6 +62,7 @@ Three variants depending on target environment:
   "extends": "../../tsconfig.build.json",
   "compilerOptions": {
     "types": ["node"],
+    "rootDir": "./src",
     "outDir": "./lib"
   },
   "include": ["./src/**/*"]
@@ -73,6 +76,21 @@ Three variants depending on target environment:
   "extends": "../../tsconfig.build.json",
   "compilerOptions": {
     "lib": ["es2025", "dom"],
+    "rootDir": "./src",
+    "outDir": "./lib"
+  },
+  "include": ["./src/**/*"]
+}
+```
+
+**Web API packages** — use `Request`/`Response`/`ReadableStream`/`fetch` (web-standard APIs available in Node 18+, browsers, Deno, Bun — but TypeScript bundles them under `"dom"` lib):
+
+```jsonc
+{
+  "extends": "../../tsconfig.build.json",
+  "compilerOptions": {
+    "lib": ["es2025", "dom"],
+    "rootDir": "./src",
     "outDir": "./lib"
   },
   "include": ["./src/**/*"]
@@ -85,6 +103,7 @@ Three variants depending on target environment:
 {
   "extends": "../../tsconfig.build.json",
   "compilerOptions": {
+    "rootDir": "./src",
     "outDir": "./lib"
   },
   "include": ["./src/**/*"]
@@ -104,7 +123,11 @@ Three variants depending on target environment:
 }
 ```
 
-All tests run in Node (via Vitest), so all test configs get `types: ["node"]`. Extends the package's own tsconfig so source types are inherited correctly.
+All tests run in Node (via Vitest), so all test configs get `types: ["node"]`. Extends the package's own tsconfig so source types are inherited correctly. All test files use explicit `import { describe, test, expect } from 'vitest'` — no ambient globals needed.
+
+### Fix: `react` package tsconfig
+
+The `react` package currently extends `../../tsconfig.json` (IDE config with `noEmit: true`) instead of `../../tsconfig.build.json`. This is a pre-existing bug — `noEmit` conflicts with `tsc --emitDeclarationOnly`. Fix as part of this migration by switching to extend `../../tsconfig.build.json` like all other packages.
 
 ## 2. Package Categorization
 
@@ -114,14 +137,24 @@ All tests run in Node (via Vitest), so all test configs get `types: ["node"]`. E
 - `hub-server`
 - `node-keystore`
 - `node-streams-transport`
-- `hub-client` (if needed)
+- `socket-transport` (imports `node:net`)
 
 ### Browser packages — `lib: ["es2025", "dom"]`
 
 - `browser-keystore`
 - `react`
 
-### React Native packages — no overrides
+### Web API packages — `lib: ["es2025", "dom"]`
+
+Packages that use web-standard APIs (`Request`, `Response`, `ReadableStream`, `fetch`) which TypeScript types under the `"dom"` lib. These are environment-agnostic at runtime but need DOM types for compilation.
+
+- `http-server-transport`
+- `http-client-transport`
+- `message-transport` (if it uses `MessagePort`/`MessageChannel`)
+
+### Platform-specific packages — no overrides
+
+Packages whose types come from their own dependencies (e.g., `electron`, `expo-crypto`), not ambient `@types` or `lib`.
 
 - `expo-keystore`
 - `electron-keystore`
@@ -129,9 +162,9 @@ All tests run in Node (via Vitest), so all test configs get `types: ["node"]`. E
 
 ### Environment-agnostic — no overrides (inherit base)
 
-- `async`, `capability`, `client`, `codec`, `event`, `execution`, `flow`, `generator`, `group`, `http-client-transport`, `http-server-transport`, `hub-protocol`, `log`, `message-transport`, `otel`, `patch`, `protocol`, `result`, `schema`, `socket-transport`, `standalone`, `stream`, `token`, `transport`
+- `async`, `capability`, `client`, `codec`, `event`, `execution`, `flow`, `generator`, `group`, `hub-client`, `hub-protocol`, `log`, `otel`, `patch`, `protocol`, `result`, `schema`, `standalone`, `stream`, `token`, `transport`
 
-**Rule:** if `tsc` complains about missing types in an agnostic package during implementation, promote it to the Node category. No guessing upfront.
+**Rule:** if `tsc` complains about missing types in an agnostic package during implementation, promote it to the appropriate category. No guessing upfront.
 
 ## 3. Version Bumps
 
@@ -143,15 +176,17 @@ All tests run in Node (via Vitest), so all test configs get `types: ["node"]`. E
 | `vite` | 7.3.1 | 8.x (latest) |
 | `vitest` | 4.1.1 | compatible with Vite 8 (latest) |
 
+Note: the pnpm catalog currently lists `typescript: 5.9.2` while root `package.json` has `^5.9.3`. Unify under the catalog entry for TS 6.
+
 ### `swc.json`
 
-Bump `jsc.target` from `"es2022"` to `"es2025"`.
+Bump `jsc.target` from `"es2022"` to `"es2025"`. Verify that `@swc/core` 1.15.x supports this target value — if not, update SWC or use the closest supported target.
 
 ### Vite 8 specifics
 
-- `esbuild.*` config → `oxc.*` equivalents (if any exist)
-- `build.rollupOptions` → `build.rolldownOptions` (if any exist)
-- Current vitest configs are minimal — mostly just the version bump
+- `tests/e2e-web/vite.config.ts`: migrate `optimizeDeps.esbuildOptions` (with `resolveExtensions` and `loader` configs) to `optimizeDeps.rolldownOptions` equivalents
+- Vitest configs (`packages/react/vitest.config.ts`, `packages/hub-server/vitest.config.ts`, `tests/integration/vitest.config.ts`) are minimal — version bump only
+- If any configs use `build.rollupOptions`, migrate to `build.rolldownOptions`
 
 ## 4. Deprecated Options Cleanup
 
@@ -159,6 +194,12 @@ Remove from `tsconfig.build.json`:
 - `allowSyntheticDefaultImports: true` — always-on in TS 6
 - `esModuleInterop: true` — always-on in TS 6
 - `declarationMap: true` — not needed (IDE uses path aliases, CI already disabled it)
+
+Remove from all other tsconfig files in the repo:
+- `esModuleInterop: true` in `tests/e2e-electron/tsconfig.json`
+- Any other deprecated options found in `tests/e2e-web/` tsconfigs
+
+Update `tests/e2e-web/` and `tests/e2e-electron/` tsconfigs to use `target: "es2025"` and `lib: ["es2025"]` for consistency.
 
 No `ignoreDeprecations: "6.0"` — clean migration, fix warnings instead of suppressing.
 
@@ -188,7 +229,7 @@ Changes:
 
 ### CI workflow
 
-Add a step running `tsc --noEmit --stableTypeOrdering` against root tsconfig for TS 7 readiness validation. This has ~25% perf cost — CI only, not in dev or pre-commit.
+Add a step running `tsc --noEmit --stableTypeOrdering` against root tsconfig for TS 7 readiness validation. This has ~25% perf cost — CI only, not in dev or pre-commit. Verify that `--stableTypeOrdering` is available in the targeted TS 6 version before adding.
 
 ### Pre-commit hook
 
@@ -196,7 +237,7 @@ No changes — runs `pnpm biome check` and `pnpm run build:types`, both still va
 
 ## 6. Module Resolution Strategy
 
-Primary: `moduleResolution: "nodenext"` everywhere. This is the strictest ESM enforcement and matches the existing package-level configs and import conventions (`.js` extensions already used).
+Primary: `moduleResolution: "nodenext"` everywhere. This is the strictest ESM enforcement and matches the existing package-level configs and import conventions (`.js` extensions already used). All packages have proper `exports` fields in `package.json`.
 
 Fallback: if `"nodenext"` causes issues with the root IDE config or specific packages, switch to `"bundler"` where needed.
 
@@ -208,8 +249,10 @@ Fallback: if `"nodenext"` causes issues with the root IDE config or specific pac
 - No use of removed module formats (`amd`, `umd`, `systemjs`)
 - No use of `--outFile`, `--moduleResolution classic`, or other removed options
 
-## Non-Goals
+## 8. Out of Scope
 
 - Replacing SWC with `tsc --build` project references (defer to TS 7 native port)
 - Adding composite project references
 - Restructuring the build pipeline beyond config changes
+- `website/` tsconfig (managed by Docusaurus)
+- `tests/deno/` config (managed by Deno)
