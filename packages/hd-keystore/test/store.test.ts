@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest'
+
 import { derivePrivateKey } from '../src/derivation.js'
 import { HDKeyEntry } from '../src/entry.js'
+import { HDKeyStore } from '../src/store.js'
 
 // Deterministic seed for testing
 const SEED = Uint8Array.from(
@@ -39,5 +41,42 @@ describe('HDKeyEntry', () => {
   test('removeAsync() is a no-op', async () => {
     const entry = new HDKeyEntry({ seed: SEED, path: "m/44'/903'/0'" })
     await expect(entry.removeAsync()).resolves.toBeUndefined()
+  })
+})
+
+const MNEMONIC =
+  'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
+
+describe('HDKeyStore', () => {
+  test('fromMnemonic() creates store', () => {
+    const store = HDKeyStore.fromMnemonic(MNEMONIC)
+    expect(store).toBeDefined()
+  })
+
+  test('fromSeed() creates store', () => {
+    const seed = new Uint8Array(64)
+    const store = HDKeyStore.fromSeed(seed)
+    expect(store).toBeDefined()
+  })
+
+  test('entry() returns HDKeyEntry for index', async () => {
+    const store = HDKeyStore.fromMnemonic(MNEMONIC)
+    const entry = store.entry('0')
+    expect(entry.keyID).toBe("m/44'/903'/0'")
+    const key = await entry.provideAsync()
+    expect(key.length).toBe(32)
+  })
+
+  test('entry() returns HDKeyEntry for full path', async () => {
+    const store = HDKeyStore.fromMnemonic(MNEMONIC)
+    const entry = store.entry("m/44'/903'/5'")
+    expect(entry.keyID).toBe("m/44'/903'/5'")
+  })
+
+  test('same keyID returns same entry', () => {
+    const store = HDKeyStore.fromMnemonic(MNEMONIC)
+    const a = store.entry('0')
+    const b = store.entry('0')
+    expect(a).toBe(b)
   })
 })
