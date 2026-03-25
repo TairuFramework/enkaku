@@ -29,6 +29,8 @@ catalog:
   '@orama/plugin-docusaurus-v3': ^3.1.18
   '@playwright/test': 1.58.2
   '@scure/base': ^2.0.0
+  '@scure/bip39': ^2.0.1
+  micro-key-producer: ^0.8.5
   '@standard-schema/spec': ^1.1.0
   '@swc/cli': ^0.8.0
   '@swc/core': ^1.15.21
