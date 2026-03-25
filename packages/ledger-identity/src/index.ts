@@ -16,4 +16,5 @@ export {
   LedgerError,
   LedgerUserRejectedError,
 } from './errors.js'
+export { createLedgerIdentityProvider, type LedgerIdentityProviderOptions } from './provider.js'
 export type { LedgerTransport } from './types.js'
