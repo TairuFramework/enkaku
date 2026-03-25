@@ -6,7 +6,12 @@ import type {
   StreamCall,
 } from '@enkaku/client'
 import type { ProtocolDefinition } from '@enkaku/protocol'
-import serialize from 'canonicalize'
+
+import canonicalize from 'canonicalize'
+
+// canonicalize is a CJS package with incorrect `export default` types.
+// Under nodenext, the module namespace is imported; the function is on `.default`.
+const serialize = canonicalize.default as (input: unknown) => string | undefined
 
 export function createRequestKey(procedure: string, arg?: unknown): string {
   return [procedure, arg ? serialize(arg) : ''].join(':')

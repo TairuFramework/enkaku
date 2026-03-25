@@ -1,8 +1,9 @@
 {
   "extends": "../../tsconfig.build.json",
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "lib": ["es2025", "esnext.disposable", "dom"],
+    "rootDir": "./src",
     "outDir": "./lib"
   },
   "include": ["./src/**/*"]
