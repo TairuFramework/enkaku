@@ -9,22 +9,21 @@ export default defineConfig({
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
   },
   optimizeDeps: {
-    esbuildOptions: {
-      resolveExtensions: [
-        '.web.js',
-        '.web.jsx',
-        '.web.ts',
-        '.web.tsx',
-        '.mjs',
-        '.js',
-        '.mts',
-        '.ts',
-        '.jsx',
-        '.tsx',
-        '.json',
-      ],
-      loader: {
-        '.js': 'jsx',
+    rolldownOptions: {
+      resolve: {
+        extensions: [
+          '.web.js',
+          '.web.jsx',
+          '.web.ts',
+          '.web.tsx',
+          '.mjs',
+          '.js',
+          '.mts',
+          '.ts',
+          '.jsx',
+          '.tsx',
+          '.json',
+        ],
       },
     },
   },
