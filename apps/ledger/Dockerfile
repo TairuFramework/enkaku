@@ -13,4 +13,5 @@ FROM ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
 WORKDIR /app
 COPY . .
 
-CMD ["make"]
+RUN git init .
+CMD ["bash", "-c", "BOLOS_SDK=$NANOSP_SDK COIN=ENK make"]
