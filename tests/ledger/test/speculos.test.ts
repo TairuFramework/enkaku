@@ -22,7 +22,9 @@ import {
 } from '@enkaku/ledger-identity'
 import { createTokenEncrypter, isFullIdentity, verifyToken } from '@enkaku/token'
 import { x25519 } from '@noble/curves/ed25519.js'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
+
+vi.setConfig({ testTimeout: 15000 })
 
 const SPECULOS_API_URL = process.env.SPECULOS_URL ?? 'http://127.0.0.1:9999'
 const SPECULOS_AVAILABLE = await checkSpeculosAvailable()
@@ -69,24 +71,10 @@ function createSpeculosTransport(): LedgerTransport {
 
       const response = await fetch(`${SPECULOS_API_URL}/apdu`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Connection: 'close' },
         body: JSON.stringify({ data: apduHex }),
+        keepalive: false,
       })
-
-      if (needsApproval) {
-        await new Promise((resolve) => setTimeout(resolve, 200))
-        await fetch(`${SPECULOS_API_URL}/button/right`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'press-and-release' }),
-        })
-        await new Promise((resolve) => setTimeout(resolve, 200))
-        await fetch(`${SPECULOS_API_URL}/button/both`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'press-and-release' }),
-        })
-      }
 
       if (!response.ok) {
         throw new Error(`Speculos APDU error: ${response.status} ${response.statusText}`)

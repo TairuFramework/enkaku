@@ -24,9 +24,8 @@
 /**
  * APDU P2 bytes for SIGN_MESSAGE chunking.
  */
-#define P2_SINGLE 0x00
-#define P2_MORE   0x00
-#define P2_LAST   0x01
+#define P2_LAST   0x00
+#define P2_MORE   0x80
 
 /**
  * Limits.

@@ -1,8 +1,10 @@
 # Enkaku Ledger App
 
-BOLOS application for Ledger hardware devices providing Ed25519 signing and X25519 ECDH key agreement for Enkaku identity.
+BOLOS application for Ledger Nano S+ providing Ed25519 signing and X25519 ECDH key agreement for Enkaku identity.
 
 ## APDU Protocol
+
+**CLA**: `0xE0`
 
 | INS | Command | Input | Output | Confirmation |
 |-----|---------|-------|--------|-------------|
@@ -11,27 +13,29 @@ BOLOS application for Ledger hardware devices providing Ed25519 signing and X255
 | `0x03` | `SIGN_MESSAGE` | encoded path + chunked message | 64-byte Ed25519 signature | Yes |
 | `0x04` | `ECDH_X25519` | encoded path + 32-byte ephemeral key | 32-byte shared secret | Yes |
 
-**CLA**: `0xE0`
-
 ### Derivation Path Encoding
 
 ```
 [component_count: 1 byte] [components: 4 bytes each, big-endian with hardened bit]
 ```
 
-Example: `m/44'/903'/0'` encodes as `03 8000002C 80000387 80000000`
+All components must be hardened (SLIP-0010 Ed25519). Example: `m/44'/903'/0'` encodes as `03 8000002C 80000387 80000000`.
 
 ### SIGN_MESSAGE Chunking
 
-- First chunk: `P1=0x00, P2=0x00` — data = path + message start
-- Continuation: `P1=0x80, P2=0x00` — data = message continuation
-- Final chunk: `P1=0x80, P2=0x01` — data = last message bytes, triggers signing
+| P1 | P2 | Meaning |
+|----|-----|---------|
+| `0x00` | `0x00` | First and only chunk — includes path + message, triggers signing |
+| `0x00` | `0x80` | First chunk of multi-chunk — includes path + message start, more to come |
+| `0x80` | `0x80` | Continuation chunk — message data, more to come |
+| `0x80` | `0x00` | Last continuation chunk — triggers signing |
 
 ### Status Words
 
 | Code | Meaning |
 |------|---------|
 | `0x9000` | Success |
+| `0x6700` | Wrong data length |
 | `0x6985` | User rejected |
 | `0x6A80` | Invalid data |
 | `0x6A82` | App not open |
@@ -41,48 +45,34 @@ Example: `m/44'/903'/0'` encodes as `03 8000002C 80000387 80000000`
 
 ## Build
 
-### With Docker Compose (recommended)
+Requires Docker.
 
 ```bash
 cd apps/ledger
 
-# Build the app + start Speculos emulator
-docker compose up --build
-
-# Build only (no emulator)
+# Build only
 docker compose run --rm build
+
+# Build output: bin/app.elf
 ```
 
-### With Docker (manual)
+The build uses `ghcr.io/ledgerhq/ledger-app-builder` targeting the Nano S+ SDK (API level 25) with SLIP-0010 Ed25519 derivation.
 
-```bash
-docker run --rm -v "$(pwd):/app" \
-  ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest \
-  bash -c "cd /app && BOLOS_SDK=\$NANOSP_SDK make"
-```
+## Test
 
-### With local SDK
-
-```bash
-make BOLOS_SDK=/path/to/ledger-secure-sdk
-```
-
-## Test with Speculos
+Integration tests run against the Speculos emulator using a deterministic mnemonic seed.
 
 ### Automated (recommended)
 
 ```bash
-# From repo root — builds app, starts Speculos, runs tests, stops emulator
-./apps/ledger/test.sh
+# From repo root — builds if needed, starts Speculos, runs 12 tests, stops emulator
+./tests/ledger/test.sh
 
-# Or via pnpm
-pnpm --filter=@enkaku/ledger-identity run test:speculos
+# Force rebuild
+./tests/ledger/test.sh --build
 
-# Skip build if app.elf already exists
-./apps/ledger/test.sh --no-build
-
-# Keep Speculos running after tests (for manual debugging)
-./apps/ledger/test.sh --keep
+# Keep Speculos running after tests (for debugging)
+./tests/ledger/test.sh --keep
 ```
 
 ### Manual
@@ -98,29 +88,29 @@ docker compose up -d speculos
 
 # Run tests (from repo root)
 cd ../..
-SPECULOS_URL=http://localhost:5000 pnpm --filter=@enkaku/ledger-identity run test:unit
+SPECULOS_URL=http://localhost:9999 pnpm --filter=@enkaku/ledger-tests run test
 
 # Stop
 docker compose -f apps/ledger/docker-compose.yml down
 ```
 
-Speculos exposes:
-- **Port 5000**: REST API (APDU exchange, button simulation, screenshots)
-- **Port 40000**: Raw TCP APDU port
-
-The integration tests in `packages/ledger-identity/test/speculos.test.ts` auto-detect Speculos and skip when not available. They auto-approve device prompts via the REST API.
+Speculos exposes port 9999 (configurable via `SPECULOS_PORT`) for its REST API.
 
 ### What the tests verify
 
-- `GET_PUBLIC_KEY` returns a valid 32-byte Ed25519 public key
-- `provideIdentity()` produces a valid `FullIdentity` with `did:key:z...` DID
-- `signToken()` produces JWTs verifiable by standard Ed25519 verification
-- `agreeKey()` performs X25519 ECDH and returns a valid shared secret
-- **Cross-compatibility**: same DID and shared secrets as `@enkaku/hd-keystore` with the same mnemonic seed
+12 integration tests in `tests/ledger/test/speculos.test.ts`:
+
+- **APDU protocol**: version, public key derivation (deterministic, path-dependent)
+- **IdentityProvider**: `provideIdentity()` returns `FullIdentity` with `did:key:z...` DID
+- **Signing**: `signToken()` produces JWTs verifiable by standard Ed25519 verification
+- **ECDH**: `agreeKey()` performs X25519 key agreement, `decrypt()` decrypts JWE
+- **Cross-compatibility**: same mnemonic produces identical DIDs, signatures, and shared secrets as `@enkaku/hd-keystore`
+
+Tests auto-skip if Speculos is not available.
 
 ## TypeScript Client
 
-The `@enkaku/ledger-identity` package provides the TypeScript client for this app. See `packages/ledger-identity/` in the monorepo.
+The `@enkaku/ledger-identity` package provides the TypeScript client. See `packages/ledger-identity/`.
 
 ```ts
 import TransportNodeHID from '@ledgerhq/hw-transport-node-hid'
@@ -128,5 +118,29 @@ import { createLedgerIdentityProvider } from '@enkaku/ledger-identity'
 
 const transport = await TransportNodeHID.create()
 const provider = createLedgerIdentityProvider(transport)
-const identity = await provider.provideIdentity("0")
+const identity = await provider.provideIdentity('0')
+// identity.id → "did:key:z6Mk..."
+// identity.signToken(payload) → signed JWT
+// identity.agreeKey(ephemeralPubkey) → X25519 shared secret
+// identity.decrypt(jwe) → decrypted plaintext
 ```
+
+## SDK Implementation Notes
+
+### Ed25519 Public Key Compression
+
+The BOLOS SDK returns Ed25519 public keys in 65-byte uncompressed format: `0x04 || X(32, big-endian) || Y(32, big-endian)`. Converting to the standard 32-byte compressed format (RFC 8032) requires reversing Y from big-endian to little-endian and encoding the sign of X in the MSB — the same approach used by the Solana and Stellar Ledger apps.
+
+### X25519 ECDH
+
+Uses the `cx_x25519` SDK syscall for direct Montgomery scalar multiplication. The Ed25519 private key seed is converted to an X25519 scalar via SHA-512 + clamp (RFC 7748). `cx_x25519` accepts the u-coordinate and scalar in little-endian (standard X25519), but its output is big-endian (from `cx_bn_export`) and must be reversed. The SDK applies RFC 7748 clamping internally.
+
+### SDK Functions
+
+| Function | Purpose |
+|----------|---------|
+| `bip32_derive_with_seed_init_privkey_256(HDW_ED25519_SLIP10, ...)` | SLIP-10 Ed25519 key derivation |
+| `bip32_derive_with_seed_get_pubkey_256(HDW_ED25519_SLIP10, ...)` | Ed25519 public key (65-byte uncompressed) |
+| `cx_eddsa_sign_no_throw` | Ed25519 signing |
+| `cx_hash_sha512` | SHA-512 for Ed25519→X25519 scalar conversion |
+| `cx_x25519` | X25519 scalar multiplication |

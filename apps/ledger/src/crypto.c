@@ -70,9 +70,12 @@ int derive_ed25519_keys(const uint32_t *path, uint8_t path_len,
             return -1;
         }
 
-        // raw_pubkey is 65 bytes: 0x04 || X(32) || Y(32)
-        // Ed25519 compressed public key is Y(32) with sign bit of X in MSB
-        memmove(public_key, raw_pubkey + 1 + ED25519_PK_LEN, ED25519_PK_LEN);
+        // raw_pubkey is 65 bytes: 0x04 || X(32, big-endian) || Y(32, big-endian)
+        // Ed25519 compressed format (RFC 8032): Y in little-endian with sign of X in MSB
+        // Reverse Y coordinate from big-endian to little-endian (same as Solana/Stellar apps)
+        for (int i = 0; i < ED25519_PK_LEN; i++) {
+            public_key[i] = raw_pubkey[ED25519_PK_LEN + ED25519_PK_LEN - i];
+        }
         if (raw_pubkey[ED25519_PK_LEN] & 1) {
             public_key[ED25519_PK_LEN - 1] |= 0x80;
         }

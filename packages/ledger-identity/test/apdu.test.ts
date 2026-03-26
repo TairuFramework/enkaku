@@ -55,9 +55,11 @@ describe('encodeSignMessageChunks()', () => {
     for (let i = 1; i < chunks.length; i++) {
       expect(chunks[i].p1).toBe(0x80)
     }
-    expect(chunks[chunks.length - 1].p2).toBe(0x01)
+    // Last chunk: P2 = 0x00 (sign now)
+    expect(chunks[chunks.length - 1].p2).toBe(0x00)
+    // All non-last chunks: P2 = 0x80 (more chunks follow)
     for (let i = 0; i < chunks.length - 1; i++) {
-      expect(chunks[i].p2).toBe(0x00)
+      expect(chunks[i].p2).toBe(0x80)
     }
   })
 })

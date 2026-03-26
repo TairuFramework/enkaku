@@ -20,7 +20,7 @@ static void ecdh_approved(void) {
         return;
     }
 
-    // Convert Ed25519 private key to X25519 via SHA-512 + clamp (RFC 7748)
+    // Convert Ed25519 private key to X25519 scalar via SHA-512 + clamp (RFC 7748)
     uint8_t hash[64];
     cx_hash_sha512(ed_private.d, ed_private.d_len, hash, sizeof(hash));
     explicit_bzero(&ed_private, sizeof(ed_private));
@@ -29,36 +29,28 @@ static void ecdh_approved(void) {
     hash[31] &= 127;
     hash[31] |= 64;
 
-    cx_ecfp_private_key_t x25519_private;
-    cx_err_t error = cx_ecfp_init_private_key_no_throw(CX_CURVE_Curve25519,
-                                                        hash, 32,
-                                                        &x25519_private);
+    // cx_x25519 takes u-coordinate and scalar in little-endian (standard X25519),
+    // but outputs the result in big-endian (via cx_bn_export)
+    uint8_t u[X25519_SECRET_LEN];
+    memmove(u, G_context.ephemeral_pubkey, X25519_SECRET_LEN);
+    explicit_bzero(G_context.ephemeral_pubkey, sizeof(G_context.ephemeral_pubkey));
+
+    // X25519 scalar multiplication: u = clamp(hash) * u
+    cx_err_t error = cx_x25519(u, hash, 32);
     explicit_bzero(hash, sizeof(hash));
 
     if (error != CX_OK) {
-        explicit_bzero(&x25519_private, sizeof(x25519_private));
+        explicit_bzero(u, sizeof(u));
         io_send_sw(SW_INTERNAL_ERROR);
         return;
     }
 
-    // ECDH key agreement
+    // Reverse output from big-endian (cx_bn_export) to little-endian (X25519 standard)
     uint8_t shared_secret[X25519_SECRET_LEN];
-    size_t secret_len = X25519_SECRET_LEN;
-    error = cx_ecdh_no_throw(&x25519_private,
-                              CX_ECDH_X,
-                              G_context.ephemeral_pubkey,
-                              X25519_SECRET_LEN,
-                              shared_secret,
-                              secret_len);
-
-    explicit_bzero(&x25519_private, sizeof(x25519_private));
-    explicit_bzero(G_context.ephemeral_pubkey, sizeof(G_context.ephemeral_pubkey));
-
-    if (error != CX_OK) {
-        explicit_bzero(shared_secret, sizeof(shared_secret));
-        io_send_sw(SW_INTERNAL_ERROR);
-        return;
+    for (int i = 0; i < X25519_SECRET_LEN; i++) {
+        shared_secret[i] = u[X25519_SECRET_LEN - 1 - i];
     }
+    explicit_bzero(u, sizeof(u));
 
     io_send_response_pointer(shared_secret, X25519_SECRET_LEN, SW_OK);
     explicit_bzero(shared_secret, sizeof(shared_secret));

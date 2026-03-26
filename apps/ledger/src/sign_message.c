@@ -68,9 +68,8 @@ int handler_sign_message(buffer_t *cdata, uint8_t p1, uint8_t p2) {
             G_context.message_len = msg_len;
         }
 
-        // If single-chunk message (p2 == P2_SINGLE), proceed to sign
-        if (p2 == P2_SINGLE) {
-            // Request user confirmation, then sign
+        // If this is the last (or only) chunk, sign now
+        if (p2 != P2_MORE) {
             sign_approved();
             return 0;
         }
@@ -94,7 +93,7 @@ int handler_sign_message(buffer_t *cdata, uint8_t p1, uint8_t p2) {
             return io_send_sw(SW_OK);
         }
 
-        // Final chunk — sign
+        // Last chunk (p2 == P2_LAST) — sign
         sign_approved();
         return 0;
     }

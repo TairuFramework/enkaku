@@ -56,7 +56,8 @@ export function encodeSignMessageChunks(
   firstData.set(firstMessageSlice, pathBytes.length)
 
   const isOnly = firstMessageSlice.length >= message.length
-  chunks.push({ p1: 0x00, p2: isOnly ? 0x00 : 0x00, data: firstData })
+  // P2: 0x00 = last/only chunk (sign now), 0x80 = more chunks follow
+  chunks.push({ p1: 0x00, p2: isOnly ? 0x00 : 0x80, data: firstData })
 
   // Continuation chunks
   let offset = firstDataCapacity
@@ -64,7 +65,8 @@ export function encodeSignMessageChunks(
     const slice = message.slice(offset, offset + MAX_APDU_DATA)
     offset += slice.length
     const isFinal = offset >= message.length
-    chunks.push({ p1: 0x80, p2: isFinal ? 0x01 : 0x00, data: slice })
+    // P2: 0x00 = last chunk (sign now), 0x80 = more chunks follow
+    chunks.push({ p1: 0x80, p2: isFinal ? 0x00 : 0x80, data: slice })
   }
 
   return chunks
