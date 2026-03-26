@@ -7,12 +7,12 @@ set -euo pipefail
 # integration tests in tests/ledger/, then tears down.
 #
 # Usage:
-#   ./tests/ledger/test.sh              # Build + emulator + tests + teardown
-#   ./tests/ledger/test.sh --no-build   # Skip C build, assume bin/app.elf exists
+#   ./tests/ledger/test.sh              # Emulator + tests (builds only if needed)
+#   ./tests/ledger/test.sh --build      # Force rebuild before testing
 #   ./tests/ledger/test.sh --keep       # Don't stop Speculos after tests
 #
 # Environment:
-#   SPECULOS_PORT  API port (default: 5000)
+#   SPECULOS_PORT  API port (default: 9999)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -21,12 +21,12 @@ SPECULOS_PORT="${SPECULOS_PORT:-9999}"
 SPECULOS_URL="http://127.0.0.1:${SPECULOS_PORT}"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 
-NO_BUILD=false
+FORCE_BUILD=false
 KEEP=false
 
 for arg in "$@"; do
   case "$arg" in
-    --no-build) NO_BUILD=true ;;
+    --build) FORCE_BUILD=true ;;
     --keep) KEEP=true ;;
   esac
 done
@@ -39,14 +39,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Step 1: Build the app
-if [ "$NO_BUILD" = false ]; then
+# Step 1: Build the app (only if ELF missing or --build flag)
+if [ "$FORCE_BUILD" = true ] || [ ! -f "$APP_DIR/bin/app.elf" ]; then
   echo "Building Ledger app..."
   docker compose -f "$COMPOSE_FILE" run --rm build
+else
+  echo "Using existing apps/ledger/bin/app.elf (use --build to force rebuild)"
 fi
 
 if [ ! -f "$APP_DIR/bin/app.elf" ]; then
-  echo "Error: apps/ledger/bin/app.elf not found. Build may have failed."
+  echo "Error: apps/ledger/bin/app.elf not found. Build failed."
   exit 1
 fi
 
