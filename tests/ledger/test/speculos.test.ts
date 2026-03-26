@@ -1,25 +1,28 @@
 /**
- * Integration tests against Speculos emulator.
+ * Integration tests: Ledger app (via Speculos) + @enkaku/ledger-identity.
  *
- * These tests require Speculos running with the Enkaku app:
+ * Run with: ./test.sh (or pnpm run test:speculos)
  *
- *   cd apps/ledger && docker compose up --build
+ * These tests validate the full APDU round-trip between the TypeScript
+ * client and the BOLOS C app running in the Speculos emulator.
  *
- * Speculos must be started with a known seed:
- *   --seed "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+ * Speculos must be started with seed:
+ *   "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
  *
- * The tests auto-approve button prompts via the Speculos REST API.
- * Skip these tests if Speculos is not available (SPECULOS_URL not set).
+ * Tests auto-skip if Speculos is not available.
  */
 
 import { HDKeyStore } from '@enkaku/hd-keystore'
-import { isFullIdentity, verifyToken } from '@enkaku/token'
+import {
+  CLA,
+  createLedgerIdentityProvider,
+  encodeDerivationPath,
+  INS,
+  type LedgerTransport,
+} from '@enkaku/ledger-identity'
+import { createTokenEncrypter, isFullIdentity, verifyToken } from '@enkaku/token'
 import { x25519 } from '@noble/curves/ed25519.js'
 import { describe, expect, test } from 'vitest'
-
-import { CLA, encodeDerivationPath, INS } from '../src/apdu.js'
-import { createLedgerIdentityProvider } from '../src/provider.js'
-import type { LedgerTransport } from '../src/types.js'
 
 const SPECULOS_API_URL = process.env.SPECULOS_URL ?? 'http://127.0.0.1:5000'
 const SPECULOS_AVAILABLE = await checkSpeculosAvailable()
@@ -39,8 +42,8 @@ async function checkSpeculosAvailable(): Promise<boolean> {
 }
 
 /**
- * Create a transport that sends APDUs to Speculos via its REST API.
- * Also auto-approves any button prompts after each APDU that requires confirmation.
+ * Transport that sends APDUs to Speculos via its REST API.
+ * Auto-approves device button prompts for signing/ECDH operations.
  */
 function createSpeculosTransport(): LedgerTransport {
   return {
@@ -51,7 +54,6 @@ function createSpeculosTransport(): LedgerTransport {
       p2: number,
       data?: Uint8Array,
     ): Promise<Uint8Array> {
-      // Build the hex-encoded APDU
       const dataHex = data != null ? Buffer.from(data).toString('hex') : ''
       const lc = data != null ? data.length : 0
       const apduHex =
@@ -62,12 +64,9 @@ function createSpeculosTransport(): LedgerTransport {
         lc.toString(16).padStart(2, '0') +
         dataHex
 
-      // If this command requires user confirmation (SIGN_MESSAGE final chunk or ECDH),
-      // auto-approve by pressing right + both buttons after a short delay
       const needsApproval =
         (ins === INS.SIGN_MESSAGE && (p1 === 0x00 || p2 === 0x01)) || ins === INS.ECDH_X25519
 
-      // Send APDU via Speculos REST API
       const response = await fetch(`${SPECULOS_API_URL}/apdu`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -75,17 +74,13 @@ function createSpeculosTransport(): LedgerTransport {
       })
 
       if (needsApproval) {
-        // Auto-approve: navigate to "Approve" and press both buttons
-        // Wait a moment for the UI to render
         await new Promise((resolve) => setTimeout(resolve, 200))
-        // Press right to navigate to approve
         await fetch(`${SPECULOS_API_URL}/button/right`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'press-and-release' }),
         })
         await new Promise((resolve) => setTimeout(resolve, 200))
-        // Press both buttons to confirm
         await fetch(`${SPECULOS_API_URL}/button/both`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -100,7 +95,6 @@ function createSpeculosTransport(): LedgerTransport {
       const result = (await response.json()) as { data: string }
       const responseHex = result.data
 
-      // Last 4 hex chars are the status word
       const swHex = responseHex.slice(-4)
       const sw = Number.parseInt(swHex, 16)
 
@@ -108,7 +102,6 @@ function createSpeculosTransport(): LedgerTransport {
         throw new Error(`APDU error: status word 0x${swHex}`)
       }
 
-      // Return response data (excluding status word)
       const dataResponse = responseHex.slice(0, -4)
       if (dataResponse.length === 0) {
         return new Uint8Array(0)
@@ -120,7 +113,18 @@ function createSpeculosTransport(): LedgerTransport {
   }
 }
 
-describe.skipIf(!SPECULOS_AVAILABLE)('Speculos integration', () => {
+// -- Ledger App Tests (raw APDU) --
+
+describe.skipIf(!SPECULOS_AVAILABLE)('Ledger app: APDU protocol', () => {
+  test('GET_APP_VERSION returns 3 bytes', async () => {
+    const transport = createSpeculosTransport()
+    const response = await transport.send(CLA, INS.GET_APP_VERSION, 0x00, 0x00)
+    expect(response.length).toBe(3)
+    expect(response[0]).toBe(0) // major
+    expect(response[1]).toBe(1) // minor
+    expect(response[2]).toBe(0) // patch
+  })
+
   test('GET_PUBLIC_KEY returns 32-byte Ed25519 public key', async () => {
     const transport = createSpeculosTransport()
     const pathBytes = encodeDerivationPath("m/44'/903'/0'")
@@ -128,6 +132,27 @@ describe.skipIf(!SPECULOS_AVAILABLE)('Speculos integration', () => {
     expect(response.length).toBe(32)
   })
 
+  test('GET_PUBLIC_KEY is deterministic for same path', async () => {
+    const transport = createSpeculosTransport()
+    const pathBytes = encodeDerivationPath("m/44'/903'/0'")
+    const a = await transport.send(CLA, INS.GET_PUBLIC_KEY, 0x00, 0x00, pathBytes)
+    const b = await transport.send(CLA, INS.GET_PUBLIC_KEY, 0x00, 0x00, pathBytes)
+    expect(a).toEqual(b)
+  })
+
+  test('GET_PUBLIC_KEY returns different keys for different paths', async () => {
+    const transport = createSpeculosTransport()
+    const path0 = encodeDerivationPath("m/44'/903'/0'")
+    const path1 = encodeDerivationPath("m/44'/903'/1'")
+    const a = await transport.send(CLA, INS.GET_PUBLIC_KEY, 0x00, 0x00, path0)
+    const b = await transport.send(CLA, INS.GET_PUBLIC_KEY, 0x00, 0x00, path1)
+    expect(a).not.toEqual(b)
+  })
+})
+
+// -- IdentityProvider Integration Tests --
+
+describe.skipIf(!SPECULOS_AVAILABLE)('Ledger app + ledger-identity integration', () => {
   test('provideIdentity() returns FullIdentity with valid DID', async () => {
     const provider = createLedgerIdentityProvider(createSpeculosTransport())
     const identity = await provider.provideIdentity('0')
@@ -154,7 +179,21 @@ describe.skipIf(!SPECULOS_AVAILABLE)('Speculos integration', () => {
     expect(shared.length).toBe(32)
   })
 
-  test('same DID as HD keystore with same mnemonic', async () => {
+  test('decrypt() decrypts JWE encrypted to ledger identity', async () => {
+    const provider = createLedgerIdentityProvider(createSpeculosTransport())
+    const identity = await provider.provideIdentity('0')
+    const encrypter = createTokenEncrypter(identity.id)
+    const plaintext = new TextEncoder().encode('secret message')
+    const jwe = await encrypter.encrypt(plaintext)
+    const decrypted = await identity.decrypt(jwe)
+    expect(decrypted).toEqual(plaintext)
+  })
+})
+
+// -- Cross-compatibility: Ledger app vs HD keystore --
+
+describe.skipIf(!SPECULOS_AVAILABLE)('Ledger app + hd-keystore cross-compatibility', () => {
+  test('same mnemonic produces same DID', async () => {
     const provider = createLedgerIdentityProvider(createSpeculosTransport())
     const ledgerIdentity = await provider.provideIdentity('0')
 
@@ -164,7 +203,23 @@ describe.skipIf(!SPECULOS_AVAILABLE)('Speculos integration', () => {
     expect(ledgerIdentity.id).toBe(hdIdentity.id)
   })
 
-  test('ECDH produces same shared secret as HD keystore', async () => {
+  test('tokens from both sources are verifiable and share same issuer', async () => {
+    const provider = createLedgerIdentityProvider(createSpeculosTransport())
+    const ledgerIdentity = await provider.provideIdentity('0')
+
+    const hdStore = HDKeyStore.fromMnemonic(MNEMONIC)
+    const hdIdentity = await hdStore.provideIdentity('0')
+
+    const ledgerToken = await ledgerIdentity.signToken({ source: 'ledger' })
+    const hdToken = await hdIdentity.signToken({ source: 'hd' })
+
+    const ledgerVerified = await verifyToken(`${ledgerToken.data}.${ledgerToken.signature}`)
+    const hdVerified = await verifyToken(`${hdToken.data}.${hdToken.signature}`)
+
+    expect(ledgerVerified.payload.iss).toBe(hdVerified.payload.iss)
+  })
+
+  test('ECDH produces same shared secret from both sources', async () => {
     const provider = createLedgerIdentityProvider(createSpeculosTransport())
     const ledgerIdentity = await provider.provideIdentity('0')
 
@@ -178,5 +233,22 @@ describe.skipIf(!SPECULOS_AVAILABLE)('Speculos integration', () => {
     const hdShared = await hdIdentity.agreeKey(ephPub)
 
     expect(ledgerShared).toEqual(hdShared)
+  })
+
+  test('JWE encrypted by HD identity is decryptable by Ledger identity', async () => {
+    const provider = createLedgerIdentityProvider(createSpeculosTransport())
+    const ledgerIdentity = await provider.provideIdentity('0')
+
+    const hdStore = HDKeyStore.fromMnemonic(MNEMONIC)
+    const hdIdentity = await hdStore.provideIdentity('0')
+
+    // Encrypt with HD identity's DID
+    const encrypter = createTokenEncrypter(hdIdentity.id)
+    const plaintext = new TextEncoder().encode('cross-compat secret')
+    const jwe = await encrypter.encrypt(plaintext)
+
+    // Decrypt with Ledger identity (same underlying key)
+    const decrypted = await ledgerIdentity.decrypt(jwe)
+    expect(decrypted).toEqual(plaintext)
   })
 })

@@ -32,7 +32,6 @@
     "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
     "test:types": "tsc --noEmit -p tsconfig.test.json",
     "test:unit": "vitest run",
-    "test:speculos": "../../apps/ledger/test.sh",
     "test": "pnpm run test:types && pnpm run test:unit",
     "prepublishOnly": "pnpm run build"
   },

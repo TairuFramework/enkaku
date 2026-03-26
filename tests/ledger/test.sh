@@ -1,21 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Automated Speculos test runner for the Enkaku Ledger app.
+# Automated Speculos integration test runner.
+#
+# Builds the Ledger C app, starts the Speculos emulator, runs the
+# integration tests in tests/ledger/, then tears down.
 #
 # Usage:
-#   ./apps/ledger/test.sh              # Build, start emulator, run tests, stop
-#   ./apps/ledger/test.sh --no-build   # Skip build, assume bin/app.elf exists
-#   ./apps/ledger/test.sh --keep       # Don't stop Speculos after tests
+#   ./tests/ledger/test.sh              # Build + emulator + tests + teardown
+#   ./tests/ledger/test.sh --no-build   # Skip C build, assume bin/app.elf exists
+#   ./tests/ledger/test.sh --keep       # Don't stop Speculos after tests
 #
 # Environment:
 #   SPECULOS_PORT  API port (default: 5000)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+APP_DIR="$REPO_ROOT/apps/ledger"
 SPECULOS_PORT="${SPECULOS_PORT:-5000}"
 SPECULOS_URL="http://127.0.0.1:${SPECULOS_PORT}"
-COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
+COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 
 NO_BUILD=false
 KEEP=false
@@ -41,9 +45,8 @@ if [ "$NO_BUILD" = false ]; then
   docker compose -f "$COMPOSE_FILE" run --rm build
 fi
 
-# Verify the ELF exists
-if [ ! -f "$SCRIPT_DIR/bin/app.elf" ]; then
-  echo "Error: bin/app.elf not found. Build may have failed."
+if [ ! -f "$APP_DIR/bin/app.elf" ]; then
+  echo "Error: apps/ledger/bin/app.elf not found. Build may have failed."
   exit 1
 fi
 
@@ -51,7 +54,7 @@ fi
 echo "Starting Speculos emulator on port ${SPECULOS_PORT}..."
 docker compose -f "$COMPOSE_FILE" up -d speculos
 
-# Step 3: Wait for API to be ready
+# Step 3: Wait for API
 echo -n "Waiting for Speculos API"
 RETRIES=30
 until curl -sf "${SPECULOS_URL}/events?currentscreenonly=true" > /dev/null 2>&1; do
@@ -68,8 +71,8 @@ done
 echo " ready"
 
 # Step 4: Run integration tests
-echo "Running integration tests..."
+echo "Running Ledger integration tests..."
 cd "$REPO_ROOT"
-SPECULOS_URL="${SPECULOS_URL}" pnpm --filter=@enkaku/ledger-identity run test:unit
+SPECULOS_URL="${SPECULOS_URL}" pnpm --filter=@enkaku/ledger-tests run test
 
 echo "All tests passed."

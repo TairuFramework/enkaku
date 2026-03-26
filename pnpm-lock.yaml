@@ -562,6 +562,34 @@ importers:
         specifier: workspace:^
         version: link:../transport
 
+  packages/ledger-identity:
+    dependencies:
+      '@enkaku/codec':
+        specifier: workspace:^
+        version: link:../codec
+      '@enkaku/log':
+        specifier: workspace:^
+        version: link:../log
+      '@enkaku/otel':
+        specifier: workspace:^
+        version: link:../otel
+      '@enkaku/token':
+        specifier: workspace:^
+        version: link:../token
+    devDependencies:
+      '@enkaku/hd-keystore':
+        specifier: workspace:^
+        version: link:../hd-keystore
+      '@noble/curves':
+        specifier: 'catalog:'
+        version: 2.0.1
+      '@scure/bip39':
+        specifier: 'catalog:'
+        version: 2.0.1
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.1(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/ui@4.1.1)(happy-dom@20.8.8)(jsdom@27.4.0(@noble/hashes@2.0.1))(vite@8.0.2(@types/node@25.5.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/log:
     dependencies:
       '@logtape/logtape':
@@ -982,6 +1010,27 @@ importers:
       get-port:
         specifier: 'catalog:'
         version: 7.2.0
+
+  tests/ledger:
+    devDependencies:
+      '@enkaku/hd-keystore':
+        specifier: workspace:^
+        version: link:../../packages/hd-keystore
+      '@enkaku/ledger-identity':
+        specifier: workspace:^
+        version: link:../../packages/ledger-identity
+      '@enkaku/token':
+        specifier: workspace:^
+        version: link:../../packages/token
+      '@noble/curves':
+        specifier: 'catalog:'
+        version: 2.0.1
+      '@scure/bip39':
+        specifier: 'catalog:'
+        version: 2.0.1
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.1(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/ui@4.1.1)(happy-dom@20.8.8)(jsdom@27.4.0(@noble/hashes@2.0.1))(vite@8.0.2(@types/node@25.5.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
 
   website:
     dependencies:

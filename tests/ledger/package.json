@@ -1,0 +1,19 @@
+{
+  "name": "@enkaku/ledger-tests",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:speculos": "./test.sh"
+  },
+  "devDependencies": {
+    "@enkaku/hd-keystore": "workspace:^",
+    "@enkaku/ledger-identity": "workspace:^",
+    "@enkaku/token": "workspace:^",
+    "@noble/curves": "catalog:",
+    "@scure/bip39": "catalog:",
+    "vitest": "catalog:"
+  }
+}

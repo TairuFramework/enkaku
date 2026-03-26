@@ -10,6 +10,7 @@
  * @module ledger-identity
  */
 
+export { type APDUChunk, CLA, encodeDerivationPath, encodeSignMessageChunks, INS } from './apdu.js'
 export {
   LedgerAppNotOpenError,
   LedgerDisconnectedError,
