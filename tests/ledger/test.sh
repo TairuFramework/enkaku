@@ -17,7 +17,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 APP_DIR="$REPO_ROOT/apps/ledger"
-SPECULOS_PORT="${SPECULOS_PORT:-5000}"
+SPECULOS_PORT="${SPECULOS_PORT:-9999}"
 SPECULOS_URL="http://127.0.0.1:${SPECULOS_PORT}"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 

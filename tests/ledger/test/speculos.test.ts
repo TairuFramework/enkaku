@@ -24,7 +24,7 @@ import { createTokenEncrypter, isFullIdentity, verifyToken } from '@enkaku/token
 import { x25519 } from '@noble/curves/ed25519.js'
 import { describe, expect, test } from 'vitest'
 
-const SPECULOS_API_URL = process.env.SPECULOS_URL ?? 'http://127.0.0.1:5000'
+const SPECULOS_API_URL = process.env.SPECULOS_URL ?? 'http://127.0.0.1:9999'
 const SPECULOS_AVAILABLE = await checkSpeculosAvailable()
 
 const MNEMONIC =
