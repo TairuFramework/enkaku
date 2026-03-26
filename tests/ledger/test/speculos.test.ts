@@ -22,9 +22,7 @@ import {
 } from '@enkaku/ledger-identity'
 import { createTokenEncrypter, isFullIdentity, verifyToken } from '@enkaku/token'
 import { x25519 } from '@noble/curves/ed25519.js'
-import { describe, expect, test, vi } from 'vitest'
-
-vi.setConfig({ testTimeout: 15000 })
+import { describe, expect, test } from 'vitest'
 
 const SPECULOS_API_URL = process.env.SPECULOS_URL ?? 'http://127.0.0.1:9999'
 const SPECULOS_AVAILABLE = await checkSpeculosAvailable()
@@ -65,9 +63,6 @@ function createSpeculosTransport(): LedgerTransport {
         p2.toString(16).padStart(2, '0') +
         lc.toString(16).padStart(2, '0') +
         dataHex
-
-      const needsApproval =
-        (ins === INS.SIGN_MESSAGE && (p1 === 0x00 || p2 === 0x01)) || ins === INS.ECDH_X25519
 
       const response = await fetch(`${SPECULOS_API_URL}/apdu`, {
         method: 'POST',
