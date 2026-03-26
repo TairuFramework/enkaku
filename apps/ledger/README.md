@@ -69,37 +69,46 @@ make BOLOS_SDK=/path/to/ledger-secure-sdk
 
 ## Test with Speculos
 
-### Start the emulator
+### Automated (recommended)
+
+```bash
+# From repo root — builds app, starts Speculos, runs tests, stops emulator
+./apps/ledger/test.sh
+
+# Or via pnpm
+pnpm --filter=@enkaku/ledger-identity run test:speculos
+
+# Skip build if app.elf already exists
+./apps/ledger/test.sh --no-build
+
+# Keep Speculos running after tests (for manual debugging)
+./apps/ledger/test.sh --keep
+```
+
+### Manual
 
 ```bash
 cd apps/ledger
 
-# Option 1: Docker Compose (builds app + starts Speculos)
-docker compose up --build
+# Build
+docker compose run --rm build
 
-# Option 2: Manual (if app is already built)
-speculos --model nanosp bin/app.elf \
-  --seed "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about" \
-  --apdu-port 40000 --api-port 5000 --display headless
+# Start Speculos
+docker compose up -d speculos
+
+# Run tests (from repo root)
+cd ../..
+SPECULOS_URL=http://localhost:5000 pnpm --filter=@enkaku/ledger-identity run test:unit
+
+# Stop
+docker compose -f apps/ledger/docker-compose.yml down
 ```
 
 Speculos exposes:
 - **Port 5000**: REST API (APDU exchange, button simulation, screenshots)
 - **Port 40000**: Raw TCP APDU port
 
-### Run integration tests
-
-With Speculos running:
-
-```bash
-# From repo root
-pnpm run test:unit --filter=@enkaku/ledger-identity
-
-# Or with a custom Speculos URL
-SPECULOS_URL=http://localhost:5000 pnpm run test:unit --filter=@enkaku/ledger-identity
-```
-
-The integration tests in `packages/ledger-identity/test/speculos.test.ts` auto-detect whether Speculos is available and skip if not. They auto-approve device prompts via the REST API.
+The integration tests in `packages/ledger-identity/test/speculos.test.ts` auto-detect Speculos and skip when not available. They auto-approve device prompts via the REST API.
 
 ### What the tests verify
 
