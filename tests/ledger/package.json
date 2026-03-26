@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:speculos": "./test.sh"
+    "test:speculos": "./test-speculos.sh"
   },
   "devDependencies": {
     "@enkaku/hd-keystore": "workspace:^",

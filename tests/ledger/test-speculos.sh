@@ -74,7 +74,7 @@ echo " ready"
 
 # Step 4: Run integration tests
 echo "Running Ledger integration tests..."
-cd "$REPO_ROOT"
-SPECULOS_URL="${SPECULOS_URL}" pnpm --filter=@enkaku/ledger-tests run test
+cd "$SCRIPT_DIR"
+SPECULOS_URL="${SPECULOS_URL}" vitest run speculos.test.ts
 
 echo "All tests passed."
