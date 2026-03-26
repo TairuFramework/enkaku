@@ -17,7 +17,7 @@ import { isFullIdentity, verifyToken } from '@enkaku/token'
 import { x25519 } from '@noble/curves/ed25519.js'
 import { describe, expect, test } from 'vitest'
 
-import { CLA, encodeDerivationPath, encodeSignMessageChunks, INS } from '../src/apdu.js'
+import { CLA, encodeDerivationPath, INS } from '../src/apdu.js'
 import { createLedgerIdentityProvider } from '../src/provider.js'
 import type { LedgerTransport } from '../src/types.js'
 
