@@ -41,11 +41,24 @@ Example: `m/44'/903'/0'` encodes as `03 8000002C 80000387 80000000`
 
 ## Build
 
-### With Docker (recommended)
+### With Docker Compose (recommended)
 
 ```bash
-docker build -t enkaku-ledger-app .
-docker run --rm -v $(pwd)/bin:/app/bin enkaku-ledger-app
+cd apps/ledger
+
+# Build the app + start Speculos emulator
+docker compose up --build
+
+# Build only (no emulator)
+docker compose run --rm build
+```
+
+### With Docker (manual)
+
+```bash
+docker run --rm -v "$(pwd):/app" \
+  ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest \
+  bash -c "cd /app && BOLOS_SDK=\$NANOSP_SDK make"
 ```
 
 ### With local SDK
@@ -56,16 +69,45 @@ make BOLOS_SDK=/path/to/ledger-secure-sdk
 
 ## Test with Speculos
 
+### Start the emulator
+
 ```bash
-# Install Speculos
-pip install speculos
+cd apps/ledger
 
-# Run the app in the emulator (Nano S+)
-speculos --model nanosp bin/app.elf
+# Option 1: Docker Compose (builds app + starts Speculos)
+docker compose up --build
 
-# In another terminal, use the @enkaku/ledger-identity TypeScript package
-# with @ledgerhq/hw-transport-speculos to connect
+# Option 2: Manual (if app is already built)
+speculos --model nanosp bin/app.elf \
+  --seed "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about" \
+  --apdu-port 40000 --api-port 5000 --display headless
 ```
+
+Speculos exposes:
+- **Port 5000**: REST API (APDU exchange, button simulation, screenshots)
+- **Port 40000**: Raw TCP APDU port
+
+### Run integration tests
+
+With Speculos running:
+
+```bash
+# From repo root
+pnpm run test:unit --filter=@enkaku/ledger-identity
+
+# Or with a custom Speculos URL
+SPECULOS_URL=http://localhost:5000 pnpm run test:unit --filter=@enkaku/ledger-identity
+```
+
+The integration tests in `packages/ledger-identity/test/speculos.test.ts` auto-detect whether Speculos is available and skip if not. They auto-approve device prompts via the REST API.
+
+### What the tests verify
+
+- `GET_PUBLIC_KEY` returns a valid 32-byte Ed25519 public key
+- `provideIdentity()` produces a valid `FullIdentity` with `did:key:z...` DID
+- `signToken()` produces JWTs verifiable by standard Ed25519 verification
+- `agreeKey()` performs X25519 ECDH and returns a valid shared secret
+- **Cross-compatibility**: same DID and shared secrets as `@enkaku/hd-keystore` with the same mnemonic seed
 
 ## TypeScript Client
 
