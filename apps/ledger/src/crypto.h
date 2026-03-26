@@ -4,6 +4,7 @@
 
 #include "os.h"
 #include "cx.h"
+#include "os_seed.h"
 
 #include "constants.h"
 

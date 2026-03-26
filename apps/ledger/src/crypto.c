@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "crypto.h"
+#include "crypto_helpers.h"
 
 int parse_bip32_path(const uint8_t *data, uint8_t data_len,
                      uint32_t *path, uint8_t *path_len) {
@@ -37,41 +38,42 @@ int derive_ed25519_keys(const uint32_t *path, uint8_t path_len,
                         cx_ecfp_private_key_t *private_key,
                         uint8_t public_key[ED25519_PK_LEN]) {
     cx_err_t error;
-    // os_derive_bip32_no_throw requires a 64-byte buffer
-    uint8_t raw_private_key[64];
 
-    // Derive raw private key using SLIP-0010
-    error = os_derive_bip32_no_throw(CX_CURVE_Ed25519,
-                                     path, path_len,
-                                     raw_private_key, NULL);
-    if (error != CX_OK) {
-        explicit_bzero(raw_private_key, sizeof(raw_private_key));
-        return -1;
-    }
+    // Use SLIP-0010 derivation mode for Ed25519
+    error = bip32_derive_with_seed_init_privkey_256(
+        HDW_ED25519_SLIP10,
+        CX_CURVE_Ed25519,
+        path, path_len,
+        private_key,
+        NULL,  // no chain code
+        NULL, 0);  // no external seed
 
-    // Initialize private key structure (only first 32 bytes are the Ed25519 seed)
-    error = cx_ecfp_init_private_key_no_throw(CX_CURVE_Ed25519,
-                                               raw_private_key,
-                                               ED25519_PK_LEN,
-                                               private_key);
-    explicit_bzero(raw_private_key, sizeof(raw_private_key));
     if (error != CX_OK) {
+        explicit_bzero(private_key, sizeof(cx_ecfp_private_key_t));
         return -1;
     }
 
     // Derive public key if requested
     if (public_key != NULL) {
-        cx_ecfp_public_key_t pub;
-        error = cx_ecfp_generate_pair_no_throw(CX_CURVE_Ed25519, &pub, private_key, 1);
+        uint8_t raw_pubkey[65];
+        error = bip32_derive_with_seed_get_pubkey_256(
+            HDW_ED25519_SLIP10,
+            CX_CURVE_Ed25519,
+            path, path_len,
+            raw_pubkey,
+            NULL,  // no chain code
+            CX_SHA512,
+            NULL, 0);  // no external seed
+
         if (error != CX_OK) {
             explicit_bzero(private_key, sizeof(cx_ecfp_private_key_t));
             return -1;
         }
 
-        // BOLOS SDK returns 65-byte uncompressed: 0x04 || X(32) || Y(32)
-        // Ed25519 compressed public key is Y(32) with sign bit of X in MSB of last byte
-        memmove(public_key, pub.W + 1 + ED25519_PK_LEN, ED25519_PK_LEN);
-        if (pub.W[ED25519_PK_LEN] & 1) {
+        // raw_pubkey is 65 bytes: 0x04 || X(32) || Y(32)
+        // Ed25519 compressed public key is Y(32) with sign bit of X in MSB
+        memmove(public_key, raw_pubkey + 1 + ED25519_PK_LEN, ED25519_PK_LEN);
+        if (raw_pubkey[ED25519_PK_LEN] & 1) {
             public_key[ED25519_PK_LEN - 1] |= 0x80;
         }
     }
