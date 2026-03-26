@@ -28,9 +28,8 @@ services:
       - "${SPECULOS_PORT:-9999}:5000"
       - "40000:40000"
     command: >
-      --model nanosp
       /app/bin/app.elf
-      --sdk 1.0
+      --model nanosp
       --seed "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
       --apdu-port 40000
       --api-port 5000
