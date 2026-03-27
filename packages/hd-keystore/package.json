@@ -1,9 +1,9 @@
 {
   "name": "@enkaku/hd-keystore",
-  "version": "0.1.0",
+  "version": "0.14.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Enkaku HD keystore with SLIP-0010 Ed25519 derivation",
+  "description": "Enkaku HD keystore",
   "keywords": [
     "cryptography",
     "key-management",

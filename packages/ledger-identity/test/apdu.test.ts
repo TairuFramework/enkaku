@@ -26,7 +26,7 @@ describe('constants', () => {
 
 describe('encodeDerivationPath()', () => {
   test('encodes hardened path components', () => {
-    const encoded = encodeDerivationPath("m/44'/903'/0'")
+    const encoded = encodeDerivationPath("m/44'/876'/0'")
     expect(encoded.length).toBe(1 + 3 * 4)
     expect(encoded[0]).toBe(3)
   })
@@ -38,7 +38,7 @@ describe('encodeDerivationPath()', () => {
 
 describe('encodeSignMessageChunks()', () => {
   test('returns single chunk for small message', () => {
-    const path = encodeDerivationPath("m/44'/903'/0'")
+    const path = encodeDerivationPath("m/44'/876'/0'")
     const message = new Uint8Array(32)
     const chunks = encodeSignMessageChunks(path, message)
     expect(chunks.length).toBe(1)
@@ -47,7 +47,7 @@ describe('encodeSignMessageChunks()', () => {
   })
 
   test('returns multiple chunks for large message', () => {
-    const path = encodeDerivationPath("m/44'/903'/0'")
+    const path = encodeDerivationPath("m/44'/876'/0'")
     const message = new Uint8Array(512)
     const chunks = encodeSignMessageChunks(path, message)
     expect(chunks.length).toBeGreaterThan(1)

@@ -22,7 +22,7 @@ import {
 import { LedgerDisconnectedError } from './errors.js'
 import type { LedgerTransport } from './types.js'
 
-const DEFAULT_BASE_PATH = "44'/903'"
+const DEFAULT_BASE_PATH = "44'/876'"
 const tracer = createTracer('ledger-identity')
 const logger = getEnkakuLogger('ledger-identity')
 

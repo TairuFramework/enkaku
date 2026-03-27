@@ -1,6 +1,6 @@
 import HDKey from 'micro-key-producer/slip10.js'
 
-const DEFAULT_BASE_PATH = "44'/903'"
+const DEFAULT_BASE_PATH = "44'/876'"
 const INDEX_RE = /^\d+$/
 
 export function resolveDerivationPath(keyID: string, basePath: string = DEFAULT_BASE_PATH): string {

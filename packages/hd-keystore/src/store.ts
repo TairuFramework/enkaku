@@ -7,7 +7,7 @@ import { mnemonicToSeedSync } from '@scure/bip39'
 import { resolveDerivationPath } from './derivation.js'
 import { HDKeyEntry } from './entry.js'
 
-const DEFAULT_BASE_PATH = "44'/903'"
+const DEFAULT_BASE_PATH = "44'/876'"
 const tracer = createTracer('keystore.hd')
 const logger = getEnkakuLogger('hd-keystore')
 

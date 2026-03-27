@@ -2,19 +2,19 @@ import { describe, expect, test } from 'vitest'
 
 import { derivePrivateKey, resolveDerivationPath } from '../src/derivation.js'
 
-const DEFAULT_BASE_PATH = "44'/903'"
+const DEFAULT_BASE_PATH = "44'/876'"
 
 describe('resolveDerivationPath()', () => {
   test('resolves numeric index to full path', () => {
-    expect(resolveDerivationPath('0', DEFAULT_BASE_PATH)).toBe("m/44'/903'/0'")
+    expect(resolveDerivationPath('0', DEFAULT_BASE_PATH)).toBe("m/44'/876'/0'")
   })
 
   test('resolves string index to full hardened path', () => {
-    expect(resolveDerivationPath('5', DEFAULT_BASE_PATH)).toBe("m/44'/903'/5'")
+    expect(resolveDerivationPath('5', DEFAULT_BASE_PATH)).toBe("m/44'/876'/5'")
   })
 
   test('passes through full path unchanged', () => {
-    expect(resolveDerivationPath("m/44'/903'/2'", DEFAULT_BASE_PATH)).toBe("m/44'/903'/2'")
+    expect(resolveDerivationPath("m/44'/876'/2'", DEFAULT_BASE_PATH)).toBe("m/44'/876'/2'")
   })
 
   test('throws for invalid keyID', () => {
@@ -42,14 +42,14 @@ describe('derivePrivateKey()', () => {
   })
 
   test('same seed + path produces same key', () => {
-    const a = derivePrivateKey(SEED, "m/44'/903'/0'")
-    const b = derivePrivateKey(SEED, "m/44'/903'/0'")
+    const a = derivePrivateKey(SEED, "m/44'/876'/0'")
+    const b = derivePrivateKey(SEED, "m/44'/876'/0'")
     expect(a).toEqual(b)
   })
 
   test('different paths produce different keys', () => {
-    const a = derivePrivateKey(SEED, "m/44'/903'/0'")
-    const b = derivePrivateKey(SEED, "m/44'/903'/1'")
+    const a = derivePrivateKey(SEED, "m/44'/876'/0'")
+    const b = derivePrivateKey(SEED, "m/44'/876'/1'")
     expect(a).not.toEqual(b)
   })
 })

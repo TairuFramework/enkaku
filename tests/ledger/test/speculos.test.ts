@@ -110,14 +110,14 @@ describe.skipIf(!SPECULOS_AVAILABLE)('Ledger app: APDU protocol', () => {
 
   test('GET_PUBLIC_KEY returns 32-byte Ed25519 public key', async () => {
     const transport = createSpeculosTransport()
-    const pathBytes = encodeDerivationPath("m/44'/903'/0'")
+    const pathBytes = encodeDerivationPath("m/44'/876'/0'")
     const response = await transport.send(CLA, INS.GET_PUBLIC_KEY, 0x00, 0x00, pathBytes)
     expect(response.length).toBe(32)
   })
 
   test('GET_PUBLIC_KEY is deterministic for same path', async () => {
     const transport = createSpeculosTransport()
-    const pathBytes = encodeDerivationPath("m/44'/903'/0'")
+    const pathBytes = encodeDerivationPath("m/44'/876'/0'")
     const a = await transport.send(CLA, INS.GET_PUBLIC_KEY, 0x00, 0x00, pathBytes)
     const b = await transport.send(CLA, INS.GET_PUBLIC_KEY, 0x00, 0x00, pathBytes)
     expect(a).toEqual(b)
@@ -125,8 +125,8 @@ describe.skipIf(!SPECULOS_AVAILABLE)('Ledger app: APDU protocol', () => {
 
   test('GET_PUBLIC_KEY returns different keys for different paths', async () => {
     const transport = createSpeculosTransport()
-    const path0 = encodeDerivationPath("m/44'/903'/0'")
-    const path1 = encodeDerivationPath("m/44'/903'/1'")
+    const path0 = encodeDerivationPath("m/44'/876'/0'")
+    const path1 = encodeDerivationPath("m/44'/876'/1'")
     const a = await transport.send(CLA, INS.GET_PUBLIC_KEY, 0x00, 0x00, path0)
     const b = await transport.send(CLA, INS.GET_PUBLIC_KEY, 0x00, 0x00, path1)
     expect(a).not.toEqual(b)

@@ -19,7 +19,7 @@ BOLOS application for Ledger Nano S+ providing Ed25519 signing and X25519 ECDH k
 [component_count: 1 byte] [components: 4 bytes each, big-endian with hardened bit]
 ```
 
-All components must be hardened (SLIP-0010 Ed25519). Example: `m/44'/903'/0'` encodes as `03 8000002C 80000387 80000000`.
+All components must be hardened (SLIP-0010 Ed25519). Example: `m/44'/876'/0'` encodes as `03 8000002C 8000036C 80000000`.
 
 ### SIGN_MESSAGE Chunking
 
@@ -62,8 +62,6 @@ The build uses `ghcr.io/ledgerhq/ledger-app-builder` targeting the Nano S+ SDK (
 
 Integration tests run against the Speculos emulator using a deterministic mnemonic seed.
 
-### Automated (recommended)
-
 ```bash
 # From repo root — builds if needed, starts Speculos, runs 12 tests, stops emulator
 ./tests/ledger/test.sh
@@ -73,25 +71,6 @@ Integration tests run against the Speculos emulator using a deterministic mnemon
 
 # Keep Speculos running after tests (for debugging)
 ./tests/ledger/test.sh --keep
-```
-
-### Manual
-
-```bash
-cd apps/ledger
-
-# Build
-docker compose run --rm build
-
-# Start Speculos
-docker compose up -d speculos
-
-# Run tests (from repo root)
-cd ../..
-SPECULOS_URL=http://localhost:9999 pnpm --filter=@enkaku/ledger-tests run test
-
-# Stop
-docker compose -f apps/ledger/docker-compose.yml down
 ```
 
 Speculos exposes port 9999 (configurable via `SPECULOS_PORT`) for its REST API.

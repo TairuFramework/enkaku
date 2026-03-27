@@ -1,8 +1,9 @@
 import { b64uFromJSON, fromUTF, toB64U } from '@enkaku/codec'
 import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
-import { ed25519 } from '@noble/curves/ed25519.js'
+import { ed25519, x25519 } from '@noble/curves/ed25519.js'
 
 import { CODECS, getDID } from './did.js'
+import { decryptToken } from './jwe.js'
 import type { SignedHeader } from './schemas.js'
 import type { SignedToken } from './types.js'
 
@@ -97,12 +98,10 @@ export function createDecryptingIdentity(privateKey: Uint8Array): DecryptingIden
   const x25519Private = ed25519.utils.toMontgomerySecret(privateKey)
 
   async function decrypt(jwe: string): Promise<Uint8Array> {
-    const { decryptToken } = await import('./jwe.js')
     return decryptToken({ id, decrypt, agreeKey }, jwe)
   }
 
   async function agreeKey(ephemeralPublicKey: Uint8Array): Promise<Uint8Array> {
-    const { x25519 } = await import('@noble/curves/ed25519.js')
     return x25519.getSharedSecret(x25519Private, ephemeralPublicKey)
   }
 
