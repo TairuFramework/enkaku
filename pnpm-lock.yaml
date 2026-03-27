@@ -533,6 +533,9 @@ importers:
 
   packages/hub-protocol:
     dependencies:
+      '@enkaku/event':
+        specifier: workspace:^
+        version: link:../event
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
