@@ -1,12 +1,6 @@
-import type { HubProtocol, HubStore, RoutedMessage } from '@enkaku/hub-protocol'
+import type { HubProtocol, HubStore, StoredMessage } from '@enkaku/hub-protocol'
 import type { ServerTransportOf } from '@enkaku/protocol'
-import type {
-  ChannelHandler,
-  ProcedureHandlers,
-  RequestHandler,
-  Server,
-  StreamHandler,
-} from '@enkaku/server'
+import type { ChannelHandler, ProcedureHandlers, RequestHandler, Server } from '@enkaku/server'
 import { serve } from '@enkaku/server'
 import type { Identity } from '@enkaku/token'
 
@@ -24,153 +18,157 @@ export type HubInstance = {
   server: Server<HubProtocol>
 }
 
-function getClientDID(ctx: { message?: { payload?: Record<string, unknown> } }): string {
-  const iss = (ctx.message?.payload as Record<string, unknown> | undefined)?.iss
-  if (typeof iss === 'string' && iss.length > 0) {
-    return iss
-  }
-  return 'anonymous'
+function getClientDID(ctx: { message: { payload: { iss?: string } } }): string {
+  return ctx.message.payload.iss ?? 'anonymous'
 }
 
-/**
- * Create a hub server using standard Enkaku serve() with HubProtocol.
- */
+function encodePayload(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes))
+}
+
+function decodePayload(str: string): Uint8Array {
+  return Uint8Array.from(atob(str), (c) => c.charCodeAt(0))
+}
+
 export function createHub(params: CreateHubParams): HubInstance {
   const registry = new HubClientRegistry()
   const { store } = params
 
   const handlers: ProcedureHandlers<HubProtocol> = {
     'hub/send': (async (ctx) => {
-      const { groupID, epoch, contentType, payload } = ctx.param
       const senderDID = getClientDID(ctx)
+      const { recipients, payload } = ctx.param
 
-      const message: RoutedMessage = {
-        senderDID,
-        groupID,
-        epoch,
-        contentType,
-        payload,
+      if (store == null) {
+        throw new Error('Store is required for hub/send')
       }
 
-      let delivered = 0
-      let queued = 0
+      const payloadBytes = decodePayload(payload)
+      const sequenceID = await store.store({ senderDID, recipients, payload: payloadBytes })
 
-      // Fan out to online group members
-      const members = registry.getOnlineGroupMembers(groupID)
-      for (const memberDID of members) {
-        if (memberDID === senderDID) continue // Don't echo back to sender
-        const client = registry.getClient(memberDID)
+      // Deliver to online recipients immediately
+      for (const recipientDID of recipients) {
+        if (recipientDID === senderDID) continue
+        const client = registry.getClient(recipientDID)
         if (client?.sendMessage != null) {
-          client.sendMessage(message)
-          delivered++
+          client.sendMessage({ sequenceID, senderDID, payload: payloadBytes })
         }
       }
 
-      // Store-and-forward for offline members (if store is provided)
-      if (store != null) {
-        const allMembers = await store.getGroupMembers(groupID)
-        for (const memberDID of allMembers) {
-          if (memberDID === senderDID) continue
-          if (!registry.isOnline(memberDID)) {
-            await store.enqueue(memberDID, message)
-            queued++
-          }
-        }
-      }
-
-      return { delivered, queued }
+      return { sequenceID }
     }) as RequestHandler<HubProtocol, 'hub/send'>,
 
-    'hub/receive': (async (ctx) => {
-      const { groups } = ctx.param
-      const clientDID = getClientDID(ctx)
-      const writer = ctx.writable.getWriter()
+    'hub/group/send': (async (ctx) => {
+      const senderDID = getClientDID(ctx)
+      const { groupID, payload } = ctx.param
 
-      // Register this client's receive stream
-      registry.register(clientDID)
-      registry.setReceiveWriter(clientDID, (message: RoutedMessage) => {
-        writer.write(message).catch(() => {})
-      })
-
-      // Join requested groups
-      for (const groupID of groups) {
-        registry.joinGroup(clientDID, groupID)
+      if (store == null) {
+        throw new Error('Store is required for hub/group/send')
       }
 
-      // Drain queued messages
-      if (store != null) {
-        const queued = await store.dequeue(clientDID)
-        for (const message of queued) {
-          await writer.write(message)
+      const members = registry.getGroupMembers(groupID)
+      if (members.length === 0) {
+        throw new Error(`Unknown group: ${groupID}`)
+      }
+
+      const recipients = members.filter((did) => did !== senderDID)
+      const payloadBytes = decodePayload(payload)
+      const sequenceID = await store.store({
+        senderDID,
+        recipients,
+        payload: payloadBytes,
+        groupID,
+      })
+
+      // Deliver to online recipients immediately
+      for (const recipientDID of recipients) {
+        const client = registry.getClient(recipientDID)
+        if (client?.sendMessage != null) {
+          client.sendMessage({ sequenceID, senderDID, groupID, payload: payloadBytes })
         }
       }
 
-      // Handle already-aborted signal
-      if (ctx.signal.aborted) {
-        registry.unregister(clientDID)
-        writer.close().catch(() => {})
-        return undefined as never
-      }
+      return { sequenceID }
+    }) as RequestHandler<HubProtocol, 'hub/group/send'>,
 
-      // Keep stream open until aborted
-      return new Promise((resolve) => {
-        ctx.signal.addEventListener(
-          'abort',
-          () => {
-            registry.unregister(clientDID)
-            writer.close().catch(() => {})
-            resolve(undefined as never)
-          },
-          { once: true },
-        )
-      })
-    }) as StreamHandler<HubProtocol, 'hub/receive'>,
-
-    'hub/tunnel/request': (async (ctx) => {
-      const { peerDID } = ctx.param
+    'hub/receive': (async (ctx) => {
       const clientDID = getClientDID(ctx)
+      const { after, groupIDs } = ctx.param ?? {}
 
-      if (!registry.isOnline(peerDID)) {
-        throw new Error(`Peer ${peerDID} is not online`)
-      }
+      registry.register(clientDID)
 
-      // TODO: Full tunnel implementation requires pairing two channel handlers.
-      // For now, the tunnel handler accepts the connection and relays bytes
-      // through the registry when both peers have open tunnels.
       const writer = ctx.writable.getWriter()
       const reader = ctx.readable.getReader()
 
-      // Register this tunnel endpoint in the registry
-      registry.setTunnelWriter(clientDID, peerDID, (data: { data: string }) => {
-        writer.write(data).catch(() => {})
+      // Set up message delivery callback with optional group filter
+      registry.setReceiveWriter(clientDID, (message: StoredMessage) => {
+        // Apply group filter: direct messages always pass, group messages only if in filter
+        if (groupIDs != null && groupIDs.length > 0) {
+          if (message.groupID != null && !groupIDs.includes(message.groupID)) {
+            return
+          }
+        }
+        const encoded = encodePayload(message.payload)
+        writer
+          .write({
+            sequenceID: message.sequenceID,
+            senderDID: message.senderDID,
+            groupID: message.groupID,
+            payload: encoded,
+          })
+          .catch(() => {})
       })
 
-      // Read from this client and forward to peer's tunnel writer
+      // Drain queued messages from store
+      if (store != null) {
+        let cursor = after
+        while (true) {
+          const result = await store.fetch({
+            recipientDID: clientDID,
+            after: cursor ?? undefined,
+            limit: 50,
+          })
+          for (const msg of result.messages) {
+            // Apply group filter
+            if (groupIDs != null && groupIDs.length > 0) {
+              if (msg.groupID != null && !groupIDs.includes(msg.groupID)) {
+                continue
+              }
+            }
+            const encoded = encodePayload(msg.payload)
+            await writer.write({
+              sequenceID: msg.sequenceID,
+              senderDID: msg.senderDID,
+              groupID: msg.groupID,
+              payload: encoded,
+            })
+          }
+          cursor = result.cursor
+          if (!result.hasMore) break
+        }
+      }
+
+      // Read acks from device
       void (async () => {
         try {
           while (true) {
             const { done, value } = await reader.read()
             if (done) break
-            registry.sendTunnelData(peerDID, clientDID, value as { data: string })
+            if (value?.ack != null && store != null) {
+              await store.ack({ recipientDID: clientDID, sequenceIDs: value.ack })
+            }
           }
         } catch {
-          // Stream closed
+          // Channel closed
         }
       })()
 
-      // Handle already-aborted signal
-      if (ctx.signal.aborted) {
-        registry.clearTunnelWriter(clientDID, peerDID)
-        reader.cancel().catch(() => {})
-        writer.close().catch(() => {})
-        return undefined as never
-      }
-
+      // Keep channel open until aborted
       return new Promise((resolve) => {
         ctx.signal.addEventListener(
           'abort',
           () => {
-            registry.clearTunnelWriter(clientDID, peerDID)
+            registry.clearReceiveWriter(clientDID)
             reader.cancel().catch(() => {})
             writer.close().catch(() => {})
             resolve(undefined as never)
@@ -178,17 +176,15 @@ export function createHub(params: CreateHubParams): HubInstance {
           { once: true },
         )
       })
-    }) as ChannelHandler<HubProtocol, 'hub/tunnel/request'>,
+    }) as ChannelHandler<HubProtocol, 'hub/receive'>,
 
     'hub/keypackage/upload': (async (ctx) => {
       if (store == null) {
-        throw new Error('Key package storage requires a HubStore')
+        throw new Error('Store is required for key package operations')
       }
-      const { keyPackages } = ctx.param
       const clientDID = getClientDID(ctx)
-      for (const kp of keyPackages) {
-        await store.storeKeyPackage(clientDID, kp)
-      }
+      const { keyPackages } = ctx.param
+      await Promise.all(keyPackages.map((kp: string) => store.storeKeyPackage(clientDID, kp)))
       return { stored: keyPackages.length }
     }) as RequestHandler<HubProtocol, 'hub/keypackage/upload'>,
 
@@ -202,40 +198,25 @@ export function createHub(params: CreateHubParams): HubInstance {
     }) as RequestHandler<HubProtocol, 'hub/keypackage/fetch'>,
 
     'hub/group/join': (async (ctx) => {
-      const { groupID, credential: _credential } = ctx.param
       const clientDID = getClientDID(ctx)
-
-      // TODO: Validate credential against @enkaku/group when accessControl is enabled.
-      // Currently accepts any join request when accessControl is false.
-
+      const { groupID } = ctx.param
       registry.register(clientDID)
       registry.joinGroup(clientDID, groupID)
-
-      // Update store if available
       if (store != null) {
-        const members = await store.getGroupMembers(groupID)
-        if (!members.includes(clientDID)) {
-          members.push(clientDID)
-          await store.setGroupMembers(groupID, members)
-        }
+        const members = registry.getGroupMembers(groupID)
+        await store.setGroupMembers(groupID, members)
       }
-
       return { joined: true }
     }) as RequestHandler<HubProtocol, 'hub/group/join'>,
 
     'hub/group/leave': (async (ctx) => {
-      const { groupID } = ctx.param
       const clientDID = getClientDID(ctx)
-
+      const { groupID } = ctx.param
       registry.leaveGroup(clientDID, groupID)
-
-      // Update store if available
       if (store != null) {
-        const members = await store.getGroupMembers(groupID)
-        const updated = members.filter((m) => m !== clientDID)
-        await store.setGroupMembers(groupID, updated)
+        const members = registry.getGroupMembers(groupID)
+        await store.setGroupMembers(groupID, members)
       }
-
       return { left: true }
     }) as RequestHandler<HubProtocol, 'hub/group/leave'>,
   }
