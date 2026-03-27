@@ -1,110 +1,91 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
 
-/**
- * Hub protocol definition for group-aware message routing.
- *
- * All messages are standard Enkaku procedure types:
- * - hub/send: request (send encrypted message to a group)
- * - hub/receive: stream (server pushes messages to client)
- * - hub/tunnel/request: channel (bidirectional tunnel between peers)
- * - hub/keypackage/upload: request (upload key packages)
- * - hub/keypackage/fetch: request (fetch key packages for a DID)
- * - hub/group/join: request (announce group membership)
- * - hub/group/leave: request (leave a group)
- */
 export const hubProtocol = {
   'hub/send': {
     type: 'request',
+    description: 'Send opaque message to explicit recipients',
     param: {
       type: 'object',
       properties: {
-        groupID: { type: 'string' },
-        epoch: { type: 'integer' },
-        contentType: {
-          type: 'string',
-          enum: ['commit', 'proposal', 'welcome', 'application'],
-        },
-        payload: { type: 'string' },
+        recipients: { type: 'array', items: { type: 'string' } },
+        payload: { type: 'string', contentEncoding: 'base64' },
       },
-      required: ['groupID', 'epoch', 'contentType', 'payload'],
+      required: ['recipients', 'payload'],
       additionalProperties: false,
     },
     result: {
       type: 'object',
       properties: {
-        delivered: { type: 'integer' },
-        queued: { type: 'integer' },
+        sequenceID: { type: 'string' },
       },
-      required: ['delivered', 'queued'],
+      required: ['sequenceID'],
+      additionalProperties: false,
+    },
+  },
+  'hub/group/send': {
+    type: 'request',
+    description: 'Send opaque message to all members of a group',
+    param: {
+      type: 'object',
+      properties: {
+        groupID: { type: 'string' },
+        payload: { type: 'string', contentEncoding: 'base64' },
+      },
+      required: ['groupID', 'payload'],
+      additionalProperties: false,
+    },
+    result: {
+      type: 'object',
+      properties: {
+        sequenceID: { type: 'string' },
+      },
+      required: ['sequenceID'],
       additionalProperties: false,
     },
   },
   'hub/receive': {
-    type: 'stream',
-    param: {
-      type: 'object',
-      properties: {
-        groups: {
-          type: 'array',
-          items: { type: 'string' },
-        },
-      },
-      required: ['groups'],
-      additionalProperties: false,
-    },
-    receive: {
-      type: 'object',
-      properties: {
-        senderDID: { type: 'string' },
-        groupID: { type: 'string' },
-        epoch: { type: 'integer' },
-        contentType: {
-          type: 'string',
-          enum: ['commit', 'proposal', 'welcome', 'application'],
-        },
-        payload: { type: 'string' },
-      },
-      required: ['senderDID', 'groupID', 'epoch', 'contentType', 'payload'],
-      additionalProperties: false,
-    },
-  },
-  'hub/tunnel/request': {
     type: 'channel',
+    description: 'Bidirectional mailbox channel — hub pushes messages, device pushes acks',
     param: {
       type: 'object',
       properties: {
-        peerDID: { type: 'string' },
-        groupID: { type: 'string' },
+        after: { type: 'string' },
+        groupIDs: { type: 'array', items: { type: 'string' } },
       },
-      required: ['peerDID', 'groupID'],
       additionalProperties: false,
     },
     send: {
       type: 'object',
       properties: {
-        data: { type: 'string' },
+        ack: { type: 'array', items: { type: 'string' } },
       },
-      required: ['data'],
+      required: ['ack'],
       additionalProperties: false,
     },
     receive: {
       type: 'object',
       properties: {
-        data: { type: 'string' },
+        sequenceID: { type: 'string' },
+        senderDID: { type: 'string' },
+        groupID: { type: 'string' },
+        payload: { type: 'string', contentEncoding: 'base64' },
       },
-      required: ['data'],
+      required: ['sequenceID', 'senderDID', 'payload'],
+      additionalProperties: false,
+    },
+    result: {
+      type: 'object',
+      properties: {},
       additionalProperties: false,
     },
   },
   'hub/keypackage/upload': {
     type: 'request',
+    description: 'Upload key packages for later retrieval',
     param: {
       type: 'object',
       properties: {
-        keyPackages: {
-          type: 'array',
-          items: { type: 'string' },
-        },
+        keyPackages: { type: 'array', items: { type: 'string' } },
       },
       required: ['keyPackages'],
       additionalProperties: false,
@@ -120,6 +101,7 @@ export const hubProtocol = {
   },
   'hub/keypackage/fetch': {
     type: 'request',
+    description: 'Fetch and consume key packages for a DID',
     param: {
       type: 'object',
       properties: {
@@ -132,10 +114,7 @@ export const hubProtocol = {
     result: {
       type: 'object',
       properties: {
-        keyPackages: {
-          type: 'array',
-          items: { type: 'string' },
-        },
+        keyPackages: { type: 'array', items: { type: 'string' } },
       },
       required: ['keyPackages'],
       additionalProperties: false,
@@ -143,6 +122,7 @@ export const hubProtocol = {
   },
   'hub/group/join': {
     type: 'request',
+    description: 'Register as a member of a group on the hub',
     param: {
       type: 'object',
       properties: {
@@ -163,6 +143,7 @@ export const hubProtocol = {
   },
   'hub/group/leave': {
     type: 'request',
+    description: 'Unregister from a group on the hub',
     param: {
       type: 'object',
       properties: {
