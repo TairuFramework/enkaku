@@ -105,7 +105,7 @@ describe('Scenario A: Multi-device via hub', () => {
 
     const result2 = await store.fetch({
       recipientDID: recipient.id,
-      after: result1.cursor!,
+      after: result1.cursor ?? undefined,
       limit: 2,
     })
     expect(result2.messages).toHaveLength(2)
@@ -113,7 +113,7 @@ describe('Scenario A: Multi-device via hub', () => {
 
     const result3 = await store.fetch({
       recipientDID: recipient.id,
-      after: result2.cursor!,
+      after: result2.cursor ?? undefined,
       limit: 2,
     })
     expect(result3.messages).toHaveLength(1)

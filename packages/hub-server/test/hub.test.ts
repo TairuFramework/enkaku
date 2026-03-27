@@ -196,7 +196,10 @@ describe('hub handlers', () => {
     const msg2 = await reader.read()
 
     // Ack both messages
-    await channel.send({ ack: [msg1.value!.sequenceID, msg2.value!.sequenceID] })
+    const ack = [msg1.value?.sequenceID, msg2.value?.sequenceID].filter(
+      (id): id is string => id != null,
+    )
+    await channel.send({ ack })
     await delay(50)
 
     // Close and reconnect -- should get no old messages
