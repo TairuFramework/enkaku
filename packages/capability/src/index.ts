@@ -393,3 +393,10 @@ export async function checkCapability(
   assertValidDelegation(capability.payload, toCapability, time)
   await checkDelegationChain(capability.payload, tail, { ...options, atTime: time })
 }
+
+export type { RevocationBackend, RevocationRecord } from './revocation.js'
+export {
+  createMemoryRevocationBackend,
+  createRevocationChecker,
+  createRevocationRecord,
+} from './revocation.js'
