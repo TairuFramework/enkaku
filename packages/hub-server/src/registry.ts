@@ -1,16 +1,11 @@
-import type { RoutedMessage } from '@enkaku/hub-protocol'
+import type { StoredMessage } from '@enkaku/hub-protocol'
 
 export type ClientEntry = {
   did: string
   groups: Set<string>
-  sendMessage: ((message: RoutedMessage) => void) | null
-  tunnelWriters: Map<string, (data: { data: string }) => void>
+  sendMessage: ((message: StoredMessage) => void) | null
 }
 
-/**
- * Tracks connected clients and their group memberships.
- * Shared across hub handlers via closure.
- */
 export class HubClientRegistry {
   #clients = new Map<string, ClientEntry>()
   #groupMembers = new Map<string, Set<string>>()
@@ -18,16 +13,12 @@ export class HubClientRegistry {
   register(did: string): ClientEntry {
     const existing = this.#clients.get(did)
     if (existing != null) {
-      // Re-registration: clear stale state from previous connection
-      existing.sendMessage = null
-      existing.tunnelWriters.clear()
       return existing
     }
     const entry: ClientEntry = {
       did,
       groups: new Set(),
       sendMessage: null,
-      tunnelWriters: new Map(),
     }
     this.#clients.set(did, entry)
     return entry
@@ -36,8 +27,6 @@ export class HubClientRegistry {
   unregister(did: string): void {
     const entry = this.#clients.get(did)
     if (entry == null) return
-
-    // Remove from all groups
     for (const groupID of entry.groups) {
       const members = this.#groupMembers.get(groupID)
       if (members != null) {
@@ -47,14 +36,13 @@ export class HubClientRegistry {
         }
       }
     }
-    entry.tunnelWriters.clear()
     this.#clients.delete(did)
   }
 
-  setReceiveWriter(did: string, sendMessage: (message: RoutedMessage) => void): void {
+  setReceiveWriter(did: string, writer: (message: StoredMessage) => void): void {
     const entry = this.#clients.get(did)
     if (entry != null) {
-      entry.sendMessage = sendMessage
+      entry.sendMessage = writer
     }
   }
 
@@ -65,53 +53,21 @@ export class HubClientRegistry {
     }
   }
 
-  setTunnelWriter(
-    clientDID: string,
-    peerDID: string,
-    write: (data: { data: string }) => void,
-  ): void {
-    const entry = this.#clients.get(clientDID)
-    if (entry != null) {
-      entry.tunnelWriters.set(peerDID, write)
-    }
-  }
-
-  clearTunnelWriter(clientDID: string, peerDID: string): void {
-    const entry = this.#clients.get(clientDID)
-    if (entry != null) {
-      entry.tunnelWriters.delete(peerDID)
-    }
-  }
-
-  sendTunnelData(targetDID: string, fromDID: string, data: { data: string }): void {
-    const entry = this.#clients.get(targetDID)
-    const writer = entry?.tunnelWriters.get(fromDID)
-    if (writer != null) {
-      writer(data)
-    }
-  }
-
   joinGroup(did: string, groupID: string): void {
     const entry = this.#clients.get(did)
     if (entry == null) {
-      throw new Error(`Client ${did} is not registered`)
+      throw new Error(`Client ${did} not registered`)
     }
     entry.groups.add(groupID)
-
-    let members = this.#groupMembers.get(groupID)
-    if (members == null) {
-      members = new Set()
-      this.#groupMembers.set(groupID, members)
-    }
+    const members = this.#groupMembers.get(groupID) ?? new Set()
     members.add(did)
+    this.#groupMembers.set(groupID, members)
   }
 
   leaveGroup(did: string, groupID: string): void {
     const entry = this.#clients.get(did)
-    if (entry != null) {
-      entry.groups.delete(groupID)
-    }
-
+    if (entry == null) return
+    entry.groups.delete(groupID)
     const members = this.#groupMembers.get(groupID)
     if (members != null) {
       members.delete(did)
@@ -124,10 +80,16 @@ export class HubClientRegistry {
   getOnlineGroupMembers(groupID: string): Array<string> {
     const members = this.#groupMembers.get(groupID)
     if (members == null) return []
-    return Array.from(members).filter((did) => {
+    return [...members].filter((did) => {
       const entry = this.#clients.get(did)
       return entry?.sendMessage != null
     })
+  }
+
+  getGroupMembers(groupID: string): Array<string> {
+    const members = this.#groupMembers.get(groupID)
+    if (members == null) return []
+    return [...members]
   }
 
   getClient(did: string): ClientEntry | undefined {
@@ -135,7 +97,6 @@ export class HubClientRegistry {
   }
 
   isOnline(did: string): boolean {
-    const entry = this.#clients.get(did)
-    return entry?.sendMessage != null
+    return this.#clients.get(did)?.sendMessage != null
   }
 }
