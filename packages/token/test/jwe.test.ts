@@ -2,8 +2,9 @@ import { b64uFromJSON } from '@enkaku/codec'
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { describe, expect, test } from 'vitest'
 
-import { createDecryptingIdentity, randomIdentity } from '../src/identity.js'
+import { createDecryptingIdentity, createFullIdentity, randomIdentity } from '../src/identity.js'
 import { concatKDF, createTokenEncrypter, decryptToken, encryptToken } from '../src/jwe.js'
+import { randomPrivateKey } from '../src/signer.js'
 
 describe('concatKDF', () => {
   test('derives 256-bit key from shared secret', () => {
@@ -176,5 +177,16 @@ describe('createTokenEncrypter() error paths', () => {
     expect(() => createTokenEncrypter(key, { algorithm: 'RSA' as never })).toThrow(
       'Unsupported algorithm',
     )
+  })
+})
+
+describe('DecryptingIdentity.decrypt()', () => {
+  test('decrypts JWE encrypted to identity DID', async () => {
+    const identity = createFullIdentity(randomPrivateKey())
+    const encrypter = createTokenEncrypter(identity.id)
+    const plaintext = new TextEncoder().encode('hello world')
+    const jwe = await encrypter.encrypt(plaintext)
+    const decrypted = await identity.decrypt(jwe)
+    expect(decrypted).toEqual(plaintext)
   })
 })

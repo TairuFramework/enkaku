@@ -15,6 +15,7 @@ export type {
   DecryptingIdentity,
   FullIdentity,
   Identity,
+  IdentityProvider,
   OwnIdentity,
   SigningIdentity,
 } from './identity.js'

@@ -78,6 +78,9 @@ catalogs:
     '@scure/base':
       specifier: ^2.0.0
       version: 2.0.0
+    '@scure/bip39':
+      specifier: ^2.0.1
+      version: 2.0.1
     '@standard-schema/spec':
       specifier: ^1.1.0
       version: 1.1.0
@@ -147,6 +150,9 @@ catalogs:
     json-schema-to-ts:
       specifier: ^3.1.1
       version: 3.1.1
+    micro-key-producer:
+      specifier: ^0.8.5
+      version: 0.8.5
     react:
       specifier: 19.2.0
       version: 19.2.0
@@ -435,6 +441,31 @@ importers:
         specifier: 'catalog:'
         version: 2.0.0-rc.10(@noble/ciphers@2.1.1)(@noble/curves@2.0.1)
 
+  packages/hd-keystore:
+    dependencies:
+      '@enkaku/log':
+        specifier: workspace:^
+        version: link:../log
+      '@enkaku/otel':
+        specifier: workspace:^
+        version: link:../otel
+      '@enkaku/token':
+        specifier: workspace:^
+        version: link:../token
+      '@scure/bip39':
+        specifier: 'catalog:'
+        version: 2.0.1
+      micro-key-producer:
+        specifier: 'catalog:'
+        version: 0.8.5
+    devDependencies:
+      '@enkaku/protocol':
+        specifier: workspace:^
+        version: link:../protocol
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.1(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/ui@4.1.1)(happy-dom@20.8.8)(jsdom@27.4.0(@noble/hashes@2.0.1))(vite@8.0.2(@types/node@25.5.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/http-client-transport:
     dependencies:
       '@enkaku/otel':
@@ -530,6 +561,34 @@ importers:
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+
+  packages/ledger-identity:
+    dependencies:
+      '@enkaku/codec':
+        specifier: workspace:^
+        version: link:../codec
+      '@enkaku/log':
+        specifier: workspace:^
+        version: link:../log
+      '@enkaku/otel':
+        specifier: workspace:^
+        version: link:../otel
+      '@enkaku/token':
+        specifier: workspace:^
+        version: link:../token
+    devDependencies:
+      '@enkaku/hd-keystore':
+        specifier: workspace:^
+        version: link:../hd-keystore
+      '@noble/curves':
+        specifier: 'catalog:'
+        version: 2.0.1
+      '@scure/bip39':
+        specifier: 'catalog:'
+        version: 2.0.1
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.1(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/ui@4.1.1)(happy-dom@20.8.8)(jsdom@27.4.0(@noble/hashes@2.0.1))(vite@8.0.2(@types/node@25.5.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/log:
     dependencies:
@@ -951,6 +1010,27 @@ importers:
       get-port:
         specifier: 'catalog:'
         version: 7.2.0
+
+  tests/ledger:
+    devDependencies:
+      '@enkaku/hd-keystore':
+        specifier: workspace:^
+        version: link:../../packages/hd-keystore
+      '@enkaku/ledger-identity':
+        specifier: workspace:^
+        version: link:../../packages/ledger-identity
+      '@enkaku/token':
+        specifier: workspace:^
+        version: link:../../packages/token
+      '@noble/curves':
+        specifier: 'catalog:'
+        version: 2.0.1
+      '@scure/bip39':
+        specifier: 'catalog:'
+        version: 2.0.1
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.1(@opentelemetry/api@1.9.1)(@types/node@25.5.0)(@vitest/ui@4.1.1)(happy-dom@20.8.8)(jsdom@27.4.0(@noble/hashes@2.0.1))(vite@8.0.2(@types/node@25.5.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))
 
   website:
     dependencies:
@@ -3884,6 +3964,9 @@ packages:
 
   '@scure/base@2.0.0':
     resolution: {integrity: sha512-3E1kpuZginKkek01ovG8krQ0Z44E3DHPjc5S2rjJw9lZn3KSQOs8S7wqikF/AH7iRanHypj85uGyxk0XAyC37w==}
+
+  '@scure/bip39@2.0.1':
+    resolution: {integrity: sha512-PsxdFj/d2AcJcZDX1FXN3dDgitDDTmwf78rKZq1a6c1P1Nan1X/Sxc7667zU3U+AN60g7SxxP0YCVw2H/hBycg==}
 
   '@shikijs/core@1.29.2':
     resolution: {integrity: sha512-vju0lY9r27jJfOY4Z7+Rt/nIOjzJpZ3y+nYpqtUZInVoXQ/TJZcfGnNOGnKjFdVZb8qexiCuSlZRKcGfhhTTZQ==}
@@ -8163,6 +8246,14 @@ packages:
     resolution: {integrity: sha512-BgsXevY1MBac/3ZYv/RfNFf/4iuW9X7f4H8ZNkiH+r667HD9sVujxcmu4jvEzGCAm4/WyKdZCuyhAcyhTHOucQ==}
     engines: {node: '>=20.19.4'}
     hasBin: true
+
+  micro-key-producer@0.8.5:
+    resolution: {integrity: sha512-aPvW8Dyp0My4Un3DL4WIwG8blHM7AwYL5VwKWXSHztxJxfVRlRaa/z77qGMP5OO3Zmq2Xje+dV9Be4keSTfVYA==}
+    hasBin: true
+
+  micro-packed@0.8.0:
+    resolution: {integrity: sha512-AKb8znIvg9sooythbXzyFeChEY0SkW0C6iXECpy/ls0e5BtwXO45J9wD9SLzBztnS4XmF/5kwZknsq+jyynd/A==}
+    engines: {node: '>= 20.19.0'}
 
   micromark-core-commonmark@1.1.0:
     resolution: {integrity: sha512-BgHO1aRbolh2hcrzL2d1La37V0Aoz73ymF8rAcKnohLy93titmv62E0gP8Hrx9PKcKrqCZ1BbLGbP3bEhoXYlw==}
@@ -15528,6 +15619,11 @@ snapshots:
 
   '@scure/base@2.0.0': {}
 
+  '@scure/bip39@2.0.1':
+    dependencies:
+      '@noble/hashes': 2.0.1
+      '@scure/base': 2.0.0
+
   '@shikijs/core@1.29.2':
     dependencies:
       '@shikijs/engine-javascript': 1.29.2
@@ -20783,6 +20879,18 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  micro-key-producer@0.8.5:
+    dependencies:
+      '@noble/ciphers': 2.1.1
+      '@noble/curves': 2.0.1
+      '@noble/hashes': 2.0.1
+      '@scure/base': 2.0.0
+      micro-packed: 0.8.0
+
+  micro-packed@0.8.0:
+    dependencies:
+      '@scure/base': 2.0.0
 
   micromark-core-commonmark@1.1.0:
     dependencies:

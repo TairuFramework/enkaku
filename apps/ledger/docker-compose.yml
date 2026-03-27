@@ -1,0 +1,36 @@
+# Build and test the Enkaku Ledger app with Speculos emulator.
+#
+# Automated:
+#   ./apps/ledger/test.sh             # Build + emulator + tests + teardown
+#
+# Manual:
+#   docker compose run --rm build     # Build only
+#   docker compose up -d speculos     # Start Speculos (after build)
+#   docker compose down               # Stop everything
+#
+# Speculos exposes:
+#   - Port 5000: REST API (APDU exchange, button simulation, screenshots)
+#   - Port 40000: Raw TCP APDU port
+
+services:
+  build:
+    image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: bash -c "BOLOS_SDK=$$NANOSP_SDK COIN=ENK make clean && BOLOS_SDK=$$NANOSP_SDK COIN=ENK make"
+
+  speculos:
+    image: ghcr.io/ledgerhq/speculos
+    volumes:
+      - .:/app
+    ports:
+      - "${SPECULOS_PORT:-9999}:5000"
+      - "40000:40000"
+    command: >
+      /app/bin/app.elf
+      --model nanosp
+      --seed "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+      --apdu-port 40000
+      --api-port 5000
+      --display headless
