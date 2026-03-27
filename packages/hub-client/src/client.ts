@@ -1,27 +1,25 @@
-import type { Client, RequestCall, StreamCall } from '@enkaku/client'
-import type { HubProtocol, RoutedMessage } from '@enkaku/hub-protocol'
+import type { Client } from '@enkaku/client'
+import type { HubProtocol } from '@enkaku/hub-protocol'
 
 export type HubClientParams = {
   client: Client<HubProtocol>
 }
 
-type SendResult = { delivered: number; queued: number }
-type JoinResult = { joined: boolean }
-type LeaveResult = { left: boolean }
-type UploadResult = { stored: number }
-type FetchResult = { keyPackages: Array<string> }
-
-type HubReceive = {
-  senderDID: string
-  groupID: string
-  epoch: number
-  contentType: 'commit' | 'proposal' | 'welcome' | 'application'
+export type SendParams = {
+  recipients: Array<string>
   payload: string
 }
 
-/**
- * Convenience wrapper around Client<HubProtocol> for hub interactions.
- */
+export type GroupSendParams = {
+  groupID: string
+  payload: string
+}
+
+export type ReceiveOptions = {
+  after?: string
+  groupIDs?: Array<string>
+}
+
 export class HubClient {
   #client: Client<HubProtocol>
 
@@ -33,58 +31,46 @@ export class HubClient {
     return this.#client
   }
 
-  /**
-   * Send an encrypted message to a group.
-   */
-  send(message: RoutedMessage): RequestCall<SendResult> {
+  send(params: SendParams) {
     return this.#client.request('hub/send', {
+      param: { recipients: params.recipients, payload: params.payload },
+    })
+  }
+
+  groupSend(params: GroupSendParams) {
+    return this.#client.request('hub/group/send', {
+      param: { groupID: params.groupID, payload: params.payload },
+    })
+  }
+
+  receive(options?: ReceiveOptions) {
+    return this.#client.createChannel('hub/receive', {
       param: {
-        groupID: message.groupID,
-        epoch: message.epoch,
-        contentType: message.contentType,
-        payload: message.payload,
+        after: options?.after,
+        groupIDs: options?.groupIDs,
       },
     })
   }
 
-  /**
-   * Start receiving messages for the given groups.
-   */
-  receive(groups: Array<string>): StreamCall<HubReceive, unknown> {
-    return this.#client.createStream('hub/receive', {
-      param: { groups },
-    })
-  }
-
-  /**
-   * Join a group on the hub.
-   */
-  joinGroup(groupID: string, credential?: string): RequestCall<JoinResult> {
+  joinGroup(groupID: string, credential = '') {
     return this.#client.request('hub/group/join', {
-      param: { groupID, credential: credential ?? '' },
+      param: { groupID, credential },
     })
   }
 
-  /**
-   * Leave a group on the hub.
-   */
-  leaveGroup(groupID: string): RequestCall<LeaveResult> {
-    return this.#client.request('hub/group/leave', { param: { groupID } })
+  leaveGroup(groupID: string) {
+    return this.#client.request('hub/group/leave', {
+      param: { groupID },
+    })
   }
 
-  /**
-   * Upload key packages to the hub.
-   */
-  uploadKeyPackages(keyPackages: Array<string>): RequestCall<UploadResult> {
+  uploadKeyPackages(keyPackages: Array<string>) {
     return this.#client.request('hub/keypackage/upload', {
       param: { keyPackages },
     })
   }
 
-  /**
-   * Fetch key packages for a DID.
-   */
-  fetchKeyPackages(did: string, count?: number): RequestCall<FetchResult> {
+  fetchKeyPackages(did: string, count?: number) {
     return this.#client.request('hub/keypackage/fetch', {
       param: { did, count },
     })
