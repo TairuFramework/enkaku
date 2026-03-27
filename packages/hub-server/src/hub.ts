@@ -18,8 +18,9 @@ export type HubInstance = {
   server: Server<HubProtocol>
 }
 
-function getClientDID(ctx: { message: { payload: { iss?: string } } }): string {
-  return ctx.message.payload.iss ?? 'anonymous'
+function getClientDID(ctx: { message: { payload: Record<string, unknown> } }): string {
+  const payload = ctx.message.payload
+  return typeof payload.iss === 'string' ? payload.iss : 'anonymous'
 }
 
 function encodePayload(bytes: Uint8Array): string {
@@ -121,7 +122,7 @@ export function createHub(params: CreateHubParams): HubInstance {
 
       // Drain queued messages from store
       if (store != null) {
-        let cursor = after
+        let cursor: string | null | undefined = after
         while (true) {
           const result = await store.fetch({
             recipientDID: clientDID,

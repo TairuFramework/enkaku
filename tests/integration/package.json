@@ -30,5 +30,12 @@
     "@opentelemetry/sdk-trace-base": "catalog:",
     "@opentelemetry/sdk-trace-node": "catalog:",
     "get-port": "catalog:"
+  },
+  "dependencies": {
+    "@enkaku/capability": "workspace:^",
+    "@enkaku/event": "workspace:^",
+    "@enkaku/hub-client": "workspace:^",
+    "@enkaku/hub-protocol": "workspace:^",
+    "@enkaku/hub-server": "workspace:^"
   }
 }

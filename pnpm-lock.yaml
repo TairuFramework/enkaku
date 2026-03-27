@@ -979,6 +979,22 @@ importers:
         version: 8.0.2(@types/node@25.5.0)(esbuild@0.27.3)(jiti@2.6.1)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3)
 
   tests/integration:
+    dependencies:
+      '@enkaku/capability':
+        specifier: workspace:^
+        version: link:../../packages/capability
+      '@enkaku/event':
+        specifier: workspace:^
+        version: link:../../packages/event
+      '@enkaku/hub-client':
+        specifier: workspace:^
+        version: link:../../packages/hub-client
+      '@enkaku/hub-protocol':
+        specifier: workspace:^
+        version: link:../../packages/hub-protocol
+      '@enkaku/hub-server':
+        specifier: workspace:^
+        version: link:../../packages/hub-server
     devDependencies:
       '@enkaku/client':
         specifier: workspace:^

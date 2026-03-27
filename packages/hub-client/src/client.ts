@@ -1,4 +1,4 @@
-import type { Client } from '@enkaku/client'
+import type { ChannelCall, Client, RequestCall } from '@enkaku/client'
 import type { HubProtocol } from '@enkaku/hub-protocol'
 
 export type HubClientParams = {
@@ -20,6 +20,17 @@ export type ReceiveOptions = {
   groupIDs?: Array<string>
 }
 
+type ReceiveMessage = {
+  sequenceID: string
+  senderDID: string
+  groupID?: string
+  payload: string
+}
+
+type ReceiveAck = {
+  ack: Array<string>
+}
+
 export class HubClient {
   #client: Client<HubProtocol>
 
@@ -31,19 +42,21 @@ export class HubClient {
     return this.#client
   }
 
-  send(params: SendParams) {
+  send(params: SendParams): RequestCall<{ sequenceID: string }> {
     return this.#client.request('hub/send', {
       param: { recipients: params.recipients, payload: params.payload },
     })
   }
 
-  groupSend(params: GroupSendParams) {
+  groupSend(params: GroupSendParams): RequestCall<{ sequenceID: string }> {
     return this.#client.request('hub/group/send', {
       param: { groupID: params.groupID, payload: params.payload },
     })
   }
 
-  receive(options?: ReceiveOptions) {
+  receive(
+    options?: ReceiveOptions,
+  ): ChannelCall<ReceiveMessage, ReceiveAck, Record<string, never>> {
     return this.#client.createChannel('hub/receive', {
       param: {
         after: options?.after,
@@ -52,25 +65,25 @@ export class HubClient {
     })
   }
 
-  joinGroup(groupID: string, credential = '') {
+  joinGroup(groupID: string, credential = ''): RequestCall<{ joined: boolean }> {
     return this.#client.request('hub/group/join', {
       param: { groupID, credential },
     })
   }
 
-  leaveGroup(groupID: string) {
+  leaveGroup(groupID: string): RequestCall<{ left: boolean }> {
     return this.#client.request('hub/group/leave', {
       param: { groupID },
     })
   }
 
-  uploadKeyPackages(keyPackages: Array<string>) {
+  uploadKeyPackages(keyPackages: Array<string>): RequestCall<{ stored: number }> {
     return this.#client.request('hub/keypackage/upload', {
       param: { keyPackages },
     })
   }
 
-  fetchKeyPackages(did: string, count?: number) {
+  fetchKeyPackages(did: string, count?: number): RequestCall<{ keyPackages: Array<string> }> {
     return this.#client.request('hub/keypackage/fetch', {
       param: { did, count },
     })
