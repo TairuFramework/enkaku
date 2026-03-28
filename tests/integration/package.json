@@ -17,10 +17,15 @@
   "scripts": {
     "test": "vitest run"
   },
-  "devDependencies": {
+  "dependencies": {
+    "@enkaku/capability": "workspace:^",
     "@enkaku/client": "workspace:^",
+    "@enkaku/event": "workspace:^",
     "@enkaku/http-client-transport": "workspace:^",
     "@enkaku/http-server-transport": "workspace:^",
+    "@enkaku/hub-client": "workspace:^",
+    "@enkaku/hub-protocol": "workspace:^",
+    "@enkaku/hub-server": "workspace:^",
     "@enkaku/node-streams-transport": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
@@ -30,12 +35,5 @@
     "@opentelemetry/sdk-trace-base": "catalog:",
     "@opentelemetry/sdk-trace-node": "catalog:",
     "get-port": "catalog:"
-  },
-  "dependencies": {
-    "@enkaku/capability": "workspace:^",
-    "@enkaku/event": "workspace:^",
-    "@enkaku/hub-client": "workspace:^",
-    "@enkaku/hub-protocol": "workspace:^",
-    "@enkaku/hub-server": "workspace:^"
   }
 }
