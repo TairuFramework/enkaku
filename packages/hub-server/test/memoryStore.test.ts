@@ -1,114 +1,203 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { createMemoryStore } from '../src/memoryStore.js'
 
 describe('createMemoryStore', () => {
-  test('enqueue and dequeue round-trip', async () => {
+  test('store returns a sequence ID', async () => {
     const store = createMemoryStore()
-    const msg = {
-      senderDID: 'alice',
-      groupID: 'g1',
-      epoch: 1,
-      contentType: 'application' as const,
-      payload: 'data',
-    }
-
-    await store.enqueue('bob', msg)
-    const result = await store.dequeue('bob')
-    expect(result).toEqual([msg])
+    const id = await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([1, 2, 3]),
+    })
+    expect(typeof id).toBe('string')
+    expect(id.length).toBeGreaterThan(0)
   })
 
-  test('dequeue returns empty array for unknown DID', async () => {
+  test('fetch returns stored messages for recipient', async () => {
     const store = createMemoryStore()
-    const result = await store.dequeue('unknown')
-    expect(result).toEqual([])
+    await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([1, 2, 3]),
+    })
+    const result = await store.fetch({ recipientDID: 'did:key:bob' })
+    expect(result.messages).toHaveLength(1)
+    expect(result.messages[0].senderDID).toBe('did:key:alice')
+    expect(result.messages[0].payload).toEqual(new Uint8Array([1, 2, 3]))
+    expect(result.cursor).toBe(result.messages[0].sequenceID)
   })
 
-  test('dequeue with limit returns partial queue and preserves remainder', async () => {
+  test('fetch returns empty for unknown recipient', async () => {
+    const store = createMemoryStore()
+    const result = await store.fetch({ recipientDID: 'did:key:unknown' })
+    expect(result.messages).toHaveLength(0)
+    expect(result.cursor).toBeNull()
+  })
+
+  test('fetch respects after cursor', async () => {
+    const store = createMemoryStore()
+    const id1 = await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([1]),
+    })
+    await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([2]),
+    })
+    const result = await store.fetch({ recipientDID: 'did:key:bob', after: id1 })
+    expect(result.messages).toHaveLength(1)
+    expect(result.messages[0].payload).toEqual(new Uint8Array([2]))
+  })
+
+  test('fetch respects limit and sets hasMore', async () => {
     const store = createMemoryStore()
     for (let i = 0; i < 5; i++) {
-      await store.enqueue('bob', {
-        senderDID: 'alice',
-        groupID: 'g1',
-        epoch: i,
-        contentType: 'application',
-        payload: `msg-${i}`,
+      await store.store({
+        senderDID: 'did:key:alice',
+        recipients: ['did:key:bob'],
+        payload: new Uint8Array([i]),
       })
     }
-
-    const first = await store.dequeue('bob', 2)
-    expect(first).toHaveLength(2)
-    expect(first[0]?.payload).toBe('msg-0')
-    expect(first[1]?.payload).toBe('msg-1')
-
-    const rest = await store.dequeue('bob')
-    expect(rest).toHaveLength(3)
-    expect(rest[0]?.payload).toBe('msg-2')
+    const result = await store.fetch({ recipientDID: 'did:key:bob', limit: 2 })
+    expect(result.messages).toHaveLength(2)
+    expect(result.hasMore).toBe(true)
+    expect(result.messages[0].payload).toEqual(new Uint8Array([0]))
+    expect(result.messages[1].payload).toEqual(new Uint8Array([1]))
   })
 
-  test('dequeue is destructive — messages are consumed', async () => {
+  test('fetch with ack acknowledges previous messages', async () => {
     const store = createMemoryStore()
-    await store.enqueue('bob', {
-      senderDID: 'alice',
-      groupID: 'g1',
-      epoch: 1,
-      contentType: 'application',
-      payload: 'once',
+    const id1 = await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([1]),
     })
-
-    const first = await store.dequeue('bob')
-    expect(first).toHaveLength(1)
-
-    const second = await store.dequeue('bob')
-    expect(second).toEqual([])
+    await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([2]),
+    })
+    // Ack first message while fetching
+    await store.fetch({
+      recipientDID: 'did:key:bob',
+      ack: [id1],
+    })
+    // Re-fetching after ack should not return acked message
+    const result2 = await store.fetch({ recipientDID: 'did:key:bob' })
+    expect(result2.messages).toHaveLength(1)
+    expect(result2.messages[0].payload).toEqual(new Uint8Array([2]))
   })
 
-  test('storeKeyPackage and fetchKeyPackages round-trip', async () => {
+  test('ack removes delivery record for recipient', async () => {
     const store = createMemoryStore()
-    await store.storeKeyPackage('alice', 'kp1')
-    await store.storeKeyPackage('alice', 'kp2')
-    await store.storeKeyPackage('alice', 'kp3')
-
-    const result = await store.fetchKeyPackages('alice', 2)
-    expect(result).toEqual(['kp1', 'kp2'])
+    const id = await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([1]),
+    })
+    await store.ack({ recipientDID: 'did:key:bob', sequenceIDs: [id] })
+    const result = await store.fetch({ recipientDID: 'did:key:bob' })
+    expect(result.messages).toHaveLength(0)
   })
 
-  test('fetchKeyPackages consumes packages (single-use)', async () => {
+  test('reference counting: message deleted when all recipients ack', async () => {
     const store = createMemoryStore()
-    await store.storeKeyPackage('alice', 'kp1')
-
-    const first = await store.fetchKeyPackages('alice', 1)
-    expect(first).toEqual(['kp1'])
-
-    const second = await store.fetchKeyPackages('alice', 1)
-    expect(second).toEqual([])
+    const id = await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob', 'did:key:carol'],
+      payload: new Uint8Array([1]),
+    })
+    await store.ack({ recipientDID: 'did:key:bob', sequenceIDs: [id] })
+    const carolResult = await store.fetch({ recipientDID: 'did:key:carol' })
+    expect(carolResult.messages).toHaveLength(1)
+    await store.ack({ recipientDID: 'did:key:carol', sequenceIDs: [id] })
+    const carolResult2 = await store.fetch({ recipientDID: 'did:key:carol' })
+    expect(carolResult2.messages).toHaveLength(0)
   })
 
-  test('fetchKeyPackages defaults to count=1', async () => {
+  test('store with groupID preserves it in fetched messages', async () => {
     const store = createMemoryStore()
-    await store.storeKeyPackage('alice', 'kp1')
-    await store.storeKeyPackage('alice', 'kp2')
-
-    const result = await store.fetchKeyPackages('alice')
-    expect(result).toEqual(['kp1'])
+    await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([1]),
+      groupID: 'group-123',
+    })
+    const result = await store.fetch({ recipientDID: 'did:key:bob' })
+    expect(result.messages[0].groupID).toBe('group-123')
   })
 
-  test('fetchKeyPackages returns empty for unknown DID', async () => {
+  test('store without groupID has no groupID in fetched messages', async () => {
     const store = createMemoryStore()
-    const result = await store.fetchKeyPackages('unknown')
-    expect(result).toEqual([])
+    await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([1]),
+    })
+    const result = await store.fetch({ recipientDID: 'did:key:bob' })
+    expect(result.messages[0].groupID).toBeUndefined()
   })
 
-  test('setGroupMembers and getGroupMembers round-trip', async () => {
+  test('purge removes messages older than threshold', async () => {
     const store = createMemoryStore()
-    await store.setGroupMembers('g1', ['alice', 'bob'])
-    const members = await store.getGroupMembers('g1')
-    expect(members).toEqual(['alice', 'bob'])
+    await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([1]),
+    })
+    const purged = await store.purge({ olderThan: 0 })
+    expect(purged.length).toBeGreaterThan(0)
+    const result = await store.fetch({ recipientDID: 'did:key:bob' })
+    expect(result.messages).toHaveLength(0)
   })
 
-  test('getGroupMembers returns empty for unknown group', async () => {
+  test('purge emits purge event', async () => {
     const store = createMemoryStore()
-    const result = await store.getGroupMembers('unknown')
-    expect(result).toEqual([])
+    await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([1]),
+    })
+    const handler = vi.fn()
+    store.events.on('purge', handler)
+    await store.purge({ olderThan: 0 })
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({ sequenceIDs: expect.any(Array) }),
+    )
+  })
+
+  test('sequence IDs are monotonically ordered', async () => {
+    const store = createMemoryStore()
+    const id1 = await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([1]),
+    })
+    const id2 = await store.store({
+      senderDID: 'did:key:alice',
+      recipients: ['did:key:bob'],
+      payload: new Uint8Array([2]),
+    })
+    expect(id1 < id2).toBe(true)
+  })
+
+  test('key package store and fetch', async () => {
+    const store = createMemoryStore()
+    await store.storeKeyPackage('did:key:alice', 'kp-1')
+    await store.storeKeyPackage('did:key:alice', 'kp-2')
+    const packages = await store.fetchKeyPackages('did:key:alice', 1)
+    expect(packages).toEqual(['kp-1'])
+    const remaining = await store.fetchKeyPackages('did:key:alice')
+    expect(remaining).toEqual(['kp-2'])
+  })
+
+  test('group members management', async () => {
+    const store = createMemoryStore()
+    await store.setGroupMembers('group-1', ['did:key:alice', 'did:key:bob'])
+    const members = await store.getGroupMembers('group-1')
+    expect(members).toEqual(['did:key:alice', 'did:key:bob'])
   })
 })

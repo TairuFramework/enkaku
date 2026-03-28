@@ -1,30 +1,53 @@
-/**
- * What the hub sees for each routed message.
- * The payload is encrypted and opaque to the hub.
- */
-export type RoutedMessage = {
+import type { EventEmitter } from '@enkaku/event'
+
+/** Opaque message stored by the hub — minimal metadata for routing only. */
+export type StoredMessage = {
+  sequenceID: string
   senderDID: string
-  groupID: string
-  epoch: number
-  contentType: 'commit' | 'proposal' | 'welcome' | 'application'
-  /** Base64-encoded encrypted payload */
-  payload: string
+  groupID?: string
+  payload: Uint8Array
 }
 
-/**
- * Storage contract for hub persistence.
- * Implementations are external (e.g., in-memory, Kubun-backed).
- *
- * Note: `dequeue` and `fetchKeyPackages` are destructive — they consume
- * and remove the returned items from storage. This matches MLS semantics
- * where key packages are single-use and queued messages are delivered once.
- */
+export type StoreParams = {
+  senderDID: string
+  recipients: Array<string>
+  payload: Uint8Array
+  groupID?: string
+}
+
+export type FetchParams = {
+  recipientDID: string
+  after?: string
+  limit?: number
+  ack?: Array<string>
+}
+
+export type FetchResult = {
+  messages: Array<StoredMessage>
+  cursor: string | null
+  hasMore?: boolean
+}
+
+export type AckParams = {
+  recipientDID: string
+  sequenceIDs: Array<string>
+}
+
+export type PurgeParams = {
+  olderThan: number
+}
+
+export type HubStoreEvents = {
+  purge: { sequenceIDs: Array<string> }
+}
+
 export type HubStore = {
-  enqueue(recipientDID: string, message: RoutedMessage): Promise<void>
-  /** Dequeue and remove up to `limit` messages for the recipient. */
-  dequeue(recipientDID: string, limit?: number): Promise<Array<RoutedMessage>>
+  events: EventEmitter<HubStoreEvents>
+  store(params: StoreParams): Promise<string>
+  fetch(params: FetchParams): Promise<FetchResult>
+  ack(params: AckParams): Promise<void>
+  purge(params: PurgeParams): Promise<Array<string>>
   storeKeyPackage(ownerDID: string, keyPackage: string): Promise<void>
-  /** Fetch and consume up to `count` key packages (single-use). */
   fetchKeyPackages(ownerDID: string, count?: number): Promise<Array<string>>
   setGroupMembers(groupID: string, members: Array<string>): Promise<void>
   getGroupMembers(groupID: string): Promise<Array<string>>

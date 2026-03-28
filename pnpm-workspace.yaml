@@ -30,7 +30,6 @@ catalog:
   '@playwright/test': 1.58.2
   '@scure/base': ^2.0.0
   '@scure/bip39': ^2.0.1
-  micro-key-producer: ^0.8.5
   '@standard-schema/spec': ^1.1.0
   '@swc/cli': ^0.8.0
   '@swc/core': ^1.15.21
@@ -40,12 +39,12 @@ catalog:
   '@types/react': ^19.2.14
   '@types/react-dom': ^19.2.3
   '@vitejs/plugin-react': ^6.0.1
-  '@vitest/ui': ^4.1.1
+  '@vitest/ui': ^4.1.2
   ajv: ^8.18.0
   ajv-formats: ^3.0.1
   canonicalize: 2.1.0
   del-cli: ^7.0.0
-  electron: ^41.0.4
+  electron: ^41.1.0
   electron-store: ^11.0.2
   eventsource-parser: ^3.0.0
   expo: ~55.0.8
@@ -53,8 +52,9 @@ catalog:
   expo-secure-store: ^55.0.9
   expo-status-bar: ~55.0.4
   get-port: ^7.2.0
-  happy-dom: ^20.8.8
+  happy-dom: ^20.8.9
   json-schema-to-ts: ^3.1.1
+  micro-key-producer: ^0.8.5
   playwright: ^1.55.0
   react: 19.2.0
   react-dom: 19.2.0
@@ -63,14 +63,14 @@ catalog:
   react-native-web: 0.21.2
   ts-mls: 2.0.0-rc.10
   tsx: ^4.21.0
-  turbo: ^2.8.20
+  turbo: ^2.8.21
   typedoc: ^0.28.18
   typedoc-plugin-markdown: ^4.11.0
   typescript: ^6.0.2
   uint8arrays: ^5.1.0
   undici: ^7.22.0
-  vite: ^8.0.2
-  vitest: ^4.1.1
+  vite: ^8.0.3
+  vitest: ^4.1.2
 
 catalogMode: prefer
 

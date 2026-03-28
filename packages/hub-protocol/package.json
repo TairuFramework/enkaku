@@ -37,6 +37,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/event": "workspace:^",
     "@enkaku/protocol": "workspace:^"
   }
 }

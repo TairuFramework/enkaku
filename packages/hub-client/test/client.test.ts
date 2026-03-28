@@ -13,6 +13,10 @@ type HubTransports = DirectTransports<
   AnyClientMessageOf<HubProtocol>
 >
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 function createTestHub() {
   const store = createMemoryStore()
   const transports: HubTransports = new DirectTransports()
@@ -21,113 +25,131 @@ function createTestHub() {
     store,
     accessControl: false,
   })
-  const identity = randomIdentity()
+  return { hub, store, transports }
+}
+
+function createTestClient(
+  hub: ReturnType<typeof createTestHub>['hub'],
+  identity = randomIdentity(),
+) {
+  const transports: HubTransports = new DirectTransports()
+  hub.server.handle(transports.server)
   const rawClient = new Client<HubProtocol>({
     transport: transports.client,
     identity,
   })
   const client = new HubClient({ client: rawClient })
-  return { client, hub, transports, store, identity }
-}
-
-async function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return { client, identity, transports }
 }
 
 describe('HubClient', () => {
-  test('joinGroup and leaveGroup', async () => {
-    const { client, transports } = createTestHub()
+  test('send to explicit recipients and receive', async () => {
+    const { hub } = createTestHub()
+    const { client: alice, transports: aliceT } = createTestClient(hub)
+    const { client: bob, identity: bobIdentity, transports: bobT } = createTestClient(hub)
 
-    await client.joinGroup('test-group')
-    await client.leaveGroup('test-group')
+    const channel = bob.receive()
+    const reader = channel.readable.getReader()
+    await delay(50)
+
+    await alice.send({ recipients: [bobIdentity.id], payload: btoa('hello') })
+
+    const msg = await reader.read()
+    expect(msg.done).toBe(false)
+    expect(msg.value?.payload).toBe(btoa('hello'))
+
+    channel.close()
+    await delay(50)
+    await aliceT.dispose()
+    await bobT.dispose()
+  })
+
+  test('groupSend and receive with group', async () => {
+    const { hub } = createTestHub()
+    const { client: alice, transports: aliceT } = createTestClient(hub)
+    const { client: bob, transports: bobT } = createTestClient(hub)
+
+    await alice.joinGroup('chat')
+    await bob.joinGroup('chat')
+
+    const channel = bob.receive()
+    const reader = channel.readable.getReader()
+    await delay(50)
+
+    await alice.groupSend({ groupID: 'chat', payload: btoa('group-hello') })
+
+    const msg = await reader.read()
+    expect(msg.done).toBe(false)
+    expect(msg.value?.payload).toBe(btoa('group-hello'))
+    expect(msg.value?.groupID).toBe('chat')
+
+    channel.close()
+    await delay(50)
+    await aliceT.dispose()
+    await bobT.dispose()
+  })
+
+  test('receive with groupIDs filter', async () => {
+    const { hub } = createTestHub()
+    const { client: alice, transports: aliceT } = createTestClient(hub)
+    const { client: bob, identity: bobIdentity, transports: bobT } = createTestClient(hub)
+
+    await alice.joinGroup('chat')
+    await alice.joinGroup('work')
+    await bob.joinGroup('chat')
+    await bob.joinGroup('work')
+
+    const channel = bob.receive({ groupIDs: ['chat'] })
+    const reader = channel.readable.getReader()
+    await delay(50)
+
+    await alice.groupSend({ groupID: 'work', payload: btoa('work-msg') })
+    await alice.groupSend({ groupID: 'chat', payload: btoa('chat-msg') })
+    await alice.send({ recipients: [bobIdentity.id], payload: btoa('direct-msg') })
+
+    await delay(100)
+    const msg1 = await reader.read()
+    expect(msg1.value?.payload).toBe(btoa('chat-msg'))
+
+    const msg2 = await reader.read()
+    expect(msg2.value?.payload).toBe(btoa('direct-msg'))
+
+    channel.close()
+    await delay(50)
+    await aliceT.dispose()
+    await bobT.dispose()
+  })
+
+  test('joinGroup and leaveGroup', async () => {
+    const { hub } = createTestHub()
+    const { client, transports } = createTestClient(hub)
+
+    const result = await client.joinGroup('test-group')
+    expect(result.joined).toBe(true)
+
+    const leaveResult = await client.leaveGroup('test-group')
+    expect(leaveResult.left).toBe(true)
 
     await transports.dispose()
   })
 
   test('uploadKeyPackages and fetchKeyPackages', async () => {
-    const { client, transports } = createTestHub()
+    const { hub } = createTestHub()
+    const { client, identity, transports } = createTestClient(hub)
 
-    const result = await client.uploadKeyPackages(['kp1', 'kp2'])
+    const result = await client.uploadKeyPackages(['kp-1', 'kp-2'])
     expect(result.stored).toBe(2)
 
-    const fetched = await client.fetchKeyPackages(
-      // fetch uses the identity DID from the signed token
-      'anonymous', // store key under whatever DID the server sees
-      1,
-    )
-    // Key packages are stored under the authenticated DID
-    expect(fetched).toBeDefined()
+    const fetched = await client.fetchKeyPackages(identity.id, 1)
+    expect(fetched.keyPackages).toHaveLength(1)
 
     await transports.dispose()
   })
 
-  test('send and receive messages', async () => {
-    const aliceIdentity = randomIdentity()
-    const bobIdentity = randomIdentity()
-
-    const store = createMemoryStore()
-
-    // Alice's connection
-    const aliceTransports: HubTransports = new DirectTransports()
-    const hub = createHub({
-      transport: aliceTransports.server,
-      store,
-      accessControl: false,
-    })
-    const aliceRaw = new Client<HubProtocol>({
-      transport: aliceTransports.client,
-      identity: aliceIdentity,
-    })
-    const alice = new HubClient({ client: aliceRaw })
-
-    // Bob's connection
-    const bobTransports: HubTransports = new DirectTransports()
-    hub.server.handle(bobTransports.server)
-    const bobRaw = new Client<HubProtocol>({
-      transport: bobTransports.client,
-      identity: bobIdentity,
-    })
-    const bob = new HubClient({ client: bobRaw })
-
-    // Both join
-    await alice.joinGroup('chat')
-    await bob.joinGroup('chat')
-
-    // Both open receive streams
-    const bobReceive = bob.receive(['chat'])
-    const bobReader = bobReceive.readable.getReader()
-
-    // Alice sends via HubClient
-    const result = await alice.send({
-      senderDID: aliceIdentity.id,
-      groupID: 'chat',
-      epoch: 1,
-      contentType: 'application',
-      payload: 'hello-bob',
-    })
-    expect(result.delivered).toBe(1)
-
-    // Bob receives
-    const msg = await bobReader.read()
-    expect(msg.done).toBe(false)
-    expect(msg.value).toMatchObject({
-      groupID: 'chat',
-      payload: 'hello-bob',
-    })
-
-    // Cleanup
-    bobReceive.close()
-    await delay(50)
-    await bobTransports.dispose()
-    await aliceTransports.dispose()
-  })
-
   test('exposes rawClient', () => {
-    const identity = randomIdentity()
     const transports: HubTransports = new DirectTransports()
     const rawClient = new Client<HubProtocol>({
       transport: transports.client,
-      identity,
     })
     const client = new HubClient({ client: rawClient })
     expect(client.rawClient).toBe(rawClient)

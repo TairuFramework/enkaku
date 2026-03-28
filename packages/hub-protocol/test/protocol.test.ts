@@ -18,6 +18,7 @@ describe('HubProtocol', () => {
   test('request procedures have param and result', () => {
     const requestProcedures = [
       'hub/send',
+      'hub/group/send',
       'hub/keypackage/upload',
       'hub/keypackage/fetch',
       'hub/group/join',
@@ -31,15 +32,8 @@ describe('HubProtocol', () => {
     }
   })
 
-  test('stream procedure has param and receive', () => {
-    const def = hubProtocol['hub/receive']
-    expect(def.type).toBe('stream')
-    expect('param' in def).toBe(true)
-    expect('receive' in def).toBe(true)
-  })
-
   test('channel procedure has param, send, and receive', () => {
-    const def = hubProtocol['hub/tunnel/request']
+    const def = hubProtocol['hub/receive']
     expect(def.type).toBe('channel')
     expect('param' in def).toBe(true)
     expect('send' in def).toBe(true)
