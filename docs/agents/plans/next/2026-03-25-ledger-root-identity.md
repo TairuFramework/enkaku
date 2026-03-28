@@ -1,30 +1,31 @@
 # Ledger Root Identity — Follow-on Work
 
-**Status:** pending (Ledger identity implementation complete, delegation and archival remain)
+**Status:** pending (agent primitives complete, archival and multi-Ledger remain)
 
-**Date:** 2026-03-25 (updated 2026-03-26)
+**Date:** 2026-03-25 (updated 2026-03-28)
 
-**Prerequisite:** `feat/ledger` branch (completed 2026-03-26) — see `completed/2026-03-26-ledger-identity.complete.md`
+**Prerequisites:**
+- `completed/2026-03-26-ledger-identity.complete.md` — Ledger identity + HD keystore
+- `completed/2026-03-28-agent-primitives.complete.md` — hub mailbox, revocation, delegation pattern
 
 ---
 
+## Completed
+
+- **Capability delegation pattern** — root identity adoption via `createCapability`, documented in agent primitives spec
+- **Revocation primitive** — `RevocationRecord`, `RevocationBackend`, `createRevocationChecker` as `VerifyTokenHook`
+- **Hub mailbox** — blind relay with ack semantics, pagination, opaque payloads
+
 ## Remaining Work
 
-### GroupArchiver — MLS Epoch Key Archival
+### GroupArchiver — MLS Epoch Key Archival (Kubun scope)
 
-Extension to `@enkaku/group` for archiving MLS-encrypted messages recoverable only by the root identity (Ledger).
+Scoped as a Kubun concern, not Enkaku. Enkaku provides the JWE encryption primitive (single-recipient, already exists). Kubun implements:
 
-- **Incremental archival:** capture `SecretTree` per epoch transition, JWE-encrypt to root X25519 public key
-- **Snapshot archival:** serialize full `ClientState` periodically, JWE-encrypt to root
-- **Recovery:** latest snapshot + incremental epoch archives → decrypted message history (requires Ledger for ECDH)
-- **Configurable backend:** hub endpoint, S3, local
-
-### Capability Delegation UX
-
-The capability system already supports delegation chains. Needs:
-
-- CLI/UI workflow for delegating from Ledger root to device identity
-- Capability revocation list (use `verifyToken` hook in `DelegationChainOptions`)
+- Incremental archival: capture epoch key material, JWE-encrypt to root X25519 public key
+- Snapshot archival: serialize group state periodically
+- Recovery: Ledger ECDH to decrypt archived keys
+- Configurable backend: hub endpoint, S3, local
 
 ### Future
 

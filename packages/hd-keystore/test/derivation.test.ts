@@ -26,7 +26,7 @@ describe('derivePrivateKey()', () => {
   // SLIP-0010 test vector from https://github.com/satoshilabs/slips/blob/master/slip-0010.md
   // Test Vector 1 for ed25519
   const SEED = Uint8Array.from(
-    '000102030405060708090a0b0c0d0e0f'.match(/.{2}/g)!.map((b) => Number.parseInt(b, 16)),
+    ('000102030405060708090a0b0c0d0e0f'.match(/.{2}/g) ?? []).map((b) => Number.parseInt(b, 16)),
   )
 
   test('derives master key from seed', () => {
