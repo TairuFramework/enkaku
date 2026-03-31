@@ -139,7 +139,7 @@ export function createLedgerIdentityProvider(
           return decryptToken({ id, decrypt, agreeKey }, jwe)
         }
 
-        const identity: FullIdentity = { id, signToken, agreeKey, decrypt }
+        const identity: FullIdentity = { id, publicKey, signToken, agreeKey, decrypt }
         cache.set(path, identity)
         return identity
       },

@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/hub-server",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Hub server for Enkaku E2EE group message routing",
@@ -37,6 +37,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@enkaku/codec": "workspace:^",
     "@enkaku/event": "workspace:^",
     "@enkaku/hub-protocol": "workspace:^",
     "@enkaku/protocol": "workspace:^",

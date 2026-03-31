@@ -21,6 +21,7 @@ describe('identity type guards', () => {
   test('isSigningIdentity returns true for signing identity', () => {
     const identity: SigningIdentity = {
       id: 'did:key:z123',
+      publicKey: new Uint8Array(),
       signToken: async () => ({}) as never,
     }
     expect(isSigningIdentity(identity)).toBe(true)
@@ -43,6 +44,7 @@ describe('identity type guards', () => {
   test('isDecryptingIdentity returns false for signing-only identity', () => {
     const identity: SigningIdentity = {
       id: 'did:key:z123',
+      publicKey: new Uint8Array(),
       signToken: async () => ({}) as never,
     }
     expect(isDecryptingIdentity(identity)).toBe(false)
@@ -51,6 +53,7 @@ describe('identity type guards', () => {
   test('isFullIdentity returns true for full identity', () => {
     const identity: FullIdentity = {
       id: 'did:key:z123',
+      publicKey: new Uint8Array(),
       signToken: async () => ({}) as never,
       decrypt: async () => new Uint8Array(),
       agreeKey: async () => new Uint8Array(),
@@ -61,6 +64,7 @@ describe('identity type guards', () => {
   test('isFullIdentity returns false for signing-only identity', () => {
     const identity: SigningIdentity = {
       id: 'did:key:z123',
+      publicKey: new Uint8Array(),
       signToken: async () => ({}) as never,
     }
     expect(isFullIdentity(identity)).toBe(false)

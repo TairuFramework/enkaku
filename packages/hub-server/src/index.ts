@@ -1,3 +1,5 @@
+export type { CreateHandlersParams } from './handlers.js'
+export { createHandlers } from './handlers.js'
 export type { CreateHubParams, HubInstance } from './hub.js'
 export { createHub } from './hub.js'
 export { createMemoryStore } from './memoryStore.js'

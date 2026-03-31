@@ -46,7 +46,7 @@ async function createBrowserSigningIdentity(keyPair: CryptoKeyPair): Promise<Sig
     }
   }
 
-  return { id, signToken }
+  return { id, publicKey, signToken }
 }
 
 export async function provideSigningIdentity(

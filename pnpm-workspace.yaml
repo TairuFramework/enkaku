@@ -4,7 +4,7 @@ packages:
   - website
 
 catalog:
-  '@biomejs/biome': ^2.4.9
+  '@biomejs/biome': ^2.4.10
   '@dipakparmar/docusaurus-plugin-umami': ^2.4.0
   '@docusaurus/core': ^3.9.2
   '@docusaurus/faster': ^3.9.2
@@ -15,7 +15,6 @@ catalog:
   '@docusaurus/types': ^3.9.2
   '@electron-forge/cli': ^7.11.1
   '@electron-forge/plugin-vite': ^7.11.1
-  '@enkaku/codec': ^0.12.0
   '@hono/node-server': ^1.19.12
   '@logtape/logtape': ^2.0.5
   '@napi-rs/keyring': ^1.2.0
@@ -63,7 +62,7 @@ catalog:
   react-native-web: 0.21.2
   ts-mls: 2.0.0-rc.10
   tsx: ^4.21.0
-  turbo: ^2.8.21
+  turbo: ^2.9.1
   typedoc: ^0.28.18
   typedoc-plugin-markdown: ^4.11.0
   typescript: ^6.0.2

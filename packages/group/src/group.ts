@@ -1,6 +1,5 @@
 import type { OwnIdentity, SigningIdentity } from '@enkaku/token'
 import { stringifyToken, verifyToken } from '@enkaku/token'
-import { ed25519 } from '@noble/curves/ed25519.js'
 import {
   type CiphersuiteImpl,
   type CiphersuiteName,
@@ -44,14 +43,6 @@ async function resolveCiphersuite(options?: GroupOptions): Promise<ResolvedCiphe
   const authService = createDIDAuthenticationService()
   const context: MlsContext = { cipherSuite, authService }
   return { cipherSuite, context }
-}
-
-function getSignatureKeys(identity: OwnIdentity): {
-  signKey: Uint8Array
-  publicKey: Uint8Array
-} {
-  const publicKey = ed25519.getPublicKey(identity.privateKey)
-  return { signKey: identity.privateKey, publicKey }
 }
 
 function makeMLSCredential(did: string): Credential {
@@ -181,40 +172,38 @@ export async function createGroup(
   options?: GroupOptions,
 ): Promise<CreateGroupResult> {
   const { cipherSuite, context } = await resolveCiphersuite(options)
-  const keys = getSignatureKeys(identity)
 
-  const mlsCredential = makeMLSCredential(identity.id)
-  const [keyPackage, rootCap] = await Promise.all([
-    generateKeyPackageWithKey({
-      credential: mlsCredential,
-      signatureKeyPair: keys,
-      cipherSuite,
-    }),
+  const statePromise = generateKeyPackageWithKey({
+    credential: makeMLSCredential(identity.id),
+    signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
+    cipherSuite,
+  }).then((keyPackage) => {
+    return mlsCreateGroup({
+      context,
+      groupId: new TextEncoder().encode(groupID),
+      keyPackage: keyPackage.publicPackage,
+      privateKeyPackage: keyPackage.privatePackage,
+      extensions: options?.extensions ?? [],
+    })
+  })
+  const [state, rootCap] = await Promise.all([
+    statePromise,
     createGroupCapability(identity, groupID),
   ])
 
-  const state = await mlsCreateGroup({
-    context,
-    groupId: new TextEncoder().encode(groupID),
-    keyPackage: keyPackage.publicPackage,
-    privateKeyPackage: keyPackage.privatePackage,
-    extensions: options?.extensions ?? [],
-  })
-  const rootCapStr = stringifyToken(rootCap)
-
+  const rootCapability = stringifyToken(rootCap)
   const credential: MemberCredential = {
     did: identity.id,
-    capabilityChain: [rootCapStr],
+    capabilityChain: [rootCapability],
     capability: rootCap,
     permission: 'admin',
     groupID,
   }
-
   const group = new GroupHandle({
     state,
     credential,
     context,
-    rootCapability: rootCapStr,
+    rootCapability,
   })
 
   return { group, credential }
@@ -400,18 +389,10 @@ export async function createKeyPackageBundle(
   options?: GroupOptions,
 ): Promise<KeyPackageBundle> {
   const { cipherSuite } = await resolveCiphersuite(options)
-  const keys = getSignatureKeys(identity)
-  const mlsCredential = makeMLSCredential(identity.id)
-
   const result = await generateKeyPackageWithKey({
-    credential: mlsCredential,
-    signatureKeyPair: keys,
+    credential: makeMLSCredential(identity.id),
+    signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
     cipherSuite,
   })
-
-  return {
-    publicPackage: result.publicPackage,
-    privatePackage: result.privatePackage,
-    ownerDID: identity.id,
-  }
+  return { ...result, ownerDID: identity.id }
 }

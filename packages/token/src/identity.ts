@@ -12,6 +12,7 @@ const tracer = createTracer('token')
 export type Identity = { readonly id: string }
 
 export type SigningIdentity = Identity & {
+  publicKey: Uint8Array
   signToken: <
     Payload extends Record<string, unknown> = Record<string, unknown>,
     Header extends Record<string, unknown> = Record<string, unknown>,
@@ -35,7 +36,11 @@ export type IdentityProvider<T extends SigningIdentity = SigningIdentity> = {
 }
 
 export function isSigningIdentity(identity: Identity): identity is SigningIdentity {
-  return 'signToken' in identity && typeof (identity as SigningIdentity).signToken === 'function'
+  return (
+    'publicKey' in identity &&
+    'signToken' in identity &&
+    typeof (identity as SigningIdentity).signToken === 'function'
+  )
 }
 
 export function isDecryptingIdentity(identity: Identity): identity is DecryptingIdentity {
@@ -85,7 +90,7 @@ export function createSigningIdentity(privateKey: Uint8Array): SigningIdentity {
     )
   }
 
-  return { id, signToken }
+  return { id, publicKey, signToken }
 }
 
 /**
