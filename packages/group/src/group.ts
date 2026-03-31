@@ -1,7 +1,6 @@
 import type { OwnIdentity, SigningIdentity } from '@enkaku/token'
 import { stringifyToken, verifyToken } from '@enkaku/token'
 import {
-  type CiphersuiteImpl,
   type CiphersuiteName,
   type ClientState,
   type Credential,
@@ -32,17 +31,11 @@ import type { GroupOptions, Invite, KeyPackageBundle } from './types.js'
 
 const DEFAULT_CIPHERSUITE = 'MLS_128_DHKEMX25519_AES128GCM_SHA256_Ed25519' as const
 
-type ResolvedCiphersuite = {
-  cipherSuite: CiphersuiteImpl
-  context: MlsContext
-}
-
-async function resolveCiphersuite(options?: GroupOptions): Promise<ResolvedCiphersuite> {
+async function resolveMlsContext(options?: GroupOptions): Promise<MlsContext> {
   const name = (options?.ciphersuiteName ?? DEFAULT_CIPHERSUITE) as CiphersuiteName
   const cipherSuite = await getCiphersuiteImpl(name, options?.cryptoProvider ?? nobleCryptoProvider)
   const authService = createDIDAuthenticationService()
-  const context: MlsContext = { cipherSuite, authService }
-  return { cipherSuite, context }
+  return { cipherSuite, authService }
 }
 
 function makeMLSCredential(did: string): Credential {
@@ -171,12 +164,12 @@ export async function createGroup(
   groupID: string,
   options?: GroupOptions,
 ): Promise<CreateGroupResult> {
-  const { cipherSuite, context } = await resolveCiphersuite(options)
+  const context = await resolveMlsContext(options)
 
   const statePromise = generateKeyPackageWithKey({
     credential: makeMLSCredential(identity.id),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
-    cipherSuite,
+    cipherSuite: context.cipherSuite,
   }).then((keyPackage) => {
     return mlsCreateGroup({
       context,
@@ -207,6 +200,22 @@ export async function createGroup(
   })
 
   return { group, credential }
+}
+
+export type RestoreGroupParams = {
+  state: ClientState
+  credential: MemberCredential
+  rootCapability: string
+  options?: GroupOptions
+}
+
+export async function restoreGroup(params: RestoreGroupParams): Promise<GroupHandle> {
+  return new GroupHandle({
+    state: params.state,
+    credential: params.credential,
+    context: await resolveMlsContext(params.options),
+    rootCapability: params.rootCapability,
+  })
 }
 
 export type CreateInviteParams = {
@@ -304,7 +313,7 @@ export type ProcessWelcomeParams = {
  */
 export async function processWelcome(params: ProcessWelcomeParams): Promise<ProcessWelcomeResult> {
   const { identity, invite, welcome, keyPackageBundle, ratchetTree, options } = params
-  const { context } = await resolveCiphersuite(options)
+  const context = await resolveMlsContext(options)
 
   // Validate the invite's capability chain before trusting it
   const { validateGroupCapability } = await import('./capability.js')
@@ -388,7 +397,7 @@ export async function createKeyPackageBundle(
   identity: OwnIdentity,
   options?: GroupOptions,
 ): Promise<KeyPackageBundle> {
-  const { cipherSuite } = await resolveCiphersuite(options)
+  const { cipherSuite } = await resolveMlsContext(options)
   const result = await generateKeyPackageWithKey({
     credential: makeMLSCredential(identity.id),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },

@@ -35,6 +35,8 @@ export {
   type ProcessWelcomeResult,
   processWelcome,
   type RemoveMemberResult,
+  type RestoreGroupParams,
   removeMember,
+  restoreGroup,
 } from './group.js'
 export type { GroupOptions, GroupSyncScope, Invite, KeyPackageBundle } from './types.js'
