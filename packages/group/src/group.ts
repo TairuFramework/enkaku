@@ -25,7 +25,7 @@ import {
   delegateGroupMembership,
   type GroupPermission,
 } from './capability.js'
-import { type MemberCredential, mlsIdentityToSerializedCredential } from './credential.js'
+import type { MemberCredential } from './credential.js'
 import { nobleCryptoProvider } from './crypto.js'
 import type { GroupOptions, Invite, KeyPackageBundle } from './types.js'
 
@@ -106,10 +106,8 @@ export class GroupHandle {
       if (node != null && node.nodeType === nodeTypes.leaf) {
         const credential = node.leaf.credential
         if ('identity' in credential) {
-          try {
-            const parsed = mlsIdentityToSerializedCredential(credential.identity)
-            if (parsed.did === did) return i / 2
-          } catch {}
+          const identity = new TextDecoder().decode(credential.identity)
+          if (identity === did) return i / 2
         }
       }
     }
