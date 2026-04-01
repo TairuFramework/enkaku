@@ -26,11 +26,11 @@ catalog:
   '@opentelemetry/sdk-trace-base': ^2.6.1
   '@opentelemetry/sdk-trace-node': ^2.6.1
   '@orama/plugin-docusaurus-v3': ^3.1.18
-  '@playwright/test': 1.58.2
+  '@playwright/test': 1.59.0
   '@scure/base': ^2.0.0
   '@scure/bip39': ^2.0.1
   '@standard-schema/spec': ^1.1.0
-  '@swc/cli': ^0.8.0
+  '@swc/cli': ^0.8.1
   '@swc/core': ^1.15.21
   '@testing-library/jest-dom': ^6.9.1
   '@testing-library/react': ^16.3.2
@@ -62,7 +62,7 @@ catalog:
   react-native-web: 0.21.2
   ts-mls: 2.0.0-rc.10
   tsx: ^4.21.0
-  turbo: ^2.9.1
+  turbo: ^2.9.3
   typedoc: ^0.28.18
   typedoc-plugin-markdown: ^4.11.0
   typescript: ^6.0.2
