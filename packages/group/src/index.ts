@@ -7,7 +7,12 @@ export {
   type ValidateGroupCapabilityParams,
   validateGroupCapability,
 } from './capability.js'
-export { type ClientState, decodeClientState, encodeClientState } from './codec.js'
+export {
+  type ClientState,
+  decodeClientState,
+  encodeClientState,
+  sanitizeRatchetTree,
+} from './codec.js'
 export {
   credentialToMLSIdentity,
   extractPermission,

@@ -279,3 +279,291 @@ describe('GroupHandle lifecycle', () => {
     ).rejects.toThrow()
   })
 })
+
+// Simulate JSON roundtrip effect: undefined array entries become null.
+// In practice this happens when ratchet trees are transported as JSON between
+describe('ratchet tree extension', () => {
+  test('processWelcome joins without ratchetTree param (tree embedded in Welcome)', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'ext-join')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage, newGroup: updatedAlice } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+
+    // No ratchetTree param — tree comes from the Welcome message
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite,
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKP,
+    })
+
+    expect(bobGroup.memberCount).toBe(2)
+
+    const { message } = await updatedAlice.encrypt(new TextEncoder().encode('no tree needed'))
+    const decrypted = await bobGroup.decrypt(message)
+    expect(new TextDecoder().decode(decrypted)).toBe('no tree needed')
+  })
+
+  test('3-member join without ratchetTree param', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    const { group: g1 } = await createGroup(alice, 'ext-3m')
+
+    const { invite: bobInvite } = await createInvite({
+      group: g1,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage: bobWelcome, newGroup: g2 } = await commitInvite(g1, bobKP.publicPackage)
+    await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: bobWelcome,
+      keyPackageBundle: bobKP,
+    })
+
+    const { invite: charlieInvite } = await createInvite({
+      group: g2,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const { welcomeMessage: charlieWelcome, newGroup: g3 } = await commitInvite(
+      g2,
+      charlieKP.publicPackage,
+    )
+    const { group: charlieGroup } = await processWelcome({
+      identity: charlie,
+      invite: charlieInvite,
+      welcome: charlieWelcome,
+      keyPackageBundle: charlieKP,
+    })
+
+    expect(g3.memberCount).toBe(3)
+    expect(charlieGroup.memberCount).toBe(3)
+
+    const { message } = await g3.encrypt(new TextEncoder().encode('extension works'))
+    const decrypted = await charlieGroup.decrypt(message)
+    expect(new TextDecoder().decode(decrypted)).toBe('extension works')
+  })
+})
+
+// Simulate JSON roundtrip effect: undefined array entries become null.
+// In practice this happens when ratchet trees are transported as JSON between
+// peers (e.g. Kubun's invite payloads use JSON.stringify with a custom replacer
+// that handles Uint8Array/BigInt but not undefined array entries).
+function nullifyTree(tree: ReadonlyArray<unknown>): Array<unknown> {
+  return tree.map((entry) => (entry === undefined ? null : entry))
+}
+
+describe('JSON serialization null safety', () => {
+  test('processWelcome joins and exchanges messages with nullified 2-member tree', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'null-2m')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage, newGroup: updatedAlice } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite,
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: nullifyTree(updatedAlice.state.ratchetTree),
+    })
+
+    expect(bobGroup.memberCount).toBe(2)
+
+    // Verify full participation — not just memberCount
+    const { message } = await updatedAlice.encrypt(new TextEncoder().encode('hello bob'))
+    const decrypted = await bobGroup.decrypt(message)
+    expect(new TextDecoder().decode(decrypted)).toBe('hello bob')
+  })
+
+  test('processWelcome joins 3-member group with nullified tree', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'null-3m')
+
+    // Add Bob normally
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage: bobWelcome, newGroup: groupWithBob } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+    await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: bobWelcome,
+      keyPackageBundle: bobKP,
+      ratchetTree: groupWithBob.state.ratchetTree,
+    })
+
+    // Add Charlie with nullified tree — tree has blank parent nodes
+    const { invite: charlieInvite } = await createInvite({
+      group: groupWithBob,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const { welcomeMessage: charlieWelcome, newGroup: groupWith3 } = await commitInvite(
+      groupWithBob,
+      charlieKP.publicPackage,
+    )
+
+    const nullified = nullifyTree(groupWith3.state.ratchetTree)
+    // Verify the tree actually has null entries (blank parent nodes)
+    expect(nullified.some((entry) => entry === null)).toBe(true)
+
+    const { group: charlieGroup } = await processWelcome({
+      identity: charlie,
+      invite: charlieInvite,
+      welcome: charlieWelcome,
+      keyPackageBundle: charlieKP,
+      ratchetTree: nullified,
+    })
+
+    expect(charlieGroup.memberCount).toBe(3)
+
+    const { message } = await groupWith3.encrypt(new TextEncoder().encode('to charlie'))
+    const decrypted = await charlieGroup.decrypt(message)
+    expect(new TextDecoder().decode(decrypted)).toBe('to charlie')
+  })
+
+  test('processWelcome joins after member removal with nullified tree', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+    const dave = randomIdentity()
+
+    const { group: g1 } = await createGroup(alice, 'null-remove')
+
+    // Add Bob
+    const { invite: bobInvite } = await createInvite({
+      group: g1,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage: bobWelcome, newGroup: g2 } = await commitInvite(g1, bobKP.publicPackage)
+    await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: bobWelcome,
+      keyPackageBundle: bobKP,
+      ratchetTree: g2.state.ratchetTree,
+    })
+
+    // Add Charlie
+    await createInvite({
+      group: g2,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const { newGroup: g3 } = await commitInvite(g2, charlieKP.publicPackage)
+
+    // Remove Bob — creates blank leaf node in tree
+    const { newGroup: g4 } = await removeMember(g3, 1)
+    expect(g4.memberCount).toBe(2)
+
+    // Invite Dave — tree now has both blank leaf (from removal) and blank parents
+    const { invite: daveInvite } = await createInvite({
+      group: g4,
+      identity: alice,
+      recipientDID: dave.id,
+      permission: 'member',
+    })
+    const daveKP = await createKeyPackageBundle(dave)
+    const { welcomeMessage: daveWelcome, newGroup: g5 } = await commitInvite(
+      g4,
+      daveKP.publicPackage,
+    )
+
+    const nullified = nullifyTree(g5.state.ratchetTree)
+    expect(nullified.some((entry) => entry === null)).toBe(true)
+
+    const { group: daveGroup } = await processWelcome({
+      identity: dave,
+      invite: daveInvite,
+      welcome: daveWelcome,
+      keyPackageBundle: daveKP,
+      ratchetTree: nullified,
+    })
+
+    expect(daveGroup.memberCount).toBe(3)
+
+    const { message } = await g5.encrypt(new TextEncoder().encode('welcome dave'))
+    const decrypted = await daveGroup.decrypt(message)
+    expect(new TextDecoder().decode(decrypted)).toBe('welcome dave')
+  })
+
+  test('findMemberLeafIndex works with nullified tree entries', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'null-find')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage, newGroup: updatedAlice } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite,
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: nullifyTree(updatedAlice.state.ratchetTree),
+    })
+
+    // findMemberLeafIndex should work on the joined group
+    // (its internal tree was built by ts-mls from the sanitized input)
+    expect(bobGroup.findMemberLeafIndex(bob.id)).toBe(1)
+    expect(bobGroup.findMemberLeafIndex(alice.id)).toBe(0)
+    expect(bobGroup.findMemberLeafIndex('did:key:unknown')).toBeUndefined()
+  })
+})

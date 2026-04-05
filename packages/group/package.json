@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/group",
-  "version": "0.14.4",
+  "version": "0.14.5",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "E2EE group identity and membership for Enkaku using MLS",

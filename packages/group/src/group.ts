@@ -25,6 +25,7 @@ import {
   delegateGroupMembership,
   type GroupPermission,
 } from './capability.js'
+import { sanitizeRatchetTree } from './codec.js'
 import type { MemberCredential } from './credential.js'
 import { nobleCryptoProvider } from './crypto.js'
 import type { GroupOptions, Invite, KeyPackageBundle } from './types.js'
@@ -95,7 +96,7 @@ export class GroupHandle {
 
   get memberCount(): number {
     return this.#state.ratchetTree.filter(
-      (node) => node !== undefined && node.nodeType === nodeTypes.leaf,
+      (node) => node != null && node.nodeType === nodeTypes.leaf,
     ).length
   }
 
@@ -293,6 +294,7 @@ export async function commitInvite(
     context: group.context,
     state: group.state,
     extraProposals: [addProposal],
+    ratchetTreeExtension: true,
   })
 
   const newGroup = new GroupHandle({
@@ -319,7 +321,7 @@ export type ProcessWelcomeParams = {
   invite: Invite
   welcome: unknown
   keyPackageBundle: KeyPackageBundle
-  ratchetTree: unknown
+  ratchetTree?: unknown
   options?: GroupOptions
 }
 
@@ -342,12 +344,15 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
   const capToken = await verifyToken(invite.capabilityToken)
 
   type JoinGroupParams = Parameters<typeof mlsJoinGroup>[0]
+  const sanitizedTree = Array.isArray(ratchetTree) ? sanitizeRatchetTree(ratchetTree) : ratchetTree
   const state = await mlsJoinGroup({
     context,
     welcome: welcome as JoinGroupParams['welcome'],
     keyPackage: keyPackageBundle.publicPackage as JoinGroupParams['keyPackage'],
     privateKeys: keyPackageBundle.privatePackage as JoinGroupParams['privateKeys'],
-    ratchetTree: ratchetTree as JoinGroupParams['ratchetTree'],
+    ...(sanitizedTree != null && {
+      ratchetTree: sanitizedTree as JoinGroupParams['ratchetTree'],
+    }),
   })
 
   const credential: MemberCredential = {
