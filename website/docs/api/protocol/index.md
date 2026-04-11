@@ -22,7 +22,7 @@ npm install @enkaku/protocol
 
 ##### rsn?
 
-> `optional` **rsn**: `string`
+> `optional` **rsn?**: `string`
 
 ##### typ
 
@@ -154,7 +154,7 @@ npm install @enkaku/protocol
 
 ### ClientTransportOf
 
-> **ClientTransportOf**\<`Protocol`\> = [`TransportType`](../transport/index.md#transporttype)\<[`AnyServerMessageOf`](#anyservermessageof)\<`Protocol`\>, [`AnyClientMessageOf`](#anyclientmessageof)\<`Protocol`\>\>
+> **ClientTransportOf**\<`Protocol`\> = `TransportType`\<[`AnyServerMessageOf`](#anyservermessageof)\<`Protocol`\>, [`AnyClientMessageOf`](#anyclientmessageof)\<`Protocol`\>\>
 
 #### Type Parameters
 
@@ -166,7 +166,7 @@ npm install @enkaku/protocol
 
 ### DataOf
 
-> **DataOf**\<`S`\> = `S` *extends* [`Schema`](../schema/index.md#schema-1) ? `FromSchema`\<`S`\> : `never`
+> **DataOf**\<`S`\> = `S` *extends* `Schema` ? `FromSchema`\<`S`\> : `never`
 
 #### Type Parameters
 
@@ -324,11 +324,11 @@ npm install @enkaku/protocol
 
 ##### getAsync()
 
-> **getAsync**(): `Promise`\<`null` \| `PrivateKeyType`\>
+> **getAsync**(): `Promise`\<`PrivateKeyType` \| `null`\>
 
 ###### Returns
 
-`Promise`\<`null` \| `PrivateKeyType`\>
+`Promise`\<`PrivateKeyType` \| `null`\>
 
 ##### provideAsync()
 
@@ -396,7 +396,7 @@ npm install @enkaku/protocol
 
 ### Message
 
-> **Message**\<`Payload`\> = [`SignedToken`](../token/index.md#signedtoken)\<`SignedPayload` & `Payload`\> \| [`UnsignedToken`](../token/index.md#unsignedtoken)\<`Payload`\>
+> **Message**\<`Payload`\> = `SignedToken`\<`SignedPayload` & `Payload`\> \| `UnsignedToken`\<`Payload`\>
 
 #### Type Parameters
 
@@ -562,7 +562,7 @@ npm install @enkaku/protocol
 
 ### ReturnOf
 
-> **ReturnOf**\<`S`\> = `S` *extends* [`Schema`](../schema/index.md#schema-1) ? `FromSchema`\<`S`\> : `void`
+> **ReturnOf**\<`S`\> = `S` *extends* `Schema` ? `FromSchema`\<`S`\> : `void`
 
 #### Type Parameters
 
@@ -648,7 +648,7 @@ npm install @enkaku/protocol
 
 ### ServerTransportOf
 
-> **ServerTransportOf**\<`Protocol`\> = [`TransportType`](../transport/index.md#transporttype)\<[`AnyClientMessageOf`](#anyclientmessageof)\<`Protocol`\>, [`AnyServerMessageOf`](#anyservermessageof)\<`Protocol`\>\>
+> **ServerTransportOf**\<`Protocol`\> = `TransportType`\<[`AnyClientMessageOf`](#anyclientmessageof)\<`Protocol`\>, [`AnyServerMessageOf`](#anyservermessageof)\<`Protocol`\>\>
 
 #### Type Parameters
 
@@ -682,7 +682,7 @@ npm install @enkaku/protocol
 
 ### TransportMessage
 
-> **TransportMessage** = [`SignedToken`](../token/index.md#signedtoken)\<`SignedPayload` & [`TransportMessagePayload`](#transportmessagepayload), [`TransportMessageHeader`](#transportmessageheader)\> \| [`UnsignedToken`](../token/index.md#unsignedtoken)\<[`TransportMessagePayload`](#transportmessagepayload), [`TransportMessageHeader`](#transportmessageheader)\>
+> **TransportMessage** = `SignedToken`\<`SignedPayload` & [`TransportMessagePayload`](#transportmessagepayload), [`TransportMessageHeader`](#transportmessageheader)\> \| `UnsignedToken`\<[`TransportMessagePayload`](#transportmessagepayload), [`TransportMessageHeader`](#transportmessageheader)\>
 
 ***
 
@@ -712,7 +712,7 @@ npm install @enkaku/protocol
 
 ##### id?
 
-> `optional` **id**: `string`
+> `optional` **id?**: `string`
 
 ##### type
 
@@ -728,7 +728,7 @@ npm install @enkaku/protocol
 
 ##### id?
 
-> `optional` **id**: `string`
+> `optional` **id?**: `string`
 
 ##### type
 
@@ -1970,7 +1970,7 @@ npm install @enkaku/protocol
 
 ### createClientMessageSchema()
 
-> **createClientMessageSchema**(`protocol`, `type?`): [`Schema`](../schema/index.md#schema-1)
+> **createClientMessageSchema**(`protocol`, `type?`): `Schema`
 
 #### Parameters
 
@@ -1982,13 +1982,13 @@ npm install @enkaku/protocol
 
 #### Returns
 
-[`Schema`](../schema/index.md#schema-1)
+`Schema`
 
 ***
 
 ### createServerMessageSchema()
 
-> **createServerMessageSchema**(`protocol`, `type?`): [`Schema`](../schema/index.md#schema-1)
+> **createServerMessageSchema**(`protocol`, `type?`): `Schema`
 
 #### Parameters
 
@@ -2000,4 +2000,4 @@ npm install @enkaku/protocol
 
 #### Returns
 
-[`Schema`](../schema/index.md#schema-1)
+`Schema`

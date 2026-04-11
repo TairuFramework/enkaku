@@ -452,7 +452,7 @@ Error thrown when patch operations fail.
 
 ### applyPatches()
 
-> **applyPatches**(`data`, `patches`): `void`
+> **applyPatches**(`data`, `patches`, `strict?`): `void`
 
 Applies an array of JSON Patch operations to an object.
 
@@ -472,6 +472,12 @@ Object to modify
 (\{ `op`: `"add"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"set"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"remove"`; `path`: `string`; \} \| \{ `op`: `"replace"`; `path`: `string`; `value`: `unknown`; \} \| \{ `from`: `string`; `op`: `"move"`; `path`: `string`; \} \| \{ `from`: `string`; `op`: `"copy"`; `path`: `string`; \} \| \{ `op`: `"test"`; `path`: `string`; `value`: `unknown`; \})[]
 
 Array of patch operations to apply
+
+##### strict?
+
+`boolean` = `true`
+
+Whether to throw on non-existent paths (default: true)
 
 #### Returns
 
@@ -496,7 +502,7 @@ applyPatches(data, [
 
 ### createPatches()
 
-> **createPatches**(`to`, `from`): (\{ `op`: `"add"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"set"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"remove"`; `path`: `string`; \} \| \{ `op`: `"replace"`; `path`: `string`; `value`: `unknown`; \} \| \{ `from`: `string`; `op`: `"move"`; `path`: `string`; \} \| \{ `from`: `string`; `op`: `"copy"`; `path`: `string`; \} \| \{ `op`: `"test"`; `path`: `string`; `value`: `unknown`; \})[]
+> **createPatches**(`to`, `from?`): (\{ `op`: `"add"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"set"`; `path`: `string`; `value`: `unknown`; \} \| \{ `op`: `"remove"`; `path`: `string`; \} \| \{ `op`: `"replace"`; `path`: `string`; `value`: `unknown`; \} \| \{ `from`: `string`; `op`: `"move"`; `path`: `string`; \} \| \{ `from`: `string`; `op`: `"copy"`; `path`: `string`; \} \| \{ `op`: `"test"`; `path`: `string`; `value`: `unknown`; \})[]
 
 Creates JSON Patch operations to transform one object into another.
 
@@ -512,7 +518,7 @@ using `applyPatches`.
 
 Target object state
 
-##### from
+##### from?
 
 `Record`\<`string`, `unknown`\> = `{}`
 

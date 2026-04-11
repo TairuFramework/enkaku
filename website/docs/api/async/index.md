@@ -20,11 +20,11 @@ npm install @enkaku/async
 
 ##### Constructor
 
-> **new AbortInterruption**(`options`): [`AbortInterruption`](#abortinterruption)
+> **new AbortInterruption**(`options?`): [`AbortInterruption`](#abortinterruption)
 
 ###### Parameters
 
-###### options
+###### options?
 
 [`InterruptionOptions`](#interruptionoptions) = `{}`
 
@@ -64,11 +64,11 @@ npm install @enkaku/async
 
 ##### Constructor
 
-> **new CancelInterruption**(`options`): [`CancelInterruption`](#cancelinterruption)
+> **new CancelInterruption**(`options?`): [`CancelInterruption`](#cancelinterruption)
 
 ###### Parameters
 
-###### options
+###### options?
 
 [`InterruptionOptions`](#interruptionoptions) = `{}`
 
@@ -108,11 +108,11 @@ npm install @enkaku/async
 
 ##### Constructor
 
-> **new DisposeInterruption**(`options`): [`DisposeInterruption`](#disposeinterruption)
+> **new DisposeInterruption**(`options?`): [`DisposeInterruption`](#disposeinterruption)
 
 ###### Parameters
 
-###### options
+###### options?
 
 [`InterruptionOptions`](#interruptionoptions) = `{}`
 
@@ -165,11 +165,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Constructor
 
-> **new Disposer**(`params`): [`Disposer`](#disposer)
+> **new Disposer**(`params?`): [`Disposer`](#disposer)
 
 ###### Parameters
 
-###### params
+###### params?
 
 [`DisposerParams`](#disposerparams) = `{}`
 
@@ -240,11 +240,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Constructor
 
-> **new Interruption**(`options`): [`Interruption`](#interruption)
+> **new Interruption**(`options?`): [`Interruption`](#interruption)
 
 ###### Parameters
 
-###### options
+###### options?
 
 [`InterruptionOptions`](#interruptionoptions) = `{}`
 
@@ -320,7 +320,7 @@ Attaches a callback for only the rejection of the Promise.
 
 ###### onRejected?
 
-`null` | (`reason`) => `TResult` \| `PromiseLike`\<`TResult`\>
+((`reason`) => `TResult` \| `PromiseLike`\<`TResult`\>) \| `null`
 
 ###### Returns
 
@@ -343,7 +343,7 @@ resolved value cannot be modified from the callback.
 
 ###### onFinally?
 
-`null` | () => `void` \| `PromiseLike`\<`void`\>
+(() => `void` \| `PromiseLike`\<`void`\>) \| `null`
 
 ###### Returns
 
@@ -375,11 +375,11 @@ Attaches callbacks for the resolution and/or rejection of the Promise.
 
 ###### onFulfilled?
 
-`null` | (`value`) => `TResult1` \| `PromiseLike`\<`TResult1`\>
+((`value`) => `TResult1` \| `PromiseLike`\<`TResult1`\>) \| `null`
 
 ###### onRejected?
 
-`null` | (`reason`) => `TResult2` \| `PromiseLike`\<`TResult2`\>
+((`reason`) => `TResult2` \| `PromiseLike`\<`TResult2`\>) \| `null`
 
 ###### Returns
 
@@ -589,11 +589,11 @@ A promise whose internal state matches the provided promise.
 
 ##### Constructor
 
-> **new TimeoutInterruption**(`options`): [`TimeoutInterruption`](#timeoutinterruption)
+> **new TimeoutInterruption**(`options?`): [`TimeoutInterruption`](#timeoutinterruption)
 
 ###### Parameters
 
-###### options
+###### options?
 
 [`InterruptionOptions`](#interruptionoptions) = `{}`
 
@@ -645,7 +645,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 > **promise**: `Promise`\<`T`\>
 
-##### reject()
+##### reject
 
 > **reject**: (`reason?`) => `void`
 
@@ -659,7 +659,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 `void`
 
-##### resolve()
+##### resolve
 
 > **resolve**: (`value`) => `void`
 
@@ -667,7 +667,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 ###### value
 
-`T` | `PromiseLike`\<`T`\>
+`T` \| `PromiseLike`\<`T`\>
 
 ###### Returns
 
@@ -681,9 +681,9 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 #### Properties
 
-##### dispose()?
+##### dispose?
 
-> `optional` **dispose**: (`reason?`) => `Promise`\<`void`\>
+> `optional` **dispose?**: (`reason?`) => `Promise`\<`void`\>
 
 ###### Parameters
 
@@ -697,11 +697,11 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 ##### signal?
 
-> `optional` **signal**: `AbortSignal`
+> `optional` **signal?**: `AbortSignal`
 
 ***
 
-### ExecuteFn()
+### ExecuteFn
 
 > **ExecuteFn**\<`T`\> = (`resolve`, `reject`) => `void`
 
@@ -735,7 +735,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 ##### message?
 
-> `optional` **message**: `string`
+> `optional` **message?**: `string`
 
 ***
 

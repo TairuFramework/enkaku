@@ -10,7 +10,7 @@ npm install @enkaku/electron-rpc
 
 ## Type Aliases
 
-### CreateProcess()
+### CreateProcess
 
 > **CreateProcess** = \<`R`, `W`\>(`name`, `onMessage`) => [`MessageFunc`](#messagefunc)\<`W`\>
 
@@ -40,7 +40,7 @@ npm install @enkaku/electron-rpc
 
 ***
 
-### MessageFunc()
+### MessageFunc
 
 > **MessageFunc**\<`T`\> = (`message`) => `void`
 
@@ -62,7 +62,7 @@ npm install @enkaku/electron-rpc
 
 ***
 
-### PortHandler()
+### PortHandler
 
 > **PortHandler** = (`port`, `event`) => `void` \| `Promise`\<`void`\>
 
@@ -84,7 +84,7 @@ npm install @enkaku/electron-rpc
 
 ### PortInput
 
-> **PortInput** = [`PortOrPromise`](#portorpromise) \| () => [`PortOrPromise`](#portorpromise)
+> **PortInput** = [`PortOrPromise`](#portorpromise) \| (() => [`PortOrPromise`](#portorpromise))
 
 ***
 
@@ -102,31 +102,31 @@ npm install @enkaku/electron-rpc
 
 ##### name?
 
-> `optional` **name**: `string`
+> `optional` **name?**: `string`
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`
 
 ***
 
 ### ServeProcessParams
 
-> **ServeProcessParams**\<`Protocol`\> = `Omit`\<[`ServerParams`](../server/index.md#serverparams)\<`Protocol`\>, `"transports"`\> & `object`
+> **ServeProcessParams**\<`Protocol`\> = `Omit`\<`ServerParams`\<`Protocol`\>, `"transports"`\> & `object`
 
 #### Type Declaration
 
 ##### name?
 
-> `optional` **name**: `string`
+> `optional` **name?**: `string`
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`
 
 ## Functions
 
@@ -158,7 +158,7 @@ npm install @enkaku/electron-rpc
 
 ### createRendererClient()
 
-> **createRendererClient**\<`Protocol`\>(`options`): [`Client`](../client/index.md#client)\<`Protocol`, [`ClientDefinitionsType`](../client/index.md#clientdefinitionstype)\<`Protocol`\>\>
+> **createRendererClient**\<`Protocol`\>(`options?`): [`Client`](../client/index.md#client)\<`Protocol`, [`ClientDefinitionsType`](../client/index.md#clientdefinitionstype)\<`Protocol`\>\>
 
 #### Type Parameters
 
@@ -168,7 +168,7 @@ npm install @enkaku/electron-rpc
 
 #### Parameters
 
-##### options
+##### options?
 
 [`RendererClientOptions`](#rendererclientoptions)\<`Protocol`\> = `{}`
 

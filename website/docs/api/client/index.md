@@ -22,11 +22,15 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`
 
 ##### ClientDefinitions
 
 `ClientDefinitions` *extends* [`ClientDefinitionsType`](#clientdefinitionstype)\<`Protocol`\> = [`ClientDefinitionsType`](#clientdefinitionstype)\<`Protocol`\>
+
+#### Indexable
+
+> \[`key`: `number`\]: () => `Promise`\<`void`\>
 
 #### Constructors
 
@@ -65,18 +69,6 @@ Disposer class, providing a dispose function and a disposed Promise.
 [`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed)
 
 #### Methods
-
-##### \[asyncDispose\]()
-
-> **\[asyncDispose\]**(): `Promise`\<`void`\>
-
-###### Returns
-
-`Promise`\<`void`\>
-
-###### Inherited from
-
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose)
 
 ##### createChannel()
 
@@ -154,7 +146,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### request()
 
-> **request**\<`Procedure`, `T`\>(`procedure`, ...`args`): `Promise`\<`T`\[`"Result"`\]\> & `object`
+> **request**\<`Procedure`, `T`\>(`procedure`, ...`args`): `Promise`\<`T`\[`"Result"`\]\> & `RequestMeta` & `object`
 
 ###### Type Parameters
 
@@ -178,7 +170,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Returns
 
-`Promise`\<`T`\[`"Result"`\]\> & `object`
+`Promise`\<`T`\[`"Result"`\]\> & `RequestMeta` & `object`
 
 ##### sendEvent()
 
@@ -202,7 +194,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### args
 
-...`T`\[`"Data"`\] *extends* `never` ? \[\] : \[`T`\[`"Data"`\]\]
+...`T`\[`"Data"`\] *extends* `never` ? \[`object`\] : \[`object`\]
 
 ###### Returns
 
@@ -264,7 +256,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Implementation of
 
-[`ErrorObjectType`](#errorobjecttype).[`code`](#code-3)
+`ErrorObjectType.code`
 
 ##### data
 
@@ -278,9 +270,27 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Implementation of
 
-[`ErrorObjectType`](#errorobjecttype).[`data`](#data-3)
+`ErrorObjectType.data`
 
 #### Methods
+
+##### toJSON()
+
+> **toJSON**(): [`ErrorObjectType`](#errorobjecttype)\<`Code`, `Data`\>
+
+###### Returns
+
+[`ErrorObjectType`](#errorobjecttype)\<`Code`, `Data`\>
+
+##### toString()
+
+> **toString**(): `string`
+
+Returns a string representation of an object.
+
+###### Returns
+
+`string`
 
 ##### fromPayload()
 
@@ -300,7 +310,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### payload
 
-[`ErrorReplyPayload`](../protocol/index.md#errorreplypayload)\<`Code`, `Data`\>
+`ErrorReplyPayload`\<`Code`, `Data`\>
 
 ###### Returns
 
@@ -314,7 +324,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Type Declaration
 
-##### send()
+##### send
 
 > **send**: (`value`) => `Promise`\<`void`\>
 
@@ -356,7 +366,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`
 
 ***
 
@@ -368,7 +378,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`
 
 #### Properties
 
@@ -398,21 +408,21 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`
 
 #### Properties
 
-##### getRandomID()?
+##### getRandomID?
 
-> `optional` **getRandomID**: () => `string`
+> `optional` **getRandomID?**: () => `string`
 
 ###### Returns
 
 `string`
 
-##### handleTransportDisposed()?
+##### handleTransportDisposed?
 
-> `optional` **handleTransportDisposed**: (`signal`) => [`ClientTransportOf`](../protocol/index.md#clienttransportof)\<`Protocol`\> \| `void`
+> `optional` **handleTransportDisposed?**: (`signal`) => `ClientTransportOf`\<`Protocol`\> \| `void`
 
 ###### Parameters
 
@@ -422,11 +432,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Returns
 
-[`ClientTransportOf`](../protocol/index.md#clienttransportof)\<`Protocol`\> \| `void`
+`ClientTransportOf`\<`Protocol`\> \| `void`
 
-##### handleTransportError()?
+##### handleTransportError?
 
-> `optional` **handleTransportError**: (`error`) => [`ClientTransportOf`](../protocol/index.md#clienttransportof)\<`Protocol`\> \| `void`
+> `optional` **handleTransportError?**: (`error`) => `ClientTransportOf`\<`Protocol`\> \| `void`
 
 ###### Parameters
 
@@ -436,19 +446,31 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Returns
 
-[`ClientTransportOf`](../protocol/index.md#clienttransportof)\<`Protocol`\> \| `void`
+`ClientTransportOf`\<`Protocol`\> \| `void`
+
+##### identity?
+
+> `optional` **identity?**: `Identity` \| `Promise`\<`Identity`\>
+
+##### logger?
+
+> `optional` **logger?**: `Logger`
+
+##### runtime?
+
+> `optional` **runtime?**: `Runtime`
 
 ##### serverID?
 
-> `optional` **serverID**: `string`
+> `optional` **serverID?**: `string`
 
-##### signer?
+##### tracer?
 
-> `optional` **signer**: [`TokenSigner`](../token/index.md#tokensigner) \| `Promise`\<[`TokenSigner`](../token/index.md#tokensigner)\>
+> `optional` **tracer?**: `Tracer`
 
 ##### transport
 
-> **transport**: [`ClientTransportOf`](../protocol/index.md#clienttransportof)\<`Protocol`\>
+> **transport**: `ClientTransportOf`\<`Protocol`\>
 
 ***
 
@@ -474,7 +496,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### data?
 
-> `optional` **data**: `Data`
+> `optional` **data?**: `Data`
 
 ##### message
 
@@ -490,17 +512,17 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`
 
 ***
 
 ### RequestCall
 
-> **RequestCall**\<`Result`\> = `Promise`\<`Result`\> & `object`
+> **RequestCall**\<`Result`\> = `Promise`\<`Result`\> & `RequestMeta` & `object`
 
 #### Type Declaration
 
-##### abort()
+##### abort
 
 > **abort**: (`reason?`) => `void`
 
@@ -538,7 +560,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`
 
 ***
 
@@ -564,13 +586,17 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Type Declaration
 
-##### close()
+##### close
 
 > **close**: () => `void`
 
 ###### Returns
 
 `void`
+
+##### procedure
+
+> **procedure**: `string`
 
 ##### readable
 
@@ -596,4 +622,4 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`

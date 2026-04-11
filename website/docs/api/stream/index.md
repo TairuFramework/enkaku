@@ -60,7 +60,7 @@ npm install @enkaku/stream
 
 ## Type Aliases
 
-### DecodeJSON()
+### DecodeJSON
 
 > **DecodeJSON**\<`T`\> = (`value`) => `T`
 
@@ -82,7 +82,7 @@ npm install @enkaku/stream
 
 ***
 
-### EncodeJSON()
+### EncodeJSON
 
 > **EncodeJSON**\<`T`\> = (`value`) => `string`
 
@@ -118,11 +118,19 @@ npm install @enkaku/stream
 
 ##### decode?
 
-> `optional` **decode**: [`DecodeJSON`](#decodejson)\<`unknown`\>
+> `optional` **decode?**: [`DecodeJSON`](#decodejson)\<`unknown`\>
 
-##### onInvalidJSON()?
+##### maxBufferSize?
 
-> `optional` **onInvalidJSON**: (`value`, `controller`) => `void`
+> `optional` **maxBufferSize?**: `number`
+
+##### maxMessageSize?
+
+> `optional` **maxMessageSize?**: `number`
+
+##### onInvalidJSON?
+
+> `optional` **onInvalidJSON?**: (`value`, `controller`) => `void`
 
 ###### Parameters
 
@@ -137,6 +145,34 @@ npm install @enkaku/stream
 ###### Returns
 
 `void`
+
+***
+
+### Pipe
+
+> **Pipe**\<`T`\> = `ReadableWritablePair`\<`T`, `T`\> & `object`
+
+#### Type Declaration
+
+##### drain
+
+> **drain**: (`pipePromise`) => `Promise`\<`void`\>
+
+###### Parameters
+
+###### pipePromise
+
+`Promise`\<`void`\>
+
+###### Returns
+
+`Promise`\<`void`\>
+
+#### Type Parameters
+
+##### T
+
+`T`
 
 ## Functions
 
@@ -180,9 +216,13 @@ Create a tuple of `ReadableWritablePair` streams connected to each other.
 
 ### createPipe()
 
-> **createPipe**\<`T`\>(): `ReadableWritablePair`\<`T`, `T`\>
+> **createPipe**\<`T`\>(): [`Pipe`](#pipe)\<`T`\>
 
 Create a `ReadableWritablePair` stream queuing written messages until they are read from the other end.
+
+The returned `drain` function closes the readable directly (bypassing the
+writable's writer lock) and waits for the given `pipePromise` to flush all
+buffered values.
 
 #### Type Parameters
 
@@ -192,7 +232,7 @@ Create a `ReadableWritablePair` stream queuing written messages until they are r
 
 #### Returns
 
-`ReadableWritablePair`\<`T`, `T`\>
+[`Pipe`](#pipe)\<`T`\>
 
 ***
 
@@ -222,7 +262,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 ### fromJSONLines()
 
-> **fromJSONLines**\<`T`\>(`options`): `TransformStream`\<`string` \| `Uint8Array`\<`ArrayBufferLike`\>, `T`\>
+> **fromJSONLines**\<`T`\>(`options?`): `TransformStream`\<`string` \| `Uint8Array`\<`ArrayBufferLike`\>, `T`\>
 
 #### Type Parameters
 
@@ -232,7 +272,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Parameters
 
-##### options
+##### options?
 
 [`FromJSONLinesOptions`](#fromjsonlinesoptions)\<`T`\> = `{}`
 
@@ -318,7 +358,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 ### toJSONLines()
 
-> **toJSONLines**\<`T`\>(`encode`): `TransformStream`\<`T`, `string`\>
+> **toJSONLines**\<`T`\>(`encode?`): `TransformStream`\<`T`, `string`\>
 
 #### Type Parameters
 
@@ -328,7 +368,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 #### Parameters
 
-##### encode
+##### encode?
 
 [`EncodeJSON`](#encodejson)\<`T`\> = `safeStringify`
 

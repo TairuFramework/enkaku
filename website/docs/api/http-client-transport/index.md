@@ -12,17 +12,19 @@ npm install @enkaku/http-client-transport
 
 ### ClientTransport
 
-Base Transport class implementing TransportType.
-
 #### Extends
 
-- [`Transport`](../transport/index.md#transport)\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)\<`Protocol`\>\>
+- `Transport`\<`AnyServerMessageOf`\<`Protocol`\>, `AnyClientMessageOf`\<`Protocol`\>\>
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`
+
+#### Indexable
+
+> \[`key`: `number`\]: () => `Promise`\<`void`\>
 
 #### Constructors
 
@@ -42,7 +44,7 @@ Base Transport class implementing TransportType.
 
 ###### Overrides
 
-[`Transport`](../transport/index.md#transport).[`constructor`](../transport/index.md#constructor-1)
+`Transport< AnyServerMessageOf<Protocol>, AnyClientMessageOf<Protocol> >.constructor`
 
 #### Accessors
 
@@ -58,35 +60,23 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`disposed`](../transport/index.md#disposed-1)
+`Transport.disposed`
 
 ##### events
 
 ###### Get Signature
 
-> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](../transport/index.md#transportevents-1)\>
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitter)\<`TransportEvents`\>
 
 ###### Returns
 
-[`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](../transport/index.md#transportevents-1)\>
+[`EventEmitter`](../event/index.md#eventemitter)\<`TransportEvents`\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`events`](../transport/index.md#events)
+`Transport.events`
 
 #### Methods
-
-##### \[asyncDispose\]()
-
-> **\[asyncDispose\]**(): `Promise`\<`void`\>
-
-###### Returns
-
-`Promise`\<`void`\>
-
-###### Inherited from
-
-[`Transport`](../transport/index.md#transport).[`[asyncDispose]`](../transport/index.md#asyncdispose-2)
 
 ##### \[asyncIterator\]()
 
@@ -96,17 +86,17 @@ Base Transport class implementing TransportType.
 
 `object`
 
-###### next()
+###### next
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\>; \}\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`AnyServerMessageOf`\<`Protocol`\>\> \| \{ `done`: `true`; `value`: `NonNullable`\<`AnyServerMessageOf`\<`Protocol`\>\> \| `null`; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\>; \}\>
+`Promise`\<`ReadableStreamReadValueResult`\<`AnyServerMessageOf`\<`Protocol`\>\> \| \{ `done`: `true`; `value`: `NonNullable`\<`AnyServerMessageOf`\<`Protocol`\>\> \| `null`; \}\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`[asyncIterator]`](../transport/index.md#asynciterator)
+`Transport.[asyncIterator]`
 
 ##### dispose()
 
@@ -124,31 +114,31 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`dispose`](../transport/index.md#dispose-2)
+`Transport.dispose`
 
 ##### getWritable()
 
-> **getWritable**(): `WritableStream`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)\<`Protocol`\>\>
+> **getWritable**(): `WritableStream`\<`AnyClientMessageOf`\<`Protocol`\>\>
 
 ###### Returns
 
-`WritableStream`\<[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)\<`Protocol`\>\>
+`WritableStream`\<`AnyClientMessageOf`\<`Protocol`\>\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`getWritable`](../transport/index.md#getwritable)
+`Transport.getWritable`
 
 ##### read()
 
-> **read**(): `Promise`\<`ReadableStreamReadResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\>\>
+> **read**(): `Promise`\<`ReadableStreamReadResult`\<`AnyServerMessageOf`\<`Protocol`\>\>\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadResult`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\>\>
+`Promise`\<`ReadableStreamReadResult`\<`AnyServerMessageOf`\<`Protocol`\>\>\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`read`](../transport/index.md#read)
+`Transport.read`
 
 ##### write()
 
@@ -158,7 +148,7 @@ Base Transport class implementing TransportType.
 
 ###### value
 
-[`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)
+`AnyClientMessageOf`
 
 ###### Returns
 
@@ -166,7 +156,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`write`](../transport/index.md#write)
+`Transport.write`
 
 ***
 
@@ -216,43 +206,41 @@ Base Transport class implementing TransportType.
 
 #### Properties
 
+##### fetch?
+
+> `optional` **fetch?**: [`FetchFunction`](#fetchfunction)
+
+##### runtime?
+
+> `optional` **runtime?**: `Runtime`
+
 ##### url
 
 > **url**: `string`
 
 ***
 
-### EventStream
+### FetchFunction
 
-> **EventStream** = `object`
-
-#### Properties
-
-##### id
-
-> **id**: `string`
-
-##### source
-
-> **source**: `EventSource`
+> **FetchFunction** = *typeof* `globalThis.fetch`
 
 ***
 
 ### TransportStream
 
-> **TransportStream**\<`Protocol`\> = `ReadableWritablePair`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>, [`AnyClientMessageOf`](../protocol/index.md#anyclientmessageof)\<`Protocol`\>\> & `object`
+> **TransportStream**\<`Protocol`\> = `ReadableWritablePair`\<`AnyServerMessageOf`\<`Protocol`\>, `AnyClientMessageOf`\<`Protocol`\>\> & `object`
 
 #### Type Declaration
 
 ##### controller
 
-> **controller**: `ReadableStreamDefaultController`\<[`AnyServerMessageOf`](../protocol/index.md#anyservermessageof)\<`Protocol`\>\>
+> **controller**: `ReadableStreamDefaultController`\<`AnyServerMessageOf`\<`Protocol`\>\>
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` *extends* `ProtocolDefinition`
 
 ***
 
@@ -262,27 +250,19 @@ Base Transport class implementing TransportType.
 
 #### Properties
 
+##### fetch?
+
+> `optional` **fetch?**: [`FetchFunction`](#fetchfunction)
+
+##### runtime?
+
+> `optional` **runtime?**: `Runtime`
+
 ##### url
 
 > **url**: `string`
 
 ## Functions
-
-### createEventStream()
-
-> **createEventStream**(`url`): `Promise`\<[`EventStream`](#eventstream)\>
-
-#### Parameters
-
-##### url
-
-`string`
-
-#### Returns
-
-`Promise`\<[`EventStream`](#eventstream)\>
-
-***
 
 ### createTransportStream()
 

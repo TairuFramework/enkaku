@@ -14,7 +14,7 @@ const config: Config = {
   projectName: 'enkaku',
   onBrokenLinks: 'throw',
   future: {
-    experimental_faster: true,
+    faster: true,
     v4: true,
   },
   i18n: {

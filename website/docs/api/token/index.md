@@ -10,51 +10,177 @@ npm install @enkaku/token
 
 ## Type Aliases
 
-### GenericSigner
+### ConcatKDFParams
 
-> **GenericSigner** = `object`
+> **ConcatKDFParams** = `object`
 
 #### Properties
 
-##### algorithm
+##### algorithmID
 
-> **algorithm**: `SignatureAlgorithm`
+> **algorithmID**: `string`
 
-##### publicKey
+##### keyLength
 
-> **publicKey**: `Uint8Array`
+> **keyLength**: `number`
 
-##### sign()
+##### partyUInfo
 
-> **sign**: (`message`) => `Uint8Array` \| `Promise`\<`Uint8Array`\>
+> **partyUInfo**: `Uint8Array`
+
+##### partyVInfo
+
+> **partyVInfo**: `Uint8Array`
+
+##### sharedSecret
+
+> **sharedSecret**: `Uint8Array`
+
+***
+
+### DecryptingIdentity
+
+> **DecryptingIdentity** = [`Identity`](#identity) & `object`
+
+#### Type Declaration
+
+##### agreeKey()
+
+> **agreeKey**(`ephemeralPublicKey`): `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
 ###### Parameters
 
-###### message
+###### ephemeralPublicKey
 
 `Uint8Array`
 
 ###### Returns
 
-`Uint8Array` \| `Promise`\<`Uint8Array`\>
+`Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+##### decrypt()
+
+> **decrypt**(`jwe`): `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+###### Parameters
+
+###### jwe
+
+`string`
+
+###### Returns
+
+`Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
 ***
 
-### OwnSigner
+### EncryptOptions
 
-> **OwnSigner** = [`GenericSigner`](#genericsigner) & `object`
+> **EncryptOptions** = `object`
 
-#### Type Declaration
+#### Properties
 
-##### privateKey
+##### algorithm
 
-> **privateKey**: `Uint8Array`
+> **algorithm**: `"X25519"`
 
 ***
 
-### OwnTokenSigner
+### EnvelopeMode
 
-> **OwnTokenSigner** = [`TokenSigner`](#tokensigner) & `object`
+> **EnvelopeMode** = `"plain"` \| `"jws"` \| `"jws-in-jwe"` \| `"jwe-in-jws"`
+
+***
+
+### FullIdentity
+
+> **FullIdentity** = [`SigningIdentity`](#signingidentity) & [`DecryptingIdentity`](#decryptingidentity)
+
+***
+
+### Identity
+
+> **Identity** = `object`
+
+#### Properties
+
+##### id
+
+> `readonly` **id**: `string`
+
+***
+
+### IdentityProvider
+
+> **IdentityProvider**\<`T`\> = `object`
+
+#### Type Parameters
+
+##### T
+
+`T` *extends* [`SigningIdentity`](#signingidentity) = [`SigningIdentity`](#signingidentity)
+
+#### Methods
+
+##### provideIdentity()
+
+> **provideIdentity**(`keyID`): `Promise`\<`T`\>
+
+###### Parameters
+
+###### keyID
+
+`string`
+
+###### Returns
+
+`Promise`\<`T`\>
+
+***
+
+### JWEHeader
+
+> **JWEHeader** = `object`
+
+#### Properties
+
+##### alg
+
+> **alg**: `string`
+
+##### apu?
+
+> `optional` **apu?**: `string`
+
+##### apv?
+
+> `optional` **apv?**: `string`
+
+##### enc
+
+> **enc**: `string`
+
+##### epk
+
+> **epk**: `object`
+
+###### crv
+
+> **crv**: `string`
+
+###### kty
+
+> **kty**: `string`
+
+###### x
+
+> **x**: `string`
+
+***
+
+### OwnIdentity
+
+> **OwnIdentity** = [`FullIdentity`](#fullidentity) & `object`
 
 #### Type Declaration
 
@@ -98,31 +224,19 @@ npm install @enkaku/token
 
 ***
 
-### Token
+### SigningIdentity
 
-> **Token**\<`Payload`, `Header`\> = [`UnsignedToken`](#unsignedtoken)\<`Payload`, `Header`\> \| [`SignedToken`](#signedtoken)\<`Payload`, `Header`\> \| [`VerifiedToken`](#verifiedtoken)\<`Payload`, `Header`\>
+> **SigningIdentity** = [`Identity`](#identity) & `object`
 
-#### Type Parameters
+#### Type Declaration
 
-##### Payload
+##### publicKey
 
-`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+> **publicKey**: `Uint8Array`
 
-##### Header
+##### signToken
 
-`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
-
-***
-
-### TokenSigner
-
-> **TokenSigner** = `object`
-
-#### Properties
-
-##### createToken()
-
-> **createToken**: \<`Payload`, `Header`\>(`payload`, `header?`) => `Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
+> **signToken**: \<`Payload`, `Header`\>(`payload`, `header?`) => `Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
 
 ###### Type Parameters
 
@@ -148,9 +262,99 @@ npm install @enkaku/token
 
 `Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
 
-##### id
+***
 
-> **id**: `string`
+### TimeClaimsPayload
+
+> **TimeClaimsPayload** = `object`
+
+Payload with optional time-based claims.
+
+#### Properties
+
+##### exp?
+
+> `optional` **exp?**: `number`
+
+Expiration time (seconds since epoch)
+
+##### iat?
+
+> `optional` **iat?**: `number`
+
+Issued at time (seconds since epoch)
+
+##### nbf?
+
+> `optional` **nbf?**: `number`
+
+Not before time (seconds since epoch)
+
+***
+
+### TimeValidationOptions
+
+> **TimeValidationOptions** = `object`
+
+Options for time-based token validation.
+
+#### Properties
+
+##### atTime?
+
+> `optional` **atTime?**: `number`
+
+Current time in seconds. Defaults to now().
+
+##### clockTolerance?
+
+> `optional` **clockTolerance?**: `number`
+
+Clock skew tolerance in seconds. Defaults to 0.
+
+***
+
+### Token
+
+> **Token**\<`Payload`, `Header`\> = [`UnsignedToken`](#unsignedtoken)\<`Payload`, `Header`\> \| [`SignedToken`](#signedtoken)\<`Payload`, `Header`\> \| [`VerifiedToken`](#verifiedtoken)\<`Payload`, `Header`\>
+
+#### Type Parameters
+
+##### Payload
+
+`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+##### Header
+
+`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+***
+
+### TokenEncrypter
+
+> **TokenEncrypter** = `object`
+
+#### Properties
+
+##### recipientID?
+
+> `optional` **recipientID?**: `string`
+
+#### Methods
+
+##### encrypt()
+
+> **encrypt**(`plaintext`): `Promise`\<`string`\>
+
+###### Parameters
+
+###### plaintext
+
+`Uint8Array`
+
+###### Returns
+
+`Promise`\<`string`\>
 
 ***
 
@@ -172,7 +376,7 @@ npm install @enkaku/token
 
 ##### data?
 
-> `optional` **data**: `string`
+> `optional` **data?**: `string`
 
 ##### header
 
@@ -184,7 +388,39 @@ npm install @enkaku/token
 
 ##### signature?
 
-> `optional` **signature**: `undefined`
+> `optional` **signature?**: `undefined`
+
+***
+
+### UnwrapOptions
+
+> **UnwrapOptions** = `object`
+
+#### Properties
+
+##### decrypter?
+
+> `optional` **decrypter?**: [`DecryptingIdentity`](#decryptingidentity)
+
+##### verifiers?
+
+> `optional` **verifiers?**: `Verifiers`
+
+***
+
+### UnwrappedEnvelope
+
+> **UnwrappedEnvelope** = `object`
+
+#### Properties
+
+##### mode
+
+> **mode**: [`EnvelopeMode`](#envelopemode)
+
+##### payload
+
+> **payload**: `Record`\<`string`, `unknown`\>
 
 ***
 
@@ -208,9 +444,29 @@ npm install @enkaku/token
 
 `Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
+***
+
+### WrapOptions
+
+> **WrapOptions** = `object`
+
+#### Properties
+
+##### encrypter?
+
+> `optional` **encrypter?**: [`TokenEncrypter`](#tokenencrypter)
+
+##### header?
+
+> `optional` **header?**: `Record`\<`string`, `unknown`\>
+
+##### signer?
+
+> `optional` **signer?**: [`SigningIdentity`](#signingidentity)
+
 ## Variables
 
-### randomPrivateKey()
+### randomPrivateKey
 
 > `const` **randomPrivateKey**: (`seed?`) => `Uint8Array` = `ed25519.utils.randomSecretKey`
 
@@ -227,6 +483,146 @@ Generate a random private key.
 `Uint8Array`
 
 ## Functions
+
+### assertTimeClaimsValid()
+
+> **assertTimeClaimsValid**(`payload`, `options?`): `void`
+
+Validate time-based claims in a token payload.
+
+#### Parameters
+
+##### payload
+
+[`TimeClaimsPayload`](#timeclaimspayload)
+
+##### options?
+
+[`TimeValidationOptions`](#timevalidationoptions) = `{}`
+
+#### Returns
+
+`void`
+
+#### Throws
+
+Error if token is expired or not yet valid
+
+***
+
+### concatKDF()
+
+> **concatKDF**(`params`): `Uint8Array`
+
+Concat KDF per RFC 7518 Section 4.6.2.
+Single SHA-256 iteration (sufficient for 256-bit keys).
+
+#### Parameters
+
+##### params
+
+[`ConcatKDFParams`](#concatkdfparams)
+
+#### Returns
+
+`Uint8Array`
+
+***
+
+### createDecryptingIdentity()
+
+> **createDecryptingIdentity**(`privateKey`): [`DecryptingIdentity`](#decryptingidentity)
+
+Create a decrypting identity from an Ed25519 private key.
+Uses X25519 key derivation for ECDH key agreement.
+
+#### Parameters
+
+##### privateKey
+
+`Uint8Array`
+
+#### Returns
+
+[`DecryptingIdentity`](#decryptingidentity)
+
+***
+
+### createFullIdentity()
+
+> **createFullIdentity**(`privateKey`): [`FullIdentity`](#fullidentity)
+
+Create a full identity (signing + decrypting) from an Ed25519 private key.
+
+#### Parameters
+
+##### privateKey
+
+`Uint8Array`
+
+#### Returns
+
+[`FullIdentity`](#fullidentity)
+
+***
+
+### createSigningIdentity()
+
+> **createSigningIdentity**(`privateKey`): [`SigningIdentity`](#signingidentity)
+
+Create a signing identity from an Ed25519 private key.
+
+#### Parameters
+
+##### privateKey
+
+`Uint8Array`
+
+#### Returns
+
+[`SigningIdentity`](#signingidentity)
+
+***
+
+### createTokenEncrypter()
+
+#### Call Signature
+
+> **createTokenEncrypter**(`recipient`, `options`): [`TokenEncrypter`](#tokenencrypter)
+
+Create a token encrypter for a recipient identified by X25519 public key or DID string.
+
+##### Parameters
+
+###### recipient
+
+`Uint8Array`
+
+###### options
+
+[`EncryptOptions`](#encryptoptions)
+
+##### Returns
+
+[`TokenEncrypter`](#tokenencrypter)
+
+#### Call Signature
+
+> **createTokenEncrypter**(`recipient`): [`TokenEncrypter`](#tokenencrypter)
+
+Create a token encrypter for a recipient identified by X25519 public key or DID string.
+
+##### Parameters
+
+###### recipient
+
+`string`
+
+##### Returns
+
+[`TokenEncrypter`](#tokenencrypter)
+
+***
 
 ### createUnsignedToken()
 
@@ -278,6 +674,28 @@ Convert a base64-encoded string to a Uint8Array.
 
 ***
 
+### decryptToken()
+
+> **decryptToken**(`decrypter`, `jwe`): `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+Decrypt a JWE compact serialization string.
+
+#### Parameters
+
+##### decrypter
+
+[`DecryptingIdentity`](#decryptingidentity)
+
+##### jwe
+
+`string`
+
+#### Returns
+
+`Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
+
+***
+
 ### encodePrivateKey()
 
 > **encodePrivateKey**(`bytes`): `string`
@@ -296,43 +714,57 @@ Convert a Uint8Array to a base64-encoded string.
 
 ***
 
-### getSigner()
+### encryptToken()
 
-> **getSigner**(`privateKey`, `publicKey?`): [`GenericSigner`](#genericsigner)
+> **encryptToken**(`encrypter`, `plaintext`): `Promise`\<`string`\>
 
-Create a generic signer object for the given private key.
+Encrypt plaintext to JWE compact serialization using the given encrypter.
 
 #### Parameters
 
-##### privateKey
+##### encrypter
 
-`string` | `Uint8Array`\<`ArrayBufferLike`\>
+[`TokenEncrypter`](#tokenencrypter)
 
-##### publicKey?
+##### plaintext
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 #### Returns
 
-[`GenericSigner`](#genericsigner)
+`Promise`\<`string`\>
 
 ***
 
-### getTokenSigner()
+### isDecryptingIdentity()
 
-> **getTokenSigner**(`privateKey`): [`TokenSigner`](#tokensigner)
-
-Create a token signer object for the given private key.
+> **isDecryptingIdentity**(`identity`): `identity is DecryptingIdentity`
 
 #### Parameters
 
-##### privateKey
+##### identity
 
-`string` | `Uint8Array`\<`ArrayBufferLike`\>
+[`Identity`](#identity)
 
 #### Returns
 
-[`TokenSigner`](#tokensigner)
+`identity is DecryptingIdentity`
+
+***
+
+### isFullIdentity()
+
+> **isFullIdentity**(`identity`): `identity is FullIdentity`
+
+#### Parameters
+
+##### identity
+
+[`Identity`](#identity)
+
+#### Returns
+
+`identity is FullIdentity`
 
 ***
 
@@ -357,6 +789,22 @@ Check if a token is signed.
 #### Returns
 
 `token is SignedToken<Payload>`
+
+***
+
+### isSigningIdentity()
+
+> **isSigningIdentity**(`identity`): `identity is SigningIdentity`
+
+#### Parameters
+
+##### identity
+
+[`Identity`](#identity)
+
+#### Returns
+
+`identity is SigningIdentity`
 
 ***
 
@@ -408,27 +856,27 @@ Check if a token is verified.
 
 ***
 
-### randomSigner()
+### now()
 
-> **randomSigner**(): [`OwnSigner`](#ownsigner)
+> **now**(): `number`
 
-Generate a generic signer object with a random private key.
+Get the current time in seconds since Unix epoch.
 
 #### Returns
 
-[`OwnSigner`](#ownsigner)
+`number`
 
 ***
 
-### randomTokenSigner()
+### randomIdentity()
 
-> **randomTokenSigner**(): [`OwnTokenSigner`](#owntokensigner)
+> **randomIdentity**(): [`OwnIdentity`](#ownidentity)
 
-Generate a token signer object with a random private key.
+Generate a random identity with a new Ed25519 private key.
 
 #### Returns
 
-[`OwnTokenSigner`](#owntokensigner)
+[`OwnIdentity`](#ownidentity)
 
 ***
 
@@ -452,7 +900,7 @@ Sign a token object if not already signed.
 
 ##### signer
 
-[`TokenSigner`](#tokensigner)
+[`SigningIdentity`](#signingidentity)
 
 ##### token
 
@@ -482,29 +930,34 @@ Convert a Token object to its JWT string representation.
 
 ***
 
-### toTokenSigner()
+### unwrapEnvelope()
 
-> **toTokenSigner**(`signer`): [`TokenSigner`](#tokensigner)
+> **unwrapEnvelope**(`message`, `options`): `Promise`\<[`UnwrappedEnvelope`](#unwrappedenvelope)\>
 
-Create a token signer from a generic signer.
+Unwrap a token string, auto-detecting the envelope mode from its structure.
 
 #### Parameters
 
-##### signer
+##### message
 
-[`GenericSigner`](#genericsigner)
+`string`
+
+##### options
+
+[`UnwrapOptions`](#unwrapoptions)
 
 #### Returns
 
-[`TokenSigner`](#tokensigner)
+`Promise`\<[`UnwrappedEnvelope`](#unwrappedenvelope)\>
 
 ***
 
 ### verifyToken()
 
-> **verifyToken**\<`Payload`\>(`token`, `verifiers?`): `Promise`\<[`Token`](#token)\<`Payload`\>\>
+> **verifyToken**\<`Payload`\>(`token`, `verifiers?`, `timeOptions?`): `Promise`\<[`Token`](#token)\<`Payload`\>\>
 
 Verify a token is either unsigned or signed with a valid signature.
+Also validates time-based claims (exp, nbf) if present.
 
 #### Type Parameters
 
@@ -516,12 +969,42 @@ Verify a token is either unsigned or signed with a valid signature.
 
 ##### token
 
-`string` | [`Token`](#token)\<`Payload`\>
+`string` \| [`Token`](#token)\<`Payload`\>
 
 ##### verifiers?
 
 `Partial`\<`Record`\<`"EdDSA"` \| `"ES256"`, `Verifier`\>\>
 
+##### timeOptions?
+
+[`TimeValidationOptions`](#timevalidationoptions)
+
 #### Returns
 
 `Promise`\<[`Token`](#token)\<`Payload`\>\>
+
+***
+
+### wrapEnvelope()
+
+> **wrapEnvelope**(`mode`, `payload`, `options`): `Promise`\<`string`\>
+
+Wrap a payload into a token string according to the specified envelope mode.
+
+#### Parameters
+
+##### mode
+
+[`EnvelopeMode`](#envelopemode)
+
+##### payload
+
+`Record`\<`string`, `unknown`\>
+
+##### options
+
+[`WrapOptions`](#wrapoptions)
+
+#### Returns
+
+`Promise`\<`string`\>

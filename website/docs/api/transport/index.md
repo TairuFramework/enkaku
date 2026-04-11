@@ -28,15 +28,19 @@ Create direct Transports for communication between a client and server in the sa
 
 `ToServer`
 
+#### Indexable
+
+> \[`key`: `number`\]: () => `Promise`\<`void`\>
+
 #### Constructors
 
 ##### Constructor
 
-> **new DirectTransports**\<`ToClient`, `ToServer`\>(`options`): [`DirectTransports`](#directtransports)\<`ToClient`, `ToServer`\>
+> **new DirectTransports**\<`ToClient`, `ToServer`\>(`options?`): [`DirectTransports`](#directtransports)\<`ToClient`, `ToServer`\>
 
 ###### Parameters
 
-###### options
+###### options?
 
 [`DirectTransportsOptions`](#directtransportsoptions) = `{}`
 
@@ -86,18 +90,6 @@ Create direct Transports for communication between a client and server in the sa
 
 #### Methods
 
-##### \[asyncDispose\]()
-
-> **\[asyncDispose\]**(): `Promise`\<`void`\>
-
-###### Returns
-
-`Promise`\<`void`\>
-
-###### Inherited from
-
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose)
-
 ##### dispose()
 
 > **dispose**(`reason?`): `Promise`\<`void`\>
@@ -126,14 +118,6 @@ Base Transport class implementing TransportType.
 
 - [`Disposer`](../async/index.md#disposer)
 
-#### Extended by
-
-- [`ClientTransport`](../http-client-transport/index.md#clienttransport)
-- [`ServerTransport`](../http-server-transport/index.md#servertransport)
-- [`MessageTransport`](../message-transport/index.md#messagetransport)
-- [`NodeStreamsTransport`](../node-streams-transport/index.md#nodestreamstransport)
-- [`SocketTransport`](../socket-transport/index.md#sockettransport)
-
 #### Type Parameters
 
 ##### R
@@ -147,6 +131,10 @@ Base Transport class implementing TransportType.
 #### Implements
 
 - [`TransportType`](#transporttype)\<`R`, `W`\>
+
+#### Indexable
+
+> \[`key`: `number`\]: () => `Promise`\<`void`\>
 
 #### Constructors
 
@@ -200,25 +188,9 @@ Base Transport class implementing TransportType.
 
 ###### Implementation of
 
-`__type`.`events`
+`TransportType.events`
 
 #### Methods
-
-##### \[asyncDispose\]()
-
-> **\[asyncDispose\]**(): `Promise`\<`void`\>
-
-###### Returns
-
-`Promise`\<`void`\>
-
-###### Implementation of
-
-`TransportType.[asyncDispose]`
-
-###### Inherited from
-
-[`Disposer`](../async/index.md#disposer).[`[asyncDispose]`](../async/index.md#asyncdispose)
 
 ##### \[asyncIterator\]()
 
@@ -228,17 +200,17 @@ Base Transport class implementing TransportType.
 
 `object`
 
-###### next()
+###### next
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<`R`\>; \}\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{ `done`: `true`; `value`: `NonNullable`\<`R`\> \| `null`; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<`R`\>; \}\>
+`Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{ `done`: `true`; `value`: `NonNullable`\<`R`\> \| `null`; \}\>
 
 ###### Implementation of
 
-`__type`.`[asyncIterator]`
+`TransportType.[asyncIterator]`
 
 ##### dispose()
 
@@ -272,7 +244,7 @@ Base Transport class implementing TransportType.
 
 ###### Implementation of
 
-`__type`.`getWritable`
+`TransportType.getWritable`
 
 ##### read()
 
@@ -284,7 +256,7 @@ Base Transport class implementing TransportType.
 
 ###### Implementation of
 
-`__type`.`read`
+`TransportType.read`
 
 ##### write()
 
@@ -302,7 +274,7 @@ Base Transport class implementing TransportType.
 
 ###### Implementation of
 
-`__type`.`write`
+`TransportType.write`
 
 ## Type Aliases
 
@@ -314,7 +286,7 @@ Base Transport class implementing TransportType.
 
 ##### signal?
 
-> `optional` **signal**: `AbortSignal`
+> `optional` **signal?**: `AbortSignal`
 
 ***
 
@@ -340,7 +312,7 @@ Base Transport class implementing TransportType.
 
 ### TransportInput
 
-> **TransportInput**\<`R`, `W`\> = [`TransportStream`](#transportstream)\<`R`, `W`\> \| () => [`TransportStream`](#transportstream)\<`R`, `W`\>
+> **TransportInput**\<`R`, `W`\> = [`TransportStream`](#transportstream)\<`R`, `W`\> \| (() => [`TransportStream`](#transportstream)\<`R`, `W`\>)
 
 #### Type Parameters
 
@@ -372,7 +344,7 @@ Base Transport class implementing TransportType.
 
 ##### signal?
 
-> `optional` **signal**: `AbortSignal`
+> `optional` **signal?**: `AbortSignal`
 
 ##### stream
 
@@ -404,7 +376,7 @@ Generic Transport object type implementing read and write functions.
 
 #### Type Declaration
 
-##### getWritable()
+##### getWritable
 
 > **getWritable**: () => `WritableStream`\<`W`\>
 
@@ -412,7 +384,7 @@ Generic Transport object type implementing read and write functions.
 
 `WritableStream`\<`W`\>
 
-##### read()
+##### read
 
 > **read**: () => `Promise`\<`ReadableStreamReadResult`\<`R`\>\>
 
@@ -420,7 +392,7 @@ Generic Transport object type implementing read and write functions.
 
 `Promise`\<`ReadableStreamReadResult`\<`R`\>\>
 
-##### write()
+##### write
 
 > **write**: (`value`) => `Promise`\<`void`\>
 
@@ -446,11 +418,11 @@ Generic Transport object type implementing read and write functions.
 
 ##### \[asyncIterator\]()
 
-> **\[asyncIterator\]**(): `AsyncIterator`\<`R`, `null` \| `R`\>
+> **\[asyncIterator\]**(): `AsyncIterator`\<`R`, `R` \| `null`\>
 
 ###### Returns
 
-`AsyncIterator`\<`R`, `null` \| `R`\>
+`AsyncIterator`\<`R`, `R` \| `null`\>
 
 #### Type Parameters
 

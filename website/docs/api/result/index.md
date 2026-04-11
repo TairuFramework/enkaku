@@ -12,10 +12,6 @@ npm install @enkaku/result
 
 ### AsyncResult
 
-#### Extended by
-
-- [`Execution`](../execution/index.md#execution)
-
 #### Type Parameters
 
 ##### V
@@ -68,11 +64,11 @@ npm install @enkaku/result
 
 ###### Get Signature
 
-> **get** **orNull**(): `Promise`\<`null` \| `V`\>
+> **get** **orNull**(): `Promise`\<`V` \| `null`\>
 
 ###### Returns
 
-`Promise`\<`null` \| `V`\>
+`Promise`\<`V` \| `null`\>
 
 ##### value
 
@@ -164,15 +160,15 @@ Attaches callbacks for the resolution and/or rejection of the Promise.
 
 ###### onfulfilled?
 
-The callback to execute when the Promise is resolved.
+((`value`) => `TResult1` \| `PromiseLike`\<`TResult1`\>) \| `null`
 
-`null` | (`value`) => `TResult1` \| `PromiseLike`\<`TResult1`\>
+The callback to execute when the Promise is resolved.
 
 ###### onrejected?
 
-The callback to execute when the Promise is rejected.
+((`reason`) => `TResult2` \| `PromiseLike`\<`TResult2`\>) \| `null`
 
-`null` | (`reason`) => `TResult2` \| `PromiseLike`\<`TResult2`\>
+The callback to execute when the Promise is rejected.
 
 ###### Returns
 
@@ -322,7 +318,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### value
 
-`V` | `PromiseLike`\<`V`\>
+`V` \| `PromiseLike`\<`V`\>
 
 ###### Returns
 
@@ -360,11 +356,11 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Get Signature
 
-> **get** **orNull**(): `null` \| `V`
+> **get** **orNull**(): `V` \| `null`
 
 ###### Returns
 
-`null` \| `V`
+`V` \| `null`
 
 ##### orThrow
 
@@ -558,11 +554,11 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Get Signature
 
-> **get** **error**(): `null` \| `E`
+> **get** **error**(): `E` \| `null`
 
 ###### Returns
 
-`null` \| `E`
+`E` \| `null`
 
 ##### optional
 
@@ -578,11 +574,11 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Get Signature
 
-> **get** **orNull**(): `null` \| `V`
+> **get** **orNull**(): `V` \| `null`
 
 ###### Returns
 
-`null` \| `V`
+`V` \| `null`
 
 ##### value
 

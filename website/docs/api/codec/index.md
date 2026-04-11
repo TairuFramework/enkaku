@@ -12,7 +12,7 @@ npm install @enkaku/codec
 
 ### b64uFromJSON()
 
-> **b64uFromJSON**(`value`, `canonicalize`): `string`
+> **b64uFromJSON**(`value`, `canonicalize?`): `string`
 
 Convert a JSON object to a base64url-encoded string.
 
@@ -22,7 +22,7 @@ Convert a JSON object to a base64url-encoded string.
 
 `Record`\<`string`, `unknown`\>
 
-##### canonicalize
+##### canonicalize?
 
 `boolean` = `true`
 
@@ -112,7 +112,7 @@ Convert a base64-encoded string to a Uint8Array.
 
 ### fromB64U()
 
-> **fromB64U**(`base64url`): `Uint8Array`\<`ArrayBufferLike`\>
+> **fromB64U**(`base64url`): `Uint8Array`
 
 Convert a base64url-encoded string to a Uint8Array.
 
@@ -124,7 +124,7 @@ Convert a base64url-encoded string to a Uint8Array.
 
 #### Returns
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`Uint8Array`
 
 ***
 

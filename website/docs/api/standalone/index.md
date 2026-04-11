@@ -22,35 +22,35 @@ npm install @enkaku/standalone
 
 #### Properties
 
-##### access?
+##### accessControl?
 
-> `optional` **access**: [`ProcedureAccessRecord`](../server/index.md#procedureaccessrecord)
+> `optional` **accessControl?**: `false` \| `true` \| [`ProcedureAccessRecord`](../server/index.md#procedureaccessrecord)
 
-##### getRandomID()?
+##### getRandomID?
 
-> `optional` **getRandomID**: () => `string`
+> `optional` **getRandomID?**: () => `string`
 
 ###### Returns
 
 `string`
 
+##### identity?
+
+> `optional` **identity?**: `Identity`
+
 ##### protocol?
 
-> `optional` **protocol**: `Protocol`
+> `optional` **protocol?**: `Protocol`
 
 ##### signal?
 
-> `optional` **signal**: `AbortSignal`
-
-##### signer?
-
-> `optional` **signer**: [`TokenSigner`](../token/index.md#tokensigner)
+> `optional` **signal?**: `AbortSignal`
 
 ## Functions
 
 ### standalone()
 
-> **standalone**\<`Protocol`\>(`handlers`, `options`): [`Client`](../client/index.md#client)\<`Protocol`\>
+> **standalone**\<`Protocol`\>(`handlers`, `options?`): [`Client`](../client/index.md#client)\<`Protocol`\>
 
 #### Type Parameters
 
@@ -64,7 +64,7 @@ npm install @enkaku/standalone
 
 [`ProcedureHandlers`](../server/index.md#procedurehandlers)\<`Protocol`\>
 
-##### options
+##### options?
 
 [`StandaloneOptions`](#standaloneoptions)\<`Protocol`\> = `{}`
 

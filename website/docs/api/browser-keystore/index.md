@@ -14,7 +14,7 @@ npm install @enkaku/browser-keystore
 
 #### Implements
 
-- [`KeyEntry`](../protocol/index.md#keyentry)\<`CryptoKeyPair`\>
+- `KeyEntry`\<`CryptoKeyPair`\>
 
 #### Constructors
 
@@ -50,21 +50,21 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-[`KeyEntry`](../protocol/index.md#keyentry).[`keyID`](../protocol/index.md#keyid)
+`KeyEntry.keyID`
 
 #### Methods
 
 ##### getAsync()
 
-> **getAsync**(): `Promise`\<`null` \| `CryptoKeyPair`\>
+> **getAsync**(): `Promise`\<`CryptoKeyPair` \| `null`\>
 
 ###### Returns
 
-`Promise`\<`null` \| `CryptoKeyPair`\>
+`Promise`\<`CryptoKeyPair` \| `null`\>
 
 ###### Implementation of
 
-[`KeyEntry`](../protocol/index.md#keyentry).[`getAsync`](../protocol/index.md#getasync)
+`KeyEntry.getAsync`
 
 ##### provideAsync()
 
@@ -76,7 +76,7 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-[`KeyEntry`](../protocol/index.md#keyentry).[`provideAsync`](../protocol/index.md#provideasync)
+`KeyEntry.provideAsync`
 
 ##### removeAsync()
 
@@ -88,7 +88,7 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-[`KeyEntry`](../protocol/index.md#keyentry).[`removeAsync`](../protocol/index.md#removeasync)
+`KeyEntry.removeAsync`
 
 ##### setAsync()
 
@@ -106,7 +106,7 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-[`KeyEntry`](../protocol/index.md#keyentry).[`setAsync`](../protocol/index.md#setasync)
+`KeyEntry.setAsync`
 
 ***
 
@@ -114,7 +114,7 @@ npm install @enkaku/browser-keystore
 
 #### Implements
 
-- [`KeyStore`](../protocol/index.md#keystore)\<`CryptoKeyPair`, [`BrowserKeyEntry`](#browserkeyentry)\>
+- `KeyStore`\<`CryptoKeyPair`, [`BrowserKeyEntry`](#browserkeyentry)\>
 
 #### Constructors
 
@@ -150,15 +150,15 @@ npm install @enkaku/browser-keystore
 
 ###### Implementation of
 
-[`KeyStore`](../protocol/index.md#keystore).[`entry`](../protocol/index.md#entry)
+`KeyStore.entry`
 
 ##### open()
 
-> `static` **open**(`name`): `Promise`\<[`BrowserKeyStore`](#browserkeystore)\>
+> `static` **open**(`name?`): `Promise`\<[`BrowserKeyStore`](#browserkeystore)\>
 
 ###### Parameters
 
-###### name
+###### name?
 
 `string` = `DEFAULT_DB_NAME`
 
@@ -184,25 +184,9 @@ npm install @enkaku/browser-keystore
 
 ***
 
-### getSigner()
+### provideSigningIdentity()
 
-> **getSigner**(`keyPair`): `Promise`\<[`GenericSigner`](../token/index.md#genericsigner)\>
-
-#### Parameters
-
-##### keyPair
-
-`CryptoKeyPair`
-
-#### Returns
-
-`Promise`\<[`GenericSigner`](../token/index.md#genericsigner)\>
-
-***
-
-### provideTokenSigner()
-
-> **provideTokenSigner**(`keyID`, `useStore?`): `Promise`\<[`TokenSigner`](../token/index.md#tokensigner)\>
+> **provideSigningIdentity**(`keyID`, `useStore?`): `Promise`\<`SigningIdentity`\>
 
 #### Parameters
 
@@ -212,11 +196,11 @@ npm install @enkaku/browser-keystore
 
 ##### useStore?
 
-`string` | [`BrowserKeyStore`](#browserkeystore) | `Promise`\<[`BrowserKeyStore`](#browserkeystore)\>
+`string` \| [`BrowserKeyStore`](#browserkeystore) \| `Promise`\<[`BrowserKeyStore`](#browserkeystore)\>
 
 #### Returns
 
-`Promise`\<[`TokenSigner`](../token/index.md#tokensigner)\>
+`Promise`\<`SigningIdentity`\>
 
 ***
 

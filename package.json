@@ -18,9 +18,8 @@
     "test": "turbo run test:unit",
     "build:js": "turbo run build:js",
     "build:types": "pnpm run -r build:types",
-    "build:types:ci": "pnpm run -r build:types:ci",
     "build": "pnpm run build:types && pnpm run build:js",
-    "build:ci": "pnpm run build:types:ci && pnpm run build:js"
+    "build:ci": "pnpm run build:types && pnpm run build:js"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

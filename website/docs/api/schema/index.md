@@ -40,7 +40,7 @@ Aggregate of errors raised when validating a `data` input against a JSON `schema
 
 ###### errorObjects?
 
-`null` | `ErrorObject`\<`string`, `Record`\<`string`, `any`\>, `unknown`\>[]
+`ErrorObject`\<`string`, `Record`\<`string`, `any`\>, `unknown`\>[] \| `null`
 
 ###### Returns
 
@@ -160,7 +160,7 @@ JSON schema type used by the library.
 
 ***
 
-### Validator()
+### Validator
 
 > **Validator**\<`T`\> = (`value`) => `StandardSchemaV1.Result`\<`T`\>
 

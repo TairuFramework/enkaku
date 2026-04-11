@@ -12,11 +12,9 @@ npm install @enkaku/message-transport
 
 ### MessageTransport
 
-Base Transport class implementing TransportType.
-
 #### Extends
 
-- [`Transport`](../transport/index.md#transport)\<`R`, `W`\>
+- `Transport`\<`R`, `W`\>
 
 #### Type Parameters
 
@@ -27,6 +25,10 @@ Base Transport class implementing TransportType.
 ##### W
 
 `W`
+
+#### Indexable
+
+> \[`key`: `number`\]: () => `Promise`\<`void`\>
 
 #### Constructors
 
@@ -46,7 +48,7 @@ Base Transport class implementing TransportType.
 
 ###### Overrides
 
-[`Transport`](../transport/index.md#transport).[`constructor`](../transport/index.md#constructor-1)
+`Transport<R, W>.constructor`
 
 #### Accessors
 
@@ -62,35 +64,23 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`disposed`](../transport/index.md#disposed-1)
+`Transport.disposed`
 
 ##### events
 
 ###### Get Signature
 
-> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](../transport/index.md#transportevents-1)\>
+> **get** **events**(): [`EventEmitter`](../event/index.md#eventemitter)\<`TransportEvents`\>
 
 ###### Returns
 
-[`EventEmitter`](../event/index.md#eventemitter)\<[`TransportEvents`](../transport/index.md#transportevents-1)\>
+[`EventEmitter`](../event/index.md#eventemitter)\<`TransportEvents`\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`events`](../transport/index.md#events)
+`Transport.events`
 
 #### Methods
-
-##### \[asyncDispose\]()
-
-> **\[asyncDispose\]**(): `Promise`\<`void`\>
-
-###### Returns
-
-`Promise`\<`void`\>
-
-###### Inherited from
-
-[`Transport`](../transport/index.md#transport).[`[asyncDispose]`](../transport/index.md#asyncdispose-2)
 
 ##### \[asyncIterator\]()
 
@@ -100,17 +90,17 @@ Base Transport class implementing TransportType.
 
 `object`
 
-###### next()
+###### next
 
-> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<`R`\>; \}\>
+> **next**: () => `Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{ `done`: `true`; `value`: `NonNullable`\<`R`\> \| `null`; \}\>
 
 ###### Returns
 
-`Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{ `done`: `true`; `value`: `null` \| `NonNullable`\<`R`\>; \}\>
+`Promise`\<`ReadableStreamReadValueResult`\<`R`\> \| \{ `done`: `true`; `value`: `NonNullable`\<`R`\> \| `null`; \}\>
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`[asyncIterator]`](../transport/index.md#asynciterator)
+`Transport.[asyncIterator]`
 
 ##### dispose()
 
@@ -128,7 +118,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`dispose`](../transport/index.md#dispose-2)
+`Transport.dispose`
 
 ##### getWritable()
 
@@ -140,7 +130,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`getWritable`](../transport/index.md#getwritable)
+`Transport.getWritable`
 
 ##### read()
 
@@ -152,7 +142,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`read`](../transport/index.md#read)
+`Transport.read`
 
 ##### write()
 
@@ -170,7 +160,7 @@ Base Transport class implementing TransportType.
 
 ###### Inherited from
 
-[`Transport`](../transport/index.md#transport).[`write`](../transport/index.md#write)
+`Transport.write`
 
 ## Type Aliases
 
@@ -186,7 +176,7 @@ Base Transport class implementing TransportType.
 
 ##### signal?
 
-> `optional` **signal**: `AbortSignal`
+> `optional` **signal?**: `AbortSignal`
 
 ***
 
@@ -198,7 +188,7 @@ Base Transport class implementing TransportType.
 
 ### PortSource
 
-> **PortSource** = [`PortOrPromise`](#portorpromise) \| () => [`PortOrPromise`](#portorpromise)
+> **PortSource** = [`PortOrPromise`](#portorpromise) \| (() => [`PortOrPromise`](#portorpromise))
 
 ## Functions
 

@@ -70,7 +70,7 @@ npm install @enkaku/flow
 
 ##### stateValidator?
 
-> `optional` **stateValidator**: [`Validator`](../schema/index.md#validator)\<`State`\>
+> `optional` **stateValidator?**: `Validator`\<`State`\>
 
 ***
 
@@ -168,11 +168,11 @@ npm install @enkaku/flow
 
 ##### action?
 
-> `optional` **action**: [`FlowAction`](#flowaction)\<`State`, `Handlers`\>
+> `optional` **action?**: [`FlowAction`](#flowaction)\<`State`, `Handlers`\>
 
 ##### signal?
 
-> `optional` **signal**: `AbortSignal`
+> `optional` **signal?**: `AbortSignal`
 
 ##### state
 
@@ -198,15 +198,15 @@ npm install @enkaku/flow
 
 ##### action?
 
-> `optional` **action**: [`FlowAction`](#flowaction)\<`State`, `Handlers`\>
+> `optional` **action?**: [`FlowAction`](#flowaction)\<`State`, `Handlers`\>
 
 ##### signal?
 
-> `optional` **signal**: `AbortSignal`
+> `optional` **signal?**: `AbortSignal`
 
 ##### state?
 
-> `optional` **state**: `State`
+> `optional` **state?**: `State`
 
 ***
 
@@ -256,11 +256,11 @@ npm install @enkaku/flow
 
 ##### signal?
 
-> `optional` **signal**: `AbortSignal`
+> `optional` **signal?**: `AbortSignal`
 
 ***
 
-### Handler()
+### Handler
 
 > **Handler**\<`State`, `Params`, `Events`\> = (`context`) => [`GeneratorValue`](#generatorvalue)\<`State`\> \| `Promise`\<[`GeneratorValue`](#generatorvalue)\<`State`\>\>
 
@@ -390,17 +390,7 @@ npm install @enkaku/flow
 
 #### Returns
 
-> (`params`): [`FlowGenerator`](#flowgenerator)\<`State`, `Handlers`\>
-
-##### Parameters
-
-###### params
-
-[`GenerateFlowParams`](#generateflowparams)\<`State`, `Handlers`\>
-
-##### Returns
-
-[`FlowGenerator`](#flowgenerator)\<`State`, `Handlers`\>
+(`params`) => [`FlowGenerator`](#flowgenerator)\<`State`, `Handlers`\>
 
 ***
 

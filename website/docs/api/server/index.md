@@ -104,7 +104,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### handle()
 
-> **handle**(`transport`, `options`): `Promise`\<`void`\>
+> **handle**(`transport`, `options?`): `Promise`\<`void`\>
 
 ###### Parameters
 
@@ -112,7 +112,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 [`ServerTransportOf`](../protocol/index.md#servertransportof)\<`Protocol`\>
 
-###### options
+###### options?
 
 `HandleOptions` = `{}`
 
@@ -154,7 +154,13 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
-### EventHandler()
+### EncryptionPolicy
+
+> **EncryptionPolicy** = `"required"` \| `"optional"` \| `"none"`
+
+***
+
+### EventHandler
 
 > **EventHandler**\<`Protocol`, `Procedure`\> = (`context`) => `void` \| `Promise`\<`void`\>
 
@@ -212,9 +218,31 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
+### ProcedureAccessConfig
+
+> **ProcedureAccessConfig** = `object`
+
+#### Properties
+
+##### allow?
+
+> `optional` **allow?**: `boolean` \| `string`[]
+
+##### encryption?
+
+> `optional` **encryption?**: [`EncryptionPolicy`](#encryptionpolicy)
+
+***
+
 ### ProcedureAccessRecord
 
-> **ProcedureAccessRecord** = `Record`\<`string`, `boolean` \| `string`[]\>
+> **ProcedureAccessRecord** = `Record`\<`string`, [`ProcedureAccessValue`](#procedureaccessvalue)\>
+
+***
+
+### ProcedureAccessValue
+
+> **ProcedureAccessValue** = `boolean` \| `string`[] \| [`ProcedureAccessConfig`](#procedureaccessconfig)
 
 ***
 
@@ -262,6 +290,124 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ***
 
+### ResourceLimiter
+
+> **ResourceLimiter** = `object`
+
+#### Properties
+
+##### acquireHandler
+
+> **acquireHandler**: () => `boolean`
+
+###### Returns
+
+`boolean`
+
+##### activeHandlers
+
+> **activeHandlers**: `number`
+
+##### addController
+
+> **addController**: (`rid`) => `void`
+
+###### Parameters
+
+###### rid
+
+`string`
+
+###### Returns
+
+`void`
+
+##### canAddController
+
+> **canAddController**: () => `boolean`
+
+###### Returns
+
+`boolean`
+
+##### controllerCount
+
+> **controllerCount**: `number`
+
+##### getExpiredControllers
+
+> **getExpiredControllers**: () => `string`[]
+
+###### Returns
+
+`string`[]
+
+##### limits
+
+> **limits**: [`ResourceLimits`](#resourcelimits)
+
+##### releaseHandler
+
+> **releaseHandler**: () => `void`
+
+###### Returns
+
+`void`
+
+##### removeController
+
+> **removeController**: (`rid`) => `void`
+
+###### Parameters
+
+###### rid
+
+`string`
+
+###### Returns
+
+`void`
+
+***
+
+### ResourceLimits
+
+> **ResourceLimits** = `object`
+
+#### Properties
+
+##### cleanupTimeoutMs
+
+> **cleanupTimeoutMs**: `number`
+
+Cleanup timeout in milliseconds when disposing. Default: 30000 (30 sec)
+
+##### controllerTimeoutMs
+
+> **controllerTimeoutMs**: `number`
+
+Controller timeout in milliseconds. Default: 300000 (5 min)
+
+##### maxConcurrentHandlers
+
+> **maxConcurrentHandlers**: `number`
+
+Maximum number of concurrent handler executions. Default: 100
+
+##### maxControllers
+
+> **maxControllers**: `number`
+
+Maximum number of concurrent controllers (in-flight requests). Default: 10000
+
+##### maxMessageSize
+
+> **maxMessageSize**: `number`
+
+Maximum size in bytes for any individual message payload. Default: 10485760 (10 MB)
+
+***
+
 ### ServeParams
 
 > **ServeParams**\<`Protocol`\> = `Omit`\<[`ServerParams`](#serverparams)\<`Protocol`\>, `"transports"`\> & `object`
@@ -292,6 +438,18 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Properties
 
+##### eventAuthError
+
+> **eventAuthError**: `object`
+
+###### error
+
+> **error**: `HandlerError`\<`string`\>
+
+###### payload
+
+> **payload**: `Record`\<`string`, `unknown`\>
+
 ##### handlerAbort
 
 > **handlerAbort**: `object`
@@ -306,15 +464,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### error
 
-> **error**: `Error`
+> **error**: `HandlerError`\<`string`\>
 
 ###### payload
 
 > **payload**: `Record`\<`string`, `unknown`\>
-
-###### rid?
-
-> `optional` **rid**: `string`
 
 ##### handlerTimeout
 
@@ -350,33 +504,61 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 #### Properties
 
-##### access?
+##### accessControl?
 
-> `optional` **access**: [`ProcedureAccessRecord`](#procedureaccessrecord)
+> `optional` **accessControl?**: `false` \| `true` \| [`ProcedureAccessRecord`](#procedureaccessrecord)
+
+##### encryptionPolicy?
+
+> `optional` **encryptionPolicy?**: [`EncryptionPolicy`](#encryptionpolicy)
+
+##### getRandomID?
+
+> `optional` **getRandomID?**: () => `string`
+
+###### Returns
+
+`string`
 
 ##### handlers
 
 > **handlers**: [`ProcedureHandlers`](#procedurehandlers)\<`Protocol`\>
 
-##### id?
+##### identity?
 
-> `optional` **id**: `string`
+> `optional` **identity?**: `Identity`
+
+##### limits?
+
+> `optional` **limits?**: `Partial`\<[`ResourceLimits`](#resourcelimits)\>
+
+##### logger?
+
+> `optional` **logger?**: `Logger`
 
 ##### protocol?
 
-> `optional` **protocol**: `Protocol`
+> `optional` **protocol?**: `Protocol`
 
-##### public?
+##### runtime?
 
-> `optional` **public**: `boolean`
+> `optional` **runtime?**: `Runtime`
 
 ##### signal?
 
-> `optional` **signal**: `AbortSignal`
+> `optional` **signal?**: `AbortSignal`
+
+##### tracer?
+
+> `optional` **tracer?**: `Tracer`
 
 ##### transports?
 
-> `optional` **transports**: [`ServerTransportOf`](../protocol/index.md#servertransportof)\<`Protocol`\>[]
+> `optional` **transports?**: [`ServerTransportOf`](../protocol/index.md#servertransportof)\<`Protocol`\>[]
+
+##### verifyToken?
+
+> `optional` **verifyToken?**: [`VerifyTokenHook`](../capability/index.md#verifytokenhook)
 
 ***
 
@@ -410,7 +592,53 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 `Procedure` *extends* keyof `Protocol` & `string`
 
+## Variables
+
+### DEFAULT\_RESOURCE\_LIMITS
+
+> `const` **DEFAULT\_RESOURCE\_LIMITS**: [`ResourceLimits`](#resourcelimits)
+
 ## Functions
+
+### createResourceLimiter()
+
+> **createResourceLimiter**(`options?`): [`ResourceLimiter`](#resourcelimiter)
+
+#### Parameters
+
+##### options?
+
+`Partial`\<[`ResourceLimits`](#resourcelimits)\>
+
+#### Returns
+
+[`ResourceLimiter`](#resourcelimiter)
+
+***
+
+### resolveEncryptionPolicy()
+
+> **resolveEncryptionPolicy**(`procedure`, `record`, `globalPolicy`): [`EncryptionPolicy`](#encryptionpolicy)
+
+#### Parameters
+
+##### procedure
+
+`string`
+
+##### record
+
+[`ProcedureAccessRecord`](#procedureaccessrecord) \| `undefined`
+
+##### globalPolicy
+
+[`EncryptionPolicy`](#encryptionpolicy)
+
+#### Returns
+
+[`EncryptionPolicy`](#encryptionpolicy)
+
+***
 
 ### serve()
 

@@ -14,7 +14,7 @@ npm install @enkaku/electron-keystore
 
 #### Implements
 
-- [`KeyEntry`](../protocol/index.md#keyentry)\<`string`\>
+- `KeyEntry`\<`string`\>
 
 #### Constructors
 
@@ -54,29 +54,29 @@ npm install @enkaku/electron-keystore
 
 ###### Implementation of
 
-[`KeyEntry`](../protocol/index.md#keyentry).[`keyID`](../protocol/index.md#keyid)
+`KeyEntry.keyID`
 
 #### Methods
 
 ##### get()
 
-> **get**(): `null` \| `string`
+> **get**(): `string` \| `null`
 
 ###### Returns
 
-`null` \| `string`
+`string` \| `null`
 
 ##### getAsync()
 
-> **getAsync**(): `Promise`\<`null` \| `string`\>
+> **getAsync**(): `Promise`\<`string` \| `null`\>
 
 ###### Returns
 
-`Promise`\<`null` \| `string`\>
+`Promise`\<`string` \| `null`\>
 
 ###### Implementation of
 
-[`KeyEntry`](../protocol/index.md#keyentry).[`getAsync`](../protocol/index.md#getasync)
+`KeyEntry.getAsync`
 
 ##### provide()
 
@@ -96,7 +96,7 @@ npm install @enkaku/electron-keystore
 
 ###### Implementation of
 
-[`KeyEntry`](../protocol/index.md#keyentry).[`provideAsync`](../protocol/index.md#provideasync)
+`KeyEntry.provideAsync`
 
 ##### remove()
 
@@ -116,7 +116,7 @@ npm install @enkaku/electron-keystore
 
 ###### Implementation of
 
-[`KeyEntry`](../protocol/index.md#keyentry).[`removeAsync`](../protocol/index.md#removeasync)
+`KeyEntry.removeAsync`
 
 ##### set()
 
@@ -148,7 +148,7 @@ npm install @enkaku/electron-keystore
 
 ###### Implementation of
 
-[`KeyEntry`](../protocol/index.md#keyentry).[`setAsync`](../protocol/index.md#setasync)
+`KeyEntry.setAsync`
 
 ***
 
@@ -156,7 +156,7 @@ npm install @enkaku/electron-keystore
 
 #### Implements
 
-- [`KeyStore`](../protocol/index.md#keystore)\<`string`, [`ElectronKeyEntry`](#electronkeyentry)\>
+- `KeyStore`\<`string`, [`ElectronKeyEntry`](#electronkeyentry)\>
 
 #### Constructors
 
@@ -192,15 +192,15 @@ npm install @enkaku/electron-keystore
 
 ###### Implementation of
 
-[`KeyStore`](../protocol/index.md#keystore).[`entry`](../protocol/index.md#entry)
+`KeyStore.entry`
 
 ##### open()
 
-> `static` **open**(`name`): [`ElectronKeyStore`](#electronkeystore)
+> `static` **open**(`name?`): [`ElectronKeyStore`](#electronkeystore)
 
 ###### Parameters
 
-###### name
+###### name?
 
 `string` = `'keystore'`
 
@@ -210,15 +210,15 @@ npm install @enkaku/electron-keystore
 
 ## Functions
 
-### provideTokenSigner()
+### provideFullIdentity()
 
-> **provideTokenSigner**(`store`, `keyID`): [`TokenSigner`](../token/index.md#tokensigner)
+> **provideFullIdentity**(`store`, `keyID`): `FullIdentity`
 
 #### Parameters
 
 ##### store
 
-`string` | [`ElectronKeyStore`](#electronkeystore)
+`string` \| [`ElectronKeyStore`](#electronkeystore)
 
 ##### keyID
 
@@ -226,19 +226,19 @@ npm install @enkaku/electron-keystore
 
 #### Returns
 
-[`TokenSigner`](../token/index.md#tokensigner)
+`FullIdentity`
 
 ***
 
-### provideTokenSignerAsync()
+### provideFullIdentityAsync()
 
-> **provideTokenSignerAsync**(`store`, `keyID`): `Promise`\<[`TokenSigner`](../token/index.md#tokensigner)\>
+> **provideFullIdentityAsync**(`store`, `keyID`): `Promise`\<`FullIdentity`\>
 
 #### Parameters
 
 ##### store
 
-`string` | [`ElectronKeyStore`](#electronkeystore)
+`string` \| [`ElectronKeyStore`](#electronkeystore)
 
 ##### keyID
 
@@ -246,4 +246,4 @@ npm install @enkaku/electron-keystore
 
 #### Returns
 
-`Promise`\<[`TokenSigner`](../token/index.md#tokensigner)\>
+`Promise`\<`FullIdentity`\>

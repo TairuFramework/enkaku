@@ -22,11 +22,11 @@ npm install @enkaku/capability
 
 ##### exp?
 
-> `optional` **exp**: `number`
+> `optional` **exp?**: `number`
 
 ##### iat?
 
-> `optional` **iat**: `number`
+> `optional` **iat?**: `number`
 
 ##### iss
 
@@ -34,7 +34,7 @@ npm install @enkaku/capability
 
 ##### jti?
 
-> `optional` **jti**: `string`
+> `optional` **jti?**: `string`
 
 ##### sub
 
@@ -44,7 +44,7 @@ npm install @enkaku/capability
 
 ### CapabilityToken
 
-> **CapabilityToken**\<`Payload`, `Header`\> = [`SignedToken`](../token/index.md#signedtoken)\<`Payload`, `Header`\>
+> **CapabilityToken**\<`Payload`, `Header`\> = `SignedToken`\<`Payload`, `Header`\>
 
 #### Type Parameters
 
@@ -55,6 +55,52 @@ npm install @enkaku/capability
 ##### Header
 
 `Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+
+***
+
+### CreateCapabilityOptions
+
+> **CreateCapabilityOptions** = `object`
+
+Options for capability creation
+
+#### Properties
+
+##### parentCapability?
+
+> `optional` **parentCapability?**: `string`
+
+Parent capability token (stringified) that authorizes this delegation.
+Required when creating a capability where signer is not the subject.
+The signer must be the audience of the parent capability.
+
+***
+
+### DelegationChainOptions
+
+> **DelegationChainOptions** = `object`
+
+Options for delegation chain validation
+
+#### Properties
+
+##### atTime?
+
+> `optional` **atTime?**: `number`
+
+Time to use for expiration checks (seconds since epoch). Defaults to now().
+
+##### maxDepth?
+
+> `optional` **maxDepth?**: `number`
+
+Maximum depth of delegation chain. Defaults to 20.
+
+##### verifyToken?
+
+> `optional` **verifyToken?**: [`VerifyTokenHook`](#verifytokenhook)
+
+Optional hook called for each token in the chain after verification. Can be used for revocation checks.
 
 ***
 
@@ -74,6 +120,66 @@ npm install @enkaku/capability
 
 ***
 
+### RevocationBackend
+
+> **RevocationBackend** = `object`
+
+#### Methods
+
+##### add()
+
+> **add**(`record`): `Promise`\<`void`\>
+
+###### Parameters
+
+###### record
+
+[`RevocationRecord`](#revocationrecord)
+
+###### Returns
+
+`Promise`\<`void`\>
+
+##### isRevoked()
+
+> **isRevoked**(`jti`): `Promise`\<`boolean`\>
+
+###### Parameters
+
+###### jti
+
+`string`
+
+###### Returns
+
+`Promise`\<`boolean`\>
+
+***
+
+### RevocationRecord
+
+> **RevocationRecord** = `object`
+
+#### Properties
+
+##### iat
+
+> **iat**: `number`
+
+##### iss
+
+> **iss**: `string`
+
+##### jti
+
+> **jti**: `string`
+
+##### rev
+
+> **rev**: `true`
+
+***
+
 ### SignCapabilityPayload
 
 > **SignCapabilityPayload** = `Omit`\<[`CapabilityPayload`](#capabilitypayload), `"iss"`\> & `object`
@@ -82,7 +188,37 @@ npm install @enkaku/capability
 
 ##### iss?
 
-> `optional` **iss**: `string`
+> `optional` **iss?**: `string`
+
+***
+
+### VerifyTokenHook
+
+> **VerifyTokenHook** = (`token`, `raw`) => `void` \| `Promise`\<`void`\>
+
+Hook called for each token during verification. Throw to reject.
+
+#### Parameters
+
+##### token
+
+[`CapabilityToken`](#capabilitytoken)
+
+##### raw
+
+`string`
+
+#### Returns
+
+`void` \| `Promise`\<`void`\>
+
+## Variables
+
+### DEFAULT\_MAX\_DELEGATION\_DEPTH
+
+> `const` **DEFAULT\_MAX\_DELEGATION\_DEPTH**: `20` = `20`
+
+Default maximum delegation chain depth
 
 ## Functions
 
@@ -154,9 +290,47 @@ npm install @enkaku/capability
 
 ***
 
+### assertValidIssuedAt()
+
+> **assertValidIssuedAt**(`payload`, `atTime?`): `void`
+
+#### Parameters
+
+##### payload
+
+###### iat?
+
+`number`
+
+##### atTime?
+
+`number`
+
+#### Returns
+
+`void`
+
+***
+
+### assertValidPattern()
+
+> **assertValidPattern**(`value`): `void`
+
+#### Parameters
+
+##### value
+
+`string` \| `string`[]
+
+#### Returns
+
+`void`
+
+***
+
 ### checkCapability()
 
-> **checkCapability**(`permission`, `payload`, `atTime?`): `Promise`\<`void`\>
+> **checkCapability**(`permission`, `payload`, `options?`): `Promise`\<`void`\>
 
 #### Parameters
 
@@ -194,9 +368,9 @@ npm install @enkaku/capability
 
 `string`
 
-##### atTime?
+##### options?
 
-`number`
+[`DelegationChainOptions`](#delegationchainoptions)
 
 #### Returns
 
@@ -206,7 +380,7 @@ npm install @enkaku/capability
 
 ### checkDelegationChain()
 
-> **checkDelegationChain**(`payload`, `capabilities`, `atTime?`): `Promise`\<`void`\>
+> **checkDelegationChain**(`payload`, `capabilities`, `options?`): `Promise`\<`void`\>
 
 #### Parameters
 
@@ -218,9 +392,9 @@ npm install @enkaku/capability
 
 `string`[]
 
-##### atTime?
+##### options?
 
-`number`
+[`DelegationChainOptions`](#delegationchainoptions)
 
 #### Returns
 
@@ -230,7 +404,7 @@ npm install @enkaku/capability
 
 ### createCapability()
 
-> **createCapability**\<`Payload`, `HeaderParams`\>(`signer`, `payload`, `header?`): `Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{\[`key`: `string`\]: `unknown`; `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
+> **createCapability**\<`Payload`, `HeaderParams`\>(`signer`, `payload`, `header?`, `options?`): `Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{\[`key`: `string`\]: `unknown`; `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
 
 #### Type Parameters
 
@@ -246,7 +420,7 @@ npm install @enkaku/capability
 
 ##### signer
 
-[`TokenSigner`](../token/index.md#tokensigner)
+`SigningIdentity`
 
 ##### payload
 
@@ -256,9 +430,59 @@ npm install @enkaku/capability
 
 `HeaderParams`
 
+##### options?
+
+[`CreateCapabilityOptions`](#createcapabilityoptions)
+
 #### Returns
 
 `Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{\[`key`: `string`\]: `unknown`; `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
+
+***
+
+### createMemoryRevocationBackend()
+
+> **createMemoryRevocationBackend**(): [`RevocationBackend`](#revocationbackend)
+
+#### Returns
+
+[`RevocationBackend`](#revocationbackend)
+
+***
+
+### createRevocationChecker()
+
+> **createRevocationChecker**(`backend`): [`VerifyTokenHook`](#verifytokenhook)
+
+#### Parameters
+
+##### backend
+
+[`RevocationBackend`](#revocationbackend)
+
+#### Returns
+
+[`VerifyTokenHook`](#verifytokenhook)
+
+***
+
+### createRevocationRecord()
+
+> **createRevocationRecord**(`signer`, `jti`): `Promise`\<[`RevocationRecord`](#revocationrecord)\>
+
+#### Parameters
+
+##### signer
+
+`SigningIdentity`
+
+##### jti
+
+`string`
+
+#### Returns
+
+`Promise`\<[`RevocationRecord`](#revocationrecord)\>
 
 ***
 

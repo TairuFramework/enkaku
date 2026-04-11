@@ -14,7 +14,7 @@ npm install @enkaku/execution
 
 #### Extends
 
-- [`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
+- `AsyncResult`\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
 
 #### Type Parameters
 
@@ -30,13 +30,13 @@ npm install @enkaku/execution
 
 - `AbortController`
 - `AsyncDisposable`
-- `AsyncIterable`\<[`Result`](../result/index.md#result)\<`unknown`, `Error` \| [`Interruption`](../async/index.md#interruption)\>\>
+- `AsyncIterable`\<`Result`\<`unknown`, `Error` \| [`Interruption`](../async/index.md#interruption)\>\>
 
 #### Constructors
 
 ##### Constructor
 
-> **new Execution**\<`V`, `E`\>(`executable`, `executionContext`): [`Execution`](#execution)\<`V`, `E`\>
+> **new Execution**\<`V`, `E`\>(`executable`, `executionContext?`): [`Execution`](#execution)\<`V`, `E`\>
 
 ###### Parameters
 
@@ -44,7 +44,7 @@ npm install @enkaku/execution
 
 [`Executable`](#executable)\<`V`, `E`\>
 
-###### executionContext
+###### executionContext?
 
 `ExecutionContext` = `{}`
 
@@ -54,7 +54,7 @@ npm install @enkaku/execution
 
 ###### Overrides
 
-[`AsyncResult`](../result/index.md#asyncresult).[`constructor`](../result/index.md#constructor)
+AsyncResult\<V, E \| Interruption\>.constructor
 
 #### Properties
 
@@ -64,7 +64,7 @@ npm install @enkaku/execution
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`[species]`](../result/index.md#species)
+`AsyncResult.[species]`
 
 #### Accessors
 
@@ -122,29 +122,29 @@ npm install @enkaku/execution
 
 ###### Get Signature
 
-> **get** **optional**(): `Promise`\<[`Option`](../result/index.md#option)\<`V`\>\>
+> **get** **optional**(): `Promise`\<`Option`\<`V`\>\>
 
 ###### Returns
 
-`Promise`\<[`Option`](../result/index.md#option)\<`V`\>\>
+`Promise`\<`Option`\<`V`\>\>
 
 ###### Overrides
 
-[`AsyncResult`](../result/index.md#asyncresult).[`optional`](../result/index.md#optional)
+`AsyncResult.optional`
 
 ##### orNull
 
 ###### Get Signature
 
-> **get** **orNull**(): `Promise`\<`null` \| `V`\>
+> **get** **orNull**(): `Promise`\<`V` \| `null`\>
 
 ###### Returns
 
-`Promise`\<`null` \| `V`\>
+`Promise`\<`V` \| `null`\>
 
 ###### Overrides
 
-[`AsyncResult`](../result/index.md#asyncresult).[`orNull`](../result/index.md#ornull)
+`AsyncResult.orNull`
 
 ##### signal
 
@@ -176,7 +176,7 @@ The **`signal`** read-only property of the AbortController interface returns an 
 
 ###### Overrides
 
-[`AsyncResult`](../result/index.md#asyncresult).[`value`](../result/index.md#value)
+`AsyncResult.value`
 
 #### Methods
 
@@ -194,11 +194,11 @@ The **`signal`** read-only property of the AbortController interface returns an 
 
 ##### \[asyncIterator\]()
 
-> **\[asyncIterator\]**(): `AsyncGenerator`\<[`Result`](../result/index.md#result)\<`unknown`, [`Interruption`](../async/index.md#interruption) \| `Error`\>, `void`, `unknown`\>
+> **\[asyncIterator\]**(): `AsyncGenerator`\<`Result`\<`unknown`, [`Interruption`](../async/index.md#interruption) \| `Error`\>, `void`, `unknown`\>
 
 ###### Returns
 
-`AsyncGenerator`\<[`Result`](../result/index.md#result)\<`unknown`, [`Interruption`](../async/index.md#interruption) \| `Error`\>, `void`, `unknown`\>
+`AsyncGenerator`\<`Result`\<`unknown`, [`Interruption`](../async/index.md#interruption) \| `Error`\>, `void`, `unknown`\>
 
 ###### Implementation of
 
@@ -208,7 +208,7 @@ The **`signal`** read-only property of the AbortController interface returns an 
 
 > **abort**(`reason?`): `void`
 
-The **`abort()`** method of the AbortController interface aborts an asynchronous operation before it has completed.
+The **`abort()`** method of the AbortController interface aborts an asynchronous operation before it has completed. This is able to abort fetch requests, the consumption of any response bodies, or streams.
 
 [MDN Reference](https://developer.mozilla.org/docs/Web/API/AbortController/abort)
 
@@ -242,15 +242,15 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ##### execute()
 
-> **execute**(): `Promise`\<[`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>\>
+> **execute**(): `Promise`\<`Result`\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>\>
 
 ###### Returns
 
-`Promise`\<[`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>\>
+`Promise`\<`Result`\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>\>
 
 ##### generate()
 
-> **generate**\<`V`, `E`\>(): `AsyncGenerator`\<[`Result`](../result/index.md#result)\<`V`, [`Interruption`](../async/index.md#interruption) \| `E`\>\>
+> **generate**\<`V`, `E`\>(): `AsyncGenerator`\<`Result`\<`V`, [`Interruption`](../async/index.md#interruption) \| `E`\>\>
 
 ###### Type Parameters
 
@@ -264,7 +264,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### Returns
 
-`AsyncGenerator`\<[`Result`](../result/index.md#result)\<`V`, [`Interruption`](../async/index.md#interruption) \| `E`\>\>
+`AsyncGenerator`\<`Result`\<`V`, [`Interruption`](../async/index.md#interruption) \| `E`\>\>
 
 ##### ifError()
 
@@ -284,7 +284,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### fn
 
-(`error`) => `null` \| [`Executable`](#executable)\<`OutV`, `OutE`\>
+(`error`) => [`Executable`](#executable)\<`OutV`, `OutE`\> \| `null`
 
 ###### Returns
 
@@ -308,7 +308,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### fn
 
-(`value`) => `null` \| [`Executable`](#executable)\<`OutV`, `OutE`\>
+(`value`) => [`Executable`](#executable)\<`OutV`, `OutE`\> \| `null`
 
 ###### Returns
 
@@ -316,7 +316,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ##### map()
 
-> **map**\<`OutV`, `OutE`\>(`fn`): [`AsyncResult`](../result/index.md#asyncresult)\<`OutV`, `E` \| [`Interruption`](../async/index.md#interruption) \| `OutE`\>
+> **map**\<`OutV`, `OutE`\>(`fn`): `AsyncResult`\<`OutV`, `E` \| [`Interruption`](../async/index.md#interruption) \| `OutE`\>
 
 ###### Type Parameters
 
@@ -332,19 +332,19 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### fn
 
-(`value`) => [`MappedResult`](../result/index.md#mappedresult)\<`OutV`, `OutE`\>
+(`value`) => `MappedResult`\<`OutV`, `OutE`\>
 
 ###### Returns
 
-[`AsyncResult`](../result/index.md#asyncresult)\<`OutV`, `E` \| [`Interruption`](../async/index.md#interruption) \| `OutE`\>
+`AsyncResult`\<`OutV`, `E` \| [`Interruption`](../async/index.md#interruption) \| `OutE`\>
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`map`](../result/index.md#map)
+`AsyncResult.map`
 
 ##### mapError()
 
-> **mapError**\<`OutE`\>(`fn`): [`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption) \| `OutE`\>
+> **mapError**\<`OutE`\>(`fn`): `AsyncResult`\<`V`, `E` \| [`Interruption`](../async/index.md#interruption) \| `OutE`\>
 
 ###### Type Parameters
 
@@ -356,15 +356,15 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### fn
 
-(`error`) => [`MappedResult`](../result/index.md#mappedresult)\<`V`, `OutE`\>
+(`error`) => `MappedResult`\<`V`, `OutE`\>
 
 ###### Returns
 
-[`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption) \| `OutE`\>
+`AsyncResult`\<`V`, `E` \| [`Interruption`](../async/index.md#interruption) \| `OutE`\>
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`mapError`](../result/index.md#maperror)
+`AsyncResult.mapError`
 
 ##### next()
 
@@ -406,7 +406,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### Overrides
 
-[`AsyncResult`](../result/index.md#asyncresult).[`or`](../result/index.md#or)
+`AsyncResult.or`
 
 ##### then()
 
@@ -418,7 +418,7 @@ Attaches callbacks for the resolution and/or rejection of the Promise.
 
 ###### TResult1
 
-`TResult1` = [`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
+`TResult1` = `Result`\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
 
 ###### TResult2
 
@@ -428,15 +428,15 @@ Attaches callbacks for the resolution and/or rejection of the Promise.
 
 ###### onfulfilled?
 
-The callback to execute when the Promise is resolved.
+((`value`) => `TResult1` \| `PromiseLike`\<`TResult1`\>) \| `null`
 
-`null` | (`value`) => `TResult1` \| `PromiseLike`\<`TResult1`\>
+The callback to execute when the Promise is resolved.
 
 ###### onrejected?
 
-The callback to execute when the Promise is rejected.
+((`reason`) => `TResult2` \| `PromiseLike`\<`TResult2`\>) \| `null`
 
-`null` | (`reason`) => `TResult2` \| `PromiseLike`\<`TResult2`\>
+The callback to execute when the Promise is rejected.
 
 ###### Returns
 
@@ -446,11 +446,11 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`then`](../result/index.md#then)
+`AsyncResult.then`
 
 ##### all()
 
-> `static` **all**\<`V`, `E`\>(`values`): [`AsyncResult`](../result/index.md#asyncresult)\<[`Result`](../result/index.md#result)\<`V`, `E`\>[], `never`\>
+> `static` **all**\<`V`, `E`\>(`values`): `AsyncResult`\<`Result`\<`V`, `E`\>[], `never`\>
 
 ###### Type Parameters
 
@@ -470,15 +470,15 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Returns
 
-[`AsyncResult`](../result/index.md#asyncresult)\<[`Result`](../result/index.md#result)\<`V`, `E`\>[], `never`\>
+`AsyncResult`\<`Result`\<`V`, `E`\>[], `never`\>
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`all`](../result/index.md#all)
+`AsyncResult.all`
 
 ##### error()
 
-> `static` **error**\<`V`, `E`\>(`error`): [`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E`\>
+> `static` **error**\<`V`, `E`\>(`error`): `AsyncResult`\<`V`, `E`\>
 
 ###### Type Parameters
 
@@ -498,15 +498,15 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Returns
 
-[`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E`\>
+`AsyncResult`\<`V`, `E`\>
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`error`](../result/index.md#error)
+`AsyncResult.error`
 
 ##### from()
 
-> `static` **from**\<`V`, `E`\>(`value`): [`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E`\>
+> `static` **from**\<`V`, `E`\>(`value`): `AsyncResult`\<`V`, `E`\>
 
 ###### Type Parameters
 
@@ -526,11 +526,11 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Returns
 
-[`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E`\>
+`AsyncResult`\<`V`, `E`\>
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`from`](../result/index.md#from)
+`AsyncResult.from`
 
 ##### is()
 
@@ -558,11 +558,11 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`is`](../result/index.md#is)
+`AsyncResult.is`
 
 ##### ok()
 
-> `static` **ok**\<`V`, `E`\>(`value`): [`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E`\>
+> `static` **ok**\<`V`, `E`\>(`value`): `AsyncResult`\<`V`, `E`\>
 
 ###### Type Parameters
 
@@ -582,15 +582,15 @@ A Promise for the completion of which ever callback is executed.
 
 ###### Returns
 
-[`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E`\>
+`AsyncResult`\<`V`, `E`\>
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`ok`](../result/index.md#ok)
+`AsyncResult.ok`
 
 ##### resolve()
 
-> `static` **resolve**\<`V`, `E`\>(`value`): [`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E`\>
+> `static` **resolve**\<`V`, `E`\>(`value`): `AsyncResult`\<`V`, `E`\>
 
 ###### Type Parameters
 
@@ -606,15 +606,15 @@ A Promise for the completion of which ever callback is executed.
 
 ###### value
 
-`V` | `PromiseLike`\<`V`\>
+`V` \| `PromiseLike`\<`V`\>
 
 ###### Returns
 
-[`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E`\>
+`AsyncResult`\<`V`, `E`\>
 
 ###### Inherited from
 
-[`AsyncResult`](../result/index.md#asyncresult).[`resolve`](../result/index.md#resolve)
+`AsyncResult.resolve`
 
 ## Type Aliases
 
@@ -650,9 +650,9 @@ A Promise for the completion of which ever callback is executed.
 
 #### Properties
 
-##### cleanup()?
+##### cleanup?
 
-> `optional` **cleanup**: () => `void`
+> `optional` **cleanup?**: () => `void`
 
 ###### Returns
 
@@ -664,15 +664,15 @@ A Promise for the completion of which ever callback is executed.
 
 ##### signal?
 
-> `optional` **signal**: `AbortSignal`
+> `optional` **signal?**: `AbortSignal`
 
 ##### timeout?
 
-> `optional` **timeout**: `number`
+> `optional` **timeout?**: `number`
 
 ***
 
-### ExecuteFn()
+### ExecuteFn
 
 > **ExecuteFn**\<`V`, `E`\> = (`signal`) => [`ExecutionResult`](#executionresult)\<`V`, `E`\>
 
@@ -700,7 +700,7 @@ A Promise for the completion of which ever callback is executed.
 
 ### ExecutionResult
 
-> **ExecutionResult**\<`V`, `E`\> = `V` \| `PromiseLike`\<`V`\> \| [`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\> \| `PromiseLike`\<[`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>\> \| [`AsyncResult`](../result/index.md#asyncresult)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
+> **ExecutionResult**\<`V`, `E`\> = `V` \| `PromiseLike`\<`V`\> \| `Result`\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\> \| `PromiseLike`\<`Result`\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>\> \| `AsyncResult`\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
 
 #### Type Parameters
 
@@ -714,7 +714,7 @@ A Promise for the completion of which ever callback is executed.
 
 ***
 
-### NextFn()
+### NextFn
 
 > **NextFn**\<`V`, `OutV`, `E`, `OutE`\> = (`result`) => [`Executable`](#executable)\<`V` \| `OutV`, `E` \| `OutE`\> \| `null`
 
@@ -740,7 +740,7 @@ A Promise for the completion of which ever callback is executed.
 
 ##### result
 
-[`Result`](../result/index.md#result)\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
+`Result`\<`V`, `E` \| [`Interruption`](../async/index.md#interruption)\>
 
 #### Returns
 

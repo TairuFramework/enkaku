@@ -1,9 +1,10 @@
 name: Setup environment
+description: Shared environment setup
 inputs:
   node-version:
     description: 'Node version to use'
     required: false
-    default: 24
+    default: '24'
 
 runs:
   using: 'composite'
@@ -15,7 +16,7 @@ runs:
         run_install: false
 
     - name: Setup node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: ${{ inputs.node-version }}
         cache: 'pnpm'

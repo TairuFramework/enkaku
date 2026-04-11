@@ -1,6 +1,6 @@
 # @enkaku/event
 
-Simple events emitter based on Emittery.
+Simple events emitter.
 
 ## Installation
 
@@ -12,112 +12,29 @@ npm install @enkaku/event
 
 ### EventEmitter
 
-#### Extends
-
-- `default`\<`Events`, `AllEvents`\>
-
 #### Type Parameters
 
 ##### Events
 
 `Events` *extends* `Record`\<`string`, `unknown`\>
 
-##### AllEvents
-
-`AllEvents` = `Events` & `OmnipresentEventData`
-
 #### Constructors
 
 ##### Constructor
 
-> **new EventEmitter**\<`Events`, `AllEvents`\>(`options?`): [`EventEmitter`](#eventemitter)\<`Events`, `AllEvents`\>
-
-Create a new Emittery instance with the specified options.
-
-###### Parameters
-
-###### options?
-
-`Options`\<`Events`\>
+> **new EventEmitter**\<`Events`\>(): [`EventEmitter`](#eventemitter)\<`Events`\>
 
 ###### Returns
 
-[`EventEmitter`](#eventemitter)\<`Events`, `AllEvents`\>
-
-An instance of Emittery that you can use to listen for and emit events.
-
-###### Inherited from
-
-`Emittery<Events, AllEvents>.constructor`
+[`EventEmitter`](#eventemitter)\<`Events`\>
 
 #### Methods
 
-##### on()
+##### emit()
 
-> **on**\<`Name`\>(`eventName`, `listener`, `options?`): `UnsubscribeFunction`
+###### Call Signature
 
-Subscribe to one or more events.
-
-Using the same listener multiple times for the same event will result in only one method call per emitted event.
-
-###### Type Parameters
-
-###### Name
-
-`Name` *extends* `string` \| `number` \| `symbol`
-
-###### Parameters
-
-###### eventName
-
-`Name` | readonly `Name`[]
-
-###### listener
-
-(`eventData`) => `void` \| `Promise`\<`void`\>
-
-###### options?
-
-###### filter?
-
-(`eventData`) => `boolean`
-
-###### signal?
-
-`AbortSignal`
-
-###### Returns
-
-`UnsubscribeFunction`
-
-An unsubscribe method.
-
-###### Example
-
-```
-import Emittery from 'emittery';
-
-const emitter = new Emittery();
-
-emitter.on('🦄', data => {
-	console.log(data);
-});
-
-emitter.on(['🦄', '🐶'], data => {
-	console.log(data);
-});
-
-emitter.emit('🦄', '🌈'); // log => '🌈' x2
-emitter.emit('🐶', '🍖'); // log => '🍖'
-```
-
-###### Overrides
-
-`Emittery.on`
-
-##### readable()
-
-> **readable**\<`Name`\>(`name`, `options`): `ReadableStream`\<`AllEvents`\[`Name`\]\>
+> **emit**\<`Name`\>(`name`): `Promise`\<`void`\>
 
 ###### Type Parameters
 
@@ -131,19 +48,109 @@ emitter.emit('🐶', '🍖'); // log => '🍖'
 
 `Name`
 
-###### options
+###### Returns
 
-###### filter?
+`Promise`\<`void`\>
 
-(`eventData`) => `boolean`
+###### Call Signature
 
-###### signal?
+> **emit**\<`Name`\>(`name`, `data`): `Promise`\<`void`\>
 
-`AbortSignal`
+###### Type Parameters
+
+###### Name
+
+`Name` *extends* `string` \| `number` \| `symbol`
+
+###### Parameters
+
+###### name
+
+`Name`
+
+###### data
+
+`Events`\[`Name`\]
 
 ###### Returns
 
-`ReadableStream`\<`AllEvents`\[`Name`\]\>
+`Promise`\<`void`\>
+
+##### on()
+
+> **on**\<`Name`\>(`name`, `listener`, `options?`): [`UnsubscribeFunction`](#unsubscribefunction)
+
+###### Type Parameters
+
+###### Name
+
+`Name` *extends* `string` \| `number` \| `symbol`
+
+###### Parameters
+
+###### name
+
+`Name`
+
+###### listener
+
+(`data`) => `void` \| `Promise`\<`void`\>
+
+###### options?
+
+[`ListenerOptions`](#listeneroptions)\<`Events`\[`Name`\]\>
+
+###### Returns
+
+[`UnsubscribeFunction`](#unsubscribefunction)
+
+##### once()
+
+> **once**\<`Name`\>(`name`, `options?`): `Promise`\<`Events`\[`Name`\]\>
+
+###### Type Parameters
+
+###### Name
+
+`Name` *extends* `string` \| `number` \| `symbol`
+
+###### Parameters
+
+###### name
+
+`Name`
+
+###### options?
+
+[`ListenerOptions`](#listeneroptions)\<`Events`\[`Name`\]\>
+
+###### Returns
+
+`Promise`\<`Events`\[`Name`\]\>
+
+##### readable()
+
+> **readable**\<`Name`\>(`name`, `options?`): `ReadableStream`\<`Events`\[`Name`\]\>
+
+###### Type Parameters
+
+###### Name
+
+`Name` *extends* `string` \| `number` \| `symbol`
+
+###### Parameters
+
+###### name
+
+`Name`
+
+###### options?
+
+[`ListenerOptions`](#listeneroptions)\<`Events`\[`Name`\]\> = `{}`
+
+###### Returns
+
+`ReadableStream`\<`Events`\[`Name`\]\>
 
 ##### writable()
 
@@ -164,3 +171,57 @@ emitter.emit('🐶', '🍖'); // log => '🍖'
 ###### Returns
 
 `WritableStream`\<`Events`\[`Name`\]\>
+
+## Type Aliases
+
+### DatalessEventNames
+
+> **DatalessEventNames**\<`Events`\> = `{ [Key in keyof Events]: Events[Key] extends void ? Key : never }`\[keyof `Events`\]
+
+#### Type Parameters
+
+##### Events
+
+`Events` *extends* `Record`\<`string`, `unknown`\>
+
+***
+
+### ListenerOptions
+
+> **ListenerOptions**\<`Data`\> = `object`
+
+#### Type Parameters
+
+##### Data
+
+`Data`
+
+#### Properties
+
+##### filter?
+
+> `optional` **filter?**: (`data`) => `boolean`
+
+###### Parameters
+
+###### data
+
+`Data`
+
+###### Returns
+
+`boolean`
+
+##### signal?
+
+> `optional` **signal?**: `AbortSignal`
+
+***
+
+### UnsubscribeFunction
+
+> **UnsubscribeFunction** = () => `void`
+
+#### Returns
+
+`void`
