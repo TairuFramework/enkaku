@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@enkaku/expo-keystore": "workspace:^",
+    "@enkaku/expo-runtime": "workspace:^",
     "@enkaku/group": "workspace:^",
     "@enkaku/token": "workspace:^",
     "expo": "catalog:",

@@ -951,6 +951,9 @@ importers:
       '@enkaku/expo-keystore':
         specifier: workspace:^
         version: link:../../packages/expo-keystore
+      '@enkaku/expo-runtime':
+        specifier: workspace:^
+        version: link:../../packages/expo-runtime
       '@enkaku/group':
         specifier: workspace:^
         version: link:../../packages/group
