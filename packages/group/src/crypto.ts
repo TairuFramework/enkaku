@@ -8,6 +8,7 @@
  *
  * This enables ts-mls to run on Hermes (React Native) where crypto.subtle is unavailable.
  */
+import { createRuntime, type Runtime } from '@enkaku/runtime'
 import { gcm } from '@noble/ciphers/aes.js'
 import { ed25519, x25519 } from '@noble/curves/ed25519.js'
 import { expand as hkdfExpand, extract as hkdfExtract } from '@noble/hashes/hkdf.js'
@@ -135,13 +136,13 @@ function makeSignature(sigName: string): Signature {
 // RNG
 // ---------------------------------------------------------------------------
 
-function makeRng(customRandomBytes?: (n: number) => Uint8Array): Rng {
+function makeRng(runtime: Runtime, customRandomBytes?: (n: number) => Uint8Array): Rng {
   if (customRandomBytes != null) {
     return { randomBytes: customRandomBytes }
   }
   return {
     randomBytes(n: number): Uint8Array {
-      return crypto.getRandomValues(new Uint8Array(n))
+      return runtime.getRandomValues(new Uint8Array(n))
     },
   }
 }
@@ -486,14 +487,15 @@ const CIPHERSUITE_CONFIGS: Record<number, CiphersuiteConfig> = {
 }
 
 export type NobleCryptoProviderOptions = {
-  /** Custom random bytes function. Defaults to crypto.getRandomValues.
-   * On React Native (Hermes), polyfill crypto.getRandomValues before use
-   * (e.g., via expo-crypto's getRandomValues). */
+  /** Custom random bytes function. Defaults to runtime.getRandomValues. */
   randomBytes?: (n: number) => Uint8Array
+  /** Runtime providing platform primitives. Defaults to createRuntime(). */
+  runtime?: Runtime
 }
 
 export function createNobleCryptoProvider(options?: NobleCryptoProviderOptions): CryptoProvider {
-  const rng = makeRng(options?.randomBytes)
+  const runtime = options?.runtime ?? createRuntime()
+  const rng = makeRng(runtime, options?.randomBytes)
   return {
     async getCiphersuiteImpl(id: number): Promise<CiphersuiteImpl> {
       const config = CIPHERSUITE_CONFIGS[id]
@@ -514,7 +516,5 @@ export function createNobleCryptoProvider(options?: NobleCryptoProviderOptions):
   }
 }
 
-/** Default noble CryptoProvider using crypto.getRandomValues for RNG.
- * On Hermes, polyfill crypto.getRandomValues before importing this
- * (e.g., via expo-crypto). */
+/** Default noble CryptoProvider using the default runtime for RNG. */
 export const nobleCryptoProvider: CryptoProvider = createNobleCryptoProvider()

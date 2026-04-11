@@ -25,6 +25,7 @@ import type {
   ProtocolDefinition,
   TransportMessage,
 } from '@enkaku/protocol'
+import { createRuntime, type Runtime } from '@enkaku/runtime'
 import { createReadable, writeTo } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
 import { createParser } from 'eventsource-parser'
@@ -57,6 +58,7 @@ type SSESessionState =
 export type TransportStreamParams = {
   url: string
   fetch?: FetchFunction
+  runtime?: Runtime
 }
 
 export type TransportStream<Protocol extends ProtocolDefinition> = ReadableWritablePair<
@@ -67,10 +69,10 @@ export type TransportStream<Protocol extends ProtocolDefinition> = ReadableWrita
 export function createTransportStream<Protocol extends ProtocolDefinition>(
   params: TransportStreamParams,
 ): TransportStream<Protocol> {
+  const runtime = params.runtime ?? createRuntime({ fetch: params.fetch })
   const [readable, controller] = createReadable<AnyServerMessageOf<Protocol>>()
   let sessionState: SSESessionState = { status: 'idle' }
   const abortController = new AbortController()
-  const fetchFn = params.fetch ?? globalThis.fetch
 
   async function sendMessage(
     msg: AnyClientMessageOf<Protocol> | TransportMessage,
@@ -95,7 +97,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
           traceCtx.traceFlags,
         )
       }
-      const res = await fetchFn(params.url, {
+      const res = await runtime.fetch(params.url, {
         method: 'POST',
         body: JSON.stringify(msg),
         headers: requestHeaders,
@@ -257,6 +259,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
 export type ClientTransportParams = {
   url: string
   fetch?: FetchFunction
+  runtime?: Runtime
 }
 
 export class ClientTransport<Protocol extends ProtocolDefinition> extends Transport<

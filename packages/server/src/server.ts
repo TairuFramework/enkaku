@@ -21,6 +21,7 @@ import {
   type ProtocolDefinition,
   type ServerTransportOf,
 } from '@enkaku/protocol'
+import { createRuntime, type Runtime } from '@enkaku/runtime'
 import {
   createValidator,
   type StandardSchemaV1,
@@ -63,10 +64,6 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
   | ChannelMessageOf<Protocol>
 
 const defaultTracer = createTracer('server')
-
-function defaultRandomID(): string {
-  return globalThis.crypto.randomUUID()
-}
 
 export type AccessControlParams = (
   | { requireAuth: false; serverID?: string; access: ProcedureAccessRecord }
@@ -567,6 +564,7 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   accessControl?: false | true | ProcedureAccessRecord
   encryptionPolicy?: EncryptionPolicy
   getRandomID?: () => string
+  runtime?: Runtime
   handlers: ProcedureHandlers<Protocol>
   identity?: Identity
   limits?: Partial<ResourceLimits>
@@ -588,7 +586,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #abortController: AbortController
   #accessControl: AccessControlParams
   #events: ServerEmitter
-  #getRandomID: () => string
+  #runtime: Runtime
   #handlers: ProcedureHandlers<Protocol>
   #handling: Array<HandlingTransport<Protocol>> = []
   #limiter: ResourceLimiter
@@ -635,11 +633,12 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     })
     this.#abortController = new AbortController()
     this.#events = new EventEmitter<ServerEvents>()
-    this.#getRandomID = params.getRandomID ?? defaultRandomID
+    this.#runtime = params.runtime ?? createRuntime({ getRandomID: params.getRandomID })
     this.#handlers = params.handlers
     const serverID = params.identity?.id
     this.#logger =
-      params.logger ?? getEnkakuLogger('server', { serverID: serverID ?? this.#getRandomID() })
+      params.logger ??
+      getEnkakuLogger('server', { serverID: serverID ?? this.#runtime.getRandomID() })
     this.#tracer = params.tracer ?? defaultTracer
 
     const accessControl = params.accessControl
@@ -700,7 +699,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   handle(transport: ServerTransportOf<Protocol>, options: HandleOptions = {}): Promise<void> {
     const accessControlOverride = options.accessControl
     const logger =
-      options.logger ?? this.#logger.getChild('handler').with({ transportID: this.#getRandomID() })
+      options.logger ??
+      this.#logger.getChild('handler').with({ transportID: this.#runtime.getRandomID() })
 
     const encryptionPolicy = this.#accessControl.encryptionPolicy
 

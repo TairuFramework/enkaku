@@ -28,6 +28,7 @@ import type {
   ReturnOf,
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
+import { createRuntime, type Runtime } from '@enkaku/runtime'
 import { createPipe, writeTo } from '@enkaku/stream'
 import { createUnsignedToken, type Identity, isSigningIdentity } from '@enkaku/token'
 import { RequestError } from './error.js'
@@ -224,12 +225,9 @@ function getCreateMessage<Protocol extends ProtocolDefinition>(
   ) as CreateMessage<Protocol>
 }
 
-function defaultRandomID(): string {
-  return globalThis.crypto.randomUUID()
-}
-
 export type ClientParams<Protocol extends ProtocolDefinition> = {
   getRandomID?: () => string
+  runtime?: Runtime
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
@@ -247,7 +245,7 @@ export class Client<
 > extends Disposer {
   #controllers: Record<string, AnyClientController> = {}
   #createMessage: CreateMessage<Protocol>
-  #getRandomID: () => string
+  #runtime: Runtime
   #spans: Record<string, Span> = {}
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   #handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
@@ -266,10 +264,11 @@ export class Client<
       },
     })
     this.#createMessage = getCreateMessage<Protocol>(params.identity, params.serverID)
-    this.#getRandomID = params.getRandomID ?? defaultRandomID
+    this.#runtime = params.runtime ?? createRuntime({ getRandomID: params.getRandomID })
     this.#handleTransportDisposed = params.handleTransportDisposed
     this.#handleTransportError = params.handleTransportError
-    this.#logger = params.logger ?? getEnkakuLogger('client', { clientID: this.#getRandomID() })
+    this.#logger =
+      params.logger ?? getEnkakuLogger('client', { clientID: this.#runtime.getRandomID() })
     this.#tracer = params.tracer ?? defaultTracer
     this.#transport = params.transport
     // Start reading from transport
@@ -504,7 +503,7 @@ export class Client<
       : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
   ): RequestCall<T['Result']> & Promise<T['Result']> {
     const config = args[0] ?? {}
-    const rid = config.id ?? this.#getRandomID()
+    const rid = config.id ?? this.#runtime.getRandomID()
 
     const span = this.#tracer.startSpan(SpanNames.CLIENT_CALL, {
       attributes: {
@@ -569,7 +568,7 @@ export class Client<
       : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
   ): StreamCall<T['Receive'], T['Result']> {
     const config = args[0] ?? {}
-    const rid = config.id ?? this.#getRandomID()
+    const rid = config.id ?? this.#runtime.getRandomID()
 
     const span = this.#tracer.startSpan(SpanNames.CLIENT_CALL, {
       attributes: {
@@ -649,7 +648,7 @@ export class Client<
       : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
   ): ChannelCall<T['Receive'], T['Send'], T['Result']> {
     const config = args[0] ?? {}
-    const rid = config.id ?? this.#getRandomID()
+    const rid = config.id ?? this.#runtime.getRandomID()
 
     const span = this.#tracer.startSpan(SpanNames.CLIENT_CALL, {
       attributes: {

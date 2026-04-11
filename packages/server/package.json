@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/server",
-  "version": "0.14.2",
+  "version": "0.14.3",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Server logic for Enkaku RPC",
@@ -41,6 +41,7 @@
     "@enkaku/event": "workspace:^",
     "@enkaku/log": "workspace:^",
     "@enkaku/otel": "workspace:^",
+    "@enkaku/runtime": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/schema": "workspace:^",
     "@enkaku/stream": "workspace:^",

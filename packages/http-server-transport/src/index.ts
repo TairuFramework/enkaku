@@ -21,6 +21,7 @@ import {
   SpanStatusCode,
 } from '@enkaku/otel'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { createRuntime, type Runtime } from '@enkaku/runtime'
 import { createReadable, writeTo } from '@enkaku/stream'
 import { Transport, type TransportEvents } from '@enkaku/transport'
 
@@ -44,8 +45,10 @@ type InflightRequest =
 
 export type ServerBridgeOptions = {
   allowedOrigin?: string | Array<string>
+  getRandomID?: () => string
   onWriteError?: (event: TransportEvents['writeFailed']) => void
   maxSessions?: number
+  runtime?: Runtime
   sessionTimeoutMs?: number
   maxInflightRequests?: number
   requestTimeoutMs?: number
@@ -70,6 +73,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   type Incoming = AnyClientMessageOf<Protocol>
   type Outgoing = AnyServerMessageOf<Protocol>
 
+  const runtime = options.runtime ?? createRuntime({ getRandomID: options.getRandomID })
   const allowedOrigins = Array.isArray(options.allowedOrigin)
     ? options.allowedOrigin
     : options.allowedOrigin != null
@@ -269,7 +273,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           if (sessions.size >= maxSessions) {
             return Response.json({ error: 'Session limit reached' }, { headers, status: 503 })
           }
-          const sessionID = globalThis.crypto.randomUUID()
+          const sessionID = runtime.getRandomID()
           const [body, sseController] = createReadable<string>()
           // Send an SSE comment to flush response headers immediately.
           sseController.enqueue(':\n\n')
@@ -365,7 +369,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
 
 export type ServerTransportOptions = {
   allowedOrigin?: string | Array<string>
+  getRandomID?: () => string
   maxSessions?: number
+  runtime?: Runtime
   sessionTimeoutMs?: number
   maxInflightRequests?: number
   requestTimeoutMs?: number
@@ -380,7 +386,9 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
   constructor(options: ServerTransportOptions = {}) {
     const bridge = createServerBridge<Protocol>({
       allowedOrigin: options.allowedOrigin,
+      getRandomID: options.getRandomID,
       maxSessions: options.maxSessions,
+      runtime: options.runtime,
       sessionTimeoutMs: options.sessionTimeoutMs,
       maxInflightRequests: options.maxInflightRequests,
       requestTimeoutMs: options.requestTimeoutMs,
