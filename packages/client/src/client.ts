@@ -284,6 +284,9 @@ export class Client<
   }
 
   #abortControllers(reason?: unknown): void {
+    // Runs during dispose (where this.signal is already aborted by the base
+    // Disposer) and on transport replacement. Clearing the map after the loop
+    // makes re-entry a no-op, so no guard is needed.
     for (const controller of Object.values(this.#controllers)) {
       controller.abort(reason)
     }

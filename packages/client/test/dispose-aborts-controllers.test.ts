@@ -24,25 +24,20 @@ describe('Client.dispose aborts outstanding controllers', () => {
 
     const channel = client.createChannel('echo', { param: {} })
 
-    // Start waiting for the channel result
     let channelSettled = false
-    channel
-      .catch(() => {
-        channelSettled = true
-      })
-      .catch(() => {})
+    void channel.catch(() => {
+      channelSettled = true
+    })
 
-    // Drain the server transport to avoid unhandled rejection
+    // Drain the server transport so its write queue doesn't strand a rejection.
     transports.server.read().catch(() => {})
 
-    // Dispose the client without closing the channel
     await client.dispose()
-
-    // Give it a moment to process the abort
     await new Promise((resolve) => setTimeout(resolve, 50))
 
-    // The channel should have been aborted and settled
     expect(channelSettled).toBe(true)
+
+    await transports.server.dispose()
   })
 
   test('aborts pending readable when client is disposed without close()', async () => {
@@ -53,13 +48,13 @@ describe('Client.dispose aborts outstanding controllers', () => {
     const client = new Client<Protocol>({ transport: transports.client })
 
     const channel = client.createChannel('echo', { param: {} })
-    channel.catch(() => {})
-    const reader = channel.readable.getReader()
+    // Channel result promise rejects on dispose; swallow so it isn't unhandled.
+    void channel.catch(() => {})
 
-    // Start a read operation
+    const reader = channel.readable.getReader()
     const readPromise = reader.read()
     let readSettled = false
-    readPromise
+    void readPromise
       .then(() => {
         readSettled = true
       })
@@ -67,16 +62,13 @@ describe('Client.dispose aborts outstanding controllers', () => {
         readSettled = true
       })
 
-    // Drain the server transport to avoid unhandled rejection
     transports.server.read().catch(() => {})
 
-    // Dispose the client without closing the channel
     await client.dispose()
-
-    // Give it a moment to process the abort
     await new Promise((resolve) => setTimeout(resolve, 50))
 
-    // The read should have been aborted and settled
     expect(readSettled).toBe(true)
+
+    await transports.server.dispose()
   })
 })
