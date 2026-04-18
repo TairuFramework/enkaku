@@ -22,9 +22,14 @@ export async function safeWrite<Protocol extends ProtocolDefinition>(
     const controllerReason = controller?.signal.aborted ? controller.signal.reason : undefined
     const benign = isBenignTeardownError(error) || isBenignTeardownError(controllerReason)
     if (benign && (ctx.disposing.value || controller?.signal.aborted)) {
+      const dropReason = ctx.disposing.value
+        ? 'disposing'
+        : controller?.signal.aborted
+          ? 'aborted'
+          : 'benign'
       await ctx.events.emit('writeDropped', {
         rid,
-        reason: ctx.disposing.value ? 'disposing' : (controllerReason ?? 'aborted'),
+        reason: dropReason,
         error: error as Error,
       })
       return

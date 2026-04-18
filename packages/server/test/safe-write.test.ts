@@ -75,6 +75,8 @@ describe('safeWrite', () => {
     const controller = new AbortController()
     controller.abort('Close')
     const ctx = fakeCtx({ controllers: { r1: controller as never } })
+    const dropped = vi.fn()
+    ctx.events.on('writeDropped', dropped)
 
     await expect(
       safeWrite({
@@ -84,6 +86,8 @@ describe('safeWrite', () => {
         ctx: ctx as never,
       }),
     ).resolves.toBeUndefined()
+
+    expect(dropped).toHaveBeenCalledWith(expect.objectContaining({ rid: 'r1', reason: 'aborted' }))
   })
 
   test('rethrows non-benign errors and aborts the controller', async () => {

@@ -80,9 +80,9 @@ describe('handleStream()', () => {
       },
     )
     expect(send).toHaveBeenCalledTimes(4)
-    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
-    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })
-    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 2 })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 }, { rid: '1' })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 }, { rid: '1' })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 2 }, { rid: '1' })
     expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' }, { rid: '1' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
@@ -132,8 +132,8 @@ describe('handleStream()', () => {
       },
     )
     expect(send).toHaveBeenCalledTimes(2)
-    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
-    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 }, { rid: '1' })
+    expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 }, { rid: '1' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
   })
