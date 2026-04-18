@@ -27,8 +27,8 @@ describe('createTransportStream()', () => {
     expect(second.value).toEqual({ test: 'other' })
 
     const writer = stream.writable.getWriter()
-    writer.write({ foo: 'foo' })
-    writer.write({ bar: 'bar' })
+    await writer.write({ foo: 'foo' })
+    await writer.write({ bar: 'bar' })
     await writer.close()
     expect(written).toEqual(['{"foo":"foo"}\n', '{"bar":"bar"}\n'])
   })
