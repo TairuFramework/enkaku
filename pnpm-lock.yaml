@@ -281,6 +281,9 @@ importers:
       '@enkaku/async':
         specifier: workspace:^
         version: link:../async
+      '@enkaku/event':
+        specifier: workspace:^
+        version: link:../event
       '@enkaku/execution':
         specifier: workspace:^
         version: link:../execution

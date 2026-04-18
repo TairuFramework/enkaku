@@ -1,4 +1,5 @@
 import { Disposer, defer } from '@enkaku/async'
+import { EventEmitter } from '@enkaku/event'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
 import {
   AttributeKeys,
@@ -32,6 +33,7 @@ import { createRuntime, type Runtime } from '@enkaku/runtime'
 import { createPipe, writeTo } from '@enkaku/stream'
 import { createUnsignedToken, type Identity, isSigningIdentity } from '@enkaku/token'
 import { RequestError } from './error.js'
+import type { ClientEmitter, ClientEvents } from './events.js'
 
 const defaultTracer = createTracer('client')
 
@@ -254,6 +256,7 @@ export class Client<
   #logger: Logger
   #tracer: Tracer
   #transport: ClientTransportOf<Protocol>
+  #events: ClientEmitter = new EventEmitter<ClientEvents>()
 
   constructor(params: ClientParams<Protocol>) {
     super({
@@ -456,6 +459,10 @@ export class Client<
       { once: true },
     )
     return signal
+  }
+
+  get events(): ClientEmitter {
+    return this.#events
   }
 
   async sendEvent<

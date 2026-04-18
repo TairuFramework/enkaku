@@ -23,3 +23,4 @@ export type {
 } from './client.js'
 export { Client } from './client.js'
 export { type ErrorObjectType, RequestError, type RequestErrorParams } from './error.js'
+export type { ClientEmitter, ClientEvents, ClientRequestStatus } from './events.js'
