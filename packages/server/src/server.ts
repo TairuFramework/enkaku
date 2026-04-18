@@ -102,6 +102,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         const controller = controllers[rid]
         if (controller != null) {
           controller.abort('Timeout')
+          events.emit('handlerAbort', { rid, reason: 'Timeout' })
           const error = new HandlerError({
             code: 'EK05',
             message: 'Request timeout',
@@ -128,8 +129,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       clearInterval(cleanupInterval)
       const interruption = new DisposeInterruption()
       // Abort all currently running handlers
-      for (const controller of Object.values(controllers)) {
-        controller.abort(interruption)
+      for (const rid of Object.keys(controllers)) {
+        controllers[rid]?.abort(interruption)
+        events.emit('handlerAbort', { rid, reason: interruption })
       }
       // Wait until all running handlers are done
       await Promise.all(Object.values(running))
@@ -198,6 +200,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     limiter.addController(rid)
     limiter.acquireHandler()
 
+    events.emit('handlerStart', {
+      rid,
+      procedure: (message.payload as Record<string, unknown>).prc as string,
+      type: message.payload.typ as string,
+    })
+
     const returned = handle()
     if (returned instanceof Error) {
       limiter.removeController(rid)
@@ -210,6 +218,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       running[rid] = returned
       returned
         .then(() => {
+          events.emit('handlerEnd', {
+            rid,
+            procedure: (message.payload as Record<string, unknown>).prc as string,
+          })
           // Guard against double-release if timeout cleanup already handled this rid
           if (running[rid] === returned) {
             limiter.removeController(rid)
@@ -218,6 +230,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           }
         })
         .catch((err: unknown) => {
+          events.emit('handlerEnd', {
+            rid,
+            procedure: (message.payload as Record<string, unknown>).prc as string,
+          })
           if (running[rid] === returned) {
             limiter.removeController(rid)
             limiter.releaseHandler()
@@ -511,9 +527,17 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         return
       }
       switch (msg.payload.typ) {
-        case 'abort':
-          controllers[msg.payload.rid]?.abort(msg.payload.rsn)
+        case 'abort': {
+          const controller = controllers[msg.payload.rid]
+          if (controller != null) {
+            controller.abort(msg.payload.rsn)
+            events.emit('handlerAbort', {
+              rid: msg.payload.rid,
+              reason: msg.payload.rsn,
+            })
+          }
           break
+        }
         case 'channel': {
           const message = msg as ChannelMessageOf<Protocol>
           process(message, () => handleChannel(context, message))
@@ -622,7 +646,9 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
 
   constructor(params: ServerParams<Protocol>) {
     super({
-      dispose: async () => {
+      dispose: async (reason?: unknown) => {
+        await this.#events.emit('disposing', { reason })
+
         // Signal messages handler to stop execution and run cleanup logic
         this.#abortController.abort()
 
@@ -654,6 +680,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
             }
           }
         }
+
+        await this.#events.emit('disposed', { reason })
       },
       signal: params.signal,
     })
@@ -775,9 +803,13 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     })
     this.#handling.push({ done, transport })
 
+    const transportID = this.#runtime.getRandomID()
+    this.#events.emit('transportAdded', { transportID })
+
     logger.info('added')
     return done.then(() => {
       logger.info('done')
+      this.#events.emit('transportRemoved', { transportID })
     })
   }
 }
