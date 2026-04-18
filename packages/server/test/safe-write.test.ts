@@ -90,6 +90,22 @@ describe('safeWrite', () => {
     expect(dropped).toHaveBeenCalledWith(expect.objectContaining({ rid: 'r1', reason: 'aborted' }))
   })
 
+  test('rethrows when controller aborted with a non-benign reason', async () => {
+    const transport = fakeTransport('closed') as never
+    const controller = new AbortController()
+    controller.abort('Timeout')
+    const ctx = fakeCtx({ controllers: { r1: controller as never } })
+
+    await expect(
+      safeWrite({
+        transport,
+        payload: { typ: 'result' } as never,
+        rid: 'r1',
+        ctx: ctx as never,
+      }),
+    ).rejects.toThrow()
+  })
+
   test('rethrows non-benign errors and aborts the controller', async () => {
     const transport = fakeTransport('boom') as never
     const controller = new AbortController()

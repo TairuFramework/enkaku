@@ -76,7 +76,7 @@ export async function executeHandler<Protocol extends ProtocolDefinition>(
         },
       )
     }
-    context.events.emit('handlerError', { error, payload })
+    context.events.emit('handlerError', { error, payload }).catch(() => {})
   } finally {
     delete context.controllers[payload.rid]
   }

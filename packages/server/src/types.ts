@@ -1,3 +1,4 @@
+import type { DisposeInterruption } from '@enkaku/async'
 import type { EventEmitter } from '@enkaku/event'
 import type { Logger } from '@enkaku/log'
 import type {
@@ -167,7 +168,10 @@ export type ServerEvents = {
     error: HandlerError<string>
     payload: Record<string, unknown>
   }
-  handlerAbort: { rid: string; reason: unknown }
+  handlerAbort: {
+    rid: string
+    reason: 'Close' | 'Timeout' | 'Transport' | DisposeInterruption | string | undefined
+  }
   handlerEnd: { rid: string; procedure: string }
   handlerError: {
     error: HandlerError<string>
@@ -179,7 +183,7 @@ export type ServerEvents = {
   transportAdded: { transportID: string }
   transportRemoved: { transportID: string; reason?: unknown }
   writeDropped: { rid?: string; reason: unknown; error: Error }
-  writeFailed: { error: Error; rid: string }
+  writeFailed: { error: Error; rid?: string }
 }
 
 export type ServerEmitter = EventEmitter<ServerEvents>

@@ -20,8 +20,12 @@ export async function safeWrite<Protocol extends ProtocolDefinition>(
   } catch (error) {
     const controller = rid != null ? ctx.controllers[rid] : undefined
     const controllerReason = controller?.signal.aborted ? controller.signal.reason : undefined
-    const benign = isBenignTeardownError(error) || isBenignTeardownError(controllerReason)
-    if (benign && (ctx.disposing.value || controller?.signal.aborted)) {
+    const errorBenign = isBenignTeardownError(error)
+    const reasonBenign = isBenignTeardownError(controllerReason)
+    const shouldSwallow =
+      (errorBenign || reasonBenign) &&
+      (ctx.disposing.value || (controller?.signal.aborted === true && reasonBenign))
+    if (shouldSwallow) {
       const dropReason = ctx.disposing.value
         ? 'disposing'
         : controller?.signal.aborted
@@ -34,7 +38,7 @@ export async function safeWrite<Protocol extends ProtocolDefinition>(
       })
       return
     }
-    await ctx.events.emit('writeFailed', { error: error as Error, rid: rid ?? '' })
+    await ctx.events.emit('writeFailed', { error: error as Error, rid })
     if (controller != null && !controller.signal.aborted) {
       controller.abort('Transport')
     }

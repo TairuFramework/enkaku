@@ -2,7 +2,7 @@ import { DisposeInterruption } from './interruptions.js'
 
 const CLOSED_STREAM_PATTERNS = [
   /WritableStream is closed/i,
-  /(?:writer|reader)(?:\s|\S)*?(?:is|has been)\s+closed/i,
+  /(writer|reader).*?\b(is|has been)\s+closed/is,
 ]
 
 const BENIGN_REASON_STRINGS = new Set(['Close', 'Transport'])

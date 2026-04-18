@@ -307,7 +307,7 @@ export class Client<
         // Abort running procedures and start using new transport
         this.#abortControllers('TransportDisposed')
         this.#transport = newTransport
-        this.#events.emit('transportReplaced', {})
+        this.#events.emit('transportReplaced', {}).catch(() => {})
         this.#setupTransport()
       }
     })
@@ -323,7 +323,7 @@ export class Client<
       () => {
         span.setStatus({ code: SpanStatusCode.OK })
         span.end()
-        this.#events.emit('requestEnd', { ...meta, status: 'ok' })
+        this.#events.emit('requestEnd', { ...meta, status: 'ok' }).catch(() => {})
         delete this.#spans[meta.rid]
       },
       (error) => {
@@ -341,7 +341,7 @@ export class Client<
           error === 'Close' || (error as { name?: string } | null)?.name === 'AbortError'
             ? 'aborted'
             : 'error'
-        this.#events.emit('requestEnd', { ...meta, status })
+        this.#events.emit('requestEnd', { ...meta, status }).catch(() => {})
         delete this.#spans[meta.rid]
       },
     )
@@ -362,7 +362,7 @@ export class Client<
         }
         this.#logger.debug('failed to read from transport', { cause })
         const error = new Error('Transport read failed', { cause })
-        this.#events.emit('transportError', { error })
+        this.#events.emit('transportError', { error }).catch(() => {})
         const newTransport = this.#handleTransportError?.(error)
         if (newTransport == null) {
           this.#logger.warn('aborting following unhanded transport error')
@@ -373,7 +373,7 @@ export class Client<
           // Abort running procedures and start using new transport
           this.#abortControllers(error)
           this.#transport = newTransport
-          this.#events.emit('transportReplaced', {})
+          this.#events.emit('transportReplaced', {}).catch(() => {})
           this.#setupTransport()
         }
         return
@@ -590,7 +590,7 @@ export class Client<
         param: prm,
       })
     }
-    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type }).catch(() => {})
     const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
@@ -664,7 +664,7 @@ export class Client<
         param: prm,
       })
     }
-    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type }).catch(() => {})
     const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
@@ -750,7 +750,7 @@ export class Client<
         param: prm,
       })
     }
-    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type }).catch(() => {})
     const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
