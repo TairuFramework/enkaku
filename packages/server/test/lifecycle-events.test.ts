@@ -80,15 +80,19 @@ describe('Server lifecycle events', () => {
     expect(disposed).toHaveBeenCalledWith({ reason: 'test-reason' })
   })
 
-  test('emits handlerAbort with reason Close when client aborts', async () => {
+  test('emits handlerAbort with reason Close when client aborts a running request', async () => {
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
+    const handler = vi.fn(
+      (ctx) =>
+        new Promise((resolve) => {
+          ctx.signal.addEventListener('abort', () => resolve({ ok: true }), { once: true })
+        }),
+    )
     const server = serve<Protocol>({
-      handlers: {
-        ping: (async () => ({ ok: true })) as RequestHandler<Protocol, 'ping'>,
-      } as ProcedureHandlers<Protocol>,
+      handlers: { ping: handler } as unknown as ProcedureHandlers<Protocol>,
       protocol,
       accessControl: false,
       transport: transports.server,
@@ -97,17 +101,31 @@ describe('Server lifecycle events', () => {
     const aborted = vi.fn()
     server.events.on('handlerAbort', aborted)
 
+    // Send a real request so server creates a controller for rid 'r1'
+    await transports.client.write(
+      createUnsignedToken({
+        typ: 'request',
+        rid: 'r1',
+        prc: 'ping',
+      }) as AnyClientMessageOf<Protocol>,
+    )
+    // Wait for the handler to start
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(handler).toHaveBeenCalled()
+
+    // Now send the abort for the real rid
     await transports.client.write(
       createUnsignedToken({
         typ: 'abort',
-        rid: 'missing',
+        rid: 'r1',
         rsn: 'Close',
       }) as AnyClientMessageOf<Protocol>,
     )
+    // Allow abort handling to propagate
+    await new Promise((resolve) => setTimeout(resolve, 20))
 
-    // handlerAbort fires even for unknown rid? Current impl only aborts if
-    // controller exists. So we send a request first and then abort it.
-    // Skip this sub-case if impl does not emit for unknown rids.
+    expect(aborted).toHaveBeenCalledWith({ rid: 'r1', reason: 'Close' })
+
     await server.dispose()
   })
 })

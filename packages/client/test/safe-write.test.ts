@@ -36,4 +36,17 @@ describe('client safeWrite', () => {
       safeWrite({ transport, message: 'x', events, disposing: { value: false } }),
     ).rejects.toThrow('non-benign')
   })
+
+  test('rethrows benign errors when not disposing', async () => {
+    const transport = fakeTransport('closed') as never
+    const events = new EventEmitter<ClientEvents>()
+    const dropped = vi.fn()
+    events.on('writeDropped', dropped)
+
+    await expect(
+      safeWrite({ transport, message: 'x' as never, events, disposing: { value: false } }),
+    ).rejects.toThrow()
+
+    expect(dropped).not.toHaveBeenCalled()
+  })
 })

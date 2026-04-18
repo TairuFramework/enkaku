@@ -17,11 +17,10 @@ export async function safeWrite(params: SafeWriteParams): Promise<void> {
   try {
     await transport.write(message)
   } catch (error) {
-    if (isBenignTeardownError(error)) {
-      const reason = disposing.value ? 'disposing' : 'benign'
+    if (isBenignTeardownError(error) && disposing.value) {
       await events.emit('writeDropped', {
         rid,
-        reason,
+        reason: 'disposing',
         error: error as Error,
       })
       return
