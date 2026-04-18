@@ -34,6 +34,7 @@ import { createPipe, writeTo } from '@enkaku/stream'
 import { createUnsignedToken, type Identity, isSigningIdentity } from '@enkaku/token'
 import { RequestError } from './error.js'
 import type { ClientEmitter, ClientEvents } from './events.js'
+import { safeWrite } from './safe-write.js'
 
 const defaultTracer = createTracer('client')
 
@@ -253,6 +254,7 @@ export class Client<
   #handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   #handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
+  #disposing = { value: false }
   #logger: Logger
   #tracer: Tracer
   #transport: ClientTransportOf<Protocol>
@@ -261,8 +263,11 @@ export class Client<
   constructor(params: ClientParams<Protocol>) {
     super({
       dispose: async (reason?: unknown) => {
+        this.#disposing.value = true
+        await this.#events.emit('disposing', { reason })
         this.#abortControllers(reason)
         await this.#transport.dispose(reason)
+        await this.#events.emit('disposed', { reason })
         this.#logger.debug('disposed')
       },
     })
@@ -414,7 +419,11 @@ export class Client<
     }
   }
 
-  async #write(payload: AnyClientPayloadOf<Protocol>, header?: AnyHeader): Promise<void> {
+  async #write(
+    payload: AnyClientPayloadOf<Protocol>,
+    header?: AnyHeader,
+    rid?: string,
+  ): Promise<void> {
     if (this.signal.aborted) {
       throw new Error('Client aborted', { cause: this.signal.reason })
     }
@@ -422,7 +431,13 @@ export class Client<
     const enrichedHeader = otelInjectTraceContext(baseHeader)
     const finalHeader = Object.keys(enrichedHeader).length > 0 ? enrichedHeader : undefined
     const message = await this.#createMessage(payload, finalHeader)
-    await this.#transport.write(message)
+    await safeWrite({
+      transport: this.#transport,
+      message,
+      rid,
+      events: this.#events,
+      disposing: this.#disposing,
+    })
   }
 
   #handleSignal<Result>(
@@ -436,25 +451,28 @@ export class Client<
     signal.addEventListener(
       'abort',
       () => {
-        const reason = signal.reason.name ?? signal.reason
+        const reason = signal.reason?.name ?? signal.reason
         this.#logger.trace('abort {type} {procedure} with ID {rid} and reason: {reason}', {
           type: controller.type,
           procedure: controller.procedure,
           rid,
           reason,
         })
-        void this.#write(
+        this.#write(
           {
             typ: 'abort',
             rid,
             rsn: reason,
           } as unknown as AnyClientPayloadOf<Protocol>,
           controller.header,
-        )
-        if (signal.reason !== 'Close') {
-          controller.aborted(signal)
-          delete this.#controllers[rid]
-        }
+          rid,
+        ).catch((error: Error) => {
+          if (!this.#disposing.value) {
+            this.#events.emit('requestError', { rid, error })
+          }
+        })
+        controller.aborted(signal)
+        delete this.#controllers[rid]
       },
       { once: true },
     )
@@ -556,7 +574,7 @@ export class Client<
       })
     }
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
+      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
 
     this.#endSpanOnResult(span, controller.result)
@@ -629,7 +647,7 @@ export class Client<
       })
     }
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
+      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
 
     this.#endSpanOnResult(span, controller.result, rid)
@@ -714,7 +732,7 @@ export class Client<
       })
     }
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
+      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
 
     this.#endSpanOnResult(span, controller.result, rid)
@@ -736,6 +754,7 @@ export class Client<
       await this.#write(
         { typ: 'send', rid, val } as unknown as AnyClientPayloadOf<Protocol>,
         config.header,
+        rid,
       )
     }
 

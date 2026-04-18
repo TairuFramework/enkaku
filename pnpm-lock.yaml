@@ -306,6 +306,9 @@ importers:
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
+      '@enkaku/server':
+        specifier: workspace:^
+        version: link:../server
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
