@@ -284,10 +284,8 @@ export class Client<
   }
 
   #abortControllers(reason?: unknown): void {
-    if (!this.signal.aborted) {
-      for (const controller of Object.values(this.#controllers)) {
-        controller.abort(reason)
-      }
+    for (const controller of Object.values(this.#controllers)) {
+      controller.abort(reason)
     }
     this.#controllers = {}
   }
