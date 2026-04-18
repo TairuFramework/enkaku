@@ -804,6 +804,9 @@ importers:
         specifier: workspace:^
         version: link:../token
     devDependencies:
+      '@enkaku/client':
+        specifier: workspace:^
+        version: link:../client
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport

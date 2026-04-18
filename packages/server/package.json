@@ -47,6 +47,7 @@
     "@enkaku/token": "workspace:^"
   },
   "devDependencies": {
+    "@enkaku/client": "workspace:^",
     "@enkaku/transport": "workspace:^"
   }
 }
