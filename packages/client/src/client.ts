@@ -307,18 +307,24 @@ export class Client<
         // Abort running procedures and start using new transport
         this.#abortControllers('TransportDisposed')
         this.#transport = newTransport
+        this.#events.emit('transportReplaced', {})
         this.#setupTransport()
       }
     })
     this.#read()
   }
 
-  #endSpanOnResult(span: Span, result: Promise<unknown>, rid?: string): void {
+  #endSpanOnResult(
+    span: Span,
+    result: Promise<unknown>,
+    meta: { rid: string; procedure: string },
+  ): void {
     result.then(
       () => {
         span.setStatus({ code: SpanStatusCode.OK })
         span.end()
-        if (rid != null) delete this.#spans[rid]
+        this.#events.emit('requestEnd', { ...meta, status: 'ok' })
+        delete this.#spans[meta.rid]
       },
       (error) => {
         if (error instanceof RequestError) {
@@ -331,7 +337,12 @@ export class Client<
         })
         span.recordException(error instanceof Error ? error : new Error(String(error)))
         span.end()
-        if (rid != null) delete this.#spans[rid]
+        const status: 'ok' | 'error' | 'aborted' =
+          error === 'Close' || (error as { name?: string } | null)?.name === 'AbortError'
+            ? 'aborted'
+            : 'error'
+        this.#events.emit('requestEnd', { ...meta, status })
+        delete this.#spans[meta.rid]
       },
     )
   }
@@ -351,6 +362,7 @@ export class Client<
         }
         this.#logger.debug('failed to read from transport', { cause })
         const error = new Error('Transport read failed', { cause })
+        this.#events.emit('transportError', { error })
         const newTransport = this.#handleTransportError?.(error)
         if (newTransport == null) {
           this.#logger.warn('aborting following unhanded transport error')
@@ -361,6 +373,7 @@ export class Client<
           // Abort running procedures and start using new transport
           this.#abortControllers(error)
           this.#transport = newTransport
+          this.#events.emit('transportReplaced', {})
           this.#setupTransport()
         }
         return
@@ -577,11 +590,12 @@ export class Client<
         param: prm,
       })
     }
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
 
-    this.#endSpanOnResult(span, controller.result)
+    this.#endSpanOnResult(span, controller.result, { rid, procedure })
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
     return createRequest({ id: rid, controller, signal, sent })
@@ -650,11 +664,12 @@ export class Client<
         param: prm,
       })
     }
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
 
-    this.#endSpanOnResult(span, controller.result, rid)
+    this.#endSpanOnResult(span, controller.result, { rid, procedure })
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
@@ -735,11 +750,12 @@ export class Client<
         param: prm,
       })
     }
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
 
-    this.#endSpanOnResult(span, controller.result, rid)
+    this.#endSpanOnResult(span, controller.result, { rid, procedure })
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
