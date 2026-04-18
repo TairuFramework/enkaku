@@ -48,6 +48,7 @@ import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { handleRequest, type RequestMessageOf } from './handlers/request.js'
 import { handleStream, type StreamMessageOf } from './handlers/stream.js'
 import { createResourceLimiter, type ResourceLimiter, type ResourceLimits } from './limits.js'
+import { safeWrite } from './safe-write.js'
 import type {
   ChannelController,
   HandlerContext,
@@ -87,12 +88,14 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   const { events, handlers, limiter, logger, signal, transport, validator } = params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
+  const disposing = { value: false }
   const context: HandlerContext<Protocol> = {
     controllers,
+    disposing,
     events,
     handlers,
     logger,
-    send: (payload) => transport.write(createUnsignedToken(payload)),
+    send: (payload, options) => safeWrite({ transport, payload, rid: options?.rid, ctx: context }),
   }
   const running: Record<string, Promise<void>> = Object.create(null)
   const encoder = new TextEncoder()
@@ -109,7 +112,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             code: 'EK05',
             message: 'Request timeout',
           })
-          context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
+          context
+            .send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
+            .catch(() => {})
           events.emit('handlerTimeout', { rid })
           limiter.removeController(rid)
           limiter.releaseHandler()
@@ -125,6 +130,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
   const disposer = new Disposer({
     dispose: async () => {
+      disposing.value = true
       clearInterval(cleanupInterval)
       const interruption = new DisposeInterruption()
       // Abort all currently running handlers
@@ -135,11 +141,6 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       await Promise.all(Object.values(running))
     },
     signal,
-  })
-
-  // Abort inflight handlers when the transport fails to write
-  transport.events.on('writeFailed', (event) => {
-    controllers[event.rid]?.abort('Transport')
   })
 
   const processMessage = validator
@@ -181,7 +182,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         message: 'Server controller limit reached',
       })
       if (message.payload.typ !== 'event') {
-        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
+        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid }).catch(() => {})
       }
       events.emit('handlerError', { error, payload: message.payload })
       return
@@ -194,7 +195,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         message: 'Server handler limit reached',
       })
       if (message.payload.typ !== 'event') {
-        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>)
+        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid }).catch(() => {})
       }
       events.emit('handlerError', { error, payload: message.payload })
       return
@@ -213,14 +214,26 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       })
     } else {
       running[rid] = returned
-      returned.then(() => {
-        // Guard against double-release if timeout cleanup already handled this rid
-        if (running[rid] === returned) {
-          limiter.removeController(rid)
-          limiter.releaseHandler()
-          delete running[rid]
-        }
-      })
+      returned
+        .then(() => {
+          // Guard against double-release if timeout cleanup already handled this rid
+          if (running[rid] === returned) {
+            limiter.removeController(rid)
+            limiter.releaseHandler()
+            delete running[rid]
+          }
+        })
+        .catch((err: unknown) => {
+          if (running[rid] === returned) {
+            limiter.removeController(rid)
+            limiter.releaseHandler()
+            delete running[rid]
+          }
+          events.emit('handlerError', {
+            error: HandlerError.from(err, { code: 'EK01' }),
+            payload: message.payload,
+          })
+        })
     }
   }
 
@@ -253,7 +266,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     if (message.payload.typ === 'event') {
       events.emit('handlerError', { error, payload: message.payload })
     } else {
-      context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>)
+      context
+        .send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>, {
+          rid: message.payload.rid,
+        })
+        .catch(() => {})
     }
   }
 
@@ -452,7 +469,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             events.emit('eventAuthError', { error, payload: message.payload })
             events.emit('handlerError', { error, payload: message.payload })
           } else {
-            context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>)
+            context
+              .send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                rid: message.payload.rid,
+              })
+              .catch(() => {})
           }
           return
         }
@@ -486,7 +507,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           message: 'Message exceeds maximum size',
         })
         if ('rid' in msg.payload && msg.payload.rid != null) {
-          context.send(error.toPayload(msg.payload.rid as string) as AnyServerPayloadOf<Protocol>)
+          const rid = msg.payload.rid as string
+          context
+            .send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
+            .catch(() => {})
         }
         events.emit('handlerError', { error, payload: msg.payload })
         handleNext()
@@ -524,7 +548,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
                 code: 'EK02',
                 message: 'Channel send message must be signed',
               })
-              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>)
+              context
+                .send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                  rid: msg.payload.rid,
+                })
+                .catch(() => {})
               break
             }
             const sendIssuer = (msg as unknown as SignedToken).payload.iss
@@ -533,7 +561,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
                 code: 'EK02',
                 message: 'Send issuer does not match channel owner',
               })
-              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>)
+              context
+                .send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                  rid: msg.payload.rid,
+                })
+                .catch(() => {})
               break
             }
           }

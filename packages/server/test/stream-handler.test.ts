@@ -57,7 +57,7 @@ describe('handleStream()', () => {
       })
     })
     const reject = vi.fn()
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
     const trace = vi.fn()
 
     await handleStream(
@@ -83,7 +83,7 @@ describe('handleStream()', () => {
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 0 })
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 1 })
     expect(send).toHaveBeenCalledWith({ typ: 'receive', rid: '1', val: 2 })
-    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
+    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' }, { rid: '1' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
   })
@@ -108,6 +108,7 @@ describe('handleStream()', () => {
       if (payload.typ === 'receive' && payload.val === 1) {
         controllers['1']?.abort()
       }
+      return Promise.resolve()
     })
     const trace = vi.fn()
 

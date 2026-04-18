@@ -32,11 +32,14 @@ export async function executeHandler<Protocol extends ProtocolDefinition>(
         rid: payload.rid,
         result: val,
       })
-      await context.send({
-        typ: 'result',
-        rid: payload.rid,
-        val,
-      } as unknown as AnyServerPayloadOf<Protocol>)
+      await context.send(
+        {
+          typ: 'result',
+          rid: payload.rid,
+          val,
+        } as unknown as AnyServerPayloadOf<Protocol>,
+        { rid: payload.rid },
+      )
     }
   } catch (cause) {
     if (beforeEnd != null) {
@@ -59,7 +62,9 @@ export async function executeHandler<Protocol extends ProtocolDefinition>(
         rid: payload.rid,
         error,
       })
-      context.send(error.toPayload(payload.rid) as AnyServerPayloadOf<Protocol>)
+      await context
+        .send(error.toPayload(payload.rid) as AnyServerPayloadOf<Protocol>, { rid: payload.rid })
+        .catch(() => {})
     } else {
       context.logger.debug(
         'handler error for {type} {procedure} with ID {rid} cannot be sent to client: {error}',
