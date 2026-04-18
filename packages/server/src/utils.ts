@@ -62,9 +62,9 @@ export async function executeHandler<Protocol extends ProtocolDefinition>(
         rid: payload.rid,
         error,
       })
-      await context
-        .send(error.toPayload(payload.rid) as AnyServerPayloadOf<Protocol>, { rid: payload.rid })
-        .catch(() => {})
+      await context.send(error.toPayload(payload.rid) as AnyServerPayloadOf<Protocol>, {
+        rid: payload.rid,
+      })
     } else {
       context.logger.debug(
         'handler error for {type} {procedure} with ID {rid} cannot be sent to client: {error}',
@@ -76,7 +76,7 @@ export async function executeHandler<Protocol extends ProtocolDefinition>(
         },
       )
     }
-    context.events.emit('handlerError', { error, payload }).catch(() => {})
+    context.events.emit('handlerError', { error, payload })
   } finally {
     delete context.controllers[payload.rid]
   }

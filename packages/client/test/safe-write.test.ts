@@ -6,7 +6,7 @@ import { safeWrite } from '../src/safe-write.js'
 
 function fakeTransport(behaviour: 'ok' | 'closed' | 'boom') {
   return {
-    write: vi.fn(async () => {
+    write: vi.fn(async (_: unknown) => {
       if (behaviour === 'closed') {
         throw new TypeError('Invalid state: WritableStream is closed')
       }
@@ -17,36 +17,75 @@ function fakeTransport(behaviour: 'ok' | 'closed' | 'boom') {
   }
 }
 
+function disposingSignal(): AbortSignal {
+  const controller = new AbortController()
+  controller.abort()
+  return controller.signal
+}
+
 describe('client safeWrite', () => {
-  test('swallows benign errors when disposing', async () => {
+  test('resolves on clean write without emitting', async () => {
+    const transport = fakeTransport('ok')
+    const events = new EventEmitter<ClientEvents>()
+    const dropped = vi.fn()
+    const failed = vi.fn()
+    events.on('writeDropped', dropped)
+    events.on('writeFailed', failed)
+
+    await safeWrite({
+      transport,
+      message: 'x',
+      events,
+      signal: new AbortController().signal,
+    })
+
+    expect(dropped).not.toHaveBeenCalled()
+    expect(failed).not.toHaveBeenCalled()
+  })
+
+  test('swallows benign errors when disposing and emits writeDropped', async () => {
     const transport = fakeTransport('closed')
     const events = new EventEmitter<ClientEvents>()
     const dropped = vi.fn()
     events.on('writeDropped', dropped)
 
-    await safeWrite({ transport, message: 'x', events, disposing: { value: true } })
+    await safeWrite({ transport, message: 'x', events, signal: disposingSignal() })
 
     expect(dropped).toHaveBeenCalledWith(expect.objectContaining({ reason: 'disposing' }))
   })
 
-  test('rethrows non-benign errors', async () => {
+  test('emits writeFailed on non-benign errors and never rejects', async () => {
     const transport = fakeTransport('boom')
     const events = new EventEmitter<ClientEvents>()
-    await expect(
-      safeWrite({ transport, message: 'x', events, disposing: { value: false } }),
-    ).rejects.toThrow('non-benign')
+    const failed = vi.fn()
+    events.on('writeFailed', failed)
+
+    await safeWrite({
+      transport,
+      message: 'x',
+      events,
+      signal: new AbortController().signal,
+    })
+
+    expect(failed).toHaveBeenCalled()
   })
 
-  test('rethrows benign errors when not disposing', async () => {
-    const transport = fakeTransport('closed') as never
+  test('surfaces benign errors outside disposal via writeFailed', async () => {
+    const transport = fakeTransport('closed')
     const events = new EventEmitter<ClientEvents>()
+    const failed = vi.fn()
     const dropped = vi.fn()
+    events.on('writeFailed', failed)
     events.on('writeDropped', dropped)
 
-    await expect(
-      safeWrite({ transport, message: 'x' as never, events, disposing: { value: false } }),
-    ).rejects.toThrow()
+    await safeWrite({
+      transport,
+      message: 'x',
+      events,
+      signal: new AbortController().signal,
+    })
 
     expect(dropped).not.toHaveBeenCalled()
+    expect(failed).toHaveBeenCalled()
   })
 })

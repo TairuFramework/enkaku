@@ -5,14 +5,15 @@ import type { RequestError } from './error.js'
 export type ClientRequestStatus = 'ok' | 'error' | 'aborted'
 
 export type ClientEvents = {
-  requestStart: { rid: string; procedure: string; type: string }
+  disposed: { reason?: unknown }
+  disposing: { reason?: unknown }
   requestEnd: { rid: string; procedure: string; status: ClientRequestStatus }
   requestError: { rid: string; error: Error | RequestError }
-  writeDropped: { rid?: string; reason: unknown; error: Error }
+  requestStart: { rid: string; procedure: string; type: string }
   transportError: { error: Error }
   transportReplaced: Record<string, never>
-  disposing: { reason?: unknown }
-  disposed: { reason?: unknown }
+  writeDropped: { rid?: string; reason: unknown; error: Error }
+  writeFailed: { error: Error; rid?: string }
 }
 
 export type ClientEmitter = EventEmitter<ClientEvents>

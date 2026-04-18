@@ -1,5 +1,5 @@
 import { createArraySink } from '@enkaku/stream'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { EventEmitter } from '../src/index.js'
 
@@ -90,41 +90,37 @@ describe('EventEmitter', () => {
     expect(order).toEqual(['listener done', 'emit done'])
   })
 
-  test('emit() propagates sync listener errors', async () => {
+  test('emit() swallows sync listener errors', async () => {
     const emitter = new EventEmitter<{ test: string }>()
 
     emitter.on('test', () => {
       throw new Error('sync error')
     })
 
-    await expect(emitter.emit('test', 'hello')).rejects.toThrow('sync error')
+    await expect(emitter.emit('test', 'hello')).resolves.toBeUndefined()
   })
 
-  test('emit() propagates async listener errors', async () => {
+  test('emit() swallows async listener errors', async () => {
     const emitter = new EventEmitter<{ test: string }>()
 
     emitter.on('test', async () => {
       throw new Error('async error')
     })
 
-    await expect(emitter.emit('test', 'hello')).rejects.toThrow('async error')
+    await expect(emitter.emit('test', 'hello')).resolves.toBeUndefined()
   })
 
-  test('emit() propagates errors from filtered listeners', async () => {
+  test('emit() still runs other listeners after one throws', async () => {
     const emitter = new EventEmitter<{ test: number }>()
+    const ran = vi.fn()
 
-    emitter.on(
-      'test',
-      () => {
-        throw new Error('filtered error')
-      },
-      { filter: (value) => value > 0 },
-    )
+    emitter.on('test', () => {
+      throw new Error('filtered error')
+    })
+    emitter.on('test', ran)
 
-    // Should not throw when filter rejects
-    await emitter.emit('test', -1)
-    // Should throw when filter matches and listener throws
-    await expect(emitter.emit('test', 1)).rejects.toThrow('filtered error')
+    await emitter.emit('test', 1)
+    expect(ran).toHaveBeenCalledWith(1)
   })
 
   test('emit() runs multiple listeners in parallel', async () => {
@@ -144,8 +140,9 @@ describe('EventEmitter', () => {
     expect(order).toEqual(['fast', 'slow'])
   })
 
-  test('emit() aggregates errors from multiple listeners', async () => {
+  test('emit() swallows errors from every failing listener', async () => {
     const emitter = new EventEmitter<{ test: string }>()
+    const ran = vi.fn()
 
     emitter.on('test', () => {
       throw new Error('error 1')
@@ -153,16 +150,10 @@ describe('EventEmitter', () => {
     emitter.on('test', () => {
       throw new Error('error 2')
     })
+    emitter.on('test', ran)
 
-    await expect(emitter.emit('test', 'hello')).rejects.toThrow(AggregateError)
-    try {
-      await emitter.emit('test', 'hello')
-    } catch (err) {
-      expect(err).toBeInstanceOf(AggregateError)
-      expect((err as AggregateError).errors).toHaveLength(2)
-      expect((err as AggregateError).errors[0]).toEqual(new Error('error 1'))
-      expect((err as AggregateError).errors[1]).toEqual(new Error('error 2'))
-    }
+    await expect(emitter.emit('test', 'hello')).resolves.toBeUndefined()
+    expect(ran).toHaveBeenCalledWith('hello')
   })
 
   test('emit() works without data argument for void events', async () => {

@@ -190,9 +190,9 @@ export type ServerEmitter = EventEmitter<ServerEvents>
 
 export type HandlerContext<Protocol extends ProtocolDefinition> = {
   controllers: Record<string, HandlerController>
-  disposing: { value: boolean }
   events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
   logger: Logger
   send: (payload: AnyServerPayloadOf<Protocol>, options?: { rid?: string }) => Promise<void>
+  signal: AbortSignal
 }

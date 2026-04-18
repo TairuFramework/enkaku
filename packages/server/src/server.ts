@@ -82,14 +82,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   const { events, handlers, limiter, logger, signal, transport, validator } = params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
-  const disposing = { value: false }
   const context: HandlerContext<Protocol> = {
     controllers,
-    disposing,
     events,
     handlers,
     logger,
     send: (payload, options) => safeWrite({ transport, payload, rid: options?.rid, ctx: context }),
+    signal,
   }
   const running: Record<string, Promise<void>> = Object.create(null)
   const encoder = new TextEncoder()
@@ -102,15 +101,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         const controller = controllers[rid]
         if (controller != null) {
           controller.abort('Timeout')
-          events.emit('handlerAbort', { rid, reason: 'Timeout' }).catch(() => {})
+          events.emit('handlerAbort', { rid, reason: 'Timeout' })
           const error = new HandlerError({
             code: 'EK05',
             message: 'Request timeout',
           })
-          context
-            .send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
-            .catch(() => {})
-          events.emit('handlerTimeout', { rid }).catch(() => {})
+          context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
+          events.emit('handlerTimeout', { rid })
           limiter.removeController(rid)
           limiter.releaseHandler()
           delete controllers[rid]
@@ -125,13 +122,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
   const disposer = new Disposer({
     dispose: async () => {
-      disposing.value = true
       clearInterval(cleanupInterval)
       const interruption = new DisposeInterruption()
       // Abort all currently running handlers
       for (const rid of Object.keys(controllers)) {
         controllers[rid]?.abort(interruption)
-        events.emit('handlerAbort', { rid, reason: interruption }).catch(() => {})
+        events.emit('handlerAbort', { rid, reason: interruption })
       }
       // Wait until all running handlers are done
       await Promise.all(Object.values(running))
@@ -154,12 +150,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           validationSpan.end()
 
           logger.debug('received invalid message', { error: result })
-          events
-            .emit('invalidMessage', {
-              error: new Error('Invalid protocol message', { cause: result }),
-              message,
-            })
-            .catch(() => {})
+          events.emit('invalidMessage', {
+            error: new Error('Invalid protocol message', { cause: result }),
+            message,
+          })
           return null
         }
         return (result as StandardSchemaV1.SuccessResult<AnyClientMessageOf<Protocol>>).value
@@ -180,9 +174,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         message: 'Server controller limit reached',
       })
       if (message.payload.typ !== 'event') {
-        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid }).catch(() => {})
+        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
       }
-      events.emit('handlerError', { error, payload: message.payload }).catch(() => {})
+      events.emit('handlerError', { error, payload: message.payload })
       return
     }
 
@@ -193,43 +187,37 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         message: 'Server handler limit reached',
       })
       if (message.payload.typ !== 'event') {
-        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid }).catch(() => {})
+        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
       }
-      events.emit('handlerError', { error, payload: message.payload }).catch(() => {})
+      events.emit('handlerError', { error, payload: message.payload })
       return
     }
 
     limiter.addController(rid)
     limiter.acquireHandler()
 
-    events
-      .emit('handlerStart', {
-        rid,
-        procedure: (message.payload as Record<string, unknown>).prc as string,
-        type: message.payload.typ as string,
-      })
-      .catch(() => {})
+    events.emit('handlerStart', {
+      rid,
+      procedure: (message.payload as Record<string, unknown>).prc as string,
+      type: message.payload.typ as string,
+    })
 
     const returned = handle()
     if (returned instanceof Error) {
       limiter.removeController(rid)
       limiter.releaseHandler()
-      events
-        .emit('handlerError', {
-          error: HandlerError.from(returned, { code: 'EK01' }),
-          payload: message.payload,
-        })
-        .catch(() => {})
+      events.emit('handlerError', {
+        error: HandlerError.from(returned, { code: 'EK01' }),
+        payload: message.payload,
+      })
     } else {
       running[rid] = returned
       returned
         .then(() => {
-          events
-            .emit('handlerEnd', {
-              rid,
-              procedure: (message.payload as Record<string, unknown>).prc as string,
-            })
-            .catch(() => {})
+          events.emit('handlerEnd', {
+            rid,
+            procedure: (message.payload as Record<string, unknown>).prc as string,
+          })
           // Guard against double-release if timeout cleanup already handled this rid
           if (running[rid] === returned) {
             limiter.removeController(rid)
@@ -238,23 +226,19 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           }
         })
         .catch((err: unknown) => {
-          events
-            .emit('handlerEnd', {
-              rid,
-              procedure: (message.payload as Record<string, unknown>).prc as string,
-            })
-            .catch(() => {})
+          events.emit('handlerEnd', {
+            rid,
+            procedure: (message.payload as Record<string, unknown>).prc as string,
+          })
           if (running[rid] === returned) {
             limiter.removeController(rid)
             limiter.releaseHandler()
             delete running[rid]
           }
-          events
-            .emit('handlerError', {
-              error: HandlerError.from(err, { code: 'EK01' }),
-              payload: message.payload,
-            })
-            .catch(() => {})
+          events.emit('handlerError', {
+            error: HandlerError.from(err, { code: 'EK01' }),
+            payload: message.payload,
+          })
         })
     }
   }
@@ -288,11 +272,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     if (message.payload.typ === 'event') {
       events.emit('handlerError', { error, payload: message.payload })
     } else {
-      context
-        .send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>, {
-          rid: message.payload.rid,
-        })
-        .catch(() => {})
+      context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>, {
+        rid: message.payload.rid,
+      })
     }
   }
 
@@ -488,14 +470,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           span.end()
 
           if (message.payload.typ === 'event') {
-            events.emit('eventAuthError', { error, payload: message.payload }).catch(() => {})
-            events.emit('handlerError', { error, payload: message.payload }).catch(() => {})
+            events.emit('eventAuthError', { error, payload: message.payload })
+            events.emit('handlerError', { error, payload: message.payload })
           } else {
-            context
-              .send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>, {
-                rid: message.payload.rid,
-              })
-              .catch(() => {})
+            context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>, {
+              rid: message.payload.rid,
+            })
           }
           return
         }
@@ -530,11 +510,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         })
         if ('rid' in msg.payload && msg.payload.rid != null) {
           const rid = msg.payload.rid as string
-          context
-            .send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
-            .catch(() => {})
+          context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
         }
-        events.emit('handlerError', { error, payload: msg.payload }).catch(() => {})
+        events.emit('handlerError', { error, payload: msg.payload })
         handleNext()
         return
       }
@@ -543,12 +521,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           const controller = controllers[msg.payload.rid]
           if (controller != null) {
             controller.abort(msg.payload.rsn)
-            events
-              .emit('handlerAbort', {
-                rid: msg.payload.rid,
-                reason: msg.payload.rsn,
-              })
-              .catch(() => {})
+            events.emit('handlerAbort', {
+              rid: msg.payload.rid,
+              reason: msg.payload.rsn,
+            })
           }
           break
         }
@@ -580,11 +556,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
                 code: 'EK02',
                 message: 'Channel send message must be signed',
               })
-              context
-                .send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
-                  rid: msg.payload.rid,
-                })
-                .catch(() => {})
+              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                rid: msg.payload.rid,
+              })
               break
             }
             const sendIssuer = (msg as unknown as SignedToken).payload.iss
@@ -593,11 +567,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
                 code: 'EK02',
                 message: 'Send issuer does not match channel owner',
               })
-              context
-                .send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
-                  rid: msg.payload.rid,
-                })
-                .catch(() => {})
+              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                rid: msg.payload.rid,
+              })
               break
             }
           }
@@ -818,12 +790,11 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#handling.push({ done, transport })
 
     const transportID = this.#runtime.getRandomID()
-    this.#events.emit('transportAdded', { transportID }).catch(() => {})
-
+    this.#events.emit('transportAdded', { transportID })
     logger.info('added')
     return done.then(() => {
       logger.info('done')
-      this.#events.emit('transportRemoved', { transportID }).catch(() => {})
+      this.#events.emit('transportRemoved', { transportID })
     })
   }
 }

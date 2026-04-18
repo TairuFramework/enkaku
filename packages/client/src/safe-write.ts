@@ -9,15 +9,23 @@ export type SafeWriteParams = {
   message: unknown
   rid?: string
   events: ClientEmitter
-  disposing: { value: boolean }
+  signal: AbortSignal
 }
 
+/**
+ * Send a client message through the transport, classifying any failure as
+ * either a benign teardown (swallowed → `writeDropped` event) or a real
+ * transport failure (`requestError`/`transportError` surfaces via the Client's
+ * read loop or the calling path). Never rejects, so callers can fire-and-forget
+ * without attaching `.catch`.
+ */
 export async function safeWrite(params: SafeWriteParams): Promise<void> {
-  const { transport, message, rid, events, disposing } = params
+  const { transport, message, rid, events, signal } = params
   try {
     await transport.write(message)
+    return
   } catch (error) {
-    if (isBenignTeardownError(error) && disposing.value) {
+    if (isBenignTeardownError(error) && signal.aborted) {
       await events.emit('writeDropped', {
         rid,
         reason: 'disposing',
@@ -25,6 +33,6 @@ export async function safeWrite(params: SafeWriteParams): Promise<void> {
       })
       return
     }
-    throw error
+    await events.emit('writeFailed', { error: error as Error, rid })
   }
 }

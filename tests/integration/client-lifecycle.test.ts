@@ -1,8 +1,8 @@
+import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { type ProcedureHandlers, type RequestHandler, serve } from '@enkaku/server'
 import { DirectTransports } from '@enkaku/transport'
 import { describe, expect, test, vi } from 'vitest'
-import { Client } from '../src/index.js'
 
 const protocol = {
   ping: {

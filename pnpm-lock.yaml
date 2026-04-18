@@ -306,9 +306,6 @@ importers:
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
-      '@enkaku/server':
-        specifier: workspace:^
-        version: link:../server
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
@@ -810,9 +807,6 @@ importers:
         specifier: workspace:^
         version: link:../token
     devDependencies:
-      '@enkaku/client':
-        specifier: workspace:^
-        version: link:../client
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport

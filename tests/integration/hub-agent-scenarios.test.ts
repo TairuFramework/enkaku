@@ -50,6 +50,7 @@ describe('Scenario A: Multi-device via hub', () => {
     const { client: laptop, identity: laptopID, transports: laptopT } = createTestClient(hub)
 
     const channel = laptop.receive()
+    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -76,6 +77,7 @@ describe('Scenario A: Multi-device via hub', () => {
 
     const { client: laptop, transports: laptopT } = createTestClient(hub, laptopIdentity)
     const channel = laptop.receive()
+    void channel.catch(() => {})
     const reader = channel.readable.getReader()
 
     const msg = await reader.read()
@@ -172,6 +174,7 @@ describe('Scenario A: Group communication', () => {
     await bob.joinGroup('chat')
 
     const channel = bob.receive()
+    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -209,6 +212,7 @@ describe('Scenario A: Group communication', () => {
     await bob.joinGroup('work')
 
     const channel = bob.receive({ groupIDs: ['chat'] })
+    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -239,6 +243,7 @@ describe('Scenario A: Group communication', () => {
     await bob.joinGroup('chat')
 
     const channel = bob.receive()
+    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 

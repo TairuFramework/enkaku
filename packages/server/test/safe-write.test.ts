@@ -20,15 +20,16 @@ function fakeTransport(behaviour: 'ok' | 'closed' | 'boom') {
 function fakeCtx(overrides: Partial<Record<string, unknown>> = {}) {
   const events = new EventEmitter<ServerEvents>()
   const controllers: Record<string, AbortController> = {}
+  const abortController = new AbortController()
   return {
     controllers,
-    disposing: { value: false },
     events,
     logger: {
       debug: () => {},
       trace: () => {},
       warn: () => {},
     } as unknown as import('@enkaku/log').Logger,
+    signal: abortController.signal,
     ...overrides,
   }
 }
@@ -51,8 +52,9 @@ describe('safeWrite', () => {
 
   test('swallows benign errors when disposing and emits writeDropped', async () => {
     const transport = fakeTransport('closed') as never
-    const ctx = fakeCtx()
-    ctx.disposing.value = true
+    const abortController = new AbortController()
+    abortController.abort()
+    const ctx = fakeCtx({ signal: abortController.signal })
     const dropped = vi.fn()
     ctx.events.on('writeDropped', dropped)
 
@@ -90,37 +92,40 @@ describe('safeWrite', () => {
     expect(dropped).toHaveBeenCalledWith(expect.objectContaining({ rid: 'r1', reason: 'aborted' }))
   })
 
-  test('rethrows when controller aborted with a non-benign reason', async () => {
+  test('does not swallow when controller aborted with a non-benign reason', async () => {
     const transport = fakeTransport('closed') as never
     const controller = new AbortController()
     controller.abort('Timeout')
     const ctx = fakeCtx({ controllers: { r1: controller as never } })
+    const writeFailed = vi.fn()
+    const dropped = vi.fn()
+    ctx.events.on('writeFailed', writeFailed)
+    ctx.events.on('writeDropped', dropped)
 
-    await expect(
-      safeWrite({
-        transport,
-        payload: { typ: 'result' } as never,
-        rid: 'r1',
-        ctx: ctx as never,
-      }),
-    ).rejects.toThrow()
+    await safeWrite({
+      transport,
+      payload: { typ: 'result' } as never,
+      rid: 'r1',
+      ctx: ctx as never,
+    })
+
+    expect(dropped).not.toHaveBeenCalled()
+    expect(writeFailed).toHaveBeenCalledWith(expect.objectContaining({ rid: 'r1' }))
   })
 
-  test('rethrows non-benign errors and aborts the controller', async () => {
+  test('emits writeFailed and aborts the controller on non-benign errors', async () => {
     const transport = fakeTransport('boom') as never
     const controller = new AbortController()
     const ctx = fakeCtx({ controllers: { r1: controller as never } })
     const writeFailed = vi.fn()
     ctx.events.on('writeFailed', writeFailed)
 
-    await expect(
-      safeWrite({
-        transport,
-        payload: { typ: 'result' } as never,
-        rid: 'r1',
-        ctx: ctx as never,
-      }),
-    ).rejects.toThrow('non-benign')
+    await safeWrite({
+      transport,
+      payload: { typ: 'result' } as never,
+      rid: 'r1',
+      ctx: ctx as never,
+    })
 
     expect(writeFailed).toHaveBeenCalledWith(expect.objectContaining({ rid: 'r1' }))
     expect(controller.signal.aborted).toBe(true)

@@ -102,7 +102,10 @@ export class EventEmitter<Events extends Record<string, unknown>> {
   async emit<Name extends keyof Events>(name: Name, data?: Events[Name]): Promise<void> {
     const listeners = this.#listeners.get(name)
     if (!listeners || listeners.size === 0) return
-    const results = await Promise.allSettled(
+    // Listener errors are the listener's problem, not the emitter caller's.
+    // allSettled + discard prevents one bad listener from turning every
+    // fire-and-forget emit site into an unhandled-rejection source.
+    await Promise.allSettled(
       [...listeners].map((fn) => {
         try {
           return fn(data)
@@ -111,11 +114,6 @@ export class EventEmitter<Events extends Record<string, unknown>> {
         }
       }),
     )
-    const errors = results
-      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-      .map((r) => r.reason)
-    if (errors.length === 1) throw errors[0]
-    if (errors.length > 1) throw new AggregateError(errors)
   }
 
   readable<Name extends keyof Events>(

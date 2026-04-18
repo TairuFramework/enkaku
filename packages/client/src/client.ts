@@ -254,7 +254,6 @@ export class Client<
   #handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   #handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
-  #disposing = { value: false }
   #logger: Logger
   #tracer: Tracer
   #transport: ClientTransportOf<Protocol>
@@ -263,7 +262,6 @@ export class Client<
   constructor(params: ClientParams<Protocol>) {
     super({
       dispose: async (reason?: unknown) => {
-        this.#disposing.value = true
         await this.#events.emit('disposing', { reason })
         this.#abortControllers(reason)
         await this.#transport.dispose(reason)
@@ -308,7 +306,7 @@ export class Client<
         // Abort running procedures and start using new transport
         this.#abortControllers('TransportDisposed')
         this.#transport = newTransport
-        this.#events.emit('transportReplaced', {}).catch(() => {})
+        this.#events.emit('transportReplaced', {})
         this.#setupTransport()
       }
     })
@@ -324,7 +322,7 @@ export class Client<
       () => {
         span.setStatus({ code: SpanStatusCode.OK })
         span.end()
-        this.#events.emit('requestEnd', { ...meta, status: 'ok' }).catch(() => {})
+        this.#events.emit('requestEnd', { ...meta, status: 'ok' })
         delete this.#spans[meta.rid]
       },
       (error) => {
@@ -342,7 +340,7 @@ export class Client<
           error === 'Close' || (error as { name?: string } | null)?.name === 'AbortError'
             ? 'aborted'
             : 'error'
-        this.#events.emit('requestEnd', { ...meta, status }).catch(() => {})
+        this.#events.emit('requestEnd', { ...meta, status })
         delete this.#spans[meta.rid]
       },
     )
@@ -363,7 +361,7 @@ export class Client<
         }
         this.#logger.debug('failed to read from transport', { cause })
         const error = new Error('Transport read failed', { cause })
-        this.#events.emit('transportError', { error }).catch(() => {})
+        this.#events.emit('transportError', { error })
         const newTransport = this.#handleTransportError?.(error)
         if (newTransport == null) {
           this.#logger.warn('aborting following unhanded transport error')
@@ -374,7 +372,7 @@ export class Client<
           // Abort running procedures and start using new transport
           this.#abortControllers(error)
           this.#transport = newTransport
-          this.#events.emit('transportReplaced', {}).catch(() => {})
+          this.#events.emit('transportReplaced', {})
           this.#setupTransport()
         }
         return
@@ -450,8 +448,32 @@ export class Client<
       message,
       rid,
       events: this.#events,
-      disposing: this.#disposing,
+      signal: this.signal,
     })
+  }
+
+  // Fire-and-forget abort notification for `#handleSignal`. Never rejects:
+  // benign teardown errors are absorbed by `safeWrite`, other failures surface
+  // via `requestError` so consumers can observe them without each abort site
+  // needing its own `.catch` handler.
+  #notifyAbort(rid: string, reason: unknown, header?: AnyHeader): void {
+    void (async () => {
+      try {
+        await this.#write(
+          {
+            typ: 'abort',
+            rid,
+            rsn: reason,
+          } as unknown as AnyClientPayloadOf<Protocol>,
+          header,
+          rid,
+        )
+      } catch (error) {
+        if (!this.signal.aborted) {
+          await this.#events.emit('requestError', { rid, error: error as Error })
+        }
+      }
+    })()
   }
 
   #handleSignal<Result>(
@@ -472,23 +494,7 @@ export class Client<
           rid,
           reason,
         })
-        this.#write(
-          {
-            typ: 'abort',
-            rid,
-            rsn: reason,
-          } as unknown as AnyClientPayloadOf<Protocol>,
-          controller.header,
-          rid,
-        ).catch(async (error: Error) => {
-          if (!this.#disposing.value) {
-            try {
-              await this.#events.emit('requestError', { rid, error })
-            } catch {
-              // Swallow listener errors on teardown path
-            }
-          }
-        })
+        this.#notifyAbort(rid, reason, controller.header)
         controller.aborted(signal)
         delete this.#controllers[rid]
       },
@@ -591,7 +597,7 @@ export class Client<
         param: prm,
       })
     }
-    this.#events.emit('requestStart', { rid, procedure, type: controller.type }).catch(() => {})
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
@@ -665,7 +671,7 @@ export class Client<
         param: prm,
       })
     }
-    this.#events.emit('requestStart', { rid, procedure, type: controller.type }).catch(() => {})
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
@@ -751,7 +757,7 @@ export class Client<
         param: prm,
       })
     }
-    this.#events.emit('requestStart', { rid, procedure, type: controller.type }).catch(() => {})
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
       this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )

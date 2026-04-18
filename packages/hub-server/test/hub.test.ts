@@ -38,6 +38,7 @@ describe('hub handlers', () => {
 
     // Bob opens receive channel
     const channel = bob.createChannel('hub/receive', { param: {} })
+    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -104,6 +105,7 @@ describe('hub handlers', () => {
 
     // Bob opens receive channel
     const channel = bob.createChannel('hub/receive', { param: {} })
+    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -150,6 +152,7 @@ describe('hub handlers', () => {
     })
 
     const channel = bob.createChannel('hub/receive', { param: {} })
+    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     const msg = await reader.read()
     expect(msg.done).toBe(false)
@@ -191,6 +194,7 @@ describe('hub handlers', () => {
     })
 
     const channel = bob.createChannel('hub/receive', { param: {} })
+    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     const msg1 = await reader.read()
     const msg2 = await reader.read()
@@ -215,6 +219,7 @@ describe('hub handlers', () => {
     })
 
     const channel2 = bob2.createChannel('hub/receive', { param: {} })
+    void channel2.catch(() => {})
     const reader2 = channel2.readable.getReader()
 
     // Send a new message to verify channel works

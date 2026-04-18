@@ -1,8 +1,8 @@
+import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { type ChannelHandler, type ProcedureHandlers, serve } from '@enkaku/server'
 import { DirectTransports } from '@enkaku/transport'
 import { describe, expect, test } from 'vitest'
-import { Client } from '../src/index.js'
 
 const protocol = {
   echo: {
