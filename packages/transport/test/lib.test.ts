@@ -75,19 +75,30 @@ describe('TransportEvents lifecycle', () => {
     expect(disposed).toHaveBeenCalledWith({ reason: 'test-reason' })
     // disposing must fire before disposed
     expect(disposing.mock.invocationCallOrder[0]).toBeLessThan(disposed.mock.invocationCallOrder[0])
+
+    await transports.client.dispose()
   })
 
-  test('readFailed event structure is correct', async () => {
-    const transports = new DirectTransports<unknown, unknown>()
+  test('emits readFailed when the reader throws', async () => {
+    const readFailed = vi.fn()
+    const errored = new ReadableStream({
+      start(controller) {
+        controller.error(new Error('upstream failure'))
+      },
+    })
+    const transport = new Transport<unknown, unknown>({
+      stream: {
+        readable: errored,
+        writable: new WritableStream(),
+      },
+    })
+    transport.events.on('readFailed', readFailed)
 
-    // The readFailed event should have an error property when the listener fires.
-    // We just verify the TransportEvents type includes readFailed with error.
-    const readFailedHandler = vi.fn()
-    transports.client.events.on('readFailed', readFailedHandler)
+    await expect(transport.read()).rejects.toThrow('upstream failure')
 
-    // Simulate a read error by closing the stream and attempting to read.
-    // Note: The actual error behavior depends on the underlying stream implementation.
-    // This test verifies the event listener can be attached without type errors.
-    expect(typeof readFailedHandler).toBe('function')
+    expect(readFailed).toHaveBeenCalledTimes(1)
+    expect(readFailed.mock.calls[0][0]).toHaveProperty('error')
+
+    await transport.dispose()
   })
 })
