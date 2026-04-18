@@ -27,4 +27,4 @@ runs:
 
     - name: Build packages
       shell: bash
-      run: pnpm run build:ci
+      run: pnpm run build
