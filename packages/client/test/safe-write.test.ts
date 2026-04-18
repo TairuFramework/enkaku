@@ -19,21 +19,21 @@ function fakeTransport(behaviour: 'ok' | 'closed' | 'boom') {
 
 describe('client safeWrite', () => {
   test('swallows benign errors when disposing', async () => {
-    const transport = fakeTransport('closed') as never
+    const transport = fakeTransport('closed')
     const events = new EventEmitter<ClientEvents>()
     const dropped = vi.fn()
     events.on('writeDropped', dropped)
 
-    await safeWrite({ transport, message: 'x' as never, events, disposing: { value: true } })
+    await safeWrite({ transport, message: 'x', events, disposing: { value: true } })
 
     expect(dropped).toHaveBeenCalledWith(expect.objectContaining({ reason: 'disposing' }))
   })
 
   test('rethrows non-benign errors', async () => {
-    const transport = fakeTransport('boom') as never
+    const transport = fakeTransport('boom')
     const events = new EventEmitter<ClientEvents>()
     await expect(
-      safeWrite({ transport, message: 'x' as never, events, disposing: { value: false } }),
+      safeWrite({ transport, message: 'x', events, disposing: { value: false } }),
     ).rejects.toThrow('non-benign')
   })
 })

@@ -34,7 +34,7 @@ import { createPipe, writeTo } from '@enkaku/stream'
 import { createUnsignedToken, type Identity, isSigningIdentity } from '@enkaku/token'
 import { RequestError } from './error.js'
 import type { ClientEmitter, ClientEvents } from './events.js'
-import { safeWrite } from './safe-write.js'
+import { safeWrite, type WriteTarget } from './safe-write.js'
 
 const defaultTracer = createTracer('client')
 
@@ -432,7 +432,7 @@ export class Client<
     const finalHeader = Object.keys(enrichedHeader).length > 0 ? enrichedHeader : undefined
     const message = await this.#createMessage(payload, finalHeader)
     await safeWrite({
-      transport: this.#transport,
+      transport: this.#transport as unknown as WriteTarget,
       message,
       rid,
       events: this.#events,
@@ -466,9 +466,13 @@ export class Client<
           } as unknown as AnyClientPayloadOf<Protocol>,
           controller.header,
           rid,
-        ).catch((error: Error) => {
+        ).catch(async (error: Error) => {
           if (!this.#disposing.value) {
-            this.#events.emit('requestError', { rid, error })
+            try {
+              await this.#events.emit('requestError', { rid, error })
+            } catch {
+              // Swallow listener errors on teardown path
+            }
           }
         })
         controller.aborted(signal)

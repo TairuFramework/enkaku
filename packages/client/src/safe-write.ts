@@ -2,15 +2,11 @@ import { isBenignTeardownError } from '@enkaku/async'
 
 import type { ClientEmitter } from './events.js'
 
-export type WriteTarget = {
-  // biome-ignore lint/suspicious/noExplicitAny: transport write accepts protocol-specific messages
-  write: (message: any) => Promise<void>
-}
+export type WriteTarget = { write: (message: unknown) => Promise<void> }
 
 export type SafeWriteParams = {
   transport: WriteTarget
-  // biome-ignore lint/suspicious/noExplicitAny: callers pass typed messages via the write method
-  message: any
+  message: unknown
   rid?: string
   events: ClientEmitter
   disposing: { value: boolean }
