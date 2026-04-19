@@ -1,5 +1,5 @@
 import { createArraySink } from '@enkaku/stream'
-import { describe, expect, test, vi } from 'vitest'
+import { describe, expect, test } from 'vitest'
 
 import { EventEmitter } from '../src/index.js'
 
@@ -90,37 +90,41 @@ describe('EventEmitter', () => {
     expect(order).toEqual(['listener done', 'emit done'])
   })
 
-  test('emit() swallows sync listener errors', async () => {
+  test('emit() propagates sync listener errors', async () => {
     const emitter = new EventEmitter<{ test: string }>()
 
     emitter.on('test', () => {
       throw new Error('sync error')
     })
 
-    await expect(emitter.emit('test', 'hello')).resolves.toBeUndefined()
+    await expect(emitter.emit('test', 'hello')).rejects.toThrow('sync error')
   })
 
-  test('emit() swallows async listener errors', async () => {
+  test('emit() propagates async listener errors', async () => {
     const emitter = new EventEmitter<{ test: string }>()
 
     emitter.on('test', async () => {
       throw new Error('async error')
     })
 
-    await expect(emitter.emit('test', 'hello')).resolves.toBeUndefined()
+    await expect(emitter.emit('test', 'hello')).rejects.toThrow('async error')
   })
 
-  test('emit() still runs other listeners after one throws', async () => {
+  test('emit() propagates errors from filtered listeners', async () => {
     const emitter = new EventEmitter<{ test: number }>()
-    const ran = vi.fn()
 
-    emitter.on('test', () => {
-      throw new Error('filtered error')
-    })
-    emitter.on('test', ran)
+    emitter.on(
+      'test',
+      () => {
+        throw new Error('filtered error')
+      },
+      { filter: (value) => value > 0 },
+    )
 
-    await emitter.emit('test', 1)
-    expect(ran).toHaveBeenCalledWith(1)
+    // Should not throw when filter rejects
+    await emitter.emit('test', -1)
+    // Should throw when filter matches and listener throws
+    await expect(emitter.emit('test', 1)).rejects.toThrow('filtered error')
   })
 
   test('emit() runs multiple listeners in parallel', async () => {
@@ -140,9 +144,8 @@ describe('EventEmitter', () => {
     expect(order).toEqual(['fast', 'slow'])
   })
 
-  test('emit() swallows errors from every failing listener', async () => {
+  test('emit() aggregates errors from multiple listeners', async () => {
     const emitter = new EventEmitter<{ test: string }>()
-    const ran = vi.fn()
 
     emitter.on('test', () => {
       throw new Error('error 1')
@@ -150,14 +153,20 @@ describe('EventEmitter', () => {
     emitter.on('test', () => {
       throw new Error('error 2')
     })
-    emitter.on('test', ran)
 
-    await expect(emitter.emit('test', 'hello')).resolves.toBeUndefined()
-    expect(ran).toHaveBeenCalledWith('hello')
+    await expect(emitter.emit('test', 'hello')).rejects.toThrow(AggregateError)
+    try {
+      await emitter.emit('test', 'hello')
+    } catch (err) {
+      expect(err).toBeInstanceOf(AggregateError)
+      expect((err as AggregateError).errors).toHaveLength(2)
+      expect((err as AggregateError).errors[0]).toEqual(new Error('error 1'))
+      expect((err as AggregateError).errors[1]).toEqual(new Error('error 2'))
+    }
   })
 
   test('emit() works without data argument for void events', async () => {
-    const emitter = new EventEmitter<{ ping: undefined; pong: string }>()
+    const emitter = new EventEmitter<{ ping: void; pong: string }>()
     let called = false
 
     emitter.on('ping', () => {
@@ -168,9 +177,7 @@ describe('EventEmitter', () => {
     expect(called).toBe(true)
 
     const received: Array<string> = []
-    emitter.on('pong', (value) => {
-      received.push(value)
-    })
+    emitter.on('pong', (value) => received.push(value))
     await emitter.emit('pong', 'hello')
     expect(received).toEqual(['hello'])
   })
@@ -192,13 +199,7 @@ describe('EventEmitter', () => {
     const controller = new AbortController()
     const received: Array<number> = []
 
-    emitter.on(
-      'test',
-      (value) => {
-        received.push(value)
-      },
-      { signal: controller.signal },
-    )
+    emitter.on('test', (value) => received.push(value), { signal: controller.signal })
 
     await emitter.emit('test', 1)
     controller.abort()
@@ -211,13 +212,7 @@ describe('EventEmitter', () => {
     const emitter = new EventEmitter<{ test: number }>()
     const received: Array<number> = []
 
-    emitter.on(
-      'test',
-      (value) => {
-        received.push(value)
-      },
-      { signal: AbortSignal.abort() },
-    )
+    emitter.on('test', (value) => received.push(value), { signal: AbortSignal.abort() })
 
     await emitter.emit('test', 1)
     expect(received).toEqual([])
