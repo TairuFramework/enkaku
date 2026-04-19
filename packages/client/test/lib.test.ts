@@ -803,13 +803,7 @@ describe('Client', () => {
       const closeRead = await transports.server.read()
       expect(closeRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid, rsn: 'Close' })
 
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 3 }))
-      await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
-      await expect(stream).resolves.toBe('OK')
-
-      const [writable, received] = createArraySink<number>()
-      stream.readable.pipeTo(writable)
-      await expect(received).resolves.toEqual([1, 2, 3])
+      await expect(stream).rejects.toEqual('Close')
 
       await transports.dispose()
     })
@@ -830,12 +824,10 @@ describe('Client', () => {
       await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 2 }))
 
       stream.close()
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 3 }))
-      await transports.server.write(unsignedToken({ typ: 'result', rid: stream.id, val: 'OK' }))
 
       await pipeDone
-      await expect(receivedPromise).resolves.toEqual([1, 2, 3])
-      await expect(stream).resolves.toBe('OK')
+      await expect(receivedPromise).resolves.toEqual([1, 2])
+      await expect(stream).rejects.toEqual('Close')
 
       await transports.dispose()
     })
@@ -1135,13 +1127,7 @@ describe('Client', () => {
       const closeRead = await transports.server.read()
       expect(closeRead.value?.payload).toEqual({ typ: 'abort', rid: payload.rid, rsn: 'Close' })
 
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 3 }))
-      await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
-      await expect(channel).resolves.toBe('OK')
-
-      const [writable, received] = createArraySink<number>()
-      channel.readable.pipeTo(writable)
-      await expect(received).resolves.toEqual([1, 2, 3])
+      await expect(channel).rejects.toEqual('Close')
 
       await transports.dispose()
     })

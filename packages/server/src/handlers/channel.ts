@@ -76,11 +76,14 @@ export function handleChannel<
         rid: msg.payload.rid,
         val,
       })
-      await ctx.send({
-        typ: 'receive',
-        rid: msg.payload.rid,
-        val,
-      } as unknown as AnyServerPayloadOf<Protocol>)
+      await ctx.send(
+        {
+          typ: 'receive',
+          rid: msg.payload.rid,
+          val,
+        } as unknown as AnyServerPayloadOf<Protocol>,
+        { rid: msg.payload.rid },
+      )
     }),
   )
 

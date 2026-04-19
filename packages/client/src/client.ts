@@ -1,4 +1,5 @@
 import { Disposer, defer } from '@enkaku/async'
+import { EventEmitter } from '@enkaku/event'
 import { getEnkakuLogger, type Logger } from '@enkaku/log'
 import {
   AttributeKeys,
@@ -32,6 +33,8 @@ import { createRuntime, type Runtime } from '@enkaku/runtime'
 import { createPipe, writeTo } from '@enkaku/stream'
 import { createUnsignedToken, type Identity, isSigningIdentity } from '@enkaku/token'
 import { RequestError } from './error.js'
+import type { ClientEmitter, ClientEvents } from './events.js'
+import { safeWrite, type WriteTarget } from './safe-write.js'
 
 const defaultTracer = createTracer('client')
 
@@ -254,12 +257,15 @@ export class Client<
   #logger: Logger
   #tracer: Tracer
   #transport: ClientTransportOf<Protocol>
+  #events: ClientEmitter = new EventEmitter<ClientEvents>()
 
   constructor(params: ClientParams<Protocol>) {
     super({
       dispose: async (reason?: unknown) => {
+        await this.#events.emit('disposing', { reason })
         this.#abortControllers(reason)
         await this.#transport.dispose(reason)
+        await this.#events.emit('disposed', { reason })
         this.#logger.debug('disposed')
       },
     })
@@ -276,10 +282,11 @@ export class Client<
   }
 
   #abortControllers(reason?: unknown): void {
-    if (!this.signal.aborted) {
-      for (const controller of Object.values(this.#controllers)) {
-        controller.abort(reason)
-      }
+    // Runs during dispose (where this.signal is already aborted by the base
+    // Disposer) and on transport replacement. Clearing the map after the loop
+    // makes re-entry a no-op, so no guard is needed.
+    for (const controller of Object.values(this.#controllers)) {
+      controller.abort(reason)
     }
     this.#controllers = {}
   }
@@ -299,18 +306,24 @@ export class Client<
         // Abort running procedures and start using new transport
         this.#abortControllers('TransportDisposed')
         this.#transport = newTransport
+        this.#events.emit('transportReplaced', {})
         this.#setupTransport()
       }
     })
     this.#read()
   }
 
-  #endSpanOnResult(span: Span, result: Promise<unknown>, rid?: string): void {
+  #endSpanOnResult(
+    span: Span,
+    result: Promise<unknown>,
+    meta: { rid: string; procedure: string },
+  ): void {
     result.then(
       () => {
         span.setStatus({ code: SpanStatusCode.OK })
         span.end()
-        if (rid != null) delete this.#spans[rid]
+        this.#events.emit('requestEnd', { ...meta, status: 'ok' })
+        delete this.#spans[meta.rid]
       },
       (error) => {
         if (error instanceof RequestError) {
@@ -323,7 +336,12 @@ export class Client<
         })
         span.recordException(error instanceof Error ? error : new Error(String(error)))
         span.end()
-        if (rid != null) delete this.#spans[rid]
+        const status: 'ok' | 'error' | 'aborted' =
+          error === 'Close' || (error as { name?: string } | null)?.name === 'AbortError'
+            ? 'aborted'
+            : 'error'
+        this.#events.emit('requestEnd', { ...meta, status })
+        delete this.#spans[meta.rid]
       },
     )
   }
@@ -343,6 +361,7 @@ export class Client<
         }
         this.#logger.debug('failed to read from transport', { cause })
         const error = new Error('Transport read failed', { cause })
+        this.#events.emit('transportError', { error })
         const newTransport = this.#handleTransportError?.(error)
         if (newTransport == null) {
           this.#logger.warn('aborting following unhanded transport error')
@@ -353,6 +372,7 @@ export class Client<
           // Abort running procedures and start using new transport
           this.#abortControllers(error)
           this.#transport = newTransport
+          this.#events.emit('transportReplaced', {})
           this.#setupTransport()
         }
         return
@@ -411,7 +431,11 @@ export class Client<
     }
   }
 
-  async #write(payload: AnyClientPayloadOf<Protocol>, header?: AnyHeader): Promise<void> {
+  async #write(
+    payload: AnyClientPayloadOf<Protocol>,
+    header?: AnyHeader,
+    rid?: string,
+  ): Promise<void> {
     if (this.signal.aborted) {
       throw new Error('Client aborted', { cause: this.signal.reason })
     }
@@ -419,7 +443,48 @@ export class Client<
     const enrichedHeader = otelInjectTraceContext(baseHeader)
     const finalHeader = Object.keys(enrichedHeader).length > 0 ? enrichedHeader : undefined
     const message = await this.#createMessage(payload, finalHeader)
-    await this.#transport.write(message)
+    await safeWrite({
+      transport: this.#transport as unknown as WriteTarget,
+      message,
+      rid,
+      events: this.#events,
+      signal: this.signal,
+      onFailure: (error) => {
+        if (rid != null) {
+          // Surface the write failure on the per-rid controller so the
+          // awaited request/stream/channel promise rejects, instead of
+          // hanging on a server reply that will never arrive.
+          this.#controllers[rid]?.abort(error)
+        }
+      },
+    })
+  }
+
+  // Fire-and-forget abort notification for `#handleSignal`. Never rejects:
+  // `safeWrite` already absorbs benign teardown errors and routes non-benign
+  // ones through `writeFailed` + the per-rid controller. The try/catch here
+  // only covers `#write`'s synchronous preflight (`this.signal.aborted` ->
+  // throw) and signing errors from `#createMessage`, which are the only paths
+  // that still reject. `requestError` surfaces those so callers can observe
+  // mid-abort failures without each abort site needing its own `.catch`.
+  #notifyAbort(rid: string, reason: unknown, header?: AnyHeader): void {
+    void (async () => {
+      try {
+        await this.#write(
+          {
+            typ: 'abort',
+            rid,
+            rsn: reason,
+          } as unknown as AnyClientPayloadOf<Protocol>,
+          header,
+          rid,
+        )
+      } catch (error) {
+        if (!this.signal.aborted) {
+          await this.#events.emit('requestError', { rid, error: error as Error })
+        }
+      }
+    })()
   }
 
   #handleSignal<Result>(
@@ -433,29 +498,24 @@ export class Client<
     signal.addEventListener(
       'abort',
       () => {
-        const reason = signal.reason.name ?? signal.reason
+        const reason = signal.reason?.name ?? signal.reason
         this.#logger.trace('abort {type} {procedure} with ID {rid} and reason: {reason}', {
           type: controller.type,
           procedure: controller.procedure,
           rid,
           reason,
         })
-        void this.#write(
-          {
-            typ: 'abort',
-            rid,
-            rsn: reason,
-          } as unknown as AnyClientPayloadOf<Protocol>,
-          controller.header,
-        )
-        if (signal.reason !== 'Close') {
-          controller.aborted(signal)
-          delete this.#controllers[rid]
-        }
+        this.#notifyAbort(rid, reason, controller.header)
+        controller.aborted(signal)
+        delete this.#controllers[rid]
       },
       { once: true },
     )
     return signal
+  }
+
+  get events(): ClientEmitter {
+    return this.#events
   }
 
   async sendEvent<
@@ -548,11 +608,12 @@ export class Client<
         param: prm,
       })
     }
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
+      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
 
-    this.#endSpanOnResult(span, controller.result)
+    this.#endSpanOnResult(span, controller.result, { rid, procedure })
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
     return createRequest({ id: rid, controller, signal, sent })
@@ -621,11 +682,12 @@ export class Client<
         param: prm,
       })
     }
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
+      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
 
-    this.#endSpanOnResult(span, controller.result, rid)
+    this.#endSpanOnResult(span, controller.result, { rid, procedure })
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
@@ -706,11 +768,12 @@ export class Client<
         param: prm,
       })
     }
+    this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header),
+      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
     )
 
-    this.#endSpanOnResult(span, controller.result, rid)
+    this.#endSpanOnResult(span, controller.result, { rid, procedure })
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
@@ -729,6 +792,7 @@ export class Client<
       await this.#write(
         { typ: 'send', rid, val } as unknown as AnyClientPayloadOf<Protocol>,
         config.header,
+        rid,
       )
     }
 

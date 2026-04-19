@@ -1,5 +1,5 @@
 import { createPipe } from '@enkaku/stream'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { DirectTransports, Transport } from '../src/index.js'
 
@@ -58,5 +58,47 @@ describe('DirectTransports class', () => {
     expect(serverReceived).toEqual(['c1', 'c2'])
 
     await transports.dispose()
+  })
+})
+
+describe('TransportEvents lifecycle', () => {
+  test('emits disposing and disposed around dispose()', async () => {
+    const transports = new DirectTransports<unknown, unknown>()
+    const disposing = vi.fn()
+    const disposed = vi.fn()
+    transports.server.events.on('disposing', disposing)
+    transports.server.events.on('disposed', disposed)
+
+    await transports.server.dispose('test-reason')
+
+    expect(disposing).toHaveBeenCalledWith({ reason: 'test-reason' })
+    expect(disposed).toHaveBeenCalledWith({ reason: 'test-reason' })
+    // disposing must fire before disposed
+    expect(disposing.mock.invocationCallOrder[0]).toBeLessThan(disposed.mock.invocationCallOrder[0])
+
+    await transports.client.dispose()
+  })
+
+  test('emits readFailed when the reader throws', async () => {
+    const readFailed = vi.fn()
+    const errored = new ReadableStream({
+      start(controller) {
+        controller.error(new Error('upstream failure'))
+      },
+    })
+    const transport = new Transport<unknown, unknown>({
+      stream: {
+        readable: errored,
+        writable: new WritableStream(),
+      },
+    })
+    transport.events.on('readFailed', readFailed)
+
+    await expect(transport.read()).rejects.toThrow('upstream failure')
+
+    expect(readFailed).toHaveBeenCalledTimes(1)
+    expect(readFailed.mock.calls[0][0]).toHaveProperty('error')
+
+    await transport.dispose()
   })
 })

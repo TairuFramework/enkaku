@@ -3,7 +3,7 @@ import type { HubProtocol } from '@enkaku/hub-protocol'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
 import { randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
-import { describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
 import { createHub } from '../src/hub.js'
 import { createMemoryStore } from '../src/memoryStore.js'
@@ -53,6 +53,7 @@ describe('hub handlers', () => {
     expect(msg.value?.senderDID).toBe(aliceIdentity.id)
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await bobTransports.dispose()
     await aliceTransports.dispose()
@@ -118,6 +119,7 @@ describe('hub handlers', () => {
     expect(msg.value?.groupID).toBe('chat')
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await bobTransports.dispose()
     await aliceTransports.dispose()
@@ -156,6 +158,7 @@ describe('hub handlers', () => {
     expect(msg.value?.payload).toBe(btoa('offline-msg'))
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await bobTransports.dispose()
     await aliceTransports.dispose()
@@ -204,6 +207,7 @@ describe('hub handlers', () => {
 
     // Close and reconnect -- should get no old messages
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await bobTransports.dispose()
 
@@ -225,6 +229,7 @@ describe('hub handlers', () => {
     expect(msg3.value?.payload).toBe(btoa('msg-3'))
 
     channel2.close()
+    await expect(channel2).rejects.toEqual('Close')
     await delay(50)
     await bobTransports2.dispose()
     await aliceTransports.dispose()
@@ -274,5 +279,50 @@ describe('hub handlers', () => {
     expect(leaveResult.left).toBe(true)
 
     await transports.dispose()
+  })
+})
+
+describe('Hub teardown produces no unhandled rejections', () => {
+  const rejections: unknown[] = []
+  const onRejection = (reason: unknown) => rejections.push(reason)
+
+  beforeEach(() => {
+    rejections.length = 0
+    process.on('unhandledRejection', onRejection)
+  })
+  afterEach(() => {
+    process.off('unhandledRejection', onRejection)
+  })
+
+  test('hub/receive channel teardown (original bug repro)', async () => {
+    const { createHub, createMemoryStore } = await import('../src/index.js')
+    const { Client } = await import('@enkaku/client')
+    const { DirectTransports } = await import('@enkaku/transport')
+    const { randomIdentity } = await import('@enkaku/token')
+
+    const store = createMemoryStore()
+    const hubTransports = new DirectTransports()
+    const hub = createHub({ transport: hubTransports.server, store, accessControl: false })
+    const clientTransports = new DirectTransports()
+    hub.server.handle(clientTransports.server)
+    const client = new Client({
+      transport: clientTransports.client,
+      identity: randomIdentity(),
+    } as never)
+
+    const channel = client.createChannel(
+      'hub/receive' as never,
+      { param: { groupIDs: ['g1'] } } as never,
+    )
+    channel.close()
+    await expect(channel).rejects.toEqual('Close')
+    await client.dispose()
+    await hub.server.dispose()
+
+    await new Promise((r) => setTimeout(r, 20))
+    expect(
+      rejections,
+      `unexpected unhandled rejections: ${rejections.map(String).join(', ')}`,
+    ).toHaveLength(0)
   })
 })

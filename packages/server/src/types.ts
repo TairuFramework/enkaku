@@ -1,3 +1,4 @@
+import type { DisposeInterruption } from '@enkaku/async'
 import type { EventEmitter } from '@enkaku/event'
 import type { Logger } from '@enkaku/log'
 import type {
@@ -161,17 +162,28 @@ export type SendType<
   : never
 
 export type ServerEvents = {
+  disposed: { reason?: unknown }
+  disposing: { reason?: unknown }
   eventAuthError: {
     error: HandlerError<string>
     payload: Record<string, unknown>
   }
-  handlerAbort: { rid: string }
+  handlerAbort: {
+    rid: string
+    reason: 'Close' | 'Timeout' | 'Transport' | DisposeInterruption | string | undefined
+  }
+  handlerEnd: { rid: string; procedure: string }
   handlerError: {
     error: HandlerError<string>
     payload: Record<string, unknown>
   }
+  handlerStart: { rid: string; procedure: string; type: string }
   handlerTimeout: { rid: string }
   invalidMessage: { error: Error; message: unknown }
+  transportAdded: { transportID: string }
+  transportRemoved: { transportID: string; reason?: unknown }
+  writeDropped: { rid?: string; reason: unknown; error: Error }
+  writeFailed: { error: Error; rid?: string }
 }
 
 export type ServerEmitter = EventEmitter<ServerEvents>
@@ -181,5 +193,6 @@ export type HandlerContext<Protocol extends ProtocolDefinition> = {
   events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
   logger: Logger
-  send: (payload: AnyServerPayloadOf<Protocol>) => Promise<void>
+  send: (payload: AnyServerPayloadOf<Protocol>, options?: { rid?: string }) => Promise<void>
+  signal: AbortSignal
 }

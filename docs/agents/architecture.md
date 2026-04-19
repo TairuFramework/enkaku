@@ -144,6 +144,18 @@ packages/[package-name]/
 
 ---
 
+## Lifecycle events
+
+Each of `Transport`, `Server`, and `Client` exposes an `events` EventEmitter so consumers can observe the full connection lifecycle:
+
+- **`Transport.events`** — `writeFailed` (optional, transport-specific), `readFailed`, `disposing`, `disposed`.
+- **`Server.events`** — existing (`eventAuthError`, `handlerError`, `handlerTimeout`, `invalidMessage`) plus `handlerStart`, `handlerEnd`, `handlerAbort`, `writeDropped`, `disposing`, `disposed`, `transportAdded`, `transportRemoved`.
+- **`Client.events`** — `requestStart`, `requestEnd`, `requestError`, `writeDropped`, `transportError`, `transportReplaced`, `disposing`, `disposed`.
+
+Benign teardown errors (`AbortError`, `DisposeInterruption`, closed-writer/reader) are swallowed by the internal `safeWrite` wrapper and surface as `writeDropped` rather than unhandled rejections. Use `isBenignTeardownError` from `@enkaku/async` to classify errors in consumer code.
+
+---
+
 ## Available Skills
 
 The progressive discovery system provides focused guidance for specific domains. Skills are being built progressively -- use what's available:

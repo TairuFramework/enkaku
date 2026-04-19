@@ -35,7 +35,7 @@ describe('executeHandler()', () => {
       trace: vi.fn(),
       warn: vi.fn(),
     } as unknown as Logger
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
     const handlerError = events.once('handlerError')
 
     await executeHandler({
@@ -49,13 +49,16 @@ describe('executeHandler()', () => {
       payload,
       execute: () => handler(),
     })
-    expect(send).toHaveBeenCalledWith({
-      typ: 'error',
-      rid: '1',
-      code: error.code,
-      data: {},
-      msg: 'Request failed',
-    })
+    expect(send).toHaveBeenCalledWith(
+      {
+        typ: 'error',
+        rid: '1',
+        code: error.code,
+        data: {},
+        msg: 'Request failed',
+      },
+      { rid: '1' },
+    )
 
     const emittedError = await handlerError
     expect(emittedError.error.message).toBe('Request failed')
@@ -87,7 +90,7 @@ describe('executeHandler()', () => {
       trace: vi.fn(),
       warn: vi.fn(),
     } as unknown as Logger
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
     const handlerError = events.once('handlerError')
 
     const requestPromise = executeHandler({
@@ -104,13 +107,16 @@ describe('executeHandler()', () => {
     controllers['1']?.abort('Close')
     await requestPromise
 
-    expect(send).toHaveBeenCalledWith({
-      typ: 'error',
-      rid: '1',
-      code: error.code,
-      data: {},
-      msg: 'Request failed',
-    })
+    expect(send).toHaveBeenCalledWith(
+      {
+        typ: 'error',
+        rid: '1',
+        code: error.code,
+        data: {},
+        msg: 'Request failed',
+      },
+      { rid: '1' },
+    )
 
     const emittedError = await handlerError
     expect(emittedError.error.message).toBe('Request failed')
@@ -142,7 +148,7 @@ describe('executeHandler()', () => {
       debug: vi.fn(),
       warn: vi.fn(),
     } as unknown as Logger
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
     const handlerError = events.once('handlerError')
 
     const requestPromise = executeHandler({
@@ -182,7 +188,7 @@ describe('executeHandler()', () => {
       trace: vi.fn(),
     } as unknown as Logger
     const reject = vi.fn()
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
 
     await executeHandler({
       context: {
@@ -195,7 +201,7 @@ describe('executeHandler()', () => {
       payload,
       execute: () => handler(),
     })
-    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
+    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' }, { rid: '1' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
     expect(logger.trace).toHaveBeenCalledWith(
@@ -222,7 +228,7 @@ describe('executeHandler()', () => {
       trace: vi.fn(),
     } as unknown as Logger
     const reject = vi.fn()
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
 
     const requestPromise = executeHandler({
       context: {
@@ -238,7 +244,7 @@ describe('executeHandler()', () => {
     controllers['1']?.abort('Close')
     await requestPromise
 
-    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
+    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' }, { rid: '1' })
     expect(reject).not.toHaveBeenCalled()
     expect(controllers).toEqual({})
     expect(logger.trace).toHaveBeenCalledWith(
@@ -265,7 +271,7 @@ describe('executeHandler()', () => {
       trace: vi.fn(),
     } as unknown as Logger
     const reject = vi.fn()
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
 
     const requestPromise = executeHandler({
       context: {
@@ -297,7 +303,7 @@ describe('executeHandler()', () => {
       trace: vi.fn(),
       warn: vi.fn(),
     } as unknown as Logger
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
 
     await executeHandler({
       context: {
@@ -316,6 +322,7 @@ describe('executeHandler()', () => {
         rid: '1',
         msg: 'Handler execution failed',
       }),
+      { rid: '1' },
     )
     // Original error details are logged server-side even though client gets generic message
     expect(logger.warn).toHaveBeenCalledWith(
@@ -339,7 +346,7 @@ describe('executeHandler()', () => {
       trace: vi.fn(),
       warn: vi.fn(),
     } as unknown as Logger
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
 
     await executeHandler({
       context: {
@@ -358,13 +365,14 @@ describe('executeHandler()', () => {
         rid: '1',
         msg: 'User not found',
       }),
+      { rid: '1' },
     )
   })
 
   test('calls beforeEnd before sending result on success', async () => {
     const controllers = { '1': new AbortController() }
     const logger = { trace: vi.fn() } as unknown as Logger
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
     const callOrder: Array<string> = []
 
     await executeHandler({
@@ -385,14 +393,14 @@ describe('executeHandler()', () => {
     })
 
     expect(callOrder).toEqual(['beforeEnd', 'send'])
-    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' })
+    expect(send).toHaveBeenCalledWith({ typ: 'result', rid: '1', val: 'OK' }, { rid: '1' })
   })
 
   test('calls beforeEnd before sending error on failure', async () => {
     const controllers = { '1': new AbortController() }
     const events = new EventEmitter<ServerEvents>()
     const logger = { trace: vi.fn(), warn: vi.fn() } as unknown as Logger
-    const send = vi.fn()
+    const send = vi.fn().mockResolvedValue(undefined)
     const callOrder: Array<string> = []
 
     await executeHandler({
@@ -416,6 +424,8 @@ describe('executeHandler()', () => {
     })
 
     expect(callOrder).toEqual(['beforeEnd', 'send'])
-    expect(send).toHaveBeenCalledWith(expect.objectContaining({ typ: 'error', rid: '1' }))
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ typ: 'error', rid: '1' }), {
+      rid: '1',
+    })
   })
 })

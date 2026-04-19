@@ -20,6 +20,9 @@ export type TransportInput<R, W> = TransportStream<R, W> | (() => TransportStrea
 
 export type TransportEvents = {
   writeFailed: { error: Error; rid: string }
+  readFailed: { error: Error }
+  disposing: { reason?: unknown }
+  disposed: { reason?: unknown }
 }
 
 /**
@@ -53,7 +56,8 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
 
   constructor(params: TransportParams<R, W>) {
     super({
-      dispose: async () => {
+      dispose: async (reason?: unknown) => {
+        await this.#events.emit('disposing', { reason })
         if (this._stream != null) {
           const writer = await this._getWriter()
           try {
@@ -62,6 +66,7 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
             // Ignore error closing writer in case it's already closed
           }
         }
+        await this.#events.emit('disposed', { reason })
       },
     })
     this.#events = new EventEmitter<TransportEvents>()
@@ -107,7 +112,12 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
 
   async read(): Promise<ReadableStreamReadResult<R>> {
     const reader = await this._getReader()
-    return await reader.read()
+    try {
+      return await reader.read()
+    } catch (error) {
+      await this.#events.emit('readFailed', { error: error as Error })
+      throw error
+    }
   }
 
   async write(value: W): Promise<void> {

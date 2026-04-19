@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@enkaku/async": "workspace:^",
+    "@enkaku/event": "workspace:^",
     "@enkaku/execution": "workspace:^",
     "@enkaku/log": "workspace:^",
     "@enkaku/runtime": "workspace:^",

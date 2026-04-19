@@ -166,7 +166,7 @@ describe('EventEmitter', () => {
   })
 
   test('emit() works without data argument for void events', async () => {
-    const emitter = new EventEmitter<{ ping: undefined; pong: string }>()
+    const emitter = new EventEmitter<{ ping: void; pong: string }>()
     let called = false
 
     emitter.on('ping', () => {
@@ -177,9 +177,7 @@ describe('EventEmitter', () => {
     expect(called).toBe(true)
 
     const received: Array<string> = []
-    emitter.on('pong', (value) => {
-      received.push(value)
-    })
+    emitter.on('pong', (value) => received.push(value))
     await emitter.emit('pong', 'hello')
     expect(received).toEqual(['hello'])
   })
@@ -201,13 +199,7 @@ describe('EventEmitter', () => {
     const controller = new AbortController()
     const received: Array<number> = []
 
-    emitter.on(
-      'test',
-      (value) => {
-        received.push(value)
-      },
-      { signal: controller.signal },
-    )
+    emitter.on('test', (value) => received.push(value), { signal: controller.signal })
 
     await emitter.emit('test', 1)
     controller.abort()
@@ -220,13 +212,7 @@ describe('EventEmitter', () => {
     const emitter = new EventEmitter<{ test: number }>()
     const received: Array<number> = []
 
-    emitter.on(
-      'test',
-      (value) => {
-        received.push(value)
-      },
-      { signal: AbortSignal.abort() },
-    )
+    emitter.on('test', (value) => received.push(value), { signal: AbortSignal.abort() })
 
     await emitter.emit('test', 1)
     expect(received).toEqual([])
