@@ -50,7 +50,6 @@ describe('Scenario A: Multi-device via hub', () => {
     const { client: laptop, identity: laptopID, transports: laptopT } = createTestClient(hub)
 
     const channel = laptop.receive()
-    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -62,6 +61,7 @@ describe('Scenario A: Multi-device via hub', () => {
     expect(msg.value?.payload).toBe(payload)
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await phoneT.dispose()
     await laptopT.dispose()
@@ -77,13 +77,13 @@ describe('Scenario A: Multi-device via hub', () => {
 
     const { client: laptop, transports: laptopT } = createTestClient(hub, laptopIdentity)
     const channel = laptop.receive()
-    void channel.catch(() => {})
     const reader = channel.readable.getReader()
 
     const msg = await reader.read()
     expect(msg.value?.payload).toBe(btoa('msg-while-offline'))
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await phoneT.dispose()
     await laptopT.dispose()
@@ -174,7 +174,6 @@ describe('Scenario A: Group communication', () => {
     await bob.joinGroup('chat')
 
     const channel = bob.receive()
-    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -185,6 +184,7 @@ describe('Scenario A: Group communication', () => {
     expect(msg.value?.groupID).toBe('chat')
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await aliceT.dispose()
     await bobT.dispose()
@@ -212,7 +212,6 @@ describe('Scenario A: Group communication', () => {
     await bob.joinGroup('work')
 
     const channel = bob.receive({ groupIDs: ['chat'] })
-    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -229,6 +228,7 @@ describe('Scenario A: Group communication', () => {
     expect(msg2.value?.payload).toBe(btoa('direct-msg'))
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await aliceT.dispose()
     await bobT.dispose()
@@ -243,7 +243,6 @@ describe('Scenario A: Group communication', () => {
     await bob.joinGroup('chat')
 
     const channel = bob.receive()
-    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -257,6 +256,7 @@ describe('Scenario A: Group communication', () => {
     expect(msg2.value?.groupID).toBeUndefined()
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await aliceT.dispose()
     await bobT.dispose()

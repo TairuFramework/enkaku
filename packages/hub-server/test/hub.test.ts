@@ -38,7 +38,6 @@ describe('hub handlers', () => {
 
     // Bob opens receive channel
     const channel = bob.createChannel('hub/receive', { param: {} })
-    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -54,6 +53,7 @@ describe('hub handlers', () => {
     expect(msg.value?.senderDID).toBe(aliceIdentity.id)
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await bobTransports.dispose()
     await aliceTransports.dispose()
@@ -105,7 +105,6 @@ describe('hub handlers', () => {
 
     // Bob opens receive channel
     const channel = bob.createChannel('hub/receive', { param: {} })
-    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     await delay(50)
 
@@ -120,6 +119,7 @@ describe('hub handlers', () => {
     expect(msg.value?.groupID).toBe('chat')
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await bobTransports.dispose()
     await aliceTransports.dispose()
@@ -152,13 +152,13 @@ describe('hub handlers', () => {
     })
 
     const channel = bob.createChannel('hub/receive', { param: {} })
-    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     const msg = await reader.read()
     expect(msg.done).toBe(false)
     expect(msg.value?.payload).toBe(btoa('offline-msg'))
 
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await bobTransports.dispose()
     await aliceTransports.dispose()
@@ -194,7 +194,6 @@ describe('hub handlers', () => {
     })
 
     const channel = bob.createChannel('hub/receive', { param: {} })
-    void channel.catch(() => {})
     const reader = channel.readable.getReader()
     const msg1 = await reader.read()
     const msg2 = await reader.read()
@@ -208,6 +207,7 @@ describe('hub handlers', () => {
 
     // Close and reconnect -- should get no old messages
     channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await bobTransports.dispose()
 
@@ -219,7 +219,6 @@ describe('hub handlers', () => {
     })
 
     const channel2 = bob2.createChannel('hub/receive', { param: {} })
-    void channel2.catch(() => {})
     const reader2 = channel2.readable.getReader()
 
     // Send a new message to verify channel works
@@ -230,6 +229,7 @@ describe('hub handlers', () => {
     expect(msg3.value?.payload).toBe(btoa('msg-3'))
 
     channel2.close()
+    await expect(channel2).rejects.toEqual('Close')
     await delay(50)
     await bobTransports2.dispose()
     await aliceTransports.dispose()
@@ -315,7 +315,7 @@ describe('Hub teardown produces no unhandled rejections', () => {
       { param: { groupIDs: ['g1'] } } as never,
     )
     channel.close()
-    await channel.catch(() => {})
+    await expect(channel).rejects.toEqual('Close')
     await client.dispose()
     await hub.server.dispose()
 

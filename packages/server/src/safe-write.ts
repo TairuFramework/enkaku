@@ -30,6 +30,11 @@ export async function safeWrite<Protocol extends ProtocolDefinition>(
     const errorBenign = isBenignTeardownError(error)
     const reasonBenign = isBenignTeardownError(controllerReason)
     const disposing = ctx.signal.aborted
+    // Swallow only when the failure looks teardown-shaped AND we have a
+    // matching teardown context — either the whole server is disposing, or
+    // the per-rid controller was aborted with a benign reason (e.g. 'Close').
+    // A non-benign controller abort (e.g. 'Timeout') plus a benign-shaped
+    // write error is treated as a real failure, not teardown noise.
     const swallow =
       (errorBenign || reasonBenign) && (disposing || (controller?.signal.aborted && reasonBenign))
 

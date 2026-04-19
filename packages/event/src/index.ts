@@ -97,14 +97,22 @@ export class EventEmitter<Events extends Record<string, unknown>> {
     })
   }
 
+  /**
+   * Invokes every registered listener for `name` in parallel with the given
+   * data. Listener rejections (sync throw or async reject) are absorbed —
+   * `emit` always resolves — because the emitter caller is not responsible
+   * for listener bugs and a single misbehaving listener must not turn every
+   * fire-and-forget emit site into an unhandled-rejection source.
+   *
+   * Listeners that need to observe or report their own failures should catch
+   * internally (e.g. log, forward to telemetry). The emitter does not offer
+   * a `once-errored` signal; subscribe through normal channels instead.
+   */
   emit<Name extends DatalessEventNames<Events>>(name: Name): Promise<void>
   emit<Name extends keyof Events>(name: Name, data: Events[Name]): Promise<void>
   async emit<Name extends keyof Events>(name: Name, data?: Events[Name]): Promise<void> {
     const listeners = this.#listeners.get(name)
     if (!listeners || listeners.size === 0) return
-    // Listener errors are the listener's problem, not the emitter caller's.
-    // allSettled + discard prevents one bad listener from turning every
-    // fire-and-forget emit site into an unhandled-rejection source.
     await Promise.allSettled(
       [...listeners].map((fn) => {
         try {

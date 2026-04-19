@@ -449,6 +449,14 @@ export class Client<
       rid,
       events: this.#events,
       signal: this.signal,
+      onFailure: (error) => {
+        if (rid != null) {
+          // Surface the write failure on the per-rid controller so the
+          // awaited request/stream/channel promise rejects, instead of
+          // hanging on a server reply that will never arrive.
+          this.#controllers[rid]?.abort(error)
+        }
+      },
     })
   }
 
