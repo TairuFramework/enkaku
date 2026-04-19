@@ -52,7 +52,7 @@ describe('teardown produces no unhandled rejections', () => {
     const client = new Client<Protocol>({ transport: transports.client })
     const channel = client.createChannel('echo', { param: {} })
     channel.close()
-    await channel.catch(() => {})
+    await expect(channel).rejects.toEqual('Close')
     await client.dispose()
     await server.dispose()
 

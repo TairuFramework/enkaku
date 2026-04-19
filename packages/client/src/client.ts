@@ -461,9 +461,12 @@ export class Client<
   }
 
   // Fire-and-forget abort notification for `#handleSignal`. Never rejects:
-  // benign teardown errors are absorbed by `safeWrite`, other failures surface
-  // via `requestError` so consumers can observe them without each abort site
-  // needing its own `.catch` handler.
+  // `safeWrite` already absorbs benign teardown errors and routes non-benign
+  // ones through `writeFailed` + the per-rid controller. The try/catch here
+  // only covers `#write`'s synchronous preflight (`this.signal.aborted` ->
+  // throw) and signing errors from `#createMessage`, which are the only paths
+  // that still reject. `requestError` surfaces those so callers can observe
+  // mid-abort failures without each abort site needing its own `.catch`.
   #notifyAbort(rid: string, reason: unknown, header?: AnyHeader): void {
     void (async () => {
       try {

@@ -59,7 +59,7 @@ describe('HubClient', () => {
     expect(msg.value?.payload).toBe(btoa('hello'))
 
     channel.close()
-    channel.catch(() => {})
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await aliceT.dispose()
     await bobT.dispose()
@@ -85,7 +85,7 @@ describe('HubClient', () => {
     expect(msg.value?.groupID).toBe('chat')
 
     channel.close()
-    channel.catch(() => {})
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await aliceT.dispose()
     await bobT.dispose()
@@ -117,7 +117,7 @@ describe('HubClient', () => {
     expect(msg2.value?.payload).toBe(btoa('direct-msg'))
 
     channel.close()
-    channel.catch(() => {})
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await aliceT.dispose()
     await bobT.dispose()

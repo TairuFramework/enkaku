@@ -48,7 +48,7 @@ describe('teardown (integration)', () => {
     const channel = client.createChannel('chat', { param: {} })
 
     channel.close()
-    await channel.catch(() => {})
+    await expect(channel).rejects.toEqual('Close')
     await client.dispose()
     await server.dispose()
     await new Promise((r) => setTimeout(r, 20))
