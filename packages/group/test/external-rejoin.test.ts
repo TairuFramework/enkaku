@@ -10,6 +10,8 @@ import {
 } from 'ts-mls'
 import { describe, expect, test } from 'vitest'
 
+import type { MemberCredential } from '../src/credential.js'
+
 import {
   commitInvite,
   createGroup,
@@ -126,5 +128,27 @@ describe('joinGroupExternal — stale device recovery', () => {
         new TextDecoder().decode(node.leaf.credential.identity) === bob.id,
     ).length
     expect(bobLeafCount).toBe(1)
+  })
+
+  test('rejects credential with empty capability chain', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const { group: aliceGroup } = await createGroup(alice, 'empty-chain-group')
+    const { groupInfo } = await exportGroupInfo({ group: aliceGroup })
+
+    await expect(
+      joinGroupExternal({
+        identity: bob,
+        groupInfo,
+        credential: {
+          did: bob.id,
+          capabilityChain: [],
+          capability: {} as MemberCredential['capability'],
+          permission: 'member',
+          groupID: 'empty-chain-group',
+        },
+        resync: true,
+      }),
+    ).rejects.toThrow('capability chain must not be empty')
   })
 })
