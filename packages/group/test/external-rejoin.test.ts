@@ -151,4 +151,100 @@ describe('joinGroupExternal — stale device recovery', () => {
       }),
     ).rejects.toThrow('capability chain must not be empty')
   })
+
+  test('third online member processes external rejoin and converges', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const carol = randomIdentity()
+
+    // Group of A, B, C with all online
+    const { group: aliceGroup } = await createGroup(alice, 'trio-group')
+
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage: bobWelcome, newGroup: aliceA } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+    const { group: bobGroup, credential: bobCred } = await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: bobWelcome,
+      keyPackageBundle: bobKP,
+      ratchetTree: aliceA.state.ratchetTree,
+    })
+
+    const { invite: carolInvite } = await createInvite({
+      group: aliceA,
+      identity: alice,
+      recipientDID: carol.id,
+      permission: 'member',
+    })
+    const carolKP = await createKeyPackageBundle(carol)
+    const {
+      commitMessage: addCarolCommit,
+      welcomeMessage: carolWelcome,
+      newGroup: aliceB,
+    } = await commitInvite(aliceA, carolKP.publicPackage)
+    await bobGroup.processMessage(addCarolCommit)
+    const { group: carolGroup } = await processWelcome({
+      identity: carol,
+      invite: carolInvite,
+      welcome: carolWelcome,
+      keyPackageBundle: carolKP,
+      ratchetTree: aliceB.state.ratchetTree,
+    })
+    expect(aliceB.epoch).toBe(2n)
+    expect(bobGroup.epoch).toBe(2n)
+    expect(carolGroup.epoch).toBe(2n)
+
+    // B goes stale: A and C advance by adding + removing D. B skips these commits.
+    const dave = randomIdentity()
+    const daveKP = await createKeyPackageBundle(dave)
+    const { commitMessage: addDave, newGroup: aliceC } = await commitInvite(
+      aliceB,
+      daveKP.publicPackage,
+    )
+    await carolGroup.processMessage(addDave)
+    // B skips this commit — now stale.
+
+    const daveLeaf = aliceC.findMemberLeafIndex(dave.id)
+    const { commitMessage: rmDave, newGroup: aliceD } = await removeMember(
+      aliceC,
+      daveLeaf as number,
+    )
+    await carolGroup.processMessage(rmDave)
+    expect(aliceD.epoch).toBe(4n)
+    expect(carolGroup.epoch).toBe(4n)
+    expect(bobGroup.epoch).toBe(2n)
+
+    // B rejoins externally
+    const { groupInfo } = await exportGroupInfo({ group: aliceD })
+    const { commitMessage: rejoinCommit, group: bobRejoined } = await joinGroupExternal({
+      identity: bob,
+      groupInfo,
+      credential: bobCred,
+      resync: true,
+    })
+
+    // A and C both decode + process B's rejoin commit
+    const decodedRejoin = decode(mlsMessageDecoder, rejoinCommit)
+    if (decodedRejoin == null) throw new Error('failed to decode rejoin commit')
+    await aliceD.processMessage(decodedRejoin)
+    await carolGroup.processMessage(decodedRejoin)
+    expect(aliceD.epoch).toBe(bobRejoined.epoch)
+    expect(carolGroup.epoch).toBe(bobRejoined.epoch)
+
+    // C encrypts; A and B decrypt
+    const { message } = await carolGroup.encrypt(new TextEncoder().encode('hi all'))
+    const aliceGot = await aliceD.decrypt(message)
+    const bobGot = await bobRejoined.decrypt(message)
+    expect(new TextDecoder().decode(aliceGot)).toBe('hi all')
+    expect(new TextDecoder().decode(bobGot)).toBe('hi all')
+  })
 })
