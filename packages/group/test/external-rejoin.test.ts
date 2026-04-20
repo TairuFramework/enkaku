@@ -248,3 +248,11 @@ describe('joinGroupExternal — stale device recovery', () => {
     expect(new TextDecoder().decode(bobGot)).toBe('hi all')
   })
 })
+
+describe('public API', () => {
+  test('external rejoin symbols are exported from package root', async () => {
+    const mod = await import('../src/index.js')
+    expect(typeof mod.exportGroupInfo).toBe('function')
+    expect(typeof mod.joinGroupExternal).toBe('function')
+  })
+})
