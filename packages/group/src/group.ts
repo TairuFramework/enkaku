@@ -6,17 +6,22 @@ import {
   type Credential,
   createApplicationMessage,
   createCommit,
+  createGroupInfoWithExternalPubAndRatchetTree,
   type DefaultProposal,
   defaultCredentialTypes,
   defaultProposalTypes,
+  encode,
   generateKeyPackageWithKey,
   getCiphersuiteImpl,
   type KeyPackage,
   type MlsContext,
   createGroup as mlsCreateGroup,
   joinGroup as mlsJoinGroup,
+  mlsMessageEncoder,
   processMessage as mlsProcessMessage,
   nodeTypes,
+  protocolVersions,
+  wireformats,
 } from 'ts-mls'
 
 import { createDIDAuthenticationService } from './authentication.js'
@@ -424,4 +429,34 @@ export async function createKeyPackageBundle(
     cipherSuite,
   })
   return { ...result, ownerDID: identity.id }
+}
+
+// ---------------------------------------------------------------------------
+// External rejoin (RFC 9420 §11.2.1 — stale device self-recovery)
+// ---------------------------------------------------------------------------
+
+export type ExportGroupInfoParams = {
+  group: GroupHandle
+}
+
+export type ExportGroupInfoResult = {
+  /** Framed MLSMessage(GroupInfo) bytes. Self-describing with protocol
+   *  version + wireformat + GroupInfo (external_pub + ratchet tree embedded). */
+  groupInfo: Uint8Array
+}
+
+export async function exportGroupInfo(
+  params: ExportGroupInfoParams,
+): Promise<ExportGroupInfoResult> {
+  const groupInfo = await createGroupInfoWithExternalPubAndRatchetTree(
+    params.group.state,
+    [],
+    params.group.context.cipherSuite,
+  )
+  const framed = {
+    version: protocolVersions.mls10,
+    wireformat: wireformats.mls_group_info,
+    groupInfo,
+  } as Parameters<typeof mlsMessageEncoder>[0]
+  return { groupInfo: encode(mlsMessageEncoder, framed) }
 }
