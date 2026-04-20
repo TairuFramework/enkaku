@@ -8,6 +8,7 @@ import {
   createCommit,
   createGroupInfoWithExternalPubAndRatchetTree,
   type DefaultProposal,
+  decode,
   defaultCredentialTypes,
   defaultProposalTypes,
   encode,
@@ -15,8 +16,12 @@ import {
   getCiphersuiteImpl,
   type KeyPackage,
   type MlsContext,
+  type MlsGroupInfo,
+  type MlsPublicMessage,
   createGroup as mlsCreateGroup,
   joinGroup as mlsJoinGroup,
+  joinGroupExternal as mlsJoinGroupExternal,
+  mlsMessageDecoder,
   mlsMessageEncoder,
   processMessage as mlsProcessMessage,
   nodeTypes,
@@ -453,10 +458,92 @@ export async function exportGroupInfo(
     [],
     params.group.context.cipherSuite,
   )
-  const framed = {
+  const framed: MlsGroupInfo = {
     version: protocolVersions.mls10,
     wireformat: wireformats.mls_group_info,
     groupInfo,
-  } as Parameters<typeof mlsMessageEncoder>[0]
+  }
   return { groupInfo: encode(mlsMessageEncoder, framed) }
+}
+
+export type JoinGroupExternalParams = {
+  identity: OwnIdentity
+  /** Framed MLSMessage(GroupInfo) bytes from exportGroupInfo. */
+  groupInfo: Uint8Array
+  /** Caller's cached credential (from prior processWelcome). Reused as-is,
+   *  not re-validated. */
+  credential: MemberCredential
+  /** Stale-recovery only: atomically removes prior leaf for same identity. */
+  resync: true
+  options?: GroupOptions
+  authenticatedData?: Uint8Array
+}
+
+export type JoinGroupExternalResult = {
+  /** Framed MLSMessage(PublicMessage) bytes. Broadcast to existing members. */
+  commitMessage: Uint8Array
+  /** New GroupHandle at post-commit epoch. */
+  group: GroupHandle
+}
+
+export async function joinGroupExternal(
+  params: JoinGroupExternalParams,
+): Promise<JoinGroupExternalResult> {
+  const {
+    identity,
+    groupInfo: groupInfoBytes,
+    credential,
+    resync,
+    options,
+    authenticatedData,
+  } = params
+
+  const rootCapability = credential.capabilityChain[0]
+  if (rootCapability == null) {
+    throw new Error('Invalid credential: capability chain must not be empty')
+  }
+
+  const context = await resolveMlsContext(options)
+
+  const message = decode(mlsMessageDecoder, groupInfoBytes)
+  if (message == null) {
+    throw new Error('Invalid groupInfo: failed to decode MLSMessage')
+  }
+  if (message.wireformat !== wireformats.mls_group_info) {
+    throw new Error(
+      `Invalid groupInfo: expected wireformat mls_group_info, got ${String(message.wireformat)}`,
+    )
+  }
+  const { groupInfo } = message as MlsGroupInfo
+
+  const keyPackage = await generateKeyPackageWithKey({
+    credential: makeMLSCredential(identity.id),
+    signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
+    cipherSuite: context.cipherSuite,
+  })
+
+  const { publicMessage, newState } = await mlsJoinGroupExternal({
+    context,
+    groupInfo,
+    keyPackage: keyPackage.publicPackage,
+    privateKeys: keyPackage.privatePackage,
+    resync,
+    ...(authenticatedData != null && { authenticatedData }),
+  })
+
+  const framedCommit: MlsPublicMessage = {
+    version: protocolVersions.mls10,
+    wireformat: wireformats.mls_public_message,
+    publicMessage,
+  }
+  const commitMessage = encode(mlsMessageEncoder, framedCommit)
+
+  const group = new GroupHandle({
+    state: newState,
+    credential,
+    context,
+    rootCapability,
+  })
+
+  return { commitMessage, group }
 }
