@@ -73,12 +73,8 @@ describe('joinGroupExternal — stale device recovery', () => {
     expect(bobGroup.epoch).toBe(1n)
 
     // A advances: add C, then remove C. B stays offline.
-    const { invite: carolInvite } = await createInvite({
-      group: aliceAfterBob,
-      identity: alice,
-      recipientDID: carol.id,
-      permission: 'member',
-    })
+    // Carol never calls processWelcome here (she's only added to advance epochs),
+    // so we skip createInvite and go straight to key package + commitInvite.
     const carolKP = await createKeyPackageBundle(carol)
     const { newGroup: aliceAfterCarol } = await commitInvite(aliceAfterBob, carolKP.publicPackage)
     const carolLeaf = aliceAfterCarol.findMemberLeafIndex(carol.id)

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Stage:** executing
+**Stage:** reviewing
 
 **Goal:** Add RFC 9420 external-commit support to `@enkaku/group` scoped to stale-device self-rejoin — a device with a cached `MemberCredential` can rejoin its group after falling behind epochs, using only a fresh `GroupInfo` blob from any healthy member.
 
