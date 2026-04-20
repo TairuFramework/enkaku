@@ -514,7 +514,8 @@ export async function joinGroupExternal(
       `Invalid groupInfo: expected wireformat mls_group_info, got ${String(message.wireformat)}`,
     )
   }
-  const { groupInfo } = message as MlsGroupInfo
+  // Discriminated-union narrow via the literal wireformat tag — no cast needed.
+  const { groupInfo } = message
 
   const keyPackage = await generateKeyPackageWithKey({
     credential: makeMLSCredential(identity.id),

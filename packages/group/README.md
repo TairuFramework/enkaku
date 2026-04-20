@@ -51,7 +51,7 @@ Stale rejoin reuses the caller's previously accepted credential. The capability 
 
 - **Fresh external join by a new DID.** Requires deciding how a non-member acquires a `MemberCredential` without a live inviter.
 - **Member-proposed external add.** `proposeAddExternal` is not wrapped yet.
-- **Non-resync external join.** Only `resync: true` is supported.
+- **Non-resync external join.** `joinGroupExternal` accepts only `resync: true` (enforced via a literal type in `JoinGroupExternalParams`). Non-resync external join requires a separate API.
 
 ### ⚠️ Security: removal is not revocation
 

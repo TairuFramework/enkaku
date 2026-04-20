@@ -1,6 +1,7 @@
 import { randomIdentity } from '@enkaku/token'
 import {
   decode,
+  defaultExtensionTypes,
   encode,
   mlsMessageDecoder,
   mlsMessageEncoder,
@@ -36,6 +37,13 @@ describe('external rejoin codec round-trip', () => {
     if (decoded == null) throw new Error('unreachable')
     expect(decoded.version).toBe(protocolVersions.mls10)
     expect(decoded.wireformat).toBe(wireformats.mls_group_info)
+
+    // The whole point of the blob — external_pub + ratchet_tree extensions
+    // must be embedded so the stale device can actually rejoin.
+    if (decoded.wireformat !== wireformats.mls_group_info) throw new Error('unreachable')
+    const extensionTypesPresent = decoded.groupInfo.extensions.map((ext) => ext.extensionType)
+    expect(extensionTypesPresent).toContain(defaultExtensionTypes.external_pub)
+    expect(extensionTypesPresent).toContain(defaultExtensionTypes.ratchet_tree)
 
     // Re-encode and compare — round-trip stability
     const reencoded = encode(mlsMessageEncoder, decoded)
