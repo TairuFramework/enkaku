@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Stage:** executing
+**Stage:** qa
 
 **Goal:** Make `HubClientRegistry.setReceiveWriter` throw on double-bind so a misbehaving client opening a second `hub/receive` for the same DID surfaces a loud error instead of silently overwriting the first writer.
 
