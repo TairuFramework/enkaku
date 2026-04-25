@@ -280,6 +280,53 @@ describe('hub handlers', () => {
 
     await transports.dispose()
   })
+
+  test('hub/receive rejects second concurrent open for same DID; first stays alive', async () => {
+    const store = createMemoryStore()
+    const aliceTransports: HubTransports = new DirectTransports()
+    const hub = createHub({ transport: aliceTransports.server, store })
+    const aliceIdentity = randomIdentity()
+    const alice = new Client<HubProtocol>({
+      transport: aliceTransports.client,
+      identity: aliceIdentity,
+    })
+
+    const bobIdentity = randomIdentity()
+    const bobTransports: HubTransports = new DirectTransports()
+    hub.server.handle(bobTransports.server)
+    const bob = new Client<HubProtocol>({
+      transport: bobTransports.client,
+      identity: bobIdentity,
+    })
+
+    // First receive channel
+    const channel1 = bob.createChannel('hub/receive', { param: {} })
+    const reader1 = channel1.readable.getReader()
+    await delay(50)
+
+    // Second receive channel for same DID -- must reject
+    const channel2 = bob.createChannel('hub/receive', { param: {} })
+    // Server wraps handler errors as a generic "Handler execution failed"
+    // payload (HandlerError.from in packages/server overwrites cause.message).
+    // The signal we care about is that channel2 rejects; channel1 staying
+    // alive is the substantive correctness check below.
+    await expect(channel2).rejects.toThrow()
+
+    // First channel still works: Alice sends, channel1 receives
+    const payload = btoa('still-alive')
+    await alice.request('hub/send', {
+      param: { recipients: [bobIdentity.id], payload },
+    })
+    const msg = await reader1.read()
+    expect(msg.done).toBe(false)
+    expect(msg.value?.payload).toBe(payload)
+
+    channel1.close()
+    await expect(channel1).rejects.toEqual('Close')
+    await delay(50)
+    await bobTransports.dispose()
+    await aliceTransports.dispose()
+  })
 })
 
 describe('Hub teardown produces no unhandled rejections', () => {

@@ -69,6 +69,9 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
       const { after, groupIDs } = ctx.param ?? {}
 
       registry.register(clientDID)
+      if (registry.isOnline(clientDID)) {
+        throw new Error(`receive writer already bound for DID ${clientDID}`)
+      }
 
       const writer = ctx.writable.getWriter()
       const reader = ctx.readable.getReader()
