@@ -69,6 +69,9 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
       const { after, groupIDs } = ctx.param ?? {}
 
       registry.register(clientDID)
+      // Guard against double-bind. isOnline is true iff the receive-writer slot
+      // is occupied; throwing here (before locking the writable/readable streams)
+      // preserves the first subscriber's writer instead of leaking stream locks.
       if (registry.isOnline(clientDID)) {
         throw new Error(`receive writer already bound for DID ${clientDID}`)
       }
