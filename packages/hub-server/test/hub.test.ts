@@ -351,7 +351,10 @@ describe('hub handlers', () => {
     channel1.close()
     await expect(channel1).rejects.toEqual('Close')
 
-    // Immediate reopen -- no extra delay
+    // Immediate reopen -- no extra delay. The abort listener in handlers.ts
+    // calls clearReceiveWriter synchronously, and `await expect(channel1)
+    // .rejects...` yields enough microtasks for it to run before channel2
+    // reaches the server.
     const channel2 = bob.createChannel('hub/receive', { param: {} })
     const reader2 = channel2.readable.getReader()
     await delay(50)
@@ -361,6 +364,7 @@ describe('hub handlers', () => {
       param: { recipients: [bobIdentity.id], payload },
     })
     const msg = await reader2.read()
+    expect(msg.done).toBe(false)
     expect(msg.value?.payload).toBe(payload)
 
     channel2.close()
@@ -403,6 +407,7 @@ describe('hub handlers', () => {
       param: { recipients: [bobIdentity.id], payload },
     })
     const msg = await reader2.read()
+    expect(msg.done).toBe(false)
     expect(msg.value?.payload).toBe(payload)
 
     channel2.close()
