@@ -468,7 +468,7 @@ Clock skew tolerance in seconds. Defaults to 0.
 
 ### randomPrivateKey
 
-> `const` **randomPrivateKey**: (`seed?`) => `Uint8Array` = `ed25519.utils.randomSecretKey`
+> `const` **randomPrivateKey**: (`seed?`) => `Uint8Array`\<`ArrayBufferLike`\> & `Uint8Array`\<`ArrayBuffer`\> = `ed25519.utils.randomSecretKey`
 
 Generate a random private key.
 
@@ -476,11 +476,11 @@ Generate a random private key.
 
 ##### seed?
 
-`Uint8Array`\<`ArrayBufferLike`\>
+`TArg`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
 #### Returns
 
-`Uint8Array`
+`Uint8Array`\<`ArrayBufferLike`\> & `Uint8Array`\<`ArrayBuffer`\>
 
 ## Functions
 
@@ -660,8 +660,6 @@ Create an unsigned token object.
 
 > **decodePrivateKey**(`base64`): `Uint8Array`
 
-Convert a base64-encoded string to a Uint8Array.
-
 #### Parameters
 
 ##### base64
@@ -765,6 +763,22 @@ Encrypt plaintext to JWE compact serialization using the given encrypter.
 #### Returns
 
 `identity is FullIdentity`
+
+***
+
+### isOwnIdentity()
+
+> **isOwnIdentity**(`identity`): `identity is OwnIdentity`
+
+#### Parameters
+
+##### identity
+
+[`Identity`](#identity)
+
+#### Returns
+
+`identity is OwnIdentity`
 
 ***
 

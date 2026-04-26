@@ -68,6 +68,16 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 [`Disposer`](../async/index.md#disposer).[`disposed`](../async/index.md#disposed)
 
+##### events
+
+###### Get Signature
+
+> **get** **events**(): [`ClientEmitter`](#clientemitter)
+
+###### Returns
+
+[`ClientEmitter`](#clientemitter)
+
 #### Methods
 
 ##### createChannel()
@@ -400,6 +410,120 @@ Returns a string representation of an object.
 
 ***
 
+### ClientEmitter
+
+> **ClientEmitter** = `EventEmitter`\<[`ClientEvents`](#clientevents-1)\>
+
+***
+
+### ClientEvents
+
+> **ClientEvents** = `object`
+
+#### Properties
+
+##### disposed
+
+> **disposed**: `object`
+
+###### reason?
+
+> `optional` **reason?**: `unknown`
+
+##### disposing
+
+> **disposing**: `object`
+
+###### reason?
+
+> `optional` **reason?**: `unknown`
+
+##### requestEnd
+
+> **requestEnd**: `object`
+
+###### procedure
+
+> **procedure**: `string`
+
+###### rid
+
+> **rid**: `string`
+
+###### status
+
+> **status**: [`ClientRequestStatus`](#clientrequeststatus)
+
+##### requestError
+
+> **requestError**: `object`
+
+###### error
+
+> **error**: `Error` \| [`RequestError`](#requesterror)
+
+###### rid
+
+> **rid**: `string`
+
+##### requestStart
+
+> **requestStart**: `object`
+
+###### procedure
+
+> **procedure**: `string`
+
+###### rid
+
+> **rid**: `string`
+
+###### type
+
+> **type**: `string`
+
+##### transportError
+
+> **transportError**: `object`
+
+###### error
+
+> **error**: `Error`
+
+##### transportReplaced
+
+> **transportReplaced**: `Record`\<`string`, `never`\>
+
+##### writeDropped
+
+> **writeDropped**: `object`
+
+###### error
+
+> **error**: `Error`
+
+###### reason
+
+> **reason**: `unknown`
+
+###### rid?
+
+> `optional` **rid?**: `string`
+
+##### writeFailed
+
+> **writeFailed**: `object`
+
+###### error
+
+> **error**: `Error`
+
+###### rid?
+
+> `optional` **rid?**: `string`
+
+***
+
 ### ClientParams
 
 > **ClientParams**\<`Protocol`\> = `object`
@@ -471,6 +595,12 @@ Returns a string representation of an object.
 ##### transport
 
 > **transport**: `ClientTransportOf`\<`Protocol`\>
+
+***
+
+### ClientRequestStatus
+
+> **ClientRequestStatus** = `"ok"` \| `"error"` \| `"aborted"`
 
 ***
 

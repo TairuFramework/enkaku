@@ -438,6 +438,22 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 
 #### Properties
 
+##### disposed
+
+> **disposed**: `object`
+
+###### reason?
+
+> `optional` **reason?**: `unknown`
+
+##### disposing
+
+> **disposing**: `object`
+
+###### reason?
+
+> `optional` **reason?**: `unknown`
+
 ##### eventAuthError
 
 > **eventAuthError**: `object`
@@ -454,6 +470,22 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 
 > **handlerAbort**: `object`
 
+###### reason
+
+> **reason**: `"Close"` \| `"Timeout"` \| `"Transport"` \| [`DisposeInterruption`](../async/index.md#disposeinterruption) \| `string` \| `undefined`
+
+###### rid
+
+> **rid**: `string`
+
+##### handlerEnd
+
+> **handlerEnd**: `object`
+
+###### procedure
+
+> **procedure**: `string`
+
 ###### rid
 
 > **rid**: `string`
@@ -469,6 +501,22 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 ###### payload
 
 > **payload**: `Record`\<`string`, `unknown`\>
+
+##### handlerStart
+
+> **handlerStart**: `object`
+
+###### procedure
+
+> **procedure**: `string`
+
+###### rid
+
+> **rid**: `string`
+
+###### type
+
+> **type**: `string`
 
 ##### handlerTimeout
 
@@ -489,6 +537,54 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 ###### message
 
 > **message**: `unknown`
+
+##### transportAdded
+
+> **transportAdded**: `object`
+
+###### transportID
+
+> **transportID**: `string`
+
+##### transportRemoved
+
+> **transportRemoved**: `object`
+
+###### reason?
+
+> `optional` **reason?**: `unknown`
+
+###### transportID
+
+> **transportID**: `string`
+
+##### writeDropped
+
+> **writeDropped**: `object`
+
+###### error
+
+> **error**: `Error`
+
+###### reason
+
+> **reason**: `unknown`
+
+###### rid?
+
+> `optional` **rid?**: `string`
+
+##### writeFailed
+
+> **writeFailed**: `object`
+
+###### error
+
+> **error**: `Error`
+
+###### rid?
+
+> `optional` **rid?**: `string`
 
 ***
 

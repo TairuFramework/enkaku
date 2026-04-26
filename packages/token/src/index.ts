@@ -25,6 +25,7 @@ export {
   createSigningIdentity,
   isDecryptingIdentity,
   isFullIdentity,
+  isOwnIdentity,
   isSigningIdentity,
   randomIdentity,
 } from './identity.js'

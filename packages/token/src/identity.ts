@@ -56,6 +56,10 @@ export function isFullIdentity(identity: Identity): identity is FullIdentity {
   return isSigningIdentity(identity) && isDecryptingIdentity(identity)
 }
 
+export function isOwnIdentity(identity: Identity): identity is OwnIdentity {
+  return isFullIdentity(identity) && 'privateKey' in identity
+}
+
 /**
  * Create a signing identity from an Ed25519 private key.
  */

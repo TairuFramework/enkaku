@@ -773,6 +773,26 @@ Create a Deferred object.
 
 ***
 
+### isBenignTeardownError()
+
+> **isBenignTeardownError**(`err`): `boolean`
+
+Returns true when the given error represents a peer- or local-teardown
+signal rather than an actual failure. Call this before re-throwing on
+teardown paths so benign rejections can be swallowed.
+
+#### Parameters
+
+##### err
+
+`unknown`
+
+#### Returns
+
+`boolean`
+
+***
+
 ### lazy()
 
 > **lazy**\<`T`\>(`execute`): [`LazyPromise`](#lazypromise)\<`T`\>

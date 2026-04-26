@@ -96,6 +96,22 @@ Convert a base64url-encoded string to a UTF string.
 
 > **fromB64**(`base64`): `Uint8Array`
 
+#### Parameters
+
+##### base64
+
+`string`
+
+#### Returns
+
+`Uint8Array`
+
+***
+
+### fromB64atob()
+
+> **fromB64atob**(`base64`): `Uint8Array`
+
 Convert a base64-encoded string to a Uint8Array.
 
 #### Parameters
@@ -113,6 +129,22 @@ Convert a base64-encoded string to a Uint8Array.
 ### fromB64U()
 
 > **fromB64U**(`base64url`): `Uint8Array`
+
+#### Parameters
+
+##### base64url
+
+`string`
+
+#### Returns
+
+`Uint8Array`
+
+***
+
+### fromB64Uatob()
+
+> **fromB64Uatob**(`base64url`): `Uint8Array`
 
 Convert a base64url-encoded string to a Uint8Array.
 

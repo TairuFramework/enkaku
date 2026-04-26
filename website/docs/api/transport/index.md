@@ -296,6 +296,30 @@ Base Transport class implementing TransportType.
 
 #### Properties
 
+##### disposed
+
+> **disposed**: `object`
+
+###### reason?
+
+> `optional` **reason?**: `unknown`
+
+##### disposing
+
+> **disposing**: `object`
+
+###### reason?
+
+> `optional` **reason?**: `unknown`
+
+##### readFailed
+
+> **readFailed**: `object`
+
+###### error
+
+> **error**: `Error`
+
 ##### writeFailed
 
 > **writeFailed**: `object`

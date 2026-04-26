@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/hub-server",
-  "version": "0.14.1",
+  "version": "0.14.2",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Hub server for Enkaku E2EE group message routing",
