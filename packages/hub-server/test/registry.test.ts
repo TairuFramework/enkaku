@@ -69,4 +69,30 @@ describe('HubClientRegistry', () => {
     const registry = new HubClientRegistry()
     expect(() => registry.joinGroup('did:key:unknown', 'group-1')).toThrow()
   })
+
+  test('setReceiveWriter throws on double-bind for same DID', () => {
+    const registry = new HubClientRegistry()
+    registry.register('did:key:alice')
+    registry.setReceiveWriter('did:key:alice', vi.fn())
+    expect(() => registry.setReceiveWriter('did:key:alice', vi.fn())).toThrow(
+      /receive writer already bound/,
+    )
+  })
+
+  test('setReceiveWriter succeeds again after clearReceiveWriter', () => {
+    const registry = new HubClientRegistry()
+    registry.register('did:key:alice')
+    const first = vi.fn()
+    const second = vi.fn()
+    registry.setReceiveWriter('did:key:alice', first)
+    registry.clearReceiveWriter('did:key:alice')
+    expect(() => registry.setReceiveWriter('did:key:alice', second)).not.toThrow()
+    expect(registry.isOnline('did:key:alice')).toBe(true)
+  })
+
+  test('setReceiveWriter is a no-op for unregistered DID', () => {
+    const registry = new HubClientRegistry()
+    expect(() => registry.setReceiveWriter('did:key:ghost', vi.fn())).not.toThrow()
+    expect(registry.isOnline('did:key:ghost')).toBe(false)
+  })
 })

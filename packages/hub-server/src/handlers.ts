@@ -69,6 +69,12 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
       const { after, groupIDs } = ctx.param ?? {}
 
       registry.register(clientDID)
+      // Guard against double-bind: throw before locking the writable/readable
+      // streams so the first subscriber's writer is preserved on the rejection
+      // path. setReceiveWriter below also throws as defense-in-depth.
+      if (registry.isWriterBound(clientDID)) {
+        throw new Error(`receive writer already bound for DID ${clientDID}`)
+      }
 
       const writer = ctx.writable.getWriter()
       const reader = ctx.readable.getReader()

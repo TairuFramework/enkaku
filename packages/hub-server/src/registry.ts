@@ -41,9 +41,11 @@ export class HubClientRegistry {
 
   setReceiveWriter(did: string, writer: (message: StoredMessage) => void): void {
     const entry = this.#clients.get(did)
-    if (entry != null) {
-      entry.sendMessage = writer
+    if (entry == null) return
+    if (entry.sendMessage != null) {
+      throw new Error(`receive writer already bound for DID ${did}`)
     }
+    entry.sendMessage = writer
   }
 
   clearReceiveWriter(did: string): void {
@@ -97,6 +99,10 @@ export class HubClientRegistry {
   }
 
   isOnline(did: string): boolean {
+    return this.#clients.get(did)?.sendMessage != null
+  }
+
+  isWriterBound(did: string): boolean {
     return this.#clients.get(did)?.sendMessage != null
   }
 }
