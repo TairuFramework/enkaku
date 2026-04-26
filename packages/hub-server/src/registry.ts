@@ -101,4 +101,8 @@ export class HubClientRegistry {
   isOnline(did: string): boolean {
     return this.#clients.get(did)?.sendMessage != null
   }
+
+  isWriterBound(did: string): boolean {
+    return this.#clients.get(did)?.sendMessage != null
+  }
 }

@@ -1,7 +1,7 @@
 # Hub-server: surface double-bind on `hub/receive`
 
 **Date:** 2026-04-25
-**Status:** pending
+**Status:** in-review
 **Surfaced by:** Kubun plugin-p2p hub-receive multiplexing work (`kubun/docs/superpowers/specs/2026-04-25-hub-receive-multiplexing-design.md`).
 
 ## Problem
