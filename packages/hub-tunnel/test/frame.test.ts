@@ -42,6 +42,29 @@ describe('HubFrame round-trip', () => {
     }
     expect(decodeFrame(encodeFrame(frame))).toEqual(frame)
   })
+
+  test('round-trips correlationID on a message frame', () => {
+    const frame: HubFrame = {
+      v: 1,
+      sessionID: SESSION,
+      seq: 7,
+      correlationID: 'cid-42',
+      kind: 'message',
+      body: sampleEnkakuMessage,
+    }
+    expect(decodeFrame(encodeFrame(frame))).toEqual(frame)
+  })
+
+  test('round-trips correlationID on a session-end frame', () => {
+    const frame: HubFrame = {
+      v: 1,
+      sessionID: SESSION,
+      seq: 7,
+      correlationID: 'cid-42',
+      kind: 'session-end',
+    }
+    expect(decodeFrame(encodeFrame(frame))).toEqual(frame)
+  })
 })
 
 describe('HubFrame validation rejects', () => {
@@ -89,6 +112,48 @@ describe('HubFrame validation rejects', () => {
     expect(() => decodeFrame(new Uint8Array([0xff, 0xff, 0xff]))).toThrow(FrameDecodeError)
   })
 
+  test('frame with extra top-level property', () => {
+    const bytes = new TextEncoder().encode(
+      JSON.stringify({
+        v: 1,
+        sessionID: SESSION,
+        seq: 0,
+        kind: 'message',
+        body: sampleEnkakuMessage,
+        extra: 'nope',
+      }),
+    )
+    expect(() => decodeFrame(bytes)).toThrow(FrameDecodeError)
+  })
+
+  test('message body envelope with extra top-level property', () => {
+    const bytes = new TextEncoder().encode(
+      JSON.stringify({
+        v: 1,
+        sessionID: SESSION,
+        seq: 0,
+        kind: 'message',
+        body: { ...sampleEnkakuMessage, mystery: 'no' },
+      }),
+    )
+    expect(() => decodeFrame(bytes)).toThrow(FrameDecodeError)
+  })
+
+  test('non-integer seq', () => {
+    const bytes = new TextEncoder().encode(
+      JSON.stringify({
+        v: 1,
+        sessionID: SESSION,
+        seq: 1.5,
+        kind: 'message',
+        body: sampleEnkakuMessage,
+      }),
+    )
+    expect(() => decodeFrame(bytes)).toThrow(FrameDecodeError)
+  })
+})
+
+describe('HubFrame constants', () => {
   test('exposes HUB_FRAME_VERSION', () => {
     expect(HUB_FRAME_VERSION).toBe(1)
   })
