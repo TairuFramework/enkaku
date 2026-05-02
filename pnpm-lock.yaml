@@ -616,9 +616,6 @@ importers:
       '@enkaku/hub-protocol':
         specifier: workspace:^
         version: link:../hub-protocol
-      '@enkaku/protocol':
-        specifier: workspace:^
-        version: link:../protocol
       '@enkaku/schema':
         specifier: workspace:^
         version: link:../schema
@@ -629,6 +626,9 @@ importers:
       '@enkaku/client':
         specifier: workspace:^
         version: link:../client
+      '@enkaku/protocol':
+        specifier: workspace:^
+        version: link:../protocol
       '@enkaku/server':
         specifier: workspace:^
         version: link:../server

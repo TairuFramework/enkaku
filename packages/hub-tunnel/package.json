@@ -40,12 +40,12 @@
     "@enkaku/async": "workspace:^",
     "@enkaku/codec": "workspace:^",
     "@enkaku/hub-protocol": "workspace:^",
-    "@enkaku/protocol": "workspace:^",
     "@enkaku/schema": "workspace:^",
     "@enkaku/transport": "workspace:^"
   },
   "devDependencies": {
     "@enkaku/client": "workspace:^",
+    "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
     "@enkaku/token": "workspace:^"
   }

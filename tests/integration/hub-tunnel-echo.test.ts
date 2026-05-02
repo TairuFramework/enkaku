@@ -83,7 +83,7 @@ function createInMemoryHub(): { hubFor: (localDID: string) => HubLike } {
     }
   }
 
-  function hubFor(localDID: string): HubLike {
+  function hubFor(_localDID: string): HubLike {
     return { send, receive }
   }
 

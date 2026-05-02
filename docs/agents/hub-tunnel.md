@@ -83,8 +83,11 @@ etc.).
 - Key rotation. Hub-tunnel does not signal rekey moments; callers
   schedule them out-of-band.
 - Failure semantics: implementations throw; `EncryptError` /
-  `DecryptError` wrap the cause. Decrypt failures cause the readable
-  side to error out and the transport tears down.
+  `DecryptError` wrap the cause. Decrypt failures **drop the offending
+  frame and continue** — the session stays open and the listener sees
+  an `ObservabilityEvent` of type `decrypt-failed` plus a
+  `frame-dropped` with `reason: 'decrypt'`. Encrypt failures on the
+  write path tear down the transport.
 
 ## Session lifecycle
 
@@ -108,8 +111,12 @@ etc.).
 
 ## Observability
 
-`onEvent?: ObservabilityEventListener` receives `frame-dropped`
-events with `reason` ∈ `{ sender-mismatch, session-mismatch, dedup }`.
+`onEvent?: ObservabilityEventListener` receives:
+- `frame-dropped` with `reason` ∈
+  `{ envelope-decode, decrypt, sender-mismatch, session-mismatch, dedup }`.
+- `decrypt-failed` with the underlying `DecryptError`.
+- `envelope-decode-failed` with the underlying `EnvelopeDecodeError`.
+
 Future event types are added without breaking existing listeners
 (open enum).
 
