@@ -605,6 +605,37 @@ importers:
         specifier: workspace:^
         version: link:../transport
 
+  packages/hub-tunnel:
+    dependencies:
+      '@enkaku/async':
+        specifier: workspace:^
+        version: link:../async
+      '@enkaku/codec':
+        specifier: workspace:^
+        version: link:../codec
+      '@enkaku/hub-protocol':
+        specifier: workspace:^
+        version: link:../hub-protocol
+      '@enkaku/protocol':
+        specifier: workspace:^
+        version: link:../protocol
+      '@enkaku/schema':
+        specifier: workspace:^
+        version: link:../schema
+      '@enkaku/transport':
+        specifier: workspace:^
+        version: link:../transport
+    devDependencies:
+      '@enkaku/client':
+        specifier: workspace:^
+        version: link:../client
+      '@enkaku/server':
+        specifier: workspace:^
+        version: link:../server
+      '@enkaku/token':
+        specifier: workspace:^
+        version: link:../token
+
   packages/ledger-identity:
     dependencies:
       '@enkaku/codec':

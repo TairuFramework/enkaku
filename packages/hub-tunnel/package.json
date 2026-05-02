@@ -1,0 +1,52 @@
+{
+  "name": "@enkaku/hub-tunnel",
+  "version": "0.14.0",
+  "license": "MIT",
+  "homepage": "https://enkaku.dev",
+  "description": "Peer-to-peer Enkaku transport tunneled through a hub relay",
+  "keywords": [
+    "enkaku",
+    "hub",
+    "tunnel",
+    "transport",
+    "p2p"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TairuFramework/enkaku",
+    "directory": "packages/hub-tunnel"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": "./lib/index.js"
+  },
+  "files": [
+    "lib/*"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build:clean": "del lib",
+    "build:js": "swc src -d ./lib --config-file ../../swc.json --strip-leading-paths",
+    "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
+    "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
+    "test:types": "tsc --noEmit -p tsconfig.test.json",
+    "test:unit": "vitest run",
+    "test": "pnpm run test:types && pnpm run test:unit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@enkaku/async": "workspace:^",
+    "@enkaku/codec": "workspace:^",
+    "@enkaku/hub-protocol": "workspace:^",
+    "@enkaku/protocol": "workspace:^",
+    "@enkaku/schema": "workspace:^",
+    "@enkaku/transport": "workspace:^"
+  },
+  "devDependencies": {
+    "@enkaku/client": "workspace:^",
+    "@enkaku/server": "workspace:^",
+    "@enkaku/token": "workspace:^"
+  }
+}
