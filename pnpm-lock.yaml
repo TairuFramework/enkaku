@@ -1080,6 +1080,9 @@ importers:
       '@enkaku/hub-server':
         specifier: workspace:^
         version: link:../../packages/hub-server
+      '@enkaku/hub-tunnel':
+        specifier: workspace:^
+        version: link:../../packages/hub-tunnel
       '@enkaku/node-streams-transport':
         specifier: workspace:^
         version: link:../../packages/node-streams-transport

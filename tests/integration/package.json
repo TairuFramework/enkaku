@@ -23,6 +23,7 @@
     "@enkaku/event": "workspace:^",
     "@enkaku/http-client-transport": "workspace:^",
     "@enkaku/http-server-transport": "workspace:^",
+    "@enkaku/hub-tunnel": "workspace:^",
     "@enkaku/hub-client": "workspace:^",
     "@enkaku/hub-protocol": "workspace:^",
     "@enkaku/hub-server": "workspace:^",
