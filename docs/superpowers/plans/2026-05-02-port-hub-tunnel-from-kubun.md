@@ -38,14 +38,16 @@ pnpm install # ensure deps installed
 - Create: `packages/hub-tunnel/tsconfig.json`
 - Create: `packages/hub-tunnel/tsconfig.test.json`
 - Create: `packages/hub-tunnel/README.md`
-- Create: `packages/hub-tunnel/src/.gitkeep` (placeholder; deleted in Task 2)
+- Create: `packages/hub-tunnel/src/index.ts` (placeholder `export {}`; overwritten in Task 7)
 
-- [ ] **Step 1: Create directory tree**
+- [ ] **Step 1: Create directory tree + placeholder source file**
 
 ```bash
 mkdir -p packages/hub-tunnel/src packages/hub-tunnel/test/fixtures
-touch packages/hub-tunnel/src/.gitkeep
+printf '// placeholder — replaced in Task 7\nexport {}\n' > packages/hub-tunnel/src/index.ts
 ```
+
+Note: a placeholder TS file is required because the repo's pre-commit hook runs `tsc --emitDeclarationOnly` per package and an empty `src/` triggers `TS18003: No inputs were found`. A `.gitkeep` does not satisfy `tsc`.
 
 - [ ] **Step 2: Write `packages/hub-tunnel/package.json`**
 
@@ -169,7 +171,7 @@ These files have zero `@kubun/*` references and need no behavioral changes. Copy
 - Create: `packages/hub-tunnel/src/encryptor.ts`
 - Create: `packages/hub-tunnel/src/errors.ts`
 - Create: `packages/hub-tunnel/src/events.ts`
-- Delete: `packages/hub-tunnel/src/.gitkeep`
+- Note: `packages/hub-tunnel/src/index.ts` placeholder from Task 1 stays in place; Task 7 overwrites it with real re-exports.
 
 - [ ] **Step 1: Copy `encryptor.ts`**
 
@@ -201,13 +203,7 @@ cp /Users/paul/dev/yulsi/kubun/packages/hub-tunnel/src/events.ts \
    packages/hub-tunnel/src/events.ts
 ```
 
-- [ ] **Step 4: Delete `.gitkeep`**
-
-```bash
-rm packages/hub-tunnel/src/.gitkeep
-```
-
-- [ ] **Step 5: Type-check**
+- [ ] **Step 4: Type-check**
 
 ```bash
 pnpm --filter @enkaku/hub-tunnel exec tsc --noEmit
@@ -215,7 +211,7 @@ pnpm --filter @enkaku/hub-tunnel exec tsc --noEmit
 
 Expected: errors only about missing imports from `frame.js`/`transport.js` etc — not yet ported. The three new files individually compile clean. This is a partial check.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add packages/hub-tunnel/src
