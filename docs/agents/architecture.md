@@ -54,6 +54,14 @@ Enkaku is a modern, type-safe RPC framework for TypeScript applications. It prov
 - Handle connection lifecycle (connect, disconnect, error)
 - Support message serialization/deserialization
 
+### Hub-tunneled Transport
+
+When direct connectivity isn't possible (NAT, mobile, BYO relay),
+`@enkaku/hub-tunnel` provides a peer-to-peer transport that runs over
+a `HubLike` relay with end-to-end encryption supplied by the caller.
+See [hub-tunnel.md](./hub-tunnel.md) for wire format and session
+lifecycle details.
+
 ### Streaming Patterns
 - Implement readable/writable stream interfaces
 - Use async iterators for consuming streams
@@ -126,6 +134,7 @@ packages/[package-name]/
 - **hub-protocol**: Protocol types for blind relay hub (send, group/send, receive)
 - **hub-server**: Hub server with `HubStore` abstraction, fan-out routing, ack-based delivery
 - **hub-client**: Hub client wrapper (send, groupSend, receive, group management)
+- **hub-tunnel**: Peer-to-peer transport tunneling Enkaku messages through a hub relay with pluggable end-to-end encryption. See [hub-tunnel.md](./hub-tunnel.md).
 - **group**: E2EE group management using MLS (ts-mls), custom noble CryptoProvider for Hermes compatibility
 
 #### Utilities
