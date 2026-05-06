@@ -25,7 +25,6 @@ describe('Per-message size limits', () => {
     >()
     const server = serve<Protocol>({
       handlers,
-      accessControl: false,
       transport: transports.server,
       limits: { maxMessageSize: 50 },
     })
@@ -67,7 +66,6 @@ describe('Per-message size limits', () => {
     >()
     const server = serve<Protocol>({
       handlers,
-      accessControl: false,
       transport: transports.server,
       limits: { maxMessageSize: 50 },
     })
@@ -109,7 +107,6 @@ describe('Per-message size limits', () => {
     >()
     const server = serve<Protocol>({
       handlers,
-      accessControl: false,
       transport: transports.server,
       limits: { maxMessageSize: 50 },
     })
@@ -146,7 +143,6 @@ describe('Per-message size limits', () => {
     >()
     const server = serve<Protocol>({
       handlers,
-      accessControl: false,
       transport: transports.server,
       limits: { maxMessageSize: 50 },
     })
@@ -194,7 +190,6 @@ describe('Per-message size limits', () => {
     >()
     const server = serve<Protocol>({
       handlers,
-      accessControl: false,
       transport: transports.server,
       limits: { maxMessageSize: 10000 },
     })

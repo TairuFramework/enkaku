@@ -63,7 +63,6 @@ describe('createEncryptedHubTunnelTransport e2e', () => {
     const { hub, serverDID, clientDID, serverTransport, clientTransport } = createE2ESetup()
 
     const server = serve<EchoProtocol>({
-      accessControl: false,
       handlers: echoHandlers,
       transport: serverTransport,
     })
@@ -95,7 +94,6 @@ describe('createEncryptedHubTunnelTransport e2e', () => {
     const { hub, serverDID, clientDID, serverTransport, clientTransport } = createE2ESetup()
 
     const server = serve<EchoProtocol>({
-      accessControl: false,
       handlers: echoHandlers,
       transport: serverTransport,
     })

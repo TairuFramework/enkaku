@@ -34,7 +34,6 @@ describe('createHubTunnelTransport channel semantics', () => {
     })
 
     const server = serve<EchoProtocol>({
-      accessControl: false,
       handlers: echoHandlers,
       transport: serverTransport,
     })

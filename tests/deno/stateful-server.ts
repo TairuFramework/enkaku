@@ -28,7 +28,6 @@ serve({
       })
     },
   },
-  accessControl: false,
   transport,
 })
 

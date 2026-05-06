@@ -1,6 +1,6 @@
 import type { HubProtocol, HubStore } from '@enkaku/hub-protocol'
 import type { ServerTransportOf } from '@enkaku/protocol'
-import type { Server } from '@enkaku/server'
+import type { AccessRules, ServeParams, Server } from '@enkaku/server'
 import { serve } from '@enkaku/server'
 import type { Identity } from '@enkaku/token'
 
@@ -10,7 +10,7 @@ import { HubClientRegistry } from './registry.js'
 export type CreateHubParams = {
   transport: ServerTransportOf<HubProtocol>
   store: HubStore
-  accessControl?: boolean
+  accessRules?: AccessRules
   identity?: Identity
 }
 
@@ -24,8 +24,8 @@ export function createHub(params: CreateHubParams): HubInstance {
   const server = serve<HubProtocol>({
     handlers: createHandlers({ registry, store: params.store }),
     transport: params.transport,
-    accessControl: params.accessControl ?? false,
     identity: params.identity,
-  })
+    ...(params.accessRules != null ? { accessRules: params.accessRules } : {}),
+  } as ServeParams<HubProtocol>)
   return { registry, server }
 }

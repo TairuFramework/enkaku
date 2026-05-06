@@ -29,7 +29,7 @@ describe('Event auth error', () => {
     const server = serve<Protocol>({
       handlers,
       identity: signer,
-      accessControl: { notify: { allow: true } },
+      accessRules: { notify: { allow: true } },
       transport: transports.server,
     })
     server.events.on('eventAuthError', eventAuthHandler)
@@ -87,7 +87,7 @@ describe('Event auth error', () => {
     const server = serve<Protocol>({
       handlers,
       identity: signer,
-      accessControl: { notify: { allow: true } },
+      accessRules: { notify: { allow: true } },
       transport: transports.server,
     })
     server.events.on('eventAuthError', eventAuthHandler)

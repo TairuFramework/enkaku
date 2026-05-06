@@ -596,13 +596,11 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
   transport: ServerTransportOf<Protocol>
 }
 
-export type ServerParams<Protocol extends ProtocolDefinition> = {
-  accessControl?: false | true | AccessRules
+type BaseServerParams<Protocol extends ProtocolDefinition> = {
   encryptionPolicy?: EncryptionPolicy
   getRandomID?: () => string
   runtime?: Runtime
   handlers: ProcedureHandlers<Protocol>
-  identity?: Identity
   limits?: Partial<ResourceLimits>
   logger?: Logger
   protocol?: Protocol
@@ -611,6 +609,10 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   transports?: Array<ServerTransportOf<Protocol>>
   verifyToken?: VerifyTokenHook
 }
+
+export type ServerParams<Protocol extends ProtocolDefinition> =
+  | (BaseServerParams<Protocol> & { identity?: undefined; accessRules?: never })
+  | (BaseServerParams<Protocol> & { identity: Identity; accessRules?: AccessRules })
 
 export type HandleOptions = {
   accessControl?: false | true | AccessRules
@@ -681,37 +683,23 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       getEnkakuLogger('server', { serverID: serverID ?? this.#runtime.getRandomID() })
     this.#tracer = params.tracer ?? defaultTracer
 
-    const accessControl = params.accessControl
+    const accessRules = (params as { accessRules?: AccessRules }).accessRules
 
     if (serverID == null) {
-      // No identity: accessControl must be explicitly false
-      if (accessControl !== false) {
-        throw new Error(
-          'Invalid server parameters: either "identity" must be provided or "accessControl" must be set to false',
-        )
+      if (accessRules != null) {
+        throw new Error('Invalid server parameters: "accessRules" requires "identity"')
       }
       this.#accessControl = {
         requireAuth: false,
-        access: {},
-        encryptionPolicy: params.encryptionPolicy,
-        verifyToken: params.verifyToken,
-      }
-    } else if (accessControl === false) {
-      // Has identity but public access
-      this.#accessControl = {
-        requireAuth: false,
-        serverID,
         access: {},
         encryptionPolicy: params.encryptionPolicy,
         verifyToken: params.verifyToken,
       }
     } else {
-      // Has identity with access control (true = server-only, record = granular)
-      const access = accessControl === true || accessControl == null ? {} : accessControl
       this.#accessControl = {
         requireAuth: true,
         serverID,
-        access,
+        access: accessRules ?? {},
         encryptionPolicy: params.encryptionPolicy,
         verifyToken: params.verifyToken,
       }
@@ -799,16 +787,20 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   }
 }
 
-export type ServeParams<Protocol extends ProtocolDefinition> = Omit<
-  ServerParams<Protocol>,
+type BaseServeParams<Protocol extends ProtocolDefinition> = Omit<
+  BaseServerParams<Protocol>,
   'transports'
 > & {
   transport: ServerTransportOf<Protocol>
 }
 
+export type ServeParams<Protocol extends ProtocolDefinition> =
+  | (BaseServeParams<Protocol> & { identity?: undefined; accessRules?: never })
+  | (BaseServeParams<Protocol> & { identity: Identity; accessRules?: AccessRules })
+
 export function serve<Protocol extends ProtocolDefinition>(
   params: ServeParams<Protocol>,
 ): Server<Protocol> {
   const { transport, ...rest } = params
-  return new Server<Protocol>({ ...rest, transports: [transport] })
+  return new Server<Protocol>({ ...rest, transports: [transport] } as ServerParams<Protocol>)
 }

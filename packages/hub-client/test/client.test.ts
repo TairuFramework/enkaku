@@ -23,7 +23,6 @@ function createTestHub() {
   const hub = createHub({
     transport: transports.server,
     store,
-    accessControl: false,
   })
   return { hub, store, transports }
 }

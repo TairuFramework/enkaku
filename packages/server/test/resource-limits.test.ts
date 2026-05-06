@@ -34,7 +34,6 @@ describe('Server resource limits', () => {
     >()
     const server = serve<Protocol>({
       handlers,
-      accessControl: false,
       transport: transports.server,
       limits: { maxControllers: 2 },
     })
@@ -107,7 +106,6 @@ describe('Server resource limits', () => {
     >()
     const server = serve<Protocol>({
       handlers,
-      accessControl: false,
       transport: transports.server,
       limits: { maxConcurrentHandlers: 2, maxControllers: 10 },
     })

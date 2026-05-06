@@ -25,7 +25,6 @@ describe('Server lifecycle events', () => {
     const server = serve<Protocol>({
       handlers,
       protocol,
-      accessControl: false,
       transport: transports.server,
     })
 
@@ -65,7 +64,6 @@ describe('Server lifecycle events', () => {
         ping: (async () => ({ ok: true })) as RequestHandler<Protocol, 'ping'>,
       } as ProcedureHandlers<Protocol>,
       protocol,
-      accessControl: false,
       transport: transports.server,
     })
 
@@ -94,7 +92,6 @@ describe('Server lifecycle events', () => {
     const server = serve<Protocol>({
       handlers: { ping: handler } as unknown as ProcedureHandlers<Protocol>,
       protocol,
-      accessControl: false,
       transport: transports.server,
     })
 

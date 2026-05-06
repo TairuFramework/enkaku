@@ -34,7 +34,6 @@ describe('createHubTunnelTransport concurrent RPC + channel', () => {
     })
 
     const server = serve<EchoProtocol>({
-      accessControl: false,
       handlers: echoHandlers,
       transport: serverTransport,
     })

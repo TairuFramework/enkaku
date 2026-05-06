@@ -19,7 +19,6 @@ describe('Client lifecycle events', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
-      accessControl: false,
       handlers: {
         ping: (async () => ({ ok: true })) as RequestHandler<Protocol, 'ping'>,
       } as ProcedureHandlers<Protocol>,

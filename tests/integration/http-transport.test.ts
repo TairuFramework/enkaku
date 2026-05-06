@@ -30,7 +30,7 @@ async function createContext<Protocol extends ProtocolDefinition>(
   const port = await getPort()
 
   const serverTransport = new ServerTransport<Protocol>(serverOptions)
-  const server = serve<Protocol>({ handlers, accessControl: false, transport: serverTransport })
+  const server = serve<Protocol>({ handlers, transport: serverTransport })
   const httpServer = serveHTTP({ fetch: serverTransport.fetch, port })
 
   const clientTransport = new ClientTransport<Protocol>({ url: `http://localhost:${port}` })

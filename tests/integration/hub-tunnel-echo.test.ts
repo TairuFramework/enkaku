@@ -145,7 +145,7 @@ describe('hub-tunnel echo', () => {
     const echoHandler: RequestHandler<Protocol, 'echo'> = async ({ param }) => param
     const handlers = { echo: echoHandler } as ProcedureHandlers<Protocol>
 
-    const server = serve<Protocol>({ handlers, accessControl: false, transport: serverTransport })
+    const server = serve<Protocol>({ handlers, transport: serverTransport })
     const client = new Client<Protocol>({ transport: clientTransport })
 
     try {

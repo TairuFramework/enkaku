@@ -26,7 +26,6 @@ describe('Validation warning', () => {
 
     new Server<Protocol>({
       handlers: { test: vi.fn() },
-      accessControl: false,
       logger: logger as never,
       // No protocol provided
     })
@@ -56,7 +55,6 @@ describe('Validation warning', () => {
 
     new Server<Protocol>({
       handlers: { test: vi.fn() },
-      accessControl: false,
       protocol,
       logger: logger as never,
     })

@@ -438,7 +438,7 @@ describe('Hub teardown produces no unhandled rejections', () => {
 
     const store = createMemoryStore()
     const hubTransports = new DirectTransports()
-    const hub = createHub({ transport: hubTransports.server, store, accessControl: false })
+    const hub = createHub({ transport: hubTransports.server, store })
     const clientTransports = new DirectTransports()
     hub.server.handle(clientTransports.server)
     const client = new Client({
