@@ -58,7 +58,7 @@ describe('access control: predicate variant', () => {
       aud: serverSigner.id,
     } as unknown as Payload)
 
-    const predicate = vi.fn(() => true)
+    const predicate = vi.fn<(ctx: AllowContext) => boolean>(() => true)
 
     await checkClientToken(
       serverSigner.id,
@@ -69,7 +69,9 @@ describe('access control: predicate variant', () => {
     )
 
     expect(predicate).toHaveBeenCalledTimes(1)
-    const ctx = predicate.mock.calls[0]?.[0] as AllowContext
+    const ctx = predicate.mock.calls[0]?.[0]
+    expect(ctx).toBeDefined()
+    if (ctx == null) return
     expect(ctx.pattern).toBe('enkaku:graph/*')
     expect(ctx.procedure).toBe('enkaku:graph/test')
     expect(ctx.serverID).toBe(serverSigner.id)
