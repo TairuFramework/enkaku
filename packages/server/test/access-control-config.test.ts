@@ -62,7 +62,7 @@ describe('Server accessRules configuration', () => {
 
     await expect(
       server.handle(transports.server, {
-        accessControl: { test: { allow: ['did:key:abc'] } },
+        accessRules: { test: { allow: ['did:key:abc'] } },
       }),
     ).rejects.toThrow('identity is required')
 

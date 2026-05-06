@@ -615,7 +615,7 @@ export type ServerParams<Protocol extends ProtocolDefinition> =
   | (BaseServerParams<Protocol> & { identity: Identity; accessRules?: AccessRules })
 
 export type HandleOptions = {
-  accessControl?: false | true | AccessRules
+  accessRules?: false | AccessRules
   logger?: Logger
   verifyToken?: VerifyTokenHook
 }
@@ -725,7 +725,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   }
 
   handle(transport: ServerTransportOf<Protocol>, options: HandleOptions = {}): Promise<void> {
-    const accessControlOverride = options.accessControl
+    const accessRulesOverride = options.accessRules
     const logger =
       options.logger ??
       this.#logger.getChild('handler').with({ transportID: this.#runtime.getRandomID() })
@@ -733,26 +733,25 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const encryptionPolicy = this.#accessControl.encryptionPolicy
 
     let accessControl: AccessControlParams
-    if (accessControlOverride === false) {
+    if (accessRulesOverride === false) {
       accessControl = {
         requireAuth: false,
         access: this.#accessControl.access ?? {},
         encryptionPolicy,
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
       }
-    } else if (accessControlOverride != null) {
-      // Override with true or AccessRules
+    } else if (accessRulesOverride != null) {
+      // Override with AccessRules record
       const serverID = this.#accessControl.serverID
       if (serverID == null) {
         return Promise.reject(
           new Error('Server identity is required to enable access control on transport'),
         )
       }
-      const access = accessControlOverride === true ? {} : accessControlOverride
       accessControl = {
         requireAuth: true,
         serverID,
-        access,
+        access: accessRulesOverride,
         encryptionPolicy,
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
       }
