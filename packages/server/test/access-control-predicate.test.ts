@@ -50,6 +50,52 @@ describe('access control: predicate variant', () => {
     ).rejects.toThrow('Access denied')
   })
 
+  test('predicate that throws propagates the error', async () => {
+    const serverSigner = randomIdentity()
+    const clientSigner = randomIdentity()
+    const token = await clientSigner.signToken({
+      prc: 'enkaku:graph/test',
+      aud: serverSigner.id,
+    } as unknown as Payload)
+
+    await expect(
+      checkClientToken(
+        serverSigner.id,
+        {
+          'enkaku:graph/test': {
+            allow: () => {
+              throw new Error('predicate boom')
+            },
+          },
+        },
+        token,
+      ),
+    ).rejects.toThrow('predicate boom')
+  })
+
+  test('predicate that rejects propagates the rejection', async () => {
+    const serverSigner = randomIdentity()
+    const clientSigner = randomIdentity()
+    const token = await clientSigner.signToken({
+      prc: 'enkaku:graph/test',
+      aud: serverSigner.id,
+    } as unknown as Payload)
+
+    await expect(
+      checkClientToken(
+        serverSigner.id,
+        {
+          'enkaku:graph/test': {
+            allow: async () => {
+              throw new Error('predicate async boom')
+            },
+          },
+        },
+        token,
+      ),
+    ).rejects.toThrow('predicate async boom')
+  })
+
   test('predicate receives full AllowContext', async () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()

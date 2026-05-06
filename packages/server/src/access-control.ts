@@ -98,7 +98,8 @@ export async function checkProcedureAccess(
       continue
     }
 
-    // allow is AllowPredicate
+    // allow is AllowPredicate. A thrown error or rejected promise propagates
+    // to the caller — only `false` falls through to the next pattern.
     const ctx: AllowContext = {
       pattern,
       procedure,
@@ -107,7 +108,6 @@ export async function checkProcedureAccess(
       verifyDelegation,
     }
     if (await allow(ctx)) return
-    // Predicate returned false — fall through to next pattern
   }
 
   throw new Error('Access denied')
