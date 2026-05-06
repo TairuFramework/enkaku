@@ -8,40 +8,23 @@ import type { SignedToken } from '@enkaku/token'
 
 export type EncryptionPolicy = 'required' | 'optional' | 'none'
 
-export type ProcedureAccessConfig = {
-  allow?: boolean | Array<string>
+export type AccessRule = {
+  allow: true | Array<string>
   encryption?: EncryptionPolicy
 }
 
-export type ProcedureAccessValue = boolean | Array<string> | ProcedureAccessConfig
-
-export type ProcedureAccessRecord = Record<string, ProcedureAccessValue>
-
-function getAllowValue(access: ProcedureAccessValue): boolean | Array<string> {
-  if (typeof access === 'boolean' || Array.isArray(access)) {
-    return access
-  }
-  return access.allow ?? false
-}
-
-function getEncryptionPolicy(access: ProcedureAccessValue): EncryptionPolicy | undefined {
-  if (typeof access === 'boolean' || Array.isArray(access)) {
-    return undefined
-  }
-  return access.encryption
-}
+export type AccessRules = Record<string, AccessRule>
 
 export function resolveEncryptionPolicy(
   procedure: string,
-  record: ProcedureAccessRecord | undefined,
+  rules: AccessRules | undefined,
   globalPolicy: EncryptionPolicy,
 ): EncryptionPolicy {
-  if (record != null) {
-    for (const [pattern, accessValue] of Object.entries(record)) {
+  if (rules != null) {
+    for (const [pattern, rule] of Object.entries(rules)) {
       if (hasPartsMatch(procedure, pattern)) {
-        const procedurePolicy = getEncryptionPolicy(accessValue)
-        if (procedurePolicy != null) {
-          return procedurePolicy
+        if (rule.encryption != null) {
+          return rule.encryption
         }
       }
     }
@@ -59,7 +42,7 @@ export type ProcedureAccessPayload = {
 
 export async function checkProcedureAccess(
   serverID: string,
-  record: ProcedureAccessRecord,
+  rules: AccessRules,
   token: SignedToken<ProcedureAccessPayload>,
   options?: DelegationChainOptions,
 ): Promise<void> {
@@ -68,27 +51,21 @@ export async function checkProcedureAccess(
     throw new Error('No procedure to check')
   }
 
-  for (const [procedure, accessValue] of Object.entries(record)) {
-    if (hasPartsMatch(payload.prc, procedure)) {
-      const allow = getAllowValue(accessValue)
-      if (allow === true) {
-        // Procedure can be publicly accessed
-        return
-      }
-      if (allow === false) {
-        // Procedure cannot be accessed
-        continue
-      }
-      if (allow.includes(payload.iss)) {
-        // Issuer is allowed directly
-        return
-      }
-      if (payload.sub == null || !allow.includes(payload.sub)) {
-        // Subject is not allowed to access this procedure
-        continue
-      }
+  for (const [pattern, rule] of Object.entries(rules)) {
+    if (!hasPartsMatch(payload.prc, pattern)) continue
+
+    const { allow } = rule
+
+    if (allow === true) {
+      return
+    }
+
+    // allow is Array<string>
+    if (allow.includes(payload.iss)) {
+      return
+    }
+    if (payload.sub != null && allow.includes(payload.sub)) {
       try {
-        // Check delegation from subject
         await checkCapability({ act: payload.prc, res: serverID }, payload, options)
         return
       } catch (err) {
@@ -109,7 +86,7 @@ export async function checkProcedureAccess(
 
 export async function checkClientToken(
   serverID: string,
-  record: ProcedureAccessRecord,
+  rules: AccessRules,
   token: SignedToken,
   options?: DelegationChainOptions,
 ): Promise<void> {
@@ -139,10 +116,5 @@ export async function checkClientToken(
   if (payload.aud !== serverID) {
     throw new Error('Invalid audience')
   }
-  await checkProcedureAccess(
-    serverID,
-    record,
-    token as SignedToken<ProcedureAccessPayload>,
-    options,
-  )
+  await checkProcedureAccess(serverID, rules, token as SignedToken<ProcedureAccessPayload>, options)
 }

@@ -3,7 +3,7 @@ import type { AnyClientPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 import { randomIdentity, stringifyToken } from '@enkaku/token'
 import { describe, expect, test, vi } from 'vitest'
 
-import { checkClientToken, type ProcedureAccessConfig } from '../src/access-control.js'
+import { type AccessRule, checkClientToken } from '../src/access-control.js'
 
 type Payload = AnyClientPayloadOf<ProtocolDefinition>
 
@@ -12,7 +12,7 @@ describe('access control', () => {
     test('server signer can access all procedures', async () => {
       const signer = randomIdentity()
       const token = await signer.signToken({ prc: 'enkaku:test/test' } as Payload)
-      await expect(checkClientToken(signer.id, { '*': false }, token)).resolves.toBeUndefined()
+      await expect(checkClientToken(signer.id, {}, token)).resolves.toBeUndefined()
     })
 
     test('with delegation', async () => {
@@ -30,9 +30,7 @@ describe('access control', () => {
         sub: serverSigner.id,
         cap: stringifyToken(delegation),
       } as unknown as Payload)
-      await expect(
-        checkClientToken(serverSigner.id, { '*': false }, token),
-      ).resolves.toBeUndefined()
+      await expect(checkClientToken(serverSigner.id, {}, token)).resolves.toBeUndefined()
     })
 
     test('audience check', async () => {
@@ -42,7 +40,7 @@ describe('access control', () => {
         aud: 'did:test:123',
       } as unknown as Payload)
       await expect(async () => {
-        await checkClientToken(signer.id, { '*': false }, token)
+        await checkClientToken(signer.id, {}, token)
       }).rejects.toThrow('Invalid audience')
     })
 
@@ -53,7 +51,7 @@ describe('access control', () => {
         exp: 1000,
       } as unknown as Payload)
       await expect(async () => {
-        await checkClientToken(signer.id, { '*': false }, token)
+        await checkClientToken(signer.id, {}, token)
       }).rejects.toThrow('Invalid token: expired')
     })
   })
@@ -67,12 +65,12 @@ describe('access control', () => {
         aud: serverSigner.id,
       } as unknown as Payload)
       await expect(
-        checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': true }, token),
+        checkClientToken(serverSigner.id, { 'enkaku:graph/test': { allow: true } }, token),
       ).resolves.toBeUndefined()
     })
   })
 
-  describe('ProcedureAccessConfig with encryption', () => {
+  describe('AccessRule with encryption', () => {
     test('config with allow: true acts as public access', async () => {
       const serverSigner = randomIdentity()
       const clientSigner = randomIdentity()
@@ -80,23 +78,10 @@ describe('access control', () => {
         prc: 'enkaku:graph/test',
         aud: serverSigner.id,
       } as unknown as Payload)
-      const config: ProcedureAccessConfig = { allow: true, encryption: 'required' }
+      const config: AccessRule = { allow: true, encryption: 'required' }
       await expect(
-        checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': config }, token),
+        checkClientToken(serverSigner.id, { 'enkaku:graph/test': config }, token),
       ).resolves.toBeUndefined()
-    })
-
-    test('config with allow: false denies access', async () => {
-      const serverSigner = randomIdentity()
-      const clientSigner = randomIdentity()
-      const token = await clientSigner.signToken({
-        prc: 'enkaku:graph/test',
-        aud: serverSigner.id,
-      } as unknown as Payload)
-      const config: ProcedureAccessConfig = { allow: false, encryption: 'optional' }
-      await expect(
-        checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': config }, token),
-      ).rejects.toThrow('Access denied')
     })
 
     test('config with allow-list works like array access', async () => {
@@ -106,26 +91,13 @@ describe('access control', () => {
         prc: 'enkaku:graph/test',
         aud: serverSigner.id,
       } as unknown as Payload)
-      const config: ProcedureAccessConfig = {
+      const config: AccessRule = {
         allow: [clientSigner.id],
         encryption: 'required',
       }
       await expect(
-        checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': config }, token),
+        checkClientToken(serverSigner.id, { 'enkaku:graph/test': config }, token),
       ).resolves.toBeUndefined()
-    })
-
-    test('config without allow defaults to deny', async () => {
-      const serverSigner = randomIdentity()
-      const clientSigner = randomIdentity()
-      const token = await clientSigner.signToken({
-        prc: 'enkaku:graph/test',
-        aud: serverSigner.id,
-      } as unknown as Payload)
-      const config: ProcedureAccessConfig = { encryption: 'required' }
-      await expect(
-        checkClientToken(serverSigner.id, { '*': false, 'enkaku:graph/test': config }, token),
-      ).rejects.toThrow('Access denied')
     })
   })
 
@@ -140,7 +112,7 @@ describe('access control', () => {
       await expect(
         checkClientToken(
           serverSigner.id,
-          { '*': false, 'enkaku:graph/test': [clientSigner.id] },
+          { 'enkaku:graph/test': { allow: [clientSigner.id] } },
           token,
         ),
       ).resolves.toBeUndefined()
@@ -166,7 +138,7 @@ describe('access control', () => {
       await expect(
         checkClientToken(
           serverSigner.id,
-          { '*': false, 'enkaku:graph/test': [delegationSigner.id] },
+          { 'enkaku:graph/test': { allow: [delegationSigner.id] } },
           token,
         ),
       ).resolves.toBeUndefined()
@@ -196,7 +168,7 @@ describe('access control', () => {
 
       await checkClientToken(
         serverSigner.id,
-        { '*': false, 'enkaku:graph/test': [delegationSigner.id] },
+        { 'enkaku:graph/test': { allow: [delegationSigner.id] } },
         token,
         { verifyToken },
       )
@@ -229,7 +201,7 @@ describe('access control', () => {
       await expect(
         checkClientToken(
           serverSigner.id,
-          { '*': false, 'enkaku:graph/test': [delegationSigner.id] },
+          { 'enkaku:graph/test': { allow: [delegationSigner.id] } },
           token,
           { verifyToken },
         ),

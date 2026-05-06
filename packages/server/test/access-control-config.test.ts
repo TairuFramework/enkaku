@@ -33,7 +33,7 @@ describe('Server accessControl configuration', () => {
       new Server<Protocol>({
         handlers,
         protocol,
-        accessControl: { test: ['did:key:abc'] },
+        accessControl: { test: { allow: ['did:key:abc'] } },
       })
     }).toThrow('"identity" must be provided or "accessControl" must be set to false')
   })
@@ -65,7 +65,7 @@ describe('Server accessControl configuration', () => {
         handlers,
         protocol,
         identity: signer,
-        accessControl: { test: ['did:key:abc'] },
+        accessControl: { test: { allow: ['did:key:abc'] } },
       })
     }).not.toThrow()
   })
@@ -83,7 +83,7 @@ describe('Server accessControl configuration', () => {
     })
 
     await expect(
-      server.handle(transports.server, { accessControl: { test: ['did:key:abc'] } }),
+      server.handle(transports.server, { accessControl: { test: { allow: ['did:key:abc'] } } }),
     ).rejects.toThrow('identity is required')
 
     await server.dispose()

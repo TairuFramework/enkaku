@@ -31,9 +31,9 @@ import {
 import { type Identity, isSignedToken, type SignedToken, type Token } from '@enkaku/token'
 
 import {
+  type AccessRules,
   checkClientToken,
   type EncryptionPolicy,
-  type ProcedureAccessRecord,
   resolveEncryptionPolicy,
 } from './access-control.js'
 import { HandlerError } from './error.js'
@@ -61,8 +61,8 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
 const defaultTracer = createTracer('server')
 
 export type AccessControlParams = (
-  | { requireAuth: false; serverID?: string; access: ProcedureAccessRecord }
-  | { requireAuth: true; serverID: string; access: ProcedureAccessRecord }
+  | { requireAuth: false; serverID?: string; access: AccessRules }
+  | { requireAuth: true; serverID: string; access: AccessRules }
 ) & { encryptionPolicy?: EncryptionPolicy; verifyToken?: VerifyTokenHook }
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
@@ -597,7 +597,7 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
 }
 
 export type ServerParams<Protocol extends ProtocolDefinition> = {
-  accessControl?: false | true | ProcedureAccessRecord
+  accessControl?: false | true | AccessRules
   encryptionPolicy?: EncryptionPolicy
   getRandomID?: () => string
   runtime?: Runtime
@@ -613,7 +613,7 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
 }
 
 export type HandleOptions = {
-  accessControl?: false | true | ProcedureAccessRecord
+  accessControl?: false | true | AccessRules
   logger?: Logger
   verifyToken?: VerifyTokenHook
 }
@@ -753,7 +753,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
       }
     } else if (accessControlOverride != null) {
-      // Override with true or ProcedureAccessRecord
+      // Override with true or AccessRules
       const serverID = this.#accessControl.serverID
       if (serverID == null) {
         return Promise.reject(

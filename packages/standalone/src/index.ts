@@ -12,12 +12,12 @@
 
 import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { type ProcedureAccessRecord, type ProcedureHandlers, serve } from '@enkaku/server'
+import { type AccessRules, type ProcedureHandlers, serve } from '@enkaku/server'
 import type { Identity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
 
 export type StandaloneOptions<Protocol extends ProtocolDefinition> = {
-  accessControl?: false | true | ProcedureAccessRecord
+  accessControl?: false | true | AccessRules
   getRandomID?: () => string
   protocol?: Protocol
   signal?: AbortSignal

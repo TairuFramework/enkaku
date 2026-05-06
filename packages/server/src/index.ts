@@ -10,12 +10,7 @@
  * @module server
  */
 
-export type {
-  EncryptionPolicy,
-  ProcedureAccessConfig,
-  ProcedureAccessRecord,
-  ProcedureAccessValue,
-} from './access-control.js'
+export type { AccessRule, AccessRules, EncryptionPolicy } from './access-control.js'
 export { resolveEncryptionPolicy } from './access-control.js'
 export {
   createResourceLimiter,

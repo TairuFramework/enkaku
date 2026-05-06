@@ -36,7 +36,7 @@ describe('Server verifyToken hook', () => {
     const server = serve<Protocol>({
       handlers,
       identity: serverSigner,
-      accessControl: { '*': [delegatorSigner.id] },
+      accessControl: { '*': { allow: [delegatorSigner.id] } },
       verifyToken,
       transport: transports.server,
     })
@@ -91,7 +91,7 @@ describe('Server verifyToken hook', () => {
     const server = serve<Protocol>({
       handlers,
       identity: serverSigner,
-      accessControl: { '*': [delegatorSigner.id] },
+      accessControl: { '*': { allow: [delegatorSigner.id] } },
       verifyToken,
       transport: transports.server,
     })
