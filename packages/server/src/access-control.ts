@@ -8,8 +8,26 @@ import type { SignedToken } from '@enkaku/token'
 
 export type EncryptionPolicy = 'required' | 'optional' | 'none'
 
+export type ProcedureAccessPayload = {
+  iss: string
+  sub?: string
+  aud?: string
+  prc?: string
+  exp?: number
+}
+
+export type AllowContext = {
+  pattern: string
+  procedure: string
+  payload: ProcedureAccessPayload
+  serverID: string
+  verifyDelegation: () => Promise<boolean>
+}
+
+export type AllowPredicate = (ctx: AllowContext) => boolean | Promise<boolean>
+
 export type AccessRule = {
-  allow: true | Array<string>
+  allow: true | Array<string> | AllowPredicate
   encryption?: EncryptionPolicy
 }
 
@@ -32,14 +50,6 @@ export function resolveEncryptionPolicy(
   return globalPolicy
 }
 
-export type ProcedureAccessPayload = {
-  iss: string
-  sub?: string
-  aud?: string
-  prc?: string
-  exp?: number
-}
-
 export async function checkProcedureAccess(
   serverID: string,
   rules: AccessRules,
@@ -60,7 +70,11 @@ export async function checkProcedureAccess(
       return
     }
 
-    // allow is Array<string>
+    if (!Array.isArray(allow)) {
+      // Predicate runtime branch lands in Task 8.
+      continue
+    }
+
     if (allow.includes(payload.iss)) {
       return
     }
