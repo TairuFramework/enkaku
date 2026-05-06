@@ -61,8 +61,28 @@ export async function checkProcedureAccess(
     throw new Error('No procedure to check')
   }
 
+  const procedure = payload.prc
+
   for (const [pattern, rule] of Object.entries(rules)) {
-    if (!hasPartsMatch(payload.prc, pattern)) continue
+    if (!hasPartsMatch(procedure, pattern)) continue
+
+    const verifyDelegation = async (): Promise<boolean> => {
+      if (payload.sub == null) return false
+      try {
+        await checkCapability({ act: procedure, res: serverID }, payload, options)
+        return true
+      } catch (err) {
+        const message = err instanceof Error ? err.message : ''
+        if (
+          message.startsWith('Invalid capability') ||
+          message.startsWith('Invalid payload') ||
+          message.startsWith('Invalid token')
+        ) {
+          return false
+        }
+        throw err
+      }
+    }
 
     const { allow } = rule
 
@@ -70,29 +90,24 @@ export async function checkProcedureAccess(
       return
     }
 
-    if (!Array.isArray(allow)) {
-      // Predicate runtime branch lands in Task 8.
+    if (Array.isArray(allow)) {
+      if (allow.includes(payload.iss)) return
+      if (payload.sub != null && allow.includes(payload.sub)) {
+        if (await verifyDelegation()) return
+      }
       continue
     }
 
-    if (allow.includes(payload.iss)) {
-      return
+    // allow is AllowPredicate
+    const ctx: AllowContext = {
+      pattern,
+      procedure,
+      payload,
+      serverID,
+      verifyDelegation,
     }
-    if (payload.sub != null && allow.includes(payload.sub)) {
-      try {
-        await checkCapability({ act: payload.prc, res: serverID }, payload, options)
-        return
-      } catch (err) {
-        const message = err instanceof Error ? err.message : ''
-        if (
-          !message.startsWith('Invalid capability') &&
-          !message.startsWith('Invalid payload') &&
-          !message.startsWith('Invalid token')
-        ) {
-          throw err
-        }
-      }
-    }
+    if (await allow(ctx)) return
+    // Predicate returned false — fall through to next pattern
   }
 
   throw new Error('Access denied')
