@@ -106,7 +106,7 @@ describe('createController onDone fires at most once', () => {
       await transports.server.write(
         unsignedToken({ typ: 'error', rid, code: 'boom', msg: 'boom', data: {} }),
       )
-      await expect(channel).rejects.toBeDefined()
+      await expect(channel).rejects.toMatchObject({ code: 'boom', message: 'boom' })
 
       // close() fires the per-rid abort → controller.aborted → onDone (would be 2nd writer.close).
       channel.close()
