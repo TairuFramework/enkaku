@@ -32,7 +32,6 @@ describe('Channel send authorization', () => {
     >()
     const server = serve<Protocol>({
       handlers,
-      accessControl: false,
       transport: transports.server,
     })
 
@@ -75,7 +74,7 @@ describe('Channel send authorization', () => {
     const server = serve<Protocol>({
       handlers,
       identity: signer,
-      accessControl: { chat: true },
+      accessRules: { chat: { allow: true } },
       transport: transports.server,
     })
 
@@ -136,7 +135,7 @@ describe('Channel send authorization', () => {
     const server = serve<Protocol>({
       handlers,
       identity: signer,
-      accessControl: { chat: true },
+      accessRules: { chat: { allow: true } },
       transport: transports.server,
     })
 
@@ -193,7 +192,7 @@ describe('Channel send authorization', () => {
     const server = serve<Protocol>({
       handlers,
       identity: signer,
-      accessControl: { chat: true },
+      accessRules: { chat: { allow: true } },
       transport: transports.server,
     })
 
@@ -248,7 +247,6 @@ describe('Channel send authorization', () => {
     >()
     const server = serve<Protocol>({
       handlers,
-      accessControl: false,
       transport: transports.server,
     })
 

@@ -12,36 +12,48 @@
 
 import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { type ProcedureAccessRecord, type ProcedureHandlers, serve } from '@enkaku/server'
-import type { Identity } from '@enkaku/token'
+import { type ProcedureHandlers, type ServerAccessOptions, serve } from '@enkaku/server'
 import { DirectTransports } from '@enkaku/transport'
 
 export type StandaloneOptions<Protocol extends ProtocolDefinition> = {
-  accessControl?: false | true | ProcedureAccessRecord
   getRandomID?: () => string
   protocol?: Protocol
   signal?: AbortSignal
-  identity?: Identity
-}
+} & ServerAccessOptions
 
 export function standalone<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,
   options: StandaloneOptions<Protocol> = {},
 ): Client<Protocol> {
-  const { accessControl, getRandomID, protocol, signal, identity } = options
+  const { getRandomID, protocol, signal } = options
   const transports = new DirectTransports<
     AnyServerMessageOf<Protocol>,
     AnyClientMessageOf<Protocol>
   >({ signal })
 
-  const serverID = identity ? identity.id : undefined
-  serve<Protocol>({
-    accessControl: accessControl ?? (serverID == null ? false : undefined),
-    handlers,
-    identity,
-    protocol,
-    signal,
-    transport: transports.server,
+  if (options.identity != null) {
+    serve<Protocol>({
+      handlers,
+      identity: options.identity,
+      protocol,
+      signal,
+      transport: transports.server,
+      accessRules: options.accessRules,
+    })
+  } else {
+    serve<Protocol>({
+      handlers,
+      protocol,
+      signal,
+      transport: transports.server,
+    })
+  }
+
+  const serverID = options.identity?.id
+  return new Client<Protocol>({
+    getRandomID,
+    serverID,
+    identity: options.identity,
+    transport: transports.client,
   })
-  return new Client<Protocol>({ getRandomID, serverID, identity, transport: transports.client })
 }

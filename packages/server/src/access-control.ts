@@ -8,47 +8,6 @@ import type { SignedToken } from '@enkaku/token'
 
 export type EncryptionPolicy = 'required' | 'optional' | 'none'
 
-export type ProcedureAccessConfig = {
-  allow?: boolean | Array<string>
-  encryption?: EncryptionPolicy
-}
-
-export type ProcedureAccessValue = boolean | Array<string> | ProcedureAccessConfig
-
-export type ProcedureAccessRecord = Record<string, ProcedureAccessValue>
-
-function getAllowValue(access: ProcedureAccessValue): boolean | Array<string> {
-  if (typeof access === 'boolean' || Array.isArray(access)) {
-    return access
-  }
-  return access.allow ?? false
-}
-
-function getEncryptionPolicy(access: ProcedureAccessValue): EncryptionPolicy | undefined {
-  if (typeof access === 'boolean' || Array.isArray(access)) {
-    return undefined
-  }
-  return access.encryption
-}
-
-export function resolveEncryptionPolicy(
-  procedure: string,
-  record: ProcedureAccessRecord | undefined,
-  globalPolicy: EncryptionPolicy,
-): EncryptionPolicy {
-  if (record != null) {
-    for (const [pattern, accessValue] of Object.entries(record)) {
-      if (hasPartsMatch(procedure, pattern)) {
-        const procedurePolicy = getEncryptionPolicy(accessValue)
-        if (procedurePolicy != null) {
-          return procedurePolicy
-        }
-      }
-    }
-  }
-  return globalPolicy
-}
-
 export type ProcedureAccessPayload = {
   iss: string
   sub?: string
@@ -57,9 +16,43 @@ export type ProcedureAccessPayload = {
   exp?: number
 }
 
+export type AllowContext = {
+  pattern: string
+  procedure: string
+  payload: ProcedureAccessPayload
+  serverID: string
+  verifyDelegation: () => Promise<boolean>
+}
+
+export type AllowPredicate = (ctx: AllowContext) => boolean | Promise<boolean>
+
+export type AccessRule = {
+  allow: true | Array<string> | AllowPredicate
+  encryption?: EncryptionPolicy
+}
+
+export type AccessRules = Record<string, AccessRule>
+
+export function resolveEncryptionPolicy(
+  procedure: string,
+  rules: AccessRules | undefined,
+  globalPolicy: EncryptionPolicy,
+): EncryptionPolicy {
+  if (rules != null) {
+    for (const [pattern, rule] of Object.entries(rules)) {
+      if (hasPartsMatch(procedure, pattern)) {
+        if (rule.encryption != null) {
+          return rule.encryption
+        }
+      }
+    }
+  }
+  return globalPolicy
+}
+
 export async function checkProcedureAccess(
   serverID: string,
-  record: ProcedureAccessRecord,
+  rules: AccessRules,
   token: SignedToken<ProcedureAccessPayload>,
   options?: DelegationChainOptions,
 ): Promise<void> {
@@ -68,40 +61,53 @@ export async function checkProcedureAccess(
     throw new Error('No procedure to check')
   }
 
-  for (const [procedure, accessValue] of Object.entries(record)) {
-    if (hasPartsMatch(payload.prc, procedure)) {
-      const allow = getAllowValue(accessValue)
-      if (allow === true) {
-        // Procedure can be publicly accessed
-        return
-      }
-      if (allow === false) {
-        // Procedure cannot be accessed
-        continue
-      }
-      if (allow.includes(payload.iss)) {
-        // Issuer is allowed directly
-        return
-      }
-      if (payload.sub == null || !allow.includes(payload.sub)) {
-        // Subject is not allowed to access this procedure
-        continue
-      }
+  const procedure = payload.prc
+
+  for (const [pattern, rule] of Object.entries(rules)) {
+    if (!hasPartsMatch(procedure, pattern)) continue
+
+    const verifyDelegation = async (): Promise<boolean> => {
+      if (payload.sub == null) return false
       try {
-        // Check delegation from subject
-        await checkCapability({ act: payload.prc, res: serverID }, payload, options)
-        return
+        await checkCapability({ act: procedure, res: serverID }, payload, options)
+        return true
       } catch (err) {
         const message = err instanceof Error ? err.message : ''
         if (
-          !message.startsWith('Invalid capability') &&
-          !message.startsWith('Invalid payload') &&
-          !message.startsWith('Invalid token')
+          message.startsWith('Invalid capability') ||
+          message.startsWith('Invalid payload') ||
+          message.startsWith('Invalid token')
         ) {
-          throw err
+          return false
         }
+        throw err
       }
     }
+
+    const { allow } = rule
+
+    if (allow === true) {
+      return
+    }
+
+    if (Array.isArray(allow)) {
+      if (allow.includes(payload.iss)) return
+      if (payload.sub != null && allow.includes(payload.sub)) {
+        if (await verifyDelegation()) return
+      }
+      continue
+    }
+
+    // allow is AllowPredicate. A thrown error or rejected promise propagates
+    // to the caller — only `false` falls through to the next pattern.
+    const ctx: AllowContext = {
+      pattern,
+      procedure,
+      payload,
+      serverID,
+      verifyDelegation,
+    }
+    if (await allow(ctx)) return
   }
 
   throw new Error('Access denied')
@@ -109,7 +115,7 @@ export async function checkProcedureAccess(
 
 export async function checkClientToken(
   serverID: string,
-  record: ProcedureAccessRecord,
+  rules: AccessRules,
   token: SignedToken,
   options?: DelegationChainOptions,
 ): Promise<void> {
@@ -139,10 +145,5 @@ export async function checkClientToken(
   if (payload.aud !== serverID) {
     throw new Error('Invalid audience')
   }
-  await checkProcedureAccess(
-    serverID,
-    record,
-    token as SignedToken<ProcedureAccessPayload>,
-    options,
-  )
+  await checkProcedureAccess(serverID, rules, token as SignedToken<ProcedureAccessPayload>, options)
 }

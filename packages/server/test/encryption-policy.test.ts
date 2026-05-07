@@ -185,7 +185,7 @@ describe('encryption policy enforcement', () => {
       handlers,
       identity: signer,
       encryptionPolicy: 'required',
-      accessControl: {
+      accessRules: {
         // Override: this procedure doesn't need encryption
         test: { allow: true, encryption: 'none' },
       },
@@ -220,7 +220,6 @@ describe('encryption policy enforcement', () => {
     >()
     serve<Protocol>({
       handlers,
-      accessControl: false,
       encryptionPolicy: 'required',
       transport: transports.server,
     })

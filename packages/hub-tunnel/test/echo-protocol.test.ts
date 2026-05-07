@@ -16,7 +16,6 @@ type EchoTransports = DirectTransports<EchoServerMessage, EchoClientMessage>
 async function withEcho(fn: (client: Client<EchoProtocol>) => Promise<void>): Promise<void> {
   const transports: EchoTransports = new DirectTransports()
   const server = serve<EchoProtocol>({
-    accessControl: false,
     handlers: echoHandlers,
     transport: transports.server,
   })

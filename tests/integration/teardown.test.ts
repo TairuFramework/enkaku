@@ -39,7 +39,6 @@ describe('teardown (integration)', () => {
       return null
     }) as ChannelHandler<Protocol, 'chat'>
     const server = serve<Protocol>({
-      accessControl: false,
       handlers: { chat: handler } as ProcedureHandlers<Protocol>,
       protocol,
       transport: transports.server,

@@ -11,10 +11,11 @@
  */
 
 export type {
+  AccessRule,
+  AccessRules,
+  AllowContext,
+  AllowPredicate,
   EncryptionPolicy,
-  ProcedureAccessConfig,
-  ProcedureAccessRecord,
-  ProcedureAccessValue,
 } from './access-control.js'
 export { resolveEncryptionPolicy } from './access-control.js'
 export {
@@ -23,7 +24,13 @@ export {
   type ResourceLimiter,
   type ResourceLimits,
 } from './limits.js'
-export { type ServeParams, Server, type ServerParams, serve } from './server.js'
+export {
+  type ServeParams,
+  Server,
+  type ServerAccessOptions,
+  type ServerParams,
+  serve,
+} from './server.js'
 export type {
   ChannelHandler,
   ChannelHandlerContext,

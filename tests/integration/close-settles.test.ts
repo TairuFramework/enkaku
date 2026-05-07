@@ -28,7 +28,6 @@ describe("channel.close() settles the call promise with 'Close'", () => {
       return null
     }) as ChannelHandler<Protocol, 'echo'>
     const server = serve<Protocol>({
-      accessControl: false,
       handlers: { echo: handler } as ProcedureHandlers<Protocol>,
       protocol,
       transport: transports.server,

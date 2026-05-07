@@ -1,5 +1,5 @@
 import type { ProtocolDefinition, ServerTransportOf } from '@enkaku/protocol'
-import { type Server, type ServerParams, serve } from '@enkaku/server'
+import { type ServeParams, type Server, serve } from '@enkaku/server'
 import { Transport } from '@enkaku/transport'
 import { type IpcMainEvent, ipcMain, MessageChannelMain, type MessagePortMain } from 'electron'
 
@@ -41,8 +41,8 @@ export function handleProcessPort(name: string, handler: PortHandler) {
 }
 
 export type ServeProcessParams<Protocol extends ProtocolDefinition> = Omit<
-  ServerParams<Protocol>,
-  'transports'
+  ServeParams<Protocol>,
+  'transport'
 > & {
   name?: string
 }
@@ -63,6 +63,6 @@ export function serveProcess<Protocol extends ProtocolDefinition>(
     const transport = new Transport({
       stream: createMainTransportStream(port),
     }) as ServerTransportOf<Protocol>
-    server = serve<Protocol>({ transport, accessControl: false, ...serverParams })
+    server = serve<Protocol>({ transport, ...serverParams } as ServeParams<Protocol>)
   })
 }

@@ -59,7 +59,7 @@ describe('end-to-end tracing', () => {
       identity: serverIdentity,
       handlers,
       transport: transports.server,
-      accessControl: { '*': [clientIdentity.id] },
+      accessRules: { '*': { allow: [clientIdentity.id] } },
     })
 
     const client = new Client<Protocol>({
@@ -114,7 +114,7 @@ describe('end-to-end tracing', () => {
       identity: serverIdentity,
       handlers,
       transport: transports.server,
-      accessControl: { '*': [] }, // Empty access list - no one allowed
+      accessRules: { '*': { allow: [] } }, // Empty access list - no one allowed
     })
 
     const client = new Client<Protocol>({

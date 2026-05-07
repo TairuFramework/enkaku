@@ -31,9 +31,9 @@ import {
 import { type Identity, isSignedToken, type SignedToken, type Token } from '@enkaku/token'
 
 import {
+  type AccessRules,
   checkClientToken,
   type EncryptionPolicy,
-  type ProcedureAccessRecord,
   resolveEncryptionPolicy,
 } from './access-control.js'
 import { HandlerError } from './error.js'
@@ -61,8 +61,8 @@ type ProcessMessageOf<Protocol extends ProtocolDefinition> =
 const defaultTracer = createTracer('server')
 
 export type AccessControlParams = (
-  | { requireAuth: false; serverID?: string; access: ProcedureAccessRecord }
-  | { requireAuth: true; serverID: string; access: ProcedureAccessRecord }
+  | { requireAuth: false; serverID?: string; access: AccessRules }
+  | { requireAuth: true; serverID: string; access: AccessRules }
 ) & { encryptionPolicy?: EncryptionPolicy; verifyToken?: VerifyTokenHook }
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
@@ -596,13 +596,15 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
   transport: ServerTransportOf<Protocol>
 }
 
+export type ServerAccessOptions =
+  | { identity?: undefined; accessRules?: never }
+  | { identity: Identity; accessRules?: AccessRules }
+
 export type ServerParams<Protocol extends ProtocolDefinition> = {
-  accessControl?: false | true | ProcedureAccessRecord
   encryptionPolicy?: EncryptionPolicy
   getRandomID?: () => string
   runtime?: Runtime
   handlers: ProcedureHandlers<Protocol>
-  identity?: Identity
   limits?: Partial<ResourceLimits>
   logger?: Logger
   protocol?: Protocol
@@ -610,10 +612,10 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
   verifyToken?: VerifyTokenHook
-}
+} & ServerAccessOptions
 
 export type HandleOptions = {
-  accessControl?: false | true | ProcedureAccessRecord
+  accessRules?: false | AccessRules
   logger?: Logger
   verifyToken?: VerifyTokenHook
 }
@@ -681,37 +683,23 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       getEnkakuLogger('server', { serverID: serverID ?? this.#runtime.getRandomID() })
     this.#tracer = params.tracer ?? defaultTracer
 
-    const accessControl = params.accessControl
+    const accessRules = (params as { accessRules?: AccessRules }).accessRules
 
     if (serverID == null) {
-      // No identity: accessControl must be explicitly false
-      if (accessControl !== false) {
-        throw new Error(
-          'Invalid server parameters: either "identity" must be provided or "accessControl" must be set to false',
-        )
+      if (accessRules != null) {
+        throw new Error('Invalid server parameters: "accessRules" requires "identity"')
       }
       this.#accessControl = {
         requireAuth: false,
-        access: {},
-        encryptionPolicy: params.encryptionPolicy,
-        verifyToken: params.verifyToken,
-      }
-    } else if (accessControl === false) {
-      // Has identity but public access
-      this.#accessControl = {
-        requireAuth: false,
-        serverID,
         access: {},
         encryptionPolicy: params.encryptionPolicy,
         verifyToken: params.verifyToken,
       }
     } else {
-      // Has identity with access control (true = server-only, record = granular)
-      const access = accessControl === true || accessControl == null ? {} : accessControl
       this.#accessControl = {
         requireAuth: true,
         serverID,
-        access,
+        access: accessRules ?? {},
         encryptionPolicy: params.encryptionPolicy,
         verifyToken: params.verifyToken,
       }
@@ -737,7 +725,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   }
 
   handle(transport: ServerTransportOf<Protocol>, options: HandleOptions = {}): Promise<void> {
-    const accessControlOverride = options.accessControl
+    const accessRulesOverride = options.accessRules
     const logger =
       options.logger ??
       this.#logger.getChild('handler').with({ transportID: this.#runtime.getRandomID() })
@@ -745,26 +733,25 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const encryptionPolicy = this.#accessControl.encryptionPolicy
 
     let accessControl: AccessControlParams
-    if (accessControlOverride === false) {
+    if (accessRulesOverride === false) {
       accessControl = {
         requireAuth: false,
         access: this.#accessControl.access ?? {},
         encryptionPolicy,
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
       }
-    } else if (accessControlOverride != null) {
-      // Override with true or ProcedureAccessRecord
+    } else if (accessRulesOverride != null) {
+      // Override with AccessRules record
       const serverID = this.#accessControl.serverID
       if (serverID == null) {
         return Promise.reject(
           new Error('Server identity is required to enable access control on transport'),
         )
       }
-      const access = accessControlOverride === true ? {} : accessControlOverride
       accessControl = {
         requireAuth: true,
         serverID,
-        access,
+        access: accessRulesOverride,
         encryptionPolicy,
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
       }
@@ -810,5 +797,5 @@ export function serve<Protocol extends ProtocolDefinition>(
   params: ServeParams<Protocol>,
 ): Server<Protocol> {
   const { transport, ...rest } = params
-  return new Server<Protocol>({ ...rest, transports: [transport] })
+  return new Server<Protocol>({ ...rest, transports: [transport] } as ServerParams<Protocol>)
 }
