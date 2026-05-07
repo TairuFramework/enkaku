@@ -147,19 +147,25 @@ function createController<T>(
   onDone?: () => void,
 ): RequestController<T> {
   const deferred = defer<T>()
+  let done = false
+  const finish = () => {
+    if (done) return
+    done = true
+    onDone?.()
+  }
   return Object.assign(new AbortController(), params, {
     result: deferred.promise,
     ok: (value: T) => {
       deferred.resolve(value)
-      onDone?.()
+      finish()
     },
     error: (error: RequestError) => {
       deferred.reject(error)
-      onDone?.()
+      finish()
     },
     aborted: (signal: AbortSignal) => {
       deferred.reject(signal.reason)
-      onDone?.()
+      finish()
     },
   })
 }
