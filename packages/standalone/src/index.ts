@@ -12,19 +12,14 @@
 
 import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { type AccessRules, type ProcedureHandlers, serve } from '@enkaku/server'
-import type { Identity } from '@enkaku/token'
+import { type ProcedureHandlers, type ServerAccessOptions, serve } from '@enkaku/server'
 import { DirectTransports } from '@enkaku/transport'
 
-type BaseStandaloneOptions<Protocol extends ProtocolDefinition> = {
+export type StandaloneOptions<Protocol extends ProtocolDefinition> = {
   getRandomID?: () => string
   protocol?: Protocol
   signal?: AbortSignal
-}
-
-export type StandaloneOptions<Protocol extends ProtocolDefinition> =
-  | (BaseStandaloneOptions<Protocol> & { identity?: undefined; accessRules?: never })
-  | (BaseStandaloneOptions<Protocol> & { identity: Identity; accessRules?: AccessRules })
+} & ServerAccessOptions
 
 export function standalone<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,

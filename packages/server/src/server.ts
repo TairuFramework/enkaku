@@ -596,7 +596,11 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
   transport: ServerTransportOf<Protocol>
 }
 
-type BaseServerParams<Protocol extends ProtocolDefinition> = {
+export type ServerAccessOptions =
+  | { identity?: undefined; accessRules?: never }
+  | { identity: Identity; accessRules?: AccessRules }
+
+export type ServerParams<Protocol extends ProtocolDefinition> = {
   encryptionPolicy?: EncryptionPolicy
   getRandomID?: () => string
   runtime?: Runtime
@@ -608,11 +612,7 @@ type BaseServerParams<Protocol extends ProtocolDefinition> = {
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
   verifyToken?: VerifyTokenHook
-}
-
-export type ServerParams<Protocol extends ProtocolDefinition> =
-  | (BaseServerParams<Protocol> & { identity?: undefined; accessRules?: never })
-  | (BaseServerParams<Protocol> & { identity: Identity; accessRules?: AccessRules })
+} & ServerAccessOptions
 
 export type HandleOptions = {
   accessRules?: false | AccessRules
@@ -786,16 +786,12 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   }
 }
 
-type BaseServeParams<Protocol extends ProtocolDefinition> = Omit<
-  BaseServerParams<Protocol>,
+export type ServeParams<Protocol extends ProtocolDefinition> = Omit<
+  ServerParams<Protocol>,
   'transports'
 > & {
   transport: ServerTransportOf<Protocol>
 }
-
-export type ServeParams<Protocol extends ProtocolDefinition> =
-  | (BaseServeParams<Protocol> & { identity?: undefined; accessRules?: never })
-  | (BaseServeParams<Protocol> & { identity: Identity; accessRules?: AccessRules })
 
 export function serve<Protocol extends ProtocolDefinition>(
   params: ServeParams<Protocol>,

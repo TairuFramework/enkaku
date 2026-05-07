@@ -24,7 +24,13 @@ export {
   type ResourceLimiter,
   type ResourceLimits,
 } from './limits.js'
-export { type ServeParams, Server, type ServerParams, serve } from './server.js'
+export {
+  type ServeParams,
+  Server,
+  type ServerAccessOptions,
+  type ServerParams,
+  serve,
+} from './server.js'
 export type {
   ChannelHandler,
   ChannelHandlerContext,
