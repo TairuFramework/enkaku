@@ -23,10 +23,12 @@ No other files change. The fix is intentionally minimal per the spec's "Prefer t
 
 ---
 
-## Task 1: Reproduction test — channel result then dispose throws
+## Task 1: Reproduction test — channel result then close throws
 
 **Files:**
 - Create: `packages/client/test/controller-on-done-once.test.ts`
+
+> **Trigger correction (post-investigation):** The original spec proposed `client.dispose()` as the second trigger, but the message handler at `client.ts:420-429` deletes the controller from `#controllers` synchronously right after `controller.ok()`, so `dispose()`'s `#abortControllers` loop no longer reaches it. The reliable in-process trigger is `channel.close()` (and the stream equivalent), which calls `request.abort('Close')` → `controller.abort()` → fires the still-registered per-rid abort listener at `client.ts:498-513` → `controller.aborted(signal)` → `onDone()` → second `writer.close()`. The fix in Task 2 addresses every path that converges on `controller.aborted`, so Task 1's coverage of the `close()` path is sufficient.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -54,7 +56,7 @@ const protocol = {
 type Protocol = typeof protocol
 
 describe('createController onDone fires at most once', () => {
-  test('channel: result then dispose does not throw a second writer.close()', async () => {
+  test('channel: result then close() does not throw a second writer.close()', async () => {
     const unhandled = vi.fn()
     process.on('unhandledRejection', unhandled)
     try {
@@ -72,13 +74,15 @@ describe('createController onDone fires at most once', () => {
       await transports.server.write(unsignedToken({ typ: 'result', rid, val: 'OK' }))
       await expect(channel).resolves.toBe('OK')
 
-      // Disposing the client aborts the per-rid signal → controller.aborted → onDone (2nd writer.close).
-      await client.dispose()
+      // close() on an already-resolved channel fires controller.abort() → still-registered
+      // per-rid abort listener → controller.aborted() → onDone (2nd writer.close) → throws.
+      channel.close()
       // Allow any unhandled rejection to surface.
       await new Promise((resolve) => setTimeout(resolve, 50))
 
       expect(unhandled).not.toHaveBeenCalled()
 
+      await client.dispose()
       await transports.server.dispose()
     } finally {
       process.off('unhandledRejection', unhandled)
@@ -173,12 +177,12 @@ transitions are silent."
 **Files:**
 - Modify: `packages/client/test/controller-on-done-once.test.ts`
 
-- [ ] **Step 1: Append the stream-result-then-dispose test**
+- [ ] **Step 1: Append the stream-result-then-close test**
 
-Inside the existing `describe('createController onDone fires at most once', ...)` block, add:
+Inside the existing `describe('createController onDone fires at most once', ...)` block, add. The trigger is the same as Task 1 — `result` then a manual abort on the resolved request — adapted for the stream API. (`createStream` returns a `StreamCall` whose `abort` method calls `controller.abort()`; if a `close()` helper exists analogous to channel's, prefer it. Otherwise call `stream.abort('Close')` directly.) Pick whichever method the existing `StreamCall` exposes; do not invent one.
 
 ```ts
-test('stream: result then dispose does not throw a second writer.close()', async () => {
+test('stream: result then abort does not throw a second writer.close()', async () => {
   const unhandled = vi.fn()
   process.on('unhandledRejection', unhandled)
   try {
@@ -195,11 +199,13 @@ test('stream: result then dispose does not throw a second writer.close()', async
     await transports.server.write(unsignedToken({ typ: 'result', rid, val: 'OK' }))
     await expect(stream).resolves.toBe('OK')
 
-    await client.dispose()
+    // Fire the per-rid abort after the stream already resolved.
+    stream.abort('Close')
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     expect(unhandled).not.toHaveBeenCalled()
 
+    await client.dispose()
     await transports.server.dispose()
   } finally {
     process.off('unhandledRejection', unhandled)
@@ -207,12 +213,12 @@ test('stream: result then dispose does not throw a second writer.close()', async
 })
 ```
 
-- [ ] **Step 2: Append the channel-error-then-dispose test**
+- [ ] **Step 2: Append the channel-error-then-close test**
 
 Same `describe` block, add:
 
 ```ts
-test('channel: error reply then dispose does not throw a second writer.close()', async () => {
+test('channel: error reply then close() does not throw a second writer.close()', async () => {
   const unhandled = vi.fn()
   process.on('unhandledRejection', unhandled)
   try {
@@ -235,12 +241,13 @@ test('channel: error reply then dispose does not throw a second writer.close()',
     )
     await expect(channel).rejects.toBeDefined()
 
-    // Dispose fires the per-rid abort → controller.aborted → onDone (would be 2nd writer.close).
-    await client.dispose()
+    // close() fires the per-rid abort → controller.aborted → onDone (would be 2nd writer.close).
+    channel.close()
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     expect(unhandled).not.toHaveBeenCalled()
 
+    await client.dispose()
     await transports.server.dispose()
   } finally {
     process.off('unhandledRejection', unhandled)

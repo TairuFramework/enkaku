@@ -21,7 +21,7 @@ const protocol = {
 type Protocol = typeof protocol
 
 describe('createController onDone fires at most once', () => {
-  test('channel: result then dispose does not throw a second writer.close()', async () => {
+  test('channel: result then close() does not throw a second writer.close()', async () => {
     const unhandled = vi.fn()
     process.on('unhandledRejection', unhandled)
     try {
