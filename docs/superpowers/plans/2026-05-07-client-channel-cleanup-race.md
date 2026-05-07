@@ -179,10 +179,10 @@ transitions are silent."
 
 - [ ] **Step 1: Append the stream-result-then-close test**
 
-Inside the existing `describe('createController onDone fires at most once', ...)` block, add. The trigger is the same as Task 1 — `result` then a manual abort on the resolved request — adapted for the stream API. (`createStream` returns a `StreamCall` whose `abort` method calls `controller.abort()`; if a `close()` helper exists analogous to channel's, prefer it. Otherwise call `stream.abort('Close')` directly.) Pick whichever method the existing `StreamCall` exposes; do not invent one.
+Inside the existing `describe('createController onDone fires at most once', ...)` block, add. `StreamCall` exposes `close(): void` (verified at `packages/client/src/client.ts:57-61`), same shape as `ChannelCall`, and it routes through `request.abort('Close')` → `controller.abort()` — the identical reproduction path as Task 1's channel test.
 
 ```ts
-test('stream: result then abort does not throw a second writer.close()', async () => {
+test('stream: result then close() does not throw a second writer.close()', async () => {
   const unhandled = vi.fn()
   process.on('unhandledRejection', unhandled)
   try {
@@ -200,7 +200,7 @@ test('stream: result then abort does not throw a second writer.close()', async (
     await expect(stream).resolves.toBe('OK')
 
     // Fire the per-rid abort after the stream already resolved.
-    stream.abort('Close')
+    stream.close()
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     expect(unhandled).not.toHaveBeenCalled()
@@ -237,7 +237,7 @@ test('channel: error reply then close() does not throw a second writer.close()',
 
     // Server replies with an error — fires controller.error → onDone (1st writer.close).
     await transports.server.write(
-      unsignedToken({ typ: 'error', rid, code: 500, msg: 'boom' }),
+      unsignedToken({ typ: 'error', rid, code: 'boom', msg: 'boom', data: {} }),
     )
     await expect(channel).rejects.toBeDefined()
 
@@ -260,7 +260,7 @@ test('channel: error reply then close() does not throw a second writer.close()',
 Run: `pnpm --filter @enkaku/client test:unit -- controller-on-done-once`
 Expected: 3 PASS, 0 FAIL, 0 unhandled rejections.
 
-If the `error` payload shape (`{ typ: 'error', rid, code, msg }`) does not match the protocol, grep for the canonical shape with `grep -n "typ: 'error'" packages/client/test/lib.test.ts packages/protocol/src/*.ts` and adjust the literal — the test's only purpose at that boundary is to land on `controller.error`, so any well-formed error payload that reaches the client read loop is acceptable.
+If TypeScript complains about the `error` payload shape, the canonical type is `{ typ: 'error', rid: string, code: string, msg: string, data }` (see `packages/protocol/src/types/calls.ts:41-50`). Adjust the literal — the test's only purpose at that boundary is to land on `controller.error`, so any well-formed error payload that reaches the client read loop is acceptable.
 
 - [ ] **Step 4: Commit the additional tests**
 
