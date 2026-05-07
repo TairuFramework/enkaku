@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Stage:** executing
+**Stage:** qa
 
 **Goal:** Make `createController`'s `onDone` callback fire at most once so channel/stream `writer.close()` cleanup never runs twice and never throws `Invalid state: WritableStream is closed`.
 
