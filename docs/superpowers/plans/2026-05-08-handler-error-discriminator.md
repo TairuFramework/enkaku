@@ -406,51 +406,209 @@ git commit -m "test(server): handlerError replaces eventAuthError on event auth 
 
 ---
 
-### Task 4: Add auth-denial assertions to `access-control.test.ts`
+### Task 4: Integration tests for request/channel/stream auth-denials
 
 **Files:**
-- Modify: `packages/server/test/access-control.test.ts`
+- Create: `packages/server/test/access-control-deny.test.ts`
 
-- [ ] **Step 1: Read the file to identify denial-path tests**
+**Premise correction:** `access-control*.test.ts` files are unit tests of `checkClientToken`, not integration tests via `serve()`. There is no existing coverage for request/channel/stream auth-denial through the server pipeline. This task creates a new file with three integration tests covering the three message types.
 
-Run: `grep -n "deni\|reject\|EK02\|handlerError\|allow:" packages/server/test/access-control.test.ts`
+Use `encryption-policy.test.ts` as the structural reference — it uses `DirectTransports` + `serve()` and reads error payloads off the wire.
 
-Expected output: a list of test cases that exercise denial of `request`, `channel`, and `stream` procedures.
-
-- [ ] **Step 2: For each denial test of a request procedure, add a `handlerError` listener and assertion**
-
-Pattern to add inside each denial test (place the listener registration immediately after `serve(...)` and the assertion immediately after the existing denial assertion):
+- [ ] **Step 1: Create `packages/server/test/access-control-deny.test.ts`**
 
 ```ts
-const handlerErrorHandler = vi.fn()
-server.events.on('handlerError', handlerErrorHandler)
+import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { randomIdentity } from '@enkaku/token'
+import { DirectTransports } from '@enkaku/transport'
+import { describe, expect, test, vi } from 'vitest'
 
-// ... existing test body ...
+import { type ProcedureHandlers, serve } from '../src/index.js'
 
-expect(handlerErrorHandler).toHaveBeenCalledWith(
-  expect.objectContaining({
-    error: expect.objectContaining({ code: 'EK02' }),
-    category: 'auth',
-    messageType: 'request',
-  }),
-)
+describe('access-control denial emits handlerError', () => {
+  const expiresAt = Math.floor(Date.now() / 1000) + 300
+
+  const protocol = {
+    req: { type: 'request', result: { type: 'string' } },
+    chan: {
+      type: 'channel',
+      send: { type: 'string' },
+      receive: { type: 'string' },
+      result: { type: 'string' },
+    },
+    str: {
+      type: 'stream',
+      receive: { type: 'string' },
+      result: { type: 'string' },
+    },
+  } as const satisfies ProtocolDefinition
+  type Protocol = typeof protocol
+
+  test('request denial emits handlerError with category auth, messageType request', async () => {
+    const handler = vi.fn(() => 'OK')
+    const handlers = { req: handler } as unknown as ProcedureHandlers<Protocol>
+
+    const serverSigner = randomIdentity()
+    const clientSigner = randomIdentity()
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+    const handlerErrorHandler = vi.fn()
+
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverSigner,
+      accessRules: { req: { allow: () => false } },
+      transport: transports.server,
+    })
+    server.events.on('handlerError', handlerErrorHandler)
+
+    const message = await clientSigner.signToken({
+      typ: 'request',
+      aud: serverSigner.id,
+      prc: 'req',
+      rid: 'r1',
+      prm: undefined,
+      exp: expiresAt,
+    } as const)
+    await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+
+    const read = await transports.client.read()
+    expect(read.value?.payload.typ).toBe('error')
+    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK02')
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(handler).not.toHaveBeenCalled()
+    expect(handlerErrorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+        messageType: 'request',
+      }),
+    )
+
+    await server.dispose()
+    await transports.dispose()
+  })
+
+  test('channel denial emits handlerError with category auth, messageType channel', async () => {
+    const handler = vi.fn(async () => 'OK')
+    const handlers = { chan: handler } as unknown as ProcedureHandlers<Protocol>
+
+    const serverSigner = randomIdentity()
+    const clientSigner = randomIdentity()
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+    const handlerErrorHandler = vi.fn()
+
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverSigner,
+      accessRules: { chan: { allow: () => false } },
+      transport: transports.server,
+    })
+    server.events.on('handlerError', handlerErrorHandler)
+
+    const message = await clientSigner.signToken({
+      typ: 'channel',
+      aud: serverSigner.id,
+      prc: 'chan',
+      rid: 'c1',
+      prm: undefined,
+      exp: expiresAt,
+    } as const)
+    await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+
+    const read = await transports.client.read()
+    expect(read.value?.payload.typ).toBe('error')
+    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK02')
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(handler).not.toHaveBeenCalled()
+    expect(handlerErrorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+        messageType: 'channel',
+      }),
+    )
+
+    await server.dispose()
+    await transports.dispose()
+  })
+
+  test('stream denial emits handlerError with category auth, messageType stream', async () => {
+    const handler = vi.fn(async () => 'OK')
+    const handlers = { str: handler } as unknown as ProcedureHandlers<Protocol>
+
+    const serverSigner = randomIdentity()
+    const clientSigner = randomIdentity()
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+    const handlerErrorHandler = vi.fn()
+
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverSigner,
+      accessRules: { str: { allow: () => false } },
+      transport: transports.server,
+    })
+    server.events.on('handlerError', handlerErrorHandler)
+
+    const message = await clientSigner.signToken({
+      typ: 'stream',
+      aud: serverSigner.id,
+      prc: 'str',
+      rid: 's1',
+      prm: undefined,
+      exp: expiresAt,
+    } as const)
+    await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+
+    const read = await transports.client.read()
+    expect(read.value?.payload.typ).toBe('error')
+    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK02')
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(handler).not.toHaveBeenCalled()
+    expect(handlerErrorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+        messageType: 'stream',
+      }),
+    )
+
+    await server.dispose()
+    await transports.dispose()
+  })
+})
 ```
 
-- [ ] **Step 3: Repeat for channel and stream denial tests**
+If `prm: undefined` causes a token-signing rejection or AJV validation failure, drop the field — payload shapes for request/channel/stream may differ. Verify the protocol message shape against `@enkaku/protocol` if the tokens fail to construct.
 
-Same pattern as Step 2 but with `messageType: 'channel'` or `messageType: 'stream'` respectively. If an existing test does not have a denial branch for these types, leave it alone — coverage already exists in tests for the other types.
+- [ ] **Step 2: Run**
 
-- [ ] **Step 4: Run**
+Run: `pnpm --filter @enkaku/server run test:unit -- access-control-deny`
 
-Run: `pnpm --filter @enkaku/server run test:unit -- access-control`
+Expected: all 3 tests pass. If any test fails because of token shape (e.g., AJV rejects the message), inspect the existing `event-auth.test.ts` and `channel-send-auth.test.ts` for the canonical signed-token shapes per type, and align.
 
-Expected: all tests pass.
-
-- [ ] **Step 5: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
-git add packages/server/test/access-control.test.ts
-git commit -m "test(server): assert handlerError category=auth on access-control denials"
+git add packages/server/test/access-control-deny.test.ts
+git commit -m "test(server): integration coverage for handlerError on req/channel/stream auth deny"
 ```
 
 ---
