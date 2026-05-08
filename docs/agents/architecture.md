@@ -154,7 +154,7 @@ packages/[package-name]/
 Each of `Transport`, `Server`, and `Client` exposes an `events` EventEmitter so consumers can observe the full connection lifecycle:
 
 - **`Transport.events`** — `writeFailed` (optional, transport-specific), `readFailed`, `disposing`, `disposed`.
-- **`Server.events`** — existing (`eventAuthError`, `handlerError`, `handlerTimeout`, `invalidMessage`) plus `handlerStart`, `handlerEnd`, `handlerAbort`, `writeDropped`, `disposing`, `disposed`, `transportAdded`, `transportRemoved`.
+- **`Server.events`** — `handlerError` (discriminated by `category` ∈ {auth, limit, encryption, handler} and `messageType` ∈ {event, request, channel, stream, send}), `handlerTimeout`, `invalidMessage`, `handlerStart`, `handlerEnd`, `handlerAbort`, `writeDropped`, `writeFailed`, `disposing`, `disposed`, `transportAdded`, `transportRemoved`.
 - **`Client.events`** — `requestStart`, `requestEnd`, `requestError`, `writeDropped`, `transportError`, `transportReplaced`, `disposing`, `disposed`.
 
 Benign teardown errors (`AbortError`, `DisposeInterruption`, closed-writer/reader) are swallowed by the internal `safeWrite` wrapper and surface as `writeDropped` rather than unhandled rejections. Use `isBenignTeardownError` from `@enkaku/async` to classify errors in consumer code.

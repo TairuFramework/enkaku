@@ -2,7 +2,26 @@ import { toPromise } from '@enkaku/async'
 import type { AnyServerPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
 
 import { HandlerError } from './error.js'
-import type { HandlerContext } from './types.js'
+import type {
+  HandlerContext,
+  HandlerErrorCategory,
+  HandlerErrorMessageType,
+  ServerEmitter,
+} from './types.js'
+
+export function emitHandlerError(
+  events: ServerEmitter,
+  category: HandlerErrorCategory,
+  error: HandlerError<string>,
+  payload: { typ: string } & Record<string, unknown>,
+): void {
+  events.emit('handlerError', {
+    error,
+    payload,
+    category,
+    messageType: payload.typ as HandlerErrorMessageType,
+  })
+}
 
 function canSend(signal: AbortSignal): boolean {
   return !signal.aborted || signal.reason === 'Close'
@@ -76,7 +95,7 @@ export async function executeHandler<Protocol extends ProtocolDefinition>(
         },
       )
     }
-    context.events.emit('handlerError', { error, payload })
+    emitHandlerError(context.events, 'handler', error, payload)
   } finally {
     delete context.controllers[payload.rid]
   }

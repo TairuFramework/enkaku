@@ -77,6 +77,7 @@ describe('Channel send authorization', () => {
       accessRules: { chat: { allow: true } },
       transport: transports.server,
     })
+    const handlerErrorEvent = server.events.once('handlerError')
 
     // Establish channel with valid signed token
     const channelMsg = await signer.signToken({
@@ -107,6 +108,15 @@ describe('Channel send authorization', () => {
     expect(errorMsg.value?.payload.typ).toBe('error')
     expect(errorMsg.value?.payload.rid).toBe('ch1')
     expect((errorMsg.value?.payload as Record<string, unknown>).msg).toContain('signed')
+
+    const emitted = await handlerErrorEvent
+    expect(emitted).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+        messageType: 'send',
+      }),
+    )
 
     // Value should not have been received by handler
     expect(receivedValues).toEqual([])
@@ -195,6 +205,7 @@ describe('Channel send authorization', () => {
       accessRules: { chat: { allow: true } },
       transport: transports.server,
     })
+    const handlerErrorEvent = server.events.once('handlerError')
 
     // Establish channel with valid signed token
     const channelMsg = await signer.signToken({
@@ -225,6 +236,15 @@ describe('Channel send authorization', () => {
 
     // Value should not have been received by handler
     expect(receivedValues).toEqual([])
+
+    const emitted = await handlerErrorEvent
+    expect(emitted).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+        messageType: 'send',
+      }),
+    )
 
     await server.dispose()
     await transports.dispose()

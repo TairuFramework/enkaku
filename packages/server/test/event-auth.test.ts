@@ -6,7 +6,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { type ProcedureHandlers, serve } from '../src/index.js'
 
 describe('Event auth error', () => {
-  test('emits eventAuthError when event authorization fails', async () => {
+  test('emits handlerError with category auth when event authorization fails', async () => {
     const protocol = {
       notify: {
         type: 'event',
@@ -23,8 +23,6 @@ describe('Event auth error', () => {
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
-    const eventAuthHandler = vi.fn()
-    const handlerErrorHandler = vi.fn()
 
     const server = serve<Protocol>({
       handlers,
@@ -32,10 +30,8 @@ describe('Event auth error', () => {
       accessRules: { notify: { allow: true } },
       transport: transports.server,
     })
-    server.events.on('eventAuthError', eventAuthHandler)
-    server.events.on('handlerError', handlerErrorHandler)
+    const handlerErrorEvent = server.events.once('handlerError')
 
-    // Send unsigned event - should fail auth
     await transports.client.write(
       createUnsignedToken({
         typ: 'event',
@@ -44,27 +40,21 @@ describe('Event auth error', () => {
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
-    // Wait for processing
-    await new Promise((resolve) => setTimeout(resolve, 50))
-
-    // Handler should not have been called
+    const emitted = await handlerErrorEvent
     expect(handler).not.toHaveBeenCalled()
-
-    // eventAuthError should have been emitted
-    expect(eventAuthHandler).toHaveBeenCalledWith(
+    expect(emitted).toEqual(
       expect.objectContaining({
         error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+        messageType: 'event',
       }),
     )
-
-    // handlerError should also have been emitted
-    expect(handlerErrorHandler).toHaveBeenCalled()
 
     await server.dispose()
     await transports.dispose()
   })
 
-  test('does not emit eventAuthError for valid signed events', async () => {
+  test('does not emit handlerError for valid signed events', async () => {
     const protocol = {
       notify: {
         type: 'event',
@@ -82,7 +72,7 @@ describe('Event auth error', () => {
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
-    const eventAuthHandler = vi.fn()
+    const handlerErrorHandler = vi.fn()
 
     const server = serve<Protocol>({
       handlers,
@@ -90,7 +80,7 @@ describe('Event auth error', () => {
       accessRules: { notify: { allow: true } },
       transport: transports.server,
     })
-    server.events.on('eventAuthError', eventAuthHandler)
+    server.events.on('handlerError', handlerErrorHandler)
 
     // Send valid signed event
     const message = await signer.signToken({
@@ -108,7 +98,7 @@ describe('Event auth error', () => {
     // Handler should have been called
     expect(handler).toHaveBeenCalled()
 
-    // No auth error should have been emitted
-    expect(eventAuthHandler).not.toHaveBeenCalled()
+    // No handlerError should have been emitted
+    expect(handlerErrorHandler).not.toHaveBeenCalled()
   })
 })

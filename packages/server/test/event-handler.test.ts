@@ -69,6 +69,13 @@ describe('handleEvent()', () => {
     const emittedError = await handlerError
     expect(emittedError.error.message).toBe('Failed!')
     expect(emittedError.payload).toEqual(clientToken.payload)
+    expect(emittedError).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK01' }),
+        category: 'handler',
+        messageType: 'event',
+      }),
+    )
     expect(logger.debug).toHaveBeenCalledWith(
       'handler error for event {procedure} with data {data}: {error}',
       {

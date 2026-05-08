@@ -161,13 +161,13 @@ export type SendType<
   ? DataOf<Protocol[Procedure]['send']>
   : never
 
+export type HandlerErrorCategory = 'auth' | 'limit' | 'encryption' | 'handler'
+
+export type HandlerErrorMessageType = 'event' | 'request' | 'channel' | 'stream' | 'send'
+
 export type ServerEvents = {
   disposed: { reason?: unknown }
   disposing: { reason?: unknown }
-  eventAuthError: {
-    error: HandlerError<string>
-    payload: Record<string, unknown>
-  }
   handlerAbort: {
     rid: string
     reason: 'Close' | 'Timeout' | 'Transport' | DisposeInterruption | string | undefined
@@ -176,6 +176,8 @@ export type ServerEvents = {
   handlerError: {
     error: HandlerError<string>
     payload: Record<string, unknown>
+    category: HandlerErrorCategory
+    messageType: HandlerErrorMessageType
   }
   handlerStart: { rid: string; procedure: string; type: string }
   handlerTimeout: { rid: string }

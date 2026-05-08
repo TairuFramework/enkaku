@@ -36,6 +36,8 @@ export type {
   ChannelHandlerContext,
   EventHandler,
   EventHandlerContext,
+  HandlerErrorCategory,
+  HandlerErrorMessageType,
   HandlerReturn,
   ProcedureHandlers,
   RequestHandler,

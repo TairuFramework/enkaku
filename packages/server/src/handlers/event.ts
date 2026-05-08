@@ -3,6 +3,7 @@ import type { ClientMessage, EventPayloadOf, ProtocolDefinition } from '@enkaku/
 
 import { HandlerError } from '../error.js'
 import type { EventHandler, EventHandlerContext, HandlerContext } from '../types.js'
+import { emitHandlerError } from '../utils.js'
 
 export type EventMessageOf<
   Protocol extends ProtocolDefinition,
@@ -52,6 +53,6 @@ export function handleEvent<
       })
     }
 
-    ctx.events.emit('handlerError', { error, payload: msg.payload })
+    emitHandlerError(ctx.events, 'handler', error, msg.payload)
   })
 }

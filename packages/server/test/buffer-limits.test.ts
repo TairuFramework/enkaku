@@ -165,7 +165,13 @@ describe('Per-message size limits', () => {
 
     expect(handler).not.toHaveBeenCalled()
     expect(errorEvents.length).toBe(1)
-    expect((errorEvents[0] as { error: { code: string } }).error.code).toBe('EK06')
+    expect(errorEvents[0]).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK06' }),
+        category: 'limit',
+        messageType: 'event',
+      }),
+    )
 
     await server.dispose()
     await transports.dispose()
