@@ -52,6 +52,11 @@ export function handleEvent<
       })
     }
 
-    ctx.events.emit('handlerError', { error, payload: msg.payload })
+    ctx.events.emit('handlerError', {
+      error,
+      payload: msg.payload,
+      category: 'handler',
+      messageType: 'event',
+    })
   })
 }

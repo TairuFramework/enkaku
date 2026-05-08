@@ -47,6 +47,7 @@ import type {
   ChannelController,
   HandlerContext,
   HandlerController,
+  HandlerErrorMessageType,
   ProcedureHandlers,
   ServerEmitter,
   ServerEvents,
@@ -176,7 +177,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       if (message.payload.typ !== 'event') {
         context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
       }
-      events.emit('handlerError', { error, payload: message.payload })
+      events.emit('handlerError', {
+        error,
+        payload: message.payload,
+        category: 'limit',
+        messageType: message.payload.typ as HandlerErrorMessageType,
+      })
       return
     }
 
@@ -189,7 +195,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       if (message.payload.typ !== 'event') {
         context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
       }
-      events.emit('handlerError', { error, payload: message.payload })
+      events.emit('handlerError', {
+        error,
+        payload: message.payload,
+        category: 'limit',
+        messageType: message.payload.typ as HandlerErrorMessageType,
+      })
       return
     }
 
@@ -209,6 +220,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       events.emit('handlerError', {
         error: HandlerError.from(returned, { code: 'EK01' }),
         payload: message.payload,
+        category: 'handler',
+        messageType: message.payload.typ as HandlerErrorMessageType,
       })
     } else {
       running[rid] = returned
@@ -238,6 +251,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           events.emit('handlerError', {
             error: HandlerError.from(err, { code: 'EK01' }),
             payload: message.payload,
+            category: 'handler',
+            messageType: message.payload.typ as HandlerErrorMessageType,
           })
         })
     }
@@ -269,13 +284,17 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       code: 'EK07',
       message: 'Encryption required but message is not encrypted',
     })
-    if (message.payload.typ === 'event') {
-      events.emit('handlerError', { error, payload: message.payload })
-    } else {
+    if (message.payload.typ !== 'event') {
       context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>, {
         rid: message.payload.rid,
       })
     }
+    events.emit('handlerError', {
+      error,
+      payload: message.payload,
+      category: 'encryption',
+      messageType: message.payload.typ as HandlerErrorMessageType,
+    })
   }
 
   function getParentContext(message: ProcessMessageOf<Protocol>) {
@@ -469,14 +488,17 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           span.recordException(error)
           span.end()
 
-          if (message.payload.typ === 'event') {
-            events.emit('eventAuthError', { error, payload: message.payload })
-            events.emit('handlerError', { error, payload: message.payload })
-          } else {
+          if (message.payload.typ !== 'event') {
             context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>, {
               rid: message.payload.rid,
             })
           }
+          events.emit('handlerError', {
+            error,
+            payload: message.payload,
+            category: 'auth',
+            messageType: message.payload.typ as HandlerErrorMessageType,
+          })
           return
         }
 
@@ -512,7 +534,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           const rid = msg.payload.rid as string
           context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
         }
-        events.emit('handlerError', { error, payload: msg.payload })
+        events.emit('handlerError', {
+          error,
+          payload: msg.payload,
+          category: 'limit',
+          messageType: msg.payload.typ as HandlerErrorMessageType,
+        })
         handleNext()
         return
       }
@@ -559,6 +586,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
                 rid: msg.payload.rid,
               })
+              events.emit('handlerError', {
+                error,
+                payload: msg.payload,
+                category: 'auth',
+                messageType: 'send',
+              })
               break
             }
             const sendIssuer = (msg as unknown as SignedToken).payload.iss
@@ -569,6 +602,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
                 rid: msg.payload.rid,
+              })
+              events.emit('handlerError', {
+                error,
+                payload: msg.payload,
+                category: 'auth',
+                messageType: 'send',
               })
               break
             }
