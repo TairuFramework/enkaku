@@ -49,6 +49,13 @@ describe('Stream crash cleanup', () => {
     // Handler error event should have been emitted
     await new Promise((resolve) => setTimeout(resolve, 50))
     expect(errorHandler).toHaveBeenCalled()
+    expect(errorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK01' }),
+        category: 'handler',
+        messageType: 'stream',
+      }),
+    )
 
     await server.dispose()
     await transports.dispose()
@@ -98,6 +105,13 @@ describe('Stream crash cleanup', () => {
     // Handler error event should have been emitted
     await new Promise((resolve) => setTimeout(resolve, 50))
     expect(errorHandler).toHaveBeenCalled()
+    expect(errorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK01' }),
+        category: 'handler',
+        messageType: 'channel',
+      }),
+    )
 
     await server.dispose()
     await transports.dispose()

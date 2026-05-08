@@ -63,6 +63,13 @@ describe('executeHandler()', () => {
     const emittedError = await handlerError
     expect(emittedError.error.message).toBe('Request failed')
     expect(emittedError.payload).toEqual(payload)
+    expect(emittedError).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'TEST123' }),
+        category: 'handler',
+        messageType: 'request',
+      }),
+    )
     expect(controllers).toEqual({})
     expect(logger.trace).toHaveBeenCalledWith(
       'send error to {type} {procedure} with ID {rid}: {error}',
@@ -121,6 +128,13 @@ describe('executeHandler()', () => {
     const emittedError = await handlerError
     expect(emittedError.error.message).toBe('Request failed')
     expect(emittedError.payload).toEqual(payload)
+    expect(emittedError).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'TEST123' }),
+        category: 'handler',
+        messageType: 'request',
+      }),
+    )
     expect(controllers).toEqual({})
     expect(logger.trace).toHaveBeenCalledWith(
       'send error to {type} {procedure} with ID {rid}: {error}',
@@ -169,6 +183,13 @@ describe('executeHandler()', () => {
     const emittedError = await handlerError
     expect(emittedError.error.message).toBe('Request failed')
     expect(emittedError.payload).toEqual(payload)
+    expect(emittedError).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'TEST123' }),
+        category: 'handler',
+        messageType: 'request',
+      }),
+    )
     expect(controllers).toEqual({})
     expect(logger.debug).toHaveBeenCalledWith(
       'handler error for {type} {procedure} with ID {rid} cannot be sent to client: {error}',
