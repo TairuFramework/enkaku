@@ -23,7 +23,6 @@ describe('Event auth error', () => {
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
-    const handlerErrorHandler = vi.fn()
 
     const server = serve<Protocol>({
       handlers,
@@ -31,7 +30,7 @@ describe('Event auth error', () => {
       accessRules: { notify: { allow: true } },
       transport: transports.server,
     })
-    server.events.on('handlerError', handlerErrorHandler)
+    const handlerErrorEvent = server.events.once('handlerError')
 
     await transports.client.write(
       createUnsignedToken({
@@ -41,10 +40,9 @@ describe('Event auth error', () => {
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
-    await new Promise((resolve) => setTimeout(resolve, 50))
-
+    const emitted = await handlerErrorEvent
     expect(handler).not.toHaveBeenCalled()
-    expect(handlerErrorHandler).toHaveBeenCalledWith(
+    expect(emitted).toEqual(
       expect.objectContaining({
         error: expect.objectContaining({ code: 'EK02' }),
         category: 'auth',

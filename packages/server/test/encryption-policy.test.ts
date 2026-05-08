@@ -135,7 +135,6 @@ describe('encryption policy enforcement', () => {
       AnyClientMessageOf<Protocol>
     >()
     const signer = randomIdentity()
-    const handlerErrorHandler = vi.fn()
 
     const server = serve<Protocol>({
       handlers,
@@ -143,7 +142,7 @@ describe('encryption policy enforcement', () => {
       encryptionPolicy: 'required',
       transport: transports.server,
     })
-    server.events.on('handlerError', handlerErrorHandler)
+    const handlerErrorEvent = server.events.once('handlerError')
 
     const message = await signer.signToken({
       typ: 'event',
@@ -154,11 +153,9 @@ describe('encryption policy enforcement', () => {
     } as const)
     await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
-    // Wait for processing
-    await new Promise((resolve) => setTimeout(resolve, 50))
-
+    const emitted = await handlerErrorEvent
     expect(notifyHandler).not.toHaveBeenCalled()
-    expect(handlerErrorHandler).toHaveBeenCalledWith(
+    expect(emitted).toEqual(
       expect.objectContaining({
         error: expect.objectContaining({ code: 'EK07' }),
         category: 'encryption',
@@ -183,7 +180,6 @@ describe('encryption policy enforcement', () => {
       AnyClientMessageOf<Protocol>
     >()
     const signer = randomIdentity()
-    const handlerErrorHandler = vi.fn()
 
     const server = serve<Protocol>({
       handlers,
@@ -191,7 +187,7 @@ describe('encryption policy enforcement', () => {
       encryptionPolicy: 'required',
       transport: transports.server,
     })
-    server.events.on('handlerError', handlerErrorHandler)
+    const handlerErrorEvent = server.events.once('handlerError')
 
     const message = (await signer.signToken({
       typ: 'request',
@@ -204,10 +200,9 @@ describe('encryption policy enforcement', () => {
     expect(read.value?.payload.typ).toBe('error')
     expect((read.value?.payload as Record<string, unknown>).code).toBe('EK07')
 
-    await new Promise((resolve) => setTimeout(resolve, 20))
-
+    const emitted = await handlerErrorEvent
     expect(handler).not.toHaveBeenCalled()
-    expect(handlerErrorHandler).toHaveBeenCalledWith(
+    expect(emitted).toEqual(
       expect.objectContaining({
         error: expect.objectContaining({ code: 'EK07' }),
         category: 'encryption',

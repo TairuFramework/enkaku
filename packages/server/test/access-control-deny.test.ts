@@ -35,7 +35,6 @@ describe('access-control denial emits handlerError', () => {
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
-    const handlerErrorHandler = vi.fn()
 
     const server = serve<Protocol>({
       handlers,
@@ -43,7 +42,7 @@ describe('access-control denial emits handlerError', () => {
       accessRules: { req: { allow: () => false } },
       transport: transports.server,
     })
-    server.events.on('handlerError', handlerErrorHandler)
+    const handlerErrorEvent = server.events.once('handlerError')
 
     const message = await clientSigner.signToken({
       typ: 'request',
@@ -59,10 +58,9 @@ describe('access-control denial emits handlerError', () => {
     expect(read.value?.payload.typ).toBe('error')
     expect((read.value?.payload as Record<string, unknown>).code).toBe('EK02')
 
-    await new Promise((resolve) => setTimeout(resolve, 20))
-
+    const emitted = await handlerErrorEvent
     expect(handler).not.toHaveBeenCalled()
-    expect(handlerErrorHandler).toHaveBeenCalledWith(
+    expect(emitted).toEqual(
       expect.objectContaining({
         error: expect.objectContaining({ code: 'EK02' }),
         category: 'auth',
@@ -85,7 +83,6 @@ describe('access-control denial emits handlerError', () => {
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
-    const handlerErrorHandler = vi.fn()
 
     const server = serve<Protocol>({
       handlers,
@@ -93,7 +90,7 @@ describe('access-control denial emits handlerError', () => {
       accessRules: { chan: { allow: () => false } },
       transport: transports.server,
     })
-    server.events.on('handlerError', handlerErrorHandler)
+    const handlerErrorEvent = server.events.once('handlerError')
 
     const message = await clientSigner.signToken({
       typ: 'channel',
@@ -109,10 +106,9 @@ describe('access-control denial emits handlerError', () => {
     expect(read.value?.payload.typ).toBe('error')
     expect((read.value?.payload as Record<string, unknown>).code).toBe('EK02')
 
-    await new Promise((resolve) => setTimeout(resolve, 20))
-
+    const emitted = await handlerErrorEvent
     expect(handler).not.toHaveBeenCalled()
-    expect(handlerErrorHandler).toHaveBeenCalledWith(
+    expect(emitted).toEqual(
       expect.objectContaining({
         error: expect.objectContaining({ code: 'EK02' }),
         category: 'auth',
@@ -135,7 +131,6 @@ describe('access-control denial emits handlerError', () => {
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
-    const handlerErrorHandler = vi.fn()
 
     const server = serve<Protocol>({
       handlers,
@@ -143,7 +138,7 @@ describe('access-control denial emits handlerError', () => {
       accessRules: { str: { allow: () => false } },
       transport: transports.server,
     })
-    server.events.on('handlerError', handlerErrorHandler)
+    const handlerErrorEvent = server.events.once('handlerError')
 
     const message = await clientSigner.signToken({
       typ: 'stream',
@@ -159,10 +154,9 @@ describe('access-control denial emits handlerError', () => {
     expect(read.value?.payload.typ).toBe('error')
     expect((read.value?.payload as Record<string, unknown>).code).toBe('EK02')
 
-    await new Promise((resolve) => setTimeout(resolve, 20))
-
+    const emitted = await handlerErrorEvent
     expect(handler).not.toHaveBeenCalled()
-    expect(handlerErrorHandler).toHaveBeenCalledWith(
+    expect(emitted).toEqual(
       expect.objectContaining({
         error: expect.objectContaining({ code: 'EK02' }),
         category: 'auth',
