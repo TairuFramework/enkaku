@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Stage:** reviewing
+**Stage:** qa
 
 **Goal:** Extend `Server.events.handlerError` with `category` and `messageType` discriminators, emit it from every handler-failure site (including the four auth-denial sites that currently emit nothing), and remove `eventAuthError`.
 
