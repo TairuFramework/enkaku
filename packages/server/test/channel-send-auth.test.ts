@@ -77,6 +77,8 @@ describe('Channel send authorization', () => {
       accessRules: { chat: { allow: true } },
       transport: transports.server,
     })
+    const handlerErrorHandler = vi.fn()
+    server.events.on('handlerError', handlerErrorHandler)
 
     // Establish channel with valid signed token
     const channelMsg = await signer.signToken({
@@ -107,6 +109,15 @@ describe('Channel send authorization', () => {
     expect(errorMsg.value?.payload.typ).toBe('error')
     expect(errorMsg.value?.payload.rid).toBe('ch1')
     expect((errorMsg.value?.payload as Record<string, unknown>).msg).toContain('signed')
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(handlerErrorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+        messageType: 'send',
+      }),
+    )
 
     // Value should not have been received by handler
     expect(receivedValues).toEqual([])
@@ -195,6 +206,8 @@ describe('Channel send authorization', () => {
       accessRules: { chat: { allow: true } },
       transport: transports.server,
     })
+    const handlerErrorHandler = vi.fn()
+    server.events.on('handlerError', handlerErrorHandler)
 
     // Establish channel with valid signed token
     const channelMsg = await signer.signToken({
@@ -225,6 +238,15 @@ describe('Channel send authorization', () => {
 
     // Value should not have been received by handler
     expect(receivedValues).toEqual([])
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(handlerErrorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+        messageType: 'send',
+      }),
+    )
 
     await server.dispose()
     await transports.dispose()
