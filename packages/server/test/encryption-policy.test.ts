@@ -161,6 +161,57 @@ describe('encryption policy enforcement', () => {
     expect(handlerErrorHandler).toHaveBeenCalledWith(
       expect.objectContaining({
         error: expect.objectContaining({ code: 'EK07' }),
+        category: 'encryption',
+        messageType: 'event',
+      }),
+    )
+
+    await server.dispose()
+    await transports.dispose()
+  })
+
+  test('emits handlerError with category encryption on request encryption violation', async () => {
+    const handler = vi.fn<RequestHandler<Protocol, 'test'>>(() => 'OK')
+    const notifyHandler = vi.fn()
+    const handlers = {
+      test: handler,
+      notify: notifyHandler,
+    } as unknown as ProcedureHandlers<Protocol>
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+    const signer = randomIdentity()
+    const handlerErrorHandler = vi.fn()
+
+    const server = serve<Protocol>({
+      handlers,
+      identity: signer,
+      encryptionPolicy: 'required',
+      transport: transports.server,
+    })
+    server.events.on('handlerError', handlerErrorHandler)
+
+    const message = (await signer.signToken({
+      typ: 'request',
+      prc: 'test',
+      rid: 'r1',
+    })) as unknown as AnyClientMessageOf<Protocol>
+    await transports.client.write(message)
+
+    const read = await transports.client.read()
+    expect(read.value?.payload.typ).toBe('error')
+    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK07')
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(handler).not.toHaveBeenCalled()
+    expect(handlerErrorHandler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK07' }),
+        category: 'encryption',
+        messageType: 'request',
       }),
     )
 
