@@ -33,7 +33,7 @@ export function fromB64(base64: string): Uint8Array {
     : fromB64atob(base64)
 }
 
-const B64U_RE = /^[A-Za-z0-9_-]*$/
+const B64U_RE = /^[A-Za-z0-9_-]*={0,2}$/
 
 /**
  * Convert a base64url-encoded string to a Uint8Array.
@@ -56,9 +56,12 @@ export function fromB64U(base64url: string): Uint8Array {
  */
 export function toB64(bytes: Uint8Array): string {
   if ('toBase64' in bytes) {
-    return bytes.toBase64({ alphabet: 'base64' })
+    return bytes.toBase64({ alphabet: 'base64', omitPadding: true })
   }
-  return btoa(Array.from(bytes, (byte: number) => String.fromCodePoint(byte)).join(''))
+  return btoa(Array.from(bytes, (byte: number) => String.fromCodePoint(byte)).join('')).replace(
+    /=+$/,
+    '',
+  )
 }
 
 /**
@@ -66,7 +69,7 @@ export function toB64(bytes: Uint8Array): string {
  */
 export function toB64U(bytes: Uint8Array) {
   if ('toBase64' in bytes) {
-    return bytes.toBase64({ alphabet: 'base64url' })
+    return bytes.toBase64({ alphabet: 'base64url', omitPadding: true })
   }
   return toB64(bytes).replace(/[=+/]/g, (m) => (m === '+' ? '-' : m === '/' ? '_' : ''))
 }

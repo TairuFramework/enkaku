@@ -43,7 +43,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "peerDependencies": {
-    "electron": ">=40.0.0"
+    "electron": "^42.0.0"
   },
   "dependencies": {
     "@enkaku/client": "workspace:^",

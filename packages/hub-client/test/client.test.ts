@@ -1,4 +1,5 @@
 import { Client } from '@enkaku/client'
+import { fromUTF, toB64 } from '@enkaku/codec'
 import type { HubProtocol } from '@enkaku/hub-protocol'
 import { createHub, createMemoryStore } from '@enkaku/hub-server'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
@@ -15,6 +16,10 @@ type HubTransports = DirectTransports<
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function encodePayload(value: string): string {
+  return toB64(fromUTF(value))
 }
 
 function createTestHub() {
@@ -51,11 +56,11 @@ describe('HubClient', () => {
     const reader = channel.readable.getReader()
     await delay(50)
 
-    await alice.send({ recipients: [bobIdentity.id], payload: btoa('hello') })
+    await alice.send({ recipients: [bobIdentity.id], payload: encodePayload('hello') })
 
     const msg = await reader.read()
     expect(msg.done).toBe(false)
-    expect(msg.value?.payload).toBe(btoa('hello'))
+    expect(msg.value?.payload).toBe(encodePayload('hello'))
 
     channel.close()
     await expect(channel).rejects.toEqual('Close')
@@ -76,11 +81,11 @@ describe('HubClient', () => {
     const reader = channel.readable.getReader()
     await delay(50)
 
-    await alice.groupSend({ groupID: 'chat', payload: btoa('group-hello') })
+    await alice.groupSend({ groupID: 'chat', payload: encodePayload('group-hello') })
 
     const msg = await reader.read()
     expect(msg.done).toBe(false)
-    expect(msg.value?.payload).toBe(btoa('group-hello'))
+    expect(msg.value?.payload).toBe(encodePayload('group-hello'))
     expect(msg.value?.groupID).toBe('chat')
 
     channel.close()
@@ -104,16 +109,16 @@ describe('HubClient', () => {
     const reader = channel.readable.getReader()
     await delay(50)
 
-    await alice.groupSend({ groupID: 'work', payload: btoa('work-msg') })
-    await alice.groupSend({ groupID: 'chat', payload: btoa('chat-msg') })
-    await alice.send({ recipients: [bobIdentity.id], payload: btoa('direct-msg') })
+    await alice.groupSend({ groupID: 'work', payload: encodePayload('work-msg') })
+    await alice.groupSend({ groupID: 'chat', payload: encodePayload('chat-msg') })
+    await alice.send({ recipients: [bobIdentity.id], payload: encodePayload('direct-msg') })
 
     await delay(100)
     const msg1 = await reader.read()
-    expect(msg1.value?.payload).toBe(btoa('chat-msg'))
+    expect(msg1.value?.payload).toBe(encodePayload('chat-msg'))
 
     const msg2 = await reader.read()
-    expect(msg2.value?.payload).toBe(btoa('direct-msg'))
+    expect(msg2.value?.payload).toBe(encodePayload('direct-msg'))
 
     channel.close()
     await expect(channel).rejects.toEqual('Close')

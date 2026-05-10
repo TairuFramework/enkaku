@@ -48,8 +48,16 @@ describe('fromB64U()', () => {
     expect(() => fromB64U('aGVs bG8')).toThrow('Invalid base64url')
   })
 
-  test('rejects input containing padding characters', () => {
-    expect(() => fromB64U('aGVsbG8=')).toThrow('Invalid base64url')
+  test('accepts input containing padding characters', () => {
+    const bytes = new Uint8Array([104, 101, 108, 108, 111])
+    expect(equals(fromB64U('aGVsbG8='), bytes)).toBe(true)
+    expect(equals(fromB64U('aGk='), new Uint8Array([104, 105]))).toBe(true)
+    expect(equals(fromB64U('YQ=='), new Uint8Array([97]))).toBe(true)
+  })
+
+  test('rejects input with padding in invalid position', () => {
+    expect(() => fromB64U('aGVs=bG8')).toThrow('Invalid base64url')
+    expect(() => fromB64U('aGVsbG8===')).toThrow('Invalid base64url')
   })
 
   test('rejects input containing standard base64 characters', () => {

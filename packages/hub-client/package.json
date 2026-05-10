@@ -39,6 +39,7 @@
     "@enkaku/hub-protocol": "workspace:^"
   },
   "devDependencies": {
+    "@enkaku/codec": "workspace:^",
     "@enkaku/hub-server": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/token": "workspace:^",

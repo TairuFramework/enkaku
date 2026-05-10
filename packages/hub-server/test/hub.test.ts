@@ -1,4 +1,5 @@
 import { Client } from '@enkaku/client'
+import { fromUTF, toB64 } from '@enkaku/codec'
 import type { HubProtocol } from '@enkaku/hub-protocol'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
 import { randomIdentity } from '@enkaku/token'
@@ -15,6 +16,10 @@ type HubTransports = DirectTransports<
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function encodePayload(value: string): string {
+  return toB64(fromUTF(value))
 }
 
 describe('hub handlers', () => {
@@ -42,7 +47,7 @@ describe('hub handlers', () => {
     await delay(50)
 
     // Alice sends to Bob
-    const payload = btoa('hello-bob')
+    const payload = encodePayload('hello-bob')
     await alice.request('hub/send', {
       param: { recipients: [bobIdentity.id], payload },
     })
@@ -70,7 +75,7 @@ describe('hub handlers', () => {
 
     await expect(
       alice.request('hub/group/send', {
-        param: { groupID: 'nonexistent', payload: btoa('hello') },
+        param: { groupID: 'nonexistent', payload: encodePayload('hello') },
       }),
     ).rejects.toThrow()
 
@@ -110,12 +115,12 @@ describe('hub handlers', () => {
 
     // Alice sends to group
     await alice.request('hub/group/send', {
-      param: { groupID: 'chat', payload: btoa('group-message') },
+      param: { groupID: 'chat', payload: encodePayload('group-message') },
     })
 
     const msg = await reader.read()
     expect(msg.done).toBe(false)
-    expect(msg.value?.payload).toBe(btoa('group-message'))
+    expect(msg.value?.payload).toBe(encodePayload('group-message'))
     expect(msg.value?.groupID).toBe('chat')
 
     channel.close()
@@ -139,7 +144,7 @@ describe('hub handlers', () => {
 
     // Alice sends to Bob while Bob is offline
     await alice.request('hub/send', {
-      param: { recipients: [bobIdentity.id], payload: btoa('offline-msg') },
+      param: { recipients: [bobIdentity.id], payload: encodePayload('offline-msg') },
     })
     await delay(50)
 
@@ -155,7 +160,7 @@ describe('hub handlers', () => {
     const reader = channel.readable.getReader()
     const msg = await reader.read()
     expect(msg.done).toBe(false)
-    expect(msg.value?.payload).toBe(btoa('offline-msg'))
+    expect(msg.value?.payload).toBe(encodePayload('offline-msg'))
 
     channel.close()
     await expect(channel).rejects.toEqual('Close')
@@ -178,10 +183,10 @@ describe('hub handlers', () => {
 
     // Send messages while Bob is offline
     await alice.request('hub/send', {
-      param: { recipients: [bobIdentity.id], payload: btoa('msg-1') },
+      param: { recipients: [bobIdentity.id], payload: encodePayload('msg-1') },
     })
     await alice.request('hub/send', {
-      param: { recipients: [bobIdentity.id], payload: btoa('msg-2') },
+      param: { recipients: [bobIdentity.id], payload: encodePayload('msg-2') },
     })
     await delay(50)
 
@@ -223,10 +228,10 @@ describe('hub handlers', () => {
 
     // Send a new message to verify channel works
     await alice.request('hub/send', {
-      param: { recipients: [bobIdentity.id], payload: btoa('msg-3') },
+      param: { recipients: [bobIdentity.id], payload: encodePayload('msg-3') },
     })
     const msg3 = await reader2.read()
-    expect(msg3.value?.payload).toBe(btoa('msg-3'))
+    expect(msg3.value?.payload).toBe(encodePayload('msg-3'))
 
     channel2.close()
     await expect(channel2).rejects.toEqual('Close')
@@ -313,7 +318,7 @@ describe('hub handlers', () => {
     await expect(channel2).rejects.toThrow()
 
     // First channel still works: Alice sends, channel1 receives
-    const payload = btoa('still-alive')
+    const payload = encodePayload('still-alive')
     await alice.request('hub/send', {
       param: { recipients: [bobIdentity.id], payload },
     })
@@ -359,7 +364,7 @@ describe('hub handlers', () => {
     const reader2 = channel2.readable.getReader()
     await delay(50)
 
-    const payload = btoa('reconnect-ok')
+    const payload = encodePayload('reconnect-ok')
     await alice.request('hub/send', {
       param: { recipients: [bobIdentity.id], payload },
     })
@@ -402,7 +407,7 @@ describe('hub handlers', () => {
     const reader2 = channel2.readable.getReader()
     await delay(50)
 
-    const payload = btoa('delayed-ok')
+    const payload = encodePayload('delayed-ok')
     await alice.request('hub/send', {
       param: { recipients: [bobIdentity.id], payload },
     })
