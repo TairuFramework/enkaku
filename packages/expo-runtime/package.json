@@ -29,9 +29,6 @@
     "test": "pnpm run test:types",
     "prepublishOnly": "pnpm run build"
   },
-  "peerDependencies": {
-    "expo": "^55.0.0"
-  },
   "dependencies": {
     "@enkaku/runtime": "workspace:^",
     "expo-crypto": "catalog:"

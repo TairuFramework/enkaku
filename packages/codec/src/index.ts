@@ -56,12 +56,9 @@ export function fromB64U(base64url: string): Uint8Array {
  */
 export function toB64(bytes: Uint8Array): string {
   if ('toBase64' in bytes) {
-    return bytes.toBase64({ alphabet: 'base64', omitPadding: true })
+    return bytes.toBase64({ alphabet: 'base64' })
   }
-  return btoa(Array.from(bytes, (byte: number) => String.fromCodePoint(byte)).join('')).replace(
-    /=+$/,
-    '',
-  )
+  return btoa(Array.from(bytes, (byte: number) => String.fromCodePoint(byte)).join(''))
 }
 
 /**
@@ -69,9 +66,9 @@ export function toB64(bytes: Uint8Array): string {
  */
 export function toB64U(bytes: Uint8Array) {
   if ('toBase64' in bytes) {
-    return bytes.toBase64({ alphabet: 'base64url', omitPadding: true })
+    return bytes.toBase64({ alphabet: 'base64url' })
   }
-  return toB64(bytes).replace(/[=+/]/g, (m) => (m === '+' ? '-' : m === '/' ? '_' : ''))
+  return toB64(bytes).replace(/[+/]/g, (m) => (m === '+' ? '-' : '_'))
 }
 
 /**

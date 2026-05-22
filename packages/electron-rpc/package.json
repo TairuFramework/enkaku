@@ -42,9 +42,6 @@
     "test": "pnpm run test:types",
     "prepublishOnly": "pnpm run build"
   },
-  "peerDependencies": {
-    "electron": "^42.0.0"
-  },
   "dependencies": {
     "@enkaku/client": "workspace:^",
     "@enkaku/server": "workspace:^",

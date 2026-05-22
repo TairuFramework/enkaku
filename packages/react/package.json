@@ -40,9 +40,6 @@
     "@enkaku/client": "workspace:^",
     "canonicalize": "catalog:"
   },
-  "peerDependencies": {
-    "react": "^19.0.0"
-  },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^",
     "@enkaku/standalone": "workspace:^",

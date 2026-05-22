@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "dev.enkaku.e2e"
@@ -22,9 +17,6 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "dev.enkaku.e2e"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     }
   }
 }

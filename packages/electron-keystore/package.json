@@ -36,9 +36,6 @@
     "test": "pnpm run test:types && pnpm run test:unit",
     "prepublishOnly": "pnpm run build"
   },
-  "peerDependencies": {
-    "electron": "^42.0.0"
-  },
   "dependencies": {
     "@enkaku/codec": "workspace:^",
     "@enkaku/log": "workspace:^",
