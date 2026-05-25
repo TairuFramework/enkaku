@@ -334,7 +334,10 @@ export async function checkDelegationChain(
   }
 
   const [head, ...tail] = capabilities
-  const next = await verifyToken<CapabilityPayload>(head)
+  // Verify the leaf capability's own time claims (exp/nbf) at the same reference
+  // time used for the delegation checks, so a capability that was valid when the
+  // request was issued is not rejected by a later wall-clock during verification.
+  const next = await verifyToken<CapabilityPayload>(head, undefined, { atTime })
   assertCapabilityToken(next)
   if (options?.verifyToken != null) {
     await options.verifyToken(next, head)
@@ -383,7 +386,9 @@ export async function checkCapability(
   if (head == null) {
     throw new Error('Invalid payload: no capability')
   }
-  const capability = await verifyToken<CapabilityPayload>(head)
+  // Verify the leaf capability's own time claims at the resolved reference time
+  // (`atTime` when provided, else now()), matching the delegation checks below.
+  const capability = await verifyToken<CapabilityPayload>(head, undefined, { atTime: time })
   assertCapabilityToken(capability)
   if (options?.verifyToken != null) {
     await options.verifyToken(capability, head)

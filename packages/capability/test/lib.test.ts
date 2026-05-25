@@ -466,6 +466,36 @@ describe('checkCapability()', () => {
       }),
     ).rejects.toThrow('Token expired')
   })
+
+  test('honors atTime for the leaf capability — valid-when-issued passes despite later expiry', async () => {
+    // exp is in the real past, so a wall-clock (now()) verification would reject
+    // the leaf capability outright. atTime is before exp, so the capability was
+    // valid at the reference time and must be accepted.
+    const referenceTime = 1700000000
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const capability = await createCapability(alice, {
+      sub: alice.id,
+      aud: bob.id,
+      act: 'test/read',
+      res: 'foo/bar',
+      exp: referenceTime + 100,
+    })
+
+    const bobToken = await bob.signToken({
+      sub: alice.id,
+      act: 'test/read',
+      res: 'foo/bar',
+      cap: stringifyToken(capability),
+    })
+
+    await expect(
+      checkCapability({ act: 'test/read', res: 'foo/bar' }, bobToken.payload, {
+        atTime: referenceTime,
+      }),
+    ).resolves.not.toThrow()
+  })
 })
 
 describe('checkCapability() - self-issued tokens (C-02)', () => {
