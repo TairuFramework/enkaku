@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  type DIDDoc,
   decodePeer4,
   encodePeer4,
   getPeer4ShortForm,
