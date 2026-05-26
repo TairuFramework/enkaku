@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { encodePeer4, validateDIDDoc } from '../src/peer4.js'
+import {
+  decodePeer4,
+  encodePeer4,
+  getPeer4ShortForm,
+  isPeer4,
+  validateDIDDoc,
+} from '../src/peer4.js'
 
 describe('validateDIDDoc', () => {
   it('accepts a minimal valid doc', () => {
@@ -71,5 +77,58 @@ describe('encodePeer4', () => {
     const a = encodePeer4(doc)
     const b = encodePeer4({ ...doc, authentication: [] })
     expect(a.longForm).not.toBe(b.longForm)
+  })
+})
+
+describe('decodePeer4', () => {
+  const doc = {
+    '@context': ['https://www.w3.org/ns/did/v1'],
+    verificationMethod: [{ id: '#key-0', type: 'Multikey', publicKeyMultibase: 'z6MkAbc' }],
+    authentication: ['#key-0'],
+  }
+
+  it('decodes a long form back to the original doc', () => {
+    const { longForm } = encodePeer4(doc)
+    const decoded = decodePeer4(longForm)
+    expect(decoded.doc).toEqual(doc)
+    expect(decoded.shortForm).toBe(longForm.split(':').slice(0, 3).join(':'))
+  })
+
+  it('rejects a long form with mismatched hash', () => {
+    const { longForm } = encodePeer4(doc)
+    const idx = longForm.indexOf(':z', 'did:peer:4'.length) + 2
+    const tampered = `${longForm.slice(0, idx)}A${longForm.slice(idx + 1)}`
+    expect(() => decodePeer4(tampered)).toThrow(/hash mismatch/i)
+  })
+
+  it('rejects a short form passed to decodePeer4', () => {
+    const { shortForm } = encodePeer4(doc)
+    expect(() => decodePeer4(shortForm)).toThrow(/long form/i)
+  })
+
+  it('rejects a non-peer:4 DID', () => {
+    expect(() => decodePeer4('did:key:z6MkAbc')).toThrow(/Invalid did:peer:4/)
+  })
+
+  it('rejects an oversized doc', () => {
+    const big = { ...doc, padding: 'x'.repeat(200) }
+    const { longForm } = encodePeer4(big)
+    expect(() => decodePeer4(longForm, { maxDocSize: 100 })).toThrow(/doc too large/i)
+  })
+})
+
+describe('isPeer4 / getPeer4ShortForm', () => {
+  it('detects peer:4 DIDs', () => {
+    expect(isPeer4('did:peer:4zAbc')).toBe(true)
+    expect(isPeer4('did:key:z6Mk')).toBe(false)
+  })
+
+  it('extracts the short form from a long form', () => {
+    const { longForm, shortForm } = encodePeer4({
+      '@context': ['https://www.w3.org/ns/did/v1'],
+      verificationMethod: [{ id: '#k', type: 'Multikey', publicKeyMultibase: 'z6Mk' }],
+    })
+    expect(getPeer4ShortForm(longForm)).toBe(shortForm)
+    expect(getPeer4ShortForm(shortForm)).toBe(shortForm)
   })
 })
