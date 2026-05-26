@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Stage:** executing — Gate 2 complete
+**Stage:** executing — Gate 3 complete
 
 **Goal:** Wire `did:peer:4` long/short-form identifiers through the token, capability, server, and group layers using token-layer self-bootstrap (long-form `iss` on first contact) — no transport-layer changes.
 
