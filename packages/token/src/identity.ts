@@ -323,6 +323,7 @@ function buildIdentity(
     const aud = payload.aud
     if (typeof aud !== 'string') return did
     if (sentTo.has(aud)) return did
+    // Concurrent sign() calls with the same new aud may both emit long-form; recipient cache writes are idempotent so this is acceptable.
     sentTo.add(aud)
     return longForm
   }
