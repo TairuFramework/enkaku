@@ -302,12 +302,12 @@ export async function unwrapEnvelope(
     if (options.decrypter == null) throw new Error('Decrypter required for JWE message')
     const decrypted = await decryptToken(options.decrypter, message)
     const jwsString = new TextDecoder().decode(decrypted)
-    const token = await verifyToken(jwsString, options.verifiers)
+    const token = await verifyToken(jwsString, { verifiers: options.verifiers })
     return { payload: token.payload as Record<string, unknown>, mode: 'jws-in-jwe' }
   }
   if (parts.length === 3) {
     // JWT: could be plain, jws, or jwe-in-jws
-    const token = await verifyToken(message, options.verifiers)
+    const token = await verifyToken(message, { verifiers: options.verifiers })
     if (isUnsignedToken(token)) {
       return { payload: token.payload as Record<string, unknown>, mode: 'plain' }
     }

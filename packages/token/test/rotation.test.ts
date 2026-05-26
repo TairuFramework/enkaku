@@ -31,7 +31,7 @@ describe('createRotationAssertion', () => {
     })
     const assertion = await createRotationAssertion(oldId, newId)
     const cache = createInMemoryDIDCache()
-    const verified = await verifyToken(assertion, undefined, undefined, {
+    const verified = await verifyToken(assertion, {
       resolver: (did) => cache.get(did),
     })
     expect((verified as { verifiedPublicKey: Uint8Array }).verifiedPublicKey).toBeDefined()

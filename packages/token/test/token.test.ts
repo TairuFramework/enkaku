@@ -60,7 +60,7 @@ describe('verifyToken with time validation', () => {
       exp: fixedTime - 100,
     })
 
-    await expect(verifyToken(token, undefined, { atTime: fixedTime })).rejects.toThrow(
+    await expect(verifyToken(token, { timeOptions: { atTime: fixedTime } })).rejects.toThrow(
       'Token expired',
     )
   })
@@ -72,7 +72,7 @@ describe('verifyToken with time validation', () => {
       nbf: fixedTime + 100,
     })
 
-    await expect(verifyToken(token, undefined, { atTime: fixedTime })).rejects.toThrow(
+    await expect(verifyToken(token, { timeOptions: { atTime: fixedTime } })).rejects.toThrow(
       'Token not yet valid',
     )
   })
@@ -85,7 +85,7 @@ describe('verifyToken with time validation', () => {
       exp: fixedTime + 100,
     })
 
-    const result = await verifyToken(token, undefined, { atTime: fixedTime })
+    const result = await verifyToken(token, { timeOptions: { atTime: fixedTime } })
     expect(result.payload.test).toBe(true)
   })
 
@@ -93,7 +93,7 @@ describe('verifyToken with time validation', () => {
     const identity = randomIdentity()
     const token = await identity.signToken({ test: true })
 
-    const result = await verifyToken(token, undefined, { atTime: fixedTime })
+    const result = await verifyToken(token, { timeOptions: { atTime: fixedTime } })
     expect(result.payload.test).toBe(true)
   })
 
@@ -101,18 +101,15 @@ describe('verifyToken with time validation', () => {
     const identity = randomIdentity()
     const token = await identity.signToken({
       test: true,
-      exp: fixedTime - 5, // Expired 5 seconds ago
+      exp: fixedTime - 5,
     })
 
-    // Should fail without tolerance
-    await expect(verifyToken(token, undefined, { atTime: fixedTime })).rejects.toThrow(
+    await expect(verifyToken(token, { timeOptions: { atTime: fixedTime } })).rejects.toThrow(
       'Token expired',
     )
 
-    // Should pass with 10 second tolerance
-    const result = await verifyToken(token, undefined, {
-      atTime: fixedTime,
-      clockTolerance: 10,
+    const result = await verifyToken(token, {
+      timeOptions: { atTime: fixedTime, clockTolerance: 10 },
     })
     expect(result.payload.test).toBe(true)
   })
@@ -125,7 +122,7 @@ describe('verifyToken with time validation', () => {
     })
     const tokenString = stringifyToken(token)
 
-    await expect(verifyToken(tokenString, undefined, { atTime: fixedTime })).rejects.toThrow(
+    await expect(verifyToken(tokenString, { timeOptions: { atTime: fixedTime } })).rejects.toThrow(
       'Token expired',
     )
   })

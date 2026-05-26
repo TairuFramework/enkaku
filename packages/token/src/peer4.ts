@@ -2,6 +2,7 @@ import { canonicalStringify, fromUTF, toUTF } from '@enkaku/codec'
 import { createValidator, type FromSchema, isType, type Schema } from '@enkaku/schema'
 
 import { decodeMultibase, encodeMultibase, multihashSHA256, verifyMultihash } from './multibase.js'
+import { concatBytes } from './utils.js'
 
 /** @internal */
 export const verificationMethodSchema = {
@@ -50,13 +51,6 @@ export function validateDIDDoc(value: unknown): value is DIDDoc {
 
 const PEER4_PREFIX = 'did:peer:4'
 const JSON_MULTICODEC = new Uint8Array([0x80, 0x04])
-
-function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
-  const out = new Uint8Array(a.length + b.length)
-  out.set(a, 0)
-  out.set(b, a.length)
-  return out
-}
 
 const DEFAULT_MAX_DOC_SIZE = 64 * 1024
 

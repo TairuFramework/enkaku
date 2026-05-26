@@ -49,7 +49,7 @@ describe('createIdentity', () => {
     const signed = await identity.sign({ aud: 'someone' })
     expect(signed.header.kid).toBeDefined()
     expect(signed.payload.iss).toBe(identity.did)
-    const verified = await verifyToken(signed, undefined, undefined, {
+    const verified = await verifyToken(signed, {
       resolver: (did) => cache.get(did),
     })
     expect((verified as { verifiedPublicKey: Uint8Array }).verifiedPublicKey.length).toBe(32)

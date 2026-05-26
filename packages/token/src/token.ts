@@ -19,6 +19,19 @@ import { getVerifier, type Verifiers } from './verifier.js'
 const tokenTracer = createTracer('token')
 
 export type VerifyTokenOptions = {
+  verifiers?: Verifiers
+  timeOptions?: TimeValidationOptions
+  resolver?: DIDResolver
+}
+
+export type VerifySignedPayloadInput<
+  Payload extends Record<string, unknown> = Record<string, unknown>,
+> = {
+  signature: Uint8Array
+  payload: Payload
+  header: { alg?: string; kid?: string }
+  data: Uint8Array | string
+  verifiers?: Verifiers
   resolver?: DIDResolver
 }
 
@@ -27,14 +40,8 @@ export type VerifyTokenOptions = {
  */
 export async function verifySignedPayload<
   Payload extends Record<string, unknown> = Record<string, unknown>,
->(
-  signature: Uint8Array,
-  payload: Payload,
-  header: { alg?: string; kid?: string },
-  data: Uint8Array | string,
-  verifiers?: Verifiers,
-  resolver?: DIDResolver,
-): Promise<Uint8Array> {
+>(input: VerifySignedPayloadInput<Payload>): Promise<Uint8Array> {
+  const { signature, payload, header, data, verifiers, resolver } = input
   assertType(validateSignedPayload, payload)
   const [alg, publicKey] = await resolveIssuer(payload.iss, { kid: header.kid }, resolver)
   const verify = getVerifier(alg, verifiers)
@@ -102,10 +109,9 @@ export async function signToken<
 
 async function verifyTokenInner<Payload extends Record<string, unknown> = Record<string, unknown>>(
   token: Token<Payload> | string,
-  verifiers?: Verifiers,
-  timeOptions?: TimeValidationOptions,
-  options?: VerifyTokenOptions,
+  options: VerifyTokenOptions = {},
 ): Promise<Token<Payload>> {
+  const { verifiers, timeOptions, resolver } = options
   if (typeof token !== 'string') {
     if (isUnsignedToken(token)) {
       return token
@@ -115,14 +121,14 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
       return token
     }
     if (isSignedToken(token)) {
-      const verifiedPublicKey = await verifySignedPayload(
-        fromB64U(token.signature),
-        token.payload,
-        token.header as { alg?: string; kid?: string },
-        token.data,
+      const verifiedPublicKey = await verifySignedPayload({
+        signature: fromB64U(token.signature),
+        payload: token.payload,
+        header: token.header as { alg?: string; kid?: string },
+        data: token.data,
         verifiers,
-        options?.resolver,
-      )
+        resolver,
+      })
       assertTimeClaimsValid(token.payload as Record<string, unknown>, timeOptions)
       return { ...token, verifiedPublicKey } as Token<Payload>
     }
@@ -150,14 +156,14 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
 
     const payload = b64uToJSON<Payload>(encodedPayload)
     const data = `${encodedHeader}.${encodedPayload}`
-    const verifiedPublicKey = await verifySignedPayload(
-      fromB64U(signature),
+    const verifiedPublicKey = await verifySignedPayload({
+      signature: fromB64U(signature),
       payload,
-      header as { alg?: string; kid?: string },
+      header: header as { alg?: string; kid?: string },
       data,
       verifiers,
-      options?.resolver,
-    )
+      resolver,
+    })
     assertTimeClaimsValid(payload as Record<string, unknown>, timeOptions)
     return {
       data,
@@ -177,14 +183,9 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
  */
 export async function verifyToken<
   Payload extends Record<string, unknown> = Record<string, unknown>,
->(
-  token: Token<Payload> | string,
-  verifiers?: Verifiers,
-  timeOptions?: TimeValidationOptions,
-  options?: VerifyTokenOptions,
-): Promise<Token<Payload>> {
+>(token: Token<Payload> | string, options: VerifyTokenOptions = {}): Promise<Token<Payload>> {
   return withSpan(tokenTracer, SpanNames.TOKEN_VERIFY, {}, async (span) => {
-    const result = await verifyTokenInner(token, verifiers, timeOptions, options)
+    const result = await verifyTokenInner(token, options)
     if (isSignedToken(result)) {
       span.setAttribute(
         AttributeKeys.AUTH_DID,

@@ -118,11 +118,13 @@ export {
   isUnsignedToken,
   isVerifiedToken,
   signToken,
+  type VerifySignedPayloadInput,
   type VerifyTokenOptions,
+  verifySignedPayload,
   verifyToken,
 } from './token.js'
 export type * from './types.js'
-export { stringifyToken } from './utils.js'
+export { concatBytes, stringifyToken } from './utils.js'
 export {
   getVerifier,
   type Verifier,

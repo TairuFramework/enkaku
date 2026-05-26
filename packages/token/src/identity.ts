@@ -8,6 +8,7 @@ import { encodeMultibase } from './multibase.js'
 import { type DIDDoc, encodePeer4, isPeer4 } from './peer4.js'
 import type { SignedHeader } from './schemas.js'
 import type { SignedToken } from './types.js'
+import { concatBytes } from './utils.js'
 
 const tracer = createTracer('token')
 
@@ -187,13 +188,6 @@ function codecFor(alg: KeyAlg): Uint8Array {
     case 'X25519':
       return CODEC_X25519_PUB
   }
-}
-
-function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
-  const out = new Uint8Array(a.length + b.length)
-  out.set(a, 0)
-  out.set(b, a.length)
-  return out
 }
 
 function publicKeyMultibase(alg: KeyAlg, publicKey: Uint8Array): string {

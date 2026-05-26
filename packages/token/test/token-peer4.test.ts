@@ -32,7 +32,7 @@ describe('verifyToken with did:peer:4', () => {
     const { token, shortForm, doc } = buildPeer4Token(priv)
     const cache = createInMemoryDIDCache()
     await cache.set(shortForm, doc)
-    const verified = await verifyToken(token, undefined, undefined, {
+    const verified = await verifyToken(token, {
       resolver: (did) => cache.get(did),
     })
     expect((verified as { verifiedPublicKey: Uint8Array }).verifiedPublicKey).toEqual(
@@ -43,9 +43,7 @@ describe('verifyToken with did:peer:4', () => {
   it('throws UnknownDID when peer:4 doc is not cached', async () => {
     const priv = ed25519.utils.randomSecretKey()
     const { token } = buildPeer4Token(priv)
-    await expect(
-      verifyToken(token, undefined, undefined, { resolver: () => undefined }),
-    ).rejects.toThrow(/Unknown DID/)
+    await expect(verifyToken(token, { resolver: () => undefined })).rejects.toThrow(/Unknown DID/)
   })
 
   it('still verifies a did:key token without a resolver', async () => {
