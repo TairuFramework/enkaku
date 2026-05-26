@@ -1,4 +1,7 @@
+import { canonicalStringify, fromUTF } from '@enkaku/codec'
 import { createValidator, type FromSchema, isType, type Schema } from '@enkaku/schema'
+
+import { encodeMultibase, multihashSHA256 } from './multibase.js'
 
 /** @internal */
 export const verificationMethodSchema = {
@@ -43,4 +46,29 @@ const didDocValidator = createValidator(didDocSchema)
  */
 export function validateDIDDoc(value: unknown): value is DIDDoc {
   return isType(didDocValidator, value)
+}
+
+const PEER4_PREFIX = 'did:peer:4'
+const JSON_MULTICODEC = new Uint8Array([0x80, 0x04])
+
+function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
+  const out = new Uint8Array(a.length + b.length)
+  out.set(a, 0)
+  out.set(b, a.length)
+  return out
+}
+
+/**
+ * Encode a DID document as a did:peer:4 identifier.
+ * Returns both the long form (self-contained, doc embedded) and short form (hash only).
+ */
+export function encodePeer4(doc: DIDDoc): { longForm: string; shortForm: string; doc: DIDDoc } {
+  const canonicalDocBytes = fromUTF(canonicalStringify(doc))
+  const taggedDoc = concatBytes(JSON_MULTICODEC, canonicalDocBytes)
+  const encodedDoc = encodeMultibase(taggedDoc)
+  const hashBytes = multihashSHA256(fromUTF(encodedDoc))
+  const hash = encodeMultibase(hashBytes)
+  const shortForm = `${PEER4_PREFIX}${hash}`
+  const longForm = `${shortForm}:${encodedDoc}`
+  return { longForm, shortForm, doc }
 }
