@@ -587,6 +587,23 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               emitHandlerError(events, 'auth', error, msg.payload)
               break
             }
+            try {
+              await verifyToken(msg as SignedToken, {
+                cache: params.cache,
+                resolver: params.resolver,
+              })
+            } catch (cause) {
+              const error = new HandlerError({
+                cause,
+                code: 'EK02',
+                message: (cause as Error).message ?? 'Access denied',
+              })
+              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                rid: msg.payload.rid,
+              })
+              emitHandlerError(events, 'auth', error, msg.payload)
+              break
+            }
             const sendIssuer = (msg as unknown as SignedToken).payload.iss
             if (
               controller.issuer != null &&
