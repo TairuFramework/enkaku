@@ -726,8 +726,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         access: {},
         encryptionPolicy: params.encryptionPolicy,
         verifyToken: params.verifyToken,
-        cache: params.cache,
-        resolver: params.resolver,
+        cache: this.#cache,
+        resolver: this.#resolver,
       }
     } else {
       this.#accessControl = {
@@ -736,8 +736,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         access: accessRules ?? {},
         encryptionPolicy: params.encryptionPolicy,
         verifyToken: params.verifyToken,
-        cache: params.cache,
-        resolver: params.resolver,
+        cache: this.#cache,
+        resolver: this.#resolver,
       }
     }
 
