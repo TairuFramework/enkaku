@@ -4,6 +4,8 @@ import { ed25519, x25519 } from '@noble/curves/ed25519.js'
 
 import { CODECS, getDID } from './did.js'
 import { decryptToken } from './jwe.js'
+import { encodeMultibase } from './multibase.js'
+import { type DIDDoc, encodePeer4 } from './peer4.js'
 import type { SignedHeader } from './schemas.js'
 import type { SignedToken } from './types.js'
 
@@ -132,4 +134,224 @@ export function createFullIdentity(privateKey: Uint8Array): FullIdentity {
 export function randomIdentity(): OwnIdentity {
   const privateKey = ed25519.utils.randomSecretKey()
   return { ...createFullIdentity(privateKey), privateKey }
+}
+
+// ─── createIdentity builder ────────────────────────────────────────────────
+
+export type KeyPurpose = 'sig' | 'kem'
+export type KeyAlg = 'EdDSA' | 'X25519'
+
+export type IdentityKeySpec = {
+  purpose: KeyPurpose
+  alg: KeyAlg
+  privateKey?: Uint8Array
+}
+
+export type CreateIdentityInput = {
+  keys: Array<IdentityKeySpec>
+  didMethod?: 'key' | 'peer:4'
+}
+
+export type ResolvedKey = {
+  fragment: string
+  alg: KeyAlg
+  purpose: KeyPurpose
+  privateKey: Uint8Array
+  publicKey: Uint8Array
+}
+
+export type SignOptions = {
+  kid?: string
+}
+
+export type MultiKeyIdentity = {
+  did: string
+  longForm: string
+  doc: DIDDoc
+  keys: Array<ResolvedKey>
+  sign<Payload extends Record<string, unknown> = Record<string, unknown>>(
+    payload: Payload,
+    options?: SignOptions,
+  ): Promise<SignedToken<Payload>>
+}
+
+const CODEC_ED25519_PUB = new Uint8Array([0xed, 0x01])
+const CODEC_X25519_PUB = new Uint8Array([0xec, 0x01])
+
+function codecFor(alg: KeyAlg): Uint8Array {
+  switch (alg) {
+    case 'EdDSA':
+      return CODEC_ED25519_PUB
+    case 'X25519':
+      return CODEC_X25519_PUB
+  }
+}
+
+function concatBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
+  const out = new Uint8Array(a.length + b.length)
+  out.set(a, 0)
+  out.set(b, a.length)
+  return out
+}
+
+function publicKeyMultibase(alg: KeyAlg, publicKey: Uint8Array): string {
+  return encodeMultibase(concatBytes(codecFor(alg), publicKey))
+}
+
+function generateKeyPair(
+  alg: KeyAlg,
+  providedPrivate?: Uint8Array,
+): { privateKey: Uint8Array; publicKey: Uint8Array } {
+  switch (alg) {
+    case 'EdDSA': {
+      const priv = providedPrivate ?? ed25519.utils.randomSecretKey()
+      return { privateKey: priv, publicKey: ed25519.getPublicKey(priv) }
+    }
+    case 'X25519': {
+      const priv = providedPrivate ?? x25519.utils.randomSecretKey()
+      return { privateKey: priv, publicKey: x25519.getPublicKey(priv) }
+    }
+  }
+}
+
+function isClassical(spec: IdentityKeySpec): boolean {
+  return spec.alg === 'EdDSA' || spec.alg === 'X25519'
+}
+
+function chooseMethod(input: CreateIdentityInput): 'key' | 'peer:4' {
+  if (input.didMethod != null) {
+    if (input.didMethod === 'key') {
+      if (input.keys.length !== 1) {
+        throw new Error('IdentityError.InvalidMethod: did:key requires exactly one key')
+      }
+      if (!isClassical(input.keys[0])) {
+        throw new Error('IdentityError.InvalidMethod: did:key requires a classical algorithm')
+      }
+      if (input.keys[0].purpose !== 'sig') {
+        throw new Error('IdentityError.InvalidMethod: did:key requires a signing key')
+      }
+    }
+    return input.didMethod
+  }
+  if (input.keys.length === 1 && isClassical(input.keys[0]) && input.keys[0].purpose === 'sig') {
+    return 'key'
+  }
+  return 'peer:4'
+}
+
+function resolveKeys(input: CreateIdentityInput): Array<ResolvedKey> {
+  return input.keys.map((spec, i) => {
+    const { privateKey, publicKey } = generateKeyPair(spec.alg, spec.privateKey)
+    return {
+      fragment: `#key-${i}`,
+      alg: spec.alg,
+      purpose: spec.purpose,
+      privateKey,
+      publicKey,
+    }
+  })
+}
+
+function buildDoc(keys: Array<ResolvedKey>): DIDDoc {
+  const verificationMethod = keys.map((k) => ({
+    id: k.fragment,
+    type: 'Multikey',
+    publicKeyMultibase: publicKeyMultibase(k.alg, k.publicKey),
+  }))
+  const authentication = keys.filter((k) => k.purpose === 'sig').map((k) => k.fragment)
+  const keyAgreement = keys.filter((k) => k.purpose === 'kem').map((k) => k.fragment)
+  const doc: DIDDoc = {
+    '@context': ['https://www.w3.org/ns/did/v1'],
+    verificationMethod,
+  }
+  if (authentication.length > 0) doc.authentication = authentication
+  if (keyAgreement.length > 0) doc.keyAgreement = keyAgreement
+  return doc
+}
+
+function pickSigningKey(keys: Array<ResolvedKey>, kid?: string): ResolvedKey {
+  if (kid != null) {
+    const found = keys.find((k) => k.fragment === kid)
+    if (found == null) throw new Error(`KidNotFound: ${kid}`)
+    if (found.purpose !== 'sig') throw new Error(`Kid is not a signing key: ${kid}`)
+    return found
+  }
+  const first = keys.find((k) => k.purpose === 'sig')
+  if (first == null) throw new Error('No signing key in identity')
+  return first
+}
+
+function signWith(key: ResolvedKey, data: Uint8Array): Uint8Array {
+  switch (key.alg) {
+    case 'EdDSA':
+      return ed25519.sign(data, key.privateKey)
+    case 'X25519':
+      throw new Error('X25519 cannot sign')
+  }
+}
+
+function buildIdentity(
+  did: string,
+  longForm: string,
+  doc: DIDDoc,
+  keys: Array<ResolvedKey>,
+): MultiKeyIdentity {
+  async function sign<Payload extends Record<string, unknown> = Record<string, unknown>>(
+    payload: Payload,
+    options: SignOptions = {},
+  ): Promise<SignedToken<Payload>> {
+    const key = pickSigningKey(keys, options.kid)
+    const isPeer = did.startsWith('did:peer:4')
+    const header = {
+      typ: 'JWT',
+      alg: 'EdDSA',
+      ...(isPeer ? { kid: key.fragment } : {}),
+    } as SignedHeader
+    const fullPayload = { ...payload, iss: did }
+    const data = `${b64uFromJSON(header)}.${b64uFromJSON(fullPayload)}`
+    return {
+      header: header as SignedHeader & Record<string, unknown>,
+      payload: fullPayload as Payload & { iss: string },
+      signature: toB64U(signWith(key, fromUTF(data))),
+      data,
+    } as SignedToken<Payload>
+  }
+
+  return { did, longForm, doc, keys, sign }
+}
+
+/**
+ * Create a multi-key identity. The DID method is chosen automatically:
+ * - single classical signing key → did:key
+ * - anything else → did:peer:4
+ *
+ * Caller can override via `didMethod`. Invalid overrides throw IdentityError.InvalidMethod.
+ */
+export async function createIdentity(input: CreateIdentityInput): Promise<MultiKeyIdentity> {
+  if (input.keys.length === 0) {
+    throw new Error('createIdentity requires at least one key')
+  }
+  const method = chooseMethod(input)
+  const keys = resolveKeys(input)
+
+  if (method === 'key') {
+    const [k] = keys
+    const did = getDID(CODECS.EdDSA, k.publicKey)
+    const doc: DIDDoc = {
+      '@context': ['https://www.w3.org/ns/did/v1'],
+      verificationMethod: [
+        {
+          id: '#key-0',
+          type: 'Multikey',
+          publicKeyMultibase: publicKeyMultibase(k.alg, k.publicKey),
+        },
+      ],
+      authentication: ['#key-0'],
+    }
+    return buildIdentity(did, did, doc, keys)
+  }
+
+  const doc = buildDoc(keys)
+  const { longForm, shortForm } = encodePeer4(doc)
+  return buildIdentity(shortForm, longForm, doc, keys)
 }
