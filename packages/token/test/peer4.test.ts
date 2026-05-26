@@ -57,6 +57,10 @@ describe('encodePeer4', () => {
     authentication: ['#key-0'],
   }
 
+  it('rejects an invalid doc on encode', () => {
+    expect(() => encodePeer4({ '@context': [] } as unknown as DIDDoc)).toThrow(/schema validation/)
+  })
+
   it('produces a long form starting with did:peer:4', () => {
     const { longForm } = encodePeer4(doc)
     expect(longForm.startsWith('did:peer:4z')).toBe(true)
@@ -121,6 +125,11 @@ describe('isPeer4 / getPeer4ShortForm', () => {
   it('detects peer:4 DIDs', () => {
     expect(isPeer4('did:peer:4zAbc')).toBe(true)
     expect(isPeer4('did:key:z6Mk')).toBe(false)
+  })
+
+  it('rejects did:peer:4 without z prefix on hash', () => {
+    expect(isPeer4('did:peer:40foo')).toBe(false)
+    expect(isPeer4('did:peer:4')).toBe(false)
   })
 
   it('extracts the short form from a long form', () => {

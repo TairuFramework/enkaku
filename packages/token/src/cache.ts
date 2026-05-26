@@ -33,6 +33,7 @@ export function createInMemoryDIDCache(): DIDCache {
         return Promise.reject(new Error('DIDCache: short form/doc hash mismatch'))
       }
       docs.set(shortForm, doc)
+      return Promise.resolve()
     },
   }
 }

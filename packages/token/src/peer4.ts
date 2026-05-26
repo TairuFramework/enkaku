@@ -69,7 +69,7 @@ export type DecodePeer4Options = {
  * Check whether a value is a did:peer:4 identifier (either form).
  */
 export function isPeer4(value: unknown): value is string {
-  return typeof value === 'string' && value.startsWith(PEER4_PREFIX)
+  return typeof value === 'string' && value.startsWith(`${PEER4_PREFIX}z`)
 }
 
 /**
@@ -105,6 +105,11 @@ export function decodePeer4(
   const hashEncoded = longForm.slice(PEER4_PREFIX.length, sep)
   const encodedDoc = longForm.slice(sep + 1)
 
+  const maxSize = options.maxDocSize ?? DEFAULT_MAX_DOC_SIZE
+  if (encodedDoc.length > maxSize * 2) {
+    throw new Error(`did:peer:4 encoded doc too large: ${encodedDoc.length} > ${maxSize * 2}`)
+  }
+
   const hashBytes = decodeMultibase(hashEncoded)
   if (!verifyMultihash(hashBytes, fromUTF(encodedDoc))) {
     throw new Error('did:peer:4 hash mismatch')
@@ -115,7 +120,6 @@ export function decodePeer4(
     throw new Error('did:peer:4 doc missing JSON multicodec prefix')
   }
   const docBytes = taggedDoc.slice(JSON_MULTICODEC.length)
-  const maxSize = options.maxDocSize ?? DEFAULT_MAX_DOC_SIZE
   if (docBytes.length > maxSize) {
     throw new Error(`did:peer:4 doc too large: ${docBytes.length} > ${maxSize}`)
   }
@@ -134,6 +138,9 @@ export function decodePeer4(
  * Returns both the long form (self-contained, doc embedded) and short form (hash only).
  */
 export function encodePeer4(doc: DIDDoc): { longForm: string; shortForm: string; doc: DIDDoc } {
+  if (!validateDIDDoc(doc)) {
+    throw new Error('did:peer:4 doc failed schema validation')
+  }
   const canonicalDocBytes = fromUTF(canonicalStringify(doc))
   const taggedDoc = concatBytes(JSON_MULTICODEC, canonicalDocBytes)
   const encodedDoc = encodeMultibase(taggedDoc)

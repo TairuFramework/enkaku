@@ -3,7 +3,7 @@ import type { SignedToken } from './types.js'
 
 export type RotationPayload = {
   type: 'did-rotation'
-  iss: string
+  iss?: string
   to: string
   toLongForm: string
   issuedAt: number
@@ -21,7 +21,6 @@ export async function createRotationAssertion(
 ): Promise<SignedToken<RotationPayload>> {
   return oldIdentity.sign<RotationPayload>({
     type: 'did-rotation',
-    iss: oldIdentity.did,
     to: newIdentity.did,
     toLongForm: newIdentity.longForm,
     issuedAt,

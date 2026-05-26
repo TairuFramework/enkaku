@@ -5,7 +5,7 @@ import { ed25519, x25519 } from '@noble/curves/ed25519.js'
 import { CODECS, getDID } from './did.js'
 import { decryptToken } from './jwe.js'
 import { encodeMultibase } from './multibase.js'
-import { type DIDDoc, encodePeer4 } from './peer4.js'
+import { type DIDDoc, encodePeer4, isPeer4 } from './peer4.js'
 import type { SignedHeader } from './schemas.js'
 import type { SignedToken } from './types.js'
 
@@ -173,6 +173,8 @@ export type MultiKeyIdentity = {
     payload: Payload,
     options?: SignOptions,
   ): Promise<SignedToken<Payload>>
+  decrypt(jwe: string): Promise<Uint8Array>
+  agreeKey(ephemeralPublicKey: Uint8Array, kid?: string): Promise<Uint8Array>
 }
 
 const CODEC_ED25519_PUB = new Uint8Array([0xed, 0x01])
@@ -290,6 +292,20 @@ function signWith(key: ResolvedKey, data: Uint8Array): Uint8Array {
   }
 }
 
+function pickKemKey(keys: Array<ResolvedKey>, kid?: string): ResolvedKey {
+  if (kid != null) {
+    const found = keys.find((k) => k.fragment === kid)
+    if (found == null) throw new Error(`KidNotFound: ${kid}`)
+    if (found.purpose !== 'kem' || found.alg !== 'X25519') {
+      throw new Error(`Kid is not a KEM X25519 key: ${kid}`)
+    }
+    return found
+  }
+  const first = keys.find((k) => k.purpose === 'kem' && k.alg === 'X25519')
+  if (first == null) throw new Error('No KEM key in identity')
+  return first
+}
+
 function buildIdentity(
   did: string,
   longForm: string,
@@ -301,11 +317,10 @@ function buildIdentity(
     options: SignOptions = {},
   ): Promise<SignedToken<Payload>> {
     const key = pickSigningKey(keys, options.kid)
-    const isPeer = did.startsWith('did:peer:4')
     const header = {
       typ: 'JWT',
       alg: 'EdDSA',
-      ...(isPeer ? { kid: key.fragment } : {}),
+      ...(isPeer4(did) ? { kid: key.fragment } : {}),
     } as SignedHeader
     const fullPayload = { ...payload, iss: did }
     const data = `${b64uFromJSON(header)}.${b64uFromJSON(fullPayload)}`
@@ -317,7 +332,17 @@ function buildIdentity(
     } as SignedToken<Payload>
   }
 
-  return { did, longForm, doc, keys, sign }
+  async function agreeKey(ephemeralPublicKey: Uint8Array, kid?: string): Promise<Uint8Array> {
+    const key = pickKemKey(keys, kid)
+    return x25519.getSharedSecret(key.privateKey, ephemeralPublicKey)
+  }
+
+  async function decrypt(jwe: string): Promise<Uint8Array> {
+    pickKemKey(keys)
+    return decryptToken({ id: did, decrypt, agreeKey }, jwe)
+  }
+
+  return { did, longForm, doc, keys, sign, decrypt, agreeKey }
 }
 
 /**

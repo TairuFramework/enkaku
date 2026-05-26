@@ -2,6 +2,7 @@ import { ed25519 } from '@noble/curves/ed25519.js'
 import { describe, expect, it } from 'vitest'
 import { createInMemoryDIDCache } from '../src/cache.js'
 import { createIdentity } from '../src/identity.js'
+import { createTokenEncrypter, encryptToken } from '../src/jwe.js'
 import { isPeer4 } from '../src/peer4.js'
 import { verifyToken } from '../src/token.js'
 
@@ -73,5 +74,28 @@ describe('createIdentity', () => {
     expect(identity.did.startsWith('did:key:')).toBe(true)
     const signed = await identity.sign({})
     expect(signed.payload.iss).toBe(identity.did)
+  })
+
+  it('decrypts a token addressed to its KEM key', async () => {
+    const identity = await createIdentity({
+      keys: [
+        { purpose: 'sig', alg: 'EdDSA' },
+        { purpose: 'kem', alg: 'X25519' },
+      ],
+    })
+    const kemKey = identity.keys.find((k) => k.purpose === 'kem')
+    if (kemKey == null) throw new Error('no kem key')
+    const plaintext = new TextEncoder().encode('hello world')
+    const encrypter = createTokenEncrypter(kemKey.publicKey, { algorithm: 'X25519' })
+    const jwe = await encryptToken(encrypter, plaintext)
+    const decrypted = await identity.decrypt(jwe)
+    expect(new TextDecoder().decode(decrypted)).toBe('hello world')
+  })
+
+  it('throws when decrypting without a KEM key', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+    })
+    await expect(identity.decrypt('fake.jwe')).rejects.toThrow(/no KEM key|no kem key/i)
   })
 })

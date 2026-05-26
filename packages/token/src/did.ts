@@ -91,7 +91,13 @@ export async function resolveIssuer(
       throw new Error(`Unknown DID: ${shortForm}`)
     }
     if (header.kid == null) {
-      throw new Error('resolveIssuer: did:peer:4 token missing kid header')
+      const auth = doc.authentication
+      if (auth == null || auth.length === 0) {
+        throw new Error(
+          'resolveIssuer: did:peer:4 token missing kid and doc has no authentication entries',
+        )
+      }
+      return resolveKidFromDoc(doc, auth[0])
     }
     return resolveKidFromDoc(doc, header.kid)
   }

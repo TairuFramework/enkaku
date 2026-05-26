@@ -42,14 +42,23 @@ describe('resolveIssuer', () => {
     ).rejects.toThrow(/Unknown DID/)
   })
 
-  it('throws when kid is missing for peer:4', async () => {
+  it('falls back to first authentication entry when kid missing', async () => {
+    const priv = ed25519.utils.randomSecretKey()
+    const pub = ed25519.getPublicKey(priv)
+    const ed25519Codec = new Uint8Array([0xed, 0x01])
+    const taggedPub = new Uint8Array(ed25519Codec.length + pub.length)
+    taggedPub.set(ed25519Codec, 0)
+    taggedPub.set(pub, ed25519Codec.length)
+    const publicKeyMultibase = encodeMultibase(taggedPub)
     const { shortForm, doc } = encodePeer4({
       '@context': ['https://www.w3.org/ns/did/v1'],
-      verificationMethod: [{ id: '#key-0', type: 'Multikey', publicKeyMultibase: 'z6Mk' }],
+      verificationMethod: [{ id: '#key-0', type: 'Multikey', publicKeyMultibase }],
       authentication: ['#key-0'],
     })
     const resolver = (did: string) => (did === shortForm ? doc : undefined)
-    await expect(resolveIssuer(shortForm, {}, resolver)).rejects.toThrow(/kid/i)
+    const [alg, key] = await resolveIssuer(shortForm, {}, resolver)
+    expect(alg).toBe('EdDSA')
+    expect(key).toEqual(pub)
   })
 
   it('throws KidNotFound when kid does not exist in doc', async () => {
