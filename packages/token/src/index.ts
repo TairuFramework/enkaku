@@ -10,24 +10,42 @@
  * @module token
  */
 
-export { CODECS, getAlgorithmAndPublicKey, getDID, getSignatureInfo } from './did.js'
-export type {
-  DecryptingIdentity,
-  FullIdentity,
-  Identity,
-  IdentityProvider,
-  OwnIdentity,
-  SigningIdentity,
-} from './identity.js'
 export {
+  createInMemoryDIDCache,
+  type DIDCache,
+  type DIDResolver,
+} from './cache.js'
+export {
+  CODECS,
+  getAlgorithmAndPublicKey,
+  getDID,
+  getSignatureInfo,
+  type ResolveIssuerHeader,
+  resolveIssuer,
+} from './did.js'
+export {
+  type CreateIdentityInput,
   createDecryptingIdentity,
   createFullIdentity,
+  createIdentity,
   createSigningIdentity,
+  type DecryptingIdentity,
+  type FullIdentity,
+  type Identity,
+  type IdentityKeySpec,
+  type IdentityProvider,
   isDecryptingIdentity,
   isFullIdentity,
   isOwnIdentity,
   isSigningIdentity,
+  type KeyAlg,
+  type KeyPurpose,
+  type MultiKeyIdentity,
+  type OwnIdentity,
+  type ResolvedKey,
   randomIdentity,
+  type SigningIdentity,
+  type SignOptions,
 } from './identity.js'
 export type {
   ConcatKDFParams,
@@ -47,6 +65,26 @@ export {
   unwrapEnvelope,
   wrapEnvelope,
 } from './jwe.js'
+export {
+  decodeMultibase,
+  encodeMultibase,
+  multihashSHA256,
+  verifyMultihash,
+} from './multibase.js'
+export {
+  type DecodePeer4Options,
+  type DIDDoc,
+  decodePeer4,
+  encodePeer4,
+  getPeer4ShortForm,
+  isPeer4,
+  type VerificationMethod,
+  validateDIDDoc,
+} from './peer4.js'
+export {
+  createRotationAssertion,
+  type RotationPayload,
+} from './rotation.js'
 export {
   capabilitySchema,
   type SignatureAlgorithm,
@@ -80,6 +118,7 @@ export {
   isUnsignedToken,
   isVerifiedToken,
   signToken,
+  type VerifyTokenOptions,
   verifyToken,
 } from './token.js'
 export type * from './types.js'

@@ -2,7 +2,8 @@ import { b64uToJSON, fromB64U, fromUTF } from '@enkaku/codec'
 import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
 import { assertType, isType } from '@enkaku/schema'
 
-import { getSignatureInfo } from './did.js'
+import type { DIDResolver } from './cache.js'
+import { resolveIssuer } from './did.js'
 import type { SigningIdentity } from './identity.js'
 import {
   type SignedPayload,
@@ -17,19 +18,31 @@ import { getVerifier, type Verifiers } from './verifier.js'
 
 const tokenTracer = createTracer('token')
 
+export type VerifyTokenOptions = TimeValidationOptions & {
+  verifiers?: Verifiers
+  resolver?: DIDResolver
+}
+
+export type VerifySignedPayloadInput<
+  Payload extends Record<string, unknown> = Record<string, unknown>,
+> = {
+  signature: Uint8Array
+  payload: Payload
+  header: { alg?: string; kid?: string }
+  data: Uint8Array | string
+  verifiers?: Verifiers
+  resolver?: DIDResolver
+}
+
 /**
  * Verify the signature of a signed payload and return the public key of the issuer.
  */
 export async function verifySignedPayload<
   Payload extends Record<string, unknown> = Record<string, unknown>,
->(
-  signature: Uint8Array,
-  payload: Payload,
-  data: Uint8Array | string,
-  verifiers?: Verifiers,
-): Promise<Uint8Array> {
+>(input: VerifySignedPayloadInput<Payload>): Promise<Uint8Array> {
+  const { signature, payload, header, data, verifiers, resolver } = input
   assertType(validateSignedPayload, payload)
-  const [alg, publicKey] = getSignatureInfo(payload.iss)
+  const [alg, publicKey] = await resolveIssuer(payload.iss, { kid: header.kid }, resolver)
   const verify = getVerifier(alg, verifiers)
   const message = typeof data === 'string' ? fromUTF(data) : data
   const verified = await verify(signature, message, publicKey)
@@ -95,9 +108,9 @@ export async function signToken<
 
 async function verifyTokenInner<Payload extends Record<string, unknown> = Record<string, unknown>>(
   token: Token<Payload> | string,
-  verifiers?: Verifiers,
-  timeOptions?: TimeValidationOptions,
+  options: VerifyTokenOptions = {},
 ): Promise<Token<Payload>> {
+  const { verifiers, resolver, ...timeOptions } = options
   if (typeof token !== 'string') {
     if (isUnsignedToken(token)) {
       return token
@@ -107,12 +120,14 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
       return token
     }
     if (isSignedToken(token)) {
-      const verifiedPublicKey = await verifySignedPayload(
-        fromB64U(token.signature),
-        token.payload,
-        token.data,
+      const verifiedPublicKey = await verifySignedPayload({
+        signature: fromB64U(token.signature),
+        payload: token.payload,
+        header: token.header as { alg?: string; kid?: string },
+        data: token.data,
         verifiers,
-      )
+        resolver,
+      })
       assertTimeClaimsValid(token.payload as Record<string, unknown>, timeOptions)
       return { ...token, verifiedPublicKey } as Token<Payload>
     }
@@ -140,12 +155,14 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
 
     const payload = b64uToJSON<Payload>(encodedPayload)
     const data = `${encodedHeader}.${encodedPayload}`
-    const verifiedPublicKey = await verifySignedPayload(
-      fromB64U(signature),
+    const verifiedPublicKey = await verifySignedPayload({
+      signature: fromB64U(signature),
       payload,
+      header: header as { alg?: string; kid?: string },
       data,
       verifiers,
-    )
+      resolver,
+    })
     assertTimeClaimsValid(payload as Record<string, unknown>, timeOptions)
     return {
       data,
@@ -165,13 +182,9 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
  */
 export async function verifyToken<
   Payload extends Record<string, unknown> = Record<string, unknown>,
->(
-  token: Token<Payload> | string,
-  verifiers?: Verifiers,
-  timeOptions?: TimeValidationOptions,
-): Promise<Token<Payload>> {
+>(token: Token<Payload> | string, options: VerifyTokenOptions = {}): Promise<Token<Payload>> {
   return withSpan(tokenTracer, SpanNames.TOKEN_VERIFY, {}, async (span) => {
-    const result = await verifyTokenInner(token, verifiers, timeOptions)
+    const result = await verifyTokenInner(token, options)
     if (isSignedToken(result)) {
       span.setAttribute(
         AttributeKeys.AUTH_DID,

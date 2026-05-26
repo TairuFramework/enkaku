@@ -1,5 +1,8 @@
 import { base58 } from '@scure/base'
-
+import type { DIDResolver } from './cache.js'
+import { decodeMultibase } from './multibase.js'
+import type { DIDDoc, VerificationMethod } from './peer4.js'
+import { getPeer4ShortForm, isPeer4 } from './peer4.js'
 import type { SignatureAlgorithm } from './schemas.js'
 
 /** @internal */
@@ -63,6 +66,54 @@ export function getSignatureInfo(did: string): [SignatureAlgorithm, Uint8Array] 
   const expectedSize = EXPECTED_KEY_SIZES[alg]
   if (expectedSize != null && publicKey.length !== expectedSize) {
     throw new Error('Invalid public key size')
+  }
+  return info
+}
+
+export type ResolveIssuerHeader = { kid?: string }
+
+/**
+ * Resolve a token issuer (did:key or did:peer:4) to [alg, publicKey].
+ * For did:peer:4 issuers, the resolver MUST be provided.
+ */
+export async function resolveIssuer(
+  iss: string,
+  header: ResolveIssuerHeader = {},
+  resolver?: DIDResolver,
+): Promise<[SignatureAlgorithm, Uint8Array]> {
+  if (isPeer4(iss)) {
+    if (resolver == null) {
+      throw new Error('resolveIssuer: did:peer:4 requires a resolver')
+    }
+    const shortForm = getPeer4ShortForm(iss)
+    const doc = await resolver(shortForm)
+    if (doc == null) {
+      throw new Error(`Unknown DID: ${shortForm}`)
+    }
+    if (header.kid == null) {
+      const auth = doc.authentication
+      if (auth == null || auth.length === 0) {
+        throw new Error(
+          'resolveIssuer: did:peer:4 token missing kid and doc has no authentication entries',
+        )
+      }
+      return resolveKidFromDoc(doc, auth[0])
+    }
+    return resolveKidFromDoc(doc, header.kid)
+  }
+
+  return getSignatureInfo(iss)
+}
+
+function resolveKidFromDoc(doc: DIDDoc, kid: string): [SignatureAlgorithm, Uint8Array] {
+  const method = (doc.verificationMethod as Array<VerificationMethod>).find((m) => m.id === kid)
+  if (method == null) {
+    throw new Error(`KidNotFound: ${kid}`)
+  }
+  const bytes = decodeMultibase(method.publicKeyMultibase)
+  const info = getAlgorithmAndPublicKey(bytes)
+  if (info == null) {
+    throw new Error('Unsupported verification method codec')
   }
   return info
 }
