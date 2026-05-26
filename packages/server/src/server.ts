@@ -29,6 +29,7 @@ import {
   type Validator,
 } from '@enkaku/schema'
 import {
+  createInMemoryDIDCache,
   type DIDCache,
   type DIDResolver,
   type Identity,
@@ -650,7 +651,7 @@ export type HandleOptions = {
 export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #abortController: AbortController
   #accessControl: AccessControlParams
-  #cache?: DIDCache
+  #cache: DIDCache
   #resolver?: DIDResolver
   #events: ServerEmitter
   #runtime: Runtime
@@ -706,7 +707,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#events = new EventEmitter<ServerEvents>()
     this.#runtime = params.runtime ?? createRuntime({ getRandomID: params.getRandomID })
     this.#handlers = params.handlers
-    this.#cache = params.cache
+    this.#cache = params.cache ?? createInMemoryDIDCache()
     this.#resolver = params.resolver
     const serverID = params.identity?.id
     this.#logger =
