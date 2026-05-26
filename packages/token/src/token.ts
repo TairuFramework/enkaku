@@ -18,9 +18,8 @@ import { getVerifier, type Verifiers } from './verifier.js'
 
 const tokenTracer = createTracer('token')
 
-export type VerifyTokenOptions = {
+export type VerifyTokenOptions = TimeValidationOptions & {
   verifiers?: Verifiers
-  timeOptions?: TimeValidationOptions
   resolver?: DIDResolver
 }
 
@@ -111,7 +110,7 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
   token: Token<Payload> | string,
   options: VerifyTokenOptions = {},
 ): Promise<Token<Payload>> {
-  const { verifiers, timeOptions, resolver } = options
+  const { verifiers, resolver, ...timeOptions } = options
   if (typeof token !== 'string') {
     if (isUnsignedToken(token)) {
       return token
