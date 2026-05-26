@@ -7,7 +7,7 @@ import type {
 } from '@enkaku/protocol'
 import { createPipe, writeTo } from '@enkaku/stream'
 
-import type { HandlerContext, ReceiveType, StreamHandler } from '../types.js'
+import type { HandlerContext, ReceiveType, RequestController, StreamHandler } from '../types.js'
 import { executeHandler } from '../utils.js'
 
 export type StreamMessageOf<
@@ -40,7 +40,8 @@ export function handleStream<
 
   const activeSpan = getActiveSpan()
 
-  const controller = new AbortController()
+  const issuer = (msg.payload as Record<string, unknown>).iss as string | undefined
+  const controller: RequestController = Object.assign(new AbortController(), { issuer })
   ctx.controllers[msg.payload.rid] = controller
 
   const receiveStream = createPipe<ReceiveType<Protocol, Procedure>>()

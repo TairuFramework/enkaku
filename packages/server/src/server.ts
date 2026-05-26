@@ -577,16 +577,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               break
             }
             const abortIssuer = (msg as unknown as SignedToken).payload.iss
-            // Only enforce issuer-match when controller.issuer is populated
-            // (request and stream controllers do not store issuer, only channel controllers do)
             if (
-              (controller as ChannelController).issuer != null &&
-              normalizeDID(abortIssuer) !==
-                normalizeDID((controller as ChannelController).issuer as string)
+              controller.issuer != null &&
+              normalizeDID(abortIssuer) !== normalizeDID(controller.issuer)
             ) {
               const error = new HandlerError({
                 code: 'EK02',
-                message: 'Abort issuer does not match channel/stream/request owner',
+                message: 'Abort issuer does not match owner',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
                 rid: msg.payload.rid,

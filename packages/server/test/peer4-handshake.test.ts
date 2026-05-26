@@ -26,6 +26,12 @@ const protocol = {
     receive: { type: 'string' },
     result: { type: 'string' },
   },
+  stream: {
+    type: 'stream',
+    param: { type: 'string' },
+    receive: { type: 'string' },
+    result: { type: 'string' },
+  },
 } as const satisfies ProtocolDefinition
 type Protocol = typeof protocol
 
@@ -618,6 +624,132 @@ describe('peer4 handshake integration', () => {
         reason: 'client-cancel',
       }),
     )
+
+    await server.dispose()
+    await transports.dispose()
+  })
+
+  it('Scenario K: forged abort of a request from a different signed identity is rejected', async () => {
+    const cache = createInMemoryDIDCache()
+
+    // Client B (attacker) — a separate identity also allowed on the server
+    const clientBIdentity = await createIdentity({
+      keys: [
+        { purpose: 'sig', alg: 'EdDSA' },
+        { purpose: 'kem', alg: 'X25519' },
+      ],
+    })
+    const clientBShortForm = getPeer4ShortForm(clientBIdentity.did)
+
+    // Track whether client A's handler is active and its signal
+    const handlerState = { signal: null as AbortSignal | null }
+    let resolveHandlerStarted!: () => void
+    const handlerStartedPromise = new Promise<void>((resolve) => {
+      resolveHandlerStarted = resolve
+    })
+
+    // Client A's handler: long-running, captures signal, resolves after abort or timeout
+    let handlerCallCount = 0
+    const handler = vi.fn(async (ctx: { param: string; signal: AbortSignal }): Promise<string> => {
+      handlerCallCount++
+      if (handlerCallCount === 1) {
+        // First call is client A's slow request
+        handlerState.signal = ctx.signal
+        resolveHandlerStarted()
+        await new Promise<void>((resolve) => {
+          const id = setTimeout(resolve, 2000)
+          ctx.signal.addEventListener('abort', () => {
+            clearTimeout(id)
+            resolve()
+          })
+        })
+      }
+      return 'done'
+    })
+    const handlers = { ping: handler } as unknown as ProcedureHandlers<Protocol>
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverIdentity,
+      accessRules: {
+        ping: { allow: [clientShortForm, clientBShortForm] },
+      },
+      cache,
+      transport: transports.server,
+    })
+
+    // Client A starts a long-running request (long-form to populate cache)
+    const requestMsg = await clientIdentity.sign(
+      {
+        typ: 'request',
+        prc: 'ping',
+        rid: 'r-k-1',
+        prm: 'slow-request',
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      },
+      { embedLongForm: true },
+    )
+    await transports.client.write(requestMsg as unknown as AnyClientMessageOf<Protocol>)
+
+    // Wait for client A's handler to start (so the controller is registered)
+    await handlerStartedPromise
+
+    // Client B sends a fast request (long-form) to populate its DID in the server cache
+    const requestBMsg = await clientBIdentity.sign(
+      {
+        typ: 'request',
+        prc: 'ping',
+        rid: 'r-k-b',
+        prm: 'hello-b',
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      },
+      { embedLongForm: true },
+    )
+    await transports.client.write(requestBMsg as unknown as AnyClientMessageOf<Protocol>)
+
+    // Wait for client B's result (its handler resolves immediately on second call)
+    const handlerBResult = server.events.once('handlerEnd')
+    await handlerBResult
+
+    // Client B tries to abort client A's request using its own valid credentials
+    const forgedAbort = await clientBIdentity.sign(
+      {
+        typ: 'abort',
+        rid: 'r-k-1',
+        rsn: 'hijack',
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      } as unknown as Parameters<typeof clientBIdentity.sign>[0],
+      { embedLongForm: false },
+    )
+
+    const handlerErrorEvent = server.events.once('handlerError')
+    await transports.client.write(forgedAbort as unknown as AnyClientMessageOf<Protocol>)
+
+    const emitted = await handlerErrorEvent
+    expect(emitted).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+      }),
+    )
+
+    // Client A's request signal must NOT be aborted
+    expect(handlerState.signal?.aborted).toBe(false)
+
+    // No handlerAbort event for r-k-1 should have fired
+    const abortRace = await Promise.race([
+      server.events.once('handlerAbort').then((evt) => (evt.rid === 'r-k-1' ? 'aborted' : 'other')),
+      new Promise((resolve) => setTimeout(resolve, 80)).then(() => 'not-aborted'),
+    ])
+    expect(abortRace).toBe('not-aborted')
 
     await server.dispose()
     await transports.dispose()
