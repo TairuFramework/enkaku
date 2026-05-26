@@ -14,6 +14,7 @@ import {
   type DIDCache,
   type DIDResolver,
   isVerifiedToken,
+  normalizeDID,
   type SignedHeader,
   type SignedPayload,
   type SignedToken,
@@ -209,13 +210,11 @@ export async function createCapability<
   const parent = await verifyToken<CapabilityPayload>(options.parentCapability)
   assertCapabilityToken(parent)
 
-  // Signer must be the audience of the parent capability
-  if (parent.payload.aud !== signerId) {
+  if (normalizeDID(parent.payload.aud) !== normalizeDID(signerId)) {
     throw new Error('Invalid capability: signer must be the audience of parent capability')
   }
 
-  // Subject must match
-  if (parent.payload.sub !== payload.sub) {
+  if (normalizeDID(parent.payload.sub) !== normalizeDID(payload.sub)) {
     throw new Error('Invalid capability: subject mismatch with parent capability')
   }
 
@@ -305,10 +304,10 @@ export function assertValidDelegation(
   atTime?: number,
 ): void {
   const time = atTime ?? now()
-  if (to.iss !== from.aud) {
+  if (normalizeDID(to.iss) !== normalizeDID(from.aud)) {
     throw new Error('Invalid capability: audience mismatch')
   }
-  if (to.sub !== from.sub) {
+  if (normalizeDID(to.sub) !== normalizeDID(from.sub)) {
     throw new Error('Invalid capability: subject mismatch')
   }
   assertNonExpired(from, time)
@@ -331,7 +330,7 @@ export async function checkDelegationChain(
   }
 
   if (capabilities.length === 0) {
-    if (payload.iss !== payload.sub) {
+    if (normalizeDID(payload.iss) !== normalizeDID(payload.sub)) {
       throw new Error('Invalid capability: issuer should be subject')
     }
     assertNonExpired(payload, atTime)
@@ -366,7 +365,7 @@ export async function checkCapability(
   }
 
   const time = options?.atTime ?? now()
-  if (payload.iss === payload.sub) {
+  if (normalizeDID(payload.iss) === normalizeDID(payload.sub)) {
     // Subject is issuer, no delegation required
     // But still need to validate the permission is granted
     assertNonExpired(payload, time)
