@@ -180,6 +180,28 @@ describe('MultiKeyIdentity.sign first-per-aud long-form policy', () => {
     expect(t.payload.iss).toBe(identity.did)
   })
 
+  it('treats long-form and short-form of the same peer4 aud as the same peer (sentTo normalization)', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    // Peer whose long-form and short-form are both valid representations
+    const peerIdentity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const peerLong = peerIdentity.longForm
+    const peerShort = peerIdentity.did
+
+    // First sign: long-form aud → should use long-form iss
+    const t1 = await identity.sign({ sub: identity.did, aud: peerLong })
+    expect(t1.payload.iss).toBe(identity.longForm)
+
+    // Second sign: short-form aud (same identity) → sentTo already has normalizedAud; use short-form iss
+    const t2 = await identity.sign({ sub: identity.did, aud: peerShort })
+    expect(t2.payload.iss).toBe(identity.did)
+  })
+
   it('did:key identities always use short form (longForm === did)', async () => {
     const identity = await createIdentity({
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],

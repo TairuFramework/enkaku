@@ -2,7 +2,7 @@ import { b64uFromJSON, fromUTF, toB64U } from '@enkaku/codec'
 import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
 import { ed25519, x25519 } from '@noble/curves/ed25519.js'
 
-import { CODECS, getDID } from './did.js'
+import { CODECS, getDID, normalizeDID } from './did.js'
 import { decryptToken } from './jwe.js'
 import { encodeMultibase } from './multibase.js'
 import { type DIDDoc, encodePeer4, isPeer4 } from './peer4.js'
@@ -322,9 +322,10 @@ function buildIdentity(
     if (embedLongForm === false) return did
     const aud = payload.aud
     if (typeof aud !== 'string') return did
-    if (sentTo.has(aud)) return did
+    const normalizedAud = normalizeDID(aud)
+    if (sentTo.has(normalizedAud)) return did
     // Concurrent sign() calls with the same new aud may both emit long-form; recipient cache writes are idempotent so this is acceptable.
-    sentTo.add(aud)
+    sentTo.add(normalizedAud)
     return longForm
   }
 
