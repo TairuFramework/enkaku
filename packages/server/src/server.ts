@@ -28,7 +28,15 @@ import {
   ValidationError,
   type Validator,
 } from '@enkaku/schema'
-import { type Identity, isSignedToken, type SignedToken, type Token } from '@enkaku/token'
+import {
+  type DIDCache,
+  type DIDResolver,
+  type Identity,
+  isSignedToken,
+  type SignedToken,
+  type Token,
+  verifyToken,
+} from '@enkaku/token'
 
 import {
   type AccessRules,
@@ -64,7 +72,12 @@ const defaultTracer = createTracer('server')
 export type AccessControlParams = (
   | { requireAuth: false; serverID?: string; access: AccessRules }
   | { requireAuth: true; serverID: string; access: AccessRules }
-) & { encryptionPolicy?: EncryptionPolicy; verifyToken?: VerifyTokenHook }
+) & {
+  encryptionPolicy?: EncryptionPolicy
+  verifyToken?: VerifyTokenHook
+  cache?: DIDCache
+  resolver?: DIDResolver
+}
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
   events: ServerEmitter
@@ -439,11 +452,19 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             span.setAttribute(AttributeKeys.AUTH_ALLOWED, false)
             throw new Error('Message is not signed')
           }
+          await verifyToken(message as SignedToken, {
+            cache: params.cache,
+            resolver: params.resolver,
+          })
           await checkClientToken(
             params.serverID,
             params.access,
             message as unknown as SignedToken,
-            params.verifyToken != null ? { verifyToken: params.verifyToken } : undefined,
+            {
+              verifyToken: params.verifyToken,
+              cache: params.cache,
+              resolver: params.resolver,
+            },
           )
           const did = (message as unknown as SignedToken).payload.iss
           if (did != null) {
@@ -605,6 +626,7 @@ export type ServerAccessOptions =
   | { identity: Identity; accessRules?: AccessRules }
 
 export type ServerParams<Protocol extends ProtocolDefinition> = {
+  cache?: DIDCache
   encryptionPolicy?: EncryptionPolicy
   getRandomID?: () => string
   runtime?: Runtime
@@ -612,6 +634,7 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   limits?: Partial<ResourceLimits>
   logger?: Logger
   protocol?: Protocol
+  resolver?: DIDResolver
   tracer?: Tracer
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
@@ -627,6 +650,8 @@ export type HandleOptions = {
 export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #abortController: AbortController
   #accessControl: AccessControlParams
+  #cache?: DIDCache
+  #resolver?: DIDResolver
   #events: ServerEmitter
   #runtime: Runtime
   #handlers: ProcedureHandlers<Protocol>
@@ -681,6 +706,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#events = new EventEmitter<ServerEvents>()
     this.#runtime = params.runtime ?? createRuntime({ getRandomID: params.getRandomID })
     this.#handlers = params.handlers
+    this.#cache = params.cache
+    this.#resolver = params.resolver
     const serverID = params.identity?.id
     this.#logger =
       params.logger ??
@@ -698,6 +725,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         access: {},
         encryptionPolicy: params.encryptionPolicy,
         verifyToken: params.verifyToken,
+        cache: params.cache,
+        resolver: params.resolver,
       }
     } else {
       this.#accessControl = {
@@ -706,6 +735,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         access: accessRules ?? {},
         encryptionPolicy: params.encryptionPolicy,
         verifyToken: params.verifyToken,
+        cache: params.cache,
+        resolver: params.resolver,
       }
     }
 
@@ -743,6 +774,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         access: this.#accessControl.access ?? {},
         encryptionPolicy,
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
+        cache: this.#cache,
+        resolver: this.#resolver,
       }
     } else if (accessRulesOverride != null) {
       // Override with AccessRules record
@@ -758,6 +791,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         access: accessRulesOverride,
         encryptionPolicy,
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
+        cache: this.#cache,
+        resolver: this.#resolver,
       }
     } else {
       // Use server-level defaults
