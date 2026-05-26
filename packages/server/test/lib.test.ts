@@ -261,7 +261,12 @@ describe('serve()', () => {
       AnyClientMessageOf<Protocol>
     >()
     const signer = randomIdentity()
-    serve<Protocol>({ handlers, identity: signer, protocol, transport: transports.server })
+    const server = serve<Protocol>({
+      handlers,
+      identity: signer,
+      protocol,
+      transport: transports.server,
+    })
 
     const message = await signer.signToken({
       typ: 'channel',
@@ -269,7 +274,6 @@ describe('serve()', () => {
       rid: '1',
       prm: 5,
     } as const)
-    await transports.client.write(message)
 
     const send = [5, 3, 10, 20]
     async function sendNext() {
@@ -284,6 +288,12 @@ describe('serve()', () => {
         await transports.client.write(sendMsg)
       }
     }
+
+    // Wait for the channel handler to start before sending the first value,
+    // to avoid a race between send messages and channel registration.
+    const handlerStarted = server.events.once('handlerStart')
+    await transports.client.write(message)
+    await handlerStarted
     sendNext()
 
     const received: Array<number> = []
