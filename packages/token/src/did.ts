@@ -117,3 +117,12 @@ function resolveKidFromDoc(doc: DIDDoc, kid: string): [SignatureAlgorithm, Uint8
   }
   return info
 }
+
+/**
+ * Fold a DID to its canonical form for equality comparison.
+ * For did:peer:4, returns the short form regardless of whether input is long or short.
+ * All other DID methods pass through unchanged.
+ */
+export function normalizeDID(did: string): string {
+  return isPeer4(did) ? getPeer4ShortForm(did) : did
+}

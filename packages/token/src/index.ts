@@ -20,6 +20,7 @@ export {
   getAlgorithmAndPublicKey,
   getDID,
   getSignatureInfo,
+  normalizeDID,
   type ResolveIssuerHeader,
   resolveIssuer,
 } from './did.js'
