@@ -195,7 +195,7 @@ export async function createCapability<
   assertValidPattern(payload.res)
 
   // If signer is the subject, no parent validation needed (root capability)
-  if (payload.sub === signerId) {
+  if (normalizeDID(payload.sub) === normalizeDID(signerId)) {
     return await signer.signToken(payload, header)
   }
 
