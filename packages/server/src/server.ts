@@ -544,13 +544,62 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       switch (msg.payload.typ) {
         case 'abort': {
           const controller = controllers[msg.payload.rid]
-          if (controller != null) {
-            controller.abort(msg.payload.rsn)
-            events.emit('handlerAbort', {
-              rid: msg.payload.rid,
-              reason: msg.payload.rsn,
-            })
+          if (controller == null) {
+            break
           }
+          if (params.requireAuth) {
+            if (!isSignedToken(msg as Token)) {
+              const error = new HandlerError({
+                code: 'EK02',
+                message: 'Abort message must be signed',
+              })
+              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                rid: msg.payload.rid,
+              })
+              emitHandlerError(events, 'auth', error, msg.payload)
+              break
+            }
+            try {
+              await verifyToken(msg as SignedToken, {
+                cache: params.cache,
+                resolver: params.resolver,
+              })
+            } catch (cause) {
+              const error = new HandlerError({
+                cause,
+                code: 'EK02',
+                message: (cause as Error).message ?? 'Access denied',
+              })
+              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                rid: msg.payload.rid,
+              })
+              emitHandlerError(events, 'auth', error, msg.payload)
+              break
+            }
+            const abortIssuer = (msg as unknown as SignedToken).payload.iss
+            // Only enforce issuer-match when controller.issuer is populated
+            // (request and stream controllers do not store issuer, only channel controllers do)
+            if (
+              (controller as ChannelController).issuer != null &&
+              normalizeDID(abortIssuer) !==
+                normalizeDID((controller as ChannelController).issuer as string)
+            ) {
+              const error = new HandlerError({
+                code: 'EK02',
+                message: 'Abort issuer does not match channel/stream/request owner',
+              })
+              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                rid: msg.payload.rid,
+              })
+              emitHandlerError(events, 'auth', error, msg.payload)
+              break
+            }
+          }
+          controller.abort(msg.payload.rsn)
+          events.emit('handlerAbort', {
+            rid: msg.payload.rid,
+            reason: msg.payload.rsn,
+          })
           break
         }
         case 'channel': {

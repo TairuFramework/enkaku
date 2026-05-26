@@ -476,4 +476,255 @@ describe('peer4 handshake integration', () => {
     await server.dispose()
     await transports.dispose()
   })
+
+  it('Scenario H: forged abort is rejected in requireAuth mode', async () => {
+    const cache = createInMemoryDIDCache()
+    const handlerAborted: Array<string> = []
+    const handler = vi.fn(async (ctx: { readable: AsyncIterable<string> }) => {
+      for await (const value of ctx.readable) {
+        handlerAborted.push(value)
+      }
+      return 'done'
+    })
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverIdentity,
+      accessRules: { chat: { allow: [clientShortForm] } },
+      cache,
+      transport: transports.server,
+    })
+
+    // Legit client opens a channel (long-form to populate cache)
+    const channelMsg = await clientIdentity.sign(
+      {
+        typ: 'channel',
+        prc: 'chat',
+        rid: 'ch-h-1',
+        prm: undefined,
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      },
+      { embedLongForm: true },
+    )
+    await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
+
+    // Give time for channel to be established
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Attacker signs a valid abort token but with a different (attacker-controlled) identity
+    const attackerIdentity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+    })
+    const forgedAbort = await attackerIdentity.sign(
+      {
+        typ: 'abort',
+        rid: 'ch-h-1',
+        rsn: 'forged',
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      } as unknown as Parameters<typeof attackerIdentity.sign>[0],
+      { embedLongForm: true },
+    )
+
+    const handlerErrorEvent = server.events.once('handlerError')
+    await transports.client.write(forgedAbort as unknown as AnyClientMessageOf<Protocol>)
+
+    const emitted = await handlerErrorEvent
+    expect(emitted).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+      }),
+    )
+
+    // Controller must NOT have been aborted
+    const abortEvent = server.events.once('handlerAbort')
+    const abortRace = await Promise.race([
+      abortEvent.then(() => 'aborted'),
+      new Promise((resolve) => setTimeout(resolve, 80)).then(() => 'not-aborted'),
+    ])
+    expect(abortRace).toBe('not-aborted')
+
+    await server.dispose()
+    await transports.dispose()
+  })
+
+  it('Scenario I: legitimate abort from same issuer succeeds', async () => {
+    const cache = createInMemoryDIDCache()
+    const handler = vi.fn(async (ctx: { readable: AsyncIterable<string> }) => {
+      for await (const _value of ctx.readable) {
+        // consume
+      }
+      return 'done'
+    })
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverIdentity,
+      accessRules: { chat: { allow: [clientShortForm] } },
+      cache,
+      transport: transports.server,
+    })
+
+    // Client opens a channel (long-form to populate cache)
+    const channelMsg = await clientIdentity.sign(
+      {
+        typ: 'channel',
+        prc: 'chat',
+        rid: 'ch-i-1',
+        prm: undefined,
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      },
+      { embedLongForm: true },
+    )
+    await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
+
+    // Give time for channel to be established and cache populated
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Same client sends a valid abort with short-form iss
+    const abortMsg = await clientIdentity.sign(
+      {
+        typ: 'abort',
+        rid: 'ch-i-1',
+        rsn: 'client-cancel',
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      } as unknown as Parameters<typeof clientIdentity.sign>[0],
+      { embedLongForm: false },
+    )
+
+    const handlerAbortEvent = server.events.once('handlerAbort')
+    await transports.client.write(abortMsg as unknown as AnyClientMessageOf<Protocol>)
+
+    const abortEmitted = await handlerAbortEvent
+    expect(abortEmitted).toEqual(
+      expect.objectContaining({
+        rid: 'ch-i-1',
+        reason: 'client-cancel',
+      }),
+    )
+
+    await server.dispose()
+    await transports.dispose()
+  })
+
+  it('Scenario J: abort with wrong issuer on shared transport is rejected', async () => {
+    // controllers are per-transport-session, so both clients must share the same
+    // transport for the issuer-mismatch check to fire (otherwise the abort drops
+    // silently at controller == null — a separate, intentional info-hiding behaviour)
+    const cache = createInMemoryDIDCache()
+    const handler = vi.fn(async (ctx: { readable: AsyncIterable<string> }) => {
+      for await (const _value of ctx.readable) {
+        // consume
+      }
+      return 'done'
+    })
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+
+    // Client B identity (attacker) — different key pair
+    const clientBIdentity = await createIdentity({
+      keys: [
+        { purpose: 'sig', alg: 'EdDSA' },
+        { purpose: 'kem', alg: 'X25519' },
+      ],
+    })
+    const clientBShortForm = getPeer4ShortForm(clientBIdentity.did)
+
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverIdentity,
+      accessRules: {
+        chat: { allow: [clientShortForm, clientBShortForm] },
+      },
+      cache,
+      transport: transports.server,
+    })
+
+    // Client A opens a channel (long-form to populate cache)
+    const channelMsgA = await clientIdentity.sign(
+      {
+        typ: 'channel',
+        prc: 'chat',
+        rid: 'ch-j-1',
+        prm: undefined,
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      },
+      { embedLongForm: true },
+    )
+    await transports.client.write(channelMsgA as unknown as AnyClientMessageOf<Protocol>)
+
+    // Give time for channel A to be established and cache populated
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Client B also establishes itself (long-form to populate its cache entry)
+    const channelMsgB = await clientBIdentity.sign(
+      {
+        typ: 'channel',
+        prc: 'chat',
+        rid: 'ch-j-2',
+        prm: undefined,
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      },
+      { embedLongForm: true },
+    )
+    await transports.client.write(channelMsgB as unknown as AnyClientMessageOf<Protocol>)
+
+    // Give time for channel B to be established
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Client B now tries to abort client A's channel using its own (valid) credentials
+    const wrongAbort = await clientBIdentity.sign(
+      {
+        typ: 'abort',
+        rid: 'ch-j-1',
+        rsn: 'hijack',
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      } as unknown as Parameters<typeof clientBIdentity.sign>[0],
+      { embedLongForm: false },
+    )
+
+    const handlerErrorEvent = server.events.once('handlerError')
+    await transports.client.write(wrongAbort as unknown as AnyClientMessageOf<Protocol>)
+
+    const emitted = await handlerErrorEvent
+    expect(emitted).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+      }),
+    )
+
+    // Client A's channel must still be running (no handlerAbort for ch-j-1)
+    const abortRace = await Promise.race([
+      server.events.once('handlerAbort').then((evt) => evt),
+      new Promise((resolve) => setTimeout(resolve, 80)).then(() => 'not-aborted'),
+    ])
+    expect(abortRace).toBe('not-aborted')
+
+    await server.dispose()
+    await transports.dispose()
+  })
 })
