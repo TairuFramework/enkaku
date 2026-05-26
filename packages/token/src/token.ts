@@ -2,8 +2,8 @@ import { b64uToJSON, fromB64U, fromUTF } from '@enkaku/codec'
 import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
 import { assertType, isType } from '@enkaku/schema'
 
-import type { DIDResolver } from './cache.js'
-import { resolveIssuer } from './did.js'
+import type { DIDCache, DIDResolver } from './cache.js'
+import { resolveIssuerWithDoc } from './did.js'
 import type { SigningIdentity } from './identity.js'
 import {
   type SignedPayload,
@@ -21,6 +21,7 @@ const tokenTracer = createTracer('token')
 export type VerifyTokenOptions = TimeValidationOptions & {
   verifiers?: Verifiers
   resolver?: DIDResolver
+  cache?: DIDCache
 }
 
 export type VerifySignedPayloadInput<
@@ -32,6 +33,7 @@ export type VerifySignedPayloadInput<
   data: Uint8Array | string
   verifiers?: Verifiers
   resolver?: DIDResolver
+  cache?: DIDCache
 }
 
 /**
@@ -40,14 +42,29 @@ export type VerifySignedPayloadInput<
 export async function verifySignedPayload<
   Payload extends Record<string, unknown> = Record<string, unknown>,
 >(input: VerifySignedPayloadInput<Payload>): Promise<Uint8Array> {
-  const { signature, payload, header, data, verifiers, resolver } = input
+  const { signature, payload, header, data, verifiers, resolver, cache } = input
   assertType(validateSignedPayload, payload)
-  const [alg, publicKey] = await resolveIssuer(payload.iss, { kid: header.kid }, resolver)
+  const effectiveResolver: DIDResolver | undefined =
+    cache == null
+      ? resolver
+      : async (did) => {
+          const cached = await cache.get(did)
+          if (cached != null) return cached
+          return resolver != null ? resolver(did) : undefined
+        }
+  const { alg, publicKey, peer4Doc } = await resolveIssuerWithDoc(
+    payload.iss,
+    { kid: header.kid },
+    effectiveResolver,
+  )
   const verify = getVerifier(alg, verifiers)
   const message = typeof data === 'string' ? fromUTF(data) : data
   const verified = await verify(signature, message, publicKey)
   if (!verified) {
     throw new Error('Invalid signature')
+  }
+  if (cache != null && peer4Doc != null) {
+    await cache.set(peer4Doc.shortForm, peer4Doc.doc)
   }
   return publicKey
 }
@@ -110,7 +127,7 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
   token: Token<Payload> | string,
   options: VerifyTokenOptions = {},
 ): Promise<Token<Payload>> {
-  const { verifiers, resolver, ...timeOptions } = options
+  const { verifiers, resolver, cache, ...timeOptions } = options
   if (typeof token !== 'string') {
     if (isUnsignedToken(token)) {
       return token
@@ -127,6 +144,7 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
         data: token.data,
         verifiers,
         resolver,
+        cache,
       })
       assertTimeClaimsValid(token.payload as Record<string, unknown>, timeOptions)
       return { ...token, verifiedPublicKey } as Token<Payload>
@@ -162,6 +180,7 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
       data,
       verifiers,
       resolver,
+      cache,
     })
     assertTimeClaimsValid(payload as Record<string, unknown>, timeOptions)
     return {
