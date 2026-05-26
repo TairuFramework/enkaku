@@ -23,7 +23,9 @@ export {
   getSignatureInfo,
   normalizeDID,
   type ResolveIssuerHeader,
+  type ResolveIssuerWithDocResult,
   resolveIssuer,
+  resolveIssuerWithDoc,
 } from './did.js'
 export {
   type CreateIdentityInput,

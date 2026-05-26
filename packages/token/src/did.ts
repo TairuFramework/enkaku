@@ -2,7 +2,7 @@ import { base58 } from '@scure/base'
 import type { DIDResolver } from './cache.js'
 import { decodeMultibase } from './multibase.js'
 import type { DIDDoc, VerificationMethod } from './peer4.js'
-import { getPeer4ShortForm, isPeer4 } from './peer4.js'
+import { decodePeer4, encodePeer4, getPeer4ShortForm, isPeer4 } from './peer4.js'
 import type { SignatureAlgorithm } from './schemas.js'
 
 /** @internal */
@@ -72,37 +72,74 @@ export function getSignatureInfo(did: string): [SignatureAlgorithm, Uint8Array] 
 
 export type ResolveIssuerHeader = { kid?: string }
 
+export type ResolveIssuerWithDocResult = {
+  alg: SignatureAlgorithm
+  publicKey: Uint8Array
+  /** Present when iss was a peer:4 long form or resolver returned a doc — caller may use to populate a cache. */
+  peer4Doc?: { shortForm: string; doc: DIDDoc }
+}
+
 /**
- * Resolve a token issuer (did:key or did:peer:4) to [alg, publicKey].
- * For did:peer:4 issuers, the resolver MUST be provided.
+ * Resolve a token issuer (did:key or did:peer:4) and return alg + public key,
+ * plus the decoded peer:4 doc when one was obtained inline or via the resolver.
+ * Callers writing to a DID cache should write `peer4Doc` only after signature verification.
+ */
+export async function resolveIssuerWithDoc(
+  iss: string,
+  header: ResolveIssuerHeader = {},
+  resolver?: DIDResolver,
+): Promise<ResolveIssuerWithDocResult> {
+  if (isPeer4(iss)) {
+    const shortForm = getPeer4ShortForm(iss)
+
+    if (iss !== shortForm) {
+      const { doc } = decodePeer4(iss)
+      const [alg, publicKey] = resolveKidOrAuth(doc, header.kid)
+      return { alg, publicKey, peer4Doc: { shortForm, doc } }
+    }
+
+    if (resolver == null) {
+      throw new Error(`Unknown DID: ${shortForm}`)
+    }
+    const doc = await resolver(shortForm)
+    if (doc == null) {
+      throw new Error(`Unknown DID: ${shortForm}`)
+    }
+    const expected = encodePeer4(doc).shortForm
+    if (expected !== shortForm) {
+      throw new Error('DIDResolver: short form/doc hash mismatch')
+    }
+    const [alg, publicKey] = resolveKidOrAuth(doc, header.kid)
+    return { alg, publicKey, peer4Doc: { shortForm, doc } }
+  }
+
+  const [alg, publicKey] = getSignatureInfo(iss)
+  return { alg, publicKey }
+}
+
+/**
+ * Resolve a token issuer to [alg, publicKey]. Backward-compatible wrapper around resolveIssuerWithDoc.
  */
 export async function resolveIssuer(
   iss: string,
   header: ResolveIssuerHeader = {},
   resolver?: DIDResolver,
 ): Promise<[SignatureAlgorithm, Uint8Array]> {
-  if (isPeer4(iss)) {
-    if (resolver == null) {
-      throw new Error('resolveIssuer: did:peer:4 requires a resolver')
-    }
-    const shortForm = getPeer4ShortForm(iss)
-    const doc = await resolver(shortForm)
-    if (doc == null) {
-      throw new Error(`Unknown DID: ${shortForm}`)
-    }
-    if (header.kid == null) {
-      const auth = doc.authentication
-      if (auth == null || auth.length === 0) {
-        throw new Error(
-          'resolveIssuer: did:peer:4 token missing kid and doc has no authentication entries',
-        )
-      }
-      return resolveKidFromDoc(doc, auth[0])
-    }
-    return resolveKidFromDoc(doc, header.kid)
-  }
+  const { alg, publicKey } = await resolveIssuerWithDoc(iss, header, resolver)
+  return [alg, publicKey]
+}
 
-  return getSignatureInfo(iss)
+function resolveKidOrAuth(doc: DIDDoc, kid: string | undefined): [SignatureAlgorithm, Uint8Array] {
+  if (kid == null) {
+    const auth = doc.authentication
+    if (auth == null || auth.length === 0) {
+      throw new Error(
+        'resolveIssuer: did:peer:4 token missing kid and doc has no authentication entries',
+      )
+    }
+    return resolveKidFromDoc(doc, auth[0])
+  }
+  return resolveKidFromDoc(doc, kid)
 }
 
 function resolveKidFromDoc(doc: DIDDoc, kid: string): [SignatureAlgorithm, Uint8Array] {
