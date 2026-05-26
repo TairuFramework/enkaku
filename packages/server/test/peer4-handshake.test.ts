@@ -20,6 +20,12 @@ const protocol = {
     param: { type: 'string' },
     result: { type: 'string' },
   },
+  chat: {
+    type: 'channel',
+    send: { type: 'string' },
+    receive: { type: 'string' },
+    result: { type: 'string' },
+  },
 } as const satisfies ProtocolDefinition
 type Protocol = typeof protocol
 
@@ -254,6 +260,145 @@ describe('peer4 handshake integration', () => {
       }),
     )
     expect(handler).not.toHaveBeenCalled()
+
+    await server.dispose()
+    await transports.dispose()
+  })
+
+  it('Scenario F: peer4 client opens channel (long-form), subsequent send messages (short-form) all deliver', async () => {
+    const cache = createInMemoryDIDCache()
+    const receivedValues: Array<unknown> = []
+    const handler = vi.fn(async (ctx: { readable: AsyncIterable<string> }) => {
+      for await (const value of ctx.readable) {
+        receivedValues.push(value)
+      }
+      return 'done'
+    })
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverIdentity,
+      accessRules: { chat: { allow: [clientShortForm] } },
+      cache,
+      transport: transports.server,
+    })
+
+    // Open channel with long-form iss (first contact, embedLongForm: true)
+    const channelMsg = await clientIdentity.sign(
+      {
+        typ: 'channel',
+        prc: 'chat',
+        rid: 'ch-f-1',
+        prm: undefined,
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      },
+      { embedLongForm: true },
+    )
+    await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
+
+    // Give time for channel to be established and cache populated
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Cache should now contain client's short form from the channel-open
+    const cached = await cache.get(clientShortForm)
+    expect(cached).toBeDefined()
+
+    // Send first message: short-form iss (same aud was already seen; embedLongForm:false)
+    const send1 = await clientIdentity.sign(
+      { typ: 'send', rid: 'ch-f-1', val: 'hello-1' },
+      { embedLongForm: false },
+    )
+    await transports.client.write(send1 as unknown as AnyClientMessageOf<Protocol>)
+
+    // Send second message: short-form iss
+    const send2 = await clientIdentity.sign(
+      { typ: 'send', rid: 'ch-f-1', val: 'hello-2' },
+      { embedLongForm: false },
+    )
+    await transports.client.write(send2 as unknown as AnyClientMessageOf<Protocol>)
+
+    // Give time for processing
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Both values should have been received by the handler
+    expect(receivedValues).toEqual(['hello-1', 'hello-2'])
+
+    await server.dispose()
+    await transports.dispose()
+  })
+
+  it('Scenario G: forged send with random signature on peer4 channel is rejected', async () => {
+    const cache = createInMemoryDIDCache()
+    const receivedValues: Array<unknown> = []
+    const handler = vi.fn(async (ctx: { readable: AsyncIterable<string> }) => {
+      for await (const value of ctx.readable) {
+        receivedValues.push(value)
+      }
+      return 'done'
+    })
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverIdentity,
+      accessRules: { chat: { allow: [clientShortForm] } },
+      cache,
+      transport: transports.server,
+    })
+
+    // Open channel with long-form iss to populate cache
+    const channelMsg = await clientIdentity.sign(
+      {
+        typ: 'channel',
+        prc: 'chat',
+        rid: 'ch-g-1',
+        prm: undefined,
+        aud: serverIdentity.id,
+        exp: expiresAt(),
+      },
+      { embedLongForm: true },
+    )
+    await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
+
+    // Give time for channel to be established
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Build a real-shaped send token with short-form iss, then replace signature with junk
+    const realSend = await clientIdentity.sign(
+      { typ: 'send', rid: 'ch-g-1', val: 'forged-value' },
+      { embedLongForm: false },
+    )
+    const forgedSend = {
+      header: realSend.header,
+      payload: realSend.payload,
+      data: realSend.data,
+      signature: toB64U(crypto.getRandomValues(new Uint8Array(64))),
+    }
+
+    const handlerErrorEvent = server.events.once('handlerError')
+    await transports.client.write(forgedSend as unknown as AnyClientMessageOf<Protocol>)
+
+    const emitted = await handlerErrorEvent
+    expect(emitted).toEqual(
+      expect.objectContaining({
+        error: expect.objectContaining({ code: 'EK02' }),
+        category: 'auth',
+      }),
+    )
+    // Forged value must NOT have reached the handler
+    expect(receivedValues).toEqual([])
 
     await server.dispose()
     await transports.dispose()

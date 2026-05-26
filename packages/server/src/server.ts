@@ -34,6 +34,7 @@ import {
   type DIDResolver,
   type Identity,
   isSignedToken,
+  normalizeDID,
   type SignedToken,
   type Token,
   verifyToken,
@@ -587,7 +588,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               break
             }
             const sendIssuer = (msg as unknown as SignedToken).payload.iss
-            if (controller.issuer != null && sendIssuer !== controller.issuer) {
+            if (
+              controller.issuer != null &&
+              normalizeDID(sendIssuer) !== normalizeDID(controller.issuer)
+            ) {
               const error = new HandlerError({
                 code: 'EK02',
                 message: 'Send issuer does not match channel owner',
