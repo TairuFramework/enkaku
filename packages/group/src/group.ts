@@ -5,7 +5,6 @@ import {
   type OwnIdentity,
   type SigningIdentity,
   stringifyToken,
-  verifyToken,
 } from '@enkaku/token'
 import {
   type CiphersuiteName,
@@ -372,17 +371,17 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
   const cache = options?.cache ?? createInMemoryDIDCache()
   const context = await resolveMlsContext(options)
 
-  // Validate the invite's capability chain before trusting it
+  // Validate the invite's capability chain before trusting it.
+  // validateGroupCapability internally calls verifyToken with cache/resolver and returns the
+  // verified token — reuse it instead of calling verifyToken a second time without cache/resolver.
   const { validateGroupCapability } = await import('./capability.js')
-  await validateGroupCapability({
+  const capToken = await validateGroupCapability({
     tokenData: invite.capabilityToken,
     groupID: invite.groupID,
     delegationChain:
       invite.capabilityChain.length > 1 ? invite.capabilityChain.slice(0, -1) : undefined,
     options: { cache, resolver: options?.resolver },
   })
-
-  const capToken = await verifyToken(invite.capabilityToken)
 
   type JoinGroupParams = Parameters<typeof mlsJoinGroup>[0]
   const sanitizedTree = Array.isArray(ratchetTree) ? sanitizeRatchetTree(ratchetTree) : ratchetTree
