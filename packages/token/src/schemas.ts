@@ -20,6 +20,7 @@ export const signedHeaderSchema = {
   properties: {
     typ: { type: 'string', const: 'JWT' },
     alg: signatureAlgorithmSchema,
+    kid: { type: 'string' },
   },
   required: ['typ', 'alg'],
   additionalProperties: true,
