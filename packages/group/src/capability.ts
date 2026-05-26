@@ -6,7 +6,7 @@ import {
   createCapability,
   type DelegationChainOptions,
 } from '@enkaku/capability'
-import { type SigningIdentity, verifyToken } from '@enkaku/token'
+import { normalizeDID, type SigningIdentity, verifyToken } from '@enkaku/token'
 
 export type GroupPermission = 'admin' | 'member' | 'read'
 
@@ -82,7 +82,10 @@ export async function validateGroupCapability(
   params: ValidateGroupCapabilityParams,
 ): Promise<CapabilityToken> {
   const { tokenData, groupID, delegationChain, options } = params
-  const token = await verifyToken<CapabilityPayload>(tokenData)
+  const token = await verifyToken<CapabilityPayload>(tokenData, {
+    cache: options?.cache,
+    resolver: options?.resolver,
+  })
   assertCapabilityToken(token)
 
   // Verify the resource matches the group
@@ -99,7 +102,7 @@ export async function validateGroupCapability(
   // Verify delegation chain if provided
   if (delegationChain != null && delegationChain.length > 0) {
     await checkDelegationChain(token.payload, delegationChain, options)
-  } else if (token.payload.iss !== token.payload.sub) {
+  } else if (normalizeDID(token.payload.iss) !== normalizeDID(token.payload.sub)) {
     throw new Error('Invalid capability: delegation chain required for delegated capabilities')
   }
 
