@@ -11,6 +11,7 @@
  */
 
 export {
+  type CreateInMemoryDIDCacheOptions,
   createInMemoryDIDCache,
   type DIDCache,
   type DIDResolver,
