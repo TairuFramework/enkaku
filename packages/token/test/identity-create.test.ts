@@ -48,7 +48,7 @@ describe('createIdentity', () => {
     await cache.set(identity.did, identity.doc)
     const signed = await identity.sign({ aud: 'someone' })
     expect(signed.header.kid).toBeDefined()
-    expect(signed.payload.iss).toBe(identity.did)
+    expect(signed.payload.iss).toBe(identity.longForm)
     const verified = await verifyToken(signed, {
       resolver: (did) => cache.get(did),
     })

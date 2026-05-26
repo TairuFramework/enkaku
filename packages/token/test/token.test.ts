@@ -214,10 +214,16 @@ describe('verifyToken with cache', () => {
       resolverHits++
       return did === shortForm ? identity.doc : undefined
     }
-    const token = await identity.sign({ sub: identity.did, aud: 'someone' })
+    const token = await identity.sign(
+      { sub: identity.did, aud: 'someone' },
+      { embedLongForm: false },
+    )
     await verifyToken(token, { cache, resolver })
     expect(resolverHits).toBe(1)
-    const token2 = await identity.sign({ sub: identity.did, aud: 'someone-else' })
+    const token2 = await identity.sign(
+      { sub: identity.did, aud: 'someone-else' },
+      { embedLongForm: false },
+    )
     await verifyToken(token2, { cache, resolver })
     expect(resolverHits).toBe(1)
   })

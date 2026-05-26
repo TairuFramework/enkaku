@@ -1,5 +1,5 @@
 import { ed25519 } from '@noble/curves/ed25519.js'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 
 import type {
   DecryptingIdentity,
@@ -9,6 +9,7 @@ import type {
 } from '../src/identity.js'
 import {
   createFullIdentity,
+  createIdentity,
   createSigningIdentity,
   isDecryptingIdentity,
   isFullIdentity,
@@ -121,5 +122,75 @@ describe('randomIdentity', () => {
     const id1 = randomIdentity()
     const id2 = randomIdentity()
     expect(id2.id).not.toBe(id1.id)
+  })
+})
+
+describe('MultiKeyIdentity.sign first-per-aud long-form policy', () => {
+  it('uses long form on first token to a new aud, short form thereafter', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const aud = 'did:example:bob'
+    const t1 = await identity.sign({ sub: identity.did, aud })
+    expect(t1.payload.iss).toBe(identity.longForm)
+    const t2 = await identity.sign({ sub: identity.did, aud })
+    expect(t2.payload.iss).toBe(identity.did) // short form
+  })
+
+  it('uses long form again for a different aud', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    await identity.sign({ sub: identity.did, aud: 'did:example:bob' })
+    const t = await identity.sign({ sub: identity.did, aud: 'did:example:alice' })
+    expect(t.payload.iss).toBe(identity.longForm)
+  })
+
+  it('uses short form by default when payload has no aud', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const t = await identity.sign({ sub: identity.did })
+    expect(t.payload.iss).toBe(identity.did)
+  })
+
+  it('embedLongForm:true forces long form even on repeat aud', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const aud = 'did:example:bob'
+    await identity.sign({ sub: identity.did, aud })
+    const t = await identity.sign({ sub: identity.did, aud }, { embedLongForm: true })
+    expect(t.payload.iss).toBe(identity.longForm)
+  })
+
+  it('embedLongForm:false forces short form even on first contact', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const t = await identity.sign(
+      { sub: identity.did, aud: 'did:example:bob' },
+      { embedLongForm: false },
+    )
+    expect(t.payload.iss).toBe(identity.did)
+  })
+
+  it('did:key identities always use short form (longForm === did)', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'key',
+    })
+    const t1 = await identity.sign({ sub: identity.did, aud: 'did:example:bob' })
+    expect(t1.payload.iss).toBe(identity.did)
+    const t2 = await identity.sign(
+      { sub: identity.did, aud: 'did:example:bob' },
+      { embedLongForm: true },
+    )
+    expect(t2.payload.iss).toBe(identity.did)
   })
 })
