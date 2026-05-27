@@ -181,11 +181,10 @@ export type SignCapabilityPayload = Omit<CapabilityPayload, 'iss'> & { iss?: str
 
 export async function createCapability<
   Payload extends SignCapabilityPayload = SignCapabilityPayload,
-  HeaderParams extends Record<string, unknown> = Record<string, unknown>,
 >(
   signer: SigningIdentity,
   payload: Payload,
-  header?: HeaderParams,
+  header?: Record<string, unknown>,
   options?: CreateCapabilityOptions,
 ): Promise<CapabilityToken<Payload & { iss: string }, SignedHeader>> {
   const signerId = signer.id
