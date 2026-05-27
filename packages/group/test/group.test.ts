@@ -661,8 +661,8 @@ describe('peer4 MLS group end-to-end', () => {
     })
 
     const bobLeaf = addCommit.newGroup.findMemberLeafIndex(bob.id)
-    expect(bobLeaf).toBeDefined()
-    const removeResult = await removeMember(addCommit.newGroup, bobLeaf!)
+    if (bobLeaf == null) throw new Error('bob leaf not found')
+    const removeResult = await removeMember(addCommit.newGroup, bobLeaf)
     expect(removeResult.newGroup.memberCount).toBe(1)
     expect(removeResult.newGroup.findMemberLeafIndex(bob.id)).toBeUndefined()
   })
