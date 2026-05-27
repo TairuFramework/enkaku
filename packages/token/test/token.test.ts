@@ -153,7 +153,7 @@ describe('verifyToken with cache', () => {
     const { b64uFromJSON: b64uJSON, fromUTF: fUTF, toB64U: tb64u } = await import('@enkaku/codec')
     const key = identity.keys[0]
     const header = { typ: 'JWT' as const, alg: 'EdDSA' as const, kid: key.fragment }
-    const payload = { iss: identity.longForm, sub: identity.did, aud: 'someone' }
+    const payload = { iss: identity.longForm, sub: identity.id, aud: 'someone' }
     const data = `${b64uJSON(header)}.${b64uJSON(payload)}`
     const signature = tb64u(ed.sign(fUTF(data), key.privateKey))
     const token = { header, payload, signature, data }
@@ -174,7 +174,7 @@ describe('verifyToken with cache', () => {
     const { b64uFromJSON: b64uJSON, fromUTF: fUTF, toB64U: tb64u } = await import('@enkaku/codec')
     const key = identity.keys[0]
     const header = { typ: 'JWT' as const, alg: 'EdDSA' as const, kid: key.fragment }
-    const payload = { iss: identity.longForm, sub: identity.did, aud: 'someone' }
+    const payload = { iss: identity.longForm, sub: identity.id, aud: 'someone' }
     const data = `${b64uJSON(header)}.${b64uJSON(payload)}`
     const goodSig = ed.sign(fUTF(data), key.privateKey)
     void goodSig
@@ -196,7 +196,7 @@ describe('verifyToken with cache', () => {
     const cache = createInMemoryDIDCache()
     const { shortForm } = encodePeer4(identity.doc)
     await cache.set(shortForm, identity.doc)
-    const token = await identity.sign({ sub: identity.did, aud: 'someone' })
+    const token = await identity.signToken({ sub: identity.id, aud: 'someone' })
     await expect(verifyToken(token, { cache })).resolves.toBeDefined()
   })
 
@@ -214,14 +214,14 @@ describe('verifyToken with cache', () => {
       resolverHits++
       return did === shortForm ? identity.doc : undefined
     }
-    const token = await identity.sign(
-      { sub: identity.did, aud: 'someone' },
+    const token = await identity.signToken(
+      { sub: identity.id, aud: 'someone' },
       { embedLongForm: false },
     )
     await verifyToken(token, { cache, resolver })
     expect(resolverHits).toBe(1)
-    const token2 = await identity.sign(
-      { sub: identity.did, aud: 'someone-else' },
+    const token2 = await identity.signToken(
+      { sub: identity.id, aud: 'someone-else' },
       { embedLongForm: false },
     )
     await verifyToken(token2, { cache, resolver })

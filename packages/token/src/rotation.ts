@@ -19,9 +19,9 @@ export async function createRotationAssertion(
   newIdentity: MultiKeyIdentity,
   issuedAt: number = Math.floor(Date.now() / 1000),
 ): Promise<SignedToken<RotationPayload>> {
-  return oldIdentity.sign<RotationPayload>({
+  return oldIdentity.signToken<RotationPayload>({
     type: 'did-rotation',
-    to: newIdentity.did,
+    to: newIdentity.id,
     toLongForm: newIdentity.longForm,
     issuedAt,
   })

@@ -4,17 +4,17 @@ import {
   randomIdentity,
   stringifyToken,
 } from '@enkaku/token'
+import { defaultCredentialTypes } from 'ts-mls'
 import { describe, expect, it, test } from 'vitest'
 
 import { createGroupCapability, delegateGroupMembership } from '../src/capability.js'
 import {
-  credentialToMLSIdentity,
   extractPermission,
   type MemberCredential,
-  mlsIdentityToSerializedCredential,
+  parseMLSCredentialIdentity,
   populateCacheFromCredential,
-  type SerializedCredential,
 } from '../src/credential.js'
+import { makeMLSCredential } from '../src/group.js'
 
 function makeSignedTokenWithAct(act: Array<string>) {
   return {
@@ -25,29 +25,44 @@ function makeSignedTokenWithAct(act: Array<string>) {
   }
 }
 
-describe('credential', () => {
-  test('round-trips credential through MLS identity', async () => {
-    const alice = randomIdentity()
-    const rootCap = await createGroupCapability(alice, 'test-group')
-    const rootCapStr = stringifyToken(rootCap)
-
-    const credential: MemberCredential = {
-      did: alice.id,
-      capabilityChain: [rootCapStr],
-      capability: rootCap,
-      permission: 'admin',
-      groupID: 'test-group',
-    }
-
-    const identity = credentialToMLSIdentity(credential)
-    expect(identity).toBeInstanceOf(Uint8Array)
-
-    const deserialized = mlsIdentityToSerializedCredential(identity)
-    expect(deserialized.did).toBe(alice.id)
-    expect(deserialized.groupID).toBe('test-group')
-    expect(deserialized.capabilityChain).toEqual([rootCapStr])
+describe('parseMLSCredentialIdentity', () => {
+  it('accepts a minimal did:key credential', () => {
+    const bytes = new TextEncoder().encode(JSON.stringify({ id: 'did:key:z6MkABC' }))
+    const parsed = parseMLSCredentialIdentity(bytes)
+    expect(parsed).toEqual({ id: 'did:key:z6MkABC' })
   })
 
+  it('accepts a peer4 credential carrying longForm', () => {
+    const bytes = new TextEncoder().encode(
+      JSON.stringify({ id: 'did:peer:4zABC', longForm: 'did:peer:4zABC:eyJ...' }),
+    )
+    const parsed = parseMLSCredentialIdentity(bytes)
+    expect(parsed.id).toBe('did:peer:4zABC')
+    expect(parsed.longForm).toBe('did:peer:4zABC:eyJ...')
+  })
+
+  it('rejects non-JSON input', () => {
+    const bytes = new TextEncoder().encode('not-json')
+    expect(() => parseMLSCredentialIdentity(bytes)).toThrow()
+  })
+
+  it('rejects JSON missing the id field', () => {
+    const bytes = new TextEncoder().encode(JSON.stringify({ longForm: 'x' }))
+    expect(() => parseMLSCredentialIdentity(bytes)).toThrow(/id/i)
+  })
+
+  it('rejects JSON where id is not a string', () => {
+    const bytes = new TextEncoder().encode(JSON.stringify({ id: 42 }))
+    expect(() => parseMLSCredentialIdentity(bytes)).toThrow(/id/i)
+  })
+
+  it('rejects JSON where longForm is not a string', () => {
+    const bytes = new TextEncoder().encode(JSON.stringify({ id: 'did:key:z', longForm: 42 }))
+    expect(() => parseMLSCredentialIdentity(bytes)).toThrow(/longForm/i)
+  })
+})
+
+describe('credential', () => {
   test('extracts admin permission', async () => {
     const alice = randomIdentity()
     const rootCap = await createGroupCapability(alice, 'test-group')
@@ -90,103 +105,27 @@ describe('credential', () => {
     const token = makeSignedTokenWithAct(['write'])
     expect(() => extractPermission(token)).toThrow('no recognized permission level')
   })
-
-  test('mlsIdentityToSerializedCredential throws on non-JSON input', () => {
-    const badBytes = new TextEncoder().encode('not json')
-    expect(() => mlsIdentityToSerializedCredential(badBytes)).toThrow()
-  })
-
-  test('mlsIdentityToSerializedCredential throws when required fields are missing', () => {
-    const incomplete = new TextEncoder().encode(JSON.stringify({ did: 'test' }))
-    expect(() => mlsIdentityToSerializedCredential(incomplete)).toThrow(
-      'malformed serialized credential',
-    )
-  })
-
-  test('mlsIdentityToSerializedCredential throws when capabilityChain is not an array', () => {
-    const bad = new TextEncoder().encode(
-      JSON.stringify({ did: 'test', groupID: 'g1', capabilityChain: 'not-array' }),
-    )
-    expect(() => mlsIdentityToSerializedCredential(bad)).toThrow('malformed serialized credential')
-  })
 })
 
-describe('SerializedCredential.longForm', () => {
-  it('credentialToMLSIdentity embeds longForm when peer4 identity passes it', async () => {
+describe('populateCacheFromCredential', () => {
+  it('writes the doc to the cache when longForm matches id', async () => {
     const identity = await createIdentity({
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
       didMethod: 'peer:4',
     })
-    const credential = {
-      did: identity.did,
-      capabilityChain: ['cap-token'],
-      capability: { payload: { act: 'read', res: 'foo' } } as never,
-      permission: 'read' as const,
-      groupID: 'group-1',
-    }
-    const bytes = credentialToMLSIdentity(credential, { longForm: identity.longForm })
-    const parsed = mlsIdentityToSerializedCredential(bytes)
-    expect(parsed.longForm).toBe(identity.longForm)
-    expect(parsed.did).toBe(identity.did)
-  })
-
-  it('credentialToMLSIdentity omits longForm for did:key identities', async () => {
-    const identity = await createIdentity({
-      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
-      didMethod: 'key',
-    })
-    const credential = {
-      did: identity.did,
-      capabilityChain: [],
-      capability: { payload: { act: 'read', res: 'foo' } } as never,
-      permission: 'read' as const,
-      groupID: 'group-1',
-    }
-    // Even when longForm option is provided, did:key identities don't get it embedded.
-    const bytes = credentialToMLSIdentity(credential, { longForm: identity.longForm })
-    const parsed = mlsIdentityToSerializedCredential(bytes)
-    expect(parsed.longForm).toBeUndefined()
-  })
-
-  it('mlsIdentityToSerializedCredential rejects malformed longForm type', () => {
-    const bytes = new TextEncoder().encode(
-      JSON.stringify({
-        did: 'did:peer:4zXyz',
-        groupID: 'g',
-        capabilityChain: [],
-        longForm: 42, // wrong type
-      }),
-    )
-    expect(() => mlsIdentityToSerializedCredential(bytes)).toThrow(/longForm/i)
-  })
-
-  it('populateCacheFromCredential writes the doc to the cache when longForm matches did', async () => {
-    const identity = await createIdentity({
-      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
-      didMethod: 'peer:4',
-    })
-    const serialized: SerializedCredential = {
-      did: identity.did,
-      groupID: 'g',
-      capabilityChain: [],
-      longForm: identity.longForm,
-    }
     const cache = createInMemoryDIDCache()
-    await populateCacheFromCredential(serialized, cache)
-    expect(await cache.get(identity.did)).toEqual(identity.doc)
+    await populateCacheFromCredential({ id: identity.id, longForm: identity.longForm }, cache)
+    expect(await cache.get(identity.id)).toEqual(identity.doc)
   })
 
-  it('populateCacheFromCredential is a no-op when longForm is absent', async () => {
+  it('is a no-op when longForm is absent', async () => {
     const cache = createInMemoryDIDCache()
-    const serialized: SerializedCredential = {
-      did: 'did:key:z6MkSample',
-      groupID: 'g',
-      capabilityChain: [],
-    }
-    await expect(populateCacheFromCredential(serialized, cache)).resolves.toBeUndefined()
+    await expect(
+      populateCacheFromCredential({ id: 'did:key:z6MkSample' }, cache),
+    ).resolves.toBeUndefined()
   })
 
-  it('populateCacheFromCredential rejects when longForm hash does not match did', async () => {
+  it('rejects when longForm hash does not match id', async () => {
     const alice = await createIdentity({
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
       didMethod: 'peer:4',
@@ -195,13 +134,57 @@ describe('SerializedCredential.longForm', () => {
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
       didMethod: 'peer:4',
     })
-    const serialized: SerializedCredential = {
-      did: alice.did,
-      groupID: 'g',
-      capabilityChain: [],
-      longForm: bob.longForm, // mismatched
-    }
     const cache = createInMemoryDIDCache()
-    await expect(populateCacheFromCredential(serialized, cache)).rejects.toThrow(/does not match/i)
+    await expect(
+      populateCacheFromCredential({ id: alice.id, longForm: bob.longForm }, cache),
+    ).rejects.toThrow(/does not match/i)
   })
 })
+
+describe('makeMLSCredential', () => {
+  it('emits JSON { id } for a did:key identity', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'key',
+    })
+    const credential = makeMLSCredential(identity)
+    expect(credential.credentialType).toBe(defaultCredentialTypes.basic)
+    const parsed = parseMLSCredentialIdentity((credential as { identity: Uint8Array }).identity)
+    expect(parsed.id).toBe(identity.id)
+    expect(parsed.longForm).toBeUndefined()
+  })
+
+  it('emits JSON { id, longForm } for a did:peer:4 identity', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const credential = makeMLSCredential(identity)
+    expect(credential.credentialType).toBe(defaultCredentialTypes.basic)
+    const parsed = parseMLSCredentialIdentity((credential as { identity: Uint8Array }).identity)
+    expect(parsed.id).toBe(identity.id)
+    expect(parsed.longForm).toBe(identity.longForm)
+  })
+
+  it('throws when a peer4 identity has no longForm', () => {
+    const fake = {
+      id: 'did:peer:4zABC',
+      publicKey: new Uint8Array(32),
+      privateKey: new Uint8Array(32),
+      signToken: async () => {
+        throw new Error('not used')
+      },
+    } as unknown as Parameters<typeof makeMLSCredential>[0]
+    expect(() => makeMLSCredential(fake)).toThrow(/longForm/i)
+  })
+})
+
+// Ensure MemberCredential type uses `id` field
+const _typeCheck: MemberCredential = {
+  id: 'did:key:z...',
+  capabilityChain: [],
+  capability: { payload: { act: 'read', res: 'foo' } } as never,
+  permission: 'read',
+  groupID: 'group-1',
+}
+void _typeCheck

@@ -8,6 +8,7 @@ import {
   type IdentityProvider,
   type SignedHeader,
   type SignedToken,
+  type SignTokenOptions,
 } from '@enkaku/token'
 
 import {
@@ -80,10 +81,10 @@ export function createLedgerIdentityProvider(
         span.setAttribute(AttributeKeys.AUTH_DID, id)
         logger.info('Ledger identity resolved: {did}', { did: id })
 
-        async function signToken<
-          Payload extends Record<string, unknown> = Record<string, unknown>,
-          Header extends Record<string, unknown> = Record<string, unknown>,
-        >(payload: Payload, header?: Header): Promise<SignedToken<Payload, Header>> {
+        async function signToken<Payload extends Record<string, unknown> = Record<string, unknown>>(
+          payload: Payload,
+          options: SignTokenOptions = {},
+        ): Promise<SignedToken<Payload>> {
           return withSpan(
             tracer,
             SpanNames.TOKEN_SIGN,
@@ -98,7 +99,11 @@ export function createLedgerIdentityProvider(
                 throw new Error('Invalid payload: issuer does not match signer')
               }
 
-              const fullHeader = { ...header, typ: 'JWT', alg: 'EdDSA' } as SignedHeader & Header
+              const fullHeader = {
+                ...(options.header ?? {}),
+                typ: 'JWT',
+                alg: 'EdDSA',
+              } as SignedHeader
               const fullPayload = { ...payload, iss: id }
               const data = `${b64uFromJSON(fullHeader)}.${b64uFromJSON(fullPayload)}`
 

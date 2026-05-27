@@ -7,6 +7,7 @@ import {
   type SignedHeader,
   type SignedToken,
   type SigningIdentity,
+  type SignTokenOptions,
 } from '@enkaku/token'
 
 import { BrowserKeyStore } from './store.js'
@@ -19,15 +20,19 @@ async function createBrowserSigningIdentity(keyPair: CryptoKeyPair): Promise<Sig
   const publicKey = await getPublicKey(keyPair)
   const id = getDID(CODECS.ES256, publicKey)
 
-  async function signToken<
-    Payload extends Record<string, unknown> = Record<string, unknown>,
-    Header extends Record<string, unknown> = Record<string, unknown>,
-  >(payload: Payload, header?: Header): Promise<SignedToken<Payload, Header>> {
+  async function signToken<Payload extends Record<string, unknown> = Record<string, unknown>>(
+    payload: Payload,
+    options: SignTokenOptions = {},
+  ): Promise<SignedToken<Payload>> {
     if (payload.iss != null && payload.iss !== id) {
       throw new Error('Invalid payload: issuer does not match signer')
     }
 
-    const fullHeader = { ...header, typ: 'JWT', alg: 'ES256' } as SignedHeader & Header
+    const fullHeader = {
+      ...(options.header ?? {}),
+      typ: 'JWT',
+      alg: 'ES256',
+    } as SignedHeader
     const fullPayload = { ...payload, iss: id }
     const data = `${b64uFromJSON(fullHeader)}.${b64uFromJSON(fullPayload)}`
 

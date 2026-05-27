@@ -184,7 +184,7 @@ describe('outer-message signature verification', () => {
         { purpose: 'kem', alg: 'X25519' },
       ],
     })
-    expect(isPeer4(peer4Identity.did)).toBe(true)
+    expect(isPeer4(peer4Identity.id)).toBe(true)
 
     const handler = async () => 'ok'
     const handlers = { test: handler } as unknown as ProcedureHandlers<Protocol>
@@ -205,7 +205,7 @@ describe('outer-message signature verification', () => {
     })
 
     // Use embedLongForm: true so the long form (self-contained) is included in iss
-    const msg = await peer4Identity.sign(
+    const msg = await peer4Identity.signToken(
       {
         typ: 'request',
         prc: 'test',
@@ -223,7 +223,7 @@ describe('outer-message signature verification', () => {
     expect(response.value?.payload.typ).toBe('result')
 
     // After successful verification, the short form should be in the cache
-    const shortForm = getPeer4ShortForm(peer4Identity.did)
+    const shortForm = getPeer4ShortForm(peer4Identity.id)
     const cached = await cache.get(shortForm)
     expect(cached).toBeDefined()
 

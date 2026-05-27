@@ -14,9 +14,9 @@ describe('createRotationAssertion', () => {
       ],
     })
     const assertion = await createRotationAssertion(oldId, newId)
-    expect(assertion.payload.iss).toBe(oldId.did)
+    expect(assertion.payload.iss).toBe(oldId.id)
     expect(assertion.payload.type).toBe('did-rotation')
-    expect(assertion.payload.to).toBe(newId.did)
+    expect(assertion.payload.to).toBe(newId.id)
     expect(assertion.payload.toLongForm).toBe(newId.longForm)
     expect(typeof assertion.payload.issuedAt).toBe('number')
   })

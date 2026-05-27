@@ -1,5 +1,5 @@
-import { randomIdentity } from '@enkaku/token'
-import { describe, expect, test } from 'vitest'
+import { createIdentity, randomIdentity } from '@enkaku/token'
+import { describe, expect, it, test } from 'vitest'
 
 import {
   commitInvite,
@@ -18,7 +18,7 @@ describe('GroupHandle lifecycle', () => {
     expect(group.groupID).toBe('test-group-1')
     expect(group.epoch).toBe(0n)
     expect(group.memberCount).toBe(1)
-    expect(credential.did).toBe(alice.id)
+    expect(credential.id).toBe(alice.id)
     expect(credential.permission).toBe('admin')
     expect(credential.groupID).toBe('test-group-1')
   })
@@ -37,7 +37,7 @@ describe('GroupHandle lifecycle', () => {
     })
     expect(invite.groupID).toBe('invite-group')
     expect(invite.permission).toBe('member')
-    expect(invite.inviterDID).toBe(alice.id)
+    expect(invite.inviterID).toBe(alice.id)
 
     const bobKeyBundle = await createKeyPackageBundle(bob)
     const { welcomeMessage, newGroup: updatedAliceGroup } = await commitInvite(
@@ -59,7 +59,7 @@ describe('GroupHandle lifecycle', () => {
 
     expect(bobGroup.epoch).toBe(1n)
     expect(bobGroup.memberCount).toBe(2)
-    expect(bobCred.did).toBe(bob.id)
+    expect(bobCred.id).toBe(bob.id)
     expect(bobCred.permission).toBe('member')
   })
 
@@ -265,7 +265,7 @@ describe('GroupHandle lifecycle', () => {
       capabilityToken: 'invalid',
       capabilityChain: [],
       permission: 'member' as const,
-      inviterDID: alice.id,
+      inviterID: alice.id,
     }
 
     await expect(
@@ -565,5 +565,105 @@ describe('JSON serialization null safety', () => {
     expect(bobGroup.findMemberLeafIndex(bob.id)).toBe(1)
     expect(bobGroup.findMemberLeafIndex(alice.id)).toBe(0)
     expect(bobGroup.findMemberLeafIndex('did:key:unknown')).toBeUndefined()
+  })
+})
+
+async function makePeer4(sigKeys = 1) {
+  return await createIdentity({
+    keys: Array.from({ length: sigKeys }, () => ({
+      purpose: 'sig' as const,
+      alg: 'EdDSA' as const,
+    })),
+    didMethod: 'peer:4',
+  })
+}
+
+describe('peer4 MLS group end-to-end', () => {
+  it('two peer4 members exchange application messages', async () => {
+    const alice = await makePeer4()
+    const bob = await makePeer4()
+    const { group: aliceGroup } = await createGroup(alice, 'g-peer4-1')
+
+    const bobBundle = await createKeyPackageBundle(bob)
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const commit = await commitInvite(aliceGroup, bobBundle.publicPackage)
+
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite,
+      welcome: commit.welcomeMessage,
+      keyPackageBundle: bobBundle,
+    })
+
+    const plaintext = new TextEncoder().encode('hello bob')
+    const { message } = await commit.newGroup.encrypt(plaintext)
+    const decrypted = await bobGroup.decrypt(message)
+    expect(new TextDecoder().decode(decrypted)).toBe('hello bob')
+  })
+
+  it('mixes peer4 admin with did:key member', async () => {
+    const alice = await makePeer4()
+    const bob = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'key',
+    })
+    const { group: aliceGroup } = await createGroup(alice, 'g-mixed-1')
+    const bobBundle = await createKeyPackageBundle(bob)
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const commit = await commitInvite(aliceGroup, bobBundle.publicPackage)
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite,
+      welcome: commit.welcomeMessage,
+      keyPackageBundle: bobBundle,
+    })
+
+    const { message } = await commit.newGroup.encrypt(new TextEncoder().encode('hi'))
+    const decrypted = await bobGroup.decrypt(message)
+    expect(new TextDecoder().decode(decrypted)).toBe('hi')
+  })
+
+  it('binds an MLS leaf for a peer4 identity with multiple sig keys', async () => {
+    const alice = await makePeer4(2)
+    const { group: aliceGroup } = await createGroup(alice, 'g-multisig-1')
+    // group creation succeeds → auth service bound the primary sig key successfully.
+    expect(aliceGroup.memberCount).toBe(1)
+    expect(aliceGroup.findMemberLeafIndex(alice.id)).toBe(0)
+  })
+
+  it('removes a peer4 member and rejects subsequent traffic from them', async () => {
+    const alice = await makePeer4()
+    const bob = await makePeer4()
+    const { group: aliceGroup0 } = await createGroup(alice, 'g-remove-1')
+    const bobBundle = await createKeyPackageBundle(bob)
+    const { invite } = await createInvite({
+      group: aliceGroup0,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const addCommit = await commitInvite(aliceGroup0, bobBundle.publicPackage)
+    await processWelcome({
+      identity: bob,
+      invite,
+      welcome: addCommit.welcomeMessage,
+      keyPackageBundle: bobBundle,
+    })
+
+    const bobLeaf = addCommit.newGroup.findMemberLeafIndex(bob.id)
+    if (bobLeaf == null) throw new Error('bob leaf not found')
+    const removeResult = await removeMember(addCommit.newGroup, bobLeaf)
+    expect(removeResult.newGroup.memberCount).toBe(1)
+    expect(removeResult.newGroup.findMemberLeafIndex(bob.id)).toBeUndefined()
   })
 })

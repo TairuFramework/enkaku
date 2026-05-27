@@ -181,11 +181,10 @@ export type SignCapabilityPayload = Omit<CapabilityPayload, 'iss'> & { iss?: str
 
 export async function createCapability<
   Payload extends SignCapabilityPayload = SignCapabilityPayload,
-  HeaderParams extends Record<string, unknown> = Record<string, unknown>,
 >(
   signer: SigningIdentity,
   payload: Payload,
-  header?: HeaderParams,
+  header?: Record<string, unknown>,
   options?: CreateCapabilityOptions,
 ): Promise<CapabilityToken<Payload & { iss: string }, SignedHeader>> {
   const signerId = signer.id
@@ -196,7 +195,7 @@ export async function createCapability<
 
   // If signer is the subject, no parent validation needed (root capability)
   if (normalizeDID(payload.sub) === normalizeDID(signerId)) {
-    return await signer.signToken(payload, header)
+    return await signer.signToken(payload, { header })
   }
 
   // Signer is delegating on behalf of someone else - validate authorization
@@ -235,7 +234,7 @@ export async function createCapability<
     throw new Error('Invalid capability: delegated permission exceeds parent capability')
   }
 
-  return await signer.signToken(payload, header)
+  return await signer.signToken(payload, { header })
 }
 
 export function isMatch(expected: string, actual: string): boolean {

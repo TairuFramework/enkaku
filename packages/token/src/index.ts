@@ -49,7 +49,7 @@ export {
   type ResolvedKey,
   randomIdentity,
   type SigningIdentity,
-  type SignOptions,
+  type SignTokenOptions,
 } from './identity.js'
 export type {
   ConcatKDFParams,

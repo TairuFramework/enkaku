@@ -1,4 +1,4 @@
-import { randomIdentity } from '@enkaku/token'
+import { createIdentity, randomIdentity } from '@enkaku/token'
 import {
   decode,
   defaultExtensionTypes,
@@ -124,14 +124,53 @@ describe('joinGroupExternal — stale device recovery', () => {
     // B's DID appears exactly once in the tree post-rejoin (resync removed old leaf)
     const bobLeafIndex = aliceAdvanced.findMemberLeafIndex(bob.id)
     expect(bobLeafIndex).toBeDefined()
-    const bobLeafCount = aliceAdvanced.state.ratchetTree.filter(
-      (node) =>
-        node != null &&
-        node.nodeType === nodeTypes.leaf &&
-        'identity' in node.leaf.credential &&
-        new TextDecoder().decode(node.leaf.credential.identity) === bob.id,
-    ).length
+    const bobLeafCount = aliceAdvanced.state.ratchetTree.filter((node) => {
+      if (node == null || node.nodeType !== nodeTypes.leaf) return false
+      if (!('identity' in node.leaf.credential)) return false
+      const text = new TextDecoder().decode(node.leaf.credential.identity)
+      try {
+        const parsed = JSON.parse(text) as Record<string, unknown>
+        return parsed.id === bob.id
+      } catch {
+        return text === bob.id
+      }
+    }).length
     expect(bobLeafCount).toBe(1)
+  })
+
+  test('rejects when identity.id does not match credential.id (resync guard)', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const { group: aliceGroup } = await createGroup(alice, 'mismatch-guard-group')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { newGroup: aliceAfterBob, welcomeMessage } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+    const { credential: bobCred } = await processWelcome({
+      identity: bob,
+      invite,
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: aliceAfterBob.state.ratchetTree,
+    })
+    const { groupInfo } = await exportGroupInfo({ group: aliceAfterBob })
+
+    const eve = randomIdentity()
+    await expect(
+      joinGroupExternal({
+        identity: eve,
+        groupInfo,
+        credential: bobCred,
+        resync: true,
+      }),
+    ).rejects.toThrow(/identity\.id.*must match credential\.id/)
   })
 
   test('rejects credential with empty capability chain', async () => {
@@ -145,7 +184,7 @@ describe('joinGroupExternal — stale device recovery', () => {
         identity: bob,
         groupInfo,
         credential: {
-          did: bob.id,
+          id: bob.id,
           capabilityChain: [],
           capability: {} as MemberCredential['capability'],
           permission: 'member',
@@ -154,6 +193,63 @@ describe('joinGroupExternal — stale device recovery', () => {
         resync: true,
       }),
     ).rejects.toThrow('capability chain must not be empty')
+  })
+
+  test('peer4 identity can rejoin via groupInfo + resync', async () => {
+    const alice = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const bob = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+
+    // Two-member peer4 group so the ratchet tree is non-trivial (ts-mls
+    // requires a non-blank last node for rejoin).
+    const { group: aliceGroup } = await createGroup(alice, 'g-rejoin-peer4')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { newGroup: aliceAfterBob, welcomeMessage } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+    const { credential: bobCred } = await processWelcome({
+      identity: bob,
+      invite,
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: aliceAfterBob.state.ratchetTree,
+    })
+
+    const { groupInfo } = await exportGroupInfo({ group: aliceAfterBob })
+
+    // Stale-recovery rejoin: bob comes back with the same sig-key material so
+    // his re-derived peer:4 short form matches the existing leaf; resync
+    // atomically replaces it.
+    const bobSigKey = bob.keys.find((k) => k.purpose === 'sig')
+    if (bobSigKey == null) throw new Error('bob has no sig key')
+    const bobRedux = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA', privateKey: bobSigKey.privateKey }],
+      didMethod: 'peer:4',
+    })
+    expect(bobRedux.id).toBe(bob.id)
+
+    const { group: rejoined, commitMessage } = await joinGroupExternal({
+      identity: bobRedux,
+      groupInfo,
+      credential: bobCred,
+      resync: true,
+    })
+
+    expect(rejoined.groupID).toBe('g-rejoin-peer4')
+    expect(rejoined.epoch).toBe(aliceAfterBob.epoch + 1n)
+    expect(commitMessage.byteLength).toBeGreaterThan(0)
   })
 
   test('third online member processes external rejoin and converges', async () => {

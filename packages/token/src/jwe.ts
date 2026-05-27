@@ -268,13 +268,13 @@ export async function wrapEnvelope(
     }
     case 'jws': {
       if (options.signer == null) throw new Error('Signer required for jws mode')
-      const token = await options.signer.signToken(payload, options.header)
+      const token = await options.signer.signToken(payload, { header: options.header })
       return stringifyToken(token)
     }
     case 'jws-in-jwe': {
       if (options.signer == null) throw new Error('Signer required for jws-in-jwe mode')
       if (options.encrypter == null) throw new Error('Encrypter required for jws-in-jwe mode')
-      const signed = await options.signer.signToken(payload, options.header)
+      const signed = await options.signer.signToken(payload, { header: options.header })
       const jwsString = stringifyToken(signed)
       return encryptToken(options.encrypter, new TextEncoder().encode(jwsString))
     }
@@ -283,7 +283,7 @@ export async function wrapEnvelope(
       if (options.encrypter == null) throw new Error('Encrypter required for jwe-in-jws mode')
       const plaintext = new TextEncoder().encode(JSON.stringify(payload))
       const jwe = await encryptToken(options.encrypter, plaintext)
-      const signed = await options.signer.signToken({ jwe }, options.header)
+      const signed = await options.signer.signToken({ jwe }, { header: options.header })
       return stringifyToken(signed)
     }
   }

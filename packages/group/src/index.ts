@@ -14,12 +14,11 @@ export {
   sanitizeRatchetTree,
 } from './codec.js'
 export {
-  credentialToMLSIdentity,
   extractPermission,
   type MemberCredential,
-  mlsIdentityToSerializedCredential,
+  type MLSCredentialIdentity,
+  parseMLSCredentialIdentity,
   populateCacheFromCredential,
-  type SerializedCredential,
 } from './credential.js'
 export {
   createNobleCryptoProvider,

@@ -2,6 +2,8 @@ import {
   createInMemoryDIDCache,
   type DIDCache,
   type DIDResolver,
+  isPeer4,
+  normalizeDID,
   type OwnIdentity,
   type SigningIdentity,
   stringifyToken,
@@ -42,7 +44,11 @@ import {
   type GroupPermission,
 } from './capability.js'
 import { sanitizeRatchetTree } from './codec.js'
-import type { MemberCredential } from './credential.js'
+import {
+  type MemberCredential,
+  type MLSCredentialIdentity,
+  parseMLSCredentialIdentity,
+} from './credential.js'
 import { nobleCryptoProvider } from './crypto.js'
 import type { GroupOptions, Invite, KeyPackageBundle } from './types.js'
 
@@ -55,10 +61,24 @@ async function resolveMlsContext(options?: GroupOptions): Promise<MlsContext> {
   return { cipherSuite, authService }
 }
 
-function makeMLSCredential(did: string): Credential {
+export function makeMLSCredential(identity: OwnIdentity): Credential {
+  const id = identity.id
+  const isPeer = isPeer4(id)
+  if (
+    isPeer &&
+    !('longForm' in identity && typeof (identity as { longForm?: unknown }).longForm === 'string')
+  ) {
+    throw new Error(
+      'peer:4 identity is missing longForm; only identities from createIdentity can be used as MLS members',
+    )
+  }
+  const payload: MLSCredentialIdentity = { id }
+  if (isPeer) {
+    payload.longForm = (identity as unknown as { longForm: string }).longForm
+  }
   return {
     credentialType: defaultCredentialTypes.basic,
-    identity: new TextEncoder().encode(did),
+    identity: new TextEncoder().encode(JSON.stringify(payload)),
   }
 }
 
@@ -130,15 +150,21 @@ export class GroupHandle {
     ).length
   }
 
-  findMemberLeafIndex(did: string): number | undefined {
+  findMemberLeafIndex(id: string): number | undefined {
     const tree = this.#state.ratchetTree
+    const targetNorm = normalizeDID(id)
     for (let i = 0; i < tree.length; i++) {
       const node = tree[i]
       if (node != null && node.nodeType === nodeTypes.leaf) {
         const credential = node.leaf.credential
         if ('identity' in credential) {
-          const identity = new TextDecoder().decode(credential.identity)
-          if (identity === did) return i / 2
+          let parsed: ReturnType<typeof parseMLSCredentialIdentity>
+          try {
+            parsed = parseMLSCredentialIdentity(credential.identity)
+          } catch {
+            continue
+          }
+          if (normalizeDID(parsed.id) === targetNorm) return i / 2
         }
       }
     }
@@ -214,7 +240,7 @@ export async function createGroup(
   const context = await resolveMlsContext(options)
 
   const statePromise = generateKeyPackageWithKey({
-    credential: makeMLSCredential(identity.id),
+    credential: makeMLSCredential(identity),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
     cipherSuite: context.cipherSuite,
   }).then((keyPackage) => {
@@ -233,7 +259,7 @@ export async function createGroup(
 
   const rootCapability = stringifyToken(rootCap)
   const credential: MemberCredential = {
-    did: identity.id,
+    id: identity.id,
     capabilityChain: [rootCapability],
     capability: rootCap,
     permission: 'admin',
@@ -301,7 +327,7 @@ export async function createInvite(params: CreateInviteParams): Promise<CreateIn
     capabilityToken: memberCapStr,
     capabilityChain: [group.rootCapability, memberCapStr],
     permission,
-    inviterDID: identity.id,
+    inviterID: identity.id,
   }
 
   return { invite }
@@ -396,7 +422,7 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
   })
 
   const credential: MemberCredential = {
-    did: identity.id,
+    id: identity.id,
     capabilityChain: invite.capabilityChain,
     capability: capToken as MemberCredential['capability'],
     permission: invite.permission,
@@ -463,7 +489,7 @@ export async function createKeyPackageBundle(
 ): Promise<KeyPackageBundle> {
   const { cipherSuite } = await resolveMlsContext(options)
   const result = await generateKeyPackageWithKey({
-    credential: makeMLSCredential(identity.id),
+    credential: makeMLSCredential(identity),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
     cipherSuite,
   })
@@ -537,6 +563,17 @@ export async function joinGroupExternal(
     throw new Error('Invalid credential: capability chain must not be empty')
   }
 
+  // Guard: resync requires the rejoining identity to match the leaf being
+  // replaced. If `identity.id` does not match `credential.id`, ts-mls's
+  // findIndex returns -1 and the downstream `removeLeafNodeMutable(tree, -1)`
+  // call enters an unbounded loop (ts-mls bug; the no-match branch is not
+  // guarded). Reject early with a clear error.
+  if (normalizeDID(identity.id) !== normalizeDID(credential.id)) {
+    throw new Error(
+      `joinGroupExternal: identity.id (${identity.id}) must match credential.id (${credential.id}) for resync`,
+    )
+  }
+
   const cache = options?.cache ?? createInMemoryDIDCache()
   const context = await resolveMlsContext(options)
 
@@ -553,7 +590,7 @@ export async function joinGroupExternal(
   const { groupInfo } = message
 
   const keyPackage = await generateKeyPackageWithKey({
-    credential: makeMLSCredential(identity.id),
+    credential: makeMLSCredential(identity),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
     cipherSuite: context.cipherSuite,
   })

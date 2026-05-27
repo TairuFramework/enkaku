@@ -1,40 +1,15 @@
-import { getSignatureInfo } from '@enkaku/token'
+import {
+  decodeMultibase,
+  decodePeer4,
+  getAlgorithmAndPublicKey,
+  getSignatureInfo,
+  isPeer4,
+} from '@enkaku/token'
 import type { AuthenticationService, Credential } from 'ts-mls'
 import { defaultCredentialTypes } from 'ts-mls'
 
-import { mlsIdentityToSerializedCredential } from './credential.js'
+import { parseMLSCredentialIdentity } from './credential.js'
 
-/**
- * Extracts the DID from an MLS basic credential's identity bytes.
- *
- * Handles two formats:
- * 1. JSON-encoded SerializedCredential (from credentialToMLSIdentity) — extracts .did
- * 2. Plain DID string (from makeMLSCredential) — uses directly
- */
-function extractDIDFromIdentity(identity: Uint8Array): string | null {
-  const text = new TextDecoder().decode(identity)
-
-  // Try JSON format first (SerializedCredential)
-  if (text.startsWith('{')) {
-    try {
-      const serialized = mlsIdentityToSerializedCredential(identity)
-      return serialized.did
-    } catch {
-      return null
-    }
-  }
-
-  // Plain DID string
-  if (text.startsWith('did:key:z')) {
-    return text
-  }
-
-  return null
-}
-
-/**
- * Constant-time comparison of two Uint8Array values.
- */
 function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false
   let diff = 0
@@ -45,35 +20,60 @@ function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
   return diff === 0
 }
 
-/**
- * Creates a DID-based AuthenticationService for MLS.
- *
- * Validates that the public key embedded in a credential's DID (did:key:z...)
- * matches the signature public key presented by the MLS leaf node.
- *
- * This provides cryptographic binding between MLS identities and Enkaku DIDs.
- */
 export function createDIDAuthenticationService(): AuthenticationService {
   return {
     async validateCredential(
       credential: Credential,
       signaturePublicKey: Uint8Array,
     ): Promise<boolean> {
-      // Only support basic credentials
       if (credential.credentialType !== defaultCredentialTypes.basic) {
         return false
       }
 
-      // Extract the DID from identity bytes
-      // Cast needed: CredentialCustom's credentialType is `number`, preventing full narrowing
-      const did = extractDIDFromIdentity((credential as { identity: Uint8Array }).identity)
-      if (did == null) {
+      let parsed: ReturnType<typeof parseMLSCredentialIdentity>
+      try {
+        parsed = parseMLSCredentialIdentity((credential as { identity: Uint8Array }).identity)
+      } catch {
         return false
       }
 
-      // Derive the expected public key from the DID
+      if (isPeer4(parsed.id)) {
+        if (parsed.longForm == null) return false
+        let decoded: ReturnType<typeof decodePeer4>
+        try {
+          decoded = decodePeer4(parsed.longForm)
+        } catch {
+          return false
+        }
+        if (decoded.shortForm !== parsed.id) return false
+        // Only verification methods referenced by `authentication` are
+        // permitted to sign for authentication — per DID Core. Reject MLS
+        // leaves bound to keys outside that set (KEM keys, assertion-only
+        // keys, etc.) even if the byte comparison would otherwise match.
+        const authIDs = new Set(decoded.doc.authentication ?? [])
+        if (authIDs.size === 0) return false
+        for (const vm of decoded.doc.verificationMethod ?? []) {
+          if (!authIDs.has(vm.id)) continue
+          if (typeof vm.publicKeyMultibase !== 'string') continue
+          let vmBytes: Uint8Array
+          try {
+            vmBytes = decodeMultibase(vm.publicKeyMultibase)
+          } catch {
+            continue
+          }
+          // Validate multicodec prefix and strip it; rejects unknown codecs
+          // (e.g. X25519 KEM keys, future PQ codecs) instead of blindly
+          // comparing 2-byte-truncated bytes.
+          const stripped = getAlgorithmAndPublicKey(vmBytes)
+          if (stripped == null) continue
+          const [, publicKeyBytes] = stripped
+          if (constantTimeEqual(publicKeyBytes, signaturePublicKey)) return true
+        }
+        return false
+      }
+
       try {
-        const [, publicKeyFromDID] = getSignatureInfo(did)
+        const [, publicKeyFromDID] = getSignatureInfo(parsed.id)
         return constantTimeEqual(publicKeyFromDID, signaturePublicKey)
       } catch {
         return false

@@ -14,15 +14,26 @@ const tracer = createTracer('token')
 
 export type Identity = { readonly id: string }
 
+export type SignTokenOptions = {
+  /** Extra header fields merged into the signed JWS header. */
+  header?: Record<string, unknown>
+  /** Pick a non-primary signing key by fragment (e.g. "#key-1"). */
+  kid?: string
+  /**
+   * Override the first-per-aud long-form policy for did:peer:4 identities.
+   * - true: always use long form (no-op for did:key, where longForm === id).
+   * - false: always use short form.
+   * - undefined (default): use long form on first token to a given payload.aud, short form thereafter.
+   */
+  embedLongForm?: boolean
+}
+
 export type SigningIdentity = Identity & {
   publicKey: Uint8Array
-  signToken: <
-    Payload extends Record<string, unknown> = Record<string, unknown>,
-    Header extends Record<string, unknown> = Record<string, unknown>,
-  >(
+  signToken: <Payload extends Record<string, unknown> = Record<string, unknown>>(
     payload: Payload,
-    header?: Header,
-  ) => Promise<SignedToken<Payload, Header>>
+    options?: SignTokenOptions,
+  ) => Promise<SignedToken<Payload>>
 }
 
 export type DecryptingIdentity = Identity & {
@@ -70,10 +81,10 @@ export function createSigningIdentity(privateKey: Uint8Array): SigningIdentity {
   const publicKey = ed25519.getPublicKey(privateKey)
   const id = getDID(CODECS.EdDSA, publicKey)
 
-  async function signToken<
-    Payload extends Record<string, unknown> = Record<string, unknown>,
-    Header extends Record<string, unknown> = Record<string, unknown>,
-  >(payload: Payload, header?: Header): Promise<SignedToken<Payload, Header>> {
+  async function signToken<Payload extends Record<string, unknown> = Record<string, unknown>>(
+    payload: Payload,
+    options: SignTokenOptions = {},
+  ): Promise<SignedToken<Payload>> {
     return withSpan(
       tracer,
       SpanNames.TOKEN_SIGN,
@@ -83,7 +94,11 @@ export function createSigningIdentity(privateKey: Uint8Array): SigningIdentity {
           throw new Error('Invalid payload: issuer does not match signer')
         }
 
-        const fullHeader = { ...header, typ: 'JWT', alg: 'EdDSA' } as SignedHeader & Header
+        const fullHeader = {
+          ...(options.header ?? {}),
+          typ: 'JWT',
+          alg: 'EdDSA',
+        } as SignedHeader
         const fullPayload = { ...payload, iss: id }
         const data = `${b64uFromJSON(fullHeader)}.${b64uFromJSON(fullPayload)}`
 
@@ -161,25 +176,16 @@ export type ResolvedKey = {
   publicKey: Uint8Array
 }
 
-export type SignOptions = {
-  kid?: string
-  /**
-   * Override the first-per-aud long-form policy for did:peer:4 identities.
-   * - true: always use long form (no-op for did:key, where longForm === did).
-   * - false: always use short form, regardless of whether aud has been seen.
-   * - undefined (default): use long form on first token to a given payload.aud, short form thereafter.
-   */
-  embedLongForm?: boolean
-}
-
 export type MultiKeyIdentity = {
-  did: string
+  id: string
   longForm: string
   doc: DIDDoc
   keys: Array<ResolvedKey>
-  sign<Payload extends Record<string, unknown> = Record<string, unknown>>(
+  publicKey: Uint8Array
+  privateKey: Uint8Array
+  signToken<Payload extends Record<string, unknown> = Record<string, unknown>>(
     payload: Payload,
-    options?: SignOptions,
+    options?: SignTokenOptions,
   ): Promise<SignedToken<Payload>>
   decrypt(jwe: string): Promise<Uint8Array>
   agreeKey(ephemeralPublicKey: Uint8Array, kid?: string): Promise<Uint8Array>
@@ -308,34 +314,39 @@ function pickKemKey(keys: Array<ResolvedKey>, kid?: string): ResolvedKey {
 }
 
 function buildIdentity(
-  did: string,
+  id: string,
   longForm: string,
   doc: DIDDoc,
   keys: Array<ResolvedKey>,
 ): MultiKeyIdentity {
+  const primarySig = keys.find((k) => k.purpose === 'sig')
+  if (primarySig == null) {
+    throw new Error('createIdentity requires at least one signing key')
+  }
   const sentTo = new Set<string>()
-  const isPeer = isPeer4(did)
+  const isPeer = isPeer4(id)
 
   function pickIss(payload: Record<string, unknown>, embedLongForm: boolean | undefined): string {
-    if (!isPeer) return did
+    if (!isPeer) return id
     if (embedLongForm === true) return longForm
-    if (embedLongForm === false) return did
+    if (embedLongForm === false) return id
     const aud = payload.aud
-    if (typeof aud !== 'string') return did
+    if (typeof aud !== 'string') return id
     const normalizedAud = normalizeDID(aud)
-    if (sentTo.has(normalizedAud)) return did
+    if (sentTo.has(normalizedAud)) return id
     // Concurrent sign() calls with the same new aud may both emit long-form; recipient cache writes are idempotent so this is acceptable.
     sentTo.add(normalizedAud)
     return longForm
   }
 
-  async function sign<Payload extends Record<string, unknown> = Record<string, unknown>>(
+  async function signToken<Payload extends Record<string, unknown> = Record<string, unknown>>(
     payload: Payload,
-    options: SignOptions = {},
+    options: SignTokenOptions = {},
   ): Promise<SignedToken<Payload>> {
     const key = pickSigningKey(keys, options.kid)
     const iss = pickIss(payload as Record<string, unknown>, options.embedLongForm)
     const header = {
+      ...(options.header ?? {}),
       typ: 'JWT',
       alg: 'EdDSA',
       ...(isPeer ? { kid: key.fragment } : {}),
@@ -357,10 +368,20 @@ function buildIdentity(
 
   async function decrypt(jwe: string): Promise<Uint8Array> {
     pickKemKey(keys)
-    return decryptToken({ id: did, decrypt, agreeKey }, jwe)
+    return decryptToken({ id, decrypt, agreeKey }, jwe)
   }
 
-  return { did, longForm, doc, keys, sign, decrypt, agreeKey }
+  return {
+    id,
+    longForm,
+    doc,
+    keys,
+    publicKey: primarySig.publicKey,
+    privateKey: primarySig.privateKey,
+    signToken,
+    decrypt,
+    agreeKey,
+  }
 }
 
 /**
@@ -379,7 +400,7 @@ export async function createIdentity(input: CreateIdentityInput): Promise<MultiK
 
   if (method === 'key') {
     const [k] = keys
-    const did = getDID(CODECS.EdDSA, k.publicKey)
+    const id = getDID(CODECS.EdDSA, k.publicKey)
     const doc: DIDDoc = {
       '@context': ['https://www.w3.org/ns/did/v1'],
       verificationMethod: [
@@ -391,7 +412,7 @@ export async function createIdentity(input: CreateIdentityInput): Promise<MultiK
       ],
       authentication: ['#key-0'],
     }
-    return buildIdentity(did, did, doc, keys)
+    return buildIdentity(id, id, doc, keys)
   }
 
   const doc = buildDoc(keys)
