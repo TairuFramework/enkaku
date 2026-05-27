@@ -196,7 +196,7 @@ export async function createCapability<
 
   // If signer is the subject, no parent validation needed (root capability)
   if (normalizeDID(payload.sub) === normalizeDID(signerId)) {
-    return await signer.signToken(payload, header)
+    return await signer.signToken(payload, { header })
   }
 
   // Signer is delegating on behalf of someone else - validate authorization
@@ -235,7 +235,7 @@ export async function createCapability<
     throw new Error('Invalid capability: delegated permission exceeds parent capability')
   }
 
-  return await signer.signToken(payload, header)
+  return await signer.signToken(payload, { header })
 }
 
 export function isMatch(expected: string, actual: string): boolean {

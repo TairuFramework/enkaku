@@ -118,7 +118,7 @@ describe('SerializedCredential.longForm', () => {
       didMethod: 'peer:4',
     })
     const credential = {
-      did: identity.did,
+      did: identity.id,
       capabilityChain: ['cap-token'],
       capability: { payload: { act: 'read', res: 'foo' } } as never,
       permission: 'read' as const,
@@ -127,7 +127,7 @@ describe('SerializedCredential.longForm', () => {
     const bytes = credentialToMLSIdentity(credential, { longForm: identity.longForm })
     const parsed = mlsIdentityToSerializedCredential(bytes)
     expect(parsed.longForm).toBe(identity.longForm)
-    expect(parsed.did).toBe(identity.did)
+    expect(parsed.did).toBe(identity.id)
   })
 
   it('credentialToMLSIdentity omits longForm for did:key identities', async () => {
@@ -136,7 +136,7 @@ describe('SerializedCredential.longForm', () => {
       didMethod: 'key',
     })
     const credential = {
-      did: identity.did,
+      did: identity.id,
       capabilityChain: [],
       capability: { payload: { act: 'read', res: 'foo' } } as never,
       permission: 'read' as const,
@@ -166,14 +166,14 @@ describe('SerializedCredential.longForm', () => {
       didMethod: 'peer:4',
     })
     const serialized: SerializedCredential = {
-      did: identity.did,
+      did: identity.id,
       groupID: 'g',
       capabilityChain: [],
       longForm: identity.longForm,
     }
     const cache = createInMemoryDIDCache()
     await populateCacheFromCredential(serialized, cache)
-    expect(await cache.get(identity.did)).toEqual(identity.doc)
+    expect(await cache.get(identity.id)).toEqual(identity.doc)
   })
 
   it('populateCacheFromCredential is a no-op when longForm is absent', async () => {
@@ -196,7 +196,7 @@ describe('SerializedCredential.longForm', () => {
       didMethod: 'peer:4',
     })
     const serialized: SerializedCredential = {
-      did: alice.did,
+      did: alice.id,
       groupID: 'g',
       capabilityChain: [],
       longForm: bob.longForm, // mismatched

@@ -225,7 +225,7 @@ function getCreateMessage<Protocol extends ProtocolDefinition>(
       if (!isSigningIdentity(id)) {
         throw new Error('Identity does not support signing')
       }
-      return id.signToken(payload, header)
+      return id.signToken(payload, { header })
     })
   }
 
