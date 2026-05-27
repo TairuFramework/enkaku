@@ -165,23 +165,55 @@ describe('joinGroupExternal — stale device recovery', () => {
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
       didMethod: 'peer:4',
     })
-    const { group: g0 } = await createGroup(alice, 'g-rejoin-peer4')
-    const { groupInfo } = await exportGroupInfo({ group: g0 })
-
-    const aliceB = await createIdentity({
+    const bob = await createIdentity({
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
       didMethod: 'peer:4',
     })
-    // Reuse the original member credential — caller-held local state per Invite contract.
+
+    // Two-member peer4 group so the ratchet tree is non-trivial (ts-mls
+    // requires a non-blank last node for rejoin).
+    const { group: aliceGroup } = await createGroup(alice, 'g-rejoin-peer4')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { newGroup: aliceAfterBob, welcomeMessage } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+    const { credential: bobCred } = await processWelcome({
+      identity: bob,
+      invite,
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: aliceAfterBob.state.ratchetTree,
+    })
+
+    const { groupInfo } = await exportGroupInfo({ group: aliceAfterBob })
+
+    // Stale-recovery rejoin: bob comes back with the same sig-key material so
+    // his re-derived peer:4 short form matches the existing leaf; resync
+    // atomically replaces it.
+    const bobSigKey = bob.keys.find((k) => k.purpose === 'sig')
+    if (bobSigKey == null) throw new Error('bob has no sig key')
+    const bobRedux = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA', privateKey: bobSigKey.privateKey }],
+      didMethod: 'peer:4',
+    })
+    expect(bobRedux.id).toBe(bob.id)
+
     const { group: rejoined, commitMessage } = await joinGroupExternal({
-      identity: aliceB,
+      identity: bobRedux,
       groupInfo,
-      credential: g0.credential,
+      credential: bobCred,
       resync: true,
     })
 
     expect(rejoined.groupID).toBe('g-rejoin-peer4')
-    expect(rejoined.epoch).toBe(g0.epoch + 1n)
+    expect(rejoined.epoch).toBe(aliceAfterBob.epoch + 1n)
     expect(commitMessage.byteLength).toBeGreaterThan(0)
   })
 
