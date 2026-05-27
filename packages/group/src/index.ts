@@ -18,6 +18,7 @@ export {
   extractPermission,
   type MemberCredential,
   mlsIdentityToSerializedCredential,
+  populateCacheFromCredential,
   type SerializedCredential,
 } from './credential.js'
 export {

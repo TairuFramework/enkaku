@@ -1,5 +1,5 @@
 import type { CapabilityToken } from '@enkaku/capability'
-import type { SignedToken } from '@enkaku/token'
+import { type DIDCache, decodePeer4, isPeer4, type SignedToken } from '@enkaku/token'
 
 import type { GroupPermission } from './capability.js'
 
@@ -28,17 +28,25 @@ export type SerializedCredential = {
   did: string
   groupID: string
   capabilityChain: Array<string>
+  /** did:peer:4 long form (with embedded doc). Present only when did is a did:peer:4 short form. */
+  longForm?: string
 }
 
 /**
  * Creates an MLS-compatible credential (basic type) from a member credential.
  * The identity field contains the serialized credential as UTF-8 JSON.
  */
-export function credentialToMLSIdentity(credential: MemberCredential): Uint8Array {
+export function credentialToMLSIdentity(
+  credential: MemberCredential,
+  options: { longForm?: string } = {},
+): Uint8Array {
   const serialized: SerializedCredential = {
     did: credential.did,
     groupID: credential.groupID,
     capabilityChain: credential.capabilityChain,
+  }
+  if (options.longForm != null && isPeer4(credential.did)) {
+    serialized.longForm = options.longForm
   }
   return new TextEncoder().encode(JSON.stringify(serialized))
 }
@@ -58,7 +66,28 @@ export function mlsIdentityToSerializedCredential(identity: Uint8Array): Seriali
   ) {
     throw new Error('Invalid MLS credential: malformed serialized credential')
   }
+  const candidate = parsed as Record<string, unknown>
+  if ('longForm' in candidate && typeof candidate.longForm !== 'string') {
+    throw new Error('Invalid MLS credential: longForm must be a string when present')
+  }
   return parsed as SerializedCredential
+}
+
+/**
+ * If the serialized credential carries a did:peer:4 long form, decode it and write to the cache.
+ * Hash binding enforced by decodePeer4 + cache.set.
+ */
+export async function populateCacheFromCredential(
+  serialized: SerializedCredential,
+  cache: DIDCache,
+): Promise<void> {
+  if (serialized.longForm == null) return
+  if (!isPeer4(serialized.did)) return
+  const { shortForm, doc } = decodePeer4(serialized.longForm)
+  if (shortForm !== serialized.did) {
+    throw new Error('Credential longForm does not match credential.did')
+  }
+  await cache.set(shortForm, doc)
 }
 
 /**

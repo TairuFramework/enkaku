@@ -11,7 +11,10 @@
  */
 
 import {
+  type DIDCache,
+  type DIDResolver,
   isVerifiedToken,
+  normalizeDID,
   type SignedHeader,
   type SignedPayload,
   type SignedToken,
@@ -37,6 +40,10 @@ export type DelegationChainOptions = {
   maxDepth?: number
   /** Optional hook called for each token in the chain after verification. Can be used for revocation checks. */
   verifyToken?: VerifyTokenHook
+  /** Optional DID cache for resolving did:peer:4 issuers. Populated on long-form first contact. */
+  cache?: DIDCache
+  /** Optional resolver for did:peer:4 short forms not in cache. */
+  resolver?: DIDResolver
 }
 
 /** Options for capability creation */
@@ -188,7 +195,7 @@ export async function createCapability<
   assertValidPattern(payload.res)
 
   // If signer is the subject, no parent validation needed (root capability)
-  if (payload.sub === signerId) {
+  if (normalizeDID(payload.sub) === normalizeDID(signerId)) {
     return await signer.signToken(payload, header)
   }
 
@@ -203,13 +210,11 @@ export async function createCapability<
   const parent = await verifyToken<CapabilityPayload>(options.parentCapability)
   assertCapabilityToken(parent)
 
-  // Signer must be the audience of the parent capability
-  if (parent.payload.aud !== signerId) {
+  if (normalizeDID(parent.payload.aud) !== normalizeDID(signerId)) {
     throw new Error('Invalid capability: signer must be the audience of parent capability')
   }
 
-  // Subject must match
-  if (parent.payload.sub !== payload.sub) {
+  if (normalizeDID(parent.payload.sub) !== normalizeDID(payload.sub)) {
     throw new Error('Invalid capability: subject mismatch with parent capability')
   }
 
@@ -299,10 +304,10 @@ export function assertValidDelegation(
   atTime?: number,
 ): void {
   const time = atTime ?? now()
-  if (to.iss !== from.aud) {
+  if (normalizeDID(to.iss) !== normalizeDID(from.aud)) {
     throw new Error('Invalid capability: audience mismatch')
   }
-  if (to.sub !== from.sub) {
+  if (normalizeDID(to.sub) !== normalizeDID(from.sub)) {
     throw new Error('Invalid capability: subject mismatch')
   }
   assertNonExpired(from, time)
@@ -325,7 +330,7 @@ export async function checkDelegationChain(
   }
 
   if (capabilities.length === 0) {
-    if (payload.iss !== payload.sub) {
+    if (normalizeDID(payload.iss) !== normalizeDID(payload.sub)) {
       throw new Error('Invalid capability: issuer should be subject')
     }
     assertNonExpired(payload, atTime)
@@ -337,7 +342,11 @@ export async function checkDelegationChain(
   // Verify the leaf capability's own time claims (exp/nbf) at the same reference
   // time used for the delegation checks, so a capability that was valid when the
   // request was issued is not rejected by a later wall-clock during verification.
-  const next = await verifyToken<CapabilityPayload>(head, { atTime })
+  const next = await verifyToken<CapabilityPayload>(head, {
+    atTime,
+    cache: options?.cache,
+    resolver: options?.resolver,
+  })
   assertCapabilityToken(next)
   if (options?.verifyToken != null) {
     await options.verifyToken(next, head)
@@ -356,7 +365,7 @@ export async function checkCapability(
   }
 
   const time = options?.atTime ?? now()
-  if (payload.iss === payload.sub) {
+  if (normalizeDID(payload.iss) === normalizeDID(payload.sub)) {
     // Subject is issuer, no delegation required
     // But still need to validate the permission is granted
     assertNonExpired(payload, time)
@@ -388,7 +397,11 @@ export async function checkCapability(
   }
   // Verify the leaf capability's own time claims at the resolved reference time
   // (`atTime` when provided, else now()), matching the delegation checks below.
-  const capability = await verifyToken<CapabilityPayload>(head, { atTime: time })
+  const capability = await verifyToken<CapabilityPayload>(head, {
+    atTime: time,
+    cache: options?.cache,
+    resolver: options?.resolver,
+  })
   assertCapabilityToken(capability)
   if (options?.verifyToken != null) {
     await options.verifyToken(capability, head)

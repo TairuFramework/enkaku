@@ -1,5 +1,11 @@
-import type { OwnIdentity, SigningIdentity } from '@enkaku/token'
-import { stringifyToken, verifyToken } from '@enkaku/token'
+import {
+  createInMemoryDIDCache,
+  type DIDCache,
+  type DIDResolver,
+  type OwnIdentity,
+  type SigningIdentity,
+  stringifyToken,
+} from '@enkaku/token'
 import {
   type CiphersuiteName,
   type ClientState,
@@ -62,6 +68,8 @@ export type GroupHandleParams = {
   context: MlsContext
   /** Stringified root capability (for delegation) */
   rootCapability: string
+  cache: DIDCache
+  resolver?: DIDResolver
 }
 
 /**
@@ -72,12 +80,16 @@ export class GroupHandle {
   #credential: MemberCredential
   #context: MlsContext
   #rootCapability: string
+  #cache: DIDCache
+  #resolver?: DIDResolver
 
   constructor(params: GroupHandleParams) {
     this.#state = params.state
     this.#credential = params.credential
     this.#context = params.context
     this.#rootCapability = params.rootCapability
+    this.#cache = params.cache
+    this.#resolver = params.resolver
   }
 
   get groupID(): string {
@@ -102,6 +114,14 @@ export class GroupHandle {
 
   get context(): MlsContext {
     return this.#context
+  }
+
+  get cache(): DIDCache {
+    return this.#cache
+  }
+
+  get resolver(): DIDResolver | undefined {
+    return this.#resolver
   }
 
   get memberCount(): number {
@@ -190,6 +210,7 @@ export async function createGroup(
   groupID: string,
   options?: GroupOptions,
 ): Promise<CreateGroupResult> {
+  const cache = options?.cache ?? createInMemoryDIDCache()
   const context = await resolveMlsContext(options)
 
   const statePromise = generateKeyPackageWithKey({
@@ -223,6 +244,8 @@ export async function createGroup(
     credential,
     context,
     rootCapability,
+    cache,
+    resolver: options?.resolver,
   })
 
   return { group, credential }
@@ -236,11 +259,14 @@ export type RestoreGroupParams = {
 }
 
 export async function restoreGroup(params: RestoreGroupParams): Promise<GroupHandle> {
+  const cache = params.options?.cache ?? createInMemoryDIDCache()
   return new GroupHandle({
     state: params.state,
     credential: params.credential,
     context: await resolveMlsContext(params.options),
     rootCapability: params.rootCapability,
+    cache,
+    resolver: params.options?.resolver,
   })
 }
 
@@ -312,6 +338,8 @@ export async function commitInvite(
     credential: group.credential,
     context: group.context,
     rootCapability: group.rootCapability,
+    cache: group.cache,
+    resolver: group.resolver,
   })
 
   return {
@@ -340,18 +368,20 @@ export type ProcessWelcomeParams = {
  */
 export async function processWelcome(params: ProcessWelcomeParams): Promise<ProcessWelcomeResult> {
   const { identity, invite, welcome, keyPackageBundle, ratchetTree, options } = params
+  const cache = options?.cache ?? createInMemoryDIDCache()
   const context = await resolveMlsContext(options)
 
-  // Validate the invite's capability chain before trusting it
+  // Validate the invite's capability chain before trusting it.
+  // validateGroupCapability internally calls verifyToken with cache/resolver and returns the
+  // verified token — reuse it instead of calling verifyToken a second time without cache/resolver.
   const { validateGroupCapability } = await import('./capability.js')
-  await validateGroupCapability({
+  const capToken = await validateGroupCapability({
     tokenData: invite.capabilityToken,
     groupID: invite.groupID,
     delegationChain:
       invite.capabilityChain.length > 1 ? invite.capabilityChain.slice(0, -1) : undefined,
+    options: { cache, resolver: options?.resolver },
   })
-
-  const capToken = await verifyToken(invite.capabilityToken)
 
   type JoinGroupParams = Parameters<typeof mlsJoinGroup>[0]
   const sanitizedTree = Array.isArray(ratchetTree) ? sanitizeRatchetTree(ratchetTree) : ratchetTree
@@ -382,6 +412,8 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
       (() => {
         throw new Error('Invalid invite: capability chain must not be empty')
       })(),
+    cache,
+    resolver: options?.resolver,
   })
 
   return { group, credential }
@@ -415,6 +447,8 @@ export async function removeMember(
     credential: group.credential,
     context: group.context,
     rootCapability: group.rootCapability,
+    cache: group.cache,
+    resolver: group.resolver,
   })
 
   return { commitMessage: result.commit, newGroup }
@@ -503,6 +537,7 @@ export async function joinGroupExternal(
     throw new Error('Invalid credential: capability chain must not be empty')
   }
 
+  const cache = options?.cache ?? createInMemoryDIDCache()
   const context = await resolveMlsContext(options)
 
   const message = decode(mlsMessageDecoder, groupInfoBytes)
@@ -544,6 +579,8 @@ export async function joinGroupExternal(
     credential,
     context,
     rootCapability,
+    cache,
+    resolver: options?.resolver,
   })
 
   return { commitMessage, group }

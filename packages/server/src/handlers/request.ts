@@ -1,6 +1,6 @@
 import type { ClientMessage, ProtocolDefinition, RequestPayloadOf } from '@enkaku/protocol'
 
-import type { HandlerContext, RequestHandler } from '../types.js'
+import type { HandlerContext, RequestController, RequestHandler } from '../types.js'
 import { executeHandler } from '../utils.js'
 
 export type RequestMessageOf<
@@ -34,7 +34,8 @@ export function handleRequest<
     })
   }
 
-  const controller = new AbortController()
+  const issuer = (msg.payload as Record<string, unknown>).iss as string | undefined
+  const controller: RequestController = Object.assign(new AbortController(), { issuer })
   ctx.controllers[msg.payload.rid] = controller
 
   const handlerContext = {

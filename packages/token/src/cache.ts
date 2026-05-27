@@ -15,14 +15,36 @@ export type DIDCache = {
   set(shortForm: string, doc: DIDDoc): void | Promise<void>
 }
 
+export type CreateInMemoryDIDCacheOptions = {
+  /** Maximum number of cached entries. Oldest evicted first. Default 10_000. */
+  maxEntries?: number
+}
+
+const DEFAULT_MAX_ENTRIES = 10_000
+
 /**
- * Build an in-memory DID cache. The returned cache verifies short-form/doc binding on every set.
+ * Build an in-memory DID cache. The returned cache verifies short-form/doc binding on every set
+ * and evicts least-recently-used entries when maxEntries is exceeded.
  */
-export function createInMemoryDIDCache(): DIDCache {
+export function createInMemoryDIDCache(options: CreateInMemoryDIDCacheOptions = {}): DIDCache {
+  const maxEntries = options.maxEntries ?? DEFAULT_MAX_ENTRIES
+  if (maxEntries < 1) {
+    throw new Error('DIDCache: maxEntries must be at least 1')
+  }
   const docs = new Map<string, DIDDoc>()
+
+  function touch(shortForm: string, doc: DIDDoc): void {
+    docs.delete(shortForm)
+    docs.set(shortForm, doc)
+  }
+
   return {
     get(shortForm) {
-      return docs.get(shortForm)
+      const doc = docs.get(shortForm)
+      if (doc != null) {
+        touch(shortForm, doc)
+      }
+      return doc
     },
     set(shortForm, doc) {
       if (!isPeer4(shortForm)) {
@@ -32,7 +54,12 @@ export function createInMemoryDIDCache(): DIDCache {
       if (expected !== shortForm) {
         return Promise.reject(new Error('DIDCache: short form/doc hash mismatch'))
       }
-      docs.set(shortForm, doc)
+      touch(shortForm, doc)
+      while (docs.size > maxEntries) {
+        const oldest = docs.keys().next().value
+        if (oldest == null) break
+        docs.delete(oldest)
+      }
       return Promise.resolve()
     },
   }

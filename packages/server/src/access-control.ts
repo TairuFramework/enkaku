@@ -4,7 +4,7 @@ import {
   type DelegationChainOptions,
   hasPartsMatch,
 } from '@enkaku/capability'
-import type { SignedToken } from '@enkaku/token'
+import { normalizeDID, type SignedToken } from '@enkaku/token'
 
 export type EncryptionPolicy = 'required' | 'optional' | 'none'
 
@@ -91,9 +91,14 @@ export async function checkProcedureAccess(
     }
 
     if (Array.isArray(allow)) {
-      if (allow.includes(payload.iss)) return
-      if (payload.sub != null && allow.includes(payload.sub)) {
-        if (await verifyDelegation()) return
+      const normalizedAllow = allow.map(normalizeDID)
+      const normalizedIss = normalizeDID(payload.iss)
+      if (normalizedAllow.includes(normalizedIss)) return
+      if (payload.sub != null) {
+        const normalizedSub = normalizeDID(payload.sub)
+        if (normalizedAllow.includes(normalizedSub)) {
+          if (await verifyDelegation()) return
+        }
       }
       continue
     }
@@ -125,9 +130,11 @@ export async function checkClientToken(
     throw new Error('No procedure to check')
   }
 
-  if (payload.iss === serverID) {
+  const normalizedServerID = normalizeDID(serverID)
+
+  if (normalizeDID(payload.iss) === normalizedServerID) {
     // If issuer uses the server's signer, only check audience and expiration if provided
-    if (payload.aud != null && payload.aud !== serverID) {
+    if (payload.aud != null && normalizeDID(payload.aud) !== normalizedServerID) {
       throw new Error('Invalid audience')
     }
     if (payload.exp != null) {
@@ -136,13 +143,13 @@ export async function checkClientToken(
     return
   }
 
-  if (payload.sub === serverID) {
+  if (payload.sub != null && normalizeDID(payload.sub) === normalizedServerID) {
     // If subject is the server, check capability directly
     await checkCapability({ act: procedure, res: serverID }, payload, options)
     return
   }
 
-  if (payload.aud !== serverID) {
+  if (payload.aud == null || normalizeDID(payload.aud) !== normalizedServerID) {
     throw new Error('Invalid audience')
   }
   await checkProcedureAccess(serverID, rules, token as SignedToken<ProcedureAccessPayload>, options)

@@ -18,7 +18,9 @@ import type {
 
 import type { HandlerError } from './error.js'
 
-export type RequestController = AbortController
+export type RequestController = AbortController & {
+  issuer?: string
+}
 
 export type ChannelController<Send = unknown> = AbortController & {
   issuer?: string

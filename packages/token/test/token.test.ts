@@ -1,9 +1,9 @@
 import { b64uFromJSON } from '@enkaku/codec'
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { equals } from 'uint8arrays'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, it, test } from 'vitest'
 
-import { randomIdentity } from '../src/identity.js'
+import { createIdentity, randomIdentity } from '../src/identity.js'
 import {
   createUnsignedToken,
   isSignedToken,
@@ -138,4 +138,93 @@ test('verifyToken uses generic error for unsupported algorithm', async () => {
   await expect(verifyToken(`${badHeader}.${payload}.${sig}`)).rejects.toThrow(
     'Unsupported signature algorithm',
   )
+})
+
+describe('verifyToken with cache', () => {
+  it('populates cache when iss is peer4 long form and signature is valid', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const { createInMemoryDIDCache } = await import('../src/cache.js')
+    const { encodePeer4 } = await import('../src/peer4.js')
+    const cache = createInMemoryDIDCache()
+    const { ed25519: ed } = await import('@noble/curves/ed25519.js')
+    const { b64uFromJSON: b64uJSON, fromUTF: fUTF, toB64U: tb64u } = await import('@enkaku/codec')
+    const key = identity.keys[0]
+    const header = { typ: 'JWT' as const, alg: 'EdDSA' as const, kid: key.fragment }
+    const payload = { iss: identity.longForm, sub: identity.did, aud: 'someone' }
+    const data = `${b64uJSON(header)}.${b64uJSON(payload)}`
+    const signature = tb64u(ed.sign(fUTF(data), key.privateKey))
+    const token = { header, payload, signature, data }
+    await verifyToken(token, { cache })
+    const { shortForm } = encodePeer4(identity.doc)
+    expect(await cache.get(shortForm)).toEqual(identity.doc)
+  })
+
+  it('does NOT populate cache when signature is invalid', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const { createInMemoryDIDCache } = await import('../src/cache.js')
+    const { encodePeer4 } = await import('../src/peer4.js')
+    const cache = createInMemoryDIDCache()
+    const { ed25519: ed } = await import('@noble/curves/ed25519.js')
+    const { b64uFromJSON: b64uJSON, fromUTF: fUTF, toB64U: tb64u } = await import('@enkaku/codec')
+    const key = identity.keys[0]
+    const header = { typ: 'JWT' as const, alg: 'EdDSA' as const, kid: key.fragment }
+    const payload = { iss: identity.longForm, sub: identity.did, aud: 'someone' }
+    const data = `${b64uJSON(header)}.${b64uJSON(payload)}`
+    const goodSig = ed.sign(fUTF(data), key.privateKey)
+    void goodSig
+    const tamperedBytes = new Uint8Array(64)
+    tamperedBytes[0] = 1
+    const bad = { header, payload, signature: tb64u(tamperedBytes), data }
+    await expect(verifyToken(bad, { cache })).rejects.toThrow(/Invalid signature/)
+    const { shortForm } = encodePeer4(identity.doc)
+    expect(await cache.get(shortForm)).toBeUndefined()
+  })
+
+  it('verifies short-form iss against pre-populated cache', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const { createInMemoryDIDCache } = await import('../src/cache.js')
+    const { encodePeer4 } = await import('../src/peer4.js')
+    const cache = createInMemoryDIDCache()
+    const { shortForm } = encodePeer4(identity.doc)
+    await cache.set(shortForm, identity.doc)
+    const token = await identity.sign({ sub: identity.did, aud: 'someone' })
+    await expect(verifyToken(token, { cache })).resolves.toBeDefined()
+  })
+
+  it('falls through to resolver on cache miss', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const { createInMemoryDIDCache } = await import('../src/cache.js')
+    const { encodePeer4 } = await import('../src/peer4.js')
+    const cache = createInMemoryDIDCache()
+    const { shortForm } = encodePeer4(identity.doc)
+    let resolverHits = 0
+    const resolver = (did: string) => {
+      resolverHits++
+      return did === shortForm ? identity.doc : undefined
+    }
+    const token = await identity.sign(
+      { sub: identity.did, aud: 'someone' },
+      { embedLongForm: false },
+    )
+    await verifyToken(token, { cache, resolver })
+    expect(resolverHits).toBe(1)
+    const token2 = await identity.sign(
+      { sub: identity.did, aud: 'someone-else' },
+      { embedLongForm: false },
+    )
+    await verifyToken(token2, { cache, resolver })
+    expect(resolverHits).toBe(1)
+  })
 })

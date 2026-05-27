@@ -2,7 +2,7 @@ import { b64uFromJSON, fromUTF, toB64U } from '@enkaku/codec'
 import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
 import { ed25519, x25519 } from '@noble/curves/ed25519.js'
 
-import { CODECS, getDID } from './did.js'
+import { CODECS, getDID, normalizeDID } from './did.js'
 import { decryptToken } from './jwe.js'
 import { encodeMultibase } from './multibase.js'
 import { type DIDDoc, encodePeer4, isPeer4 } from './peer4.js'
@@ -163,6 +163,13 @@ export type ResolvedKey = {
 
 export type SignOptions = {
   kid?: string
+  /**
+   * Override the first-per-aud long-form policy for did:peer:4 identities.
+   * - true: always use long form (no-op for did:key, where longForm === did).
+   * - false: always use short form, regardless of whether aud has been seen.
+   * - undefined (default): use long form on first token to a given payload.aud, short form thereafter.
+   */
+  embedLongForm?: boolean
 }
 
 export type MultiKeyIdentity = {
@@ -306,17 +313,34 @@ function buildIdentity(
   doc: DIDDoc,
   keys: Array<ResolvedKey>,
 ): MultiKeyIdentity {
+  const sentTo = new Set<string>()
+  const isPeer = isPeer4(did)
+
+  function pickIss(payload: Record<string, unknown>, embedLongForm: boolean | undefined): string {
+    if (!isPeer) return did
+    if (embedLongForm === true) return longForm
+    if (embedLongForm === false) return did
+    const aud = payload.aud
+    if (typeof aud !== 'string') return did
+    const normalizedAud = normalizeDID(aud)
+    if (sentTo.has(normalizedAud)) return did
+    // Concurrent sign() calls with the same new aud may both emit long-form; recipient cache writes are idempotent so this is acceptable.
+    sentTo.add(normalizedAud)
+    return longForm
+  }
+
   async function sign<Payload extends Record<string, unknown> = Record<string, unknown>>(
     payload: Payload,
     options: SignOptions = {},
   ): Promise<SignedToken<Payload>> {
     const key = pickSigningKey(keys, options.kid)
+    const iss = pickIss(payload as Record<string, unknown>, options.embedLongForm)
     const header = {
       typ: 'JWT',
       alg: 'EdDSA',
-      ...(isPeer4(did) ? { kid: key.fragment } : {}),
+      ...(isPeer ? { kid: key.fragment } : {}),
     } as SignedHeader
-    const fullPayload = { ...payload, iss: did }
+    const fullPayload = { ...payload, iss }
     const data = `${b64uFromJSON(header)}.${b64uFromJSON(fullPayload)}`
     return {
       header: header as SignedHeader & Record<string, unknown>,
