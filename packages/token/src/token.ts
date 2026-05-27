@@ -120,7 +120,10 @@ export async function signToken<
 >(signer: SigningIdentity, token: Token<Payload, Header>): Promise<SignedToken<Payload, Header>> {
   return isSignedToken(token)
     ? (token as SignedToken<Payload, Header>)
-    : await signer.signToken(token.payload, token.header)
+    : ((await signer.signToken(token.payload, { header: token.header })) as SignedToken<
+        Payload,
+        Header
+      >)
 }
 
 async function verifyTokenInner<Payload extends Record<string, unknown> = Record<string, unknown>>(

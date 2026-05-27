@@ -14,15 +14,26 @@ const tracer = createTracer('token')
 
 export type Identity = { readonly id: string }
 
+export type SignTokenOptions = {
+  /** Extra header fields merged into the signed JWS header. */
+  header?: Record<string, unknown>
+  /** Pick a non-primary signing key by fragment (e.g. "#key-1"). */
+  kid?: string
+  /**
+   * Override the first-per-aud long-form policy for did:peer:4 identities.
+   * - true: always use long form (no-op for did:key, where longForm === id).
+   * - false: always use short form.
+   * - undefined (default): use long form on first token to a given payload.aud, short form thereafter.
+   */
+  embedLongForm?: boolean
+}
+
 export type SigningIdentity = Identity & {
   publicKey: Uint8Array
-  signToken: <
-    Payload extends Record<string, unknown> = Record<string, unknown>,
-    Header extends Record<string, unknown> = Record<string, unknown>,
-  >(
+  signToken: <Payload extends Record<string, unknown> = Record<string, unknown>>(
     payload: Payload,
-    header?: Header,
-  ) => Promise<SignedToken<Payload, Header>>
+    options?: SignTokenOptions,
+  ) => Promise<SignedToken<Payload>>
 }
 
 export type DecryptingIdentity = Identity & {
@@ -70,10 +81,10 @@ export function createSigningIdentity(privateKey: Uint8Array): SigningIdentity {
   const publicKey = ed25519.getPublicKey(privateKey)
   const id = getDID(CODECS.EdDSA, publicKey)
 
-  async function signToken<
-    Payload extends Record<string, unknown> = Record<string, unknown>,
-    Header extends Record<string, unknown> = Record<string, unknown>,
-  >(payload: Payload, header?: Header): Promise<SignedToken<Payload, Header>> {
+  async function signToken<Payload extends Record<string, unknown> = Record<string, unknown>>(
+    payload: Payload,
+    options: SignTokenOptions = {},
+  ): Promise<SignedToken<Payload>> {
     return withSpan(
       tracer,
       SpanNames.TOKEN_SIGN,
@@ -83,7 +94,11 @@ export function createSigningIdentity(privateKey: Uint8Array): SigningIdentity {
           throw new Error('Invalid payload: issuer does not match signer')
         }
 
-        const fullHeader = { ...header, typ: 'JWT', alg: 'EdDSA' } as SignedHeader & Header
+        const fullHeader = {
+          ...(options.header ?? {}),
+          typ: 'JWT',
+          alg: 'EdDSA',
+        } as SignedHeader
         const fullPayload = { ...payload, iss: id }
         const data = `${b64uFromJSON(fullHeader)}.${b64uFromJSON(fullPayload)}`
 
@@ -161,17 +176,6 @@ export type ResolvedKey = {
   publicKey: Uint8Array
 }
 
-export type SignOptions = {
-  kid?: string
-  /**
-   * Override the first-per-aud long-form policy for did:peer:4 identities.
-   * - true: always use long form (no-op for did:key, where longForm === did).
-   * - false: always use short form, regardless of whether aud has been seen.
-   * - undefined (default): use long form on first token to a given payload.aud, short form thereafter.
-   */
-  embedLongForm?: boolean
-}
-
 export type MultiKeyIdentity = {
   id: string
   longForm: string
@@ -179,9 +183,9 @@ export type MultiKeyIdentity = {
   keys: Array<ResolvedKey>
   publicKey: Uint8Array
   privateKey: Uint8Array
-  sign<Payload extends Record<string, unknown> = Record<string, unknown>>(
+  signToken<Payload extends Record<string, unknown> = Record<string, unknown>>(
     payload: Payload,
-    options?: SignOptions,
+    options?: SignTokenOptions,
   ): Promise<SignedToken<Payload>>
   decrypt(jwe: string): Promise<Uint8Array>
   agreeKey(ephemeralPublicKey: Uint8Array, kid?: string): Promise<Uint8Array>
@@ -335,13 +339,14 @@ function buildIdentity(
     return longForm
   }
 
-  async function sign<Payload extends Record<string, unknown> = Record<string, unknown>>(
+  async function signToken<Payload extends Record<string, unknown> = Record<string, unknown>>(
     payload: Payload,
-    options: SignOptions = {},
+    options: SignTokenOptions = {},
   ): Promise<SignedToken<Payload>> {
     const key = pickSigningKey(keys, options.kid)
     const iss = pickIss(payload as Record<string, unknown>, options.embedLongForm)
     const header = {
+      ...(options.header ?? {}),
       typ: 'JWT',
       alg: 'EdDSA',
       ...(isPeer ? { kid: key.fragment } : {}),
@@ -373,7 +378,7 @@ function buildIdentity(
     keys,
     publicKey: primarySig.publicKey,
     privateKey: primarySig.privateKey,
-    sign,
+    signToken,
     decrypt,
     agreeKey,
   }

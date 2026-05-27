@@ -125,16 +125,16 @@ describe('randomIdentity', () => {
   })
 })
 
-describe('MultiKeyIdentity.sign first-per-aud long-form policy', () => {
+describe('MultiKeyIdentity.signToken first-per-aud long-form policy', () => {
   it('uses long form on first token to a new aud, short form thereafter', async () => {
     const identity = await createIdentity({
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
       didMethod: 'peer:4',
     })
     const aud = 'did:example:bob'
-    const t1 = await identity.sign({ sub: identity.id, aud })
+    const t1 = await identity.signToken({ sub: identity.id, aud })
     expect(t1.payload.iss).toBe(identity.longForm)
-    const t2 = await identity.sign({ sub: identity.id, aud })
+    const t2 = await identity.signToken({ sub: identity.id, aud })
     expect(t2.payload.iss).toBe(identity.id) // short form
   })
 
@@ -143,8 +143,8 @@ describe('MultiKeyIdentity.sign first-per-aud long-form policy', () => {
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
       didMethod: 'peer:4',
     })
-    await identity.sign({ sub: identity.id, aud: 'did:example:bob' })
-    const t = await identity.sign({ sub: identity.id, aud: 'did:example:alice' })
+    await identity.signToken({ sub: identity.id, aud: 'did:example:bob' })
+    const t = await identity.signToken({ sub: identity.id, aud: 'did:example:alice' })
     expect(t.payload.iss).toBe(identity.longForm)
   })
 
@@ -153,7 +153,7 @@ describe('MultiKeyIdentity.sign first-per-aud long-form policy', () => {
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
       didMethod: 'peer:4',
     })
-    const t = await identity.sign({ sub: identity.id })
+    const t = await identity.signToken({ sub: identity.id })
     expect(t.payload.iss).toBe(identity.id)
   })
 
@@ -163,8 +163,8 @@ describe('MultiKeyIdentity.sign first-per-aud long-form policy', () => {
       didMethod: 'peer:4',
     })
     const aud = 'did:example:bob'
-    await identity.sign({ sub: identity.id, aud })
-    const t = await identity.sign({ sub: identity.id, aud }, { embedLongForm: true })
+    await identity.signToken({ sub: identity.id, aud })
+    const t = await identity.signToken({ sub: identity.id, aud }, { embedLongForm: true })
     expect(t.payload.iss).toBe(identity.longForm)
   })
 
@@ -173,7 +173,7 @@ describe('MultiKeyIdentity.sign first-per-aud long-form policy', () => {
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
       didMethod: 'peer:4',
     })
-    const t = await identity.sign(
+    const t = await identity.signToken(
       { sub: identity.id, aud: 'did:example:bob' },
       { embedLongForm: false },
     )
@@ -194,11 +194,11 @@ describe('MultiKeyIdentity.sign first-per-aud long-form policy', () => {
     const peerShort = peerIdentity.id
 
     // First sign: long-form aud → should use long-form iss
-    const t1 = await identity.sign({ sub: identity.id, aud: peerLong })
+    const t1 = await identity.signToken({ sub: identity.id, aud: peerLong })
     expect(t1.payload.iss).toBe(identity.longForm)
 
     // Second sign: short-form aud (same identity) → sentTo already has normalizedAud; use short-form iss
-    const t2 = await identity.sign({ sub: identity.id, aud: peerShort })
+    const t2 = await identity.signToken({ sub: identity.id, aud: peerShort })
     expect(t2.payload.iss).toBe(identity.id)
   })
 
@@ -207,9 +207,9 @@ describe('MultiKeyIdentity.sign first-per-aud long-form policy', () => {
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
       didMethod: 'key',
     })
-    const t1 = await identity.sign({ sub: identity.id, aud: 'did:example:bob' })
+    const t1 = await identity.signToken({ sub: identity.id, aud: 'did:example:bob' })
     expect(t1.payload.iss).toBe(identity.id)
-    const t2 = await identity.sign(
+    const t2 = await identity.signToken(
       { sub: identity.id, aud: 'did:example:bob' },
       { embedLongForm: true },
     )

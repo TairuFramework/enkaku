@@ -196,7 +196,7 @@ describe('verifyToken with cache', () => {
     const cache = createInMemoryDIDCache()
     const { shortForm } = encodePeer4(identity.doc)
     await cache.set(shortForm, identity.doc)
-    const token = await identity.sign({ sub: identity.id, aud: 'someone' })
+    const token = await identity.signToken({ sub: identity.id, aud: 'someone' })
     await expect(verifyToken(token, { cache })).resolves.toBeDefined()
   })
 
@@ -214,13 +214,13 @@ describe('verifyToken with cache', () => {
       resolverHits++
       return did === shortForm ? identity.doc : undefined
     }
-    const token = await identity.sign(
+    const token = await identity.signToken(
       { sub: identity.id, aud: 'someone' },
       { embedLongForm: false },
     )
     await verifyToken(token, { cache, resolver })
     expect(resolverHits).toBe(1)
-    const token2 = await identity.sign(
+    const token2 = await identity.signToken(
       { sub: identity.id, aud: 'someone-else' },
       { embedLongForm: false },
     )
