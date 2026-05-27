@@ -115,8 +115,8 @@ packages/[package-name]/
 - **electron-rpc**: Electron IPC transport
 
 #### Auth, Identity & Security
-- **token**: JWT signing/verification, JWE encryption (ECDH-ES + A256GCM), `IdentityProvider<T>` abstraction
-- **capability**: Capability delegation chains, `RevocationBackend`, `createRevocationChecker` as `VerifyTokenHook`
+- **token**: JWT signing/verification, JWE encryption (ECDH-ES + A256GCM), `IdentityProvider<T>` abstraction. Includes `did:peer:4` support: multibase/multihash helpers, `DIDResolver`/`DIDCache` contracts with in-memory cache (hash-binding enforced on write), `MultiKeyIdentity` builder via `createIdentity()`, rotation assertions linking old → new DIDs, unified `signToken(payload, options?)` API with optional `kid` and `embedLongForm`.
+- **capability**: Capability delegation chains, `RevocationBackend`, `createRevocationChecker` as `VerifyTokenHook`. Migrated to `signer.signToken` API.
 - **ledger-identity**: Ledger hardware wallet identity provider (APDU client for custom BOLOS app)
 - **hd-keystore**: Software HD keystore — BIP39 mnemonic to Ed25519 keys via SLIP-0010
 
@@ -131,7 +131,7 @@ packages/[package-name]/
 - **hub-server**: Hub server with `HubStore` abstraction, fan-out routing, ack-based delivery
 - **hub-client**: Hub client wrapper (send, groupSend, receive, group management)
 - **hub-tunnel**: Peer-to-peer transport tunneling Enkaku messages through a hub relay with pluggable end-to-end encryption. See [../capabilities/domains/hub-tunnel.md](../capabilities/domains/hub-tunnel.md).
-- **group**: E2EE group management using MLS (ts-mls), custom noble CryptoProvider for Hermes compatibility
+- **group**: E2EE group management using MLS (ts-mls), custom noble CryptoProvider for Hermes compatibility. Leaf credential is a single self-describing JSON shape (`MLSCredentialIdentity = { id; longForm? }`) — did:key omits `longForm`, did:peer:4 always carries it. Auth service (`createDIDAuthenticationService`) is self-contained: peer4 path decodes `longForm` inline, enforces hash binding, restricts to `doc.authentication` VMs, constant-time compares pubkey to MLS leaf signature key. Membership state (`MemberCredential`) lives outside the MLS leaf.
 
 #### Utilities
 - **async**: Async primitives (deferred, semaphore, disposables)
@@ -143,6 +143,10 @@ packages/[package-name]/
 - **patch**: JSON patch utilities
 - **log**: Logging wrapper around LogTape (namespaced loggers, console sink)
 - **otel**: OpenTelemetry integration (tracer utilities, span helpers, semantic constants, trace context propagation)
+
+#### Runtime
+- **runtime**: Platform-provided primitives (`fetch`, `getRandomID`, `getRandomValues`). `createRuntime(overrides?)` resolves to `globalThis` defaults so consumers never branch on environment.
+- **expo-runtime**: Expo runtime via `expo/fetch` and `expo-crypto`, plus `polyfillCrypto`/`polyfillFetch`/`polyfill` helpers for React Native (Hermes).
 
 #### Platform
 - **react**: React bindings for Enkaku RPC client

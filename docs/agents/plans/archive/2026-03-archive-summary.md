@@ -17,3 +17,9 @@
 - **security-audit-final-items** (2026-03-05, complete) -- Implemented 7 security audit items: refactored access control API from public/access booleans to unified accessControl parameter (breaking change), added optional verifyToken hook, and 4 performance optimizations.
 
 - **http-transport-sse-redesign** (2026-03-06, complete) -- Redesigned SSE from EventSource API to fetch + eventsource-parser with POST-based session protocol, reducing stream setup from 3 requests to 1. Uses single multiplexed SSE connection with session IDs. Breaking protocol change.
+
+- **mls-groups-hub** (2026-03-20, complete) -- Initial E2EE group communication stack: `@enkaku/group` with MLS (ts-mls), hub protocol with fan-out routing, zero-knowledge relay routing encrypted messages between user devices and multi-user groups.
+
+- **ts-mls-v2-migration** (2026-03-23, complete) -- Migrated `@enkaku/group` from ts-mls v1.6.2 to v2.0.0-rc.10. CryptoProvider rewrite (numeric ciphersuite IDs), DID-based AuthenticationService (signature-only, constant-time compare), full `group.ts` API migration to v2 params objects, `processMessage` for `MlsFramedMessage` wrappers. Custom noble CryptoProvider retained for Hermes/RN. 48 tests passing.
+
+- **ts6-vite8-migration** (2026-03-25, complete) -- Migrated TypeScript 5.9 → 6 and Vite 7 → 8 with TS 7 readiness. Restructured tsconfig hierarchy for correct type boundaries, `moduleResolution: "nodenext"`, `types: []` default with per-package overrides, added test type-checking via per-package `test:types`, SWC `esnext` target.

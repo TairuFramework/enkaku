@@ -1,7 +1,18 @@
 # peer4 MLS leaf credential rotation
 
-**Priority:** next
+**Priority:** backlog
+**Status:** blocked on ts-mls — see Blocker.
 **Predecessor:** [did:peer:4 MLS authentication service binding](../completed/2026-05-27-did-peer-4-mls-auth-service.complete.md)
+
+## Blocker
+
+ts-mls (as of 2026-05-27) does not export `signLeafNodeUpdate` — only `signLeafNodeCommit` and `signLeafNodeKeyPackage`. Building a `LeafNodeUpdate` requires the same `signWithLabel("LeafNodeTBS", ...)` operation, but the public surface omits it. Paths forward when revisiting:
+
+1. File an issue / PR upstream to expose `signLeafNodeUpdate` (and `signWithLabel`).
+2. Vendor a small internal sign helper inside `@enkaku/group`. Risk: TBS encoding tied to ts-mls internals; needs version pin + compat test.
+3. Implement rotation via Remove + Add. Loses tree-level continuity; doesn't work for single-member groups.
+
+Defer until path 1 lands or paths 2/3 are acceptable.
 
 ## Goal
 
