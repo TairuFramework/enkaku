@@ -1,4 +1,10 @@
-import { decodeMultibase, decodePeer4, getSignatureInfo, isPeer4 } from '@enkaku/token'
+import {
+  decodeMultibase,
+  decodePeer4,
+  getAlgorithmAndPublicKey,
+  getSignatureInfo,
+  isPeer4,
+} from '@enkaku/token'
 import type { AuthenticationService, Credential } from 'ts-mls'
 import { defaultCredentialTypes } from 'ts-mls'
 
@@ -12,14 +18,6 @@ function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
     diff |= a[i]! ^ b[i]!
   }
   return diff === 0
-}
-
-/**
- * Strip the multicodec prefix (2 bytes for ed25519: 0xed 0x01) from a
- * multibase-decoded public key to get raw key bytes.
- */
-function stripCodecPrefix(bytes: Uint8Array): Uint8Array {
-  return bytes.subarray(2)
 }
 
 export function createDIDAuthenticationService(): AuthenticationService {
@@ -48,15 +46,28 @@ export function createDIDAuthenticationService(): AuthenticationService {
           return false
         }
         if (decoded.shortForm !== parsed.id) return false
+        // Only verification methods referenced by `authentication` are
+        // permitted to sign for authentication — per DID Core. Reject MLS
+        // leaves bound to keys outside that set (KEM keys, assertion-only
+        // keys, etc.) even if the byte comparison would otherwise match.
+        const authIDs = new Set(decoded.doc.authentication ?? [])
+        if (authIDs.size === 0) return false
         for (const vm of decoded.doc.verificationMethod ?? []) {
+          if (!authIDs.has(vm.id)) continue
           if (typeof vm.publicKeyMultibase !== 'string') continue
           let vmBytes: Uint8Array
           try {
-            vmBytes = stripCodecPrefix(decodeMultibase(vm.publicKeyMultibase))
+            vmBytes = decodeMultibase(vm.publicKeyMultibase)
           } catch {
             continue
           }
-          if (constantTimeEqual(vmBytes, signaturePublicKey)) return true
+          // Validate multicodec prefix and strip it; rejects unknown codecs
+          // (e.g. X25519 KEM keys, future PQ codecs) instead of blindly
+          // comparing 2-byte-truncated bytes.
+          const stripped = getAlgorithmAndPublicKey(vmBytes)
+          if (stripped == null) continue
+          const [, publicKeyBytes] = stripped
+          if (constantTimeEqual(publicKeyBytes, signaturePublicKey)) return true
         }
         return false
       }

@@ -154,6 +154,49 @@ describe('createDIDAuthenticationService — peer4', () => {
     expect(ok).toBe(false)
   })
 
+  test('accepts a peer4 identity with mixed sig + kem keys (sig key binds, kem key ignored)', async () => {
+    const identity = await createIdentity({
+      keys: [
+        { purpose: 'sig', alg: 'EdDSA' },
+        { purpose: 'kem', alg: 'X25519' },
+      ],
+      didMethod: 'peer:4',
+    })
+    const credential = makeMLSCredential(identity)
+    const service = createDIDAuthenticationService()
+    // Sig key still binds despite a KEM key being present in verificationMethod.
+    expect(await service.validateCredential(credential, identity.publicKey)).toBe(true)
+    // KEM key (X25519, codec 0xec 0x01) MUST NOT bind even if its raw bytes
+    // happened to be presented as the leaf signature key — it isn't listed in
+    // doc.authentication.
+    const kemKey = identity.keys.find((k) => k.purpose === 'kem')
+    if (kemKey == null) throw new Error('expected a kem key')
+    expect(await service.validateCredential(credential, kemKey.publicKey)).toBe(false)
+  })
+
+  test('rejects when peer4 doc has no authentication entries', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    // Craft a synthetic peer4 doc that has the sig key in verificationMethod
+    // but lacks the authentication array entirely. The auth service must
+    // reject because no VM is authorized to sign.
+    const { encodePeer4 } = await import('@enkaku/token')
+    const sigKey = identity.keys.find((k) => k.purpose === 'sig')
+    if (sigKey == null) throw new Error('expected a sig key')
+    const tamperedDoc = {
+      '@context': ['https://www.w3.org/ns/did/v1'],
+      verificationMethod: identity.doc.verificationMethod,
+      // no `authentication`
+    }
+    const { longForm, shortForm } = encodePeer4(tamperedDoc)
+    const bytes = new TextEncoder().encode(JSON.stringify({ id: shortForm, longForm }))
+    const credential = { credentialType: defaultCredentialTypes.basic, identity: bytes }
+    const service = createDIDAuthenticationService()
+    expect(await service.validateCredential(credential, sigKey.publicKey)).toBe(false)
+  })
+
   test('rejects non-basic credential type', async () => {
     const identity = await createIdentity({
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
