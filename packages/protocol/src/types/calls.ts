@@ -49,9 +49,11 @@ export type ErrorReplyPayload<
   data: Data
 }
 
-export type ErrorReplyPayloadOf<Error = unknown> = Error extends ErrorObject
-  ? ErrorReplyPayload<Error['code'], Error['data']>
-  : ErrorReplyPayload<string, Record<string, unknown>>
+export type ErrorReplyPayloadOf<Error = unknown> = [Error] extends [never]
+  ? ErrorReplyPayload<string, Record<string, unknown>>
+  : Error extends ErrorObject
+    ? ErrorReplyPayload<Error['code'], Error['data']>
+    : ErrorReplyPayload<string, Record<string, unknown>>
 
 export type ReceiveReplyPayload<Value> = {
   typ: 'receive'

@@ -6,6 +6,7 @@
       "dependsOn": ["^clean"],
       "outputs": ["lib/**"]
     },
+    "test:types": {},
     "test:unit": {}
   }
 }

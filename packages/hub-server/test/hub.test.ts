@@ -442,9 +442,9 @@ describe('Hub teardown produces no unhandled rejections', () => {
     const { randomIdentity } = await import('@enkaku/token')
 
     const store = createMemoryStore()
-    const hubTransports = new DirectTransports()
+    const hubTransports: HubTransports = new DirectTransports()
     const hub = createHub({ transport: hubTransports.server, store })
-    const clientTransports = new DirectTransports()
+    const clientTransports: HubTransports = new DirectTransports()
     hub.server.handle(clientTransports.server)
     const client = new Client({
       transport: clientTransports.client,

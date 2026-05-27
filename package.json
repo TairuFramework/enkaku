@@ -8,7 +8,7 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "lint": "biome check --write ./packages ./tests",
-    "test": "turbo run test:unit",
+    "test": "turbo run test:types test:unit",
     "build:js": "turbo run build:js",
     "build:types": "pnpm run -r build:types",
     "build": "pnpm run build:types && pnpm run build:js"
