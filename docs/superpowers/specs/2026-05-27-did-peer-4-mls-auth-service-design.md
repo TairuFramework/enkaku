@@ -113,7 +113,7 @@ Enable `did:peer:4` identities to participate as full MLS group members. Today `
 pnpm --filter @enkaku/token test
 pnpm --filter @enkaku/group test
 pnpm run test       # full workspace
-pnpm run lint
+rtk proxy pnpm run lint
 pnpm run build
 ```
 
