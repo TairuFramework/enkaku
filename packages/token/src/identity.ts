@@ -173,10 +173,12 @@ export type SignOptions = {
 }
 
 export type MultiKeyIdentity = {
-  did: string
+  id: string
   longForm: string
   doc: DIDDoc
   keys: Array<ResolvedKey>
+  publicKey: Uint8Array
+  privateKey: Uint8Array
   sign<Payload extends Record<string, unknown> = Record<string, unknown>>(
     payload: Payload,
     options?: SignOptions,
@@ -308,22 +310,26 @@ function pickKemKey(keys: Array<ResolvedKey>, kid?: string): ResolvedKey {
 }
 
 function buildIdentity(
-  did: string,
+  id: string,
   longForm: string,
   doc: DIDDoc,
   keys: Array<ResolvedKey>,
 ): MultiKeyIdentity {
+  const primarySig = keys.find((k) => k.purpose === 'sig')
+  if (primarySig == null) {
+    throw new Error('createIdentity requires at least one signing key')
+  }
   const sentTo = new Set<string>()
-  const isPeer = isPeer4(did)
+  const isPeer = isPeer4(id)
 
   function pickIss(payload: Record<string, unknown>, embedLongForm: boolean | undefined): string {
-    if (!isPeer) return did
+    if (!isPeer) return id
     if (embedLongForm === true) return longForm
-    if (embedLongForm === false) return did
+    if (embedLongForm === false) return id
     const aud = payload.aud
-    if (typeof aud !== 'string') return did
+    if (typeof aud !== 'string') return id
     const normalizedAud = normalizeDID(aud)
-    if (sentTo.has(normalizedAud)) return did
+    if (sentTo.has(normalizedAud)) return id
     // Concurrent sign() calls with the same new aud may both emit long-form; recipient cache writes are idempotent so this is acceptable.
     sentTo.add(normalizedAud)
     return longForm
@@ -357,10 +363,20 @@ function buildIdentity(
 
   async function decrypt(jwe: string): Promise<Uint8Array> {
     pickKemKey(keys)
-    return decryptToken({ id: did, decrypt, agreeKey }, jwe)
+    return decryptToken({ id, decrypt, agreeKey }, jwe)
   }
 
-  return { did, longForm, doc, keys, sign, decrypt, agreeKey }
+  return {
+    id,
+    longForm,
+    doc,
+    keys,
+    publicKey: primarySig.publicKey,
+    privateKey: primarySig.privateKey,
+    sign,
+    decrypt,
+    agreeKey,
+  }
 }
 
 /**
@@ -379,7 +395,7 @@ export async function createIdentity(input: CreateIdentityInput): Promise<MultiK
 
   if (method === 'key') {
     const [k] = keys
-    const did = getDID(CODECS.EdDSA, k.publicKey)
+    const id = getDID(CODECS.EdDSA, k.publicKey)
     const doc: DIDDoc = {
       '@context': ['https://www.w3.org/ns/did/v1'],
       verificationMethod: [
@@ -391,7 +407,7 @@ export async function createIdentity(input: CreateIdentityInput): Promise<MultiK
       ],
       authentication: ['#key-0'],
     }
-    return buildIdentity(did, did, doc, keys)
+    return buildIdentity(id, id, doc, keys)
   }
 
   const doc = buildDoc(keys)

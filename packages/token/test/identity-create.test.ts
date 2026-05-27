@@ -9,8 +9,8 @@ import { verifyToken } from '../src/token.js'
 describe('createIdentity', () => {
   it('emits did:key for a single classical signing key', async () => {
     const identity = await createIdentity({ keys: [{ purpose: 'sig', alg: 'EdDSA' }] })
-    expect(identity.did.startsWith('did:key:')).toBe(true)
-    expect(identity.longForm).toBe(identity.did)
+    expect(identity.id.startsWith('did:key:')).toBe(true)
+    expect(identity.longForm).toBe(identity.id)
   })
 
   it('emits did:peer:4 for multi-key identities', async () => {
@@ -20,8 +20,8 @@ describe('createIdentity', () => {
         { purpose: 'kem', alg: 'X25519' },
       ],
     })
-    expect(isPeer4(identity.did)).toBe(true)
-    expect(identity.longForm).not.toBe(identity.did)
+    expect(isPeer4(identity.id)).toBe(true)
+    expect(identity.longForm).not.toBe(identity.id)
     expect(identity.doc.verificationMethod.length).toBe(2)
   })
 
@@ -45,7 +45,7 @@ describe('createIdentity', () => {
       ],
     })
     const cache = createInMemoryDIDCache()
-    await cache.set(identity.did, identity.doc)
+    await cache.set(identity.id, identity.doc)
     const signed = await identity.sign({ aud: 'someone' })
     expect(signed.header.kid).toBeDefined()
     expect(signed.payload.iss).toBe(identity.longForm)
@@ -71,9 +71,9 @@ describe('createIdentity', () => {
     const identity = await createIdentity({
       keys: [{ purpose: 'sig', alg: 'EdDSA', privateKey: priv }],
     })
-    expect(identity.did.startsWith('did:key:')).toBe(true)
+    expect(identity.id.startsWith('did:key:')).toBe(true)
     const signed = await identity.sign({})
-    expect(signed.payload.iss).toBe(identity.did)
+    expect(signed.payload.iss).toBe(identity.id)
   })
 
   it('decrypts a token addressed to its KEM key', async () => {
