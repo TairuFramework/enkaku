@@ -3,8 +3,6 @@ import { ed25519 } from '@noble/curves/ed25519.js'
 import { describe, expect, test } from 'vitest'
 
 import { createDIDAuthenticationService } from '../src/authentication.js'
-import type { MemberCredential } from '../src/credential.js'
-import { credentialToMLSIdentity } from '../src/credential.js'
 
 describe('createDIDAuthenticationService', () => {
   const authService = createDIDAuthenticationService()
@@ -13,26 +11,8 @@ describe('createDIDAuthenticationService', () => {
     const alice = randomIdentity()
     const [, expectedPublicKey] = getSignatureInfo(alice.id)
 
-    const credential: MemberCredential = {
-      did: alice.id,
-      capabilityChain: ['fake-cap'],
-      capability: {
-        header: { typ: 'JWT' as const, alg: 'EdDSA' as const },
-        payload: {
-          iss: alice.id,
-          sub: alice.id,
-          aud: alice.id,
-          act: ['*'],
-          res: ['*'],
-        },
-        signature: 'fake',
-        data: 'fake',
-      },
-      permission: 'admin',
-      groupID: 'test-group',
-    }
-
-    const identity = credentialToMLSIdentity(credential)
+    // MLSCredentialIdentity shape
+    const identity = new TextEncoder().encode(JSON.stringify({ id: alice.id }))
     const mlsCredential = { credentialType: 1 as const, identity }
 
     const result = await authService.validateCredential(mlsCredential, expectedPublicKey)
@@ -44,26 +24,8 @@ describe('createDIDAuthenticationService', () => {
     const bob = randomIdentity()
     const [, bobPublicKey] = getSignatureInfo(bob.id)
 
-    const credential: MemberCredential = {
-      did: alice.id,
-      capabilityChain: ['fake-cap'],
-      capability: {
-        header: { typ: 'JWT' as const, alg: 'EdDSA' as const },
-        payload: {
-          iss: alice.id,
-          sub: alice.id,
-          aud: alice.id,
-          act: ['*'],
-          res: ['*'],
-        },
-        signature: 'fake',
-        data: 'fake',
-      },
-      permission: 'admin',
-      groupID: 'test-group',
-    }
-
-    const identity = credentialToMLSIdentity(credential)
+    // alice's id, but bob's public key
+    const identity = new TextEncoder().encode(JSON.stringify({ id: alice.id }))
     const mlsCredential = { credentialType: 1 as const, identity }
 
     const result = await authService.validateCredential(mlsCredential, bobPublicKey)
@@ -74,7 +36,7 @@ describe('createDIDAuthenticationService', () => {
     const alice = randomIdentity()
     const [, expectedPublicKey] = getSignatureInfo(alice.id)
 
-    // Plain DID string in identity (as produced by makeMLSCredential in group.ts)
+    // Plain DID string in identity (legacy format)
     const identity = new TextEncoder().encode(alice.id)
     const mlsCredential = { credentialType: 1 as const, identity }
 

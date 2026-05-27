@@ -2,23 +2,23 @@ import { getSignatureInfo } from '@enkaku/token'
 import type { AuthenticationService, Credential } from 'ts-mls'
 import { defaultCredentialTypes } from 'ts-mls'
 
-import { mlsIdentityToSerializedCredential } from './credential.js'
+import { parseMLSCredentialIdentity } from './credential.js'
 
 /**
  * Extracts the DID from an MLS basic credential's identity bytes.
  *
  * Handles two formats:
- * 1. JSON-encoded SerializedCredential (from credentialToMLSIdentity) — extracts .did
- * 2. Plain DID string (from makeMLSCredential) — uses directly
+ * 1. JSON-encoded MLSCredentialIdentity (from makeMLSCredential) — extracts .id
+ * 2. Plain DID string (legacy) — uses directly
  */
 function extractDIDFromIdentity(identity: Uint8Array): string | null {
   const text = new TextDecoder().decode(identity)
 
-  // Try JSON format first (SerializedCredential)
+  // Try JSON format first (MLSCredentialIdentity)
   if (text.startsWith('{')) {
     try {
-      const serialized = mlsIdentityToSerializedCredential(identity)
-      return serialized.did
+      const parsed = parseMLSCredentialIdentity(identity)
+      return parsed.id
     } catch {
       return null
     }

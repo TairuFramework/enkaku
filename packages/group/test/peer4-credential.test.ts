@@ -7,7 +7,7 @@ import {
 import { describe, expect, it } from 'vitest'
 
 import { validateGroupCapability } from '../src/capability.js'
-import { populateCacheFromCredential, type SerializedCredential } from '../src/credential.js'
+import { type MLSCredentialIdentity, populateCacheFromCredential } from '../src/credential.js'
 
 async function makePeer4(): Promise<MultiKeyIdentity> {
   return await createIdentity({
@@ -120,14 +120,12 @@ describe('Gate 4 (minimal) — peer4 group capability + credential', () => {
 
   it('populateCacheFromCredential writes to a cache obtained from a GroupHandle', async () => {
     const alice = await makePeer4()
-    const serialized: SerializedCredential = {
-      did: alice.id,
-      groupID: 'g',
-      capabilityChain: [],
+    const credIdentity: MLSCredentialIdentity = {
+      id: alice.id,
       longForm: alice.longForm,
     }
     const cache = createInMemoryDIDCache()
-    await populateCacheFromCredential(serialized, cache)
+    await populateCacheFromCredential(credIdentity, cache)
     expect(await cache.get(alice.id)).toEqual(alice.doc)
   })
 

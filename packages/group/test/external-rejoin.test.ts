@@ -145,7 +145,7 @@ describe('joinGroupExternal — stale device recovery', () => {
         identity: bob,
         groupInfo,
         credential: {
-          did: bob.id,
+          id: bob.id,
           capabilityChain: [],
           capability: {} as MemberCredential['capability'],
           permission: 'member',

@@ -4,88 +4,69 @@ import { type DIDCache, decodePeer4, isPeer4, type SignedToken } from '@enkaku/t
 import type { GroupPermission } from './capability.js'
 
 /**
- * MLS credential wrapping an Enkaku identity with capability chain.
- * Used as the MLS credential in key packages and leaf nodes.
+ * Local member state (never serialized to the MLS leaf). Tracks the capability
+ * chain proving group membership.
  */
 export type MemberCredential = {
-  /** Member's DID (did:key:z...) */
-  did: string
-  /** Capability delegation chain proving membership */
+  id: string
   capabilityChain: Array<string>
-  /** The leaf capability token (parsed for convenience) */
   capability: CapabilityToken
-  /** Permission level */
   permission: GroupPermission
-  /** Group ID this credential is for */
   groupID: string
 }
 
 /**
- * Serialized credential format for embedding in MLS key packages.
- * Uses the MLS basic credential type with a JSON-encoded identity.
+ * Wire shape for the MLS basic credential `identity` field. Identity binding
+ * only — group membership state lives elsewhere.
+ *
+ * - did:key identities omit `longForm`.
+ * - did:peer:4 identities MUST carry `longForm`; the auth service decodes it
+ *   inline and binds the MLS leaf signature key to a verification method.
  */
-export type SerializedCredential = {
-  did: string
-  groupID: string
-  capabilityChain: Array<string>
-  /** did:peer:4 long form (with embedded doc). Present only when did is a did:peer:4 short form. */
+export type MLSCredentialIdentity = {
+  id: string
   longForm?: string
 }
 
-/**
- * Creates an MLS-compatible credential (basic type) from a member credential.
- * The identity field contains the serialized credential as UTF-8 JSON.
- */
-export function credentialToMLSIdentity(
-  credential: MemberCredential,
-  options: { longForm?: string } = {},
-): Uint8Array {
-  const serialized: SerializedCredential = {
-    did: credential.did,
-    groupID: credential.groupID,
-    capabilityChain: credential.capabilityChain,
+export function parseMLSCredentialIdentity(identity: Uint8Array): MLSCredentialIdentity {
+  const text = new TextDecoder().decode(identity)
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw new Error('Invalid MLS credential: identity bytes are not valid JSON')
   }
-  if (options.longForm != null && isPeer4(credential.did)) {
-    serialized.longForm = options.longForm
-  }
-  return new TextEncoder().encode(JSON.stringify(serialized))
-}
-
-/**
- * Extracts a serialized credential from an MLS basic credential identity field.
- */
-export function mlsIdentityToSerializedCredential(identity: Uint8Array): SerializedCredential {
-  const json = new TextDecoder().decode(identity)
-  const parsed: unknown = JSON.parse(json)
-  if (
-    parsed == null ||
-    typeof parsed !== 'object' ||
-    typeof (parsed as Record<string, unknown>).did !== 'string' ||
-    typeof (parsed as Record<string, unknown>).groupID !== 'string' ||
-    !Array.isArray((parsed as Record<string, unknown>).capabilityChain)
-  ) {
-    throw new Error('Invalid MLS credential: malformed serialized credential')
+  if (parsed == null || typeof parsed !== 'object') {
+    throw new Error('Invalid MLS credential: identity must be a JSON object')
   }
   const candidate = parsed as Record<string, unknown>
+  if (typeof candidate.id !== 'string') {
+    throw new Error('Invalid MLS credential: id must be a string')
+  }
   if ('longForm' in candidate && typeof candidate.longForm !== 'string') {
     throw new Error('Invalid MLS credential: longForm must be a string when present')
   }
-  return parsed as SerializedCredential
+  const result: MLSCredentialIdentity = { id: candidate.id }
+  if (typeof candidate.longForm === 'string') {
+    result.longForm = candidate.longForm
+  }
+  return result
 }
 
 /**
- * If the serialized credential carries a did:peer:4 long form, decode it and write to the cache.
- * Hash binding enforced by decodePeer4 + cache.set.
+ * If the parsed credential carries a did:peer:4 long form, decode it and write
+ * to the cache. Hash binding is enforced (decoded short form must equal `id`).
+ * No-op for did:key.
  */
 export async function populateCacheFromCredential(
-  serialized: SerializedCredential,
+  parsed: MLSCredentialIdentity,
   cache: DIDCache,
 ): Promise<void> {
-  if (serialized.longForm == null) return
-  if (!isPeer4(serialized.did)) return
-  const { shortForm, doc } = decodePeer4(serialized.longForm)
-  if (shortForm !== serialized.did) {
-    throw new Error('Credential longForm does not match credential.did')
+  if (parsed.longForm == null) return
+  if (!isPeer4(parsed.id)) return
+  const { shortForm, doc } = decodePeer4(parsed.longForm)
+  if (shortForm !== parsed.id) {
+    throw new Error('Credential longForm does not match credential.id')
   }
   await cache.set(shortForm, doc)
 }
@@ -97,7 +78,6 @@ export function extractPermission(token: SignedToken): GroupPermission {
   const payload = token.payload as Record<string, unknown>
   const actions = Array.isArray(payload.act) ? payload.act : [payload.act]
 
-  // Wildcard grants admin
   if (actions.includes('*')) return 'admin'
   if (actions.includes('admin')) return 'admin'
   if (actions.includes('member')) return 'member'

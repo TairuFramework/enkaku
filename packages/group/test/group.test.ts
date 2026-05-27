@@ -18,7 +18,7 @@ describe('GroupHandle lifecycle', () => {
     expect(group.groupID).toBe('test-group-1')
     expect(group.epoch).toBe(0n)
     expect(group.memberCount).toBe(1)
-    expect(credential.did).toBe(alice.id)
+    expect(credential.id).toBe(alice.id)
     expect(credential.permission).toBe('admin')
     expect(credential.groupID).toBe('test-group-1')
   })
@@ -59,7 +59,7 @@ describe('GroupHandle lifecycle', () => {
 
     expect(bobGroup.epoch).toBe(1n)
     expect(bobGroup.memberCount).toBe(2)
-    expect(bobCred.did).toBe(bob.id)
+    expect(bobCred.id).toBe(bob.id)
     expect(bobCred.permission).toBe('member')
   })
 

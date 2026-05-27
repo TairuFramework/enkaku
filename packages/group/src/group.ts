@@ -233,7 +233,7 @@ export async function createGroup(
 
   const rootCapability = stringifyToken(rootCap)
   const credential: MemberCredential = {
-    did: identity.id,
+    id: identity.id,
     capabilityChain: [rootCapability],
     capability: rootCap,
     permission: 'admin',
@@ -396,7 +396,7 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
   })
 
   const credential: MemberCredential = {
-    did: identity.id,
+    id: identity.id,
     capabilityChain: invite.capabilityChain,
     capability: capToken as MemberCredential['capability'],
     permission: invite.permission,
