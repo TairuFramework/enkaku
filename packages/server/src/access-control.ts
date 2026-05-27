@@ -130,9 +130,11 @@ export async function checkClientToken(
     throw new Error('No procedure to check')
   }
 
-  if (normalizeDID(payload.iss) === normalizeDID(serverID)) {
+  const normalizedServerID = normalizeDID(serverID)
+
+  if (normalizeDID(payload.iss) === normalizedServerID) {
     // If issuer uses the server's signer, only check audience and expiration if provided
-    if (payload.aud != null && normalizeDID(payload.aud) !== normalizeDID(serverID)) {
+    if (payload.aud != null && normalizeDID(payload.aud) !== normalizedServerID) {
       throw new Error('Invalid audience')
     }
     if (payload.exp != null) {
@@ -141,13 +143,13 @@ export async function checkClientToken(
     return
   }
 
-  if (payload.sub != null && normalizeDID(payload.sub) === normalizeDID(serverID)) {
+  if (payload.sub != null && normalizeDID(payload.sub) === normalizedServerID) {
     // If subject is the server, check capability directly
     await checkCapability({ act: procedure, res: serverID }, payload, options)
     return
   }
 
-  if (payload.aud == null || normalizeDID(payload.aud) !== normalizeDID(serverID)) {
+  if (payload.aud == null || normalizeDID(payload.aud) !== normalizedServerID) {
     throw new Error('Invalid audience')
   }
   await checkProcedureAccess(serverID, rules, token as SignedToken<ProcedureAccessPayload>, options)
