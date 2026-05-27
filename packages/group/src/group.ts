@@ -563,6 +563,17 @@ export async function joinGroupExternal(
     throw new Error('Invalid credential: capability chain must not be empty')
   }
 
+  // Guard: resync requires the rejoining identity to match the leaf being
+  // replaced. If `identity.id` does not match `credential.id`, ts-mls's
+  // findIndex returns -1 and the downstream `removeLeafNodeMutable(tree, -1)`
+  // call enters an unbounded loop (ts-mls bug; the no-match branch is not
+  // guarded). Reject early with a clear error.
+  if (normalizeDID(identity.id) !== normalizeDID(credential.id)) {
+    throw new Error(
+      `joinGroupExternal: identity.id (${identity.id}) must match credential.id (${credential.id}) for resync`,
+    )
+  }
+
   const cache = options?.cache ?? createInMemoryDIDCache()
   const context = await resolveMlsContext(options)
 

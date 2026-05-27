@@ -138,6 +138,41 @@ describe('joinGroupExternal — stale device recovery', () => {
     expect(bobLeafCount).toBe(1)
   })
 
+  test('rejects when identity.id does not match credential.id (resync guard)', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const { group: aliceGroup } = await createGroup(alice, 'mismatch-guard-group')
+    const { invite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { newGroup: aliceAfterBob, welcomeMessage } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+    const { credential: bobCred } = await processWelcome({
+      identity: bob,
+      invite,
+      welcome: welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: aliceAfterBob.state.ratchetTree,
+    })
+    const { groupInfo } = await exportGroupInfo({ group: aliceAfterBob })
+
+    const eve = randomIdentity()
+    await expect(
+      joinGroupExternal({
+        identity: eve,
+        groupInfo,
+        credential: bobCred,
+        resync: true,
+      }),
+    ).rejects.toThrow(/identity\.id.*must match credential\.id/)
+  })
+
   test('rejects credential with empty capability chain', async () => {
     const alice = randomIdentity()
     const bob = randomIdentity()
