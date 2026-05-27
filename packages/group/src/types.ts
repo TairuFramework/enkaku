@@ -31,7 +31,7 @@ export type Invite = {
   /** Permission level being granted */
   permission: GroupPermission
   /** Inviter's DID */
-  inviterDID: string
+  inviterID: string
 }
 
 export type KeyPackageBundle = {

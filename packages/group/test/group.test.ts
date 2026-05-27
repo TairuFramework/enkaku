@@ -37,7 +37,7 @@ describe('GroupHandle lifecycle', () => {
     })
     expect(invite.groupID).toBe('invite-group')
     expect(invite.permission).toBe('member')
-    expect(invite.inviterDID).toBe(alice.id)
+    expect(invite.inviterID).toBe(alice.id)
 
     const bobKeyBundle = await createKeyPackageBundle(bob)
     const { welcomeMessage, newGroup: updatedAliceGroup } = await commitInvite(
@@ -265,7 +265,7 @@ describe('GroupHandle lifecycle', () => {
       capabilityToken: 'invalid',
       capabilityChain: [],
       permission: 'member' as const,
-      inviterDID: alice.id,
+      inviterID: alice.id,
     }
 
     await expect(

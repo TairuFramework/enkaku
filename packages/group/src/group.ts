@@ -3,6 +3,7 @@ import {
   type DIDCache,
   type DIDResolver,
   isPeer4,
+  normalizeDID,
   type OwnIdentity,
   type SigningIdentity,
   stringifyToken,
@@ -43,7 +44,11 @@ import {
   type GroupPermission,
 } from './capability.js'
 import { sanitizeRatchetTree } from './codec.js'
-import type { MemberCredential, MLSCredentialIdentity } from './credential.js'
+import {
+  type MemberCredential,
+  type MLSCredentialIdentity,
+  parseMLSCredentialIdentity,
+} from './credential.js'
 import { nobleCryptoProvider } from './crypto.js'
 import type { GroupOptions, Invite, KeyPackageBundle } from './types.js'
 
@@ -145,23 +150,21 @@ export class GroupHandle {
     ).length
   }
 
-  findMemberLeafIndex(did: string): number | undefined {
+  findMemberLeafIndex(id: string): number | undefined {
     const tree = this.#state.ratchetTree
+    const targetNorm = normalizeDID(id)
     for (let i = 0; i < tree.length; i++) {
       const node = tree[i]
       if (node != null && node.nodeType === nodeTypes.leaf) {
         const credential = node.leaf.credential
         if ('identity' in credential) {
-          const text = new TextDecoder().decode(credential.identity)
-          let leafDID: string
+          let parsed: ReturnType<typeof parseMLSCredentialIdentity>
           try {
-            const parsed = JSON.parse(text) as Record<string, unknown>
-            leafDID = typeof parsed.id === 'string' ? parsed.id : text
+            parsed = parseMLSCredentialIdentity(credential.identity)
           } catch {
-            // Legacy plain-DID format
-            leafDID = text
+            continue
           }
-          if (leafDID === did) return i / 2
+          if (normalizeDID(parsed.id) === targetNorm) return i / 2
         }
       }
     }
@@ -324,7 +327,7 @@ export async function createInvite(params: CreateInviteParams): Promise<CreateIn
     capabilityToken: memberCapStr,
     capabilityChain: [group.rootCapability, memberCapStr],
     permission,
-    inviterDID: identity.id,
+    inviterID: identity.id,
   }
 
   return { invite }
