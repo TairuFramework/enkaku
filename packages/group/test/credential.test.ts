@@ -4,6 +4,7 @@ import {
   randomIdentity,
   stringifyToken,
 } from '@enkaku/token'
+import { defaultCredentialTypes } from 'ts-mls'
 import { describe, expect, it, test } from 'vitest'
 
 import { createGroupCapability, delegateGroupMembership } from '../src/capability.js'
@@ -13,6 +14,7 @@ import {
   parseMLSCredentialIdentity,
   populateCacheFromCredential,
 } from '../src/credential.js'
+import { makeMLSCredential } from '../src/group.js'
 
 function makeSignedTokenWithAct(act: Array<string>) {
   return {
@@ -137,15 +139,43 @@ describe('populateCacheFromCredential', () => {
       populateCacheFromCredential({ id: alice.id, longForm: bob.longForm }, cache),
     ).rejects.toThrow(/does not match/i)
   })
+})
 
-  it('rejects malformed longForm type via parseMLSCredentialIdentity', () => {
-    const bytes = new TextEncoder().encode(
-      JSON.stringify({
-        id: 'did:peer:4zXyz',
-        longForm: 42, // wrong type
-      }),
-    )
-    expect(() => parseMLSCredentialIdentity(bytes)).toThrow(/longForm/i)
+describe('makeMLSCredential', () => {
+  it('emits JSON { id } for a did:key identity', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'key',
+    })
+    const credential = makeMLSCredential(identity)
+    expect(credential.credentialType).toBe(defaultCredentialTypes.basic)
+    const parsed = parseMLSCredentialIdentity((credential as { identity: Uint8Array }).identity)
+    expect(parsed.id).toBe(identity.id)
+    expect(parsed.longForm).toBeUndefined()
+  })
+
+  it('emits JSON { id, longForm } for a did:peer:4 identity', async () => {
+    const identity = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const credential = makeMLSCredential(identity)
+    expect(credential.credentialType).toBe(defaultCredentialTypes.basic)
+    const parsed = parseMLSCredentialIdentity((credential as { identity: Uint8Array }).identity)
+    expect(parsed.id).toBe(identity.id)
+    expect(parsed.longForm).toBe(identity.longForm)
+  })
+
+  it('throws when a peer4 identity has no longForm', () => {
+    const fake = {
+      id: 'did:peer:4zABC',
+      publicKey: new Uint8Array(32),
+      privateKey: new Uint8Array(32),
+      signToken: async () => {
+        throw new Error('not used')
+      },
+    } as unknown as Parameters<typeof makeMLSCredential>[0]
+    expect(() => makeMLSCredential(fake)).toThrow(/longForm/i)
   })
 })
 

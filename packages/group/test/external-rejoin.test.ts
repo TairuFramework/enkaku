@@ -124,13 +124,17 @@ describe('joinGroupExternal — stale device recovery', () => {
     // B's DID appears exactly once in the tree post-rejoin (resync removed old leaf)
     const bobLeafIndex = aliceAdvanced.findMemberLeafIndex(bob.id)
     expect(bobLeafIndex).toBeDefined()
-    const bobLeafCount = aliceAdvanced.state.ratchetTree.filter(
-      (node) =>
-        node != null &&
-        node.nodeType === nodeTypes.leaf &&
-        'identity' in node.leaf.credential &&
-        new TextDecoder().decode(node.leaf.credential.identity) === bob.id,
-    ).length
+    const bobLeafCount = aliceAdvanced.state.ratchetTree.filter((node) => {
+      if (node == null || node.nodeType !== nodeTypes.leaf) return false
+      if (!('identity' in node.leaf.credential)) return false
+      const text = new TextDecoder().decode(node.leaf.credential.identity)
+      try {
+        const parsed = JSON.parse(text) as Record<string, unknown>
+        return parsed.id === bob.id
+      } catch {
+        return text === bob.id
+      }
+    }).length
     expect(bobLeafCount).toBe(1)
   })
 
