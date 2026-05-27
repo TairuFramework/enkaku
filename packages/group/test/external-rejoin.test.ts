@@ -1,4 +1,4 @@
-import { randomIdentity } from '@enkaku/token'
+import { createIdentity, randomIdentity } from '@enkaku/token'
 import {
   decode,
   defaultExtensionTypes,
@@ -158,6 +158,31 @@ describe('joinGroupExternal — stale device recovery', () => {
         resync: true,
       }),
     ).rejects.toThrow('capability chain must not be empty')
+  })
+
+  test('peer4 identity can rejoin via groupInfo + resync', async () => {
+    const alice = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    const { group: g0 } = await createGroup(alice, 'g-rejoin-peer4')
+    const { groupInfo } = await exportGroupInfo({ group: g0 })
+
+    const aliceB = await createIdentity({
+      keys: [{ purpose: 'sig', alg: 'EdDSA' }],
+      didMethod: 'peer:4',
+    })
+    // Reuse the original member credential — caller-held local state per Invite contract.
+    const { group: rejoined, commitMessage } = await joinGroupExternal({
+      identity: aliceB,
+      groupInfo,
+      credential: g0.credential,
+      resync: true,
+    })
+
+    expect(rejoined.groupID).toBe('g-rejoin-peer4')
+    expect(rejoined.epoch).toBe(g0.epoch + 1n)
+    expect(commitMessage.byteLength).toBeGreaterThan(0)
   })
 
   test('third online member processes external rejoin and converges', async () => {
