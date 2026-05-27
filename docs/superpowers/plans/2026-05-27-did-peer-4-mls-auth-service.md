@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Stage:** executing
+**Stage:** reviewing
 
 **Goal:** Enable `did:peer:4` identities to participate as full MLS group members by adapting `MultiKeyIdentity` to `OwnIdentity`, replacing the dual-format MLS leaf credential with a single self-contained JSON shape, and teaching the auth service to bind peer4 leaf signature keys via the embedded long-form DID document.
 
