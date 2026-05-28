@@ -605,6 +605,66 @@ describe('GroupHandle.listMembers', () => {
       expect(groupWith3.findMemberLeafIndex(member.id)).toBe(member.leafIndex)
     }
   })
+
+  test('reflects add and remove after processMessage on the receiver', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    // Alice creates, adds Bob. Bob joins via Welcome.
+    const { group: aliceGroup } = await createGroup(alice, 'diff-group')
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { welcomeMessage: bobWelcome, newGroup: aliceWithBob } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: bobWelcome,
+      keyPackageBundle: bobKP,
+      ratchetTree: aliceWithBob.state.ratchetTree,
+    })
+
+    // --- ADD: Alice adds Charlie ONCE; Bob receives that same commit and diffs.
+    // Alice and Bob must advance along the SAME commit chain, so the add commit
+    // Bob processes is the one that produced Alice's aliceWith3 handle.
+    await createInvite({
+      group: aliceWithBob,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const { commitMessage: addCommit, newGroup: aliceWith3 } = await commitInvite(
+      aliceWithBob,
+      charlieKP.publicPackage,
+    )
+
+    const beforeAdd = new Set(bobGroup.listMembers().map((m) => m.id))
+    await bobGroup.processMessage(addCommit)
+    const afterAdd = new Set(bobGroup.listMembers().map((m) => m.id))
+    const added = [...afterAdd].filter((id) => !beforeAdd.has(id))
+    expect(added).toEqual([charlie.id])
+
+    // --- REMOVE: Alice removes Charlie from her epoch-2 handle (same chain Bob
+    // is now on); Bob receives that commit and diffs.
+    const charlieLeaf = aliceWith3.findMemberLeafIndex(charlie.id)
+    expect(charlieLeaf).toBeDefined()
+    const { commitMessage: removeCommit } = await removeMember(aliceWith3, charlieLeaf as number)
+
+    const beforeRemove = new Set(bobGroup.listMembers().map((m) => m.id))
+    await bobGroup.processMessage(removeCommit)
+    const afterRemove = new Set(bobGroup.listMembers().map((m) => m.id))
+    const removed = [...beforeRemove].filter((id) => !afterRemove.has(id))
+    expect(removed).toEqual([charlie.id])
+  })
 })
 
 async function makePeer4(sigKeys = 1) {
