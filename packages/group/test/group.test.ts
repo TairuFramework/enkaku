@@ -1,5 +1,5 @@
 import { createIdentity, randomIdentity } from '@enkaku/token'
-import { nodeTypes } from 'ts-mls'
+import { type NodeLeaf, nodeTypes } from 'ts-mls'
 import { describe, expect, it, test } from 'vitest'
 
 import {
@@ -685,10 +685,10 @@ describe('GroupHandle.listMembers', () => {
 
     // Corrupt one leaf's credential identity to non-JSON bytes.
     const tree = groupWithBob.state.ratchetTree
-    const leaf = tree.find(
-      (node) => node != null && node.nodeType === nodeTypes.leaf,
-    ) as unknown as { leaf: { credential: { identity: Uint8Array } } }
-    leaf.leaf.credential.identity = new TextEncoder().encode('not-json-garbage')
+    const leaf = tree.find((node) => node != null && node.nodeType === nodeTypes.leaf) as NodeLeaf
+    const credential = leaf.leaf.credential
+    if (!('identity' in credential)) throw new Error('expected a basic credential')
+    credential.identity = new TextEncoder().encode('not-json-garbage')
 
     // Enumeration tolerates the bad leaf: it is skipped, not thrown.
     const members = groupWithBob.listMembers()
