@@ -1,4 +1,5 @@
 import { createIdentity, randomIdentity } from '@enkaku/token'
+import { nodeTypes } from 'ts-mls'
 import { describe, expect, it, test } from 'vitest'
 
 import {
@@ -664,6 +665,35 @@ describe('GroupHandle.listMembers', () => {
     const afterRemove = new Set(bobGroup.listMembers().map((m) => m.id))
     const removed = [...beforeRemove].filter((id) => !afterRemove.has(id))
     expect(removed).toEqual([charlie.id])
+  })
+
+  test('skips a leaf whose credential identity fails to parse', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'garbage-leaf')
+    await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { newGroup: groupWithBob } = await commitInvite(aliceGroup, bobKP.publicPackage)
+
+    expect(groupWithBob.listMembers()).toHaveLength(2)
+
+    // Corrupt one leaf's credential identity to non-JSON bytes.
+    const tree = groupWithBob.state.ratchetTree
+    const leaf = tree.find(
+      (node) => node != null && node.nodeType === nodeTypes.leaf,
+    ) as unknown as { leaf: { credential: { identity: Uint8Array } } }
+    leaf.leaf.credential.identity = new TextEncoder().encode('not-json-garbage')
+
+    // Enumeration tolerates the bad leaf: it is skipped, not thrown.
+    const members = groupWithBob.listMembers()
+    expect(members).toHaveLength(1)
+    expect(() => groupWithBob.listMembers()).not.toThrow()
   })
 })
 
