@@ -15,6 +15,7 @@ export {
 } from './codec.js'
 export {
   extractPermission,
+  type GroupMember,
   type MemberCredential,
   type MLSCredentialIdentity,
   parseMLSCredentialIdentity,
@@ -42,6 +43,7 @@ export {
   type JoinGroupExternalParams,
   type JoinGroupExternalResult,
   joinGroupExternal,
+  makeMLSCredential,
   type ProcessWelcomeParams,
   type ProcessWelcomeResult,
   processWelcome,
