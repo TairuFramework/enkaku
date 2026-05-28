@@ -568,6 +568,45 @@ describe('JSON serialization null safety', () => {
   })
 })
 
+describe('GroupHandle.listMembers', () => {
+  test('enumerates all members in ascending leaf-index order', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'list-members')
+
+    await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const { newGroup: groupWithBob } = await commitInvite(aliceGroup, bobKP.publicPackage)
+
+    await createInvite({
+      group: groupWithBob,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const { newGroup: groupWith3 } = await commitInvite(groupWithBob, charlieKP.publicPackage)
+
+    const members = groupWith3.listMembers()
+    expect(members).toHaveLength(3)
+    expect(members.map((m) => m.leafIndex)).toEqual([0, 1, 2])
+    const ids = members.map((m) => m.id)
+    expect(ids).toContain(alice.id)
+    expect(ids).toContain(bob.id)
+    expect(ids).toContain(charlie.id)
+    for (const member of members) {
+      expect(groupWith3.findMemberLeafIndex(member.id)).toBe(member.leafIndex)
+    }
+  })
+})
+
 async function makePeer4(sigKeys = 1) {
   return await createIdentity({
     keys: Array.from({ length: sigKeys }, () => ({

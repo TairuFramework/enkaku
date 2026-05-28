@@ -45,6 +45,7 @@ import {
 } from './capability.js'
 import { sanitizeRatchetTree } from './codec.js'
 import {
+  type GroupMember,
   type MemberCredential,
   type MLSCredentialIdentity,
   parseMLSCredentialIdentity,
@@ -150,9 +151,8 @@ export class GroupHandle {
     ).length
   }
 
-  findMemberLeafIndex(id: string): number | undefined {
+  *#iterateMembers(): Generator<GroupMember> {
     const tree = this.#state.ratchetTree
-    const targetNorm = normalizeDID(id)
     for (let i = 0; i < tree.length; i++) {
       const node = tree[i]
       if (node != null && node.nodeType === nodeTypes.leaf) {
@@ -164,11 +164,28 @@ export class GroupHandle {
           } catch {
             continue
           }
-          if (normalizeDID(parsed.id) === targetNorm) return i / 2
+          yield { leafIndex: i / 2, id: parsed.id }
         }
       }
     }
+  }
+
+  findMemberLeafIndex(id: string): number | undefined {
+    const targetNorm = normalizeDID(id)
+    for (const member of this.#iterateMembers()) {
+      if (normalizeDID(member.id) === targetNorm) return member.leafIndex
+    }
     return undefined
+  }
+
+  /**
+   * Enumerate the group's current members from the ratchet tree, in ascending
+   * leaf-index order. Leaves whose credential identity fails to parse are skipped
+   * (same tolerance as findMemberLeafIndex). Reflects the handle's current #state
+   * — call before and after processMessage to diff a commit's membership change.
+   */
+  listMembers(): Array<GroupMember> {
+    return [...this.#iterateMembers()]
   }
 
   /**

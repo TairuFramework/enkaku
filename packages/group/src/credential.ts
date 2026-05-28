@@ -28,6 +28,13 @@ export type MLSCredentialIdentity = {
   longForm?: string
 }
 
+export type GroupMember = {
+  /** MLS leaf index (ratchet-tree array position / 2, matching findMemberLeafIndex). */
+  leafIndex: number
+  /** DID parsed from the leaf's MLS credential identity. */
+  id: string
+}
+
 export function parseMLSCredentialIdentity(identity: Uint8Array): MLSCredentialIdentity {
   const text = new TextDecoder().decode(identity)
   let parsed: unknown
