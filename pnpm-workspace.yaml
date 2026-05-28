@@ -15,7 +15,7 @@ allowBuilds:
 blockExoticSubdeps: false
 
 catalog:
-  '@biomejs/biome': ^2.4.15
+  '@biomejs/biome': ^2.4.16
   '@dipakparmar/docusaurus-plugin-umami': ^2.4.0
   '@docusaurus/core': ^3.10.1
   '@docusaurus/faster': ^3.10.1
@@ -54,7 +54,7 @@ catalog:
   ajv-formats: ^3.0.1
   canonicalize: 3.0.0
   del-cli: ^7.0.0
-  electron: ^42.2.0
+  electron: ^42.3.0
   electron-store: ^11.0.2
   eventsource-parser: ^3.0.8
   expo: ~56.0.5
@@ -73,7 +73,7 @@ catalog:
   react-native-web: 0.21.2
   ts-mls: 2.0.0-rc.13
   tsx: ^4.22.3
-  turbo: ^2.9.14
+  turbo: ^2.9.15
   typedoc: ^0.28.19
   typedoc-plugin-markdown: ^4.11.0
   typescript: ^6.0.3

@@ -42,6 +42,7 @@ export {
   type JoinGroupExternalParams,
   type JoinGroupExternalResult,
   joinGroupExternal,
+  makeMLSCredential,
   type ProcessWelcomeParams,
   type ProcessWelcomeResult,
   processWelcome,

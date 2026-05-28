@@ -160,6 +160,18 @@ export type KeyAlg = 'EdDSA' | 'X25519'
 export type IdentityKeySpec = {
   purpose: KeyPurpose
   alg: KeyAlg
+  /**
+   * Optional caller-supplied private key bytes.
+   *
+   * - When provided, the key pair is derived deterministically from these bytes.
+   *   For a single-key spec on `did:peer:4`, this means the resulting short form
+   *   is also deterministic — useful for reproducible identities (tests, seed-based
+   *   recovery, restoring an identity from a stored secret).
+   * - When omitted, a fresh random key is generated via the algorithm's
+   *   `randomSecretKey()` utility (Ed25519 or X25519).
+   *
+   * The caller owns the lifecycle of the supplied bytes.
+   */
   privateKey?: Uint8Array
 }
 
@@ -385,11 +397,27 @@ function buildIdentity(
 }
 
 /**
- * Create a multi-key identity. The DID method is chosen automatically:
- * - single classical signing key → did:key
- * - anything else → did:peer:4
+ * Build a multi-key identity from one or more key specs.
  *
- * Caller can override via `didMethod`. Invalid overrides throw IdentityError.InvalidMethod.
+ * DID method selection:
+ * - Single classical (`EdDSA` / `X25519`) signing key with no override → `did:key`.
+ * - Anything else (multiple keys, KEM-only, any non-classical algorithm) → `did:peer:4`.
+ * - Caller may force a method via `input.didMethod`. Invalid combinations throw
+ *   `IdentityError.InvalidMethod` (e.g. forcing `did:key` with multiple keys).
+ *
+ * Key resolution:
+ * - Each `IdentityKeySpec.privateKey` is honored when present (deterministic), otherwise
+ *   a fresh random key is generated. See {@link IdentityKeySpec.privateKey}.
+ * - At least one signing key (`purpose: 'sig'`) is required; the first becomes the
+ *   identity's primary signing key and seeds `publicKey` / `privateKey` on the result.
+ *
+ * For `did:peer:4`, the returned `id` is the short form (hash of the doc) and is
+ * deterministic with respect to the resolved keys — providing the same `privateKey`
+ * bytes across runs yields the same short form. `longForm` carries the full doc and
+ * is what peers exchange for first contact (see `signToken({ embedLongForm })`).
+ *
+ * @throws `Error` when `input.keys` is empty or no `sig` key is provided.
+ * @throws `IdentityError.InvalidMethod` when `didMethod` cannot satisfy the key set.
  */
 export async function createIdentity(input: CreateIdentityInput): Promise<MultiKeyIdentity> {
   if (input.keys.length === 0) {
