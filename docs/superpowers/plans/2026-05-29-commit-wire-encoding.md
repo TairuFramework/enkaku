@@ -26,6 +26,7 @@
   - `GroupHandle.processMessage` (`:225-236`)
   - `GroupHandle.decrypt` (`:207-220`)
   - `ProcessWelcomeParams.welcome` (`:403`) + `processWelcome` mlsJoinGroup call (`:430-439`)
+  - new exported `readMessageEpoch` free function (advisory epoch peek)
 - Modify: `packages/group/test/group.test.ts` (ts-mls import line 2 + new tests)
 - Modify: `packages/group/package.json` (version)
 
@@ -533,7 +534,110 @@ git commit -m "test(group): stale commit bytes rejected on a receiver past that 
 
 ---
 
-### Task 5: Version bump to 0.16.1
+### Task 5: `readMessageEpoch` export (advisory epoch peek)
+
+**Files:**
+- Modify: `packages/group/src/group.ts` (new exported free function)
+- Test: `packages/group/test/group.test.ts`
+
+Per kubun feedback note 2: a receiver pre-checks a handshake's epoch against `handle.epoch` (drop stale / buffer future) without decrypting. The `epoch` is in the cleartext header of both `PrivateMessage` (`privateMessage.d.ts:11`) and `PublicMessage` (`framedContent.d.ts:37`), so this is a pure TLS deserialize — no group secrets, works for any peer at any epoch. **Advisory only:** the header epoch is unauthenticated; `processMessage` remains the authenticated gate.
+
+- [ ] **Step 1: Add `readMessageEpoch` to the test import**
+
+In `packages/group/test/group.test.ts`, add `readMessageEpoch` to the existing import from `'../src/group.js'` (the block at lines 5-12):
+
+```ts
+import {
+  commitInvite,
+  createGroup,
+  createInvite,
+  createKeyPackageBundle,
+  processWelcome,
+  readMessageEpoch,
+  removeMember,
+} from '../src/group.js'
+```
+
+- [ ] **Step 2: Write the failing test**
+
+Append inside the `describe('GroupHandle lifecycle', …)` block (before its closing `})`):
+
+```ts
+test('readMessageEpoch reads the handshake epoch from commit bytes', async () => {
+  const alice = randomIdentity()
+  const bob = randomIdentity()
+
+  const { group: aliceGroup } = await createGroup(alice, 'peek-epoch')
+  await createInvite({
+    group: aliceGroup,
+    identity: alice,
+    recipientDID: bob.id,
+    permission: 'member',
+  })
+  const bobKP = await createKeyPackageBundle(bob)
+  const addBob = await commitInvite(aliceGroup, bobKP.publicPackage)
+
+  // Peek matches the committed-into epoch, without any decrypt.
+  expect(readMessageEpoch(addBob.commitMessage)).toBe(addBob.epoch)
+
+  const bobLeaf = addBob.newGroup.findMemberLeafIndex(bob.id)
+  const removeRes = await removeMember(addBob.newGroup, bobLeaf as number)
+  expect(readMessageEpoch(removeRes.commitMessage)).toBe(removeRes.epoch)
+
+  // Garbage / non-message bytes yield undefined, not a throw.
+  expect(readMessageEpoch(new Uint8Array([0, 1, 2, 3]))).toBeUndefined()
+})
+```
+
+- [ ] **Step 3: Run the test to verify it fails**
+
+Run: `pnpm --filter @enkaku/group exec vitest run -t 'readMessageEpoch reads the handshake epoch'`
+Expected: FAIL — `readMessageEpoch` is not exported (import resolves to `undefined`, call throws).
+
+- [ ] **Step 4: Implement `readMessageEpoch`**
+
+In `packages/group/src/group.ts`, add this exported function (place it near the other lifecycle free functions, e.g. directly after `removeMember`):
+
+```ts
+/**
+ * Read the MLS epoch from a framed handshake/application message's cleartext
+ * header, without decrypting. Advisory only — the header epoch is unauthenticated;
+ * use it to drop stale / buffer future messages before the authenticated
+ * processMessage. Returns undefined for non-message or undecodable bytes.
+ */
+export function readMessageEpoch(bytes: Uint8Array): bigint | undefined {
+  const message = decode(mlsMessageDecoder, bytes)
+  if (message == null) return undefined
+  if (message.wireformat === wireformats.mls_private_message) {
+    return message.privateMessage.epoch
+  }
+  if (message.wireformat === wireformats.mls_public_message) {
+    return message.publicMessage.content.epoch
+  }
+  return undefined
+}
+```
+
+- [ ] **Step 5: Run the test to verify it passes**
+
+Run: `pnpm --filter @enkaku/group exec vitest run -t 'readMessageEpoch reads the handshake epoch'`
+Expected: PASS.
+
+- [ ] **Step 6: Typecheck**
+
+Run: `pnpm --filter @enkaku/group run build:types`
+Expected: no type errors.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add packages/group/src/group.ts packages/group/test/group.test.ts
+git commit -m "feat(group): readMessageEpoch — advisory epoch peek from framed bytes"
+```
+
+---
+
+### Task 6: Version bump to 0.16.1
 
 **Files:**
 - Modify: `packages/group/package.json` (version field)
@@ -581,8 +685,9 @@ git commit -m "chore(group): release 0.16.1"
 - §3.2 `processMessage` bytes → Task 1, step 7.
 - §3.2 `decrypt` bytes → Task 3.
 - §4 (claimed) "no change to processWelcome" → **corrected**: `processWelcome` MUST decode framed welcome bytes (Task 1, step 6), because `mlsJoinGroup` takes the inner `Welcome`, not bytes.
-- §5 version → Task 5 (0.16.1 per user, not 0.17.0; no enkaku catalog to bump).
-- §6 tests: bytes round-trip + epoch (Tasks 1, 2), `processMessage(bytes)` advances epoch (Task 1), stale-bytes rejection (Task 4).
+- kubun feedback note 2 (epoch peek) → Task 5 (`readMessageEpoch`, advisory).
+- §5 version → Task 6 (0.16.1 per user, not 0.17.0; no enkaku catalog to bump).
+- §6 tests: bytes round-trip + epoch (Tasks 1, 2), `processMessage(bytes)` advances epoch (Task 1), stale-bytes rejection (Task 4), peek-epoch matches result (Task 5).
 
 **Type consistency:** `commitMessage`/`welcomeMessage`: `Uint8Array`; `epoch`: `bigint`; `processMessage`/`decrypt`/`ProcessWelcomeParams.welcome` params: `Uint8Array | unknown`. Consistent across tasks.
 
