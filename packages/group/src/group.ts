@@ -497,8 +497,11 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
 }
 
 export type RemoveMemberResult = {
-  commitMessage: unknown
+  /** Framed MLSMessage bytes. Broadcast to existing members via the DS. */
+  commitMessage: Uint8Array
   newGroup: GroupHandle
+  /** Epoch the commit was committed into (== newGroup.epoch). */
+  epoch: bigint
 }
 
 /**
@@ -528,7 +531,11 @@ export async function removeMember(
     resolver: group.resolver,
   })
 
-  return { commitMessage: result.commit, newGroup }
+  return {
+    commitMessage: encode(mlsMessageEncoder, result.commit),
+    newGroup,
+    epoch: newGroup.epoch,
+  }
 }
 
 /**

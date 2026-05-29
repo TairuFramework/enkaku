@@ -306,6 +306,54 @@ describe('GroupHandle lifecycle', () => {
     expect(bobGroup.findMemberLeafIndex(charlie.id)).toBeDefined()
   })
 
+  test('removeMember returns commit bytes + epoch; receiver applies via bytes', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    // alice + bob + charlie group, with bob joined so he can receive the remove commit.
+    const { group: aliceGroup } = await createGroup(alice, 'wire-remove')
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const addBob = await commitInvite(aliceGroup, bobKP.publicPackage)
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: addBob.welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: addBob.newGroup.state.ratchetTree,
+    })
+
+    await createInvite({
+      group: addBob.newGroup,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const addCharlie = await commitInvite(addBob.newGroup, charlieKP.publicPackage)
+    await bobGroup.processMessage(addCharlie.commitMessage)
+
+    const charlieLeaf = addCharlie.newGroup.findMemberLeafIndex(charlie.id)
+    expect(charlieLeaf).toBeDefined()
+    const removeRes = await removeMember(addCharlie.newGroup, charlieLeaf as number)
+
+    expect(removeRes.commitMessage).toBeInstanceOf(Uint8Array)
+    expect(removeRes.epoch).toBe(removeRes.newGroup.epoch)
+    expect(removeRes.epoch).toBe(3n) // addBob (1) + addCharlie (2) + remove (3)
+    const decoded = decode(mlsMessageDecoder, removeRes.commitMessage)
+    expect(decoded?.wireformat).toBe(wireformats.mls_private_message)
+
+    await bobGroup.processMessage(removeRes.commitMessage)
+    expect(bobGroup.epoch).toBe(3n)
+    expect(bobGroup.findMemberLeafIndex(charlie.id)).toBeUndefined()
+  })
+
   test('processWelcome throws on invite with empty capability chain', async () => {
     const alice = randomIdentity()
     const bob = randomIdentity()
