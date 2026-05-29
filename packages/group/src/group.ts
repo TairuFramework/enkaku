@@ -385,7 +385,10 @@ export type CommitInviteResult = {
   /** Framed MLSMessage(Welcome) bytes. Delivered to the new member. */
   welcomeMessage: Uint8Array
   newGroup: GroupHandle
-  /** Epoch the commit was committed into (== newGroup.epoch). */
+  /** Post-commit epoch the group is now at (== newGroup.epoch). NOTE: this is
+   *  NOT the epoch carried in the commit's wire header — a commit is framed at
+   *  the sender's pre-commit epoch (== epoch - 1n), which is what receivers
+   *  compare against their own handle.epoch for ordering (see readMessageEpoch). */
   epoch: bigint
 }
 
@@ -515,7 +518,10 @@ export type RemoveMemberResult = {
   /** Framed MLSMessage bytes. Broadcast to existing members via the DS. */
   commitMessage: Uint8Array
   newGroup: GroupHandle
-  /** Epoch the commit was committed into (== newGroup.epoch). */
+  /** Post-commit epoch the group is now at (== newGroup.epoch). NOTE: this is
+   *  NOT the epoch carried in the commit's wire header — a commit is framed at
+   *  the sender's pre-commit epoch (== epoch - 1n), which is what receivers
+   *  compare against their own handle.epoch for ordering (see readMessageEpoch). */
   epoch: bigint
 }
 
@@ -551,6 +557,24 @@ export async function removeMember(
     newGroup,
     epoch: newGroup.epoch,
   }
+}
+
+/**
+ * Read the MLS epoch from a framed handshake/application message's cleartext
+ * header, without decrypting. Advisory only — the header epoch is unauthenticated;
+ * use it to drop stale / buffer future messages before the authenticated
+ * processMessage. Returns undefined for non-message or undecodable bytes.
+ */
+export function readMessageEpoch(bytes: Uint8Array): bigint | undefined {
+  const message = decode(mlsMessageDecoder, bytes)
+  if (message == null) return undefined
+  if (message.wireformat === wireformats.mls_private_message) {
+    return message.privateMessage.epoch
+  }
+  if (message.wireformat === wireformats.mls_public_message) {
+    return message.publicMessage.content.epoch
+  }
+  return undefined
 }
 
 /**

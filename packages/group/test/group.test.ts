@@ -8,6 +8,7 @@ import {
   createInvite,
   createKeyPackageBundle,
   processWelcome,
+  readMessageEpoch,
   removeMember,
 } from '../src/group.js'
 
@@ -379,6 +380,38 @@ describe('GroupHandle lifecycle', () => {
         ratchetTree: aliceGroup.state.ratchetTree,
       }),
     ).rejects.toThrow()
+  })
+
+  test('readMessageEpoch reads the handshake epoch from commit bytes', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'peek-epoch')
+    await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const addBob = await commitInvite(aliceGroup, bobKP.publicPackage)
+
+    // A Commit is FRAMED at the sender's epoch BEFORE it advances the group
+    // (RFC 9420 FramedContent.epoch). So the header epoch readMessageEpoch
+    // returns is the pre-commit / sending epoch (== result.epoch - 1n) — which
+    // is exactly the epoch a receiver must be at to process it, i.e. the value
+    // to compare against handle.epoch for drop/buffer ordering. It is NOT the
+    // post-commit newGroup.epoch carried in result.epoch.
+    expect(addBob.epoch).toBe(1n)
+    expect(readMessageEpoch(addBob.commitMessage)).toBe(0n)
+    expect(readMessageEpoch(addBob.commitMessage)).toBe(addBob.epoch - 1n)
+
+    const bobLeaf = addBob.newGroup.findMemberLeafIndex(bob.id)
+    const removeRes = await removeMember(addBob.newGroup, bobLeaf as number)
+    expect(readMessageEpoch(removeRes.commitMessage)).toBe(removeRes.epoch - 1n)
+
+    // Garbage / non-message bytes yield undefined, not a throw.
+    expect(readMessageEpoch(new Uint8Array([0, 1, 2, 3]))).toBeUndefined()
   })
 
   test('processMessage rejects a stale commit (bytes form) on a receiver past that epoch', async () => {

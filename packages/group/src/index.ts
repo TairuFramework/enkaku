@@ -49,6 +49,7 @@ export {
   processWelcome,
   type RemoveMemberResult,
   type RestoreGroupParams,
+  readMessageEpoch,
   removeMember,
   restoreGroup,
 } from './group.js'
