@@ -49,7 +49,17 @@ export type RemoveMemberResult = {
 }
 ```
 
-Implementation: extend the existing internal `createCommit` call site (the same one `joinGroupExternal` already wraps + encodes inline). Reuse `encode(mlsMessageEncoder, framedCommit)` for the commit, and `encode(mlsMessageEncoder, framedWelcome)` for the welcome, with appropriate `MlsPublicMessage` / `MlsWelcome` framing.
+Implementation: `createCommit` (ts-mls) already returns framed results — no manual framing wrapper needed. `result.commit` is an `MlsFramedMessage` (defaulting to `MlsPrivateMessage` when `wireAsPublicMessage` is not set — neither `commitInvite` nor `removeMember` sets it, so commits are encrypted to the current epoch, correct for broadcast to existing members). `result.welcome` is an `MlsWelcomeMessage | undefined`. Encode each directly:
+
+```ts
+const commitMessage = encode(mlsMessageEncoder, result.commit)
+if (result.welcome == null) {
+  throw new Error('commitInvite: expected a Welcome message for the add proposal')
+}
+const welcomeMessage = encode(mlsMessageEncoder, result.welcome)
+```
+
+(Note: `joinGroupExternal` frames a *bare* `PublicMessage` returned by `mlsJoinGroupExternal` — a different call than `createCommit`. The `joinGroupExternal` encoding pattern is structurally similar, not literally reusable here. The earlier version of this spec implied otherwise; corrected.)
 
 ### 3.2 `GroupHandle.processMessage` accepts bytes OR decoded objects
 
@@ -84,7 +94,7 @@ Same treatment for `decrypt(privateMessage: unknown)` (group.ts:207) — accept 
 
 `CommitInviteResult.commitMessage` and `welcomeMessage` change type from `unknown` to `Uint8Array`. `RemoveMemberResult.commitMessage` likewise. This is **semver-major** at the type level, but the runtime shape is strictly narrower than `unknown` so callers that used the values opaquely (passing them to `processMessage`, never inspecting fields) keep working at runtime. Internal kubun consumer (`packages/plugin-p2p/src/groups/manager.ts`) is the only known caller and updates in lockstep.
 
-Bump `@enkaku/group` to `0.17.0`. Update root `pnpm-workspace.yaml` catalog.
+Bump `packages/group/package.json` 0.16.0 → 0.17.0. No enkaku-side `pnpm-workspace.yaml` catalog entry exists for `@enkaku/group` and no internal package consumes it — the catalog bump is kubun-side (see §8).
 
 ## 6. Testing
 
