@@ -564,9 +564,20 @@ export async function removeMember(
  * header, without decrypting. Advisory only — the header epoch is unauthenticated;
  * use it to drop stale / buffer future messages before the authenticated
  * processMessage. Returns undefined for non-message or undecodable bytes.
+ *
+ * Total by contract: this is a safe pre-filter over bytes arriving from an
+ * untrusted Delivery Service, so it never throws. ts-mls `decode` throws (e.g.
+ * CodecError on input larger than its max size) rather than returning undefined
+ * for some malformed inputs; that is caught and treated as "not a message".
  */
 export function readMessageEpoch(bytes: Uint8Array): bigint | undefined {
-  const message = decode(mlsMessageDecoder, bytes)
+  const message = (() => {
+    try {
+      return decode(mlsMessageDecoder, bytes)
+    } catch {
+      return undefined
+    }
+  })()
   if (message == null) return undefined
   if (message.wireformat === wireformats.mls_private_message) {
     return message.privateMessage.epoch

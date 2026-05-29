@@ -412,6 +412,11 @@ describe('GroupHandle lifecycle', () => {
 
     // Garbage / non-message bytes yield undefined, not a throw.
     expect(readMessageEpoch(new Uint8Array([0, 1, 2, 3]))).toBeUndefined()
+
+    // Oversized input makes ts-mls decode throw (CodecError, >64M bytes); the
+    // advisory helper must still return undefined, never throw — it pre-filters
+    // bytes from an untrusted Delivery Service.
+    expect(readMessageEpoch(new Uint8Array(64_000_001))).toBeUndefined()
   })
 
   test('processMessage rejects a stale commit (bytes form) on a receiver past that epoch', async () => {
