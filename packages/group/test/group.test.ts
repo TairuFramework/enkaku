@@ -380,6 +380,46 @@ describe('GroupHandle lifecycle', () => {
       }),
     ).rejects.toThrow()
   })
+
+  test('processMessage rejects a stale commit (bytes form) on a receiver past that epoch', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'wire-stale')
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const addBob = await commitInvite(aliceGroup, bobKP.publicPackage)
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: addBob.welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: addBob.newGroup.state.ratchetTree,
+    })
+
+    // Alice produces an add commit advancing epoch 1->2 (the "stale" one Bob applies first).
+    await createInvite({
+      group: addBob.newGroup,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const addCharlie = await commitInvite(addBob.newGroup, charlieKP.publicPackage)
+
+    // Bob applies it, advancing to epoch 2.
+    await bobGroup.processMessage(addCharlie.commitMessage)
+    expect(bobGroup.epoch).toBe(2n)
+
+    // Re-applying the same epoch-1->2 commit bytes must be rejected (Bob is now at epoch 2).
+    await expect(bobGroup.processMessage(addCharlie.commitMessage)).rejects.toThrow()
+  })
 })
 
 // Simulate JSON roundtrip effect: undefined array entries become null.
