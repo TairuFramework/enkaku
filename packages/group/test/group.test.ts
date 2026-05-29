@@ -1,5 +1,5 @@
 import { createIdentity, randomIdentity } from '@enkaku/token'
-import { type NodeLeaf, nodeTypes } from 'ts-mls'
+import { decode, mlsMessageDecoder, type NodeLeaf, nodeTypes, wireformats } from 'ts-mls'
 import { describe, expect, it, test } from 'vitest'
 
 import {
@@ -251,6 +251,59 @@ describe('GroupHandle lifecycle', () => {
 
     const { message: msg2 } = await epoch2Group.encrypt(new TextEncoder().encode('epoch-2-msg'))
     await expect(bobGroup.decrypt(msg2)).rejects.toThrow()
+  })
+
+  test('commitInvite returns wire bytes + epoch; receiver joins and processes via bytes', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'wire-add')
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const addBob = await commitInvite(aliceGroup, bobKP.publicPackage)
+
+    // Wire-ready bytes + epoch contract.
+    expect(addBob.commitMessage).toBeInstanceOf(Uint8Array)
+    expect(addBob.welcomeMessage).toBeInstanceOf(Uint8Array)
+    expect(addBob.epoch).toBe(addBob.newGroup.epoch)
+    expect(addBob.epoch).toBe(1n)
+
+    // Bytes decode back to framed MLSMessages of the expected wireformat.
+    const decodedCommit = decode(mlsMessageDecoder, addBob.commitMessage)
+    expect(decodedCommit?.wireformat).toBe(wireformats.mls_private_message)
+    const decodedWelcome = decode(mlsMessageDecoder, addBob.welcomeMessage)
+    expect(decodedWelcome?.wireformat).toBe(wireformats.mls_welcome)
+
+    // Bob joins using welcome BYTES (processWelcome decode path).
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: addBob.welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: addBob.newGroup.state.ratchetTree,
+    })
+    expect(bobGroup.epoch).toBe(1n)
+
+    // Alice adds Charlie; Bob applies the add commit as BYTES (processMessage decode path).
+    await createInvite({
+      group: addBob.newGroup,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const addCharlie = await commitInvite(addBob.newGroup, charlieKP.publicPackage)
+    expect(addCharlie.commitMessage).toBeInstanceOf(Uint8Array)
+
+    await bobGroup.processMessage(addCharlie.commitMessage)
+    expect(bobGroup.epoch).toBe(2n)
+    expect(bobGroup.findMemberLeafIndex(charlie.id)).toBeDefined()
   })
 
   test('processWelcome throws on invite with empty capability chain', async () => {
