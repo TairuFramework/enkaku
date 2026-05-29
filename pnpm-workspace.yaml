@@ -56,8 +56,8 @@ catalog:
   del-cli: ^7.0.0
   electron: ^42.3.0
   electron-store: ^11.0.2
-  eventsource-parser: ^3.0.8
-  expo: ~56.0.5
+  eventsource-parser: ^3.1.0
+  expo: ~56.0.6
   expo-crypto: ^56.0.4
   expo-secure-store: ^56.0.4
   expo-status-bar: ~56.0.4
