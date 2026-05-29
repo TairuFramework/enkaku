@@ -203,12 +203,27 @@ export class GroupHandle {
 
   /**
    * Decrypt an application message from the group.
+   *
+   * Accepts either wire-form bytes (framed MLSMessage `Uint8Array`) or a
+   * pre-decoded ts-mls message object. The param type widens to `unknown`
+   * because `Uint8Array | unknown` collapses to `unknown` in TypeScript; the
+   * runtime `instanceof` check selects the decode path. Note: `encrypt`
+   * currently emits objects, so the bytes path is for symmetry with
+   * processMessage and future wire-form application messages.
    */
-  async decrypt(privateMessage: unknown): Promise<Uint8Array> {
+  async decrypt(message: Uint8Array | unknown): Promise<Uint8Array> {
+    let decoded: unknown = message
+    if (message instanceof Uint8Array) {
+      const parsed = decode(mlsMessageDecoder, message)
+      if (parsed == null) {
+        throw new Error('decrypt: failed to decode MLSMessage')
+      }
+      decoded = parsed
+    }
     const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
-      message: privateMessage as Parameters<typeof mlsProcessMessage>[0]['message'],
+      message: decoded as Parameters<typeof mlsProcessMessage>[0]['message'],
     })
     if (result.kind === 'applicationMessage') {
       this.#state = result.newState
