@@ -2,7 +2,7 @@
 
 **Status:** complete
 **Date:** 2026-05-29
-**Branch / PR:** `docs/commit-wire-encoding` / PR TBD
+**Branch / PR:** `docs/commit-wire-encoding` / [#31](https://github.com/TairuFramework/enkaku/pull/31)
 **Origin:** Downstream requirement from Kubun's MLS group-membership apply-time check (path A). Enkaku must emit wire-routable Commit/Welcome bytes so Kubun's hub relay (an untrusted Delivery Service) can fan them out to all members per RFC 9750 §6.1.
 
 ## Goal
