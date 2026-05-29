@@ -1,5 +1,5 @@
 import { createIdentity, randomIdentity } from '@enkaku/token'
-import { type NodeLeaf, nodeTypes } from 'ts-mls'
+import { decode, mlsMessageDecoder, type NodeLeaf, nodeTypes, wireformats } from 'ts-mls'
 import { describe, expect, it, test } from 'vitest'
 
 import {
@@ -8,6 +8,7 @@ import {
   createInvite,
   createKeyPackageBundle,
   processWelcome,
+  readMessageEpoch,
   removeMember,
 } from '../src/group.js'
 
@@ -253,6 +254,107 @@ describe('GroupHandle lifecycle', () => {
     await expect(bobGroup.decrypt(msg2)).rejects.toThrow()
   })
 
+  test('commitInvite returns wire bytes + epoch; receiver joins and processes via bytes', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'wire-add')
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const addBob = await commitInvite(aliceGroup, bobKP.publicPackage)
+
+    // Wire-ready bytes + epoch contract.
+    expect(addBob.commitMessage).toBeInstanceOf(Uint8Array)
+    expect(addBob.welcomeMessage).toBeInstanceOf(Uint8Array)
+    expect(addBob.epoch).toBe(addBob.newGroup.epoch)
+    expect(addBob.epoch).toBe(1n)
+
+    // Bytes decode back to framed MLSMessages of the expected wireformat.
+    const decodedCommit = decode(mlsMessageDecoder, addBob.commitMessage)
+    expect(decodedCommit?.wireformat).toBe(wireformats.mls_private_message)
+    const decodedWelcome = decode(mlsMessageDecoder, addBob.welcomeMessage)
+    expect(decodedWelcome?.wireformat).toBe(wireformats.mls_welcome)
+
+    // Bob joins using welcome BYTES (processWelcome decode path).
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: addBob.welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: addBob.newGroup.state.ratchetTree,
+    })
+    expect(bobGroup.epoch).toBe(1n)
+
+    // Alice adds Charlie; Bob applies the add commit as BYTES (processMessage decode path).
+    await createInvite({
+      group: addBob.newGroup,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const addCharlie = await commitInvite(addBob.newGroup, charlieKP.publicPackage)
+    expect(addCharlie.commitMessage).toBeInstanceOf(Uint8Array)
+
+    await bobGroup.processMessage(addCharlie.commitMessage)
+    expect(bobGroup.epoch).toBe(2n)
+    expect(bobGroup.findMemberLeafIndex(charlie.id)).toBeDefined()
+  })
+
+  test('removeMember returns commit bytes + epoch; receiver applies via bytes', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    // alice + bob + charlie group, with bob joined so he can receive the remove commit.
+    const { group: aliceGroup } = await createGroup(alice, 'wire-remove')
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const addBob = await commitInvite(aliceGroup, bobKP.publicPackage)
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: addBob.welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: addBob.newGroup.state.ratchetTree,
+    })
+
+    await createInvite({
+      group: addBob.newGroup,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const addCharlie = await commitInvite(addBob.newGroup, charlieKP.publicPackage)
+    await bobGroup.processMessage(addCharlie.commitMessage)
+
+    const charlieLeaf = addCharlie.newGroup.findMemberLeafIndex(charlie.id)
+    expect(charlieLeaf).toBeDefined()
+    const removeRes = await removeMember(addCharlie.newGroup, charlieLeaf as number)
+
+    expect(removeRes.commitMessage).toBeInstanceOf(Uint8Array)
+    expect(removeRes.epoch).toBe(removeRes.newGroup.epoch)
+    expect(removeRes.epoch).toBe(3n) // addBob (1) + addCharlie (2) + remove (3)
+    const decoded = decode(mlsMessageDecoder, removeRes.commitMessage)
+    expect(decoded?.wireformat).toBe(wireformats.mls_private_message)
+
+    await bobGroup.processMessage(removeRes.commitMessage)
+    expect(bobGroup.epoch).toBe(3n)
+    expect(bobGroup.findMemberLeafIndex(charlie.id)).toBeUndefined()
+  })
+
   test('processWelcome throws on invite with empty capability chain', async () => {
     const alice = randomIdentity()
     const bob = randomIdentity()
@@ -278,6 +380,83 @@ describe('GroupHandle lifecycle', () => {
         ratchetTree: aliceGroup.state.ratchetTree,
       }),
     ).rejects.toThrow()
+  })
+
+  test('readMessageEpoch reads the handshake epoch from commit bytes', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'peek-epoch')
+    await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const addBob = await commitInvite(aliceGroup, bobKP.publicPackage)
+
+    // A Commit is FRAMED at the sender's epoch BEFORE it advances the group
+    // (RFC 9420 FramedContent.epoch). So the header epoch readMessageEpoch
+    // returns is the pre-commit / sending epoch (== result.epoch - 1n) — which
+    // is exactly the epoch a receiver must be at to process it, i.e. the value
+    // to compare against handle.epoch for drop/buffer ordering. It is NOT the
+    // post-commit newGroup.epoch carried in result.epoch.
+    expect(addBob.epoch).toBe(1n)
+    expect(readMessageEpoch(addBob.commitMessage)).toBe(0n)
+    expect(readMessageEpoch(addBob.commitMessage)).toBe(addBob.epoch - 1n)
+
+    const bobLeaf = addBob.newGroup.findMemberLeafIndex(bob.id)
+    const removeRes = await removeMember(addBob.newGroup, bobLeaf as number)
+    expect(readMessageEpoch(removeRes.commitMessage)).toBe(removeRes.epoch - 1n)
+
+    // Garbage / non-message bytes yield undefined, not a throw.
+    expect(readMessageEpoch(new Uint8Array([0, 1, 2, 3]))).toBeUndefined()
+
+    // Oversized input makes ts-mls decode throw (CodecError, >64M bytes); the
+    // advisory helper must still return undefined, never throw — it pre-filters
+    // bytes from an untrusted Delivery Service.
+    expect(readMessageEpoch(new Uint8Array(64_000_001))).toBeUndefined()
+  })
+
+  test('processMessage rejects a stale commit (bytes form) on a receiver past that epoch', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const charlie = randomIdentity()
+
+    const { group: aliceGroup } = await createGroup(alice, 'wire-stale')
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob)
+    const addBob = await commitInvite(aliceGroup, bobKP.publicPackage)
+    const { group: bobGroup } = await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: addBob.welcomeMessage,
+      keyPackageBundle: bobKP,
+      ratchetTree: addBob.newGroup.state.ratchetTree,
+    })
+
+    // Alice produces an add commit advancing epoch 1->2 (the "stale" one Bob applies first).
+    await createInvite({
+      group: addBob.newGroup,
+      identity: alice,
+      recipientDID: charlie.id,
+      permission: 'member',
+    })
+    const charlieKP = await createKeyPackageBundle(charlie)
+    const addCharlie = await commitInvite(addBob.newGroup, charlieKP.publicPackage)
+
+    // Bob applies it, advancing to epoch 2.
+    await bobGroup.processMessage(addCharlie.commitMessage)
+    expect(bobGroup.epoch).toBe(2n)
+
+    // Re-applying the same epoch-1->2 commit bytes must be rejected (Bob is now at epoch 2).
+    await expect(bobGroup.processMessage(addCharlie.commitMessage)).rejects.toThrow()
   })
 })
 

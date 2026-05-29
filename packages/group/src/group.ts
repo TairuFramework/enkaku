@@ -203,12 +203,27 @@ export class GroupHandle {
 
   /**
    * Decrypt an application message from the group.
+   *
+   * Accepts either wire-form bytes (framed MLSMessage `Uint8Array`) or a
+   * pre-decoded ts-mls message object. The param type widens to `unknown`
+   * because `Uint8Array | unknown` collapses to `unknown` in TypeScript; the
+   * runtime `instanceof` check selects the decode path. Note: `encrypt`
+   * currently emits objects, so the bytes path is for symmetry with
+   * processMessage and future wire-form application messages.
    */
-  async decrypt(privateMessage: unknown): Promise<Uint8Array> {
+  async decrypt(message: Uint8Array | unknown): Promise<Uint8Array> {
+    let decoded: unknown = message
+    if (message instanceof Uint8Array) {
+      const parsed = decode(mlsMessageDecoder, message)
+      if (parsed == null) {
+        throw new Error('decrypt: failed to decode MLSMessage')
+      }
+      decoded = parsed
+    }
     const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
-      message: privateMessage as Parameters<typeof mlsProcessMessage>[0]['message'],
+      message: decoded as Parameters<typeof mlsProcessMessage>[0]['message'],
     })
     if (result.kind === 'applicationMessage') {
       this.#state = result.newState
@@ -221,12 +236,26 @@ export class GroupHandle {
 
   /**
    * Process a received MLS message (Commit, Proposal, or application).
+   *
+   * Accepts either wire-form bytes (the preferred input — framed MLSMessage
+   * `Uint8Array`, e.g. from commitInvite/removeMember) or a pre-decoded ts-mls
+   * message object (legacy path). The param type widens to `unknown` because
+   * `Uint8Array | unknown` collapses to `unknown` in TypeScript; the runtime
+   * `instanceof` check selects the decode path.
    */
-  async processMessage(privateMessage: unknown): Promise<Uint8Array | null> {
+  async processMessage(message: Uint8Array | unknown): Promise<Uint8Array | null> {
+    let decoded: unknown = message
+    if (message instanceof Uint8Array) {
+      const parsed = decode(mlsMessageDecoder, message)
+      if (parsed == null) {
+        throw new Error('processMessage: failed to decode MLSMessage')
+      }
+      decoded = parsed
+    }
     const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
-      message: privateMessage as Parameters<typeof mlsProcessMessage>[0]['message'],
+      message: decoded as Parameters<typeof mlsProcessMessage>[0]['message'],
     })
     this.#state = result.newState
     if (result.kind === 'applicationMessage') {
@@ -351,9 +380,16 @@ export async function createInvite(params: CreateInviteParams): Promise<CreateIn
 }
 
 export type CommitInviteResult = {
-  commitMessage: unknown
-  welcomeMessage: unknown
+  /** Framed MLSMessage bytes. Broadcast to existing members via the DS. */
+  commitMessage: Uint8Array
+  /** Framed MLSMessage(Welcome) bytes. Delivered to the new member. */
+  welcomeMessage: Uint8Array
   newGroup: GroupHandle
+  /** Post-commit epoch the group is now at (== newGroup.epoch). NOTE: this is
+   *  NOT the epoch carried in the commit's wire header — a commit is framed at
+   *  the sender's pre-commit epoch (== epoch - 1n), which is what receivers
+   *  compare against their own handle.epoch for ordering (see readMessageEpoch). */
+  epoch: bigint
 }
 
 /**
@@ -385,10 +421,14 @@ export async function commitInvite(
     resolver: group.resolver,
   })
 
+  if (result.welcome == null) {
+    throw new Error('commitInvite: expected a Welcome message for the add proposal')
+  }
   return {
-    commitMessage: result.commit,
-    welcomeMessage: result.welcome?.welcome,
+    commitMessage: encode(mlsMessageEncoder, result.commit),
+    welcomeMessage: encode(mlsMessageEncoder, result.welcome),
     newGroup,
+    epoch: newGroup.epoch,
   }
 }
 
@@ -400,7 +440,10 @@ export type ProcessWelcomeResult = {
 export type ProcessWelcomeParams = {
   identity: OwnIdentity
   invite: Invite
-  welcome: unknown
+  /** Wire-form framed MLSMessage(Welcome) bytes (preferred), or a pre-decoded
+   *  ts-mls Welcome object (legacy). `Uint8Array | unknown` collapses to
+   *  `unknown` in TypeScript; the runtime `instanceof` check selects the path. */
+  welcome: Uint8Array | unknown
   keyPackageBundle: KeyPackageBundle
   ratchetTree?: unknown
   options?: GroupOptions
@@ -426,11 +469,20 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
     options: { cache, resolver: options?.resolver },
   })
 
+  let resolvedWelcome: unknown = welcome
+  if (welcome instanceof Uint8Array) {
+    const decoded = decode(mlsMessageDecoder, welcome)
+    if (decoded == null || decoded.wireformat !== wireformats.mls_welcome) {
+      throw new Error('processWelcome: expected a framed MLSMessage(Welcome)')
+    }
+    resolvedWelcome = decoded.welcome
+  }
+
   type JoinGroupParams = Parameters<typeof mlsJoinGroup>[0]
   const sanitizedTree = Array.isArray(ratchetTree) ? sanitizeRatchetTree(ratchetTree) : ratchetTree
   const state = await mlsJoinGroup({
     context,
-    welcome: welcome as JoinGroupParams['welcome'],
+    welcome: resolvedWelcome as JoinGroupParams['welcome'],
     keyPackage: keyPackageBundle.publicPackage as JoinGroupParams['keyPackage'],
     privateKeys: keyPackageBundle.privatePackage as JoinGroupParams['privateKeys'],
     ...(sanitizedTree != null && {
@@ -463,8 +515,14 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
 }
 
 export type RemoveMemberResult = {
-  commitMessage: unknown
+  /** Framed MLSMessage bytes. Broadcast to existing members via the DS. */
+  commitMessage: Uint8Array
   newGroup: GroupHandle
+  /** Post-commit epoch the group is now at (== newGroup.epoch). NOTE: this is
+   *  NOT the epoch carried in the commit's wire header — a commit is framed at
+   *  the sender's pre-commit epoch (== epoch - 1n), which is what receivers
+   *  compare against their own handle.epoch for ordering (see readMessageEpoch). */
+  epoch: bigint
 }
 
 /**
@@ -494,7 +552,40 @@ export async function removeMember(
     resolver: group.resolver,
   })
 
-  return { commitMessage: result.commit, newGroup }
+  return {
+    commitMessage: encode(mlsMessageEncoder, result.commit),
+    newGroup,
+    epoch: newGroup.epoch,
+  }
+}
+
+/**
+ * Read the MLS epoch from a framed handshake/application message's cleartext
+ * header, without decrypting. Advisory only — the header epoch is unauthenticated;
+ * use it to drop stale / buffer future messages before the authenticated
+ * processMessage. Returns undefined for non-message or undecodable bytes.
+ *
+ * Total by contract: this is a safe pre-filter over bytes arriving from an
+ * untrusted Delivery Service, so it never throws. ts-mls `decode` throws (e.g.
+ * CodecError on input larger than its max size) rather than returning undefined
+ * for some malformed inputs; that is caught and treated as "not a message".
+ */
+export function readMessageEpoch(bytes: Uint8Array): bigint | undefined {
+  const message = (() => {
+    try {
+      return decode(mlsMessageDecoder, bytes)
+    } catch {
+      return undefined
+    }
+  })()
+  if (message == null) return undefined
+  if (message.wireformat === wireformats.mls_private_message) {
+    return message.privateMessage.epoch
+  }
+  if (message.wireformat === wireformats.mls_public_message) {
+    return message.publicMessage.content.epoch
+  }
+  return undefined
 }
 
 /**

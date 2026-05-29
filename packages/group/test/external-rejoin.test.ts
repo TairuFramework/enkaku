@@ -21,6 +21,7 @@ import {
   exportGroupInfo,
   joinGroupExternal,
   processWelcome,
+  readMessageEpoch,
   removeMember,
 } from '../src/group.js'
 
@@ -105,6 +106,12 @@ describe('joinGroupExternal — stale device recovery', () => {
     })
     expect(commitMessage).toBeInstanceOf(Uint8Array)
     expect(bobRejoined.epoch).toBe(aliceAdvanced.epoch + 1n)
+
+    // The external-join commit is a PublicMessage (not Private): readMessageEpoch
+    // must read its sending (pre-commit) epoch from the cleartext header — this
+    // is the mls_public_message branch, the only one no other test exercises.
+    expect(readMessageEpoch(commitMessage)).toBe(aliceAdvanced.epoch)
+    expect(readMessageEpoch(commitMessage)).toBe(bobRejoined.epoch - 1n)
 
     // A decodes and processes B's rejoin commit
     const decodedRejoin = decode(mlsMessageDecoder, commitMessage)
