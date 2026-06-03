@@ -40,6 +40,8 @@ export {
   exportGroupInfo,
   GroupHandle,
   type GroupHandleParams,
+  type InspectGroupInfoResult,
+  inspectGroupInfo,
   type JoinGroupExternalParams,
   type JoinGroupExternalResult,
   joinGroupExternal,

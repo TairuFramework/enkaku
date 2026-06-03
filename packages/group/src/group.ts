@@ -121,6 +121,10 @@ export class GroupHandle {
     return this.#state.groupContext.epoch
   }
 
+  get treeHash(): Uint8Array {
+    return this.#state.groupContext.treeHash
+  }
+
   get credential(): MemberCredential {
     return this.#credential
   }
@@ -586,6 +590,43 @@ export function readMessageEpoch(bytes: Uint8Array): bigint | undefined {
     return message.publicMessage.content.epoch
   }
   return undefined
+}
+
+export type InspectGroupInfoResult = {
+  /** The GroupInfo's epoch, read from its groupContext. */
+  epoch: bigint
+  /** The GroupInfo's ratchet-tree hash, read from its groupContext. Compare for
+   *  equality against a known post-commit state's treeHash to confirm canonical
+   *  convergence (same epoch + same treeHash ⟺ same group state). */
+  treeHash: Uint8Array
+}
+
+/**
+ * Non-destructively inspect a framed MLSMessage(GroupInfo) — read its epoch and
+ * ratchet-tree hash without joining or mutating any state. Used to confirm an
+ * external-resync Commit was canonically accepted: compare the returned
+ * (epoch, treeHash) for equality against the rejoiner's own post-commit state
+ * (GroupHandle.epoch / GroupHandle.treeHash). Equal ⟹ this device's Commit won
+ * the epoch; unequal ⟹ another Commit won and the rejoin must retry.
+ *
+ * Structural read only: it does NOT verify the GroupInfo signature. The caller
+ * is expected to have obtained the bytes over the group's authorized channel.
+ * Unlike readMessageEpoch (a total pre-filter over untrusted DS bytes), this
+ * THROWS on malformed input — a malformed already-trusted GroupInfo is a
+ * programming error, not expected traffic.
+ */
+export function inspectGroupInfo(groupInfoBytes: Uint8Array): InspectGroupInfoResult {
+  const message = decode(mlsMessageDecoder, groupInfoBytes)
+  if (message == null) {
+    throw new Error('Invalid groupInfo: failed to decode MLSMessage')
+  }
+  if (message.wireformat !== wireformats.mls_group_info) {
+    throw new Error(
+      `Invalid groupInfo: expected wireformat mls_group_info, got ${String(message.wireformat)}`,
+    )
+  }
+  const { groupContext } = message.groupInfo
+  return { epoch: groupContext.epoch, treeHash: groupContext.treeHash }
 }
 
 /**
