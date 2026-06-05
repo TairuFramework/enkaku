@@ -59,9 +59,7 @@ export async function createTransportStream<R, W>(
     },
     () => {
       socket.end()
-      // Release the half-closed socket so it stops holding the event loop open.
-      // A long-lived peer (e.g. a shared daemon) keeps its side open, so without
-      // this the client socket never reaches 'close' and the process hangs.
+      // Release the half-closed socket so it stops holding the event loop open
       socket.unref()
     },
   )
@@ -79,5 +77,16 @@ export class SocketTransport<R, W> extends Transport<R, W> {
     const { socket, signal, ...options } = params
     const source = typeof socket === 'string' ? connectSocket(socket) : socket
     super({ stream: () => createTransportStream(source, options), signal })
+    // Release the socket on dispose
+    if (typeof source !== 'function') {
+      this.events.on('disposed', async () => {
+        try {
+          const sock = await source
+          sock.unref()
+        } catch {
+          // Socket failed to connect or is already gone; nothing to release
+        }
+      })
+    }
   }
 }

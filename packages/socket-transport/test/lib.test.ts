@@ -241,8 +241,30 @@ describe('SocketTransport', () => {
     await transport.dispose()
 
     // unref() releases the loop hold; end() flushed pending writes; not a hard close
-    expect(unrefSpy).toHaveBeenCalledTimes(1)
+    expect(unrefSpy).toHaveBeenCalled()
     expect(socket.writableEnded).toBe(true)
+    expect(socket.destroyed).toBe(false)
+
+    serverSocket.destroy()
+    server.close()
+  })
+
+  test('releases the socket handle on dispose when the stream was never used', async () => {
+    const { server, socketPath } = await createTestServer()
+    const connectionPromise = waitForConnection(server)
+
+    const socket = await connectSocket(socketPath)
+    const serverSocket = await connectionPromise
+    const unrefSpy = vi.spyOn(socket, 'unref')
+
+    // Construct the transport but never read/write: the lazily-created transport
+    // stream is never materialized, so the writable-close cleanup never runs.
+    const transport = new SocketTransport<{ n: number }, unknown>({ socket })
+
+    await transport.dispose()
+
+    // The idle connection's handle is still released via the disposed hook
+    expect(unrefSpy).toHaveBeenCalled()
     expect(socket.destroyed).toBe(false)
 
     serverSocket.destroy()
