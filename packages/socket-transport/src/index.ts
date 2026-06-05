@@ -59,6 +59,10 @@ export async function createTransportStream<R, W>(
     },
     () => {
       socket.end()
+      // Release the half-closed socket so it stops holding the event loop open.
+      // A long-lived peer (e.g. a shared daemon) keeps its side open, so without
+      // this the client socket never reaches 'close' and the process hangs.
+      socket.unref()
     },
   )
 

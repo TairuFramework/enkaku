@@ -1,7 +1,7 @@
 import { createServer, type Socket as NetSocket, type Server } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { connectSocket, createTransportStream, SocketTransport } from '../src/index.js'
 
@@ -218,6 +218,33 @@ describe('SocketTransport', () => {
     expect(result.value).toEqual({ n: 7 })
 
     await transport.dispose()
+    serverSocket.destroy()
+    server.close()
+  })
+
+  test('releases the socket handle on dispose without destroying it', async () => {
+    const { server, socketPath } = await createTestServer()
+    const connectionPromise = waitForConnection(server)
+
+    const socket = await connectSocket(socketPath)
+    const serverSocket = await connectionPromise
+    const unrefSpy = vi.spyOn(socket, 'unref')
+
+    const transport = new SocketTransport<{ n: number }, unknown>({ socket })
+
+    // Drive a round-trip so the stream is established
+    serverSocket.write('{"n":1}\n')
+    const result = await transport.read()
+    expect(result.value).toEqual({ n: 1 })
+
+    // Peer stays open (like the long-lived mokei daemon)
+    await transport.dispose()
+
+    // unref() releases the loop hold; end() flushed pending writes; not a hard close
+    expect(unrefSpy).toHaveBeenCalledTimes(1)
+    expect(socket.writableEnded).toBe(true)
+    expect(socket.destroyed).toBe(false)
+
     serverSocket.destroy()
     server.close()
   })

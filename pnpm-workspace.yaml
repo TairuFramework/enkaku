@@ -46,23 +46,23 @@ catalog:
   '@testing-library/jest-dom': ^6.9.1
   '@testing-library/react': ^16.3.2
   '@types/node': 25.9.1
-  '@types/react': ^19.2.15
+  '@types/react': ^19.2.16
   '@types/react-dom': ^19.2.3
   '@vitejs/plugin-react': ^6.0.2
-  '@vitest/ui': ^4.1.7
+  '@vitest/ui': ^4.1.8
   ajv: ^8.20.0
   ajv-formats: ^3.0.1
   canonicalize: 3.0.0
   del-cli: ^7.0.0
-  electron: ^42.3.0
+  electron: ^42.3.3
   electron-store: ^11.0.2
   eventsource-parser: ^3.1.0
-  expo: ~56.0.6
+  expo: ~56.0.8
   expo-crypto: ^56.0.4
   expo-secure-store: ^56.0.4
   expo-status-bar: ~56.0.4
   get-port: ^7.2.0
-  happy-dom: ^20.8.9
+  happy-dom: ^20.10.1
   json-schema-to-ts: ^3.1.1
   micro-key-producer: ^0.8.6
   playwright: ^1.55.0
@@ -72,15 +72,15 @@ catalog:
   react-native-electron: ^0.22.1
   react-native-web: 0.21.2
   ts-mls: 2.0.0-rc.13
-  tsx: ^4.22.3
-  turbo: ^2.9.15
+  tsx: ^4.22.4
+  turbo: ^2.9.16
   typedoc: ^0.28.19
-  typedoc-plugin-markdown: ^4.11.0
+  typedoc-plugin-markdown: ^4.12.0
   typescript: ^6.0.3
   uint8arrays: ^6.1.1
   undici: ^7.22.0
-  vite: ^8.0.13
-  vitest: ^4.1.7
+  vite: ^8.0.16
+  vitest: ^4.1.8
 
 catalogMode: prefer
 
