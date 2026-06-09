@@ -24,4 +24,5 @@ export {
   isType,
   toStandardValidator,
   type Validator,
+  type ValidatorOptions,
 } from './validation.js'

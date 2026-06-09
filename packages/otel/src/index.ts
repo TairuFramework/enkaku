@@ -8,6 +8,12 @@ export {
   type Tracer,
 } from '@opentelemetry/api'
 export {
+  type BaggageEntry,
+  type BaggageProperty,
+  formatBaggage,
+  parseBaggage,
+} from './baggage.js'
+export {
   extractTraceContext,
   injectTraceContext,
   setSpanOnContext,
@@ -25,3 +31,4 @@ export {
   withSpan,
   withSyncSpan,
 } from './tracers.js'
+export { formatTracestate, parseTracestate, type TracestateEntry } from './tracestate.js'

@@ -209,3 +209,81 @@ describe('ValidationErrorObject getters', () => {
     expect(errObj.path).toEqual([])
   })
 })
+
+describe('JSON Schema 2020-12 support', () => {
+  test('validates a 2020-12 prefixItems tuple with { draft: "2020-12" }', () => {
+    const validator = createValidator(
+      {
+        $id: 'tuple2020',
+        type: 'array',
+        prefixItems: [{ type: 'number' }, { type: 'string' }],
+        items: false,
+      } as const,
+      { draft: '2020-12' },
+    )
+    expect(isType(validator, [1, 'a'])).toBe(true)
+    expect(isType(validator, ['a', 1])).toBe(false)
+    expect(isType(validator, [1, 'a', 'extra'])).toBe(false)
+  })
+
+  test('applies ajv-formats under the 2020-12 draft', () => {
+    const validator = createValidator(
+      { $id: 'email2020', type: 'string', format: 'email' } as const,
+      { draft: '2020-12' },
+    )
+    expect(isType(validator, 'user@example.com')).toBe(true)
+    expect(isType(validator, 'not-an-email')).toBe(false)
+  })
+
+  test('createValidator with the default draft throws on unknown 2020-12 keywords', () => {
+    expect(() =>
+      createValidator({
+        $id: 'tuple07',
+        type: 'array',
+        prefixItems: [{ type: 'number' }, { type: 'string' }],
+        items: false,
+      } as const),
+    ).toThrow(/unknown keyword/)
+  })
+
+  test('reuses the cached 2020-12 instance across validators', () => {
+    const first = createValidator(
+      {
+        $id: 'cacheFirst2020',
+        type: 'array',
+        prefixItems: [{ type: 'number' }],
+        items: false,
+      } as const,
+      { draft: '2020-12' },
+    )
+    const second = createValidator(
+      {
+        $id: 'cacheSecond2020',
+        type: 'array',
+        prefixItems: [{ type: 'string' }],
+        items: false,
+      } as const,
+      { draft: '2020-12' },
+    )
+    expect(isType(first, [1])).toBe(true)
+    expect(isType(first, ['a'])).toBe(false)
+    expect(isType(second, ['a'])).toBe(true)
+    expect(isType(second, [1])).toBe(false)
+  })
+
+  test('createStandardValidator forwards the draft option', () => {
+    const standard = createStandardValidator(
+      {
+        $id: 'tupleStandard2020',
+        type: 'array',
+        prefixItems: [{ type: 'number' }],
+        items: false,
+      } as const,
+      { draft: '2020-12' },
+    )
+    const ok = standard['~standard'].validate([1])
+    const bad = standard['~standard'].validate(['x'])
+    expect(ok).toEqual({ value: [1] })
+    expect(bad).toBeInstanceOf(ValidationError)
+  })
+})
