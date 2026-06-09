@@ -74,6 +74,11 @@ describe('parseTracestate', () => {
     expect(parseTracestate('dup=first,dup=second')).toEqual([{ key: 'dup', value: 'first' }])
   })
 
+  test('caps at 32 entries', () => {
+    const header = Array.from({ length: 40 }, (_, i) => `k${i}=v${i}`).join(',')
+    expect(parseTracestate(header)).toHaveLength(32)
+  })
+
   test('returns empty array for empty header', () => {
     expect(parseTracestate('')).toEqual([])
   })

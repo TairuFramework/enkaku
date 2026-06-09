@@ -41,6 +41,12 @@ describe('formatBaggage', () => {
     expect(formatBaggage([{ key: 'k', value: '' }])).toBe('k=')
     expect(parseBaggage('k=')).toEqual([{ key: 'k', value: '' }])
   })
+
+  test('drops properties with invalid (non-token) keys', () => {
+    expect(
+      formatBaggage([{ key: 'k', value: 'v', properties: [{ key: 'bad prop' }, { key: 'ok' }] }]),
+    ).toBe('k=v;ok')
+  })
 })
 
 describe('parseBaggage', () => {
@@ -75,6 +81,12 @@ describe('parseBaggage', () => {
 
   test('drops duplicate keys, keeping the first', () => {
     expect(parseBaggage('a=1,a=2')).toEqual([{ key: 'a', value: '1' }])
+  })
+
+  test('drops properties with invalid keys, keeping the member', () => {
+    expect(parseBaggage('k=v;bad prop;ok')).toEqual([
+      { key: 'k', value: 'v', properties: [{ key: 'ok' }] },
+    ])
   })
 })
 
