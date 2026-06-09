@@ -1,14 +1,32 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec'
 import { Ajv } from 'ajv'
+import { Ajv2020 } from 'ajv/dist/2020.js'
 import addFormats from 'ajv-formats'
 import type { FromSchema } from 'json-schema-to-ts'
 
 import { ValidationError } from './errors.js'
 import type { Schema } from './types.js'
 
-const ajv = new Ajv({ allErrors: true, useDefaults: false })
-// @ts-expect-error missing type definition
-addFormats(ajv)
+/**
+ * Options for creating a validator.
+ */
+export type ValidatorOptions = { draft?: '07' | '2020-12' }
+
+// AJV instances are locked to a single dialect, so we cache one instance per
+// draft and construct them lazily.
+const instances = new Map<'07' | '2020-12', Ajv | Ajv2020>()
+
+function getAjv(draft: '07' | '2020-12'): Ajv | Ajv2020 {
+  let instance = instances.get(draft)
+  if (instance == null) {
+    const options = { allErrors: true, useDefaults: false }
+    instance = draft === '2020-12' ? new Ajv2020(options) : new Ajv(options)
+    // @ts-expect-error missing type definition
+    addFormats(instance)
+    instances.set(draft, instance)
+  }
+  return instance
+}
 
 /**
  * Validator function, returning a Result of the validation.
@@ -18,7 +36,11 @@ export type Validator<T> = (value: unknown) => StandardSchemaV1.Result<T>
 /**
  * Validator function factory using a JSON schema.
  */
-export function createValidator<S extends Schema, T = FromSchema<S>>(schema: S): Validator<T> {
+export function createValidator<S extends Schema, T = FromSchema<S>>(
+  schema: S,
+  options?: ValidatorOptions,
+): Validator<T> {
+  const ajv = getAjv(options?.draft ?? '07')
   const check = ajv.compile(schema)
   // Remove from AJV's internal cache
   ajv.removeSchema(schema.$id)
@@ -71,6 +93,7 @@ export function toStandardValidator<T>(validator: Validator<T>): StandardSchemaV
  */
 export function createStandardValidator<S extends Schema, T = FromSchema<S>>(
   schema: S,
+  options?: ValidatorOptions,
 ): StandardSchemaV1<T> {
-  return toStandardValidator(createValidator(schema))
+  return toStandardValidator(createValidator(schema, options))
 }
