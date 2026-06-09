@@ -25,3 +25,4 @@ export {
   withSpan,
   withSyncSpan,
 } from './tracers.js'
+export { formatTracestate, parseTracestate, type TracestateEntry } from './tracestate.js'
