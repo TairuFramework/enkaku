@@ -88,6 +88,14 @@ describe('parseBaggage', () => {
       { key: 'k', value: 'v', properties: [{ key: 'ok' }] },
     ])
   })
+
+  test('keeps the first valid occurrence when an earlier duplicate is malformed', () => {
+    expect(parseBaggage('a=%zz,a=good')).toEqual([{ key: 'a', value: 'good' }])
+  })
+
+  test('accepts percent characters in keys (valid token char)', () => {
+    expect(parseBaggage('%20=v')).toEqual([{ key: '%20', value: 'v' }])
+  })
 })
 
 describe('baggage round-trip', () => {

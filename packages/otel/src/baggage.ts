@@ -70,7 +70,8 @@ export function formatBaggage(entries: Array<BaggageEntry>): string {
 /**
  * Parse a W3C baggage header value. Percent-decodes values, drops malformed
  * members and properties (including un-decodable percent sequences), and drops
- * duplicate keys keeping the first occurrence. Never throws. This function
+ * duplicate keys keeping the first *valid* occurrence (a malformed earlier
+ * member is dropped and does not reserve its key). Never throws. This function
  * assumes the percent-encoding contract produced by `formatBaggage` — a
  * literal `%` not part of a valid escape causes that member to be dropped.
  */
