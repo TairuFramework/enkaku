@@ -1,6 +1,4 @@
-import { getEnkakuLogger } from '@enkaku/log'
-
-const logger = getEnkakuLogger('otel')
+import { logger } from './log.js'
 
 export type TracestateEntry = { key: string; value: string }
 

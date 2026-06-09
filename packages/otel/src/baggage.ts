@@ -1,6 +1,4 @@
-import { getEnkakuLogger } from '@enkaku/log'
-
-const logger = getEnkakuLogger('otel')
+import { logger } from './log.js'
 
 export type BaggageProperty = { key: string; value?: string }
 export type BaggageEntry = { key: string; value: string; properties?: Array<BaggageProperty> }
