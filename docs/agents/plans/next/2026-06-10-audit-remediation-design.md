@@ -114,7 +114,7 @@ Bounded fixes across group, electron-rpc, server, protocol:
 
 ## Sequencing
 
-Plan 1 first (small, critical). Plans 2 and 3 independent, parallelizable. Plan 4 last or interleaved. Roadmap updated to list the four plans under Current Focus and the backlog additions.
+Plan 1 first (small, critical). Plans 2, 3 and 4 all modify `packages/server` (read loop, limits, invalid-message handling) — execute sequentially (2 → 3 → 4) unless isolated in worktrees. Roadmap updated to list the four plans under Current Focus and the backlog additions.
 
 ## Audit findings intentionally not actioned
 

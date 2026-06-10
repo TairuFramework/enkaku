@@ -23,6 +23,11 @@
 
 ## Current Focus
 
+- **Audit remediation (June 2026)** — Four plans from the full-repo audit (`2026-06-10-audit-remediation-design.md`), in priority order:
+  1. **Token verification hardening** — critical: object-token signature/payload binding, inbound `verifiedPublicKey` bypass, ES256 lowS (`next/2026-06-10-token-verification-hardening.md`)
+  2. **Transport stability** — socket crash on error, UTF-8 chunk corruption, server read-loop boundary, HTTP inflight leak, SSE disconnect swallow, Disposer hang (`next/2026-06-10-transport-stability.md`)
+  3. **Hub hardening** — mandatory identity, group join/send authz, key-package caps, lifecycle leaks, limits exposure (`next/2026-06-10-hub-hardening.md`)
+  4. **Platform fixes** — ChaCha AEAD dispatch, electron-rpc sender validation, invalid-message error reply, error-code constants (`next/2026-06-10-platform-fixes.md`)
 - **MLS capability-layer member revocation** — Production blocker for fresh external join. Capability-layer mechanism to evict members beyond MLS's stale-rejoin gap. Design between revocation token, GroupContext banlist extension, or hybrid.
 
 ## Near-term (ready when picked up)
@@ -41,3 +46,6 @@
 - **Post-quantum algorithms** — `paulmillr/noble-post-quantum` integration phased: (1) ML-DSA verifier-only, (2) Node + Electron signing, (3) JWE hybrid KEM (X25519+ML-KEM-768), (4) browser + Expo keystore refactor for large keys. Each phase its own design+plan.
 - **JWE multi-recipient** — `ECDH-ES+A256KW` + JSON Serialization. Useful when GroupArchiver / multi-root archival needs land.
 - **Remaining discovery skills** — `/enkaku:utilities` and `/enkaku:platform`. Nice-to-have.
+- **Replay protection** — jti dedup / nonce design for authenticated messages (`backlog/replay-protection.md`).
+- **MLS permission enforcement** — enforce admin/member/read on commits, sender- and receiver-side (`backlog/mls-permission-enforcement.md`); design with capability revocation.
+- **Docs & release gaps** — stale website docs, README stubs, typedoc coverage, changesets (`backlog/docs-release-gaps.md`). Tracking only while consumers are stack-internal.
