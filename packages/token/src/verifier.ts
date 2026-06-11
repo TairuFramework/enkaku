@@ -16,7 +16,7 @@ export type Verifiers = Partial<Record<SignatureAlgorithm, Verifier>>
 /** @internal */
 export const defaultVerifiers: Verifiers = {
   ES256: (signature: Uint8Array, message: Uint8Array, publicKey: Uint8Array) => {
-    return p256.verify(signature, message, publicKey, { lowS: false })
+    return p256.verify(signature, message, publicKey, { lowS: true })
   },
   EdDSA: (signature: Uint8Array, message: Uint8Array, publicKey: Uint8Array) => {
     return ed25519.verify(signature, message, publicKey)
