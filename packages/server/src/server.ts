@@ -675,7 +675,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               break
             }
           }
-          controller.writer.write(msg.payload.val)
+          const sendRid = msg.payload.rid
+          controller.writer.write(msg.payload.val).catch((cause) => {
+            const error = new Error('Failed to write to channel', { cause })
+            logger.debug('failed to write send value to channel {rid}', { rid: sendRid, cause })
+            events.emit('writeFailed', { error, rid: sendRid })
+          })
           break
         }
         case 'stream': {

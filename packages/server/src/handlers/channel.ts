@@ -56,7 +56,9 @@ export function handleChannel<
     { issuer, writer: sendStream.writable.getWriter() },
   )
   controller.signal.addEventListener('abort', () => {
-    controller.writer.close()
+    controller.writer.close().catch(() => {
+      // Writer already closed or the pipe errored — nothing left to flush
+    })
   })
   ctx.controllers[msg.payload.rid] = controller
 
