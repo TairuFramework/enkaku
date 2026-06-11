@@ -43,12 +43,12 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
 
     'hub/group/send': (async (ctx) => {
       const { groupID, payload } = ctx.param
+      const senderDID = getClientDID(ctx)
       const members = registry.getGroupMembers(groupID)
-      if (members.length === 0) {
-        throw new Error(`Unknown group: ${groupID}`)
+      if (!members.includes(senderDID)) {
+        throw new Error(`Sender is not a member of group: ${groupID}`)
       }
 
-      const senderDID = getClientDID(ctx)
       const recipients = members.filter((did) => did !== senderDID)
       const payloadBytes = fromB64(payload)
       const sequenceID = await store.store({

@@ -209,6 +209,26 @@ describe('hub handlers', () => {
     await ctx.dispose()
   })
 
+  test('hub/group/send from a non-member fails', async () => {
+    const ctx = createTestHub()
+    const { client: alice, identity: aliceIdentity } = ctx.connect()
+    const { client: mallory } = ctx.connect()
+
+    // Alice creates and joins the group; Mallory does not join
+    const credential = await membershipCredential(aliceIdentity, aliceIdentity.id, 'private')
+    await alice.request('hub/group/join', {
+      param: { groupID: 'private', credential },
+    })
+
+    await expect(
+      mallory.request('hub/group/send', {
+        param: { groupID: 'private', payload: encodePayload('intrusion') },
+      }),
+    ).rejects.toThrow()
+
+    await ctx.dispose()
+  })
+
   test('hub/receive delivers queued messages on connect', async () => {
     const ctx = createTestHub()
     const { client: alice } = ctx.connect()
