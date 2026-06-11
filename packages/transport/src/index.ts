@@ -19,7 +19,7 @@ export type TransportStream<R, W> = ReadableWritablePair<R, W> | Promise<Readabl
 export type TransportInput<R, W> = TransportStream<R, W> | (() => TransportStream<R, W>)
 
 export type TransportEvents = {
-  writeFailed: { error: Error; rid: string }
+  writeFailed: { error: Error; rid?: string }
   readFailed: { error: Error }
   disposing: { reason?: unknown }
   disposed: { reason?: unknown }
