@@ -126,3 +126,45 @@ describe('ResourceLimiter handler concurrency', () => {
     expect(limiter.activeHandlers).toBe(0)
   })
 })
+
+describe('ResourceLimiter long-lived handlers', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  test('DEFAULT_RESOURCE_LIMITS includes empty longLivedProcedures', () => {
+    expect(DEFAULT_RESOURCE_LIMITS.longLivedProcedures).toEqual([])
+  })
+
+  test('long-lived acquire bypasses maxConcurrentHandlers and is counted separately', () => {
+    const limiter = createResourceLimiter({ maxConcurrentHandlers: 1 })
+    expect(limiter.acquireHandler()).toBe(true)
+    expect(limiter.acquireHandler(true)).toBe(true)
+    expect(limiter.acquireHandler(true)).toBe(true)
+    expect(limiter.activeHandlers).toBe(1)
+    expect(limiter.activeLongLivedHandlers).toBe(2)
+    expect(limiter.acquireHandler()).toBe(false)
+    limiter.releaseHandler(true)
+    expect(limiter.activeLongLivedHandlers).toBe(1)
+    limiter.releaseHandler()
+    expect(limiter.activeHandlers).toBe(0)
+  })
+
+  test('releaseHandler(true) does not go negative', () => {
+    const limiter = createResourceLimiter()
+    limiter.releaseHandler(true)
+    expect(limiter.activeLongLivedHandlers).toBe(0)
+  })
+
+  test('long-lived controllers never expire', () => {
+    const limiter = createResourceLimiter({ controllerTimeoutMs: 1000 })
+    limiter.addController('short')
+    limiter.addController('long', true)
+    vi.advanceTimersByTime(2000)
+    expect(limiter.getExpiredControllers()).toEqual(['short'])
+  })
+})

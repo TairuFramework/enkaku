@@ -125,6 +125,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
           events.emit('handlerTimeout', { rid })
           limiter.removeController(rid)
+          // Only non-long-lived controllers expire (getExpiredControllers skips
+          // long-lived entries), so the default releaseHandler() is correct here.
           limiter.releaseHandler()
           delete controllers[rid]
           delete running[rid]
@@ -183,6 +185,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     const rid =
       message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
 
+    const procedure = (message.payload as Record<string, unknown>).prc as string | undefined
+    const longLived = procedure != null && limiter.limits.longLivedProcedures.includes(procedure)
+
     // Check controller limit
     if (!limiter.canAddController()) {
       const error = new HandlerError({
@@ -197,7 +202,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
 
     // Check handler concurrency (synchronous fast path)
-    if (limiter.activeHandlers >= limiter.limits.maxConcurrentHandlers) {
+    if (!longLived && limiter.activeHandlers >= limiter.limits.maxConcurrentHandlers) {
       const error = new HandlerError({
         code: 'EK04',
         message: 'Server handler limit reached',
@@ -209,8 +214,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       return
     }
 
-    limiter.addController(rid)
-    limiter.acquireHandler()
+    limiter.addController(rid, longLived)
+    limiter.acquireHandler(longLived)
 
     events.emit('handlerStart', {
       rid,
@@ -221,7 +226,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     const returned = handle()
     if (returned instanceof Error) {
       limiter.removeController(rid)
-      limiter.releaseHandler()
+      limiter.releaseHandler(longLived)
       emitHandlerError(
         events,
         'handler',
@@ -239,7 +244,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           // Guard against double-release if timeout cleanup already handled this rid
           if (running[rid] === returned) {
             limiter.removeController(rid)
-            limiter.releaseHandler()
+            limiter.releaseHandler(longLived)
             delete running[rid]
           }
         })
@@ -250,7 +255,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           })
           if (running[rid] === returned) {
             limiter.removeController(rid)
-            limiter.releaseHandler()
+            limiter.releaseHandler(longLived)
             delete running[rid]
           }
           emitHandlerError(

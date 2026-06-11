@@ -1,6 +1,6 @@
 import { type HubProtocol, type HubStore, hubProtocol } from '@enkaku/hub-protocol'
 import type { ServerTransportOf } from '@enkaku/protocol'
-import type { AccessRules, Server } from '@enkaku/server'
+import type { AccessRules, ResourceLimits, Server } from '@enkaku/server'
 import { serve } from '@enkaku/server'
 import type { Identity } from '@enkaku/token'
 
@@ -37,6 +37,12 @@ export type CreateHubParams = {
   keyPackageFetchLimits?: Partial<KeyPackageFetchLimits>
   /** Scheduled purge of expired stored messages. Set to `false` to disable. */
   purge?: HubPurgeOptions | false
+  /**
+   * Server resource limits. `hub/receive` is always added to
+   * `longLivedProcedures` so open mailbox channels are exempt from
+   * `controllerTimeoutMs` and from the `maxConcurrentHandlers` cap.
+   */
+  limits?: Partial<ResourceLimits>
 }
 
 export type HubInstance = {
@@ -51,12 +57,19 @@ export function createHub(params: CreateHubParams): HubInstance {
     store: params.store,
     keyPackageFetchLimits: params.keyPackageFetchLimits,
   })
+  const limits: Partial<ResourceLimits> = {
+    ...params.limits,
+    longLivedProcedures: [
+      ...new Set([...(params.limits?.longLivedProcedures ?? []), 'hub/receive']),
+    ],
+  }
   const server = serve<HubProtocol>({
     handlers,
     protocol: hubProtocol,
     transport: params.transport,
     identity: params.identity,
     accessRules: params.accessRules ?? DEFAULT_HUB_ACCESS_RULES,
+    limits,
   })
   if (params.purge !== false) {
     const interval = params.purge?.interval ?? 3_600_000

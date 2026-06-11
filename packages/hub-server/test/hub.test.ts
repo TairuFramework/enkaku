@@ -673,6 +673,81 @@ describe('hub lifecycle', () => {
   })
 })
 
+describe('hub server limits', () => {
+  test('hub/receive channels outlive controllerTimeoutMs', async () => {
+    const ctx = createTestHub({ limits: { controllerTimeoutMs: 100 } })
+    const { client: alice } = ctx.connect()
+    const { client: bob, identity: bobIdentity } = ctx.connect()
+
+    const channel = bob.createChannel('hub/receive', { param: {} })
+    const reader = channel.readable.getReader()
+    // Wait past the timeout (cleanup interval = min(100, 10000) = 100ms)
+    await delay(300)
+
+    const payload = encodePayload('survives-timeout')
+    await alice.request('hub/send', {
+      param: { recipients: [bobIdentity.id], payload },
+    })
+    const msg = await reader.read()
+    expect(msg.done).toBe(false)
+    expect(msg.value?.payload).toBe(payload)
+
+    channel.close()
+    await expect(channel).rejects.toEqual('Close')
+    await delay(50)
+    await ctx.dispose()
+  })
+
+  test('hub/receive channels are not bounded by maxConcurrentHandlers', async () => {
+    const ctx = createTestHub({ limits: { maxConcurrentHandlers: 2 } })
+    const receivers = Array.from({ length: 5 }, () => ctx.connect())
+    const channels = receivers.map(({ client }) =>
+      client.createChannel('hub/receive', { param: {} }),
+    )
+    const readers = channels.map((channel) => channel.readable.getReader())
+    await delay(100)
+
+    for (const { identity } of receivers) {
+      expect(ctx.hub.registry.isOnline(identity.id)).toBe(true)
+    }
+
+    // Regular requests still work with all channels held open
+    const { client: alice } = ctx.connect()
+    const payload = encodePayload('to-first')
+    await alice.request('hub/send', {
+      param: { recipients: [receivers[0].identity.id], payload },
+    })
+    const msg = await readers[0].read()
+    expect(msg.value?.payload).toBe(payload)
+
+    for (const channel of channels) {
+      channel.close()
+    }
+    await Promise.all(channels.map((channel) => expect(channel).rejects.toEqual('Close')))
+    await delay(50)
+    await ctx.dispose()
+  })
+
+  test('more than 100 receive channels can be open concurrently', { timeout: 30_000 }, async () => {
+    const ctx = createTestHub()
+    const receivers = Array.from({ length: 105 }, () => ctx.connect())
+    const channels = receivers.map(({ client }) =>
+      client.createChannel('hub/receive', { param: {} }),
+    )
+    await delay(500)
+
+    const online = receivers.filter(({ identity }) => ctx.hub.registry.isOnline(identity.id))
+    expect(online).toHaveLength(105)
+
+    for (const channel of channels) {
+      channel.close()
+    }
+    await Promise.all(channels.map((channel) => expect(channel).rejects.toEqual('Close')))
+    await delay(100)
+    await ctx.dispose()
+  })
+})
+
 describe('Hub teardown produces no unhandled rejections', () => {
   const rejections: Array<unknown> = []
   const onRejection = (reason: unknown) => rejections.push(reason)
