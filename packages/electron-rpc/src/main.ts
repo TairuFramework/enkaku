@@ -97,7 +97,10 @@ export function serveProcess<Protocol extends ProtocolDefinition>(
   params: ServeProcessParams<Protocol>,
 ) {
   const { name, allowedSenderURLs, ...serverParams } = params
-  const active = new Map<number, { port: MessagePortMain; server: Server<Protocol> }>()
+  const active = new Map<
+    number,
+    { port: MessagePortMain; server: Server<Protocol>; onDestroyed: () => void }
+  >()
 
   handleProcessPort(
     name ?? DEFAULT_BRIDGE_NAME,
@@ -108,6 +111,7 @@ export function serveProcess<Protocol extends ProtocolDefinition>(
       const previous = active.get(senderID)
       if (previous != null) {
         active.delete(senderID)
+        event.sender.removeListener('destroyed', previous.onDestroyed)
         previous.port.close()
         void previous.server.dispose()
       }
@@ -116,15 +120,16 @@ export function serveProcess<Protocol extends ProtocolDefinition>(
         stream: createMainTransportStream(port),
       }) as ServerTransportOf<Protocol>
       const server = serve<Protocol>({ transport, ...serverParams } as ServeParams<Protocol>)
-      active.set(senderID, { port, server })
-
-      event.sender.once('destroyed', () => {
+      const onDestroyed = () => {
         if (active.get(senderID)?.server === server) {
           active.delete(senderID)
         }
         port.close()
         void server.dispose()
-      })
+      }
+      active.set(senderID, { port, server, onDestroyed })
+
+      event.sender.once('destroyed', onDestroyed)
     },
     { allowedSenderURLs },
   )

@@ -32,6 +32,20 @@ Kubun hit this in a test and had to fall back to a hardcoded `const ACCESS_DENIE
 - Same reachable via `@enkaku/server`'s public entry.
 - A guard test (or build assertion) fails if `error-codes` is dropped from the built `lib/` again.
 
+## Related gap: `HandlerError` class not exported — consumers can't emit wire-distinguishable error codes
+
+Same theme, found in the same kubun work (Phase 2 error-shape design).
+
+`executeHandler` (`packages/server/src/utils.ts:67`) wraps every thrown handler error: `HandlerError.from(cause, { code: ErrorCodes.HANDLER_ERROR, message: 'Handler execution failed' })`. In `HandlerError.from` (`packages/server/src/error.ts:19-28`), a plain `Error` is rebuilt as `new HandlerError({ message: cause.message, ...params, cause })` — because `...params` spreads AFTER `message`, the consumer's `message` AND any `code`-like field are overwritten by `HANDLER_ERROR` / `'Handler execution failed'`. Only a `cause instanceof HandlerError` is returned unchanged (code + message preserved).
+
+But the `HandlerError` **class** is not exported from `@enkaku/server`'s public entry (`packages/server/src/index.ts` exports the `HandlerErrorCategory` / `HandlerErrorMessageType` types only, not the class or `HandlerErrorParams`). So a downstream handler cannot construct or subclass `HandlerError` to throw an error whose `code`/`message` survive to the client. Every thrown domain error collapses to the generic `HANDLER_ERROR` / `'Handler execution failed'` envelope on the wire.
+
+**Impact (kubun):** kubun's sync handlers want to deny forged/unauthorized requests with a distinct, client-observable code (to tell "you didn't sign" — EK02 — from "you signed but lack scope access"). They cannot, because they can't emit a `HandlerError` subclass. Workaround: kubun throws a plain `SyncAccessDeniedError` (code `KB08`) usable server-side only (typed catch, logging, tests); the wire shows the generic envelope. This matches how `@kubun/plugin-rpc` already sidesteps it — it catches its `WriteAccessDeniedError` inside the handler and hand-builds a GraphQL result rather than throwing through enkaku.
+
+**Fix direction:** export `HandlerError` (class) + `HandlerErrorParams` from `@enkaku/server`'s public entry, so consumers can `throw new HandlerError({ code, message })` (or subclass it) and have `executeHandler`'s `from()` pass it through untouched. Pairs naturally with shipping `ErrorCodes` at runtime (above) — together they let consumers emit typed, wire-distinguishable errors.
+
+**Done when:** `import { HandlerError } from '@enkaku/server'` resolves at runtime; a handler that throws a `HandlerError` subclass with a custom code delivers that code (not `HANDLER_ERROR`) to the client, with a test.
+
 ## Kubun follow-up (not blocking)
 
-Once a release ships the runtime const, kubun's sync-auth tests and the planned `SyncAccessDeniedError` can import `ErrorCodes` / `ErrorCode` instead of the hardcoded `'EK02'`. Tracked in kubun's sync-server-authentication plan (Phase 3 error-shape decision).
+Once a release ships the runtime const AND exports `HandlerError`, kubun's `SyncAccessDeniedError` can extend `HandlerError<'KB08'>` (wire-preserving) and its tests can import `ErrorCodes` / `ErrorCode` instead of the hardcoded `'EK02'`. Tracked in kubun's sync-server-authentication plan (Phase 2/3 error-shape decisions).

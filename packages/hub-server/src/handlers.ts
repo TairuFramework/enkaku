@@ -234,6 +234,15 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
       return { keyPackages }
     }) as RequestHandler<HubProtocol, 'hub/keypackage/fetch'>,
 
+    // SECURITY: the hub roster is NOT a security boundary. The hub keeps no
+    // group-owner registry by design, so a self-issued capability (iss === sub,
+    // no delegation chain) validates for ANY groupID — including existing
+    // groups. validateGroupCapability only proves the credential is valid for
+    // this group and audience (blocking stolen-credential replay via the aud
+    // check); it does not prove authorized membership. Any authenticated DID
+    // can join a group's delivery roster and receive its ciphertext fan-out.
+    // Confidentiality and real membership are enforced by MLS end-to-end
+    // encryption, not by this roster.
     'hub/group/join': (async (ctx) => {
       const { groupID, credential, delegationChain } = ctx.param
       const clientDID = getClientDID(ctx)
