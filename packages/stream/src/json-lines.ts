@@ -13,10 +13,20 @@ export type FromJSONLinesOptions<T = unknown> = {
   onInvalidJSON?: (value: string, controller: TransformStreamDefaultController<T>) => void
 }
 
+function defaultOnInvalidJSON(value: string): void {
+  const preview = value.length > 200 ? `${value.slice(0, 200)}…` : value
+  console.warn(`Invalid JSON line dropped: ${preview}`)
+}
+
 export function fromJSONLines<T = unknown>(
   options: FromJSONLinesOptions<T> = {},
 ): TransformStream<Uint8Array | string, T> {
-  const { decode = JSON.parse, maxBufferSize, maxMessageSize, onInvalidJSON } = options
+  const {
+    decode = JSON.parse,
+    maxBufferSize,
+    maxMessageSize,
+    onInvalidJSON = defaultOnInvalidJSON,
+  } = options
 
   const decoder = new TextDecoder()
   let input = ''
@@ -88,7 +98,7 @@ export function fromJSONLines<T = unknown>(
             try {
               controller.enqueue(decode(output.join('')))
             } catch {
-              onInvalidJSON?.(output.join(''), controller)
+              onInvalidJSON(output.join(''), controller)
             }
             output = []
           } else if (isInString) {
@@ -115,7 +125,7 @@ export function fromJSONLines<T = unknown>(
         try {
           controller.enqueue(decode(output.join('')))
         } catch {
-          onInvalidJSON?.(output.join(''), controller)
+          onInvalidJSON(output.join(''), controller)
         }
       }
     },

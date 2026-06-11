@@ -179,6 +179,23 @@ describe('fromJSONLines()', () => {
     await expect(result).resolves.toEqual([{ text: 'héllo 🌍' }])
   })
 
+  test('logs a warning by default when a line is invalid JSON', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const [source, controller] = createReadable()
+      const [sink, result] = createArraySink()
+      source.pipeThrough(fromJSONLines()).pipeTo(sink)
+
+      controller.enqueue('{"invalid": json}\n')
+      controller.close()
+
+      await expect(result).resolves.toEqual([])
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid JSON line dropped'))
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
   test('keeps decoder state isolated between concurrent streams', async () => {
     const [sourceA, controllerA] = createReadable()
     const [sourceB, controllerB] = createReadable()
