@@ -47,6 +47,8 @@ export function standalone<Protocol extends ProtocolDefinition>(
       protocol,
       signal,
       transport: transports.server,
+      // Cast: TS can't narrow the generic ServerAccessOptions union from this
+      // object literal, so the no-identity `requireAuth: false` arm isn't seen.
     } as Parameters<typeof serve<Protocol>>[0])
   }
 

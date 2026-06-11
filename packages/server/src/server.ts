@@ -827,6 +827,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       if (accessRules != null) {
         throw new Error('Invalid server parameters: "accessRules" requires "identity"')
       }
+      // Cast: TS doesn't narrow the ServerAccessOptions union through the
+      // runtime `serverID == null` guard, so `requireAuth` isn't visible here.
       if ((params as { requireAuth?: boolean }).requireAuth !== false) {
         throw new Error(
           'Invalid server parameters: a server without "identity" must explicitly pass "requireAuth: false" to disable authentication',
