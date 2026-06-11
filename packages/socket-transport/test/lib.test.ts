@@ -128,6 +128,32 @@ describe('createTransportStream()', () => {
     serverSocket.destroy()
     server.close()
   })
+
+  test('decodes multi-byte UTF-8 characters split across socket chunks', async () => {
+    const { server, socketPath } = await createTestServer()
+    const connectionPromise = waitForConnection(server)
+
+    const socket = await connectSocket(socketPath)
+    const serverSocket = await connectionPromise
+    const stream = await createTransportStream<{ text: string }, unknown>(socket)
+
+    const bytes = Buffer.from('{"text":"héllo 🌍"}\n', 'utf8')
+    // Write byte-by-byte with a small delay so multi-byte sequences are
+    // guaranteed to arrive in separate 'data' events
+    for (let i = 0; i < bytes.length; i++) {
+      serverSocket.write(bytes.subarray(i, i + 1))
+      await new Promise((resolve) => setTimeout(resolve, 1))
+    }
+
+    const reader = stream.readable.getReader()
+    const result = await reader.read()
+    expect(result.value).toEqual({ text: 'héllo 🌍' })
+
+    reader.releaseLock()
+    socket.destroy()
+    serverSocket.destroy()
+    server.close()
+  })
 })
 
 describe('createTransportStream() error handling', () => {

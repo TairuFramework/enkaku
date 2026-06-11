@@ -43,12 +43,12 @@ export async function createTransportStream<R, W>(
 ): Promise<ReadableWritablePair<R, W>> {
   const socket = await Promise.resolve(typeof source === 'function' ? source() : source)
 
-  const readable = new ReadableStream<string>({
+  const readable = new ReadableStream<Uint8Array>({
     start(controller) {
       let settled = false
       function onData(buffer: Buffer): void {
         if (!settled) {
-          controller.enqueue(buffer.toString())
+          controller.enqueue(buffer)
         }
       }
       function onClose(): void {
