@@ -732,7 +732,7 @@ export type ServerAccessOptions =
   | { identity?: undefined; requireAuth: false; accessRules?: never }
   | { identity: Identity; accessRules?: AccessRules }
 
-export type ServerParams<Protocol extends ProtocolDefinition> = {
+export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   cache?: DIDCache
   encryptionPolicy?: EncryptionPolicy
   getRandomID?: () => string
@@ -746,7 +746,10 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
   verifyToken?: VerifyTokenHook
-} & ServerAccessOptions
+}
+
+export type ServerParams<Protocol extends ProtocolDefinition> = ServerBaseParams<Protocol> &
+  ServerAccessOptions
 
 export type HandleOptions = {
   accessRules?: false | AccessRules
@@ -949,11 +952,11 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
 }
 
 export type ServeParams<Protocol extends ProtocolDefinition> = Omit<
-  ServerParams<Protocol>,
+  ServerBaseParams<Protocol>,
   'transports'
 > & {
   transport: ServerTransportOf<Protocol>
-}
+} & ServerAccessOptions
 
 export function serve<Protocol extends ProtocolDefinition>(
   params: ServeParams<Protocol>,
