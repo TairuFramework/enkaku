@@ -118,6 +118,70 @@ describe('consume()', () => {
     }).rejects.toBe(reason)
     expect(consumed).toEqual([1, 2])
   })
+
+  test('calls iterator.return() (runs finally) on abort', async () => {
+    let cleanedUp = false
+    async function* generate() {
+      try {
+        let i = 0
+        while (true) {
+          yield i++
+        }
+      } finally {
+        cleanedUp = true
+      }
+    }
+
+    const controller = new AbortController()
+    const promise = consume(
+      generate(),
+      (value) => {
+        if (value === 2) controller.abort(new Error('stop'))
+      },
+      controller.signal,
+    )
+    await expect(promise).rejects.toThrow('stop')
+    // allow the swallowed return() microtask to settle
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(cleanedUp).toBe(true)
+  })
+
+  test('calls iterator.return() on normal completion', async () => {
+    let returnCalls = 0
+    let callIndex = 0
+    const iterator: AsyncIterator<number, string> = {
+      next: async () => {
+        callIndex++
+        if (callIndex === 1) return { done: false, value: 1 }
+        return { done: true, value: 'done' }
+      },
+      return: async () => {
+        returnCalls++
+        return { done: true, value: 'done' }
+      },
+    }
+
+    const result = await consume(iterator, () => {})
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(returnCalls).toBe(1)
+    expect(result).toBe('done')
+  })
+
+  test('does not call iterator.return() twice when abort races completion', async () => {
+    let returnCalls = 0
+    const iterator: AsyncIterator<number> = {
+      next: async () => ({ done: true, value: undefined }),
+      return: async () => {
+        returnCalls++
+        return { done: true, value: undefined }
+      },
+    }
+    const controller = new AbortController()
+    controller.abort(new Error('stop'))
+    await expect(consume(iterator, () => {}, controller.signal)).rejects.toThrow('stop')
+    await new Promise((resolve) => setImmediate(resolve))
+    expect(returnCalls).toBe(1)
+  })
 })
 
 describe('fromEmitter()', () => {
