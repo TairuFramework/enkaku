@@ -24,23 +24,23 @@ function encodePayload(value: string): string {
 
 function createTestHub() {
   const store = createMemoryStore()
+  const hubIdentity = randomIdentity()
   const transports: HubTransports = new DirectTransports()
   const hub = createHub({
     transport: transports.server,
     store,
+    identity: hubIdentity,
   })
-  return { hub, store, transports }
+  return { hub, hubID: hubIdentity.id, store, transports }
 }
 
-function createTestClient(
-  hub: ReturnType<typeof createTestHub>['hub'],
-  identity = randomIdentity(),
-) {
+function createTestClient(testHub: ReturnType<typeof createTestHub>, identity = randomIdentity()) {
   const transports: HubTransports = new DirectTransports()
-  hub.server.handle(transports.server)
+  testHub.hub.server.handle(transports.server)
   const rawClient = new Client<HubProtocol>({
     transport: transports.client,
     identity,
+    serverID: testHub.hubID,
   })
   const client = new HubClient({ client: rawClient })
   return { client, identity, transports }
@@ -48,9 +48,9 @@ function createTestClient(
 
 describe('HubClient', () => {
   test('send to explicit recipients and receive', async () => {
-    const { hub } = createTestHub()
-    const { client: alice, transports: aliceT } = createTestClient(hub)
-    const { client: bob, identity: bobIdentity, transports: bobT } = createTestClient(hub)
+    const testHub = createTestHub()
+    const { client: alice, transports: aliceT } = createTestClient(testHub)
+    const { client: bob, identity: bobIdentity, transports: bobT } = createTestClient(testHub)
 
     const channel = bob.receive()
     const reader = channel.readable.getReader()
@@ -70,9 +70,9 @@ describe('HubClient', () => {
   })
 
   test('groupSend and receive with group', async () => {
-    const { hub } = createTestHub()
-    const { client: alice, transports: aliceT } = createTestClient(hub)
-    const { client: bob, transports: bobT } = createTestClient(hub)
+    const testHub = createTestHub()
+    const { client: alice, transports: aliceT } = createTestClient(testHub)
+    const { client: bob, transports: bobT } = createTestClient(testHub)
 
     await alice.joinGroup('chat')
     await bob.joinGroup('chat')
@@ -96,9 +96,9 @@ describe('HubClient', () => {
   })
 
   test('receive with groupIDs filter', async () => {
-    const { hub } = createTestHub()
-    const { client: alice, transports: aliceT } = createTestClient(hub)
-    const { client: bob, identity: bobIdentity, transports: bobT } = createTestClient(hub)
+    const testHub = createTestHub()
+    const { client: alice, transports: aliceT } = createTestClient(testHub)
+    const { client: bob, identity: bobIdentity, transports: bobT } = createTestClient(testHub)
 
     await alice.joinGroup('chat')
     await alice.joinGroup('work')
@@ -128,8 +128,8 @@ describe('HubClient', () => {
   })
 
   test('joinGroup and leaveGroup', async () => {
-    const { hub } = createTestHub()
-    const { client, transports } = createTestClient(hub)
+    const testHub = createTestHub()
+    const { client, transports } = createTestClient(testHub)
 
     const result = await client.joinGroup('test-group')
     expect(result.joined).toBe(true)
@@ -141,8 +141,8 @@ describe('HubClient', () => {
   })
 
   test('uploadKeyPackages and fetchKeyPackages', async () => {
-    const { hub } = createTestHub()
-    const { client, identity, transports } = createTestClient(hub)
+    const testHub = createTestHub()
+    const { client, identity, transports } = createTestClient(testHub)
 
     const result = await client.uploadKeyPackages(['kp-1', 'kp-2'])
     expect(result.stored).toBe(2)

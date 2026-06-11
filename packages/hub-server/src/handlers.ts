@@ -10,8 +10,11 @@ export type CreateHandlersParams = {
 }
 
 function getClientDID(ctx: { message: { payload: Record<string, unknown> } }): string {
-  const payload = ctx.message.payload
-  return typeof payload.iss === 'string' ? payload.iss : 'anonymous'
+  const iss = ctx.message.payload.iss
+  if (typeof iss !== 'string' || iss.length === 0) {
+    throw new Error('Unauthenticated message: missing verified issuer DID')
+  }
+  return iss
 }
 
 export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<HubProtocol> {

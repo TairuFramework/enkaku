@@ -1,13 +1,15 @@
 import { Client } from '@enkaku/client'
 import { fromUTF, toB64 } from '@enkaku/codec'
-import type { HubProtocol } from '@enkaku/hub-protocol'
+import type { HubProtocol, HubStore } from '@enkaku/hub-protocol'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
-import { randomIdentity } from '@enkaku/token'
+import { type OwnIdentity, randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
-import { createHub } from '../src/hub.js'
+import { createHandlers } from '../src/handlers.js'
+import { type CreateHubParams, createHub, type HubInstance } from '../src/hub.js'
 import { createMemoryStore } from '../src/memoryStore.js'
+import { HubClientRegistry } from '../src/registry.js'
 
 type HubTransports = DirectTransports<
   AnyServerMessageOf<HubProtocol>,
@@ -22,24 +24,100 @@ function encodePayload(value: string): string {
   return toB64(fromUTF(value))
 }
 
+export type TestHubOptions = Omit<CreateHubParams, 'identity' | 'store' | 'transport'> & {
+  store?: HubStore
+}
+
+type TestConnection = {
+  client: Client<HubProtocol>
+  identity: OwnIdentity
+}
+
+type TestHub = {
+  hub: HubInstance
+  hubID: string
+  store: HubStore
+  connect: (identity?: OwnIdentity) => TestConnection
+  dispose: () => Promise<void>
+}
+
+function createTestHub(options: TestHubOptions = {}): TestHub {
+  const { store: providedStore, ...hubOptions } = options
+  const store = providedStore ?? createMemoryStore()
+  const hubIdentity = randomIdentity()
+  const firstTransports: HubTransports = new DirectTransports()
+  const allTransports: Array<HubTransports> = [firstTransports]
+  const hub = createHub({
+    ...hubOptions,
+    identity: hubIdentity,
+    store,
+    transport: firstTransports.server,
+  })
+  let firstUsed = false
+
+  function connect(identity: OwnIdentity = randomIdentity()): TestConnection {
+    let transports: HubTransports
+    if (firstUsed) {
+      transports = new DirectTransports()
+      allTransports.push(transports)
+      hub.server.handle(transports.server)
+    } else {
+      transports = firstTransports
+      firstUsed = true
+    }
+    const client = new Client<HubProtocol>({
+      transport: transports.client,
+      identity,
+      serverID: hubIdentity.id,
+    })
+    return { client, identity }
+  }
+
+  async function dispose(): Promise<void> {
+    await hub.server.dispose()
+    await Promise.all(allTransports.map((transports) => transports.dispose()))
+  }
+
+  return { hub, hubID: hubIdentity.id, store, connect, dispose }
+}
+
+describe('hub authentication', () => {
+  test('rejects unsigned client messages', async () => {
+    const ctx = createTestHub()
+    const transports: HubTransports = new DirectTransports()
+    ctx.hub.server.handle(transports.server)
+    // No identity: the client sends unsigned tokens
+    const anonymous = new Client<HubProtocol>({ transport: transports.client })
+
+    await expect(
+      anonymous.request('hub/send', {
+        param: { recipients: ['did:test:recipient'], payload: encodePayload('nope') },
+      }),
+    ).rejects.toThrow('Message is not signed')
+
+    await transports.dispose()
+    await ctx.dispose()
+  })
+
+  test('handlers reject messages without a verified issuer DID', async () => {
+    const registry = new HubClientRegistry()
+    const store = createMemoryStore()
+    const handlers = createHandlers({ registry, store })
+    await expect(
+      handlers['hub/send']({
+        message: { header: {}, payload: { typ: 'request', prc: 'hub/send', rid: '1' } },
+        param: { recipients: ['did:test:recipient'], payload: encodePayload('x') },
+        signal: new AbortController().signal,
+      } as never),
+    ).rejects.toThrow('missing verified issuer')
+  })
+})
+
 describe('hub handlers', () => {
   test('hub/send delivers to explicit recipient via channel', async () => {
-    const store = createMemoryStore()
-    const aliceTransports: HubTransports = new DirectTransports()
-    const hub = createHub({ transport: aliceTransports.server, store })
-    const aliceIdentity = randomIdentity()
-    const alice = new Client<HubProtocol>({
-      transport: aliceTransports.client,
-      identity: aliceIdentity,
-    })
-
-    const bobIdentity = randomIdentity()
-    const bobTransports: HubTransports = new DirectTransports()
-    hub.server.handle(bobTransports.server)
-    const bob = new Client<HubProtocol>({
-      transport: bobTransports.client,
-      identity: bobIdentity,
-    })
+    const ctx = createTestHub()
+    const { client: alice, identity: aliceIdentity } = ctx.connect()
+    const { client: bob, identity: bobIdentity } = ctx.connect()
 
     // Bob opens receive channel
     const channel = bob.createChannel('hub/receive', { param: {} })
@@ -60,18 +138,12 @@ describe('hub handlers', () => {
     channel.close()
     await expect(channel).rejects.toEqual('Close')
     await delay(50)
-    await bobTransports.dispose()
-    await aliceTransports.dispose()
+    await ctx.dispose()
   })
 
   test('hub/group/send fails on unknown group', async () => {
-    const store = createMemoryStore()
-    const transports: HubTransports = new DirectTransports()
-    createHub({ transport: transports.server, store })
-    const alice = new Client<HubProtocol>({
-      transport: transports.client,
-      identity: randomIdentity(),
-    })
+    const ctx = createTestHub()
+    const { client: alice } = ctx.connect()
 
     await expect(
       alice.request('hub/group/send', {
@@ -79,26 +151,13 @@ describe('hub handlers', () => {
       }),
     ).rejects.toThrow()
 
-    await transports.dispose()
+    await ctx.dispose()
   })
 
   test('hub/group/send fans out to group members', async () => {
-    const store = createMemoryStore()
-    const aliceTransports: HubTransports = new DirectTransports()
-    const hub = createHub({ transport: aliceTransports.server, store })
-    const aliceIdentity = randomIdentity()
-    const alice = new Client<HubProtocol>({
-      transport: aliceTransports.client,
-      identity: aliceIdentity,
-    })
-
-    const bobIdentity = randomIdentity()
-    const bobTransports: HubTransports = new DirectTransports()
-    hub.server.handle(bobTransports.server)
-    const bob = new Client<HubProtocol>({
-      transport: bobTransports.client,
-      identity: bobIdentity,
-    })
+    const ctx = createTestHub()
+    const { client: alice } = ctx.connect()
+    const { client: bob } = ctx.connect()
 
     // Both join group
     await alice.request('hub/group/join', {
@@ -126,20 +185,12 @@ describe('hub handlers', () => {
     channel.close()
     await expect(channel).rejects.toEqual('Close')
     await delay(50)
-    await bobTransports.dispose()
-    await aliceTransports.dispose()
+    await ctx.dispose()
   })
 
   test('hub/receive delivers queued messages on connect', async () => {
-    const store = createMemoryStore()
-    const aliceTransports: HubTransports = new DirectTransports()
-    const hub = createHub({ transport: aliceTransports.server, store })
-    const aliceIdentity = randomIdentity()
-    const alice = new Client<HubProtocol>({
-      transport: aliceTransports.client,
-      identity: aliceIdentity,
-    })
-
+    const ctx = createTestHub()
+    const { client: alice } = ctx.connect()
     const bobIdentity = randomIdentity()
 
     // Alice sends to Bob while Bob is offline
@@ -149,13 +200,7 @@ describe('hub handlers', () => {
     await delay(50)
 
     // Bob connects and opens receive channel
-    const bobTransports: HubTransports = new DirectTransports()
-    hub.server.handle(bobTransports.server)
-    const bob = new Client<HubProtocol>({
-      transport: bobTransports.client,
-      identity: bobIdentity,
-    })
-
+    const { client: bob } = ctx.connect(bobIdentity)
     const channel = bob.createChannel('hub/receive', { param: {} })
     const reader = channel.readable.getReader()
     const msg = await reader.read()
@@ -165,20 +210,12 @@ describe('hub handlers', () => {
     channel.close()
     await expect(channel).rejects.toEqual('Close')
     await delay(50)
-    await bobTransports.dispose()
-    await aliceTransports.dispose()
+    await ctx.dispose()
   })
 
   test('hub/receive ack flow', async () => {
-    const store = createMemoryStore()
-    const aliceTransports: HubTransports = new DirectTransports()
-    const hub = createHub({ transport: aliceTransports.server, store })
-    const aliceIdentity = randomIdentity()
-    const alice = new Client<HubProtocol>({
-      transport: aliceTransports.client,
-      identity: aliceIdentity,
-    })
-
+    const ctx = createTestHub()
+    const { client: alice } = ctx.connect()
     const bobIdentity = randomIdentity()
 
     // Send messages while Bob is offline
@@ -191,13 +228,7 @@ describe('hub handlers', () => {
     await delay(50)
 
     // Bob connects, receives messages
-    const bobTransports: HubTransports = new DirectTransports()
-    hub.server.handle(bobTransports.server)
-    const bob = new Client<HubProtocol>({
-      transport: bobTransports.client,
-      identity: bobIdentity,
-    })
-
+    const { client: bob } = ctx.connect(bobIdentity)
     const channel = bob.createChannel('hub/receive', { param: {} })
     const reader = channel.readable.getReader()
     const msg1 = await reader.read()
@@ -214,15 +245,8 @@ describe('hub handlers', () => {
     channel.close()
     await expect(channel).rejects.toEqual('Close')
     await delay(50)
-    await bobTransports.dispose()
 
-    const bobTransports2: HubTransports = new DirectTransports()
-    hub.server.handle(bobTransports2.server)
-    const bob2 = new Client<HubProtocol>({
-      transport: bobTransports2.client,
-      identity: bobIdentity,
-    })
-
+    const { client: bob2 } = ctx.connect(bobIdentity)
     const channel2 = bob2.createChannel('hub/receive', { param: {} })
     const reader2 = channel2.readable.getReader()
 
@@ -236,19 +260,12 @@ describe('hub handlers', () => {
     channel2.close()
     await expect(channel2).rejects.toEqual('Close')
     await delay(50)
-    await bobTransports2.dispose()
-    await aliceTransports.dispose()
+    await ctx.dispose()
   })
 
   test('key package upload and fetch', async () => {
-    const store = createMemoryStore()
-    const transports: HubTransports = new DirectTransports()
-    createHub({ transport: transports.server, store })
-    const identity = randomIdentity()
-    const client = new Client<HubProtocol>({
-      transport: transports.client,
-      identity,
-    })
+    const ctx = createTestHub()
+    const { client, identity } = ctx.connect()
 
     const result = await client.request('hub/keypackage/upload', {
       param: { keyPackages: ['kp-1', 'kp-2'] },
@@ -260,18 +277,12 @@ describe('hub handlers', () => {
     })
     expect(fetched.keyPackages).toHaveLength(1)
 
-    await transports.dispose()
+    await ctx.dispose()
   })
 
   test('group join and leave', async () => {
-    const store = createMemoryStore()
-    const transports: HubTransports = new DirectTransports()
-    createHub({ transport: transports.server, store })
-    const identity = randomIdentity()
-    const client = new Client<HubProtocol>({
-      transport: transports.client,
-      identity,
-    })
+    const ctx = createTestHub()
+    const { client } = ctx.connect()
 
     const joinResult = await client.request('hub/group/join', {
       param: { groupID: 'test-group', credential: 'test' },
@@ -283,26 +294,13 @@ describe('hub handlers', () => {
     })
     expect(leaveResult.left).toBe(true)
 
-    await transports.dispose()
+    await ctx.dispose()
   })
 
   test('hub/receive rejects second concurrent open for same DID; first stays alive', async () => {
-    const store = createMemoryStore()
-    const aliceTransports: HubTransports = new DirectTransports()
-    const hub = createHub({ transport: aliceTransports.server, store })
-    const aliceIdentity = randomIdentity()
-    const alice = new Client<HubProtocol>({
-      transport: aliceTransports.client,
-      identity: aliceIdentity,
-    })
-
-    const bobIdentity = randomIdentity()
-    const bobTransports: HubTransports = new DirectTransports()
-    hub.server.handle(bobTransports.server)
-    const bob = new Client<HubProtocol>({
-      transport: bobTransports.client,
-      identity: bobIdentity,
-    })
+    const ctx = createTestHub()
+    const { client: alice } = ctx.connect()
+    const { client: bob, identity: bobIdentity } = ctx.connect()
 
     // First receive channel
     const channel1 = bob.createChannel('hub/receive', { param: {} })
@@ -329,27 +327,13 @@ describe('hub handlers', () => {
     channel1.close()
     await expect(channel1).rejects.toEqual('Close')
     await delay(50)
-    await bobTransports.dispose()
-    await aliceTransports.dispose()
+    await ctx.dispose()
   })
 
   test('hub/receive: close + immediate reopen on same DID succeeds', async () => {
-    const store = createMemoryStore()
-    const aliceTransports: HubTransports = new DirectTransports()
-    const hub = createHub({ transport: aliceTransports.server, store })
-    const aliceIdentity = randomIdentity()
-    const alice = new Client<HubProtocol>({
-      transport: aliceTransports.client,
-      identity: aliceIdentity,
-    })
-
-    const bobIdentity = randomIdentity()
-    const bobTransports: HubTransports = new DirectTransports()
-    hub.server.handle(bobTransports.server)
-    const bob = new Client<HubProtocol>({
-      transport: bobTransports.client,
-      identity: bobIdentity,
-    })
+    const ctx = createTestHub()
+    const { client: alice } = ctx.connect()
+    const { client: bob, identity: bobIdentity } = ctx.connect()
 
     const channel1 = bob.createChannel('hub/receive', { param: {} })
     await delay(50)
@@ -375,27 +359,13 @@ describe('hub handlers', () => {
     channel2.close()
     await expect(channel2).rejects.toEqual('Close')
     await delay(50)
-    await bobTransports.dispose()
-    await aliceTransports.dispose()
+    await ctx.dispose()
   })
 
   test('hub/receive: close + delayed reopen on same DID succeeds', async () => {
-    const store = createMemoryStore()
-    const aliceTransports: HubTransports = new DirectTransports()
-    const hub = createHub({ transport: aliceTransports.server, store })
-    const aliceIdentity = randomIdentity()
-    const alice = new Client<HubProtocol>({
-      transport: aliceTransports.client,
-      identity: aliceIdentity,
-    })
-
-    const bobIdentity = randomIdentity()
-    const bobTransports: HubTransports = new DirectTransports()
-    hub.server.handle(bobTransports.server)
-    const bob = new Client<HubProtocol>({
-      transport: bobTransports.client,
-      identity: bobIdentity,
-    })
+    const ctx = createTestHub()
+    const { client: alice } = ctx.connect()
+    const { client: bob, identity: bobIdentity } = ctx.connect()
 
     const channel1 = bob.createChannel('hub/receive', { param: {} })
     await delay(50)
@@ -418,13 +388,12 @@ describe('hub handlers', () => {
     channel2.close()
     await expect(channel2).rejects.toEqual('Close')
     await delay(50)
-    await bobTransports.dispose()
-    await aliceTransports.dispose()
+    await ctx.dispose()
   })
 })
 
 describe('Hub teardown produces no unhandled rejections', () => {
-  const rejections: unknown[] = []
+  const rejections: Array<unknown> = []
   const onRejection = (reason: unknown) => rejections.push(reason)
 
   beforeEach(() => {
@@ -436,29 +405,14 @@ describe('Hub teardown produces no unhandled rejections', () => {
   })
 
   test('hub/receive channel teardown (original bug repro)', async () => {
-    const { createHub, createMemoryStore } = await import('../src/index.js')
-    const { Client } = await import('@enkaku/client')
-    const { DirectTransports } = await import('@enkaku/transport')
-    const { randomIdentity } = await import('@enkaku/token')
+    const ctx = createTestHub()
+    const { client } = ctx.connect()
 
-    const store = createMemoryStore()
-    const hubTransports: HubTransports = new DirectTransports()
-    const hub = createHub({ transport: hubTransports.server, store })
-    const clientTransports: HubTransports = new DirectTransports()
-    hub.server.handle(clientTransports.server)
-    const client = new Client({
-      transport: clientTransports.client,
-      identity: randomIdentity(),
-    } as never)
-
-    const channel = client.createChannel(
-      'hub/receive' as never,
-      { param: { groupIDs: ['g1'] } } as never,
-    )
+    const channel = client.createChannel('hub/receive', { param: { groupIDs: ['g1'] } })
     channel.close()
     await expect(channel).rejects.toEqual('Close')
     await client.dispose()
-    await hub.server.dispose()
+    await ctx.dispose()
 
     await new Promise((r) => setTimeout(r, 20))
     expect(

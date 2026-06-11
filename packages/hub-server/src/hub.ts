@@ -7,14 +7,26 @@ import type { Identity } from '@enkaku/token'
 import { createHandlers } from './handlers.js'
 import { HubClientRegistry } from './registry.js'
 
-type BaseCreateHubParams = {
-  transport: ServerTransportOf<HubProtocol>
-  store: HubStore
+/**
+ * Default access rules: any authenticated DID may call hub procedures.
+ * The hub is a blind relay — per-procedure authorization (group membership,
+ * capability validation) happens in the handlers.
+ */
+export const DEFAULT_HUB_ACCESS_RULES: AccessRules = {
+  'hub/*': { allow: true },
 }
 
-export type CreateHubParams =
-  | (BaseCreateHubParams & { identity?: undefined; accessRules?: never })
-  | (BaseCreateHubParams & { identity: Identity; accessRules?: AccessRules })
+export type CreateHubParams = {
+  transport: ServerTransportOf<HubProtocol>
+  store: HubStore
+  /**
+   * Hub server identity. Required: all hub procedures derive the client DID
+   * from the verified `iss` of signed messages.
+   */
+  identity: Identity
+  /** Access rules enforced by the server. Defaults to {@link DEFAULT_HUB_ACCESS_RULES}. */
+  accessRules?: AccessRules
+}
 
 export type HubInstance = {
   registry: HubClientRegistry
@@ -24,17 +36,11 @@ export type HubInstance = {
 export function createHub(params: CreateHubParams): HubInstance {
   const registry = new HubClientRegistry()
   const handlers = createHandlers({ registry, store: params.store })
-  const server =
-    params.identity != null
-      ? serve<HubProtocol>({
-          handlers,
-          transport: params.transport,
-          identity: params.identity,
-          accessRules: params.accessRules,
-        })
-      : serve<HubProtocol>({
-          handlers,
-          transport: params.transport,
-        })
+  const server = serve<HubProtocol>({
+    handlers,
+    transport: params.transport,
+    identity: params.identity,
+    accessRules: params.accessRules ?? DEFAULT_HUB_ACCESS_RULES,
+  })
   return { registry, server }
 }
