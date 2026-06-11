@@ -1,4 +1,4 @@
-import { b64uToJSON, fromB64U, fromUTF } from '@enkaku/codec'
+import { b64uFromJSON, b64uToJSON, canonicalStringify, fromB64U, fromUTF } from '@enkaku/codec'
 import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
 import { assertType, isType } from '@enkaku/schema'
 
@@ -126,6 +126,31 @@ export async function signToken<
       >)
 }
 
+function getVerifiableData(token: SignedToken<Record<string, unknown>>): string {
+  const recomputed = `${b64uFromJSON(token.header)}.${b64uFromJSON(token.payload)}`
+  const data = token.data
+  if (data == null || data === recomputed) {
+    return recomputed
+  }
+  // `data` may use a different JSON serialization of the same header and payload.
+  // Accept it only if it decodes to exactly the same values, so the signed bytes
+  // can never be decoupled from the payload used for authorization.
+  const parts = data.split('.')
+  if (parts.length === 2) {
+    try {
+      if (
+        canonicalStringify(b64uToJSON(parts[0])) === canonicalStringify(token.header) &&
+        canonicalStringify(b64uToJSON(parts[1])) === canonicalStringify(token.payload)
+      ) {
+        return data
+      }
+    } catch {
+      // invalid base64url or JSON in data: fall through to the error below
+    }
+  }
+  throw new Error('Invalid token: data does not match header and payload')
+}
+
 async function verifyTokenInner<Payload extends Record<string, unknown> = Record<string, unknown>>(
   token: Token<Payload> | string,
   options: VerifyTokenOptions = {},
@@ -140,17 +165,18 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
       return token
     }
     if (isSignedToken(token)) {
+      const data = getVerifiableData(token)
       const verifiedPublicKey = await verifySignedPayload({
         signature: fromB64U(token.signature),
         payload: token.payload,
         header: token.header as { alg?: string; kid?: string },
-        data: token.data,
+        data,
         verifiers,
         resolver,
         cache,
       })
       assertTimeClaimsValid(token.payload as Record<string, unknown>, timeOptions)
-      return { ...token, verifiedPublicKey } as Token<Payload>
+      return { ...token, data, verifiedPublicKey } as Token<Payload>
     }
     throw new Error('Unsupported token')
   }
