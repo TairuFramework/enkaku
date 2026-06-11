@@ -123,6 +123,24 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     }
   }
 
+  function handleSSEDisconnect(error: Error): void {
+    sessionState = { status: 'idle' }
+    if (abortController.signal.aborted) {
+      // Intentional transport disposal — close the readable so pending reads settle
+      try {
+        controller.close()
+      } catch {
+        // Already closed or errored
+      }
+      return
+    }
+    try {
+      controller.error(error)
+    } catch {
+      // Already closed or errored
+    }
+  }
+
   function consumeSSEStream(response: Response): void {
     const parser = createParser({
       onEvent: (event) => {
@@ -149,11 +167,14 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       try {
         while (true) {
           const { done, value } = await reader.read()
-          if (done) break
+          if (done) {
+            handleSSEDisconnect(new Error('SSE session ended by server'))
+            return
+          }
           parser.feed(decoder.decode(value, { stream: true }))
         }
-      } catch {
-        // Stream ended (e.g. aborted) — nothing to do
+      } catch (cause) {
+        handleSSEDisconnect(new Error('SSE session disconnected', { cause }))
       }
     }
 
@@ -227,7 +248,9 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
             sessionState = { status: 'connecting', promise }
             promise
               .then((sessionID) => {
-                sessionState = { status: 'connected', sessionID }
+                if (sessionState.status === 'connecting') {
+                  sessionState = { status: 'connected', sessionID }
+                }
               })
               .catch((cause) => {
                 const error = new Error('Failed to connect SSE session', { cause })
