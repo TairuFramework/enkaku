@@ -126,8 +126,13 @@ export const hubProtocol = {
     param: {
       type: 'object',
       properties: {
-        groupID: { type: 'string' },
-        credential: { type: 'string' },
+        groupID: { type: 'string', minLength: 1, maxLength: 128 },
+        credential: { type: 'string', minLength: 1, maxLength: 16384 },
+        delegationChain: {
+          type: 'array',
+          items: { type: 'string', maxLength: 16384 },
+          maxItems: 10,
+        },
       },
       required: ['groupID', 'credential'],
       additionalProperties: false,

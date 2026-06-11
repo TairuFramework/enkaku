@@ -552,6 +552,9 @@ importers:
       '@enkaku/codec':
         specifier: workspace:^
         version: link:../codec
+      '@enkaku/group':
+        specifier: workspace:^
+        version: link:../group
       '@enkaku/hub-server':
         specifier: workspace:^
         version: link:../hub-server
@@ -582,6 +585,9 @@ importers:
       '@enkaku/event':
         specifier: workspace:^
         version: link:../event
+      '@enkaku/group':
+        specifier: workspace:^
+        version: link:../group
       '@enkaku/hub-protocol':
         specifier: workspace:^
         version: link:../hub-protocol
@@ -1113,6 +1119,10 @@ importers:
       get-port:
         specifier: 'catalog:'
         version: 7.2.0
+    devDependencies:
+      '@enkaku/group':
+        specifier: workspace:^
+        version: link:../../packages/group
 
   tests/ledger:
     devDependencies:

@@ -1,1 +1,1 @@
-export { HubClient, type HubClientParams } from './client.js'
+export { HubClient, type HubClientParams, type JoinGroupParams } from './client.js'

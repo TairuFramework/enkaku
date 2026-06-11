@@ -1,6 +1,8 @@
 import { fromB64, toB64 } from '@enkaku/codec'
+import { validateGroupCapability } from '@enkaku/group'
 import type { HubProtocol, HubStore, StoredMessage } from '@enkaku/hub-protocol'
 import type { ChannelHandler, ProcedureHandlers, RequestHandler } from '@enkaku/server'
+import { normalizeDID } from '@enkaku/token'
 
 import type { HubClientRegistry } from './registry.js'
 
@@ -175,8 +177,16 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
     }) as RequestHandler<HubProtocol, 'hub/keypackage/fetch'>,
 
     'hub/group/join': (async (ctx) => {
-      const { groupID } = ctx.param
+      const { groupID, credential, delegationChain } = ctx.param
       const clientDID = getClientDID(ctx)
+      const token = await validateGroupCapability({
+        tokenData: credential,
+        groupID,
+        delegationChain,
+      })
+      if (normalizeDID(token.payload.aud) !== normalizeDID(clientDID)) {
+        throw new Error('Invalid credential: audience does not match client DID')
+      }
       registry.register(clientDID)
       registry.joinGroup(clientDID, groupID)
       if (store != null) {

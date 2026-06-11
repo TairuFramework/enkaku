@@ -1,8 +1,9 @@
 import { Client } from '@enkaku/client'
 import { fromUTF, toB64 } from '@enkaku/codec'
+import { createGroupCapability, delegateGroupMembership } from '@enkaku/group'
 import type { HubProtocol, HubStore } from '@enkaku/hub-protocol'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
-import { type OwnIdentity, randomIdentity } from '@enkaku/token'
+import { type OwnIdentity, randomIdentity, stringifyToken } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
@@ -81,6 +82,24 @@ function createTestHub(options: TestHubOptions = {}): TestHub {
   return { hub, hubID: hubIdentity.id, store, connect, dispose }
 }
 
+async function membershipCredential(
+  owner: OwnIdentity,
+  memberDID: string,
+  groupID: string,
+): Promise<string> {
+  if (owner.id === memberDID) {
+    return stringifyToken(await createGroupCapability(owner, groupID))
+  }
+  return stringifyToken(
+    await delegateGroupMembership({
+      identity: owner,
+      groupID,
+      recipientDID: memberDID,
+      permission: 'member',
+    }),
+  )
+}
+
 describe('hub authentication', () => {
   test('rejects unsigned client messages', async () => {
     const ctx = createTestHub()
@@ -156,15 +175,17 @@ describe('hub handlers', () => {
 
   test('hub/group/send fans out to group members', async () => {
     const ctx = createTestHub()
-    const { client: alice } = ctx.connect()
-    const { client: bob } = ctx.connect()
+    const { client: alice, identity: aliceIdentity } = ctx.connect()
+    const { client: bob, identity: bobIdentity } = ctx.connect()
 
     // Both join group
+    const credentialAlice = await membershipCredential(aliceIdentity, aliceIdentity.id, 'chat')
+    const credentialBob = await membershipCredential(aliceIdentity, bobIdentity.id, 'chat')
     await alice.request('hub/group/join', {
-      param: { groupID: 'chat', credential: 'test' },
+      param: { groupID: 'chat', credential: credentialAlice },
     })
     await bob.request('hub/group/join', {
-      param: { groupID: 'chat', credential: 'test' },
+      param: { groupID: 'chat', credential: credentialBob },
     })
 
     // Bob opens receive channel
@@ -282,10 +303,11 @@ describe('hub handlers', () => {
 
   test('group join and leave', async () => {
     const ctx = createTestHub()
-    const { client } = ctx.connect()
+    const { client, identity } = ctx.connect()
 
+    const credential = await membershipCredential(identity, identity.id, 'test-group')
     const joinResult = await client.request('hub/group/join', {
-      param: { groupID: 'test-group', credential: 'test' },
+      param: { groupID: 'test-group', credential },
     })
     expect(joinResult.joined).toBe(true)
 
@@ -388,6 +410,81 @@ describe('hub handlers', () => {
     channel2.close()
     await expect(channel2).rejects.toEqual('Close')
     await delay(50)
+    await ctx.dispose()
+  })
+})
+
+describe('hub/group/join credential validation', () => {
+  test('join with a valid owner capability succeeds', async () => {
+    const ctx = createTestHub()
+    const { client: alice, identity: aliceIdentity } = ctx.connect()
+    const credential = await membershipCredential(aliceIdentity, aliceIdentity.id, 'chat')
+
+    const result = await alice.request('hub/group/join', {
+      param: { groupID: 'chat', credential },
+    })
+    expect(result.joined).toBe(true)
+    expect(ctx.hub.registry.getGroupMembers('chat')).toContain(aliceIdentity.id)
+
+    await ctx.dispose()
+  })
+
+  test('join with a delegated membership credential succeeds', async () => {
+    const ctx = createTestHub()
+    const ownerIdentity = randomIdentity()
+    const { client: bob, identity: bobIdentity } = ctx.connect()
+    const credential = await membershipCredential(ownerIdentity, bobIdentity.id, 'chat')
+
+    const result = await bob.request('hub/group/join', {
+      param: { groupID: 'chat', credential },
+    })
+    expect(result.joined).toBe(true)
+
+    await ctx.dispose()
+  })
+
+  test('join without a valid credential fails', async () => {
+    const ctx = createTestHub()
+    const { client: alice, identity: aliceIdentity } = ctx.connect()
+
+    await expect(
+      alice.request('hub/group/join', {
+        param: { groupID: 'chat', credential: 'not-a-token' },
+      }),
+    ).rejects.toThrow()
+    expect(ctx.hub.registry.getGroupMembers('chat')).not.toContain(aliceIdentity.id)
+
+    await ctx.dispose()
+  })
+
+  test('join with a credential for a different group fails', async () => {
+    const ctx = createTestHub()
+    const { client: alice, identity: aliceIdentity } = ctx.connect()
+    const credential = await membershipCredential(aliceIdentity, aliceIdentity.id, 'other-group')
+
+    await expect(
+      alice.request('hub/group/join', {
+        param: { groupID: 'chat', credential },
+      }),
+    ).rejects.toThrow()
+
+    await ctx.dispose()
+  })
+
+  test('join with a credential issued to a different DID fails', async () => {
+    const ctx = createTestHub()
+    const ownerIdentity = randomIdentity()
+    const strangerDID = randomIdentity().id
+    const { client: alice } = ctx.connect()
+    // Credential audience is the stranger, not Alice
+    const credential = await membershipCredential(ownerIdentity, strangerDID, 'chat')
+
+    await expect(
+      alice.request('hub/group/join', {
+        param: { groupID: 'chat', credential },
+      }),
+    ).rejects.toThrow()
+
     await ctx.dispose()
   })
 })
