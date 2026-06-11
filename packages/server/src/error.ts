@@ -9,6 +9,7 @@ import type { ErrorReplyPayload } from '@enkaku/protocol'
  * - EK05: Request timeout (controller expired)
  * - EK06: Message exceeds maximum size
  * - EK07: Encryption required but message is not encrypted
+ * - EK08: Invalid protocol message (schema validation failed)
  */
 
 export type HandlerErrorParams<

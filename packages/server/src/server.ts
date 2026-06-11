@@ -172,6 +172,25 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             error: new Error('Invalid protocol message', { cause: result }),
             message,
           })
+          // If the raw message carries a rid on a reply-capable type, send an
+          // error reply instead of leaving the client to hang forever.
+          const rawPayload =
+            message != null && typeof message === 'object' && 'payload' in message
+              ? (message as { payload: unknown }).payload
+              : undefined
+          if (rawPayload != null && typeof rawPayload === 'object') {
+            const { rid, typ } = rawPayload as { rid?: unknown; typ?: unknown }
+            if (
+              typeof rid === 'string' &&
+              (typ === 'request' || typ === 'stream' || typ === 'channel')
+            ) {
+              const error = new HandlerError({
+                code: 'EK08',
+                message: 'Invalid protocol message',
+              })
+              context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
+            }
+          }
           return null
         }
         return (result as StandardSchemaV1.SuccessResult<AnyClientMessageOf<Protocol>>).value
