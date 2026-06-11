@@ -1,6 +1,8 @@
 # Enkaku Roadmap
 
-## Completed Goals (Jan-May 2026)
+## Completed Goals (Jan-Jun 2026)
+
+- **Audit remediation (June 2026)** — Full-repo audit closed in four sequential plans: token-verification hardening (signature/payload binding, `verifiedPublicKey` bypass, ES256 lowS), transport stability (16 fail-closed edge fixes), hub hardening (mandatory identity, group authz, lifecycle leaks, long-lived limits), platform fixes (ChaCha AEAD dispatch, EK08 invalid-message reply, typed error-code registry, electron-rpc sender allowlist). See `completed/2026-06-10-audit-remediation.complete.md`
 
 - **Security hardening** — Comprehensive audit (47 findings), 6 implementation waves, all critical/high items resolved
 - **Message-level encryption** — JWE with ECDH-ES + A256GCM, identity type hierarchy, 4 envelope modes
@@ -23,11 +25,6 @@
 
 ## Current Focus
 
-- **Audit remediation (June 2026)** — Four plans from the full-repo audit (`2026-06-10-audit-remediation-design.md`), in priority order:
-  1. **Token verification hardening** — critical: object-token signature/payload binding, inbound `verifiedPublicKey` bypass, ES256 lowS (`next/2026-06-10-token-verification-hardening.md`)
-  2. **Transport stability** — socket crash on error, UTF-8 chunk corruption, server read-loop boundary, HTTP inflight leak, SSE disconnect swallow, Disposer hang (`next/2026-06-10-transport-stability.md`)
-  3. **Hub hardening** — mandatory identity, group join/send authz, key-package caps, lifecycle leaks, limits exposure (`next/2026-06-10-hub-hardening.md`)
-  4. **Platform fixes** — ChaCha AEAD dispatch, electron-rpc sender validation, invalid-message error reply, error-code constants (`next/2026-06-10-platform-fixes.md`)
 - **MLS capability-layer member revocation** — Production blocker for fresh external join. Capability-layer mechanism to evict members beyond MLS's stale-rejoin gap. Design between revocation token, GroupContext banlist extension, or hybrid.
 
 ## Near-term (ready when picked up)

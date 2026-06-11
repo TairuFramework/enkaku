@@ -1,7 +1,7 @@
 # Documentation & Release Infrastructure Gaps
 
 **Priority:** backlog, low (consumers are stack-internal: Kubun, Mokei). Tracking only — no implementation planned.
-**Origin:** June 2026 audit (`2026-06-10-audit-remediation-design.md`)
+**Origin:** June 2026 audit (`completed/2026-06-10-audit-remediation.complete.md`)
 
 ## Stale handwritten docs (broken for current API)
 

@@ -1,7 +1,7 @@
 # MLS Group Permission Enforcement
 
 **Priority:** backlog (authz gap; capabilities currently advisory beyond invite acceptance)
-**Origin:** June 2026 audit (`2026-06-10-audit-remediation-design.md`)
+**Origin:** June 2026 audit (`completed/2026-06-10-audit-remediation.complete.md`)
 
 ## Problem
 

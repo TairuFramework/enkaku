@@ -1,7 +1,7 @@
 # Replay Protection for Authenticated Messages
 
 **Priority:** backlog (security hardening; mitigated by TLS transports + short-lived tokens)
-**Origin:** June 2026 audit (`2026-06-10-audit-remediation-design.md`)
+**Origin:** June 2026 audit (`completed/2026-06-10-audit-remediation.complete.md`)
 
 ## Problem
 
