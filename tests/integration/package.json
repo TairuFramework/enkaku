@@ -31,6 +31,7 @@
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
     "@enkaku/token": "workspace:^",
+    "@enkaku/socket-transport": "workspace:^",
     "@enkaku/transport": "workspace:^",
     "@hono/node-server": "catalog:",
     "@opentelemetry/sdk-trace-base": "catalog:",
