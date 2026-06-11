@@ -702,51 +702,22 @@ git commit -m "docs(event,server): warn on fire-and-forget emit; document payloa
 
 ---
 
-## Task 7: Transport double-cast type-variance investigation (Item 4.5) — GATED
+## Task 7: Transport double-cast type-variance investigation (Item 4.5) — GATED → WONTFIX
 
-**Files:**
-- Investigate: `packages/protocol/src/types/transport.ts` (`ClientTransportOf`/`ServerTransportOf`), `packages/transport/src/index.ts` (`TransportType`, `Transport`, `MessageTransport`)
-- Cast sites to reproduce (in sibling repos, read-only reference): `kubun/apps/local-todo/src/worker.ts:37`, `kubun/packages/plugin-p2p/src/hub/http-client.ts:43`, `sakui/apps/desktop/src/renderer/runtime.ts:47`, `enkaku/packages/server/test/transport-read-failure.test.ts:20`.
+**Outcome (2026-06-11): investigation complete, NO enkaku change.** The gated investigation (Steps 1-3) reproduced and compiled every cast site and found the advisory's premise wrong — there is no type-variance defect in enkaku, so there is nothing to export or relax.
 
-**Context:** Consumers cross the client/server transport boundary with `transport as unknown as ServerTransportOf<P>` (and `ClientTransportOf`). `ClientTransportOf<P>`/`ServerTransportOf<P>` brand `TransportType<R, W>`'s read/write generics to specific `SignedToken | UnsignedToken` payload unions (`transport.ts:35-43`), so a concrete adapter transport never structurally matches. This task is investigation-first: find the exact variance mismatch, then design a fix that removes the *need* for the double-cast (not one that merely relocates it). **This task may ripple into `@enkaku/transport`/`@enkaku/client`/`@enkaku/server` generics — it is GATED: present findings + proposed fix to the controller/human for approval BEFORE making broad type changes.**
+**Findings:**
+- `kubun/apps/local-todo/src/worker.ts:37` and `sakui/apps/desktop/src/renderer/runtime.ts:47` — consumer constructs `new MessageTransport({...})` / `new Transport({...})` **without type arguments**, collapsing read/write generics to `unknown`; `unknown` is then correctly rejected on the covariant read position. Fix is consumer-side (supply the protocol message type args). Zero enkaku change.
+- `kubun/packages/plugin-p2p/src/hub/http-client.ts:43` — **stale** cast; `DIDObservingTransport` already matches `ClientTransportOf` structurally. Delete it.
+- `enkaku/packages/server/test/transport-read-failure.test.ts:20` — deliberately-partial vi.fn mock; `as unknown as` is the sanctioned idiom. Leave.
 
-- [ ] **Step 1: Reproduce and characterize the mismatch**
+A structural `AnyServerTransport` / relaxed `TransportType` bound / `asServerTransport` guard would be a **net regression** (re-admits `unknown` on the read side, weakening the safety the casts bypass). Decision (human, 2026-06-11): record the finding, make no enkaku change.
 
-For at least two distinct cast sites (e.g. `local-todo/src/worker.ts:37` server-side, `plugin-p2p/src/hub/http-client.ts:43` client-side), remove the `as unknown as ...` cast locally and capture the exact `tsc` error. Record: what concrete type the transport has, what the branded alias requires, and which generic position (read `R` vs write `W`) and which payload member fails to assign.
-
-- [ ] **Step 2: Classify the root cause**
-
-Determine which it is:
-- (a) message payload unions are invariant where a structural supertype would suffice;
-- (b) the concrete transport is genuinely under-typed (the cast hides a real looseness);
-- (c) `TransportType<R, W>` could accept a covariant message bound.
-Write a 3-5 sentence finding for each cast class.
-
-- [ ] **Step 3: Design the minimal fix and STOP for approval**
-
-Propose the smallest change that lets legitimate adapters assign without `as unknown as` — candidates: a structural `AnyServerTransport`/`AnyClientTransport` shape exported from `@enkaku/protocol`, a relaxed message bound on `TransportType`, or a typed `asServerTransport`/`asClientTransport` guard that performs one *checked* narrowing. State the blast radius (which packages' public types change).
-
-**GATE:** Present Steps 1-3 findings + the chosen design to the controller. Do NOT proceed to implementation until approved — the fix may change public types across multiple packages.
-
-- [ ] **Step 4: (After approval) Implement via TDD**
-
-Per the approved design: add a type-level test (e.g. a `*.test-d.ts` or an `expectTypeOf` assertion if the repo uses `vitest`'s type testing — check existing `*.test-d.ts` presence first) asserting a representative adapter transport assigns to `ServerTransportOf<P>`/`ClientTransportOf<P>` WITHOUT `as unknown as`. Implement the type change. Run `pnpm run build:types` across affected packages.
-
-- [ ] **Step 5: Verify downstream casts can be removed**
-
-In each repo (enkaku, then note for kubun/sakui), remove the now-unnecessary `as unknown as` at the reproduced sites and confirm `tsc` passes. For enkaku's own `packages/server/test/transport-read-failure.test.ts:20`, remove the cast if the design allows; otherwise document why it must remain.
-
-- [ ] **Step 6: Lint + full type build**
-
-Run: `pnpm run build` (types then JS) and `rtk proxy pnpm run lint`
-Expected: PASS.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add packages/protocol packages/transport packages/server
-git commit -m "refactor(protocol): structural transport shape removes client/server double-casts"
-```
+**Follow-ups filed for OTHER repos (not this plan):**
+- kubun `apps/local-todo/src/worker.ts:37` — parameterize `MessageTransport<AnyClientMessageOf<P>, AnyServerMessageOf<P>>`, drop cast.
+- kubun `packages/plugin-p2p/src/hub/http-client.ts:43` — delete stale cast.
+- sakui `apps/desktop/src/renderer/runtime.ts:47` — parameterize `Transport<AnyServerMessageOf<P>, AnyClientMessageOf<P>>`, drop cast.
+- Optional DX ticket (enkaku, additive/non-breaking): protocol-typed constructor helpers `serverMessageTransport<P>`/`clientMessageTransport<P>` in `@enkaku/message-transport`/`@enkaku/transport` to prevent the dropped-type-args footgun. Not required.
 
 ---
 

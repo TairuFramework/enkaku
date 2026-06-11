@@ -198,9 +198,19 @@ Document on `AccessRules` / the server README: under array/`true` access rules, 
 
 **File:** `packages/schema/src/errors.ts` (`ValidationError` constructor, lines 35-43). The message is `Validation failed for schema <id>`; per-field detail lives only in `.issues`, which transports serializing only `message` drop. Append the first issue's locator to the message, e.g. `Validation failed for schema <id> (<instancePath> <keyword>)`, when `errorObjects` is non-empty. `.issues` / `.errors` unchanged. Unit test asserts the first issue's `instancePath` + `keyword` appear in `.message`.
 
-### 4.5 — export structural transport shape (small code)
+### 4.5 — export structural transport shape — WONTFIX (premise wrong)
 
-**Package:** `@enkaku/transport` (and re-exports). Consumers cast `MessageTransport as unknown as ServerTransport` to cross the client/server nominal transport types. Export the structural transport shape so adapters cross the boundary without `as unknown as` double-casts. Verify kubun apps + enkaku's own tests can drop the double-cast.
+**Original ask:** export a structural transport shape so adapters cross the client/server boundary without `as unknown as` double-casts.
+
+**Investigation verdict (2026-06-11, Task 7):** the premise is wrong — there is no type-variance defect in enkaku, so there is nothing to export. Each cast site was reproduced and compiled:
+
+- `kubun/apps/local-todo/src/worker.ts:37` and `sakui/apps/desktop/src/renderer/runtime.ts:47` — the consumer constructs `new MessageTransport({...})` / `new Transport({...})` **without type arguments**, collapsing `R`/`W` to `unknown`. `unknown` is then (correctly) rejected on the covariant read position. Fix is in the consumer: supply the protocol message type args at construction. Zero enkaku change.
+- `kubun/packages/plugin-p2p/src/hub/http-client.ts:43` — **stale** cast; `DIDObservingTransport` already matches `ClientTransportOf` structurally. Delete the cast.
+- `enkaku/packages/server/test/transport-read-failure.test.ts:20` — deliberately-partial vi.fn mock; `as unknown as` is the sanctioned idiom. Leave.
+
+A structural `AnyServerTransport` / relaxed `TransportType` message bound / `asServerTransport` guard would be a **net regression**: it re-admits `unknown` on the read side and weakens exactly the safety the casts currently bypass. No enkaku public-type change is warranted.
+
+**Outcome:** no enkaku code change. Consumer-side fixes (kubun ×2, sakui ×1) filed as a follow-up for those repos. Optional, separate DX ticket: additive protocol-typed constructor helpers (`serverMessageTransport<P>`/`clientMessageTransport<P>`) to prevent the dropped-type-args footgun — not required to remove the casts.
 
 ---
 
