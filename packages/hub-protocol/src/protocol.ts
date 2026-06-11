@@ -7,8 +7,13 @@ export const hubProtocol = {
     param: {
       type: 'object',
       properties: {
-        recipients: { type: 'array', items: { type: 'string' } },
-        payload: { type: 'string', contentEncoding: 'base64' },
+        recipients: {
+          type: 'array',
+          items: { type: 'string', maxLength: 256 },
+          minItems: 1,
+          maxItems: 100,
+        },
+        payload: { type: 'string', contentEncoding: 'base64', maxLength: 1048576 },
       },
       required: ['recipients', 'payload'],
       additionalProperties: false,
@@ -28,8 +33,8 @@ export const hubProtocol = {
     param: {
       type: 'object',
       properties: {
-        groupID: { type: 'string' },
-        payload: { type: 'string', contentEncoding: 'base64' },
+        groupID: { type: 'string', minLength: 1, maxLength: 128 },
+        payload: { type: 'string', contentEncoding: 'base64', maxLength: 1048576 },
       },
       required: ['groupID', 'payload'],
       additionalProperties: false,
@@ -49,15 +54,23 @@ export const hubProtocol = {
     param: {
       type: 'object',
       properties: {
-        after: { type: 'string' },
-        groupIDs: { type: 'array', items: { type: 'string' } },
+        after: { type: 'string', maxLength: 64 },
+        groupIDs: {
+          type: 'array',
+          items: { type: 'string', maxLength: 128 },
+          maxItems: 100,
+        },
       },
       additionalProperties: false,
     },
     send: {
       type: 'object',
       properties: {
-        ack: { type: 'array', items: { type: 'string' } },
+        ack: {
+          type: 'array',
+          items: { type: 'string', maxLength: 64 },
+          maxItems: 1000,
+        },
       },
       required: ['ack'],
       additionalProperties: false,
@@ -85,7 +98,12 @@ export const hubProtocol = {
     param: {
       type: 'object',
       properties: {
-        keyPackages: { type: 'array', items: { type: 'string' } },
+        keyPackages: {
+          type: 'array',
+          items: { type: 'string', maxLength: 16384 },
+          minItems: 1,
+          maxItems: 50,
+        },
       },
       required: ['keyPackages'],
       additionalProperties: false,
@@ -105,8 +123,8 @@ export const hubProtocol = {
     param: {
       type: 'object',
       properties: {
-        did: { type: 'string' },
-        count: { type: 'integer' },
+        did: { type: 'string', minLength: 1, maxLength: 256 },
+        count: { type: 'integer', minimum: 1, maximum: 10 },
       },
       required: ['did'],
       additionalProperties: false,
@@ -152,7 +170,7 @@ export const hubProtocol = {
     param: {
       type: 'object',
       properties: {
-        groupID: { type: 'string' },
+        groupID: { type: 'string', minLength: 1, maxLength: 128 },
       },
       required: ['groupID'],
       additionalProperties: false,

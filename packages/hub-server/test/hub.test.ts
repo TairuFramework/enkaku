@@ -404,6 +404,30 @@ describe('hub handlers', () => {
     await ctx.dispose()
   })
 
+  test('schema validation drops messages violating quotas and emits invalidMessage', async () => {
+    const ctx = createTestHub()
+    const { client } = ctx.connect()
+
+    const invalidMessage = new Promise<unknown>((resolve) => {
+      ctx.hub.server.events.on('invalidMessage', (event) => resolve(event.error))
+    })
+
+    // 101 recipients exceeds maxItems: 100
+    const recipients = Array.from({ length: 101 }, (_, i) => `did:test:${i}`)
+    const request = client.request('hub/send', {
+      param: { recipients, payload: encodePayload('too-many') },
+    })
+    // The server drops invalid messages without replying (error reply for
+    // schema-invalid messages ships in the platform-fixes plan), so the
+    // request only settles when the client is disposed.
+    request.catch(() => {})
+
+    const error = await invalidMessage
+    expect(error).toBeInstanceOf(Error)
+
+    await ctx.dispose()
+  })
+
   test('hub/receive: close + delayed reopen on same DID succeeds', async () => {
     const ctx = createTestHub()
     const { client: alice } = ctx.connect()

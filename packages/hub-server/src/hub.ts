@@ -1,4 +1,4 @@
-import type { HubProtocol, HubStore } from '@enkaku/hub-protocol'
+import { type HubProtocol, type HubStore, hubProtocol } from '@enkaku/hub-protocol'
 import type { ServerTransportOf } from '@enkaku/protocol'
 import type { AccessRules, Server } from '@enkaku/server'
 import { serve } from '@enkaku/server'
@@ -44,6 +44,7 @@ export function createHub(params: CreateHubParams): HubInstance {
   })
   const server = serve<HubProtocol>({
     handlers,
+    protocol: hubProtocol,
     transport: params.transport,
     identity: params.identity,
     accessRules: params.accessRules ?? DEFAULT_HUB_ACCESS_RULES,
