@@ -519,7 +519,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       }
 
   async function handleNext() {
-    const next = await transport.read()
+    let next: ReadableStreamReadResult<AnyClientMessageOf<Protocol>>
+    try {
+      next = await transport.read()
+    } catch (cause) {
+      const error = new Error('Transport read failed', { cause })
+      logger.warn('failed to read from transport', { cause })
+      events.emit('transportError', { error })
+      await disposer.dispose()
+      return
+    }
     if (next.done) {
       await disposer.dispose()
       return
