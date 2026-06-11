@@ -31,6 +31,14 @@ export type AccessRule = {
   encryption?: EncryptionPolicy
 }
 
+/**
+ * Maps procedure-name patterns to access rules for a server.
+ *
+ * Security note: access checks admit on the verified issuer (`payload.iss`).
+ * `payload.sub` is caller-asserted and is NOT validated as a delegation unless
+ * a delegation rule explicitly triggers that branch. Do not treat `sub` as a
+ * verified identity in handlers.
+ */
 export type AccessRules = Record<string, AccessRule>
 
 export function resolveEncryptionPolicy(
