@@ -1,3 +1,5 @@
+import { gcm } from '@noble/ciphers/aes.js'
+import { chacha20poly1305 } from '@noble/ciphers/chacha.js'
 import {
   type Credential,
   createApplicationMessage,
@@ -361,5 +363,100 @@ describe('nobleCryptoProvider', () => {
     // RNG should use our custom function
     customImpl.rng.randomBytes(16)
     expect(callCount).toBe(1)
+  })
+})
+
+describe('nobleCryptoProvider ChaCha20-Poly1305 suite (ID 3)', () => {
+  const CHACHA_SUITE_NAME = 'MLS_128_DHKEMX25519_CHACHA20POLY1305_SHA256_Ed25519' as const
+
+  async function getChaChaImpl() {
+    return await getImpl(CHACHA_SUITE_NAME, nobleCryptoProvider)
+  }
+
+  test('uses a 32-byte AEAD key', async () => {
+    const impl = await getChaChaImpl()
+    expect(impl.hpke.keyLength).toBe(32)
+  })
+
+  test('encryptAead produces ChaCha20-Poly1305 ciphertext, not AES-GCM', async () => {
+    const impl = await getChaChaImpl()
+    const key = new Uint8Array(32).fill(7)
+    const nonce = new Uint8Array(12).fill(3)
+    const aad = new TextEncoder().encode('suite 3 aad')
+    const plaintext = new TextEncoder().encode('chacha test message')
+
+    const ct = await impl.hpke.encryptAead(key, nonce, aad, plaintext)
+
+    const expected = chacha20poly1305(key, nonce, aad).encrypt(plaintext)
+    expect(ct).toEqual(expected)
+    const aesCt = gcm(key, nonce, aad).encrypt(plaintext)
+    expect(ct).not.toEqual(aesCt)
+
+    const pt = await impl.hpke.decryptAead(key, nonce, aad, ct)
+    expect(new TextDecoder().decode(pt)).toBe('chacha test message')
+  })
+
+  test('HPKE seal and open round-trip on suite 3', async () => {
+    const impl = await getChaChaImpl()
+    const kp = await impl.hpke.generateKeyPair()
+    const plaintext = new TextEncoder().encode('hpke chacha message')
+    const info = new TextEncoder().encode('suite 3 info')
+    const aad = new TextEncoder().encode('suite 3 aad')
+
+    const { ct, enc } = await impl.hpke.seal(kp.publicKey, plaintext, info, aad)
+    const decrypted = await impl.hpke.open(kp.privateKey, enc, ct, info, aad)
+    expect(new TextDecoder().decode(decrypted)).toBe('hpke chacha message')
+  })
+
+  test('group messaging round-trip on suite 3', async () => {
+    const cipherSuite = await getChaChaImpl()
+    const context: MlsContext = { cipherSuite, authService: unsafeTestingAuthenticationService }
+
+    const alice = await generateKeyPackage({
+      credential: makeCredential('alice'),
+      cipherSuite,
+    })
+    let aliceState = await createGroup({
+      context,
+      groupId: new TextEncoder().encode('chacha-group'),
+      keyPackage: alice.publicPackage,
+      privateKeyPackage: alice.privatePackage,
+    })
+
+    const bob = await generateKeyPackage({
+      credential: makeCredential('bob'),
+      cipherSuite,
+    })
+    const addResult = await createCommit({
+      context,
+      state: aliceState,
+      extraProposals: [
+        { proposalType: defaultProposalTypes.add, add: { keyPackage: bob.publicPackage } },
+      ],
+    })
+    aliceState = addResult.newState
+
+    const bobState = await joinGroup({
+      context,
+      welcome: requireWelcome(addResult.welcome).welcome,
+      keyPackage: bob.publicPackage,
+      privateKeys: bob.privatePackage,
+      ratchetTree: aliceState.ratchetTree,
+    })
+
+    const { message: privateMessage } = await createApplicationMessage({
+      context,
+      state: aliceState,
+      message: new TextEncoder().encode('hello over chacha'),
+    })
+    const result = await processMessage({
+      context,
+      state: bobState,
+      message: privateMessage,
+    })
+    expect(result.kind).toBe('applicationMessage')
+    if (result.kind === 'applicationMessage') {
+      expect(new TextDecoder().decode(result.message)).toBe('hello over chacha')
+    }
   })
 })
