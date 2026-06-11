@@ -298,11 +298,13 @@ export class Client<
   }
 
   #setupTransport(): void {
-    this.#transport.disposed.then(() => {
-      if (this.signal.aborted) {
+    const transport = this.#transport
+    transport.disposed.then(() => {
+      if (this.signal.aborted || this.#transport !== transport) {
+        // Client is gone or this transport was already replaced — stale handler
         return
       }
-      const newTransport = this.#handleTransportDisposed?.(this.#transport.signal)
+      const newTransport = this.#handleTransportDisposed?.(transport.signal)
       if (newTransport == null) {
         this.#logger.debug('transport disposed')
         // Abort client if no new transport is provided
