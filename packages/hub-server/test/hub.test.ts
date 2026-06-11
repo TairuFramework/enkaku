@@ -209,6 +209,55 @@ describe('hub handlers', () => {
     await ctx.dispose()
   })
 
+  test('group roster survives hub restart; re-join does not clobber peers', async () => {
+    const store = createMemoryStore()
+
+    // --- first hub lifetime: alice and bob join group 'chat' ---
+    const aliceIdentity = randomIdentity()
+    const bobIdentity = randomIdentity()
+    const hub1 = createTestHub({ store })
+    const { client: alice1 } = hub1.connect(aliceIdentity)
+    const { client: bob1 } = hub1.connect(bobIdentity)
+
+    const credentialAlice = await membershipCredential(aliceIdentity, aliceIdentity.id, 'chat')
+    const credentialBob = await membershipCredential(aliceIdentity, bobIdentity.id, 'chat')
+    await alice1.request('hub/group/join', {
+      param: { groupID: 'chat', credential: credentialAlice },
+    })
+    await bob1.request('hub/group/join', {
+      param: { groupID: 'chat', credential: credentialBob },
+    })
+
+    expect((await store.getGroupMembers('chat')).sort()).toEqual(
+      [aliceIdentity.id, bobIdentity.id].sort(),
+    )
+
+    // Tear down the first hub (simulates hub restart)
+    await hub1.dispose()
+
+    // --- restart: fresh registry via a new hub, SAME store; bob stays offline ---
+    const hub2 = createTestHub({ store })
+    const { client: alice2 } = hub2.connect(aliceIdentity)
+
+    // alice re-joins; her re-join must NOT have removed bob from the durable roster
+    await alice2.request('hub/group/join', {
+      param: { groupID: 'chat', credential: credentialAlice },
+    })
+
+    expect((await store.getGroupMembers('chat')).sort()).toEqual(
+      [aliceIdentity.id, bobIdentity.id].sort(),
+    )
+
+    // alice sends to group; bob (offline) must have a queued message to fetch on reconnect
+    await alice2.request('hub/group/send', {
+      param: { groupID: 'chat', payload: encodePayload('after-restart') },
+    })
+    const queued = await store.fetch({ recipientDID: bobIdentity.id })
+    expect(queued.messages.length).toBeGreaterThan(0)
+
+    await hub2.dispose()
+  })
+
   test('hub/group/send from a non-member fails', async () => {
     const ctx = createTestHub()
     const { client: alice, identity: aliceIdentity } = ctx.connect()

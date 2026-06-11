@@ -87,7 +87,11 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
     'hub/group/send': (async (ctx) => {
       const { groupID, payload } = ctx.param
       const senderDID = getClientDID(ctx)
-      const members = registry.getGroupMembers(groupID)
+      // Durable roster ∪ live registry: the store carries membership across
+      // restarts (registry is empty after a restart); the registry covers
+      // members joined this lifetime not yet observed in a fresh store read.
+      const durable = store != null ? await store.getGroupMembers(groupID) : []
+      const members = [...new Set([...durable, ...registry.getGroupMembers(groupID)])]
       if (!members.includes(senderDID)) {
         throw new Error(`Sender is not a member of group: ${groupID}`)
       }
