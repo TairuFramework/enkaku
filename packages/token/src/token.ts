@@ -145,7 +145,7 @@ function getVerifiableData(token: SignedToken<Record<string, unknown>>): string 
   // `data` may use a different JSON serialization of the same header and payload.
   // Accept it only if it decodes to exactly the same values, so the signed bytes
   // can never be decoupled from the payload used for authorization.
-  const parts = data.split('.')
+  const parts = typeof data === 'string' ? data.split('.') : []
   if (parts.length === 2) {
     try {
       if (

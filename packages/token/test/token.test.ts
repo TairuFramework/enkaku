@@ -183,6 +183,15 @@ describe('object token signature/payload binding', () => {
     const verified = await verifyToken(token as Parameters<typeof verifyToken>[0])
     expect(isVerifiedToken(verified)).toBe(true)
   })
+
+  test('rejects object tokens whose data is not a string', async () => {
+    const identity = randomIdentity()
+    const signed = await identity.signToken({ test: true })
+    const forged = { ...signed, data: { malicious: true } }
+    await expect(
+      verifyToken(forged as unknown as Parameters<typeof verifyToken>[0]),
+    ).rejects.toThrow('data does not match')
+  })
 })
 
 describe('verified token branding', () => {
