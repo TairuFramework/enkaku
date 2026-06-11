@@ -198,7 +198,6 @@ describe('verified token branding', () => {
 
   test('verifyToken re-verifies tokens carrying an inbound verifiedPublicKey', async () => {
     const victim = randomIdentity()
-    const attacker = randomIdentity()
     const signed = await victim.signToken({ test: true })
     // forged payload, victim signature, attacker-injected verifiedPublicKey
     const forged = {
