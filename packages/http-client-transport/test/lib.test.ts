@@ -153,23 +153,41 @@ describe('createTransportStream()', () => {
     await writer.close()
   })
 
-  test('errors the readable stream when POST returns non-ok response', async () => {
+  test('non-ok POST response produces an error payload for that rid only', async () => {
+    let calls = 0
     globalThis.fetch = vi.fn(async () => {
-      return new Response('Server Error', { status: 500, statusText: 'Internal Server Error' })
+      calls++
+      if (calls === 1) {
+        return new Response('Server Error', { status: 500, statusText: 'Internal Server Error' })
+      }
+      return new Response(JSON.stringify({ payload: { typ: 'result', rid: 'r2', val: 'ok' } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
     }) as typeof fetch
 
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
-
     const writer = stream.writable.getWriter()
-    const requestMsg = {
-      payload: { typ: 'request', prc: 'test/request' },
-    } as unknown as ClientMessage
-    await writer.write(requestMsg)
+    await writer.write({
+      payload: { typ: 'request', rid: 'r1', prc: 'test/request' },
+    } as unknown as ClientMessage)
 
     const reader = stream.readable.getReader()
-    await expect(reader.read()).rejects.toThrow(
-      'Transport request failed with status 500 (Internal Server Error)',
-    )
+    const first = await reader.read()
+    expect(first.value?.payload).toMatchObject({
+      typ: 'error',
+      rid: 'r1',
+      code: 'EK_HTTP_REQUEST_FAILED',
+    })
+
+    // The shared readable survives — a subsequent call still works
+    await writer.write({
+      payload: { typ: 'request', rid: 'r2', prc: 'test/request' },
+    } as unknown as ClientMessage)
+    const second = await reader.read()
+    expect(second.value?.payload).toMatchObject({ typ: 'result', rid: 'r2' })
+
+    await writer.close()
   })
 })
 

@@ -106,7 +106,6 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       span.setAttribute(AttributeKeys.HTTP_STATUS_CODE, res.status)
       if (!res.ok) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${res.status}` })
-        controller.error(new ResponseError(res))
       } else {
         span.setStatus({ code: SpanStatusCode.OK })
       }
@@ -230,7 +229,29 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       headers['enkaku-session-id'] = sessionID
     }
     const res = await sendMessage(msg, headers)
-    if (res.ok && res.status !== 204) {
+    if (!res.ok) {
+      // Reject only this call: enqueue a synthetic error reply for its rid.
+      // Session-level failures keep using controller.error elsewhere.
+      const rid = (msg.payload as { rid?: string }).rid
+      if (rid != null) {
+        try {
+          controller.enqueue({
+            payload: {
+              typ: 'error',
+              rid,
+              code: 'EK_HTTP_REQUEST_FAILED',
+              msg: `Transport request failed with status ${res.status} (${res.statusText})`,
+              data: { status: res.status },
+            },
+          } as unknown as AnyServerMessageOf<Protocol>)
+        } catch {
+          // Readable already closed or errored (e.g. a concurrent SSE disconnect) —
+          // there is no longer anywhere to deliver the per-rid error
+        }
+      }
+      return
+    }
+    if (res.status !== 204) {
       res.json().then(
         (msg) => controller.enqueue(msg),
         (cause) => controller.error(new Error('Failed to parse response', { cause })),
