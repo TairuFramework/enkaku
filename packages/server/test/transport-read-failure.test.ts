@@ -19,7 +19,11 @@ describe('Transport read failure', () => {
       dispose: vi.fn(() => Promise.resolve()),
     } as unknown as ServerTransportOf<Protocol>
 
-    const server = new Server<Protocol>({ handlers: { test: vi.fn() }, protocol })
+    const server = new Server<Protocol>({
+      handlers: { test: vi.fn() },
+      protocol,
+      requireAuth: false,
+    })
     const transportError = vi.fn()
     server.events.on('transportError', transportError)
 

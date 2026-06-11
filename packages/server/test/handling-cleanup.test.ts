@@ -20,6 +20,7 @@ describe('handling list cleanup', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers: { test: vi.fn() } as unknown as ProcedureHandlers<Protocol>,
       protocol,
       transport: transports.server,

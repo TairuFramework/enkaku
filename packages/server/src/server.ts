@@ -729,7 +729,7 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
 }
 
 export type ServerAccessOptions =
-  | { identity?: undefined; accessRules?: never }
+  | { identity?: undefined; requireAuth: false; accessRules?: never }
   | { identity: Identity; accessRules?: AccessRules }
 
 export type ServerParams<Protocol extends ProtocolDefinition> = {
@@ -826,6 +826,11 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     if (serverID == null) {
       if (accessRules != null) {
         throw new Error('Invalid server parameters: "accessRules" requires "identity"')
+      }
+      if ((params as { requireAuth?: boolean }).requireAuth !== false) {
+        throw new Error(
+          'Invalid server parameters: a server without "identity" must explicitly pass "requireAuth: false" to disable authentication',
+        )
       }
       this.#accessControl = {
         requireAuth: false,

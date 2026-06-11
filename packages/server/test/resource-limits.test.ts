@@ -33,6 +33,7 @@ describe('Server resource limits', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
       limits: { maxControllers: 2 },
@@ -105,6 +106,7 @@ describe('Server resource limits', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
       limits: { maxConcurrentHandlers: 2, maxControllers: 10 },

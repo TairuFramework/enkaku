@@ -39,6 +39,7 @@ describe('longLivedProcedures resource limits', () => {
     const transports: TestTransports = new DirectTransports()
     const timeoutHandler = vi.fn()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers: createHoldHandlers(holdSignals),
       transport: transports.server,
       limits: { controllerTimeoutMs: 50, longLivedProcedures: ['hold'] },
@@ -69,6 +70,7 @@ describe('longLivedProcedures resource limits', () => {
     const transports: TestTransports = new DirectTransports()
     const errorCodes: Array<string> = []
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers: createHoldHandlers(holdSignals),
       transport: transports.server,
       limits: { maxConcurrentHandlers: 1, longLivedProcedures: ['hold'] },

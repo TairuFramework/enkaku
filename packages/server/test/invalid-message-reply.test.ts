@@ -43,7 +43,12 @@ function setup() {
     AnyServerMessageOf<Protocol>,
     AnyClientMessageOf<Protocol>
   >()
-  const server = serve<Protocol>({ handlers, protocol, transport: transports.server })
+  const server = serve<Protocol>({
+    requireAuth: false,
+    handlers,
+    protocol,
+    transport: transports.server,
+  })
   return { handler, server, transports }
 }
 

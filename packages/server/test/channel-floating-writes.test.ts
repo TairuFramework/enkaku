@@ -46,6 +46,7 @@ describe('channel writer promises are not left floating', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers: { echo: handler } as ProcedureHandlers<Protocol>,
       protocol,
       transport: transports.server,

@@ -16,9 +16,16 @@ type Protocol = typeof protocol
 const handlers = { test: vi.fn() } as unknown as ProcedureHandlers<Protocol>
 
 describe('Server accessRules configuration', () => {
-  test('builds standalone server when no identity and no accessRules', () => {
+  test('throws when neither identity nor requireAuth:false is provided', () => {
     expect(() => {
+      // @ts-expect-error - a server without identity must opt out of auth explicitly
       new Server<Protocol>({ handlers, protocol })
+    }).toThrow('must explicitly pass "requireAuth: false"')
+  })
+
+  test('builds standalone server when requireAuth:false is passed without identity', () => {
+    expect(() => {
+      new Server<Protocol>({ handlers, protocol, requireAuth: false })
     }).not.toThrow()
   })
 
@@ -58,7 +65,7 @@ describe('Server accessRules configuration', () => {
       AnyClientMessageOf<Protocol>
     >()
 
-    const server = new Server<Protocol>({ handlers, protocol })
+    const server = new Server<Protocol>({ handlers, protocol, requireAuth: false })
 
     await expect(
       server.handle(transports.server, {

@@ -23,7 +23,7 @@ export type StandaloneOptions<Protocol extends ProtocolDefinition> = {
 
 export function standalone<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,
-  options: StandaloneOptions<Protocol> = {},
+  options: StandaloneOptions<Protocol> = { requireAuth: false } as StandaloneOptions<Protocol>,
 ): Client<Protocol> {
   const { getRandomID, protocol, signal } = options
   const transports = new DirectTransports<
@@ -43,10 +43,11 @@ export function standalone<Protocol extends ProtocolDefinition>(
   } else {
     serve<Protocol>({
       handlers,
+      requireAuth: false,
       protocol,
       signal,
       transport: transports.server,
-    })
+    } as Parameters<typeof serve<Protocol>>[0])
   }
 
   const serverID = options.identity?.id
