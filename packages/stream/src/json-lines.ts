@@ -2,8 +2,6 @@ import { map, transform } from './transform.js'
 
 const SEPARATOR = '\n'
 
-const decoder = new TextDecoder()
-
 export class JSONLinesError extends Error {}
 
 export type DecodeJSON<T = unknown> = (value: string) => T
@@ -20,6 +18,7 @@ export function fromJSONLines<T = unknown>(
 ): TransformStream<Uint8Array | string, T> {
   const { decode = JSON.parse, maxBufferSize, maxMessageSize, onInvalidJSON } = options
 
+  const decoder = new TextDecoder()
   let input = ''
   let output: Array<string> = []
   let nestingDepth = 0
@@ -73,7 +72,7 @@ export function fromJSONLines<T = unknown>(
   return transform<Uint8Array | string, T>(
     (chunk, controller) => {
       try {
-        input += typeof chunk === 'string' ? chunk : decoder.decode(chunk)
+        input += typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
         if (maxBufferSize != null && input.length > maxBufferSize) {
           throw new JSONLinesError(
             `Buffer size ${input.length} exceeds maximum buffer size of ${maxBufferSize}`,
@@ -107,6 +106,7 @@ export function fromJSONLines<T = unknown>(
       }
     },
     (controller) => {
+      input += decoder.decode()
       for (const char of input) {
         processChar(char)
       }
