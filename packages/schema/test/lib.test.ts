@@ -225,10 +225,13 @@ describe('ValidationError message', () => {
       error = err
     }
     expect(error).toBeInstanceOf(ValidationError)
-    const message = (error as ValidationError).message
+    if (!(error instanceof ValidationError)) throw error
+    const message = error.message
     expect(message).toContain('test-schema')
-    // first issue locator: required-property keyword surfaces in the message
-    expect(message).toMatch(/required/)
+    // root-path normalization: instancePath '' is surfaced as '/' in the message
+    expect(message).toMatch(/\(\/ required\)/)
+    // .issues must be preserved per spec
+    expect(error.issues).toHaveLength(1)
   })
 })
 
