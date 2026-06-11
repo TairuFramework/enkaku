@@ -150,6 +150,37 @@ describe('createTransportStream() error handling', () => {
 
     server.close()
   })
+
+  test('socket error followed by close does not throw an uncaught exception', async () => {
+    const uncaught: Array<unknown> = []
+    const onUncaught = (error: unknown) => {
+      uncaught.push(error)
+    }
+    process.on('uncaughtException', onUncaught)
+    try {
+      const { server, socketPath } = await createTestServer()
+      const connectionPromise = waitForConnection(server)
+
+      const socket = await connectSocket(socketPath)
+      const serverSocket = await connectionPromise
+      const stream = await createTransportStream<unknown, unknown>(socket)
+      const reader = stream.readable.getReader()
+
+      // destroy(error) emits 'error' then 'close' on the socket
+      socket.destroy(new Error('boom'))
+      await expect(reader.read()).rejects.toThrow('boom')
+
+      // Let the trailing 'close' event fire — pre-fix this calls
+      // controller.close() on an errored controller → uncaughtException
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      expect(uncaught, `uncaught exceptions: ${uncaught.map(String).join(', ')}`).toHaveLength(0)
+
+      serverSocket.destroy()
+      server.close()
+    } finally {
+      process.off('uncaughtException', onUncaught)
+    }
+  })
 })
 
 describe('SocketTransport', () => {

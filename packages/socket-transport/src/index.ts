@@ -43,13 +43,42 @@ export async function createTransportStream<R, W>(
 ): Promise<ReadableWritablePair<R, W>> {
   const socket = await Promise.resolve(typeof source === 'function' ? source() : source)
 
-  const readable = new ReadableStream({
+  const readable = new ReadableStream<string>({
     start(controller) {
-      socket.on('data', (buffer) => {
-        controller.enqueue(buffer.toString())
-      })
-      socket.on('close', () => controller.close())
-      socket.on('error', (err) => controller.error(err))
+      let settled = false
+      function onData(buffer: Buffer): void {
+        if (!settled) {
+          controller.enqueue(buffer.toString())
+        }
+      }
+      function onClose(): void {
+        if (settled) {
+          return
+        }
+        settled = true
+        detach()
+        try {
+          controller.close()
+        } catch {
+          // Controller already closed or errored
+        }
+      }
+      function onError(err: Error): void {
+        if (settled) {
+          return
+        }
+        settled = true
+        detach()
+        controller.error(err)
+      }
+      function detach(): void {
+        socket.off('data', onData)
+        socket.off('close', onClose)
+        socket.off('error', onError)
+      }
+      socket.on('data', onData)
+      socket.on('close', onClose)
+      socket.on('error', onError)
     },
   }).pipeThrough(fromJSONLines<R>(options))
 
