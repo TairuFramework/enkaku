@@ -837,6 +837,10 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     }
   }
 
+  get activeTransportsCount(): number {
+    return this.#handling.length
+  }
+
   get events(): ServerEmitter {
     return this.#events
   }
@@ -895,12 +899,17 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       validator: this.#validator,
       ...accessControl,
     })
-    this.#handling.push({ done, transport })
+    const handling: HandlingTransport<Protocol> = { done, transport }
+    this.#handling.push(handling)
 
     const transportID = this.#runtime.getRandomID()
     this.#events.emit('transportAdded', { transportID })
     logger.info('added')
     return done.then(() => {
+      const index = this.#handling.indexOf(handling)
+      if (index !== -1) {
+        this.#handling.splice(index, 1)
+      }
       logger.info('done')
       this.#events.emit('transportRemoved', { transportID })
     })
