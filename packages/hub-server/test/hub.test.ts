@@ -509,6 +509,45 @@ describe('hub/group/join credential validation', () => {
   })
 })
 
+describe('hub/keypackage/fetch limits', () => {
+  test('count is capped at maxCount', async () => {
+    const ctx = createTestHub({ keyPackageFetchLimits: { maxCount: 3 } })
+    const { client, identity } = ctx.connect()
+
+    const keyPackages = Array.from({ length: 10 }, (_, i) => `kp-${i}`)
+    await client.request('hub/keypackage/upload', { param: { keyPackages } })
+
+    const fetched = await client.request('hub/keypackage/fetch', {
+      param: { did: identity.id, count: 10 },
+    })
+    expect(fetched.keyPackages).toHaveLength(3)
+
+    await ctx.dispose()
+  })
+
+  test('fetch requests are rate-limited per requester DID', async () => {
+    const ctx = createTestHub({
+      keyPackageFetchLimits: { maxRequests: 2, windowMs: 60_000 },
+    })
+    const { client, identity } = ctx.connect()
+
+    await client.request('hub/keypackage/fetch', { param: { did: identity.id } })
+    await client.request('hub/keypackage/fetch', { param: { did: identity.id } })
+    await expect(
+      client.request('hub/keypackage/fetch', { param: { did: identity.id } }),
+    ).rejects.toThrow()
+
+    // A different requester is not affected
+    const { client: other } = ctx.connect()
+    const result = await other.request('hub/keypackage/fetch', {
+      param: { did: identity.id },
+    })
+    expect(result.keyPackages).toEqual([])
+
+    await ctx.dispose()
+  })
+})
+
 describe('Hub teardown produces no unhandled rejections', () => {
   const rejections: Array<unknown> = []
   const onRejection = (reason: unknown) => rejections.push(reason)

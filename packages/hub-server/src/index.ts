@@ -1,5 +1,5 @@
-export type { CreateHandlersParams } from './handlers.js'
-export { createHandlers } from './handlers.js'
+export type { CreateHandlersParams, KeyPackageFetchLimits } from './handlers.js'
+export { createHandlers, DEFAULT_KEYPACKAGE_FETCH_LIMITS } from './handlers.js'
 export type { CreateHubParams, HubInstance } from './hub.js'
 export { createHub, DEFAULT_HUB_ACCESS_RULES } from './hub.js'
 export { createMemoryStore } from './memoryStore.js'

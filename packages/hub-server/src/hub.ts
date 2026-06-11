@@ -4,7 +4,7 @@ import type { AccessRules, Server } from '@enkaku/server'
 import { serve } from '@enkaku/server'
 import type { Identity } from '@enkaku/token'
 
-import { createHandlers } from './handlers.js'
+import { createHandlers, type KeyPackageFetchLimits } from './handlers.js'
 import { HubClientRegistry } from './registry.js'
 
 /**
@@ -26,6 +26,8 @@ export type CreateHubParams = {
   identity: Identity
   /** Access rules enforced by the server. Defaults to {@link DEFAULT_HUB_ACCESS_RULES}. */
   accessRules?: AccessRules
+  /** Quotas applied to hub/keypackage/fetch. Merged over {@link DEFAULT_KEYPACKAGE_FETCH_LIMITS}. */
+  keyPackageFetchLimits?: Partial<KeyPackageFetchLimits>
 }
 
 export type HubInstance = {
@@ -35,7 +37,11 @@ export type HubInstance = {
 
 export function createHub(params: CreateHubParams): HubInstance {
   const registry = new HubClientRegistry()
-  const handlers = createHandlers({ registry, store: params.store })
+  const handlers = createHandlers({
+    registry,
+    store: params.store,
+    keyPackageFetchLimits: params.keyPackageFetchLimits,
+  })
   const server = serve<HubProtocol>({
     handlers,
     transport: params.transport,

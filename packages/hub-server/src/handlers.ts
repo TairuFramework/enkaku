@@ -6,9 +6,25 @@ import { normalizeDID } from '@enkaku/token'
 
 import type { HubClientRegistry } from './registry.js'
 
+export type KeyPackageFetchLimits = {
+  /** Maximum number of key packages returned per fetch. Default: 10 */
+  maxCount: number
+  /** Maximum number of fetch requests per requester DID per window. Default: 30 */
+  maxRequests: number
+  /** Rate-limit window duration in milliseconds. Default: 60000 (1 min) */
+  windowMs: number
+}
+
+export const DEFAULT_KEYPACKAGE_FETCH_LIMITS: KeyPackageFetchLimits = {
+  maxCount: 10,
+  maxRequests: 30,
+  windowMs: 60_000,
+}
+
 export type CreateHandlersParams = {
   registry: HubClientRegistry
   store: HubStore
+  keyPackageFetchLimits?: Partial<KeyPackageFetchLimits>
 }
 
 function getClientDID(ctx: { message: { payload: Record<string, unknown> } }): string {
@@ -21,6 +37,33 @@ function getClientDID(ctx: { message: { payload: Record<string, unknown> } }): s
 
 export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<HubProtocol> {
   const { store, registry } = params
+
+  const fetchLimits: KeyPackageFetchLimits = {
+    ...DEFAULT_KEYPACKAGE_FETCH_LIMITS,
+    ...params.keyPackageFetchLimits,
+  }
+  const fetchWindows = new Map<string, { count: number; resetAt: number }>()
+
+  function assertKeyPackageFetchAllowed(requesterDID: string): void {
+    const now = Date.now()
+    // Bound memory: sweep expired windows once the map grows large
+    if (fetchWindows.size > 1024) {
+      for (const [did, window] of fetchWindows) {
+        if (window.resetAt <= now) {
+          fetchWindows.delete(did)
+        }
+      }
+    }
+    const window = fetchWindows.get(requesterDID)
+    if (window == null || window.resetAt <= now) {
+      fetchWindows.set(requesterDID, { count: 1, resetAt: now + fetchLimits.windowMs })
+      return
+    }
+    if (window.count >= fetchLimits.maxRequests) {
+      throw new Error('Key package fetch rate limit exceeded')
+    }
+    window.count++
+  }
 
   return {
     'hub/send': (async (ctx) => {
@@ -168,11 +211,11 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
     }) as RequestHandler<HubProtocol, 'hub/keypackage/upload'>,
 
     'hub/keypackage/fetch': (async (ctx) => {
-      if (store == null) {
-        return { keyPackages: [] }
-      }
+      const requesterDID = getClientDID(ctx)
+      assertKeyPackageFetchAllowed(requesterDID)
       const { did, count } = ctx.param
-      const keyPackages = await store.fetchKeyPackages(did, count)
+      const cappedCount = Math.min(Math.max(count ?? 1, 1), fetchLimits.maxCount)
+      const keyPackages = await store.fetchKeyPackages(did, cappedCount)
       return { keyPackages }
     }) as RequestHandler<HubProtocol, 'hub/keypackage/fetch'>,
 
