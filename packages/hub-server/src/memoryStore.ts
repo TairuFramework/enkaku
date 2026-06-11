@@ -31,7 +31,7 @@ export function createMemoryStore(): HubStore {
   const messages = new Map<string, MessageRecord>()
   const deliveries = new Map<string, Array<string>>()
   const keyPackages = new Map<string, Array<string>>()
-  const groupMembers = new Map<string, Array<string>>()
+  const groupMembers = new Map<string, Set<string>>()
   const events = new EventEmitter<HubStoreEvents>()
 
   function removeDelivery(recipientDID: string, sequenceID: string): void {
@@ -188,12 +188,27 @@ export function createMemoryStore(): HubStore {
       return packages.splice(0, n)
     },
 
-    async setGroupMembers(groupID: string, members: Array<string>): Promise<void> {
-      groupMembers.set(groupID, [...members])
+    async addGroupMember(groupID: string, did: string): Promise<void> {
+      let members = groupMembers.get(groupID)
+      if (members == null) {
+        members = new Set()
+        groupMembers.set(groupID, members)
+      }
+      members.add(did)
+    },
+
+    async removeGroupMember(groupID: string, did: string): Promise<void> {
+      const members = groupMembers.get(groupID)
+      if (members == null) return
+      members.delete(did)
+      if (members.size === 0) {
+        groupMembers.delete(groupID)
+      }
     },
 
     async getGroupMembers(groupID: string): Promise<Array<string>> {
-      return groupMembers.get(groupID) ?? []
+      const members = groupMembers.get(groupID)
+      return members == null ? [] : [...members]
     },
   }
 }

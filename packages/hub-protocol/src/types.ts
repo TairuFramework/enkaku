@@ -49,6 +49,7 @@ export type HubStore = {
   purge(params: PurgeParams): Promise<Array<string>>
   storeKeyPackage(ownerDID: string, keyPackage: string): Promise<void>
   fetchKeyPackages(ownerDID: string, count?: number): Promise<Array<string>>
-  setGroupMembers(groupID: string, members: Array<string>): Promise<void>
+  addGroupMember(groupID: string, did: string): Promise<void>
+  removeGroupMember(groupID: string, did: string): Promise<void>
   getGroupMembers(groupID: string): Promise<Array<string>>
 }

@@ -244,8 +244,7 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
       registry.register(clientDID)
       registry.joinGroup(clientDID, groupID)
       if (store != null) {
-        const members = registry.getGroupMembers(groupID)
-        await store.setGroupMembers(groupID, members)
+        await store.addGroupMember(groupID, clientDID)
       }
       return { joined: true }
     }) as RequestHandler<HubProtocol, 'hub/group/join'>,
@@ -255,8 +254,7 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
       const clientDID = getClientDID(ctx)
       registry.leaveGroup(clientDID, groupID)
       if (store != null) {
-        const members = registry.getGroupMembers(groupID)
-        await store.setGroupMembers(groupID, members)
+        await store.removeGroupMember(groupID, clientDID)
       }
       registry.unregisterIfIdle(clientDID)
       return { left: true }
