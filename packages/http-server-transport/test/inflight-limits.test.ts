@@ -88,3 +88,60 @@ describe('inflight request limits (C-09)', () => {
     expect(raceResult).toBe('pending')
   })
 })
+
+describe('inflight stream entries are released', () => {
+  test('stream rid is released when its result is written', async () => {
+    const bridge = createServerBridge({ maxInflightRequests: 1 })
+    const writer = bridge.stream.writable.getWriter()
+
+    // Stream message creates an SSE session and occupies the only inflight slot
+    const sseResponse = await bridge.handleRequest(
+      createPostRequest({ payload: { typ: 'stream', rid: 's1', prc: 'test' } }),
+    )
+    expect(sseResponse.status).toBe(200)
+
+    // Terminal result for s1 must release the inflight slot
+    await writer.write({ payload: { typ: 'result', rid: 's1', val: 'done' } } as never)
+
+    // A new request must NOT hit the inflight limit (pre-fix: immediate 503)
+    const requestPromise = bridge.handleRequest(
+      createPostRequest({ payload: { typ: 'request', rid: 'r1', prc: 'test' } }),
+    )
+    const raceResult = await Promise.race([
+      requestPromise.then((r) => r.status),
+      new Promise<string>((resolve) => setTimeout(() => resolve('pending'), 50)),
+    ])
+    expect(raceResult).toBe('pending')
+
+    // Settle the pending request cleanly
+    await writer.write({ payload: { typ: 'result', rid: 'r1', val: 'ok' } } as never)
+    const res = await requestPromise
+    expect(res.status).toBe(200)
+  })
+
+  test('session teardown sweeps its inflight stream entries', async () => {
+    const bridge = createServerBridge({ maxInflightRequests: 1 })
+    const abortController = new AbortController()
+    const request = new Request('http://localhost/', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ payload: { typ: 'stream', rid: 's1', prc: 'test' } }),
+      signal: abortController.signal,
+    })
+    const sseResponse = await bridge.handleRequest(request)
+    expect(sseResponse.status).toBe(200)
+
+    // Client disconnects the SSE request — the session and its rids must be swept
+    abortController.abort()
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    const requestPromise = bridge.handleRequest(
+      createPostRequest({ payload: { typ: 'request', rid: 'r1', prc: 'test' } }),
+    )
+    const raceResult = await Promise.race([
+      requestPromise.then((r) => r.status),
+      new Promise<string>((resolve) => setTimeout(() => resolve('pending'), 50)),
+    ])
+    expect(raceResult).toBe('pending')
+  })
+})

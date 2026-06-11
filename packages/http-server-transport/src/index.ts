@@ -87,6 +87,14 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const inflight: Map<string, InflightRequest> = new Map()
   const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
 
+  function clearSessionInflight(sessionID: string): void {
+    for (const [rid, entry] of inflight) {
+      if (entry.type === 'stream' && entry.sessionID === sessionID) {
+        inflight.delete(rid)
+      }
+    }
+  }
+
   // Periodic cleanup of expired sessions
   const cleanupInterval = setInterval(
     () => {
@@ -99,6 +107,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             } catch {}
           }
           sessions.delete(id)
+          clearSessionInflight(id)
         }
       }
     },
@@ -125,8 +134,13 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       request.resolve(Response.json(msg, { headers: request.headers }))
       inflight.delete(msg.payload.rid)
     } else {
+      // Terminal payloads end the stream/channel call — release the inflight slot
+      if (msg.payload.typ === 'result' || msg.payload.typ === 'error') {
+        inflight.delete(rid)
+      }
       const session = sessions.get(request.sessionID)
       if (session == null) {
+        inflight.delete(rid)
         options.onWriteError?.({
           error: new Error(`Session not found: ${request.sessionID}`),
           rid,
@@ -150,6 +164,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           rid,
         })
         sessions.delete(request.sessionID)
+        clearSessionInflight(request.sessionID)
       }
     }
   })
@@ -284,6 +299,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
               sseController.close()
             } catch {}
             sessions.delete(sessionID)
+            clearSessionInflight(sessionID)
           })
 
           inflight.set(message.payload.rid, { type: 'stream', sessionID })
