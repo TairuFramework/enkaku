@@ -572,6 +572,107 @@ describe('hub/keypackage/fetch limits', () => {
   })
 })
 
+describe('hub lifecycle', () => {
+  test('receive drain failure releases the writer binding (lockout recovery)', async () => {
+    const baseStore = createMemoryStore()
+    let failNextFetch = true
+    const store: HubStore = {
+      ...baseStore,
+      fetch: async (params) => {
+        if (failNextFetch) {
+          failNextFetch = false
+          throw new Error('store offline')
+        }
+        return await baseStore.fetch(params)
+      },
+    }
+    const ctx = createTestHub({ store })
+    const { client: alice } = ctx.connect()
+    const { client: bob, identity: bobIdentity } = ctx.connect()
+
+    // First open fails during drain (store.fetch throws)
+    const channel1 = bob.createChannel('hub/receive', { param: {} })
+    await expect(channel1).rejects.toThrow()
+    await delay(50)
+
+    // Without cleanup the writer stays bound forever and every reopen fails.
+    const channel2 = bob.createChannel('hub/receive', { param: {} })
+    const reader2 = channel2.readable.getReader()
+    await delay(50)
+
+    const payload = encodePayload('recovered')
+    await alice.request('hub/send', {
+      param: { recipients: [bobIdentity.id], payload },
+    })
+    const msg = await reader2.read()
+    expect(msg.done).toBe(false)
+    expect(msg.value?.payload).toBe(payload)
+
+    channel2.close()
+    await expect(channel2).rejects.toEqual('Close')
+    await delay(50)
+    await ctx.dispose()
+  })
+
+  test('closing a receive channel unregisters clients with no group memberships', async () => {
+    const ctx = createTestHub()
+    const { client: bob, identity: bobIdentity } = ctx.connect()
+
+    const channel = bob.createChannel('hub/receive', { param: {} })
+    await delay(50)
+    expect(ctx.hub.registry.getClient(bobIdentity.id)).toBeDefined()
+
+    channel.close()
+    await expect(channel).rejects.toEqual('Close')
+    await delay(50)
+    expect(ctx.hub.registry.getClient(bobIdentity.id)).toBeUndefined()
+
+    await ctx.dispose()
+  })
+
+  test('group members stay registered after their receive channel closes', async () => {
+    const ctx = createTestHub()
+    const { client: bob, identity: bobIdentity } = ctx.connect()
+
+    const credential = await membershipCredential(bobIdentity, bobIdentity.id, 'sticky')
+    await bob.request('hub/group/join', {
+      param: { groupID: 'sticky', credential },
+    })
+    const channel = bob.createChannel('hub/receive', { param: {} })
+    await delay(50)
+    channel.close()
+    await expect(channel).rejects.toEqual('Close')
+    await delay(50)
+
+    // Offline group members must keep receiving group fan-out via the store
+    expect(ctx.hub.registry.getGroupMembers('sticky')).toContain(bobIdentity.id)
+
+    await ctx.dispose()
+  })
+
+  test('scheduled purge evicts expired stored messages', async () => {
+    const store = createMemoryStore()
+    const ctx = createTestHub({ store, purge: { interval: 50, olderThan: 0 } })
+    const { client: alice } = ctx.connect()
+    const bobIdentity = randomIdentity()
+
+    const purged = new Promise<Array<string>>((resolve) => {
+      store.events.on('purge', (event) => resolve(event.sequenceIDs))
+    })
+
+    await alice.request('hub/send', {
+      param: { recipients: [bobIdentity.id], payload: encodePayload('expiring') },
+    })
+
+    const sequenceIDs = await purged
+    expect(sequenceIDs).toHaveLength(1)
+    const result = await store.fetch({ recipientDID: bobIdentity.id })
+    expect(result.messages).toHaveLength(0)
+
+    await ctx.dispose()
+  })
+})
+
 describe('Hub teardown produces no unhandled rejections', () => {
   const rejections: Array<unknown> = []
   const onRejection = (reason: unknown) => rejections.push(reason)

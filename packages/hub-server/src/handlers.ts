@@ -127,50 +127,60 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
       const writer = ctx.writable.getWriter()
       const reader = ctx.readable.getReader()
 
-      // Set up message delivery callback with optional group filter
-      registry.setReceiveWriter(clientDID, (message: StoredMessage) => {
-        // Apply group filter: direct messages always pass, group messages only if in filter
-        if (groupIDs != null && groupIDs.length > 0) {
-          if (message.groupID != null && !groupIDs.includes(message.groupID)) {
-            return
-          }
-        }
-        writer
-          .write({
-            sequenceID: message.sequenceID,
-            senderDID: message.senderDID,
-            groupID: message.groupID,
-            payload: toB64(message.payload),
-          })
-          .catch(() => {})
-      })
-
-      // Drain queued messages from store
-      if (store != null) {
-        let cursor: string | null | undefined = after
-        while (true) {
-          const result = await store.fetch({
-            recipientDID: clientDID,
-            after: cursor ?? undefined,
-            limit: 50,
-          })
-          for (const msg of result.messages) {
-            // Apply group filter
-            if (groupIDs != null && groupIDs.length > 0) {
-              if (msg.groupID != null && !groupIDs.includes(msg.groupID)) {
-                continue
-              }
+      try {
+        // Set up message delivery callback with optional group filter
+        registry.setReceiveWriter(clientDID, (message: StoredMessage) => {
+          // Apply group filter: direct messages always pass, group messages only if in filter
+          if (groupIDs != null && groupIDs.length > 0) {
+            if (message.groupID != null && !groupIDs.includes(message.groupID)) {
+              return
             }
-            await writer.write({
-              sequenceID: msg.sequenceID,
-              senderDID: msg.senderDID,
-              groupID: msg.groupID,
-              payload: toB64(msg.payload),
-            })
           }
-          cursor = result.cursor
-          if (!result.hasMore) break
+          writer
+            .write({
+              sequenceID: message.sequenceID,
+              senderDID: message.senderDID,
+              groupID: message.groupID,
+              payload: toB64(message.payload),
+            })
+            .catch(() => {})
+        })
+
+        // Drain queued messages from store
+        if (store != null) {
+          let cursor: string | null | undefined = after
+          while (true) {
+            const result = await store.fetch({
+              recipientDID: clientDID,
+              after: cursor ?? undefined,
+              limit: 50,
+            })
+            for (const msg of result.messages) {
+              // Apply group filter
+              if (groupIDs != null && groupIDs.length > 0) {
+                if (msg.groupID != null && !groupIDs.includes(msg.groupID)) {
+                  continue
+                }
+              }
+              await writer.write({
+                sequenceID: msg.sequenceID,
+                senderDID: msg.senderDID,
+                groupID: msg.groupID,
+                payload: toB64(msg.payload),
+              })
+            }
+            cursor = result.cursor
+            if (!result.hasMore) break
+          }
         }
+      } catch (error) {
+        // Bind/drain failure: release the writer binding so the client can
+        // reconnect instead of being locked out permanently.
+        registry.clearReceiveWriter(clientDID)
+        registry.unregisterIfIdle(clientDID)
+        reader.cancel().catch(() => {})
+        writer.abort(error).catch(() => {})
+        throw error
       }
 
       // Read acks from device
@@ -194,6 +204,7 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
           'abort',
           () => {
             registry.clearReceiveWriter(clientDID)
+            registry.unregisterIfIdle(clientDID)
             reader.cancel().catch(() => {})
             writer.close().catch(() => {})
             resolve(undefined as never)
@@ -247,6 +258,7 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
         const members = registry.getGroupMembers(groupID)
         await store.setGroupMembers(groupID, members)
       }
+      registry.unregisterIfIdle(clientDID)
       return { left: true }
     }) as RequestHandler<HubProtocol, 'hub/group/leave'>,
   }
