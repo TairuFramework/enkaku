@@ -183,9 +183,17 @@ function createRequest<Result>({
   ...call
 }: CreateRequestParams<Result>): RequestCall<Result> {
   const abort = (reason?: string) => {
-    void sent.then(() => {
-      controller.abort(reason)
-    })
+    void sent.then(
+      () => {
+        controller.abort(reason)
+      },
+      () => {
+        // The send already failed, so there is no in-flight request to notify,
+        // but the local controller is still aborted to clear any pending state
+        // without surfacing an unhandled rejection.
+        controller.abort(reason)
+      },
+    )
   }
   return Object.assign(
     sent.then(() => controller.result),
