@@ -18,6 +18,11 @@ import { getVerifier, type Verifiers } from './verifier.js'
 
 const tokenTracer = createTracer('token')
 
+// Tokens whose signature was verified in this process. Deserialized JSON can carry a
+// `verifiedPublicKey` property but can never be a member of this set, so verification
+// is only ever skipped for objects produced by `verifyToken` itself.
+const verifiedTokens = new WeakSet<object>()
+
 export type VerifyTokenOptions = TimeValidationOptions & {
   verifiers?: Verifiers
   resolver?: DIDResolver
@@ -93,12 +98,17 @@ export function isUnsignedToken<Payload extends Record<string, unknown>>(
 }
 
 /**
- * Check if a token is verified.
+ * Check if a token was verified by `verifyToken` in this process.
+ * A `verifiedPublicKey` property on a deserialized token is never trusted.
  */
 export function isVerifiedToken<Payload extends SignedPayload>(
   token: unknown,
 ): token is VerifiedToken<Payload> {
-  return isSignedToken(token) && (token as VerifiedToken<Payload>).verifiedPublicKey != null
+  return (
+    isSignedToken(token) &&
+    (token as VerifiedToken<Payload>).verifiedPublicKey != null &&
+    verifiedTokens.has(token as object)
+  )
 }
 
 /**
@@ -176,7 +186,9 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
         cache,
       })
       assertTimeClaimsValid(token.payload as Record<string, unknown>, timeOptions)
-      return { ...token, data, verifiedPublicKey } as Token<Payload>
+      const result = { ...token, data, verifiedPublicKey } as Token<Payload>
+      verifiedTokens.add(result)
+      return result
     }
     throw new Error('Unsupported token')
   }
@@ -212,13 +224,15 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
       cache,
     })
     assertTimeClaimsValid(payload as Record<string, unknown>, timeOptions)
-    return {
+    const result = {
       data,
       header,
       payload,
       signature,
       verifiedPublicKey,
     } as Token<Payload>
+    verifiedTokens.add(result)
+    return result
   }
 
   throw new Error('Unsupported signature algorithm')

@@ -185,6 +185,41 @@ describe('object token signature/payload binding', () => {
   })
 })
 
+describe('verified token branding', () => {
+  test('isVerifiedToken rejects deserialized tokens carrying verifiedPublicKey', async () => {
+    const identity = randomIdentity()
+    const signed = await identity.signToken({ test: true })
+    const verified = await verifyToken(signed)
+    expect(isVerifiedToken(verified)).toBe(true)
+    // round-trip through JSON, as a wire message would arrive
+    const wire = JSON.parse(JSON.stringify(verified))
+    expect(isVerifiedToken(wire)).toBe(false)
+  })
+
+  test('verifyToken re-verifies tokens carrying an inbound verifiedPublicKey', async () => {
+    const victim = randomIdentity()
+    const attacker = randomIdentity()
+    const signed = await victim.signToken({ test: true })
+    // forged payload, victim signature, attacker-injected verifiedPublicKey
+    const forged = {
+      header: signed.header,
+      payload: { ...signed.payload, admin: true },
+      signature: signed.signature,
+      data: signed.data,
+      verifiedPublicKey: new Uint8Array(32),
+    }
+    await expect(verifyToken(forged)).rejects.toThrow()
+  })
+
+  test('deserialized token with verifiedPublicKey still verifies when genuine', async () => {
+    const identity = randomIdentity()
+    const verified = await verifyToken(await identity.signToken({ test: true }))
+    const wire = JSON.parse(JSON.stringify(verified))
+    const reverified = await verifyToken(wire)
+    expect(isVerifiedToken(reverified)).toBe(true)
+  })
+})
+
 describe('verifyToken with cache', () => {
   it('populates cache when iss is peer4 long form and signature is valid', async () => {
     const identity = await createIdentity({
