@@ -18,6 +18,7 @@ export type {
   EncryptionPolicy,
 } from './access-control.js'
 export { resolveEncryptionPolicy } from './access-control.js'
+export { type ErrorCode, ErrorCodes } from './error.js'
 export {
   createResourceLimiter,
   DEFAULT_RESOURCE_LIMITS,

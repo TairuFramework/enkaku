@@ -18,6 +18,7 @@ import {
   type AnyClientMessageOf,
   type AnyServerPayloadOf,
   createClientMessageSchema,
+  ErrorCodes,
   type ProtocolDefinition,
   type ServerTransportOf,
 } from '@enkaku/protocol'
@@ -119,7 +120,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           controller.abort('Timeout')
           events.emit('handlerAbort', { rid, reason: 'Timeout' })
           const error = new HandlerError({
-            code: 'EK05',
+            code: ErrorCodes.TIMEOUT,
             message: 'Request timeout',
           })
           context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
@@ -185,7 +186,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               (typ === 'request' || typ === 'stream' || typ === 'channel')
             ) {
               const error = new HandlerError({
-                code: 'EK08',
+                code: ErrorCodes.INVALID_MESSAGE,
                 message: 'Invalid protocol message',
               })
               context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
@@ -210,7 +211,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     // Check controller limit
     if (!limiter.canAddController()) {
       const error = new HandlerError({
-        code: 'EK03',
+        code: ErrorCodes.CONTROLLER_LIMIT,
         message: 'Server controller limit reached',
       })
       if (message.payload.typ !== 'event') {
@@ -223,7 +224,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     // Check handler concurrency (synchronous fast path)
     if (!longLived && limiter.activeHandlers >= limiter.limits.maxConcurrentHandlers) {
       const error = new HandlerError({
-        code: 'EK04',
+        code: ErrorCodes.HANDLER_LIMIT,
         message: 'Server handler limit reached',
       })
       if (message.payload.typ !== 'event') {
@@ -249,7 +250,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       emitHandlerError(
         events,
         'handler',
-        HandlerError.from(returned, { code: 'EK01' }),
+        HandlerError.from(returned, { code: ErrorCodes.HANDLER_ERROR }),
         message.payload,
       )
     } else {
@@ -280,7 +281,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           emitHandlerError(
             events,
             'handler',
-            HandlerError.from(err, { code: 'EK01' }),
+            HandlerError.from(err, { code: ErrorCodes.HANDLER_ERROR }),
             message.payload,
           )
         })
@@ -310,7 +311,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
   function handleEncryptionViolation(message: ProcessMessageOf<Protocol>): void {
     const error = new HandlerError({
-      code: 'EK07',
+      code: ErrorCodes.ENCRYPTION_REQUIRED,
       message: 'Encryption required but message is not encrypted',
     })
     if (message.payload.typ !== 'event') {
@@ -511,7 +512,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
           const error = new HandlerError({
             cause,
-            code: 'EK02',
+            code: ErrorCodes.ACCESS_DENIED,
             message: (cause as Error).message ?? 'Access denied',
           })
           span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
@@ -563,7 +564,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       const msgSize = encoder.encode(JSON.stringify(msg.payload)).byteLength
       if (msgSize > limiter.limits.maxMessageSize) {
         const error = new HandlerError({
-          code: 'EK06',
+          code: ErrorCodes.MESSAGE_TOO_LARGE,
           message: 'Message exceeds maximum size',
         })
         if ('rid' in msg.payload && msg.payload.rid != null) {
@@ -583,7 +584,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           if (params.requireAuth) {
             if (!isSignedToken(msg as Token)) {
               const error = new HandlerError({
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: 'Abort message must be signed',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -600,7 +601,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             } catch (cause) {
               const error = new HandlerError({
                 cause,
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: (cause as Error).message ?? 'Access denied',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -615,7 +616,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               normalizeDID(abortIssuer) !== normalizeDID(controller.issuer)
             ) {
               const error = new HandlerError({
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: 'Abort issuer does not match owner',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -657,7 +658,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           if (params.requireAuth) {
             if (!isSignedToken(msg as Token)) {
               const error = new HandlerError({
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: 'Channel send message must be signed',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -674,7 +675,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             } catch (cause) {
               const error = new HandlerError({
                 cause,
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: (cause as Error).message ?? 'Access denied',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -689,7 +690,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               normalizeDID(sendIssuer) !== normalizeDID(controller.issuer)
             ) {
               const error = new HandlerError({
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: 'Send issuer does not match channel owner',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {

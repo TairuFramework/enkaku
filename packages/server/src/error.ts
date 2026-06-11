@@ -1,16 +1,6 @@
 import type { ErrorReplyPayload } from '@enkaku/protocol'
 
-/**
- * Error codes:
- * - EK01: Handler execution failed
- * - EK02: Access denied (authorization failure)
- * - EK03: Server controller limit reached
- * - EK04: Server handler concurrency limit reached
- * - EK05: Request timeout (controller expired)
- * - EK06: Message exceeds maximum size
- * - EK07: Encryption required but message is not encrypted
- * - EK08: Invalid protocol message (schema validation failed)
- */
+export { type ErrorCode, ErrorCodes } from '@enkaku/protocol'
 
 export type HandlerErrorParams<
   Code extends string = string,

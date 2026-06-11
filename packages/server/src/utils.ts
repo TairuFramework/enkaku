@@ -1,5 +1,5 @@
 import { toPromise } from '@enkaku/async'
-import type { AnyServerPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
+import { type AnyServerPayloadOf, ErrorCodes, type ProtocolDefinition } from '@enkaku/protocol'
 
 import { HandlerError } from './error.js'
 import type {
@@ -65,7 +65,7 @@ export async function executeHandler<Protocol extends ProtocolDefinition>(
       await beforeEnd()
     }
     const error = HandlerError.from(cause, {
-      code: 'EK01',
+      code: ErrorCodes.HANDLER_ERROR,
       message: 'Handler execution failed',
     })
     context.logger.warn('handler {procedure} (rid={rid}) threw: {message}', {
