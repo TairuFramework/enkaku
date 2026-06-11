@@ -84,7 +84,7 @@ describe('outer-message signature verification', () => {
     await transports.dispose()
   })
 
-  test('message without data field is rejected with EK02', async () => {
+  test('message without data field recomputes data and verifies successfully', async () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
 
@@ -104,8 +104,9 @@ describe('outer-message signature verification', () => {
       transport: transports.server,
     })
 
-    // Get a real signed token, then strip the data field so signature verification fails.
-    // verifyToken requires token.data (the JWS signing input) to verify the outer signature.
+    // Get a real signed token, then strip the data field.
+    // verifyToken now recomputes data from canonical-JSON header+payload when data is absent,
+    // so the signature still verifies and the handler runs successfully.
     const realToken = await clientSigner.signToken({
       iss: clientSigner.id,
       aud: serverSigner.id,
@@ -119,19 +120,13 @@ describe('outer-message signature verification', () => {
       header: realToken.header,
       payload: realToken.payload,
       signature: realToken.signature,
-      // data intentionally omitted
+      // data intentionally omitted — verifyToken recomputes it from header+payload
     }
 
-    const handlerErrorEvent = server.events.once('handlerError')
     await transports.client.write(messageWithoutData as unknown as AnyClientMessageOf<Protocol>)
 
-    const emitted = await handlerErrorEvent
-    expect(emitted).toEqual(
-      expect.objectContaining({
-        error: expect.objectContaining({ code: 'EK02' }),
-        category: 'auth',
-      }),
-    )
+    const response = await transports.client.read()
+    expect(response.value?.payload.typ).toBe('result')
 
     await server.dispose()
     await transports.dispose()
