@@ -1,5 +1,5 @@
 import { MessageChannel } from 'node:worker_threads'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { createTransportStream, MessageTransport, type PortSource } from '../src/index.js'
 
@@ -154,6 +154,26 @@ describe('MessageTransport', () => {
 
     await transport.dispose()
     port1.close()
+    port2.close()
+  })
+})
+
+describe('MessageTransport disposal', () => {
+  test('dispose closes the port and settles pending reads', async () => {
+    const { port1, port2 } = new MessageChannel()
+    const transport = new MessageTransport<unknown, unknown>({
+      port: port1 as unknown as PortSource,
+    })
+    const closeSpy = vi.spyOn(port1, 'close')
+
+    // Materialize the stream and start a read that has nothing to consume
+    const pendingRead = transport.read()
+
+    await transport.dispose()
+
+    await expect(pendingRead).resolves.toEqual({ done: true, value: undefined })
+    expect(closeSpy).toHaveBeenCalled()
+
     port2.close()
   })
 })
