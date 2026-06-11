@@ -62,4 +62,41 @@ describe('Disposer', () => {
     await expect(disposer.disposed).resolves.toBeUndefined()
     expect(disposeFn).toHaveBeenCalledWith('external reason')
   })
+
+  test('disposed settles even if the dispose callback rejects', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const disposer = new Disposer({
+        dispose: () => Promise.reject(new Error('cleanup failed')),
+      })
+      // Pre-fix these promises never settle (test times out)
+      await expect(disposer.dispose()).resolves.toBeUndefined()
+      await expect(disposer.disposed).resolves.toBeUndefined()
+      expect(warnSpy).toHaveBeenCalled()
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  test('disposed settles even if onDisposeError throws', async () => {
+    const disposer = new Disposer({
+      dispose: () => Promise.reject(new Error('cleanup failed')),
+      onDisposeError: () => {
+        throw new Error('handler boom')
+      },
+    })
+    await expect(disposer.dispose()).resolves.toBeUndefined()
+    await expect(disposer.disposed).resolves.toBeUndefined()
+  })
+
+  test('surfaces dispose callback rejection via onDisposeError', async () => {
+    const onDisposeError = vi.fn()
+    const error = new Error('cleanup failed')
+    const disposer = new Disposer({
+      dispose: () => Promise.reject(error),
+      onDisposeError,
+    })
+    await disposer.dispose()
+    expect(onDisposeError).toHaveBeenCalledWith(error)
+  })
 })

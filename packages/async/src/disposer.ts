@@ -3,6 +3,7 @@ import { DisposeInterruption } from './interruptions.js'
 
 export type DisposerParams = {
   dispose?: (reason?: unknown) => Promise<void>
+  onDisposeError?: (error: unknown) => void
   signal?: AbortSignal
 }
 
@@ -24,7 +25,24 @@ export class Disposer extends AbortController implements AsyncDisposable {
           if (params.dispose == null) {
             this.#deferred.resolve()
           } else {
-            params.dispose(this.signal.reason).then(() => this.#deferred.resolve())
+            params.dispose(this.signal.reason).then(
+              () => this.#deferred.resolve(),
+              (error) => {
+                try {
+                  if (params.onDisposeError != null) {
+                    params.onDisposeError(error)
+                  } else {
+                    console.warn('Disposer dispose callback rejected', error)
+                  }
+                } catch (handlerError) {
+                  // A throwing onDisposeError must never escape as an unhandled rejection
+                  console.warn('Disposer onDisposeError handler threw', handlerError)
+                } finally {
+                  // `disposed` must settle even if onDisposeError itself throws
+                  this.#deferred.resolve()
+                }
+              },
+            )
           }
         }
       },
