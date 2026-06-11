@@ -253,8 +253,20 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     }
     if (res.status !== 204) {
       res.json().then(
-        (msg) => controller.enqueue(msg),
-        (cause) => controller.error(new Error('Failed to parse response', { cause })),
+        (msg) => {
+          try {
+            controller.enqueue(msg)
+          } catch {
+            // Readable already closed or errored (e.g. a concurrent SSE disconnect)
+          }
+        },
+        (cause) => {
+          try {
+            controller.error(new Error('Failed to parse response', { cause }))
+          } catch {
+            // Readable already closed or errored
+          }
+        },
       )
     }
   }
