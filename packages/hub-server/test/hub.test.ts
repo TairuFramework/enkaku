@@ -233,6 +233,8 @@ describe('hub handlers', () => {
     )
 
     // Tear down the first hub (simulates hub restart)
+    await alice1.dispose()
+    await bob1.dispose()
     await hub1.dispose()
 
     // --- restart: fresh registry via a new hub, SAME store; bob stays offline ---
@@ -255,6 +257,7 @@ describe('hub handlers', () => {
     const queued = await store.fetch({ recipientDID: bobIdentity.id })
     expect(queued.messages.length).toBeGreaterThan(0)
 
+    await alice2.dispose()
     await hub2.dispose()
   })
 
