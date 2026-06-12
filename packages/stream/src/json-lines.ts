@@ -82,20 +82,25 @@ export function fromJSONLines<T = unknown>(
     }
   }
 
+  function checkBufferSize(): void {
+    if (maxBufferSize != null && input.length + output.length > maxBufferSize) {
+      throw new JSONLinesError(
+        `Buffer size ${input.length + output.length} exceeds maximum buffer size of ${maxBufferSize}`,
+      )
+    }
+  }
+
   return transform<Uint8Array | string, T>(
     (chunk, controller) => {
       try {
         input += typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
-        if (maxBufferSize != null && input.length > maxBufferSize) {
-          throw new JSONLinesError(
-            `Buffer size ${input.length} exceeds maximum buffer size of ${maxBufferSize}`,
-          )
-        }
+        checkBufferSize()
         let newLineIndex = input.indexOf(SEPARATOR)
         while (newLineIndex !== -1) {
           for (const char of input.slice(0, newLineIndex)) {
             processChar(char)
           }
+          checkBufferSize()
           if (nestingDepth === 0 && !isInString && output.length > 0) {
             checkOutputSize()
             try {

@@ -196,6 +196,26 @@ describe('fromJSONLines()', () => {
     }
   })
 
+  test('bounds multi-line accumulation under maxBufferSize alone', async () => {
+    const [source, controller] = createReadable()
+    const [sink, result] = createArraySink()
+    const pipe = source
+      .pipeThrough(fromJSONLines({ maxBufferSize: 50 }))
+      .pipeTo(sink)
+      .catch(() => {})
+
+    // Each chunk is a single '[' on its own line: input stays tiny (trimmed at the
+    // newline) but `output` accumulates an ever-deeper, never-closing structure.
+    // maxMessageSize is intentionally unset — maxBufferSize alone must catch this.
+    for (let i = 0; i < 60; i++) {
+      controller.enqueue('[\n')
+    }
+    controller.close()
+
+    await expect(result).rejects.toThrow('exceeds maximum buffer size')
+    await pipe
+  })
+
   test('keeps decoder state isolated between concurrent streams', async () => {
     const [sourceA, controllerA] = createReadable()
     const [sourceB, controllerB] = createReadable()
