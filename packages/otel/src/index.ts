@@ -10,6 +10,7 @@ export {
 export {
   type BaggageEntry,
   type BaggageProperty,
+  baggageToEntries,
   formatBaggage,
   parseBaggage,
 } from './baggage.js'

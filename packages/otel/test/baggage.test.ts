@@ -1,6 +1,7 @@
+import { baggageEntryMetadataFromString, propagation } from '@opentelemetry/api'
 import { describe, expect, test } from 'vitest'
 
-import { formatBaggage, parseBaggage } from '../src/baggage.js'
+import { baggageToEntries, formatBaggage, parseBaggage } from '../src/baggage.js'
 
 describe('formatBaggage', () => {
   test('formats a single member', () => {
@@ -105,5 +106,45 @@ describe('baggage round-trip', () => {
       { key: 'k', value: 'v', properties: [{ key: 'secure' }, { key: 'ttl', value: '30' }] },
     ]
     expect(parseBaggage(formatBaggage(entries))).toEqual(entries)
+  })
+})
+
+describe('baggageToEntries', () => {
+  test('maps plain key/value entries', () => {
+    const bag = propagation.createBaggage({
+      userId: { value: 'alice' },
+      region: { value: 'eu' },
+    })
+    const entries = baggageToEntries(bag)
+    expect(entries).toContainEqual({ key: 'userId', value: 'alice' })
+    expect(entries).toContainEqual({ key: 'region', value: 'eu' })
+    expect(entries).toHaveLength(2)
+  })
+
+  test('parses W3C metadata into structured properties (lossless)', () => {
+    const bag = propagation.createBaggage({
+      userId: { value: 'alice', metadata: baggageEntryMetadataFromString('ttl=30;internal') },
+    })
+    const entries = baggageToEntries(bag)
+    expect(entries).toEqual([
+      {
+        key: 'userId',
+        value: 'alice',
+        properties: [{ key: 'ttl', value: '30' }, { key: 'internal' }],
+      },
+    ])
+  })
+
+  test('round-trips through formatBaggage -> parseBaggage', () => {
+    const bag = propagation.createBaggage({
+      userId: { value: 'alice', metadata: baggageEntryMetadataFromString('ttl=30;internal') },
+    })
+    const entries = baggageToEntries(bag)
+    expect(parseBaggage(formatBaggage(entries))).toEqual(entries)
+  })
+
+  test('omits properties when metadata is empty', () => {
+    const bag = propagation.createBaggage({ userId: { value: 'alice' } })
+    expect(baggageToEntries(bag)).toEqual([{ key: 'userId', value: 'alice' }])
   })
 })
