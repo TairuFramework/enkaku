@@ -26,6 +26,7 @@ export { AttributeKeys, SpanNames, ZERO_TRACE_ID } from './semantic.js'
 export { formatTraceparent, parseTraceparent, type TraceparentData } from './traceparent.js'
 export {
   createTracer,
+  getActiveBaggage,
   getActiveSpan,
   getActiveTraceContext,
   type TraceContext,

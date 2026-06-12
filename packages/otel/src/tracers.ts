@@ -1,6 +1,7 @@
 import type { Context, SpanOptions, Tracer } from '@opentelemetry/api'
-import { context, type Span, SpanStatusCode, trace } from '@opentelemetry/api'
+import { context, propagation, type Span, SpanStatusCode, trace } from '@opentelemetry/api'
 
+import { type BaggageEntry, baggageToEntries } from './baggage.js'
 import { ZERO_TRACE_ID } from './semantic.js'
 
 const ENKAKU_VERSION = '0.1.0'
@@ -34,6 +35,15 @@ export function getActiveTraceContext(): TraceContext | undefined {
     spanID: ctx.spanId,
     traceFlags: ctx.traceFlags,
   }
+}
+
+export function getActiveBaggage(): Array<BaggageEntry> | undefined {
+  const baggage = propagation.getActiveBaggage()
+  if (baggage == null) {
+    return undefined
+  }
+  const entries = baggageToEntries(baggage)
+  return entries.length === 0 ? undefined : entries
 }
 
 export function withSyncSpan<T>(
