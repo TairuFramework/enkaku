@@ -6,6 +6,15 @@ export class JSONLinesError extends Error {}
 
 export type DecodeJSON<T = unknown> = (value: string) => T
 
+/**
+ * Size limits for the JSON-lines framer, measured in characters (UTF-16 code
+ * units), not bytes.
+ *
+ * - `maxBufferSize` bounds total live framer memory (the un-terminated input
+ *   buffer plus the partially-accumulated message). A stream that exceeds it
+ *   errors, preventing unbounded growth from malformed or malicious input.
+ * - `maxMessageSize` is an optional tighter cap on a single decoded message.
+ */
 export type FramingLimits = {
   maxBufferSize?: number
   maxMessageSize?: number
@@ -124,6 +133,9 @@ export function fromJSONLines<T = unknown>(
       }
     },
     (controller) => {
+      // No checkBufferSize() here: every chunk already passed the cap in the
+      // transform callback, and flush only appends the decoder's pending
+      // multibyte remainder (bounded) before emitting the final buffered value.
       input += decoder.decode()
       for (const char of input) {
         processChar(char)

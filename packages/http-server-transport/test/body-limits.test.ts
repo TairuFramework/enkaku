@@ -41,6 +41,18 @@ describe('request body size limits', () => {
     expect(res.status).toBe(413)
   })
 
+  test('returns 400 for a malformed JSON body within the size cap', async () => {
+    const bridge = createServerBridge({ maxRequestBodySize: 10_000 })
+    const res = await bridge.handleRequest(
+      new Request('http://localhost/', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{ not valid json',
+      }),
+    )
+    expect(res.status).toBe(400)
+  })
+
   test('accepts a body under the cap', async () => {
     const bridge = createServerBridge({ maxRequestBodySize: 10_000 })
     const res = await bridge.handleRequest(
