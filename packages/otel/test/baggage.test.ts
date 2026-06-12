@@ -147,4 +147,33 @@ describe('baggageToEntries', () => {
     const bag = propagation.createBaggage({ userId: { value: 'alice' } })
     expect(baggageToEntries(bag)).toEqual([{ key: 'userId', value: 'alice' }])
   })
+
+  test('round-trips a property value containing special characters', () => {
+    // OTel stores metadata raw (percent-encoded); parseProperties must decode it,
+    // and formatBaggage must re-encode on the way back out.
+    const bag = propagation.createBaggage({
+      userId: { value: 'alice', metadata: baggageEntryMetadataFromString('note=hello%20world') },
+    })
+    const entries = baggageToEntries(bag)
+    expect(entries).toEqual([
+      { key: 'userId', value: 'alice', properties: [{ key: 'note', value: 'hello world' }] },
+    ])
+    expect(parseBaggage(formatBaggage(entries))).toEqual(entries)
+  })
+
+  test('drops malformed metadata segments', () => {
+    const bag = propagation.createBaggage({
+      userId: {
+        value: 'alice',
+        metadata: baggageEntryMetadataFromString('ttl=30;bad key!;internal'),
+      },
+    })
+    expect(baggageToEntries(bag)).toEqual([
+      {
+        key: 'userId',
+        value: 'alice',
+        properties: [{ key: 'ttl', value: '30' }, { key: 'internal' }],
+      },
+    ])
+  })
 })
