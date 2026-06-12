@@ -148,6 +148,8 @@ describe('ValidatorOptions.strict', () => {
     return warnings
   }
 
+  // AJV's 2020-12 dialect defaults to strictTuples:'log', which logs a warning
+  // for prefixItems tuples that lack minItems/maxItems (regression guard).
   test('emits a strict-mode warning by default', () => {
     const warnings = captureWarnings(() => {
       createValidator(tupleSchema, { draft: '2020-12' })
@@ -162,11 +164,20 @@ describe('ValidatorOptions.strict', () => {
     expect(warnings.some((w) => w.toLowerCase().includes('strict'))).toBe(false)
   })
 
+  test("strict: 'log' still emits the strict-mode warning", () => {
+    const warnings = captureWarnings(() => {
+      createValidator(tupleSchema, { draft: '2020-12', strict: 'log' })
+    })
+    expect(warnings.some((w) => w.toLowerCase().includes('strict'))).toBe(true)
+  })
+
   test('caches distinct AJV instances per strict value (no first-call-wins)', () => {
     // Default (strict) first, then strict:false for the same draft. If the cache
     // were keyed by draft only, the second call would reuse the strict instance
     // and still warn.
-    createValidator(tupleSchema, { draft: '2020-12' })
+    captureWarnings(() => {
+      createValidator(tupleSchema, { draft: '2020-12' })
+    })
     const warnings = captureWarnings(() => {
       createValidator(tupleSchema, { draft: '2020-12', strict: false })
     })
