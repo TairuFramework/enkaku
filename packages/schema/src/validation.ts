@@ -10,20 +10,25 @@ import type { Schema } from './types.js'
 /**
  * Options for creating a validator.
  */
-export type ValidatorOptions = { draft?: '07' | '2020-12' }
+export type ValidatorOptions = { draft?: '07' | '2020-12'; strict?: boolean | 'log' }
 
-// AJV instances are locked to a single dialect, so we cache one instance per
-// draft and construct them lazily.
-const instances = new Map<'07' | '2020-12', Ajv | Ajv2020>()
+// AJV instances are locked to a single dialect AND a single strict setting, so
+// we cache one instance per (draft, strict) pair and construct them lazily.
+const instances = new Map<string, Ajv | Ajv2020>()
 
-function getAjv(draft: '07' | '2020-12'): Ajv | Ajv2020 {
-  let instance = instances.get(draft)
+function getAjv(draft: '07' | '2020-12', strict?: boolean | 'log'): Ajv | Ajv2020 {
+  const key = `${draft}:${strict ?? 'default'}`
+  let instance = instances.get(key)
   if (instance == null) {
-    const options = { allErrors: true, useDefaults: false }
+    const options = {
+      allErrors: true,
+      useDefaults: false,
+      ...(strict !== undefined && { strict }),
+    }
     instance = draft === '2020-12' ? new Ajv2020(options) : new Ajv(options)
     // @ts-expect-error missing type definition
     addFormats(instance)
-    instances.set(draft, instance)
+    instances.set(key, instance)
   }
   return instance
 }
@@ -40,7 +45,7 @@ export function createValidator<S extends Schema, T = FromSchema<S>>(
   schema: S,
   options?: ValidatorOptions,
 ): Validator<T> {
-  const ajv = getAjv(options?.draft ?? '07')
+  const ajv = getAjv(options?.draft ?? '07', options?.strict)
   const check = ajv.compile(schema)
   // Remove from AJV's internal cache
   ajv.removeSchema(schema.$id)
