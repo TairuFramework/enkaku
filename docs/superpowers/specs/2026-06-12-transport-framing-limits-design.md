@@ -49,13 +49,57 @@ export type FramingLimits = {
 }
 
 export type FromJSONLinesOptions<T = unknown> = FramingLimits & {
+  decode?: DecodeJSON<unknown>
   onInvalidJSON?: (value: string, controller: TransformStreamDefaultController<T>) => void
 }
 ```
 
 `FromJSONLinesOptions` keeps its current shape (additive split — `maxBufferSize` and
-`maxMessageSize` simply move into `FramingLimits`), so existing consumers are
-unaffected. `FramingLimits` is re-exported from the package index.
+`maxMessageSize` simply move into `FramingLimits`; `decode` stays put), so existing
+consumers are unaffected. `FramingLimits` is re-exported from the package index.
+
+### 0.5. Fix `fromJSONLines` `maxBufferSize` to bound total framer memory
+
+**Latent gap (closes here).** Today `maxBufferSize` bounds only `input` — the raw
+bytes since the last `\n` — which is trimmed at every newline (json-lines.ts:108).
+The accumulated *logical* message lives in `output`, which only flushes when
+`nestingDepth === 0` (line 96) and is bounded **only** by `maxMessageSize`.
+
+Consequence: a caller who sets `maxBufferSize` **alone** is not protected against a
+huge / deeply-nested JSON value streamed across many short newline-terminated lines —
+each line keeps `input` small, but `output` grows unbounded. This is the hang/crash
+memory class the audit targets, and `socket-transport` ships it today.
+
+**Fix.** `maxBufferSize` bounds total live framing memory — `input.length +
+output.length` — matching `eventsource-parser`, whose single `maxBufferSize` already
+covers both the partial-line and the multi-line-accumulation surfaces.
+
+```ts
+function checkBufferSize(): void {
+  if (maxBufferSize != null && input.length + output.length > maxBufferSize) {
+    throw new JSONLinesError(
+      `Buffer size ${input.length + output.length} exceeds maximum buffer size of ${maxBufferSize}`,
+    )
+  }
+}
+```
+
+Called both on chunk entry (replacing the current `input`-only check at line 86) and
+after each line is accumulated inside the newline loop, so a single chunk packing many
+short lines into one never-closing structure is caught within that chunk, not one
+chunk late.
+
+After this fix the knobs have clean, consistent meanings everywhere:
+
+- **`maxBufferSize`** — complete memory-DoS defense on its own. Set it and the framer
+  can never hold more than that many chars, regardless of line structure or nesting.
+- **`maxMessageSize`** — optional, *tighter* per-message semantic cap (reject a single
+  decoded message over X even when the buffer would allow more). No longer the sole
+  defense against a memory attack.
+
+**Behavior change:** a multi-line stream that previously passed under an `input`-only
+cap may now error. This is hardening and affects `socket-transport` as well as the new
+`node-streams-transport` wiring; called out in the changeset.
 
 ### 1. `node-streams-transport` — flat-spread `FromJSONLinesOptions<R>`
 
@@ -137,8 +181,13 @@ const parser = createParser({
 })
 ```
 
-- **Only `maxBufferSize`** is exposed. A completed event's `data` is already bounded
-  by the buffer, so a separate per-event `maxMessageSize` would be redundant.
+- **Only `maxBufferSize`** is exposed. `eventsource-parser`'s `maxBufferSize` already
+  bounds *both* its unbounded surfaces — the partial un-terminated line **and** the
+  multi-line event accumulating across `data:` fields. That second surface is the SSE
+  analog of json-lines' `output` — i.e. exactly what `maxMessageSize` guards in
+  json-lines (§0.5). Since the parser folds both into one cap, a separate SSE
+  `maxMessageSize` (checked at `onEvent`, after the buffer already enforced the bound)
+  would add **no defense**.
 - **Non-breaking:** `maxBufferSize` undefined → parser unbounded as today.
 
 ### 3. `http-server-transport` — request body size cap
@@ -178,13 +227,20 @@ A small helper `readBodyWithLimit(request, maxBytes): Promise<string | null>`
 ## Out of scope
 
 - `message-transport` — no byte stream, nothing to bound.
-- SSE-client `maxMessageSize` — subsumed by `maxBufferSize` (see §2).
+- SSE-client `maxMessageSize` — subsumed by `eventsource-parser`'s `maxBufferSize`
+  (see §2).
 - Replacing `eventsource-parser` — its native `maxBufferSize` is sufficient.
 
 ## Testing
 
 Per transport, three cases:
 
+0. **json-lines `maxBufferSize` regression (§0.5)** — in `@enkaku/stream`:
+   - `maxBufferSize` set, `maxMessageSize` **unset**: a deeply-nested / huge value
+     streamed across many short newline-terminated lines → errors (the gap this
+     closes; would hang/grow unbounded before the fix).
+   - single oversized un-terminated line still errors (existing behavior preserved).
+   - valid multi-line message under the cap still decodes.
 1. **Oversized input** → bounded error / `413`, not OOM or hang.
    - node-streams: oversized line / oversized framing buffer → stream errors
      (mirror socket-transport's existing framing tests).
@@ -205,6 +261,13 @@ stream surfaces an error and reaps the context instead of hanging.
 ## Rollout
 
 Single coordinated changeset across `@enkaku/stream`, `@enkaku/node-streams-transport`,
-`@enkaku/http-client-transport`, `@enkaku/http-server-transport`. The
-`http-server-transport` default cap is the only behavioral change for existing users;
-everything else is additive.
+`@enkaku/http-client-transport`, `@enkaku/http-server-transport`. Two behavioral
+changes for existing users, both hardening, both called out in the changeset:
+
+- `@enkaku/stream` — `maxBufferSize` now bounds total framer memory (§0.5), so a
+  multi-line stream that passed under the old `input`-only cap may now error. Affects
+  any `maxBufferSize` caller, including `socket-transport`.
+- `@enkaku/http-server-transport` — new `maxRequestBodySize` defaults to 1 MiB, so
+  bodies over 1 MiB get `413` unless the cap is raised.
+
+Everything else is additive.
