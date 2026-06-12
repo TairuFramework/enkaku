@@ -2,8 +2,6 @@ import { map, transform } from './transform.js'
 
 const SEPARATOR = '\n'
 
-const decoder = new TextDecoder()
-
 export class JSONLinesError extends Error {}
 
 export type DecodeJSON<T = unknown> = (value: string) => T
@@ -15,11 +13,22 @@ export type FromJSONLinesOptions<T = unknown> = {
   onInvalidJSON?: (value: string, controller: TransformStreamDefaultController<T>) => void
 }
 
+function defaultOnInvalidJSON(value: string): void {
+  const preview = value.length > 200 ? `${value.slice(0, 200)}…` : value
+  console.warn(`Invalid JSON line dropped: ${preview}`)
+}
+
 export function fromJSONLines<T = unknown>(
   options: FromJSONLinesOptions<T> = {},
 ): TransformStream<Uint8Array | string, T> {
-  const { decode = JSON.parse, maxBufferSize, maxMessageSize, onInvalidJSON } = options
+  const {
+    decode = JSON.parse,
+    maxBufferSize,
+    maxMessageSize,
+    onInvalidJSON = defaultOnInvalidJSON,
+  } = options
 
+  const decoder = new TextDecoder()
   let input = ''
   let output: Array<string> = []
   let nestingDepth = 0
@@ -73,7 +82,7 @@ export function fromJSONLines<T = unknown>(
   return transform<Uint8Array | string, T>(
     (chunk, controller) => {
       try {
-        input += typeof chunk === 'string' ? chunk : decoder.decode(chunk)
+        input += typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
         if (maxBufferSize != null && input.length > maxBufferSize) {
           throw new JSONLinesError(
             `Buffer size ${input.length} exceeds maximum buffer size of ${maxBufferSize}`,
@@ -89,7 +98,7 @@ export function fromJSONLines<T = unknown>(
             try {
               controller.enqueue(decode(output.join('')))
             } catch {
-              onInvalidJSON?.(output.join(''), controller)
+              onInvalidJSON(output.join(''), controller)
             }
             output = []
           } else if (isInString) {
@@ -107,6 +116,7 @@ export function fromJSONLines<T = unknown>(
       }
     },
     (controller) => {
+      input += decoder.decode()
       for (const char of input) {
         processChar(char)
       }
@@ -115,7 +125,7 @@ export function fromJSONLines<T = unknown>(
         try {
           controller.enqueue(decode(output.join('')))
         } catch {
-          onInvalidJSON?.(output.join(''), controller)
+          onInvalidJSON(output.join(''), controller)
         }
       }
     },

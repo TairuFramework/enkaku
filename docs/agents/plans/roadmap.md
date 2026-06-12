@@ -1,6 +1,8 @@
 # Enkaku Roadmap
 
-## Completed Goals (Jan-May 2026)
+## Completed Goals (Jan-Jun 2026)
+
+- **Audit remediation (June 2026)** — Full-repo audit closed in four sequential plans: token-verification hardening (signature/payload binding, `verifiedPublicKey` bypass, ES256 lowS), transport stability (16 fail-closed edge fixes), hub hardening (mandatory identity, group authz, lifecycle leaks, long-lived limits), platform fixes (ChaCha AEAD dispatch, EK08 invalid-message reply, typed error-code registry, electron-rpc sender allowlist). See `completed/2026-06-10-audit-remediation.complete.md`
 
 - **Security hardening** — Comprehensive audit (47 findings), 6 implementation waves, all critical/high items resolved
 - **Message-level encryption** — JWE with ECDH-ES + A256GCM, identity type hierarchy, 4 envelope modes
@@ -41,3 +43,6 @@
 - **Post-quantum algorithms** — `paulmillr/noble-post-quantum` integration phased: (1) ML-DSA verifier-only, (2) Node + Electron signing, (3) JWE hybrid KEM (X25519+ML-KEM-768), (4) browser + Expo keystore refactor for large keys. Each phase its own design+plan.
 - **JWE multi-recipient** — `ECDH-ES+A256KW` + JSON Serialization. Useful when GroupArchiver / multi-root archival needs land.
 - **Remaining discovery skills** — `/enkaku:utilities` and `/enkaku:platform`. Nice-to-have.
+- **Replay protection** — jti dedup / nonce design for authenticated messages (`backlog/replay-protection.md`).
+- **MLS permission enforcement** — enforce admin/member/read on commits, sender- and receiver-side (`backlog/mls-permission-enforcement.md`); design with capability revocation.
+- **Docs & release gaps** — stale website docs, README stubs, typedoc coverage, changesets (`backlog/docs-release-gaps.md`). Tracking only while consumers are stack-internal.

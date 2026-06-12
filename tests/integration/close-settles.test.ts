@@ -30,6 +30,7 @@ describe("channel.close() settles the call promise with 'Close'", () => {
     const server = serve<Protocol>({
       handlers: { echo: handler } as ProcedureHandlers<Protocol>,
       protocol,
+      requireAuth: false,
       transport: transports.server,
     })
     const client = new Client<Protocol>({ transport: transports.client })

@@ -194,10 +194,25 @@ describe('createMemoryStore', () => {
     expect(remaining).toEqual(['kp-2'])
   })
 
-  test('group members management', async () => {
+  test('addGroupMember adds members idempotently', async () => {
     const store = createMemoryStore()
-    await store.setGroupMembers('group-1', ['did:key:alice', 'did:key:bob'])
-    const members = await store.getGroupMembers('group-1')
-    expect(members).toEqual(['did:key:alice', 'did:key:bob'])
+    await store.addGroupMember('g1', 'did:key:alice')
+    await store.addGroupMember('g1', 'did:key:bob')
+    await store.addGroupMember('g1', 'did:key:alice') // duplicate
+    const members = await store.getGroupMembers('g1')
+    expect([...members].sort()).toEqual(['did:key:alice', 'did:key:bob'])
+  })
+
+  test('removeGroupMember removes a single member without touching others', async () => {
+    const store = createMemoryStore()
+    await store.addGroupMember('g1', 'did:key:alice')
+    await store.addGroupMember('g1', 'did:key:bob')
+    await store.removeGroupMember('g1', 'did:key:alice')
+    expect(await store.getGroupMembers('g1')).toEqual(['did:key:bob'])
+  })
+
+  test('getGroupMembers returns empty array for unknown group', async () => {
+    const store = createMemoryStore()
+    expect(await store.getGroupMembers('nope')).toEqual([])
   })
 })

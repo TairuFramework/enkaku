@@ -20,18 +20,41 @@ export async function createTransportStream<R, W>(
 ): Promise<ReadableWritablePair<R, W>> {
   const port = await Promise.resolve(typeof source === 'function' ? source() : source)
 
-  const readable = new ReadableStream({
+  let readableController: ReadableStreamDefaultController<R> | undefined
+  function shutdown(): void {
+    // Detach the message handler first so no enqueue races a closed controller
+    port.onmessage = null
+    try {
+      readableController?.close()
+    } catch {
+      // Readable already closed or errored
+    }
+    port.close()
+  }
+
+  const readable = new ReadableStream<R>({
     start(controller) {
+      readableController = controller
       port.onmessage = (msg) => {
         controller.enqueue(msg.data)
       }
       port.start()
     },
+    cancel() {
+      port.onmessage = null
+      port.close()
+    },
   })
 
-  const writable = new WritableStream({
+  const writable = new WritableStream<W>({
     write(msg) {
       port.postMessage(msg)
+    },
+    close() {
+      shutdown()
+    },
+    abort() {
+      shutdown()
     },
   })
 

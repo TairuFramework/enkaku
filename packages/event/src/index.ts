@@ -97,6 +97,14 @@ export class EventEmitter<Events extends Record<string, unknown>> {
     })
   }
 
+  /**
+   * Emits an event to all listeners.
+   *
+   * Listeners are awaited and their failures are rethrown (a single error as-is,
+   * multiple as an `AggregateError`). A fire-and-forget call — `void emit(...)`
+   * — therefore turns a listener failure into an unhandled promise rejection.
+   * For fire-and-forget emits, attach a handler: `emit(...).catch(...)`.
+   */
   emit<Name extends DatalessEventNames<Events>>(name: Name): Promise<void>
   emit<Name extends keyof Events>(name: Name, data: Events[Name]): Promise<void>
   async emit<Name extends keyof Events>(name: Name, data?: Events[Name]): Promise<void> {

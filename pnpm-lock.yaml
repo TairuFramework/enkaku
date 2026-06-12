@@ -363,6 +363,9 @@ importers:
       electron:
         specifier: 'catalog:'
         version: 42.3.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.8(@opentelemetry/api@1.9.1)(@types/node@25.9.2)(@vitest/ui@4.1.8)(happy-dom@20.10.2)(jsdom@27.4.0(@noble/hashes@2.2.0))(vite@8.0.16(@types/node@25.9.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
 
   packages/event:
     devDependencies:
@@ -552,6 +555,9 @@ importers:
       '@enkaku/codec':
         specifier: workspace:^
         version: link:../codec
+      '@enkaku/group':
+        specifier: workspace:^
+        version: link:../group
       '@enkaku/hub-server':
         specifier: workspace:^
         version: link:../hub-server
@@ -582,6 +588,9 @@ importers:
       '@enkaku/event':
         specifier: workspace:^
         version: link:../event
+      '@enkaku/group':
+        specifier: workspace:^
+        version: link:../group
       '@enkaku/hub-protocol':
         specifier: workspace:^
         version: link:../hub-protocol
@@ -1092,6 +1101,9 @@ importers:
       '@enkaku/server':
         specifier: workspace:^
         version: link:../../packages/server
+      '@enkaku/socket-transport':
+        specifier: workspace:^
+        version: link:../../packages/socket-transport
       '@enkaku/token':
         specifier: workspace:^
         version: link:../../packages/token
@@ -1110,6 +1122,10 @@ importers:
       get-port:
         specifier: 'catalog:'
         version: 7.2.0
+    devDependencies:
+      '@enkaku/group':
+        specifier: workspace:^
+        version: link:../../packages/group
 
   tests/ledger:
     devDependencies:
@@ -16327,7 +16343,7 @@ snapshots:
       hermes-parser: 0.33.3
       invariant: 2.2.4
       nullthrows: 1.1.1
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
       yargs: 17.7.2
 
   '@react-native/community-cli-plugin@0.85.3':
@@ -20181,7 +20197,7 @@ snapshots:
 
   history@4.10.1:
     dependencies:
-      '@babel/runtime': 7.29.2
+      '@babel/runtime': 7.29.7
       loose-envify: 1.4.0
       resolve-pathname: 3.0.0
       tiny-invariant: 1.3.3

@@ -10,6 +10,7 @@
  * @module protocol
  */
 
+export * from './error-codes.js'
 export * from './schemas/client.js'
 export * from './schemas/error.js'
 export * from './schemas/message.js'

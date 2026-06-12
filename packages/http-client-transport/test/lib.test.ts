@@ -21,6 +21,7 @@ type ClientMessage = AnyClientMessageOf<Protocol>
 function createSSEResponse(
   sessionID: string,
   events: Array<Record<string, unknown>> = [],
+  options: { close?: boolean } = {},
 ): Response {
   const chunks = [':\n\n']
   for (const event of events) {
@@ -32,7 +33,7 @@ function createSSEResponse(
       for (const chunk of chunks) {
         controller.enqueue(encoder.encode(chunk))
       }
-      if (events.length > 0) {
+      if (options.close === true) {
         controller.close()
       }
     },
@@ -152,23 +153,41 @@ describe('createTransportStream()', () => {
     await writer.close()
   })
 
-  test('errors the readable stream when POST returns non-ok response', async () => {
+  test('non-ok POST response produces an error payload for that rid only', async () => {
+    let calls = 0
     globalThis.fetch = vi.fn(async () => {
-      return new Response('Server Error', { status: 500, statusText: 'Internal Server Error' })
+      calls++
+      if (calls === 1) {
+        return new Response('Server Error', { status: 500, statusText: 'Internal Server Error' })
+      }
+      return new Response(JSON.stringify({ payload: { typ: 'result', rid: 'r2', val: 'ok' } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
     }) as typeof fetch
 
     const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
-
     const writer = stream.writable.getWriter()
-    const requestMsg = {
-      payload: { typ: 'request', prc: 'test/request' },
-    } as unknown as ClientMessage
-    await writer.write(requestMsg)
+    await writer.write({
+      payload: { typ: 'request', rid: 'r1', prc: 'test/request' },
+    } as unknown as ClientMessage)
 
     const reader = stream.readable.getReader()
-    await expect(reader.read()).rejects.toThrow(
-      'Transport request failed with status 500 (Internal Server Error)',
-    )
+    const first = await reader.read()
+    expect(first.value?.payload).toMatchObject({
+      typ: 'error',
+      rid: 'r1',
+      code: 'EK_HTTP_REQUEST_FAILED',
+    })
+
+    // The shared readable survives — a subsequent call still works
+    await writer.write({
+      payload: { typ: 'request', rid: 'r2', prc: 'test/request' },
+    } as unknown as ClientMessage)
+    const second = await reader.read()
+    expect(second.value?.payload).toMatchObject({ typ: 'result', rid: 'r2' })
+
+    await writer.close()
   })
 })
 
@@ -421,6 +440,58 @@ describe('createTransportStream() null response body', () => {
     )
 
     await writer.close()
+  })
+})
+
+describe('createTransportStream() SSE disconnect handling', () => {
+  let originalFetch: typeof globalThis.fetch
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  test('SSE stream ending errors the readable so in-flight calls do not hang', async () => {
+    globalThis.fetch = vi.fn(async () => {
+      return createSSEResponse('drop-test', [], { close: true })
+    }) as typeof fetch
+
+    const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
+    const writer = stream.writable.getWriter()
+    const streamMsg = {
+      payload: { typ: 'stream', prc: 'test/stream' },
+    } as unknown as ClientMessage
+    await writer.write(streamMsg)
+
+    const reader = stream.readable.getReader()
+    await expect(reader.read()).rejects.toThrow('SSE session ended by server')
+  })
+
+  test('session resets to idle after disconnect so the next message reconnects', async () => {
+    const acceptHeaders: Array<string | null> = []
+    globalThis.fetch = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const req = input instanceof Request ? input : new Request(input, init)
+      acceptHeaders.push(req.headers.get('accept'))
+      // Every SSE connect immediately ends, simulating a flapping server
+      return createSSEResponse(`session-${acceptHeaders.length}`, [], { close: true })
+    }) as typeof fetch
+
+    const stream = createTransportStream<Protocol>({ url: 'http://localhost/rpc' })
+    const writer = stream.writable.getWriter()
+    const streamMsg = {
+      payload: { typ: 'stream', prc: 'test/stream' },
+    } as unknown as ClientMessage
+    await writer.write(streamMsg)
+
+    // Let the first session drop be processed
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    // Next stream message must open a fresh SSE session (accept: text/event-stream)
+    await writer.write(streamMsg)
+    expect(acceptHeaders).toEqual(['text/event-stream', 'text/event-stream'])
   })
 })
 

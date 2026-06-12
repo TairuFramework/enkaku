@@ -38,6 +38,7 @@
   "dependencies": {
     "@enkaku/codec": "workspace:^",
     "@enkaku/event": "workspace:^",
+    "@enkaku/group": "workspace:^",
     "@enkaku/hub-protocol": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",

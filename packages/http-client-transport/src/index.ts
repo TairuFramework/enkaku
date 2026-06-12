@@ -106,7 +106,6 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       span.setAttribute(AttributeKeys.HTTP_STATUS_CODE, res.status)
       if (!res.ok) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${res.status}` })
-        controller.error(new ResponseError(res))
       } else {
         span.setStatus({ code: SpanStatusCode.OK })
       }
@@ -120,6 +119,24 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       throw error
     } finally {
       span.end()
+    }
+  }
+
+  function handleSSEDisconnect(error: Error): void {
+    sessionState = { status: 'idle' }
+    if (abortController.signal.aborted) {
+      // Intentional transport disposal — close the readable so pending reads settle
+      try {
+        controller.close()
+      } catch {
+        // Already closed or errored
+      }
+      return
+    }
+    try {
+      controller.error(error)
+    } catch {
+      // Already closed or errored
     }
   }
 
@@ -149,11 +166,14 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       try {
         while (true) {
           const { done, value } = await reader.read()
-          if (done) break
+          if (done) {
+            handleSSEDisconnect(new Error('SSE session ended by server'))
+            return
+          }
           parser.feed(decoder.decode(value, { stream: true }))
         }
-      } catch {
-        // Stream ended (e.g. aborted) — nothing to do
+      } catch (cause) {
+        handleSSEDisconnect(new Error('SSE session disconnected', { cause }))
       }
     }
 
@@ -209,10 +229,44 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       headers['enkaku-session-id'] = sessionID
     }
     const res = await sendMessage(msg, headers)
-    if (res.ok && res.status !== 204) {
+    if (!res.ok) {
+      // Reject only this call: enqueue a synthetic error reply for its rid.
+      // Session-level failures keep using controller.error elsewhere.
+      const rid = (msg.payload as { rid?: string }).rid
+      if (rid != null) {
+        try {
+          controller.enqueue({
+            payload: {
+              typ: 'error',
+              rid,
+              code: 'EK_HTTP_REQUEST_FAILED',
+              msg: `Transport request failed with status ${res.status} (${res.statusText})`,
+              data: { status: res.status },
+            },
+          } as unknown as AnyServerMessageOf<Protocol>)
+        } catch {
+          // Readable already closed or errored (e.g. a concurrent SSE disconnect) —
+          // there is no longer anywhere to deliver the per-rid error
+        }
+      }
+      return
+    }
+    if (res.status !== 204) {
       res.json().then(
-        (msg) => controller.enqueue(msg),
-        (cause) => controller.error(new Error('Failed to parse response', { cause })),
+        (msg) => {
+          try {
+            controller.enqueue(msg)
+          } catch {
+            // Readable already closed or errored (e.g. a concurrent SSE disconnect)
+          }
+        },
+        (cause) => {
+          try {
+            controller.error(new Error('Failed to parse response', { cause }))
+          } catch {
+            // Readable already closed or errored
+          }
+        },
       )
     }
   }
@@ -227,7 +281,9 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
             sessionState = { status: 'connecting', promise }
             promise
               .then((sessionID) => {
-                sessionState = { status: 'connected', sessionID }
+                if (sessionState.status === 'connecting') {
+                  sessionState = { status: 'connected', sessionID }
+                }
               })
               .catch((cause) => {
                 const error = new Error('Failed to connect SSE session', { cause })

@@ -31,6 +31,7 @@ describe('Channel send authorization', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
     })
@@ -266,6 +267,7 @@ describe('Channel send authorization', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
     })

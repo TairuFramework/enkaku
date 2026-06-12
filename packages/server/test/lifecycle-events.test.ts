@@ -23,6 +23,7 @@ describe('Server lifecycle events', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       protocol,
       transport: transports.server,
@@ -60,6 +61,7 @@ describe('Server lifecycle events', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers: {
         ping: (async () => ({ ok: true })) as RequestHandler<Protocol, 'ping'>,
       } as ProcedureHandlers<Protocol>,
@@ -90,6 +92,7 @@ describe('Server lifecycle events', () => {
         }),
     )
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers: { ping: handler } as unknown as ProcedureHandlers<Protocol>,
       protocol,
       transport: transports.server,

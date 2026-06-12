@@ -1,4 +1,4 @@
-import { b64uFromJSON } from '@enkaku/codec'
+import { b64uFromJSON, fromUTF, toB64U } from '@enkaku/codec'
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { equals } from 'uint8arrays'
 import { describe, expect, it, test } from 'vitest'
@@ -138,6 +138,94 @@ test('verifyToken uses generic error for unsupported algorithm', async () => {
   await expect(verifyToken(`${badHeader}.${payload}.${sig}`)).rejects.toThrow(
     'Unsupported signature algorithm',
   )
+})
+
+describe('object token signature/payload binding', () => {
+  test('rejects object tokens whose data does not match the payload', async () => {
+    const victim = randomIdentity()
+    const attacker = randomIdentity()
+    // any token signed by the victim, e.g. a capability delegated to the attacker
+    const original = await victim.signToken({ aud: attacker.id, cap: 'kv/read' })
+    // attacker reuses the victim's signature with an arbitrary payload
+    const forged = {
+      header: original.header,
+      payload: { iss: victim.id, aud: attacker.id, cap: 'kv/admin' },
+      signature: original.signature,
+      data: original.data,
+    }
+    await expect(verifyToken(forged)).rejects.toThrow('data does not match')
+  })
+
+  test('verifies object tokens after JSON round-trip', async () => {
+    const identity = randomIdentity()
+    const signed = await identity.signToken({ test: 1, nested: { b: 2, a: 1 } })
+    const wire = JSON.parse(JSON.stringify(signed))
+    const verified = await verifyToken(wire)
+    expect(isVerifiedToken(verified)).toBe(true)
+  })
+
+  test('verifies object tokens without a data field', async () => {
+    const identity = randomIdentity()
+    const signed = await identity.signToken({ test: true })
+    const { data: _data, ...withoutData } = signed
+    const verified = await verifyToken(withoutData as typeof signed)
+    expect(isVerifiedToken(verified)).toBe(true)
+  })
+
+  test('accepts data using a different serialization of the same payload', async () => {
+    const identity = randomIdentity()
+    const header = { typ: 'JWT', alg: 'EdDSA' }
+    // non-canonical key order: JSON.stringify preserves insertion order (iss, b, a)
+    const payload = { iss: identity.id, b: 2, a: 1 }
+    const data = `${b64uFromJSON(header, false)}.${b64uFromJSON(payload, false)}`
+    const signature = toB64U(ed25519.sign(fromUTF(data), identity.privateKey))
+    const token = { header, payload, signature, data }
+    const verified = await verifyToken(token as Parameters<typeof verifyToken>[0])
+    expect(isVerifiedToken(verified)).toBe(true)
+  })
+
+  test('rejects object tokens whose data is not a string', async () => {
+    const identity = randomIdentity()
+    const signed = await identity.signToken({ test: true })
+    const forged = { ...signed, data: { malicious: true } }
+    await expect(
+      verifyToken(forged as unknown as Parameters<typeof verifyToken>[0]),
+    ).rejects.toThrow('data does not match')
+  })
+})
+
+describe('verified token branding', () => {
+  test('isVerifiedToken rejects deserialized tokens carrying verifiedPublicKey', async () => {
+    const identity = randomIdentity()
+    const signed = await identity.signToken({ test: true })
+    const verified = await verifyToken(signed)
+    expect(isVerifiedToken(verified)).toBe(true)
+    // round-trip through JSON, as a wire message would arrive
+    const wire = JSON.parse(JSON.stringify(verified))
+    expect(isVerifiedToken(wire)).toBe(false)
+  })
+
+  test('verifyToken re-verifies tokens carrying an inbound verifiedPublicKey', async () => {
+    const victim = randomIdentity()
+    const signed = await victim.signToken({ test: true })
+    // forged payload, victim signature, attacker-injected verifiedPublicKey
+    const forged = {
+      header: signed.header,
+      payload: { ...signed.payload, admin: true },
+      signature: signed.signature,
+      data: signed.data,
+      verifiedPublicKey: new Uint8Array(32),
+    }
+    await expect(verifyToken(forged)).rejects.toThrow()
+  })
+
+  test('deserialized token with verifiedPublicKey still verifies when genuine', async () => {
+    const identity = randomIdentity()
+    const verified = await verifyToken(await identity.signToken({ test: true }))
+    const wire = JSON.parse(JSON.stringify(verified))
+    const reverified = await verifyToken(wire)
+    expect(isVerifiedToken(reverified)).toBe(true)
+  })
 })
 
 describe('verifyToken with cache', () => {

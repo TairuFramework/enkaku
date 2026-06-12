@@ -1,5 +1,10 @@
 import { toPromise } from '@enkaku/async'
-import type { ClientMessage, EventPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
+import {
+  type ClientMessage,
+  ErrorCodes,
+  type EventPayloadOf,
+  type ProtocolDefinition,
+} from '@enkaku/protocol'
 
 import { HandlerError } from '../error.js'
 import type { EventHandler, EventHandlerContext, HandlerContext } from '../types.js'
@@ -37,7 +42,7 @@ export function handleEvent<
   >
   return toPromise(() => handler(handlerContext)).catch((cause) => {
     const error = HandlerError.from(cause, {
-      code: 'EK01',
+      code: ErrorCodes.HANDLER_ERROR,
       message: (cause as Error).message ?? 'Handler execution failed',
     })
     if (data == null) {

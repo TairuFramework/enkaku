@@ -18,27 +18,46 @@ export function consume<T, TReturn = unknown>(
   callback: (value: T) => void | Promise<void>,
   signal?: AbortSignal,
 ): Promise<TReturn> {
-  let aborted = false
+  let closed = false
   const ended = defer<TReturn>()
 
-  signal?.addEventListener('abort', () => {
-    aborted = true
-    ended.reject(signal.reason)
-  })
+  const close = () => {
+    if (closed) return
+    closed = true
+    // Run the source's cleanup (finally blocks). Swallow errors so cleanup
+    // failures never mask the resolve/reject reason already settled below.
+    Promise.resolve(iterator.return?.()).catch(() => {})
+  }
+
+  const abort = () => {
+    close()
+    ended.reject(signal?.reason)
+  }
+
+  if (signal?.aborted) {
+    // Already aborted: settle immediately; the listener won't fire for
+    // signals that are aborted before addEventListener is called.
+    abort()
+  } else {
+    signal?.addEventListener('abort', abort)
+  }
 
   async function pull() {
+    if (signal?.aborted) return
     try {
       const { done, value } = await iterator.next()
-      if (aborted || done) {
-        if (done) {
+      if (signal?.aborted || done) {
+        if (done && !signal?.aborted) {
           ended.resolve(value)
         }
+        close()
         return
       }
 
       await callback(value)
       void pull()
     } catch (reason) {
+      close()
       ended.reject(reason)
     }
   }

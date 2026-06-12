@@ -18,8 +18,13 @@ export type Streams = { readable: Readable; writable: Writable }
 export type StreamsOrPromise = Streams | Promise<Streams>
 export type StreamsSource = StreamsOrPromise | (() => StreamsOrPromise)
 
+export type CreateTransportStreamOptions = {
+  onWriteError?: (error: Error) => void
+}
+
 export async function createTransportStream<R, W>(
   source: StreamsSource,
+  options: CreateTransportStreamOptions = {},
 ): Promise<ReadableWritablePair<R, W>> {
   const streams = await Promise.resolve(typeof source === 'function' ? source() : source)
 
@@ -27,7 +32,12 @@ export async function createTransportStream<R, W>(
   const readable = input.pipeThrough(fromJSONLines<R>())
 
   const pipe = createPipe<W>()
-  pipe.readable.pipeThrough(toJSONLines()).pipeTo(Writable.toWeb(streams.writable))
+  pipe.readable
+    .pipeThrough(toJSONLines())
+    .pipeTo(Writable.toWeb(streams.writable))
+    .catch((cause) => {
+      options.onWriteError?.(cause instanceof Error ? cause : new Error(String(cause)))
+    })
 
   return { readable, writable: pipe.writable }
 }
@@ -39,6 +49,14 @@ export type NodeStreamsTransportParams = {
 
 export class NodeStreamsTransport<R, W> extends Transport<R, W> {
   constructor(params: NodeStreamsTransportParams) {
-    super({ stream: () => createTransportStream(params.streams), signal: params.signal })
+    super({
+      stream: () =>
+        createTransportStream<R, W>(params.streams, {
+          onWriteError: (error) => {
+            this.events.emit('writeFailed', { error })
+          },
+        }),
+      signal: params.signal,
+    })
   }
 }

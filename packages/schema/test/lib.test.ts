@@ -210,6 +210,31 @@ describe('ValidationErrorObject getters', () => {
   })
 })
 
+describe('ValidationError message', () => {
+  test('includes the first issue locator in the message', () => {
+    const validate = createValidator({
+      $id: 'test-schema',
+      type: 'object',
+      properties: { name: { type: 'string' } },
+      required: ['name'],
+    } as const)
+    let error: unknown
+    try {
+      assertType(validate, {})
+    } catch (err) {
+      error = err
+    }
+    expect(error).toBeInstanceOf(ValidationError)
+    if (!(error instanceof ValidationError)) throw error
+    const message = error.message
+    expect(message).toContain('test-schema')
+    // root-path normalization: instancePath '' is surfaced as '/' in the message
+    expect(message).toMatch(/\(\/ required\)/)
+    // .issues must be preserved per spec
+    expect(error.issues).toHaveLength(1)
+  })
+})
+
 describe('JSON Schema 2020-12 support', () => {
   test('validates a 2020-12 prefixItems tuple with { draft: "2020-12" }', () => {
     const validator = createValidator(

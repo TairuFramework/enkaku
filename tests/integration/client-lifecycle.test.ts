@@ -23,6 +23,7 @@ describe('Client lifecycle events', () => {
         ping: (async () => ({ ok: true })) as RequestHandler<Protocol, 'ping'>,
       } as ProcedureHandlers<Protocol>,
       protocol,
+      requireAuth: false,
       transport: transports.server,
     })
     const client = new Client<Protocol>({ transport: transports.client })

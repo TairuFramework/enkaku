@@ -3,6 +3,7 @@ import { serve } from 'https://esm.sh/@enkaku/server'
 
 const transport = new ServerTransport()
 serve({
+  requireAuth: false,
   handlers: {
     'example:request': () => {
       console.log('received request')

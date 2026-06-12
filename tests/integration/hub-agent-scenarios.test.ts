@@ -8,11 +8,12 @@ import {
 } from '@enkaku/capability'
 
 import { Client } from '@enkaku/client'
+import { createGroupCapability, delegateGroupMembership } from '@enkaku/group'
 import { HubClient } from '@enkaku/hub-client'
 import type { HubProtocol } from '@enkaku/hub-protocol'
 import { createHub, createMemoryStore } from '@enkaku/hub-server'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
-import { randomIdentity, stringifyToken } from '@enkaku/token'
+import { type OwnIdentity, randomIdentity, stringifyToken } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
 import { describe, expect, test } from 'vitest'
 
@@ -27,27 +28,51 @@ function delay(ms: number): Promise<void> {
 
 function createTestHub() {
   const store = createMemoryStore()
+  const identity = randomIdentity()
   const transports: HubTransports = new DirectTransports()
-  const hub = createHub({ transport: transports.server, store })
-  return { hub, store, transports }
+  const hub = createHub({ identity, transport: transports.server, store })
+  return { hub, hubID: identity.id, store, transports }
 }
 
-function createTestClient(hub: ReturnType<typeof createHub>, identity = randomIdentity()) {
+function createTestClient(
+  hub: ReturnType<typeof createHub>,
+  hubID: string,
+  identity = randomIdentity(),
+) {
   const transports: HubTransports = new DirectTransports()
   hub.server.handle(transports.server)
   const rawClient = new Client<HubProtocol>({
     transport: transports.client,
     identity,
+    serverID: hubID,
   })
   const client = new HubClient({ client: rawClient })
   return { client, identity, transports }
 }
 
+async function membershipCredential(
+  owner: OwnIdentity,
+  memberDID: string,
+  groupID: string,
+): Promise<string> {
+  if (owner.id === memberDID) {
+    return stringifyToken(await createGroupCapability(owner, groupID))
+  }
+  return stringifyToken(
+    await delegateGroupMembership({
+      identity: owner,
+      groupID,
+      recipientDID: memberDID,
+      permission: 'member',
+    }),
+  )
+}
+
 describe('Scenario A: Multi-device via hub', () => {
   test('two devices, blind relay', async () => {
-    const { hub } = createTestHub()
-    const { client: phone, transports: phoneT } = createTestClient(hub)
-    const { client: laptop, identity: laptopID, transports: laptopT } = createTestClient(hub)
+    const { hub, hubID } = createTestHub()
+    const { client: phone, transports: phoneT } = createTestClient(hub, hubID)
+    const { client: laptop, identity: laptopID, transports: laptopT } = createTestClient(hub, hubID)
 
     const channel = laptop.receive()
     const reader = channel.readable.getReader()
@@ -68,14 +93,14 @@ describe('Scenario A: Multi-device via hub', () => {
   })
 
   test('store-and-forward: offline device gets messages on connect', async () => {
-    const { hub } = createTestHub()
+    const { hub, hubID } = createTestHub()
     const laptopIdentity = randomIdentity()
-    const { client: phone, transports: phoneT } = createTestClient(hub)
+    const { client: phone, transports: phoneT } = createTestClient(hub, hubID)
 
     await phone.send({ recipients: [laptopIdentity.id], payload: btoa('msg-while-offline') })
     await delay(50)
 
-    const { client: laptop, transports: laptopT } = createTestClient(hub, laptopIdentity)
+    const { client: laptop, transports: laptopT } = createTestClient(hub, hubID, laptopIdentity)
     const channel = laptop.receive()
     const reader = channel.readable.getReader()
 
@@ -166,12 +191,18 @@ describe('Scenario A: Multi-device via hub', () => {
 
 describe('Scenario A: Group communication', () => {
   test('group fan-out', async () => {
-    const { hub } = createTestHub()
-    const { client: alice, transports: aliceT } = createTestClient(hub)
-    const { client: bob, transports: bobT } = createTestClient(hub)
+    const { hub, hubID } = createTestHub()
+    const { client: alice, identity: aliceID, transports: aliceT } = createTestClient(hub, hubID)
+    const { client: bob, identity: bobID, transports: bobT } = createTestClient(hub, hubID)
 
-    await alice.joinGroup('chat')
-    await bob.joinGroup('chat')
+    await alice.joinGroup({
+      groupID: 'chat',
+      credential: await membershipCredential(aliceID, aliceID.id, 'chat'),
+    })
+    await bob.joinGroup({
+      groupID: 'chat',
+      credential: await membershipCredential(bobID, bobID.id, 'chat'),
+    })
 
     const channel = bob.receive()
     const reader = channel.readable.getReader()
@@ -191,8 +222,8 @@ describe('Scenario A: Group communication', () => {
   })
 
   test('group send fails on unknown group', async () => {
-    const { hub } = createTestHub()
-    const { client: alice, transports: aliceT } = createTestClient(hub)
+    const { hub, hubID } = createTestHub()
+    const { client: alice, transports: aliceT } = createTestClient(hub, hubID)
 
     await expect(
       alice.groupSend({ groupID: 'nonexistent', payload: btoa('hello') }),
@@ -202,14 +233,26 @@ describe('Scenario A: Group communication', () => {
   })
 
   test('receive with groupIDs filter', async () => {
-    const { hub } = createTestHub()
-    const { client: alice, transports: aliceT } = createTestClient(hub)
-    const { client: bob, identity: bobID, transports: bobT } = createTestClient(hub)
+    const { hub, hubID } = createTestHub()
+    const { client: alice, identity: aliceID, transports: aliceT } = createTestClient(hub, hubID)
+    const { client: bob, identity: bobID, transports: bobT } = createTestClient(hub, hubID)
 
-    await alice.joinGroup('chat')
-    await alice.joinGroup('work')
-    await bob.joinGroup('chat')
-    await bob.joinGroup('work')
+    await alice.joinGroup({
+      groupID: 'chat',
+      credential: await membershipCredential(aliceID, aliceID.id, 'chat'),
+    })
+    await alice.joinGroup({
+      groupID: 'work',
+      credential: await membershipCredential(aliceID, aliceID.id, 'work'),
+    })
+    await bob.joinGroup({
+      groupID: 'chat',
+      credential: await membershipCredential(bobID, bobID.id, 'chat'),
+    })
+    await bob.joinGroup({
+      groupID: 'work',
+      credential: await membershipCredential(bobID, bobID.id, 'work'),
+    })
 
     const channel = bob.receive({ groupIDs: ['chat'] })
     const reader = channel.readable.getReader()
@@ -235,12 +278,18 @@ describe('Scenario A: Group communication', () => {
   })
 
   test('mixed delivery: group and direct on same channel', async () => {
-    const { hub } = createTestHub()
-    const { client: alice, transports: aliceT } = createTestClient(hub)
-    const { client: bob, identity: bobID, transports: bobT } = createTestClient(hub)
+    const { hub, hubID } = createTestHub()
+    const { client: alice, identity: aliceID, transports: aliceT } = createTestClient(hub, hubID)
+    const { client: bob, identity: bobID, transports: bobT } = createTestClient(hub, hubID)
 
-    await alice.joinGroup('chat')
-    await bob.joinGroup('chat')
+    await alice.joinGroup({
+      groupID: 'chat',
+      credential: await membershipCredential(aliceID, aliceID.id, 'chat'),
+    })
+    await bob.joinGroup({
+      groupID: 'chat',
+      credential: await membershipCredential(bobID, bobID.id, 'chat'),
+    })
 
     const channel = bob.receive()
     const reader = channel.readable.getReader()

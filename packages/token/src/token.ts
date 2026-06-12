@@ -1,4 +1,4 @@
-import { b64uToJSON, fromB64U, fromUTF } from '@enkaku/codec'
+import { b64uFromJSON, b64uToJSON, canonicalStringify, fromB64U, fromUTF } from '@enkaku/codec'
 import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
 import { assertType, isType } from '@enkaku/schema'
 
@@ -17,6 +17,11 @@ import type { SignedToken, Token, UnsignedToken, VerifiedToken } from './types.j
 import { getVerifier, type Verifiers } from './verifier.js'
 
 const tokenTracer = createTracer('token')
+
+// Tokens whose signature was verified in this process. Deserialized JSON can carry a
+// `verifiedPublicKey` property but can never be a member of this set, so verification
+// is only ever skipped for objects produced by `verifyToken` itself.
+const verifiedTokens = new WeakSet<object>()
 
 export type VerifyTokenOptions = TimeValidationOptions & {
   verifiers?: Verifiers
@@ -93,12 +98,17 @@ export function isUnsignedToken<Payload extends Record<string, unknown>>(
 }
 
 /**
- * Check if a token is verified.
+ * Check if a token was verified by `verifyToken` in this process.
+ * A `verifiedPublicKey` property on a deserialized token is never trusted.
  */
 export function isVerifiedToken<Payload extends SignedPayload>(
   token: unknown,
 ): token is VerifiedToken<Payload> {
-  return isSignedToken(token) && (token as VerifiedToken<Payload>).verifiedPublicKey != null
+  return (
+    isSignedToken(token) &&
+    (token as VerifiedToken<Payload>).verifiedPublicKey != null &&
+    verifiedTokens.has(token as object)
+  )
 }
 
 /**
@@ -126,6 +136,31 @@ export async function signToken<
       >)
 }
 
+function getVerifiableData(token: SignedToken<Record<string, unknown>>): string {
+  const recomputed = `${b64uFromJSON(token.header)}.${b64uFromJSON(token.payload)}`
+  const data = token.data
+  if (data == null || data === recomputed) {
+    return recomputed
+  }
+  // `data` may use a different JSON serialization of the same header and payload.
+  // Accept it only if it decodes to exactly the same values, so the signed bytes
+  // can never be decoupled from the payload used for authorization.
+  const parts = typeof data === 'string' ? data.split('.') : []
+  if (parts.length === 2) {
+    try {
+      if (
+        canonicalStringify(b64uToJSON(parts[0])) === canonicalStringify(token.header) &&
+        canonicalStringify(b64uToJSON(parts[1])) === canonicalStringify(token.payload)
+      ) {
+        return data
+      }
+    } catch {
+      // invalid base64url or JSON in data: fall through to the error below
+    }
+  }
+  throw new Error('Invalid token: data does not match header and payload')
+}
+
 async function verifyTokenInner<Payload extends Record<string, unknown> = Record<string, unknown>>(
   token: Token<Payload> | string,
   options: VerifyTokenOptions = {},
@@ -140,17 +175,20 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
       return token
     }
     if (isSignedToken(token)) {
+      const data = getVerifiableData(token)
       const verifiedPublicKey = await verifySignedPayload({
         signature: fromB64U(token.signature),
         payload: token.payload,
         header: token.header as { alg?: string; kid?: string },
-        data: token.data,
+        data,
         verifiers,
         resolver,
         cache,
       })
       assertTimeClaimsValid(token.payload as Record<string, unknown>, timeOptions)
-      return { ...token, verifiedPublicKey } as Token<Payload>
+      const result = { ...token, data, verifiedPublicKey } as Token<Payload>
+      verifiedTokens.add(result)
+      return result
     }
     throw new Error('Unsupported token')
   }
@@ -186,13 +224,15 @@ async function verifyTokenInner<Payload extends Record<string, unknown> = Record
       cache,
     })
     assertTimeClaimsValid(payload as Record<string, unknown>, timeOptions)
-    return {
+    const result = {
       data,
       header,
       payload,
       signature,
       verifiedPublicKey,
     } as Token<Payload>
+    verifiedTokens.add(result)
+    return result
   }
 
   throw new Error('Unsupported signature algorithm')

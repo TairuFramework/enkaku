@@ -163,6 +163,60 @@ describe('fromJSONLines()', () => {
     await expect(result).rejects.toThrow('exceeds maximum buffer size')
     await pipe
   })
+
+  test('decodes multi-byte UTF-8 characters split across chunks', async () => {
+    const [source, controller] = createReadable()
+    const [sink, result] = createArraySink()
+    source.pipeThrough(fromJSONLines()).pipeTo(sink)
+
+    const bytes = new TextEncoder().encode('{"text":"héllo 🌍"}\n')
+    // Split inside the 2-byte 'é' (bytes 10-11) and inside the 4-byte '🌍' (bytes 16-19)
+    controller.enqueue(bytes.slice(0, 11))
+    controller.enqueue(bytes.slice(11, 18))
+    controller.enqueue(bytes.slice(18))
+    controller.close()
+
+    await expect(result).resolves.toEqual([{ text: 'héllo 🌍' }])
+  })
+
+  test('logs a warning by default when a line is invalid JSON', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const [source, controller] = createReadable()
+      const [sink, result] = createArraySink()
+      source.pipeThrough(fromJSONLines()).pipeTo(sink)
+
+      controller.enqueue('{"invalid": json}\n')
+      controller.close()
+
+      await expect(result).resolves.toEqual([])
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Invalid JSON line dropped'))
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
+
+  test('keeps decoder state isolated between concurrent streams', async () => {
+    const [sourceA, controllerA] = createReadable()
+    const [sourceB, controllerB] = createReadable()
+    const [sinkA, resultA] = createArraySink()
+    const [sinkB, resultB] = createArraySink()
+    sourceA.pipeThrough(fromJSONLines()).pipeTo(sinkA)
+    sourceB.pipeThrough(fromJSONLines()).pipeTo(sinkB)
+
+    const bytesA = new TextEncoder().encode('{"a":"é"}\n')
+    const bytesB = new TextEncoder().encode('{"b":"ü"}\n')
+    // Interleave chunks from both streams, splitting inside each 2-byte character (bytes 6-7)
+    controllerA.enqueue(bytesA.slice(0, 7))
+    controllerB.enqueue(bytesB.slice(0, 7))
+    controllerA.enqueue(bytesA.slice(7))
+    controllerB.enqueue(bytesB.slice(7))
+    controllerA.close()
+    controllerB.close()
+
+    await expect(resultA).resolves.toEqual([{ a: 'é' }])
+    await expect(resultB).resolves.toEqual([{ b: 'ü' }])
+  })
 })
 
 test('toJSONLines() encodes values to JSON lines', async () => {

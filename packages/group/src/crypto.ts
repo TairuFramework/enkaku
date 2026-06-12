@@ -4,12 +4,13 @@
  * Replaces @hpke/core (which requires crypto.subtle) with direct use of:
  * - @noble/curves for X25519 ECDH and Ed25519 signatures
  * - @noble/hashes for SHA-256/384/512 and HKDF
- * - @noble/ciphers for AES-GCM
+ * - @noble/ciphers for AES-GCM and ChaCha20-Poly1305
  *
  * This enables ts-mls to run on Hermes (React Native) where crypto.subtle is unavailable.
  */
 import { createRuntime, type Runtime } from '@enkaku/runtime'
 import { gcm } from '@noble/ciphers/aes.js'
+import { chacha20poly1305 } from '@noble/ciphers/chacha.js'
 import { ed25519, x25519 } from '@noble/curves/ed25519.js'
 import { expand as hkdfExpand, extract as hkdfExtract } from '@noble/hashes/hkdf.js'
 import { hmac } from '@noble/hashes/hmac.js'
@@ -148,7 +149,7 @@ function makeRng(runtime: Runtime, customRandomBytes?: (n: number) => Uint8Array
 }
 
 // ---------------------------------------------------------------------------
-// HPKE (RFC 9180) — X25519 KEM + HKDF + AES-GCM
+// HPKE (RFC 9180) — X25519 KEM + HKDF + AES-GCM / ChaCha20-Poly1305
 // ---------------------------------------------------------------------------
 
 // HPKE constants for X25519
@@ -236,8 +237,34 @@ function makeHpke(hpkeAlg: HpkeAlg): Hpke {
   const { hash: kemHash } = getHashFn('SHA-256') // X25519 KEM always uses SHA-256
   const nSecret = 32 // SHA-256 output length
 
-  // AEAD parameters
-  const aeadKeySize = hpkeAlg.aead === 'AES256GCM' ? 32 : 16
+  // AEAD parameters — dispatch on the suite's AEAD algorithm
+  type AEADCipher = (
+    key: Uint8Array,
+    nonce: Uint8Array,
+    aad: Uint8Array,
+  ) => {
+    encrypt: (plaintext: Uint8Array) => Uint8Array
+    decrypt: (ciphertext: Uint8Array) => Uint8Array
+  }
+
+  let aeadKeySize: number
+  let createAEADCipher: AEADCipher
+  switch (hpkeAlg.aead) {
+    case 'AES128GCM':
+      aeadKeySize = 16
+      createAEADCipher = gcm
+      break
+    case 'AES256GCM':
+      aeadKeySize = 32
+      createAEADCipher = gcm
+      break
+    case 'CHACHA20POLY1305':
+      aeadKeySize = 32
+      createAEADCipher = chacha20poly1305
+      break
+    default:
+      throw new Error(`Unsupported AEAD: ${hpkeAlg.aead}`)
+  }
   const aeadNonceSize = 12
 
   // HPKE suite ID for the full suite (KDF + AEAD)
@@ -339,7 +366,7 @@ function makeHpke(hpkeAlg: HpkeAlg): Hpke {
     aad: Uint8Array,
     plaintext: Uint8Array,
   ): Uint8Array {
-    const cipher = gcm(key, nonce, aad)
+    const cipher = createAEADCipher(key, nonce, aad)
     return cipher.encrypt(plaintext)
   }
 
@@ -349,7 +376,7 @@ function makeHpke(hpkeAlg: HpkeAlg): Hpke {
     aad: Uint8Array,
     ciphertext: Uint8Array,
   ): Uint8Array {
-    const cipher = gcm(key, nonce, aad)
+    const cipher = createAEADCipher(key, nonce, aad)
     return cipher.decrypt(ciphertext)
   }
 

@@ -7,6 +7,7 @@ import { app, BrowserWindow } from 'electron'
 import type { Protocol } from './protocol'
 
 serveProcess<Protocol>({
+  requireAuth: false,
   handlers: {
     sign: async ({ param }) => {
       const identity = await provideFullIdentityAsync('EnkakuKeystore', param.keyID ?? 'test')

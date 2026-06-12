@@ -77,6 +77,18 @@ export type ValidateGroupCapabilityParams = {
 
 /**
  * Validates that a capability token grants the specified permission for a group.
+ *
+ * Resource matching accepts three forms:
+ * - `group/<groupID>/*` — full access to a single group (what
+ *   {@link createGroupCapability} and {@link delegateGroupMembership} issue)
+ * - `group/<groupID>/<suffix>` — scoped access within a single group
+ * - `*` — **global wildcard**: grants access to EVERY group, and to every
+ *   other resource type in the stack that honours `*`. This is intentionally
+ *   supported so root identities holding a stack-wide capability can operate
+ *   on any group, but its blast radius is total: a leaked, stolen or
+ *   over-delegated `res: ['*']` token compromises all groups at once. Never
+ *   issue `*` to regular members or services — delegate `group/<groupID>/*`
+ *   (or narrower) instead, with an `exp` and a verifiable delegation chain.
  */
 export async function validateGroupCapability(
   params: ValidateGroupCapabilityParams,
@@ -88,7 +100,9 @@ export async function validateGroupCapability(
   })
   assertCapabilityToken(token)
 
-  // Verify the resource matches the group
+  // Verify the resource matches the group. `res === '*'` is the global
+  // wildcard intentionally kept for root identities — see the JSDoc above
+  // for its blast radius before touching this condition.
   const expectedResource = `group/${groupID}/`
   const resources = Array.isArray(token.payload.res) ? token.payload.res : [token.payload.res]
 

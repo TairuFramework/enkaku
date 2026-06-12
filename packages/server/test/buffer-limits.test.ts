@@ -24,6 +24,7 @@ describe('Per-message size limits', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
       limits: { maxMessageSize: 50 },
@@ -65,6 +66,7 @@ describe('Per-message size limits', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
       limits: { maxMessageSize: 50 },
@@ -106,6 +108,7 @@ describe('Per-message size limits', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
       limits: { maxMessageSize: 50 },
@@ -142,6 +145,7 @@ describe('Per-message size limits', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
       limits: { maxMessageSize: 50 },
@@ -195,6 +199,7 @@ describe('Per-message size limits', () => {
       AnyClientMessageOf<Protocol>
     >()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
       limits: { maxMessageSize: 10000 },

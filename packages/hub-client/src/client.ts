@@ -15,6 +15,12 @@ export type GroupSendParams = {
   payload: string
 }
 
+export type JoinGroupParams = {
+  groupID: string
+  credential: string
+  delegationChain?: Array<string>
+}
+
 export type ReceiveOptions = {
   after?: string
   groupIDs?: Array<string>
@@ -65,9 +71,13 @@ export class HubClient {
     })
   }
 
-  joinGroup(groupID: string, credential = ''): RequestCall<{ joined: boolean }> {
+  joinGroup(params: JoinGroupParams): RequestCall<{ joined: boolean }> {
     return this.#client.request('hub/group/join', {
-      param: { groupID, credential },
+      param: {
+        groupID: params.groupID,
+        credential: params.credential,
+        delegationChain: params.delegationChain,
+      },
     })
   }
 

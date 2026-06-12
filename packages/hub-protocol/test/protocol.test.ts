@@ -43,4 +43,40 @@ describe('HubProtocol', () => {
   test('defines exactly 7 procedures', () => {
     expect(Object.keys(hubProtocol)).toHaveLength(7)
   })
+
+  test('schema quotas bound list and string sizes', () => {
+    const sendParam = hubProtocol['hub/send'].param
+    expect(sendParam.properties.recipients.maxItems).toBe(100)
+    expect(sendParam.properties.recipients.items.maxLength).toBe(256)
+    expect(sendParam.properties.payload.maxLength).toBe(1048576)
+
+    const groupSendParam = hubProtocol['hub/group/send'].param
+    expect(groupSendParam.properties.groupID.maxLength).toBe(128)
+    expect(groupSendParam.properties.payload.maxLength).toBe(1048576)
+
+    const receiveParam = hubProtocol['hub/receive'].param
+    expect(receiveParam.properties.after.maxLength).toBe(64)
+    expect(receiveParam.properties.groupIDs.maxItems).toBe(100)
+    expect(receiveParam.properties.groupIDs.items.maxLength).toBe(128)
+    const receiveSend = hubProtocol['hub/receive'].send
+    expect(receiveSend.properties.ack.maxItems).toBe(1000)
+    expect(receiveSend.properties.ack.items.maxLength).toBe(64)
+
+    const uploadParam = hubProtocol['hub/keypackage/upload'].param
+    expect(uploadParam.properties.keyPackages.maxItems).toBe(50)
+    expect(uploadParam.properties.keyPackages.items.maxLength).toBe(16384)
+
+    const fetchParam = hubProtocol['hub/keypackage/fetch'].param
+    expect(fetchParam.properties.did.maxLength).toBe(256)
+    expect(fetchParam.properties.count.minimum).toBe(1)
+    expect(fetchParam.properties.count.maximum).toBe(10)
+
+    const joinParam = hubProtocol['hub/group/join'].param
+    expect(joinParam.properties.groupID.maxLength).toBe(128)
+    expect(joinParam.properties.credential.maxLength).toBe(16384)
+    expect(joinParam.properties.delegationChain.maxItems).toBe(10)
+
+    const leaveParam = hubProtocol['hub/group/leave'].param
+    expect(leaveParam.properties.groupID.maxLength).toBe(128)
+  })
 })

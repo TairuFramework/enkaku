@@ -1,4 +1,4 @@
-import { randomIdentity, stringifyToken } from '@enkaku/token'
+import { randomIdentity, stringifyToken, verifyToken } from '@enkaku/token'
 import { describe, expect, test, vi } from 'vitest'
 
 import {
@@ -655,22 +655,28 @@ describe('checkDelegationChain() - depth limits (H-04)', () => {
 })
 
 describe('isCapabilityToken() - type validation (M-04)', () => {
-  const validHeader = { typ: 'JWT' as const, alg: 'EdDSA' as const }
-  const validSignature = 'test-signature'
-  const validPublicKey = new Uint8Array(32)
+  const identity = randomIdentity()
 
-  function makeToken(payload: Record<string, unknown>) {
-    return {
-      data: 'test',
-      header: validHeader,
-      payload: { iss: 'did:test:123', ...payload },
-      signature: validSignature,
-      verifiedPublicKey: validPublicKey,
-    }
+  // Signs a canonical capability payload, brands it via verifyToken, then
+  // mutates the payload in-place so the WeakSet brand (keyed on object
+  // identity) survives the override.
+  async function makeToken(payload: Record<string, unknown>) {
+    const signed = await identity.signToken({
+      sub: identity.id,
+      aud: 'did:test:789',
+      act: 'test',
+      res: 'foo',
+    } as Record<string, unknown>)
+    const branded = await verifyToken(signed)
+    Object.assign(branded.payload, payload)
+    return branded
   }
 
-  test('rejects token with non-string iss', () => {
-    const token = makeToken({
+  test('rejects token with non-string iss', async () => {
+    // Note: isSignedToken (called by isVerifiedToken) also validates iss as a
+    // string, so this case is caught at the isSignedToken layer rather than
+    // isCapabilityToken's own check. The result is still false.
+    const token = await makeToken({
       iss: 123, // Override default string iss
       sub: 'did:test:456',
       aud: 'did:test:789',
@@ -680,8 +686,10 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
     expect(isCapabilityToken(token)).toBe(false)
   })
 
-  test('rejects token with non-string aud', () => {
-    const token = makeToken({
+  test('rejects token with non-string aud', async () => {
+    // Note: isSignedToken also validates aud as a string when present, so this
+    // case is caught at the isSignedToken layer. Result is still false.
+    const token = await makeToken({
       sub: 'did:test:456',
       aud: 123, // Should be string
       act: 'test',
@@ -690,8 +698,10 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
     expect(isCapabilityToken(token)).toBe(false)
   })
 
-  test('rejects token with non-string sub', () => {
-    const token = makeToken({
+  test('rejects token with non-string sub', async () => {
+    // Note: isSignedToken also validates sub as a string when present, so this
+    // case is caught at the isSignedToken layer. Result is still false.
+    const token = await makeToken({
       sub: { id: '456' }, // Should be string
       aud: 'did:test:789',
       act: 'test',
@@ -700,8 +710,8 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
     expect(isCapabilityToken(token)).toBe(false)
   })
 
-  test('rejects token with invalid act type', () => {
-    const token = makeToken({
+  test('rejects token with invalid act type', async () => {
+    const token = await makeToken({
       sub: 'did:test:456',
       aud: 'did:test:789',
       act: 123, // Should be string or string[]
@@ -710,8 +720,8 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
     expect(isCapabilityToken(token)).toBe(false)
   })
 
-  test('rejects token with invalid res type', () => {
-    const token = makeToken({
+  test('rejects token with invalid res type', async () => {
+    const token = await makeToken({
       sub: 'did:test:456',
       aud: 'did:test:789',
       act: 'test',
@@ -720,8 +730,8 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
     expect(isCapabilityToken(token)).toBe(false)
   })
 
-  test('accepts token with string act and res', () => {
-    const token = makeToken({
+  test('accepts token with string act and res', async () => {
+    const token = await makeToken({
       sub: 'did:test:456',
       aud: 'did:test:789',
       act: 'test',
@@ -730,8 +740,8 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
     expect(isCapabilityToken(token)).toBe(true)
   })
 
-  test('accepts token with array act and res', () => {
-    const token = makeToken({
+  test('accepts token with array act and res', async () => {
+    const token = await makeToken({
       sub: 'did:test:456',
       aud: 'did:test:789',
       act: ['read', 'write'],
@@ -740,8 +750,8 @@ describe('isCapabilityToken() - type validation (M-04)', () => {
     expect(isCapabilityToken(token)).toBe(true)
   })
 
-  test('rejects token with mixed array containing non-strings', () => {
-    const token = makeToken({
+  test('rejects token with mixed array containing non-strings', async () => {
+    const token = await makeToken({
       sub: 'did:test:456',
       aud: 'did:test:789',
       act: ['read', 123], // Invalid: number in array

@@ -265,6 +265,7 @@ describe('encryption policy enforcement', () => {
       AnyClientMessageOf<Protocol>
     >()
     serve<Protocol>({
+      requireAuth: false,
       handlers,
       encryptionPolicy: 'required',
       transport: transports.server,

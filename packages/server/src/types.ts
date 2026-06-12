@@ -185,6 +185,7 @@ export type ServerEvents = {
   handlerTimeout: { rid: string }
   invalidMessage: { error: Error; message: unknown }
   transportAdded: { transportID: string }
+  transportError: { error: Error }
   transportRemoved: { transportID: string; reason?: unknown }
   writeDropped: { rid?: string; reason: unknown; error: Error }
   writeFailed: { error: Error; rid?: string }

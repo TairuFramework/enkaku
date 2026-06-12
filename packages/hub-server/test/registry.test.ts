@@ -95,4 +95,27 @@ describe('HubClientRegistry', () => {
     expect(() => registry.setReceiveWriter('did:key:ghost', vi.fn())).not.toThrow()
     expect(registry.isOnline('did:key:ghost')).toBe(false)
   })
+
+  test('unregisterIfIdle removes entries with no writer and no groups', () => {
+    const registry = new HubClientRegistry()
+    registry.register('did:test:idle')
+    registry.unregisterIfIdle('did:test:idle')
+    expect(registry.getClient('did:test:idle')).toBeUndefined()
+  })
+
+  test('unregisterIfIdle keeps entries with group memberships', () => {
+    const registry = new HubClientRegistry()
+    registry.register('did:test:member')
+    registry.joinGroup('did:test:member', 'g1')
+    registry.unregisterIfIdle('did:test:member')
+    expect(registry.getClient('did:test:member')).toBeDefined()
+  })
+
+  test('unregisterIfIdle keeps entries with a bound writer', () => {
+    const registry = new HubClientRegistry()
+    registry.register('did:test:online')
+    registry.setReceiveWriter('did:test:online', () => {})
+    registry.unregisterIfIdle('did:test:online')
+    expect(registry.getClient('did:test:online')).toBeDefined()
+  })
 })

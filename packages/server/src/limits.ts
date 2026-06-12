@@ -9,6 +9,12 @@ export type ResourceLimits = {
   cleanupTimeoutMs: number
   /** Maximum size in bytes for any individual message payload. Default: 10485760 (10 MB) */
   maxMessageSize: number
+  /**
+   * Procedures treated as long-lived: exempt from controllerTimeoutMs and
+   * counted separately from maxConcurrentHandlers (bounded by maxControllers).
+   * Default: []
+   */
+  longLivedProcedures: Array<string>
 }
 
 export const DEFAULT_RESOURCE_LIMITS: ResourceLimits = {
@@ -17,18 +23,25 @@ export const DEFAULT_RESOURCE_LIMITS: ResourceLimits = {
   controllerTimeoutMs: 300000,
   cleanupTimeoutMs: 30000,
   maxMessageSize: 10485760,
+  longLivedProcedures: [],
 }
 
 export type ResourceLimiter = {
   limits: ResourceLimits
   controllerCount: number
   activeHandlers: number
+  activeLongLivedHandlers: number
   canAddController: () => boolean
-  addController: (rid: string) => void
+  addController: (rid: string, longLived?: boolean) => void
   removeController: (rid: string) => void
   getExpiredControllers: () => Array<string>
-  acquireHandler: () => boolean
-  releaseHandler: () => void
+  acquireHandler: (longLived?: boolean) => boolean
+  releaseHandler: (longLived?: boolean) => void
+}
+
+type ControllerRecord = {
+  timestamp: number
+  longLived: boolean
 }
 
 export function createResourceLimiter(options?: Partial<ResourceLimits>): ResourceLimiter {
@@ -37,8 +50,9 @@ export function createResourceLimiter(options?: Partial<ResourceLimits>): Resour
     ...options,
   }
 
-  const controllers = new Map<string, number>() // rid -> timestamp
+  const controllers = new Map<string, ControllerRecord>()
   let handlerCount = 0
+  let longLivedHandlerCount = 0
 
   return {
     limits,
@@ -48,11 +62,14 @@ export function createResourceLimiter(options?: Partial<ResourceLimits>): Resour
     get activeHandlers() {
       return handlerCount
     },
+    get activeLongLivedHandlers() {
+      return longLivedHandlerCount
+    },
     canAddController() {
       return controllers.size < limits.maxControllers
     },
-    addController(rid: string) {
-      controllers.set(rid, Date.now())
+    addController(rid: string, longLived = false) {
+      controllers.set(rid, { timestamp: Date.now(), longLived })
     },
     removeController(rid: string) {
       controllers.delete(rid)
@@ -60,21 +77,33 @@ export function createResourceLimiter(options?: Partial<ResourceLimits>): Resour
     getExpiredControllers() {
       const now = Date.now()
       const expired: Array<string> = []
-      for (const [rid, timestamp] of controllers) {
-        if (now - timestamp > limits.controllerTimeoutMs) {
+      for (const [rid, record] of controllers) {
+        if (!record.longLived && now - record.timestamp > limits.controllerTimeoutMs) {
           expired.push(rid)
         }
       }
       return expired
     },
-    acquireHandler() {
+    acquireHandler(longLived = false) {
+      if (longLived) {
+        // Long-lived handlers (e.g. persistent channels) bypass the
+        // concurrency cap; they remain bounded by maxControllers.
+        longLivedHandlerCount++
+        return true
+      }
       if (handlerCount >= limits.maxConcurrentHandlers) {
         return false
       }
       handlerCount++
       return true
     },
-    releaseHandler() {
+    releaseHandler(longLived = false) {
+      if (longLived) {
+        if (longLivedHandlerCount > 0) {
+          longLivedHandlerCount--
+        }
+        return
+      }
       if (handlerCount > 0) {
         handlerCount--
       }

@@ -40,6 +40,7 @@
   },
   "devDependencies": {
     "@enkaku/codec": "workspace:^",
+    "@enkaku/group": "workspace:^",
     "@enkaku/hub-server": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/token": "workspace:^",

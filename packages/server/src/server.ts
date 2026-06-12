@@ -18,6 +18,7 @@ import {
   type AnyClientMessageOf,
   type AnyServerPayloadOf,
   createClientMessageSchema,
+  ErrorCodes,
   type ProtocolDefinition,
   type ServerTransportOf,
 } from '@enkaku/protocol'
@@ -119,12 +120,14 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           controller.abort('Timeout')
           events.emit('handlerAbort', { rid, reason: 'Timeout' })
           const error = new HandlerError({
-            code: 'EK05',
+            code: ErrorCodes.TIMEOUT,
             message: 'Request timeout',
           })
           context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
           events.emit('handlerTimeout', { rid })
           limiter.removeController(rid)
+          // Only non-long-lived controllers expire (getExpiredControllers skips
+          // long-lived entries), so the default releaseHandler() is correct here.
           limiter.releaseHandler()
           delete controllers[rid]
           delete running[rid]
@@ -170,6 +173,25 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             error: new Error('Invalid protocol message', { cause: result }),
             message,
           })
+          // If the raw message carries a rid on a reply-capable type, send an
+          // error reply instead of leaving the client to hang forever.
+          const rawPayload =
+            message != null && typeof message === 'object' && 'payload' in message
+              ? (message as { payload: unknown }).payload
+              : undefined
+          if (rawPayload != null && typeof rawPayload === 'object') {
+            const { rid, typ } = rawPayload as { rid?: unknown; typ?: unknown }
+            if (
+              typeof rid === 'string' &&
+              (typ === 'request' || typ === 'stream' || typ === 'channel')
+            ) {
+              const error = new HandlerError({
+                code: ErrorCodes.INVALID_MESSAGE,
+                message: 'Invalid protocol message',
+              })
+              context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
+            }
+          }
           return null
         }
         return (result as StandardSchemaV1.SuccessResult<AnyClientMessageOf<Protocol>>).value
@@ -183,10 +205,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     const rid =
       message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
 
+    const procedure = (message.payload as Record<string, unknown>).prc as string | undefined
+    const longLived = procedure != null && limiter.limits.longLivedProcedures.includes(procedure)
+
     // Check controller limit
     if (!limiter.canAddController()) {
       const error = new HandlerError({
-        code: 'EK03',
+        code: ErrorCodes.CONTROLLER_LIMIT,
         message: 'Server controller limit reached',
       })
       if (message.payload.typ !== 'event') {
@@ -197,9 +222,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
 
     // Check handler concurrency (synchronous fast path)
-    if (limiter.activeHandlers >= limiter.limits.maxConcurrentHandlers) {
+    if (!longLived && limiter.activeHandlers >= limiter.limits.maxConcurrentHandlers) {
       const error = new HandlerError({
-        code: 'EK04',
+        code: ErrorCodes.HANDLER_LIMIT,
         message: 'Server handler limit reached',
       })
       if (message.payload.typ !== 'event') {
@@ -209,8 +234,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       return
     }
 
-    limiter.addController(rid)
-    limiter.acquireHandler()
+    limiter.addController(rid, longLived)
+    limiter.acquireHandler(longLived)
 
     events.emit('handlerStart', {
       rid,
@@ -221,11 +246,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     const returned = handle()
     if (returned instanceof Error) {
       limiter.removeController(rid)
-      limiter.releaseHandler()
+      limiter.releaseHandler(longLived)
       emitHandlerError(
         events,
         'handler',
-        HandlerError.from(returned, { code: 'EK01' }),
+        HandlerError.from(returned, { code: ErrorCodes.HANDLER_ERROR }),
         message.payload,
       )
     } else {
@@ -239,7 +264,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           // Guard against double-release if timeout cleanup already handled this rid
           if (running[rid] === returned) {
             limiter.removeController(rid)
-            limiter.releaseHandler()
+            limiter.releaseHandler(longLived)
             delete running[rid]
           }
         })
@@ -250,13 +275,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           })
           if (running[rid] === returned) {
             limiter.removeController(rid)
-            limiter.releaseHandler()
+            limiter.releaseHandler(longLived)
             delete running[rid]
           }
           emitHandlerError(
             events,
             'handler',
-            HandlerError.from(err, { code: 'EK01' }),
+            HandlerError.from(err, { code: ErrorCodes.HANDLER_ERROR }),
             message.payload,
           )
         })
@@ -286,7 +311,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
   function handleEncryptionViolation(message: ProcessMessageOf<Protocol>): void {
     const error = new HandlerError({
-      code: 'EK07',
+      code: ErrorCodes.ENCRYPTION_REQUIRED,
       message: 'Encryption required but message is not encrypted',
     })
     if (message.payload.typ !== 'event') {
@@ -487,7 +512,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
           const error = new HandlerError({
             cause,
-            code: 'EK02',
+            code: ErrorCodes.ACCESS_DENIED,
             message: (cause as Error).message ?? 'Access denied',
           })
           span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
@@ -519,7 +544,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       }
 
   async function handleNext() {
-    const next = await transport.read()
+    let next: ReadableStreamReadResult<AnyClientMessageOf<Protocol>>
+    try {
+      next = await transport.read()
+    } catch (cause) {
+      const error = new Error('Transport read failed', { cause })
+      logger.warn('failed to read from transport', { cause })
+      events.emit('transportError', { error })
+      await disposer.dispose()
+      return
+    }
     if (next.done) {
       await disposer.dispose()
       return
@@ -530,7 +564,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       const msgSize = encoder.encode(JSON.stringify(msg.payload)).byteLength
       if (msgSize > limiter.limits.maxMessageSize) {
         const error = new HandlerError({
-          code: 'EK06',
+          code: ErrorCodes.MESSAGE_TOO_LARGE,
           message: 'Message exceeds maximum size',
         })
         if ('rid' in msg.payload && msg.payload.rid != null) {
@@ -550,7 +584,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           if (params.requireAuth) {
             if (!isSignedToken(msg as Token)) {
               const error = new HandlerError({
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: 'Abort message must be signed',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -567,7 +601,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             } catch (cause) {
               const error = new HandlerError({
                 cause,
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: (cause as Error).message ?? 'Access denied',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -582,7 +616,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               normalizeDID(abortIssuer) !== normalizeDID(controller.issuer)
             ) {
               const error = new HandlerError({
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: 'Abort issuer does not match owner',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -624,7 +658,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           if (params.requireAuth) {
             if (!isSignedToken(msg as Token)) {
               const error = new HandlerError({
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: 'Channel send message must be signed',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -641,7 +675,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             } catch (cause) {
               const error = new HandlerError({
                 cause,
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: (cause as Error).message ?? 'Access denied',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -656,7 +690,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               normalizeDID(sendIssuer) !== normalizeDID(controller.issuer)
             ) {
               const error = new HandlerError({
-                code: 'EK02',
+                code: ErrorCodes.ACCESS_DENIED,
                 message: 'Send issuer does not match channel owner',
               })
               context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -666,7 +700,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               break
             }
           }
-          controller.writer.write(msg.payload.val)
+          const sendRid = msg.payload.rid
+          controller.writer.write(msg.payload.val).catch((cause) => {
+            const error = new Error('Failed to write to channel', { cause })
+            logger.debug('failed to write send value to channel {rid}', { rid: sendRid, cause })
+            events.emit('writeFailed', { error, rid: sendRid })
+          })
           break
         }
         case 'stream': {
@@ -690,10 +729,10 @@ type HandlingTransport<Protocol extends ProtocolDefinition> = {
 }
 
 export type ServerAccessOptions =
-  | { identity?: undefined; accessRules?: never }
+  | { identity?: undefined; requireAuth: false; accessRules?: never }
   | { identity: Identity; accessRules?: AccessRules }
 
-export type ServerParams<Protocol extends ProtocolDefinition> = {
+export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   cache?: DIDCache
   encryptionPolicy?: EncryptionPolicy
   getRandomID?: () => string
@@ -707,7 +746,10 @@ export type ServerParams<Protocol extends ProtocolDefinition> = {
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
   verifyToken?: VerifyTokenHook
-} & ServerAccessOptions
+}
+
+export type ServerParams<Protocol extends ProtocolDefinition> = ServerBaseParams<Protocol> &
+  ServerAccessOptions
 
 export type HandleOptions = {
   accessRules?: false | AccessRules
@@ -788,6 +830,13 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       if (accessRules != null) {
         throw new Error('Invalid server parameters: "accessRules" requires "identity"')
       }
+      // Cast: TS doesn't narrow the ServerAccessOptions union through the
+      // runtime `serverID == null` guard, so `requireAuth` isn't visible here.
+      if ((params as { requireAuth?: boolean }).requireAuth !== false) {
+        throw new Error(
+          'Invalid server parameters: a server without "identity" must explicitly pass "requireAuth: false" to disable authentication',
+        )
+      }
       this.#accessControl = {
         requireAuth: false,
         access: {},
@@ -821,6 +870,10 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     for (const transport of params.transports ?? []) {
       this.handle(transport)
     }
+  }
+
+  get activeTransportsCount(): number {
+    return this.#handling.length
   }
 
   get events(): ServerEmitter {
@@ -881,12 +934,17 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       validator: this.#validator,
       ...accessControl,
     })
-    this.#handling.push({ done, transport })
+    const handling: HandlingTransport<Protocol> = { done, transport }
+    this.#handling.push(handling)
 
     const transportID = this.#runtime.getRandomID()
     this.#events.emit('transportAdded', { transportID })
     logger.info('added')
     return done.then(() => {
+      const index = this.#handling.indexOf(handling)
+      if (index !== -1) {
+        this.#handling.splice(index, 1)
+      }
       logger.info('done')
       this.#events.emit('transportRemoved', { transportID })
     })
@@ -894,11 +952,11 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
 }
 
 export type ServeParams<Protocol extends ProtocolDefinition> = Omit<
-  ServerParams<Protocol>,
+  ServerBaseParams<Protocol>,
   'transports'
 > & {
   transport: ServerTransportOf<Protocol>
-}
+} & ServerAccessOptions
 
 export function serve<Protocol extends ProtocolDefinition>(
   params: ServeParams<Protocol>,

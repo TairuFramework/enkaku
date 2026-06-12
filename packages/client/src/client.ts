@@ -183,9 +183,17 @@ function createRequest<Result>({
   ...call
 }: CreateRequestParams<Result>): RequestCall<Result> {
   const abort = (reason?: string) => {
-    void sent.then(() => {
-      controller.abort(reason)
-    })
+    void sent.then(
+      () => {
+        controller.abort(reason)
+      },
+      () => {
+        // The send already failed, so there is no in-flight request to notify,
+        // but the local controller is still aborted to clear any pending state
+        // without surfacing an unhandled rejection.
+        controller.abort(reason)
+      },
+    )
   }
   return Object.assign(
     sent.then(() => controller.result),
@@ -298,11 +306,13 @@ export class Client<
   }
 
   #setupTransport(): void {
-    this.#transport.disposed.then(() => {
-      if (this.signal.aborted) {
+    const transport = this.#transport
+    transport.disposed.then(() => {
+      if (this.signal.aborted || this.#transport !== transport) {
+        // Client is gone or this transport was already replaced — stale handler
         return
       }
-      const newTransport = this.#handleTransportDisposed?.(this.#transport.signal)
+      const newTransport = this.#handleTransportDisposed?.(transport.signal)
       if (newTransport == null) {
         this.#logger.debug('transport disposed')
         // Abort client if no new transport is provided

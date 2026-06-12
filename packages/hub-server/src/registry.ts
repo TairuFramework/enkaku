@@ -39,6 +39,18 @@ export class HubClientRegistry {
     this.#clients.delete(did)
   }
 
+  /**
+   * Removes the entry only when it is idle: no bound receive writer and no
+   * group memberships. Group members must stay registered while offline so
+   * hub/group/send keeps routing to them through the store.
+   */
+  unregisterIfIdle(did: string): void {
+    const entry = this.#clients.get(did)
+    if (entry != null && entry.sendMessage == null && entry.groups.size === 0) {
+      this.#clients.delete(did)
+    }
+  }
+
   setReceiveWriter(did: string, writer: (message: StoredMessage) => void): void {
     const entry = this.#clients.get(did)
     if (entry == null) return

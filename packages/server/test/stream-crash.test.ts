@@ -27,6 +27,7 @@ describe('Stream crash cleanup', () => {
     >()
     const errorHandler = vi.fn()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
     })
@@ -83,6 +84,7 @@ describe('Stream crash cleanup', () => {
     >()
     const errorHandler = vi.fn()
     const server = serve<Protocol>({
+      requireAuth: false,
       handlers,
       transport: transports.server,
     })

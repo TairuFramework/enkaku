@@ -1,21 +1,69 @@
 import { fromB64, toB64 } from '@enkaku/codec'
+import { validateGroupCapability } from '@enkaku/group'
 import type { HubProtocol, HubStore, StoredMessage } from '@enkaku/hub-protocol'
 import type { ChannelHandler, ProcedureHandlers, RequestHandler } from '@enkaku/server'
+import { normalizeDID } from '@enkaku/token'
 
 import type { HubClientRegistry } from './registry.js'
+
+export type KeyPackageFetchLimits = {
+  /** Maximum number of key packages returned per fetch. Default: 10 */
+  maxCount: number
+  /** Maximum number of fetch requests per requester DID per window. Default: 30 */
+  maxRequests: number
+  /** Rate-limit window duration in milliseconds. Default: 60000 (1 min) */
+  windowMs: number
+}
+
+export const DEFAULT_KEYPACKAGE_FETCH_LIMITS: KeyPackageFetchLimits = {
+  maxCount: 10,
+  maxRequests: 30,
+  windowMs: 60_000,
+}
 
 export type CreateHandlersParams = {
   registry: HubClientRegistry
   store: HubStore
+  keyPackageFetchLimits?: Partial<KeyPackageFetchLimits>
 }
 
 function getClientDID(ctx: { message: { payload: Record<string, unknown> } }): string {
-  const payload = ctx.message.payload
-  return typeof payload.iss === 'string' ? payload.iss : 'anonymous'
+  const iss = ctx.message.payload.iss
+  if (typeof iss !== 'string' || iss.length === 0) {
+    throw new Error('Unauthenticated message: missing verified issuer DID')
+  }
+  return iss
 }
 
 export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<HubProtocol> {
   const { store, registry } = params
+
+  const fetchLimits: KeyPackageFetchLimits = {
+    ...DEFAULT_KEYPACKAGE_FETCH_LIMITS,
+    ...params.keyPackageFetchLimits,
+  }
+  const fetchWindows = new Map<string, { count: number; resetAt: number }>()
+
+  function assertKeyPackageFetchAllowed(requesterDID: string): void {
+    const now = Date.now()
+    // Bound memory: sweep expired windows once the map grows large
+    if (fetchWindows.size > 1024) {
+      for (const [did, window] of fetchWindows) {
+        if (window.resetAt <= now) {
+          fetchWindows.delete(did)
+        }
+      }
+    }
+    const window = fetchWindows.get(requesterDID)
+    if (window == null || window.resetAt <= now) {
+      fetchWindows.set(requesterDID, { count: 1, resetAt: now + fetchLimits.windowMs })
+      return
+    }
+    if (window.count >= fetchLimits.maxRequests) {
+      throw new Error('Key package fetch rate limit exceeded')
+    }
+    window.count++
+  }
 
   return {
     'hub/send': (async (ctx) => {
@@ -38,12 +86,16 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
 
     'hub/group/send': (async (ctx) => {
       const { groupID, payload } = ctx.param
-      const members = registry.getGroupMembers(groupID)
-      if (members.length === 0) {
-        throw new Error(`Unknown group: ${groupID}`)
+      const senderDID = getClientDID(ctx)
+      // Durable roster ∪ live registry: the store carries membership across
+      // restarts (registry is empty after a restart); the registry covers
+      // members joined this lifetime not yet observed in a fresh store read.
+      const durable = store != null ? await store.getGroupMembers(groupID) : []
+      const members = [...new Set([...durable, ...registry.getGroupMembers(groupID)])]
+      if (!members.includes(senderDID)) {
+        throw new Error(`Sender is not a member of group: ${groupID}`)
       }
 
-      const senderDID = getClientDID(ctx)
       const recipients = members.filter((did) => did !== senderDID)
       const payloadBytes = fromB64(payload)
       const sequenceID = await store.store({
@@ -79,50 +131,60 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
       const writer = ctx.writable.getWriter()
       const reader = ctx.readable.getReader()
 
-      // Set up message delivery callback with optional group filter
-      registry.setReceiveWriter(clientDID, (message: StoredMessage) => {
-        // Apply group filter: direct messages always pass, group messages only if in filter
-        if (groupIDs != null && groupIDs.length > 0) {
-          if (message.groupID != null && !groupIDs.includes(message.groupID)) {
-            return
-          }
-        }
-        writer
-          .write({
-            sequenceID: message.sequenceID,
-            senderDID: message.senderDID,
-            groupID: message.groupID,
-            payload: toB64(message.payload),
-          })
-          .catch(() => {})
-      })
-
-      // Drain queued messages from store
-      if (store != null) {
-        let cursor: string | null | undefined = after
-        while (true) {
-          const result = await store.fetch({
-            recipientDID: clientDID,
-            after: cursor ?? undefined,
-            limit: 50,
-          })
-          for (const msg of result.messages) {
-            // Apply group filter
-            if (groupIDs != null && groupIDs.length > 0) {
-              if (msg.groupID != null && !groupIDs.includes(msg.groupID)) {
-                continue
-              }
+      try {
+        // Set up message delivery callback with optional group filter
+        registry.setReceiveWriter(clientDID, (message: StoredMessage) => {
+          // Apply group filter: direct messages always pass, group messages only if in filter
+          if (groupIDs != null && groupIDs.length > 0) {
+            if (message.groupID != null && !groupIDs.includes(message.groupID)) {
+              return
             }
-            await writer.write({
-              sequenceID: msg.sequenceID,
-              senderDID: msg.senderDID,
-              groupID: msg.groupID,
-              payload: toB64(msg.payload),
-            })
           }
-          cursor = result.cursor
-          if (!result.hasMore) break
+          writer
+            .write({
+              sequenceID: message.sequenceID,
+              senderDID: message.senderDID,
+              groupID: message.groupID,
+              payload: toB64(message.payload),
+            })
+            .catch(() => {})
+        })
+
+        // Drain queued messages from store
+        if (store != null) {
+          let cursor: string | null | undefined = after
+          while (true) {
+            const result = await store.fetch({
+              recipientDID: clientDID,
+              after: cursor ?? undefined,
+              limit: 50,
+            })
+            for (const msg of result.messages) {
+              // Apply group filter
+              if (groupIDs != null && groupIDs.length > 0) {
+                if (msg.groupID != null && !groupIDs.includes(msg.groupID)) {
+                  continue
+                }
+              }
+              await writer.write({
+                sequenceID: msg.sequenceID,
+                senderDID: msg.senderDID,
+                groupID: msg.groupID,
+                payload: toB64(msg.payload),
+              })
+            }
+            cursor = result.cursor
+            if (!result.hasMore) break
+          }
         }
+      } catch (error) {
+        // Bind/drain failure: release the writer binding so the client can
+        // reconnect instead of being locked out permanently.
+        registry.clearReceiveWriter(clientDID)
+        registry.unregisterIfIdle(clientDID)
+        reader.cancel().catch(() => {})
+        writer.abort(error).catch(() => {})
+        throw error
       }
 
       // Read acks from device
@@ -146,6 +208,7 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
           'abort',
           () => {
             registry.clearReceiveWriter(clientDID)
+            registry.unregisterIfIdle(clientDID)
             reader.cancel().catch(() => {})
             writer.close().catch(() => {})
             resolve(undefined as never)
@@ -163,22 +226,38 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
     }) as RequestHandler<HubProtocol, 'hub/keypackage/upload'>,
 
     'hub/keypackage/fetch': (async (ctx) => {
-      if (store == null) {
-        return { keyPackages: [] }
-      }
+      const requesterDID = getClientDID(ctx)
+      assertKeyPackageFetchAllowed(requesterDID)
       const { did, count } = ctx.param
-      const keyPackages = await store.fetchKeyPackages(did, count)
+      const cappedCount = Math.min(Math.max(count ?? 1, 1), fetchLimits.maxCount)
+      const keyPackages = await store.fetchKeyPackages(did, cappedCount)
       return { keyPackages }
     }) as RequestHandler<HubProtocol, 'hub/keypackage/fetch'>,
 
+    // SECURITY: the hub roster is NOT a security boundary. The hub keeps no
+    // group-owner registry by design, so a self-issued capability (iss === sub,
+    // no delegation chain) validates for ANY groupID — including existing
+    // groups. validateGroupCapability only proves the credential is valid for
+    // this group and audience (blocking stolen-credential replay via the aud
+    // check); it does not prove authorized membership. Any authenticated DID
+    // can join a group's delivery roster and receive its ciphertext fan-out.
+    // Confidentiality and real membership are enforced by MLS end-to-end
+    // encryption, not by this roster.
     'hub/group/join': (async (ctx) => {
-      const { groupID } = ctx.param
+      const { groupID, credential, delegationChain } = ctx.param
       const clientDID = getClientDID(ctx)
+      const token = await validateGroupCapability({
+        tokenData: credential,
+        groupID,
+        delegationChain,
+      })
+      if (normalizeDID(token.payload.aud) !== normalizeDID(clientDID)) {
+        throw new Error('Invalid credential: audience does not match client DID')
+      }
       registry.register(clientDID)
       registry.joinGroup(clientDID, groupID)
       if (store != null) {
-        const members = registry.getGroupMembers(groupID)
-        await store.setGroupMembers(groupID, members)
+        await store.addGroupMember(groupID, clientDID)
       }
       return { joined: true }
     }) as RequestHandler<HubProtocol, 'hub/group/join'>,
@@ -188,9 +267,9 @@ export function createHandlers(params: CreateHandlersParams): ProcedureHandlers<
       const clientDID = getClientDID(ctx)
       registry.leaveGroup(clientDID, groupID)
       if (store != null) {
-        const members = registry.getGroupMembers(groupID)
-        await store.setGroupMembers(groupID, members)
+        await store.removeGroupMember(groupID, clientDID)
       }
+      registry.unregisterIfIdle(clientDID)
       return { left: true }
     }) as RequestHandler<HubProtocol, 'hub/group/leave'>,
   }

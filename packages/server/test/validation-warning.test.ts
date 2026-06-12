@@ -27,6 +27,7 @@ describe('Validation warning', () => {
     new Server<Protocol>({
       handlers: { test: vi.fn() },
       logger: logger as never,
+      requireAuth: false,
       // No protocol provided
     })
 
@@ -57,6 +58,7 @@ describe('Validation warning', () => {
       handlers: { test: vi.fn() },
       protocol,
       logger: logger as never,
+      requireAuth: false,
     })
 
     expect(warnSpy).not.toHaveBeenCalled()

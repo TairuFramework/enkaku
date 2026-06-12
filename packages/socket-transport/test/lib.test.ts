@@ -128,6 +128,32 @@ describe('createTransportStream()', () => {
     serverSocket.destroy()
     server.close()
   })
+
+  test('decodes multi-byte UTF-8 characters split across socket chunks', async () => {
+    const { server, socketPath } = await createTestServer()
+    const connectionPromise = waitForConnection(server)
+
+    const socket = await connectSocket(socketPath)
+    const serverSocket = await connectionPromise
+    const stream = await createTransportStream<{ text: string }, unknown>(socket)
+
+    const bytes = Buffer.from('{"text":"héllo 🌍"}\n', 'utf8')
+    // Write byte-by-byte with a small delay so multi-byte sequences are
+    // guaranteed to arrive in separate 'data' events
+    for (let i = 0; i < bytes.length; i++) {
+      serverSocket.write(bytes.subarray(i, i + 1))
+      await new Promise((resolve) => setTimeout(resolve, 1))
+    }
+
+    const reader = stream.readable.getReader()
+    const result = await reader.read()
+    expect(result.value).toEqual({ text: 'héllo 🌍' })
+
+    reader.releaseLock()
+    socket.destroy()
+    serverSocket.destroy()
+    server.close()
+  })
 })
 
 describe('createTransportStream() error handling', () => {
@@ -149,6 +175,37 @@ describe('createTransportStream() error handling', () => {
     expect(result.done).toBe(true)
 
     server.close()
+  })
+
+  test('socket error followed by close does not throw an uncaught exception', async () => {
+    const uncaught: Array<unknown> = []
+    const onUncaught = (error: unknown) => {
+      uncaught.push(error)
+    }
+    process.on('uncaughtException', onUncaught)
+    try {
+      const { server, socketPath } = await createTestServer()
+      const connectionPromise = waitForConnection(server)
+
+      const socket = await connectSocket(socketPath)
+      const serverSocket = await connectionPromise
+      const stream = await createTransportStream<unknown, unknown>(socket)
+      const reader = stream.readable.getReader()
+
+      // destroy(error) emits 'error' then 'close' on the socket
+      socket.destroy(new Error('boom'))
+      await expect(reader.read()).rejects.toThrow('boom')
+
+      // Let the trailing 'close' event fire — pre-fix this calls
+      // controller.close() on an errored controller → uncaughtException
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      expect(uncaught, `uncaught exceptions: ${uncaught.map(String).join(', ')}`).toHaveLength(0)
+
+      serverSocket.destroy()
+      server.close()
+    } finally {
+      process.off('uncaughtException', onUncaught)
+    }
   })
 })
 

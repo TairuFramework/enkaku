@@ -34,9 +34,16 @@ export class ValidationError extends AggregateError implements StandardSchemaV1.
 
   constructor(schema: Schema, value: unknown, errorObjects?: Array<ErrorObject> | null) {
     const schemaInfo = schema.$id ?? schema.type
+    const base = schemaInfo
+      ? `Validation failed for schema ${schemaInfo}`
+      : 'Schema validation failed'
+    // Surface the first issue's locator in the message so transports that
+    // serialize only `message` (dropping `.issues`) keep field-level detail.
+    const first = errorObjects?.[0]
+    const detail = first != null ? ` (${first.instancePath || '/'} ${first.keyword})` : ''
     super(
       (errorObjects ?? []).map((err) => new ValidationErrorObject(err)),
-      schemaInfo ? `Validation failed for schema ${schemaInfo}` : 'Schema validation failed',
+      `${base}${detail}`,
     )
     this.#schema = schema
     this.#value = value

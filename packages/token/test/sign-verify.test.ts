@@ -1,5 +1,6 @@
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { p256 } from '@noble/curves/nist.js'
+import { equals } from 'uint8arrays'
 import { describe, expect, test } from 'vitest'
 
 import { createFullIdentity, randomIdentity } from '../src/identity.js'
@@ -54,5 +55,23 @@ describe('sign and verify', () => {
     expect(verified).toBe(true)
     const failed = await verify(signature, message, p256.keygen().publicKey)
     expect(failed).toBe(false)
+  })
+
+  test('ES256 rejects malleable high-S signatures', async () => {
+    const { publicKey, secretKey } = p256.keygen()
+    const verify = getVerifier('ES256')
+    // RFC 6979 nonces are deterministic per message; ~half of messages produce a
+    // high-S signature when lowS normalization is disabled. Find one.
+    for (let i = 0; i < 256; i++) {
+      const message = new TextEncoder().encode(`malleability-${i}`)
+      const lowS = p256.sign(message, secretKey, { lowS: true })
+      const maybeHighS = p256.sign(message, secretKey, { lowS: false })
+      if (!equals(lowS, maybeHighS)) {
+        expect(await verify(lowS, message, publicKey)).toBe(true)
+        expect(await verify(maybeHighS, message, publicKey)).toBe(false)
+        return
+      }
+    }
+    throw new Error('no high-S signature found in 256 attempts')
   })
 })
