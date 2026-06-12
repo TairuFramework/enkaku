@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 
 import {
   createTracer,
+  getActiveBaggage,
   getActiveSpan,
   getActiveTraceContext,
   withSpan,
@@ -56,6 +57,14 @@ describe('withSpan', () => {
 describe('getActiveSpan', () => {
   test('returns undefined when no span is active', () => {
     expect(getActiveSpan()).toBeUndefined()
+  })
+})
+
+describe('getActiveBaggage', () => {
+  test('returns undefined when no baggage is active', () => {
+    // No ContextManager is registered in tests, so the active context is ROOT
+    // (empty). This is also the real-world "no SDK / no baggage" case.
+    expect(getActiveBaggage()).toBeUndefined()
   })
 })
 

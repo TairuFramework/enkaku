@@ -125,6 +125,72 @@ describe('toStandardValidator()', () => {
   })
 })
 
+describe('ValidatorOptions.strict', () => {
+  // A valid 2020-12 construct that AJV strict mode warns about: a prefixItems
+  // 2-tuple with no minItems/maxItems.
+  const tupleSchema = {
+    $id: 'https://example.com/strict-tuple',
+    type: 'array',
+    prefixItems: [{ type: 'string' }, { type: 'number' }],
+  } as const
+
+  function captureWarnings(fn: () => void): Array<string> {
+    const warnings: Array<string> = []
+    const original = console.warn
+    console.warn = (...args: Array<unknown>) => {
+      warnings.push(args.map(String).join(' '))
+    }
+    try {
+      fn()
+    } finally {
+      console.warn = original
+    }
+    return warnings
+  }
+
+  // AJV's 2020-12 dialect defaults to strictTuples:'log', which logs a warning
+  // for prefixItems tuples that lack minItems/maxItems (regression guard).
+  test('emits a strict-mode warning by default', () => {
+    const warnings = captureWarnings(() => {
+      createValidator(tupleSchema, { draft: '2020-12' })
+    })
+    expect(warnings.some((w) => w.toLowerCase().includes('strict'))).toBe(true)
+  })
+
+  test('suppresses the strict-mode warning when strict is false', () => {
+    const warnings = captureWarnings(() => {
+      createValidator(tupleSchema, { draft: '2020-12', strict: false })
+    })
+    expect(warnings.some((w) => w.toLowerCase().includes('strict'))).toBe(false)
+  })
+
+  test("strict: 'log' still emits the strict-mode warning", () => {
+    const warnings = captureWarnings(() => {
+      createValidator(tupleSchema, { draft: '2020-12', strict: 'log' })
+    })
+    expect(warnings.some((w) => w.toLowerCase().includes('strict'))).toBe(true)
+  })
+
+  test('caches distinct AJV instances per strict value (no first-call-wins)', () => {
+    // Default (strict) first, then strict:false for the same draft. If the cache
+    // were keyed by draft only, the second call would reuse the strict instance
+    // and still warn.
+    captureWarnings(() => {
+      createValidator(tupleSchema, { draft: '2020-12' })
+    })
+    const warnings = captureWarnings(() => {
+      createValidator(tupleSchema, { draft: '2020-12', strict: false })
+    })
+    expect(warnings.some((w) => w.toLowerCase().includes('strict'))).toBe(false)
+  })
+
+  test('validates correctly with strict disabled', () => {
+    const validate = createValidator(tupleSchema, { draft: '2020-12', strict: false })
+    expect(validate(['a', 1])).toEqual({ value: ['a', 1] })
+    expect(validate([1, 'a']) instanceof ValidationError).toBe(true)
+  })
+})
+
 describe('createStandardValidator()', () => {
   test('creates standard validator from schema', () => {
     const standard = createStandardValidator({
