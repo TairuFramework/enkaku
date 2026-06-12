@@ -6,10 +6,22 @@ export class JSONLinesError extends Error {}
 
 export type DecodeJSON<T = unknown> = (value: string) => T
 
-export type FromJSONLinesOptions<T = unknown> = {
-  decode?: DecodeJSON<unknown>
+/**
+ * Size limits for the JSON-lines framer, measured in characters (UTF-16 code
+ * units), not bytes.
+ *
+ * - `maxBufferSize` bounds total live framer memory (the un-terminated input
+ *   buffer plus the partially-accumulated message). A stream that exceeds it
+ *   errors, preventing unbounded growth from malformed or malicious input.
+ * - `maxMessageSize` is an optional tighter cap on a single decoded message.
+ */
+export type FramingLimits = {
   maxBufferSize?: number
   maxMessageSize?: number
+}
+
+export type FromJSONLinesOptions<T = unknown> = FramingLimits & {
+  decode?: DecodeJSON<unknown>
   onInvalidJSON?: (value: string, controller: TransformStreamDefaultController<T>) => void
 }
 
@@ -79,20 +91,25 @@ export function fromJSONLines<T = unknown>(
     }
   }
 
+  function checkBufferSize(): void {
+    if (maxBufferSize != null && input.length + output.length > maxBufferSize) {
+      throw new JSONLinesError(
+        `Buffer size ${input.length + output.length} exceeds maximum buffer size of ${maxBufferSize}`,
+      )
+    }
+  }
+
   return transform<Uint8Array | string, T>(
     (chunk, controller) => {
       try {
         input += typeof chunk === 'string' ? chunk : decoder.decode(chunk, { stream: true })
-        if (maxBufferSize != null && input.length > maxBufferSize) {
-          throw new JSONLinesError(
-            `Buffer size ${input.length} exceeds maximum buffer size of ${maxBufferSize}`,
-          )
-        }
+        checkBufferSize()
         let newLineIndex = input.indexOf(SEPARATOR)
         while (newLineIndex !== -1) {
           for (const char of input.slice(0, newLineIndex)) {
             processChar(char)
           }
+          checkBufferSize()
           if (nestingDepth === 0 && !isInString && output.length > 0) {
             checkOutputSize()
             try {
@@ -116,6 +133,9 @@ export function fromJSONLines<T = unknown>(
       }
     },
     (controller) => {
+      // No checkBufferSize() here: every chunk already passed the cap in the
+      // transform callback, and flush only appends the decoder's pending
+      // multibyte remainder (bounded) before emitting the final buffered value.
       input += decoder.decode()
       for (const char of input) {
         processChar(char)

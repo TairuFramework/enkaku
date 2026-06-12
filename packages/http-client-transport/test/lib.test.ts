@@ -495,6 +495,49 @@ describe('createTransportStream() SSE disconnect handling', () => {
   })
 })
 
+describe('createTransportStream() SSE buffer cap', () => {
+  let originalFetch: typeof globalThis.fetch
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch
+  })
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+  })
+
+  test('errors the readable when an SSE event exceeds maxBufferSize', async () => {
+    globalThis.fetch = vi.fn(async () => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          const encoder = new TextEncoder()
+          controller.enqueue(encoder.encode(':\n\n')) // header flush
+          // Un-terminated data line (no trailing \n\n) far larger than the cap.
+          controller.enqueue(encoder.encode(`data: ${'x'.repeat(500)}`))
+        },
+      })
+      return new Response(body, {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream', 'enkaku-session-id': 'sess-1' },
+      })
+    }) as typeof fetch
+
+    const stream = createTransportStream<Protocol>({
+      url: 'http://localhost/rpc',
+      maxBufferSize: 100,
+    })
+    const writer = stream.writable.getWriter()
+    const reader = stream.readable.getReader()
+
+    // A stream message opens the SSE session and starts consuming the response.
+    await writer.write({
+      payload: { typ: 'stream', rid: 's1', prc: 'test/stream' },
+    } as ClientMessage)
+
+    await expect(reader.read()).rejects.toThrow(/buffer/i)
+  })
+})
+
 describe('ClientTransport', () => {
   let originalFetch: typeof globalThis.fetch
 
