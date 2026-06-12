@@ -52,6 +52,7 @@ export type ServerBridgeOptions = {
   sessionTimeoutMs?: number
   maxInflightRequests?: number
   requestTimeoutMs?: number
+  maxRequestBodySize?: number
 }
 
 const VALID_PAYLOAD_TYPES = new Set(['abort', 'channel', 'event', 'request', 'send', 'stream'])
@@ -65,6 +66,39 @@ function isValidOrigin(origin: string): boolean {
   } catch {
     return false
   }
+}
+
+async function readBodyWithLimit(request: Request, maxBytes: number): Promise<string | null> {
+  const contentLength = request.headers.get('content-length')
+  if (contentLength != null) {
+    const declared = Number(contentLength)
+    if (Number.isFinite(declared) && declared > maxBytes) {
+      return null
+    }
+  }
+  const body = request.body
+  if (body == null) {
+    const text = await request.text()
+    return text.length > maxBytes ? null : text
+  }
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let received = 0
+  let result = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) {
+      break
+    }
+    received += value.byteLength
+    if (received > maxBytes) {
+      await reader.cancel()
+      return null
+    }
+    result += decoder.decode(value, { stream: true })
+  }
+  result += decoder.decode()
+  return result
 }
 
 export function createServerBridge<Protocol extends ProtocolDefinition>(
@@ -83,6 +117,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const sessionTimeoutMs = options.sessionTimeoutMs ?? 300_000 // 5 minutes
   const maxInflightRequests = options.maxInflightRequests ?? 10_000
   const requestTimeoutMs = options.requestTimeoutMs ?? 30_000 // 30 seconds
+  const maxRequestBodySize = options.maxRequestBodySize ?? 1_048_576 // 1 MiB
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
   const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
@@ -219,7 +254,11 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
 
     const headers = checkedOrigin != null ? getAccessControlHeaders(checkedOrigin) : {}
     try {
-      const message = (await request.json()) as Incoming
+      const raw = await readBodyWithLimit(request, maxRequestBodySize)
+      if (raw == null) {
+        return Response.json({ error: 'Request body too large' }, { headers, status: 413 })
+      }
+      const message = JSON.parse(raw) as Incoming
       if (!VALID_PAYLOAD_TYPES.has(message?.payload?.typ)) {
         return Response.json({ error: 'Invalid message type' }, { headers, status: 400 })
       }
@@ -391,6 +430,7 @@ export type ServerTransportOptions = {
   sessionTimeoutMs?: number
   maxInflightRequests?: number
   requestTimeoutMs?: number
+  maxRequestBodySize?: number
 }
 
 export class ServerTransport<Protocol extends ProtocolDefinition> extends Transport<
@@ -408,6 +448,7 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
       sessionTimeoutMs: options.sessionTimeoutMs,
       maxInflightRequests: options.maxInflightRequests,
       requestTimeoutMs: options.requestTimeoutMs,
+      maxRequestBodySize: options.maxRequestBodySize,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
       },
