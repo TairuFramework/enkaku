@@ -75,4 +75,24 @@ describe('createTransportStream()', () => {
     await writer.close()
     expect(written).toEqual(['{"foo":"foo"}\n', '{"bar":"bar"}\n'])
   })
+
+  test('threads maxMessageSize into the inbound framer', async () => {
+    const source = new Readable({ read() {} })
+    const sink = new Writable({
+      write(_chunk, _encoding, cb) {
+        cb()
+      },
+    })
+    const stream = await createTransportStream<unknown, unknown>(
+      { readable: source, writable: sink },
+      { maxMessageSize: 50 },
+    )
+
+    const reader = stream.readable.getReader()
+    const read = reader.read()
+    // One oversized line — the framer must error the readable rather than emit it.
+    source.push(`${JSON.stringify({ data: 'x'.repeat(100) })}\n`)
+
+    await expect(read).rejects.toThrow('exceeds maximum message size')
+  })
 })
