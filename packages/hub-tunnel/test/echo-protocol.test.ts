@@ -17,6 +17,7 @@ async function withEcho(fn: (client: Client<EchoProtocol>) => Promise<void>): Pr
   const transports: EchoTransports = new DirectTransports()
   const server = serve<EchoProtocol>({
     handlers: echoHandlers,
+    requireAuth: false,
     transport: transports.server,
   })
   const client = new Client<EchoProtocol>({

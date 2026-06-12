@@ -64,6 +64,7 @@ describe('createEncryptedHubTunnelTransport e2e', () => {
 
     const server = serve<EchoProtocol>({
       handlers: echoHandlers,
+      requireAuth: false,
       transport: serverTransport,
     })
     const client = new Client<EchoProtocol>({
@@ -95,6 +96,7 @@ describe('createEncryptedHubTunnelTransport e2e', () => {
 
     const server = serve<EchoProtocol>({
       handlers: echoHandlers,
+      requireAuth: false,
       transport: serverTransport,
     })
     const client = new Client<EchoProtocol>({
