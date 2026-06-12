@@ -6,10 +6,13 @@ export class JSONLinesError extends Error {}
 
 export type DecodeJSON<T = unknown> = (value: string) => T
 
-export type FromJSONLinesOptions<T = unknown> = {
-  decode?: DecodeJSON<unknown>
+export type FramingLimits = {
   maxBufferSize?: number
   maxMessageSize?: number
+}
+
+export type FromJSONLinesOptions<T = unknown> = FramingLimits & {
+  decode?: DecodeJSON<unknown>
   onInvalidJSON?: (value: string, controller: TransformStreamDefaultController<T>) => void
 }
 
