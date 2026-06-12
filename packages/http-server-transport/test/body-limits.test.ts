@@ -8,7 +8,10 @@ describe('request body size limits', () => {
     const res = await bridge.handleRequest(
       new Request('http://localhost/', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          'content-length': String(new TextEncoder().encode(body).byteLength),
+        },
         body,
       }),
     )

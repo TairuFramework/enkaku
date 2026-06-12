@@ -79,7 +79,7 @@ async function readBodyWithLimit(request: Request, maxBytes: number): Promise<st
   const body = request.body
   if (body == null) {
     const text = await request.text()
-    return text.length > maxBytes ? null : text
+    return new TextEncoder().encode(text).byteLength > maxBytes ? null : text
   }
   const reader = body.getReader()
   const decoder = new TextDecoder()
