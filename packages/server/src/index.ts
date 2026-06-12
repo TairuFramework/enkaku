@@ -29,6 +29,7 @@ export {
   type ServeParams,
   Server,
   type ServerAccessOptions,
+  type ServerBaseParams,
   type ServerParams,
   serve,
 } from './server.js'

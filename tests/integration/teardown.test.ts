@@ -41,6 +41,7 @@ describe('teardown (integration)', () => {
     const server = serve<Protocol>({
       handlers: { chat: handler } as ProcedureHandlers<Protocol>,
       protocol,
+      requireAuth: false,
       transport: transports.server,
     })
     const client = new Client<Protocol>({ transport: transports.client })

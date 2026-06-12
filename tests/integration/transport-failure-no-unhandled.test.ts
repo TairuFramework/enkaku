@@ -71,7 +71,12 @@ describe('transport failure mid-call produces no unhandled errors', () => {
       AnyClientMessageOf<Protocol>,
       AnyServerMessageOf<Protocol>
     >({ socket: serverSocket })
-    const server = serve<Protocol>({ handlers, protocol, transport: serverTransport })
+    const server = serve<Protocol>({
+      handlers,
+      protocol,
+      requireAuth: false,
+      transport: serverTransport,
+    })
 
     const request = client.request('wait')
     // Let the request reach the server handler

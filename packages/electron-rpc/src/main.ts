@@ -1,5 +1,11 @@
 import type { ProtocolDefinition, ServerTransportOf } from '@enkaku/protocol'
-import { type ServeParams, type Server, serve } from '@enkaku/server'
+import {
+  type ServeParams,
+  type Server,
+  type ServerAccessOptions,
+  type ServerBaseParams,
+  serve,
+} from '@enkaku/server'
 import { Transport } from '@enkaku/transport'
 import { type IpcMainEvent, ipcMain, MessageChannelMain, type MessagePortMain } from 'electron'
 
@@ -71,14 +77,18 @@ export function handleProcessPort(
   })
 }
 
+// Composed from ServerBaseParams + ServerAccessOptions rather than
+// Omit<ServeParams, 'transport'>: Omit over the ServerAccessOptions union
+// collapses it to its common keys, which loses the `requireAuth: false` arm.
 export type ServeProcessParams<Protocol extends ProtocolDefinition> = Omit<
-  ServeParams<Protocol>,
-  'transport'
-> & {
-  name?: string
-  /** See {@link HandleProcessPortOptions.allowedSenderURLs}. */
-  allowedSenderURLs?: SenderURLAllowlist
-}
+  ServerBaseParams<Protocol>,
+  'transports'
+> &
+  ServerAccessOptions & {
+    name?: string
+    /** See {@link HandleProcessPortOptions.allowedSenderURLs}. */
+    allowedSenderURLs?: SenderURLAllowlist
+  }
 
 /**
  * Serve an Enkaku protocol to renderer processes over Electron IPC ports.
