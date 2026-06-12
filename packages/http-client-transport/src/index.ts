@@ -59,6 +59,7 @@ export type TransportStreamParams = {
   url: string
   fetch?: FetchFunction
   runtime?: Runtime
+  maxBufferSize?: number
 }
 
 export type TransportStream<Protocol extends ProtocolDefinition> = ReadableWritablePair<
@@ -142,6 +143,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
 
   function consumeSSEStream(response: Response): void {
     const parser = createParser({
+      maxBufferSize: params.maxBufferSize,
       onEvent: (event) => {
         try {
           const message = JSON.parse(event.data) as AnyServerMessageOf<Protocol>
@@ -149,6 +151,18 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
         } catch (cause) {
           controller.error(new Error('Failed to parse SSE event data', { cause }))
         }
+      },
+      onError: (error) => {
+        if (error.type === 'max-buffer-size-exceeded') {
+          // Reap the session instead of buffering an unbounded stream forever.
+          try {
+            controller.error(new Error('SSE buffer size exceeded', { cause: error }))
+          } catch {
+            // Readable already closed or errored
+          }
+          abortController.abort()
+        }
+        // Other ParseError types (unknown-field, invalid-retry) are non-fatal and ignored.
       },
     })
 
@@ -316,6 +330,7 @@ export type ClientTransportParams = {
   url: string
   fetch?: FetchFunction
   runtime?: Runtime
+  maxBufferSize?: number
 }
 
 export class ClientTransport<Protocol extends ProtocolDefinition> extends Transport<
