@@ -983,7 +983,7 @@ describe('Client', () => {
         'test/channel',
         Protocol['test/channel']
       >
-      await expect(sent1).toEqual({ typ: 'send', rid: payload.rid, val: 1 })
+      await expect(sent1).toEqual({ typ: 'send', prc: 'test/channel', rid: payload.rid, val: 1 })
 
       await channel.send(2)
       expect(logger.trace).toHaveBeenCalledWith(
@@ -999,7 +999,7 @@ describe('Client', () => {
         'test/channel',
         Protocol['test/channel']
       >
-      await expect(sent2).toEqual({ typ: 'send', rid: payload.rid, val: 2 })
+      await expect(sent2).toEqual({ typ: 'send', prc: 'test/channel', rid: payload.rid, val: 2 })
 
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 1 }))
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
@@ -1110,7 +1110,7 @@ describe('Client', () => {
         'test/channel',
         Protocol['test/channel']
       >
-      await expect(sent1).toEqual({ typ: 'send', rid: payload.rid, val: 1 })
+      await expect(sent1).toEqual({ typ: 'send', prc: 'test/channel', rid: payload.rid, val: 1 })
 
       await channel.send(2)
       const sentRead2 = await transports.server.read()
@@ -1118,7 +1118,7 @@ describe('Client', () => {
         'test/channel',
         Protocol['test/channel']
       >
-      await expect(sent2).toEqual({ typ: 'send', rid: payload.rid, val: 2 })
+      await expect(sent2).toEqual({ typ: 'send', prc: 'test/channel', rid: payload.rid, val: 2 })
 
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 1 }))
       await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
