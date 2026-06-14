@@ -385,6 +385,7 @@ describe('hub handlers', () => {
 
     channel.close()
     await expect(channel).rejects.toEqual('Close')
+    await delay(50)
     await ctx.dispose()
   })
 
