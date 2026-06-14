@@ -32,7 +32,7 @@ describe('channel send with validation enabled', () => {
 
     const channel = client.createChannel('test', { param: 5 })
     await channel.send(42)
-    await new Promise((resolve) => setTimeout(resolve, 100))
+    await expect(channel).resolves.toBe('END')
 
     expect(received).toEqual([42])
   })
