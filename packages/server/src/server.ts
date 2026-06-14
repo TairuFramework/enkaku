@@ -183,7 +183,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             const { rid, typ } = rawPayload as { rid?: unknown; typ?: unknown }
             if (
               typeof rid === 'string' &&
-              (typ === 'request' || typ === 'stream' || typ === 'channel')
+              (typ === 'request' || typ === 'stream' || typ === 'channel' || typ === 'send')
             ) {
               const error = new HandlerError({
                 code: ErrorCodes.INVALID_MESSAGE,
