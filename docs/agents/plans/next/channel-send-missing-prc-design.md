@@ -61,8 +61,8 @@ export type SendCallPayload<Procedure extends string, Value> = {
 ```
 
 Thread the new `Procedure` generic through its uses:
-- `SendPayloadOf` (`types/payloads.ts`) — add the `Procedure` param.
-- `ClientPayloadOf` channel branch (`types/payloads.ts`) — pass `Procedure`.
+- `SendPayloadOf` (`types/payloads.ts`) — no `Procedure` in scope, so type `prc` as `string`: `SendCallPayload<string, DataOf<Definition['send']>>`.
+- `ClientPayloadOf` channel branch (`types/payloads.ts`) — pass the concrete `Procedure`.
 - `UnknownCallPayload` (`calls.ts`) — `SendCallPayload<string, unknown>`.
 
 This removes the blindness that let `as unknown as AnyClientPayloadOf` hide the missing field; the type now enforces what the schema requires.

@@ -383,6 +383,10 @@ describe('hub handlers', () => {
       sequenceIDs: [sequenceID],
     })
 
+    // The ack must actually drain the message from the store.
+    const remaining = await store.fetch({ recipientDID: bobIdentity.id })
+    expect(remaining.messages).toEqual([])
+
     channel.close()
     await expect(channel).rejects.toEqual('Close')
     await delay(50)
