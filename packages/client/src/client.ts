@@ -806,7 +806,7 @@ export class Client<
         value: val,
       })
       await this.#write(
-        { typ: 'send', rid, val } as unknown as AnyClientPayloadOf<Protocol>,
+        { typ: 'send', prc: procedure, rid, val } as unknown as AnyClientPayloadOf<Protocol>,
         config.header,
         rid,
       )

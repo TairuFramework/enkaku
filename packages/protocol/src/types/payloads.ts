@@ -48,7 +48,7 @@ export type ChannelPayloadOf<
   : never
 
 export type SendPayloadOf<Definition> = Definition extends ChannelProcedureDefinition
-  ? SendCallPayload<DataOf<Definition['send']>>
+  ? SendCallPayload<string, DataOf<Definition['send']>>
   : never
 
 export type ClientPayloadOf<
@@ -63,7 +63,7 @@ export type ClientPayloadOf<
       : Definition extends ChannelProcedureDefinition
         ?
             | RequestCallPayload<'channel', Procedure, DataOf<Definition['param']>>
-            | SendCallPayload<DataOf<Definition['send']>>
+            | SendCallPayload<Procedure, DataOf<Definition['send']>>
             | AbortCallPayload
         : never
 

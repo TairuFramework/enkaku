@@ -24,8 +24,9 @@ export type RequestCallPayload<Type extends RequestType, Procedure extends strin
   prm: Params
 }
 
-export type SendCallPayload<Value> = {
+export type SendCallPayload<Procedure extends string, Value> = {
   typ: 'send'
+  prc: Procedure
   rid: string
   val: Value
 }
@@ -34,7 +35,7 @@ export type UnknownCallPayload =
   | AbortCallPayload
   | EventCallPayload<string, Record<string, unknown> | undefined>
   | RequestCallPayload<RequestType, string, unknown>
-  | SendCallPayload<unknown>
+  | SendCallPayload<string, unknown>
 
 // Reply payloads: from server to client
 

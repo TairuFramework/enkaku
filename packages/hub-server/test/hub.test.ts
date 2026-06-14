@@ -5,7 +5,7 @@ import type { HubProtocol, HubStore } from '@enkaku/hub-protocol'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
 import { type OwnIdentity, randomIdentity, stringifyToken } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
-import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { createHandlers } from '../src/handlers.js'
 import { type CreateHubParams, createHub, type HubInstance } from '../src/hub.js'
@@ -352,6 +352,43 @@ describe('hub handlers', () => {
 
     channel2.close()
     await expect(channel2).rejects.toEqual('Close')
+    await delay(50)
+    await ctx.dispose()
+  })
+
+  test('hub/receive ack drains the store (store.ack is called)', async () => {
+    const store = createMemoryStore()
+    const ackSpy = vi.spyOn(store, 'ack')
+    const ctx = createTestHub({ store })
+    const { client: alice } = ctx.connect()
+    const bobIdentity = randomIdentity()
+
+    await alice.request('hub/send', {
+      param: { recipients: [bobIdentity.id], payload: encodePayload('msg-1') },
+    })
+    await delay(50)
+
+    const { client: bob } = ctx.connect(bobIdentity)
+    const channel = bob.createChannel('hub/receive', { param: {} })
+    const reader = channel.readable.getReader()
+    const msg1 = await reader.read()
+    const sequenceID = msg1.value?.sequenceID
+    expect(sequenceID).toBeDefined()
+
+    await channel.send({ ack: [sequenceID as string] })
+    await delay(50)
+
+    expect(ackSpy).toHaveBeenCalledWith({
+      recipientDID: bobIdentity.id,
+      sequenceIDs: [sequenceID],
+    })
+
+    // The ack must actually drain the message from the store.
+    const remaining = await store.fetch({ recipientDID: bobIdentity.id })
+    expect(remaining.messages).toEqual([])
+
+    channel.close()
+    await expect(channel).rejects.toEqual('Close')
     await delay(50)
     await ctx.dispose()
   })
