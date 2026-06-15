@@ -353,6 +353,16 @@ describe('fromEmitter()', () => {
     await expect(raceTimeout(loop)).resolves.toBeUndefined()
   })
 
+  test('settles next() with {done:true} when the signal is already aborted at construction', async () => {
+    const controller = new AbortController()
+    controller.abort()
+    const emitter = new EventEmitter<{ test: number }>()
+    const generator = fromEmitter(emitter, 'test', { signal: controller.signal })
+
+    // Signal already aborted before construction: next() must not park.
+    expect(await raceTimeout(generator.next())).toEqual({ done: true, value: undefined })
+  })
+
   test('delivers queued null/undefined event values instead of dropping them', async () => {
     const emitter = new EventEmitter<{ test: number | null | undefined }>()
     const generator = fromEmitter(emitter, 'test')
