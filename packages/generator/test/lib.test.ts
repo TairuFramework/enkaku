@@ -4,6 +4,17 @@ import { describe, expect, test } from 'vitest'
 
 import { consume, fromEmitter, fromStream } from '../src/index.js'
 
+// Rejects if `promise` does not settle within `ms`, so a regression that
+// leaves next() parked forever fails fast instead of hanging the suite.
+function raceTimeout<T>(promise: Promise<T>, ms = 200): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms),
+    ),
+  ])
+}
+
 describe('consume()', () => {
   test('consumes until the generator ends', async () => {
     async function* generate() {
@@ -277,6 +288,81 @@ describe('fromEmitter()', () => {
       }
     }
     expect(values).toEqual([1, 2])
+  })
+
+  test('settles a parked next() with {done:true} on return()', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+    const generator = fromEmitter(emitter, 'test')
+
+    // Queue empty: this next() parks on `pending`.
+    const parked = generator.next()
+    generator.return()
+
+    expect(await raceTimeout(parked)).toEqual({ done: true, value: undefined })
+  })
+
+  test('settles a parked next() with {done:true} on throw()', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+    const generator = fromEmitter(emitter, 'test')
+
+    const parked = generator.next()
+    // throw()'s own promise rejects with the reason...
+    await expect(generator.throw('boom')).rejects.toBe('boom')
+    // ...but the parked next() resolves cleanly.
+    expect(await raceTimeout(parked)).toEqual({ done: true, value: undefined })
+  })
+
+  test('settles a parked next() with {done:true} on dispose', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+    const generator = fromEmitter(emitter, 'test')
+
+    const parked = generator.next()
+    await generator[Symbol.asyncDispose]()
+
+    expect(await raceTimeout(parked)).toEqual({ done: true, value: undefined })
+  })
+
+  test('settles a parked next() with {done:true} on signal abort', async () => {
+    const controller = new AbortController()
+    const emitter = new EventEmitter<{ test: number }>()
+    const generator = fromEmitter(emitter, 'test', { signal: controller.signal })
+
+    const parked = generator.next()
+    controller.abort()
+
+    expect(await raceTimeout(parked)).toEqual({ done: true, value: undefined })
+  })
+
+  test('a raw for await cancelled mid-park terminates cleanly', async () => {
+    const emitter = new EventEmitter<{ test: number }>()
+    const generator = fromEmitter(emitter, 'test')
+
+    const loop = (async () => {
+      // No event is ever emitted; the loop parks immediately then is cancelled.
+      for await (const _value of generator) {
+        // unreachable
+        void _value
+      }
+    })()
+
+    // Let the loop reach its parked next(), then cancel via the iterator.
+    await new Promise((resolve) => setImmediate(resolve))
+    await generator.return()
+
+    await expect(raceTimeout(loop)).resolves.toBeUndefined()
+  })
+
+  test('delivers queued null/undefined event values instead of dropping them', async () => {
+    const emitter = new EventEmitter<{ test: number | null | undefined }>()
+    const generator = fromEmitter(emitter, 'test')
+
+    // Emit BEFORE next(): the value sits in the queue and is drained by next(),
+    // exercising the buggy `value != null` guard.
+    emitter.emit('test', null)
+    expect(await raceTimeout(generator.next())).toEqual({ value: null, done: false })
+
+    emitter.emit('test', undefined)
+    expect(await raceTimeout(generator.next())).toEqual({ value: undefined, done: false })
   })
 })
 
