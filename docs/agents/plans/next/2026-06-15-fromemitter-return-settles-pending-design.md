@@ -98,7 +98,7 @@ New tests in `packages/generator/test/lib.test.ts` under `describe('fromEmitter(
 - Parked `next()` settles `{done:true}` when `[Symbol.asyncDispose]` runs.
 - Parked `next()` settles `{done:true}` when the abort signal fires.
 - Raw `for await` over `fromEmitter`, cancelled mid-park (no queued event), terminates cleanly.
-- Regression: emitted `0`, `null`, and `undefined` event values are delivered (not dropped/re-parked).
+- Regression: **queued** `null`/`undefined` event values (emitted before `next()`, so drained via the queue path) are delivered, not dropped/re-parked. Note `0 != null` is true, so `0` was never affected; the bug only hit `null`/`undefined` on the queue-drain path.
 - Existing `consume()`-based and `fromEmitter()` tests remain green (listener still removed; no double-settle).
 
 ## Done when

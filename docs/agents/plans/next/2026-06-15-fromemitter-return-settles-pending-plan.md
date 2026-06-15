@@ -111,25 +111,26 @@ test('a raw for await cancelled mid-park terminates cleanly', async () => {
   await expect(raceTimeout(loop)).resolves.toBeUndefined()
 })
 
-test('delivers falsy event values instead of dropping them', async () => {
+test('delivers queued null/undefined event values instead of dropping them', async () => {
   const emitter = new EventEmitter<{ test: number | null | undefined }>()
   const generator = fromEmitter(emitter, 'test')
 
-  // Park first, then emit a falsy value: the listener resolves the parked next().
-  const parked = generator.next()
-  emitter.emit('test', 0)
-  expect(await raceTimeout(parked)).toEqual({ value: 0, done: false })
-
-  const parkedNull = generator.next()
+  // Emit BEFORE next(): the value sits in the queue and is drained by next(),
+  // exercising the buggy `value != null` guard. (Park-then-emit would route
+  // through the listener and bypass the bug. `0 != null` is true, so 0 is
+  // never dropped — only null/undefined are.)
   emitter.emit('test', null)
-  expect(await raceTimeout(parkedNull)).toEqual({ value: null, done: false })
+  expect(await raceTimeout(generator.next())).toEqual({ value: null, done: false })
+
+  emitter.emit('test', undefined)
+  expect(await raceTimeout(generator.next())).toEqual({ value: undefined, done: false })
 })
 ```
 
 - [ ] **Step 3: Run the new tests — verify they FAIL (hang → timeout)**
 
 Run: `pnpm --filter @enkaku/generator run test:unit -- -t fromEmitter`
-Expected: FAIL — the new `return()`/`throw()`/dispose/abort tests reject with `timed out after 200ms` (the parked promise never settles today). The falsy test fails because `0`/`null` are dropped and re-park (also a timeout). The pre-existing `fromEmitter` tests still pass.
+Expected: FAIL (6 tests) — the new `return()`/`throw()`/dispose/abort tests + the raw-for-await test reject with `timed out after 200ms` (the parked promise never settles today). The falsy test fails because queued `null`/`undefined` are dropped by the `value != null` guard and re-park (also a timeout). The pre-existing `fromEmitter` tests still pass.
 
 - [ ] **Step 4: Commit the red tests**
 
