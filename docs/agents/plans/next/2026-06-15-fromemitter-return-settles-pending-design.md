@@ -88,6 +88,7 @@ next: () => {
 - Parked `next()` after close → resolves `{done:true}` (never rejects).
 - `throw()`'s own promise → rejects with `reason`.
 - Double close (e.g. `return()` then signal-abort) → second `stop()` is a no-op for `pending`; `unsubscribe()` is already idempotent in `@enkaku/event` usage as exercised today.
+- **Signal already aborted at construction** → the `'abort'` event has already fired, so an `addEventListener('abort', …)` would never run and a later `next()` would park forever. Guard with `if (options?.signal?.aborted) stop()` (mirrors `consume()`'s already-aborted handling at `:37-43`), so `stop()` runs immediately and `next()` returns `{done:true}`.
 
 ## Testing
 

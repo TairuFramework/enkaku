@@ -187,9 +187,13 @@ export function fromEmitter<
     }
   }
 
-  options?.signal?.addEventListener('abort', () => {
+  if (options?.signal?.aborted) {
     stop()
-  })
+  } else {
+    options?.signal?.addEventListener('abort', () => {
+      stop()
+    })
+  }
 
   return {
     [Symbol.asyncDispose]() {
@@ -226,6 +230,7 @@ Key changes vs. the original:
 - Listener resolves `{ value: event, done: false }` (was a bare `event`).
 - `stop()` resolves any outstanding `pending` with `{ done: true, value: undefined }` and nulls it.
 - `next()` checks `queue.length > 0` (was `value != null`) and returns `pending.promise` directly (the old trailing `.then((value) => ({ value, done: false }))` mapping is gone).
+- The abort registration guards the already-aborted case (`if (options?.signal?.aborted) stop()`), mirroring `consume()`, so a generator built from an already-aborted signal returns `{done:true}` instead of parking. (Added in review; covered by the `signal is already aborted at construction` test.)
 
 - [ ] **Step 2: Run the new tests — verify they PASS**
 
