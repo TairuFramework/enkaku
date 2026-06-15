@@ -7,12 +7,13 @@ import { consume, fromEmitter, fromStream } from '../src/index.js'
 // Rejects if `promise` does not settle within `ms`, so a regression that
 // leaves next() parked forever fails fast instead of hanging the suite.
 function raceTimeout<T>(promise: Promise<T>, ms = 200): Promise<T> {
+  let timer: ReturnType<typeof setTimeout>
   return Promise.race([
     promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms),
-    ),
-  ])
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms)
+    }),
+  ]).finally(() => clearTimeout(timer))
 }
 
 describe('consume()', () => {
