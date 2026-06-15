@@ -100,9 +100,13 @@ export function fromEmitter<
     }
   }
 
-  options?.signal?.addEventListener('abort', () => {
+  if (options?.signal?.aborted) {
     stop()
-  })
+  } else {
+    options?.signal?.addEventListener('abort', () => {
+      stop()
+    })
+  }
 
   return {
     [Symbol.asyncDispose]() {
