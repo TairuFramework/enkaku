@@ -75,7 +75,7 @@ export function fromEmitter<
   options?: { filter?: (event: Events[EventName]) => boolean; signal?: AbortSignal },
 ): AsyncGenerator<Events[EventName], void, void> {
   let isDone = false
-  let pending: Deferred<Events[EventName]> | null = null
+  let pending: Deferred<IteratorResult<Events[EventName], void>> | null = null
   const queue: Array<Events[EventName]> = []
 
   const unsubscribe = emitter.on(
@@ -84,7 +84,7 @@ export function fromEmitter<
       if (pending == null) {
         queue.push(event)
       } else {
-        pending.resolve(event)
+        pending.resolve({ value: event, done: false })
         pending = null
       }
     },
@@ -94,11 +94,19 @@ export function fromEmitter<
   const stop = () => {
     unsubscribe()
     isDone = true
+    if (pending != null) {
+      pending.resolve({ done: true, value: undefined })
+      pending = null
+    }
   }
 
-  options?.signal?.addEventListener('abort', () => {
+  if (options?.signal?.aborted) {
     stop()
-  })
+  } else {
+    options?.signal?.addEventListener('abort', () => {
+      stop()
+    })
+  }
 
   return {
     [Symbol.asyncDispose]() {
@@ -112,12 +120,11 @@ export function fromEmitter<
       if (isDone) {
         return Promise.resolve({ done: true, value: undefined })
       }
-      const value = queue.shift()
-      if (value != null) {
-        return Promise.resolve({ value, done: false })
+      if (queue.length > 0) {
+        return Promise.resolve({ value: queue.shift() as Events[EventName], done: false })
       }
-      pending = defer<Events[EventName]>()
-      return pending.promise.then((value) => ({ value, done: false }))
+      pending = defer<IteratorResult<Events[EventName], void>>()
+      return pending.promise
     },
     return: () => {
       stop()
