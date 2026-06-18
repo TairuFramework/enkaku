@@ -104,24 +104,28 @@ export class CommitRejectedError extends Error {
   }
 }
 
+type RejectedCommit = { proposals: Array<ProposalWithSender>; senderLeafIndex?: number }
+
 /**
  * Wrap a consumer commit policy so the rejected commit's proposals are captured
  * for CommitRejectedError. ts-mls's ProcessMessageResult does not surface the
  * rejected proposals on the result, so we record them from the callback's own
- * argument on the 'reject' path onto `capture`. Returns undefined when no policy
- * is set.
+ * argument on the 'reject' path onto `capture.rejected`. Returns undefined when
+ * no policy is set.
  */
 function wrapCommitPolicy(
   callback: IncomingMessageCallback | undefined,
-  capture: Record<string, unknown>,
+  capture: { rejected?: RejectedCommit },
 ): IncomingMessageCallback | undefined {
   if (callback == null) return undefined
   return (incoming) => {
     const action = callback(incoming)
     if (action === 'reject' && incoming.kind === 'commit') {
-      capture.proposals = incoming.proposals
-      capture.senderLeafIndex =
-        incoming.senderLeafIndex == null ? undefined : Number(incoming.senderLeafIndex)
+      capture.rejected = {
+        proposals: incoming.proposals,
+        senderLeafIndex:
+          incoming.senderLeafIndex == null ? undefined : Number(incoming.senderLeafIndex),
+      }
     }
     return action
   }
@@ -195,6 +199,12 @@ export class GroupHandle {
 
   get resolver(): DIDResolver | undefined {
     return this.#resolver
+  }
+
+  /** The commit policy enforced by processMessage/decrypt, if any. Carried
+   *  onto handles derived from this one (commitInvite/removeMember). */
+  get commitPolicy(): IncomingMessageCallback | undefined {
+    return this.#commitPolicy
   }
 
   get memberCount(): number {
@@ -276,8 +286,8 @@ export class GroupHandle {
       decoded = parsed
     }
     const callback = opts?.commitPolicy ?? this.#commitPolicy
-    const captureRejected: Record<string, unknown> = {}
-    const wrapped = wrapCommitPolicy(callback, captureRejected)
+    const capture: { rejected?: RejectedCommit } = {}
+    const wrapped = wrapCommitPolicy(callback, capture)
     const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
@@ -288,15 +298,12 @@ export class GroupHandle {
       this.#state = result.newState
       return result.message
     }
-    // Commit or proposal — state was updated
+    // On reject, ts-mls returns the pre-commit state, so the handle stays put.
     this.#state = result.newState
     if (result.kind === 'newState' && result.actionTaken === 'reject') {
-      const rejected = captureRejected as Record<string, unknown>
       throw new CommitRejectedError(
-        'proposals' in rejected ? (rejected.proposals as Array<ProposalWithSender>) : [],
-        'senderLeafIndex' in rejected
-          ? (rejected.senderLeafIndex as number | undefined)
-          : undefined,
+        capture.rejected?.proposals ?? [],
+        capture.rejected?.senderLeafIndex,
       )
     }
     throw new Error('Expected application message but received handshake message')
@@ -324,26 +331,24 @@ export class GroupHandle {
       decoded = parsed
     }
     const callback = opts?.commitPolicy ?? this.#commitPolicy
-    const captureRejected: Record<string, unknown> = {}
-    const wrapped = wrapCommitPolicy(callback, captureRejected)
+    const capture: { rejected?: RejectedCommit } = {}
+    const wrapped = wrapCommitPolicy(callback, capture)
     const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
       message: decoded as Parameters<typeof mlsProcessMessage>[0]['message'],
       ...(wrapped != null && { callback: wrapped }),
     })
+    // On reject, ts-mls returns the pre-commit state, so the handle stays put.
     this.#state = result.newState
+    if (result.kind === 'newState' && result.actionTaken === 'reject') {
+      throw new CommitRejectedError(
+        capture.rejected?.proposals ?? [],
+        capture.rejected?.senderLeafIndex,
+      )
+    }
     if (result.kind === 'applicationMessage') {
       return result.message
-    }
-    if (result.kind === 'newState' && result.actionTaken === 'reject') {
-      const rejected = captureRejected as Record<string, unknown>
-      throw new CommitRejectedError(
-        'proposals' in rejected ? (rejected.proposals as Array<ProposalWithSender>) : [],
-        'senderLeafIndex' in rejected
-          ? (rejected.senderLeafIndex as number | undefined)
-          : undefined,
-      )
     }
     return null
   }
@@ -523,6 +528,7 @@ export async function commitInvite(
     rootCapability: group.rootCapability,
     cache: group.cache,
     resolver: group.resolver,
+    commitPolicy: group.commitPolicy,
   })
 
   if (result.welcome == null) {
@@ -655,6 +661,7 @@ export async function removeMember(
     rootCapability: group.rootCapability,
     cache: group.cache,
     resolver: group.resolver,
+    commitPolicy: group.commitPolicy,
   })
 
   return {
@@ -869,6 +876,7 @@ export async function joinGroupExternal(
     rootCapability,
     cache,
     resolver: options?.resolver,
+    commitPolicy: options?.commitPolicy,
   })
 
   return { commitMessage, group }

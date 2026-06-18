@@ -17,6 +17,7 @@ import {
   createInvite,
   createKeyPackageBundle,
   processWelcome,
+  removeMember,
 } from '../src/group.js'
 
 // kubun's genesis-anchor extension type (custom, non-default).
@@ -252,5 +253,28 @@ describe('Gap 2 — commit policy hook', () => {
       bobGroup.processMessage(commitMessage, { commitPolicy: rejectAll }),
     ).rejects.toBeInstanceOf(CommitRejectedError)
     expect(bobGroup.epoch).toBe(epochBefore)
+  })
+
+  test('commit policy survives on handles derived via commitInvite/removeMember', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const { group: aliceGroup } = await createGroup(alice, 'g2-derive', {
+      commitPolicy: rejectAnchorMutation,
+    })
+    expect(aliceGroup.commitPolicy).toBe(rejectAnchorMutation)
+
+    const bobBundle = await createKeyPackageBundle(bob)
+    await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const { newGroup: aliceAfterBob } = await commitInvite(aliceGroup, bobBundle.publicPackage)
+    // Derived handle retains the policy (previously dropped — review issue #1).
+    expect(aliceAfterBob.commitPolicy).toBe(rejectAnchorMutation)
+
+    const { newGroup: aliceAfterRemove } = await removeMember(aliceAfterBob, 1)
+    expect(aliceAfterRemove.commitPolicy).toBe(rejectAnchorMutation)
   })
 })
