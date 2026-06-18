@@ -3,6 +3,7 @@ import type {
   Capabilities,
   CryptoProvider,
   GroupContextExtension,
+  IncomingMessageCallback,
   KeyPackage,
   PrivateKeyPackage,
 } from 'ts-mls'
@@ -22,6 +23,13 @@ export type GroupOptions = {
    * leaf's capabilities (default: defaultCapabilities()).
    */
   capabilities?: Capabilities
+  /**
+   * Default commit policy for the resulting GroupHandle. Invoked during
+   * processMessage/decrypt for each incoming commit; return 'reject' to refuse
+   * a commit (the handle stays at its pre-commit epoch and processMessage
+   * throws CommitRejectedError). Overridable per call.
+   */
+  commitPolicy?: IncomingMessageCallback
   /** Optional DID cache for resolving did:peer:4 issuers in capability chains. Default: in-memory. */
   cache?: DIDCache
   /** Optional resolver for did:peer:4 short forms not in cache. */

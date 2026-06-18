@@ -25,6 +25,7 @@ import {
   type GroupContextExtension,
   generateKeyPackageWithKey,
   getCiphersuiteImpl,
+  type IncomingMessageCallback,
   type KeyPackage,
   type MlsContext,
   type MlsGroupInfo,
@@ -36,6 +37,7 @@ import {
   mlsMessageEncoder,
   processMessage as mlsProcessMessage,
   nodeTypes,
+  type ProposalWithSender,
   protocolVersions,
   wireformats,
 } from 'ts-mls'
@@ -86,6 +88,48 @@ export function makeMLSCredential(identity: OwnIdentity): Credential {
   }
 }
 
+/**
+ * Thrown by GroupHandle.processMessage/decrypt when the active commit policy
+ * rejects an incoming commit. The handle is left at its pre-commit epoch.
+ */
+export class CommitRejectedError extends Error {
+  readonly proposals: Array<ProposalWithSender>
+  readonly senderLeafIndex?: number
+
+  constructor(proposals: Array<ProposalWithSender>, senderLeafIndex?: number) {
+    super('Commit rejected by group commit policy')
+    this.name = 'CommitRejectedError'
+    this.proposals = proposals
+    this.senderLeafIndex = senderLeafIndex
+  }
+}
+
+type RejectedCommit = { proposals: Array<ProposalWithSender>; senderLeafIndex?: number }
+
+/**
+ * Wrap a consumer commit policy so the rejected commit's proposals are captured
+ * for CommitRejectedError. ts-mls's ProcessMessageResult does not surface the
+ * rejected proposals on the result, so we record them from the callback's own
+ * argument on the 'reject' path. Returns undefined when no policy is set.
+ */
+function wrapCommitPolicy(
+  callback: IncomingMessageCallback | undefined,
+  capture: { rejected?: RejectedCommit },
+): IncomingMessageCallback | undefined {
+  if (callback == null) return undefined
+  return (incoming) => {
+    const action = callback(incoming)
+    if (action === 'reject' && incoming.kind === 'commit') {
+      capture.rejected = {
+        proposals: incoming.proposals,
+        senderLeafIndex:
+          incoming.senderLeafIndex == null ? undefined : Number(incoming.senderLeafIndex),
+      }
+    }
+    return action
+  }
+}
+
 export type GroupHandleParams = {
   state: ClientState
   credential: MemberCredential
@@ -94,6 +138,8 @@ export type GroupHandleParams = {
   rootCapability: string
   cache: DIDCache
   resolver?: DIDResolver
+  /** Default commit policy applied by processMessage/decrypt. */
+  commitPolicy?: IncomingMessageCallback
 }
 
 /**
@@ -106,6 +152,7 @@ export class GroupHandle {
   #rootCapability: string
   #cache: DIDCache
   #resolver?: DIDResolver
+  #commitPolicy?: IncomingMessageCallback
 
   constructor(params: GroupHandleParams) {
     this.#state = params.state
@@ -114,6 +161,7 @@ export class GroupHandle {
     this.#rootCapability = params.rootCapability
     this.#cache = params.cache
     this.#resolver = params.resolver
+    this.#commitPolicy = params.commitPolicy
   }
 
   get groupID(): string {
@@ -218,7 +266,10 @@ export class GroupHandle {
    * currently emits objects, so the bytes path is for symmetry with
    * processMessage and future wire-form application messages.
    */
-  async decrypt(message: Uint8Array | unknown): Promise<Uint8Array> {
+  async decrypt(
+    message: Uint8Array | unknown,
+    opts?: { commitPolicy?: IncomingMessageCallback },
+  ): Promise<Uint8Array> {
     let decoded: unknown = message
     if (message instanceof Uint8Array) {
       const parsed = decode(mlsMessageDecoder, message)
@@ -227,10 +278,14 @@ export class GroupHandle {
       }
       decoded = parsed
     }
+    const callback = opts?.commitPolicy ?? this.#commitPolicy
+    const captureRejected: Record<string, unknown> = {}
+    const wrapped = wrapCommitPolicy(callback, captureRejected)
     const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
       message: decoded as Parameters<typeof mlsProcessMessage>[0]['message'],
+      ...(wrapped != null && { callback: wrapped }),
     })
     if (result.kind === 'applicationMessage') {
       this.#state = result.newState
@@ -238,6 +293,15 @@ export class GroupHandle {
     }
     // Commit or proposal — state was updated
     this.#state = result.newState
+    if (result.kind === 'newState' && result.actionTaken === 'reject') {
+      const rejected = captureRejected as Record<string, unknown>
+      throw new CommitRejectedError(
+        'proposals' in rejected ? (rejected.proposals as Array<ProposalWithSender>) : [],
+        'senderLeafIndex' in rejected
+          ? (rejected.senderLeafIndex as number | undefined)
+          : undefined,
+      )
+    }
     throw new Error('Expected application message but received handshake message')
   }
 
@@ -250,7 +314,10 @@ export class GroupHandle {
    * `Uint8Array | unknown` collapses to `unknown` in TypeScript; the runtime
    * `instanceof` check selects the decode path.
    */
-  async processMessage(message: Uint8Array | unknown): Promise<Uint8Array | null> {
+  async processMessage(
+    message: Uint8Array | unknown,
+    opts?: { commitPolicy?: IncomingMessageCallback },
+  ): Promise<Uint8Array | null> {
     let decoded: unknown = message
     if (message instanceof Uint8Array) {
       const parsed = decode(mlsMessageDecoder, message)
@@ -259,14 +326,27 @@ export class GroupHandle {
       }
       decoded = parsed
     }
+    const callback = opts?.commitPolicy ?? this.#commitPolicy
+    const captureRejected: Record<string, unknown> = {}
+    const wrapped = wrapCommitPolicy(callback, captureRejected)
     const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
       message: decoded as Parameters<typeof mlsProcessMessage>[0]['message'],
+      ...(wrapped != null && { callback: wrapped }),
     })
     this.#state = result.newState
     if (result.kind === 'applicationMessage') {
       return result.message
+    }
+    if (result.kind === 'newState' && result.actionTaken === 'reject') {
+      const rejected = captureRejected as Record<string, unknown>
+      throw new CommitRejectedError(
+        'proposals' in rejected ? (rejected.proposals as Array<ProposalWithSender>) : [],
+        'senderLeafIndex' in rejected
+          ? (rejected.senderLeafIndex as number | undefined)
+          : undefined,
+      )
     }
     return null
   }
@@ -343,6 +423,7 @@ export async function createGroup(
     rootCapability,
     cache,
     resolver: options?.resolver,
+    commitPolicy: options?.commitPolicy,
   })
 
   return { group, credential }
@@ -364,6 +445,7 @@ export async function restoreGroup(params: RestoreGroupParams): Promise<GroupHan
     rootCapability: params.rootCapability,
     cache,
     resolver: params.options?.resolver,
+    commitPolicy: params.options?.commitPolicy,
   })
 }
 
@@ -534,6 +616,7 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
       })(),
     cache,
     resolver: options?.resolver,
+    commitPolicy: options?.commitPolicy,
   })
 
   return { group, credential }

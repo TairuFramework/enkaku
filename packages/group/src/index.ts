@@ -1,3 +1,4 @@
+export type { IncomingMessageCallback, ProposalWithSender } from 'ts-mls'
 export { createDIDAuthenticationService } from './authentication.js'
 export {
   createGroupCapability,
@@ -28,6 +29,7 @@ export {
 } from './crypto.js'
 export {
   type CommitInviteResult,
+  CommitRejectedError,
   type CreateGroupResult,
   type CreateInviteParams,
   type CreateInviteResult,
