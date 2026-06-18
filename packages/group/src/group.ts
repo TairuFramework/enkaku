@@ -9,6 +9,7 @@ import {
   stringifyToken,
 } from '@enkaku/token'
 import {
+  type Capabilities,
   type CiphersuiteName,
   type ClientState,
   type Credential,
@@ -17,11 +18,14 @@ import {
   createGroupInfoWithExternalPubAndRatchetTree,
   type DefaultProposal,
   decode,
+  defaultCapabilities,
   defaultCredentialTypes,
   defaultProposalTypes,
   encode,
+  type GroupContextExtension,
   generateKeyPackageWithKey,
   getCiphersuiteImpl,
+  type IncomingMessageCallback,
   type KeyPackage,
   type MlsContext,
   type MlsGroupInfo,
@@ -33,6 +37,7 @@ import {
   mlsMessageEncoder,
   processMessage as mlsProcessMessage,
   nodeTypes,
+  type ProposalWithSender,
   protocolVersions,
   wireformats,
 } from 'ts-mls'
@@ -83,6 +88,57 @@ export function makeMLSCredential(identity: OwnIdentity): Credential {
   }
 }
 
+/**
+ * Thrown by GroupHandle.processMessage/decrypt when the active commit policy
+ * rejects an incoming commit. The handle is left at its pre-commit epoch.
+ */
+export class CommitRejectedError extends Error {
+  #proposals: Array<ProposalWithSender>
+  #senderLeafIndex?: number
+
+  constructor(proposals: Array<ProposalWithSender>, senderLeafIndex?: number) {
+    super('Commit rejected by group commit policy')
+    this.name = 'CommitRejectedError'
+    this.#proposals = proposals
+    this.#senderLeafIndex = senderLeafIndex
+  }
+
+  get proposals(): Array<ProposalWithSender> {
+    return this.#proposals
+  }
+
+  get senderLeafIndex(): number | undefined {
+    return this.#senderLeafIndex
+  }
+}
+
+type RejectedCommit = { proposals: Array<ProposalWithSender>; senderLeafIndex?: number }
+
+/**
+ * Wrap a consumer commit policy so the rejected commit's proposals are captured
+ * for CommitRejectedError. ts-mls's ProcessMessageResult does not surface the
+ * rejected proposals on the result, so we record them from the callback's own
+ * argument on the 'reject' path onto `capture.rejected`. Returns undefined when
+ * no policy is set.
+ */
+function wrapCommitPolicy(
+  callback: IncomingMessageCallback | undefined,
+  capture: { rejected?: RejectedCommit },
+): IncomingMessageCallback | undefined {
+  if (callback == null) return undefined
+  return (incoming) => {
+    const action = callback(incoming)
+    if (action === 'reject' && incoming.kind === 'commit') {
+      capture.rejected = {
+        proposals: incoming.proposals,
+        senderLeafIndex:
+          incoming.senderLeafIndex == null ? undefined : Number(incoming.senderLeafIndex),
+      }
+    }
+    return action
+  }
+}
+
 export type GroupHandleParams = {
   state: ClientState
   credential: MemberCredential
@@ -91,6 +147,8 @@ export type GroupHandleParams = {
   rootCapability: string
   cache: DIDCache
   resolver?: DIDResolver
+  /** Default commit policy applied by processMessage/decrypt. */
+  commitPolicy?: IncomingMessageCallback
 }
 
 /**
@@ -103,6 +161,7 @@ export class GroupHandle {
   #rootCapability: string
   #cache: DIDCache
   #resolver?: DIDResolver
+  #commitPolicy?: IncomingMessageCallback
 
   constructor(params: GroupHandleParams) {
     this.#state = params.state
@@ -111,6 +170,7 @@ export class GroupHandle {
     this.#rootCapability = params.rootCapability
     this.#cache = params.cache
     this.#resolver = params.resolver
+    this.#commitPolicy = params.commitPolicy
   }
 
   get groupID(): string {
@@ -147,6 +207,12 @@ export class GroupHandle {
 
   get resolver(): DIDResolver | undefined {
     return this.#resolver
+  }
+
+  /** The commit policy enforced by processMessage/decrypt, if any. Carried
+   *  onto handles derived from this one (commitInvite/removeMember). */
+  get commitPolicy(): IncomingMessageCallback | undefined {
+    return this.#commitPolicy
   }
 
   get memberCount(): number {
@@ -215,7 +281,10 @@ export class GroupHandle {
    * currently emits objects, so the bytes path is for symmetry with
    * processMessage and future wire-form application messages.
    */
-  async decrypt(message: Uint8Array | unknown): Promise<Uint8Array> {
+  async decrypt(
+    message: Uint8Array | unknown,
+    opts?: { commitPolicy?: IncomingMessageCallback },
+  ): Promise<Uint8Array> {
     let decoded: unknown = message
     if (message instanceof Uint8Array) {
       const parsed = decode(mlsMessageDecoder, message)
@@ -224,17 +293,27 @@ export class GroupHandle {
       }
       decoded = parsed
     }
+    const callback = opts?.commitPolicy ?? this.#commitPolicy
+    const capture: { rejected?: RejectedCommit } = {}
+    const wrapped = wrapCommitPolicy(callback, capture)
     const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
       message: decoded as Parameters<typeof mlsProcessMessage>[0]['message'],
+      ...(wrapped != null && { callback: wrapped }),
     })
     if (result.kind === 'applicationMessage') {
       this.#state = result.newState
       return result.message
     }
-    // Commit or proposal — state was updated
+    // On reject, ts-mls returns the pre-commit state, so the handle stays put.
     this.#state = result.newState
+    if (result.kind === 'newState' && result.actionTaken === 'reject') {
+      throw new CommitRejectedError(
+        capture.rejected?.proposals ?? [],
+        capture.rejected?.senderLeafIndex,
+      )
+    }
     throw new Error('Expected application message but received handshake message')
   }
 
@@ -247,7 +326,10 @@ export class GroupHandle {
    * `Uint8Array | unknown` collapses to `unknown` in TypeScript; the runtime
    * `instanceof` check selects the decode path.
    */
-  async processMessage(message: Uint8Array | unknown): Promise<Uint8Array | null> {
+  async processMessage(
+    message: Uint8Array | unknown,
+    opts?: { commitPolicy?: IncomingMessageCallback },
+  ): Promise<Uint8Array | null> {
     let decoded: unknown = message
     if (message instanceof Uint8Array) {
       const parsed = decode(mlsMessageDecoder, message)
@@ -256,12 +338,23 @@ export class GroupHandle {
       }
       decoded = parsed
     }
+    const callback = opts?.commitPolicy ?? this.#commitPolicy
+    const capture: { rejected?: RejectedCommit } = {}
+    const wrapped = wrapCommitPolicy(callback, capture)
     const result = await mlsProcessMessage({
       context: this.#context,
       state: this.#state,
       message: decoded as Parameters<typeof mlsProcessMessage>[0]['message'],
+      ...(wrapped != null && { callback: wrapped }),
     })
+    // On reject, ts-mls returns the pre-commit state, so the handle stays put.
     this.#state = result.newState
+    if (result.kind === 'newState' && result.actionTaken === 'reject') {
+      throw new CommitRejectedError(
+        capture.rejected?.proposals ?? [],
+        capture.rejected?.senderLeafIndex,
+      )
+    }
     if (result.kind === 'applicationMessage') {
       return result.message
     }
@@ -272,6 +365,22 @@ export class GroupHandle {
 // ---------------------------------------------------------------------------
 // Lifecycle functions
 // ---------------------------------------------------------------------------
+
+/**
+ * Build the leaf-node capabilities for a group creator. RFC 9420 requires a
+ * member's leaf to advertise every non-default GroupContext extension type the
+ * group uses; we derive that set from the group's extensions so it cannot
+ * desync. An explicit `override` (GroupOptions.capabilities) wins verbatim.
+ */
+function buildCreatorCapabilities(
+  extensions: ReadonlyArray<GroupContextExtension>,
+  override?: Capabilities,
+): Capabilities {
+  if (override != null) return override
+  const base = defaultCapabilities()
+  const types = new Set<number>([...base.extensions, ...extensions.map((e) => e.extensionType)])
+  return { ...base, extensions: [...types] }
+}
 
 export type CreateGroupResult = {
   group: GroupHandle
@@ -289,17 +398,19 @@ export async function createGroup(
   const cache = options?.cache ?? createInMemoryDIDCache()
   const context = await resolveMlsContext(options)
 
+  const extensions = options?.extensions ?? []
   const statePromise = generateKeyPackageWithKey({
     credential: makeMLSCredential(identity),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
     cipherSuite: context.cipherSuite,
+    capabilities: buildCreatorCapabilities(extensions, options?.capabilities),
   }).then((keyPackage) => {
     return mlsCreateGroup({
       context,
       groupId: new TextEncoder().encode(groupID),
       keyPackage: keyPackage.publicPackage,
       privateKeyPackage: keyPackage.privatePackage,
-      extensions: options?.extensions ?? [],
+      extensions,
     })
   })
   const [state, rootCap] = await Promise.all([
@@ -322,6 +433,7 @@ export async function createGroup(
     rootCapability,
     cache,
     resolver: options?.resolver,
+    commitPolicy: options?.commitPolicy,
   })
 
   return { group, credential }
@@ -343,6 +455,7 @@ export async function restoreGroup(params: RestoreGroupParams): Promise<GroupHan
     rootCapability: params.rootCapability,
     cache,
     resolver: params.options?.resolver,
+    commitPolicy: params.options?.commitPolicy,
   })
 }
 
@@ -423,6 +536,7 @@ export async function commitInvite(
     rootCapability: group.rootCapability,
     cache: group.cache,
     resolver: group.resolver,
+    commitPolicy: group.commitPolicy,
   })
 
   if (result.welcome == null) {
@@ -513,6 +627,7 @@ export async function processWelcome(params: ProcessWelcomeParams): Promise<Proc
       })(),
     cache,
     resolver: options?.resolver,
+    commitPolicy: options?.commitPolicy,
   })
 
   return { group, credential }
@@ -554,6 +669,7 @@ export async function removeMember(
     rootCapability: group.rootCapability,
     cache: group.cache,
     resolver: group.resolver,
+    commitPolicy: group.commitPolicy,
   })
 
   return {
@@ -641,6 +757,7 @@ export async function createKeyPackageBundle(
     credential: makeMLSCredential(identity),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
     cipherSuite,
+    capabilities: options?.capabilities ?? defaultCapabilities(),
   })
   return { ...result, ownerDID: identity.id }
 }
@@ -767,6 +884,7 @@ export async function joinGroupExternal(
     rootCapability,
     cache,
     resolver: options?.resolver,
+    commitPolicy: options?.commitPolicy,
   })
 
   return { commitMessage, group }
