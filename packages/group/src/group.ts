@@ -104,27 +104,24 @@ export class CommitRejectedError extends Error {
   }
 }
 
-type RejectedCommit = { proposals: Array<ProposalWithSender>; senderLeafIndex?: number }
-
 /**
  * Wrap a consumer commit policy so the rejected commit's proposals are captured
  * for CommitRejectedError. ts-mls's ProcessMessageResult does not surface the
  * rejected proposals on the result, so we record them from the callback's own
- * argument on the 'reject' path. Returns undefined when no policy is set.
+ * argument on the 'reject' path onto `capture`. Returns undefined when no policy
+ * is set.
  */
 function wrapCommitPolicy(
   callback: IncomingMessageCallback | undefined,
-  capture: { rejected?: RejectedCommit },
+  capture: Record<string, unknown>,
 ): IncomingMessageCallback | undefined {
   if (callback == null) return undefined
   return (incoming) => {
     const action = callback(incoming)
     if (action === 'reject' && incoming.kind === 'commit') {
-      capture.rejected = {
-        proposals: incoming.proposals,
-        senderLeafIndex:
-          incoming.senderLeafIndex == null ? undefined : Number(incoming.senderLeafIndex),
-      }
+      capture.proposals = incoming.proposals
+      capture.senderLeafIndex =
+        incoming.senderLeafIndex == null ? undefined : Number(incoming.senderLeafIndex)
     }
     return action
   }
