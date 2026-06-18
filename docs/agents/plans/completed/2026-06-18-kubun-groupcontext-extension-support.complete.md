@@ -3,7 +3,8 @@
 **Date:** 2026-06-18
 **Status:** complete
 **Package:** `@enkaku/group`
-**Origin backlog:** `docs/agents/plans/backlog/kubun-group-context-extension-immutability.md`
+**Origin:** consumer request `kubun-group-context-extension-immutability` (both enkaku-side
+gaps now satisfied; the request file is removed)
 
 ## Goal
 
@@ -62,9 +63,8 @@ issues addressed). Commits: `fcf1341`, `a5b05ff`, `4c2894b`, `358cfef` on `feat/
 
 ## Follow-on work
 
-- Kubun-side: anchor `commitPolicy` logic, durable commit-atomicity persistence beyond the
-  in-memory handle guarantee — tracked in
-  `docs/agents/plans/backlog/kubun-group-context-extension-immutability.md`.
+- Kubun-side (separate repo, not enkaku backlog): anchor `commitPolicy` logic, durable
+  commit-atomicity persistence beyond the in-memory handle guarantee.
 - Out of scope / future: MLS capability revocation (GroupContext banlist) reuses these two
   primitives — `docs/agents/plans/backlog/mls-permission-enforcement.md` and the revocation
   spec.
