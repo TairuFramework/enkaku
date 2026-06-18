@@ -93,14 +93,22 @@ export function makeMLSCredential(identity: OwnIdentity): Credential {
  * rejects an incoming commit. The handle is left at its pre-commit epoch.
  */
 export class CommitRejectedError extends Error {
-  readonly proposals: Array<ProposalWithSender>
-  readonly senderLeafIndex?: number
+  #proposals: Array<ProposalWithSender>
+  #senderLeafIndex?: number
 
   constructor(proposals: Array<ProposalWithSender>, senderLeafIndex?: number) {
     super('Commit rejected by group commit policy')
     this.name = 'CommitRejectedError'
-    this.proposals = proposals
-    this.senderLeafIndex = senderLeafIndex
+    this.#proposals = proposals
+    this.#senderLeafIndex = senderLeafIndex
+  }
+
+  get proposals(): Array<ProposalWithSender> {
+    return this.#proposals
+  }
+
+  get senderLeafIndex(): number | undefined {
+    return this.#senderLeafIndex
   }
 }
 
