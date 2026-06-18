@@ -1,4 +1,11 @@
-export type { IncomingMessageCallback, ProposalWithSender } from 'ts-mls'
+export type {
+  Capabilities,
+  GroupContextExtension,
+  IncomingMessageCallback,
+  Proposal,
+  ProposalWithSender,
+} from 'ts-mls'
+export { defaultCapabilities, defaultProposalTypes, makeCustomExtension } from 'ts-mls'
 export { createDIDAuthenticationService } from './authentication.js'
 export {
   createGroupCapability,
