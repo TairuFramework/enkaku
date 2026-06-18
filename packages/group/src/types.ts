@@ -1,5 +1,11 @@
 import type { DIDCache, DIDResolver } from '@enkaku/token'
-import type { CryptoProvider, GroupContextExtension, KeyPackage, PrivateKeyPackage } from 'ts-mls'
+import type {
+  Capabilities,
+  CryptoProvider,
+  GroupContextExtension,
+  KeyPackage,
+  PrivateKeyPackage,
+} from 'ts-mls'
 
 import type { GroupPermission } from './capability.js'
 
@@ -10,6 +16,12 @@ export type GroupOptions = {
   ciphersuiteName?: string
   /** Group extensions. */
   extensions?: Array<GroupContextExtension>
+  /**
+   * Raw ts-mls leaf-node capabilities. At createGroup, overrides the
+   * auto-derived capabilities; at createKeyPackageBundle, sets the invitee
+   * leaf's capabilities (default: defaultCapabilities()).
+   */
+  capabilities?: Capabilities
   /** Optional DID cache for resolving did:peer:4 issuers in capability chains. Default: in-memory. */
   cache?: DIDCache
   /** Optional resolver for did:peer:4 short forms not in cache. */

@@ -9,6 +9,7 @@ import {
   stringifyToken,
 } from '@enkaku/token'
 import {
+  type Capabilities,
   type CiphersuiteName,
   type ClientState,
   type Credential,
@@ -17,9 +18,11 @@ import {
   createGroupInfoWithExternalPubAndRatchetTree,
   type DefaultProposal,
   decode,
+  defaultCapabilities,
   defaultCredentialTypes,
   defaultProposalTypes,
   encode,
+  type GroupContextExtension,
   generateKeyPackageWithKey,
   getCiphersuiteImpl,
   type KeyPackage,
@@ -273,6 +276,22 @@ export class GroupHandle {
 // Lifecycle functions
 // ---------------------------------------------------------------------------
 
+/**
+ * Build the leaf-node capabilities for a group creator. RFC 9420 requires a
+ * member's leaf to advertise every non-default GroupContext extension type the
+ * group uses; we derive that set from the group's extensions so it cannot
+ * desync. An explicit `override` (GroupOptions.capabilities) wins verbatim.
+ */
+function buildCreatorCapabilities(
+  extensions: ReadonlyArray<GroupContextExtension>,
+  override?: Capabilities,
+): Capabilities {
+  if (override != null) return override
+  const base = defaultCapabilities()
+  const types = new Set<number>([...base.extensions, ...extensions.map((e) => e.extensionType)])
+  return { ...base, extensions: [...types] }
+}
+
 export type CreateGroupResult = {
   group: GroupHandle
   credential: MemberCredential
@@ -289,17 +308,19 @@ export async function createGroup(
   const cache = options?.cache ?? createInMemoryDIDCache()
   const context = await resolveMlsContext(options)
 
+  const extensions = options?.extensions ?? []
   const statePromise = generateKeyPackageWithKey({
     credential: makeMLSCredential(identity),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
     cipherSuite: context.cipherSuite,
+    capabilities: buildCreatorCapabilities(extensions, options?.capabilities),
   }).then((keyPackage) => {
     return mlsCreateGroup({
       context,
       groupId: new TextEncoder().encode(groupID),
       keyPackage: keyPackage.publicPackage,
       privateKeyPackage: keyPackage.privatePackage,
-      extensions: options?.extensions ?? [],
+      extensions,
     })
   })
   const [state, rootCap] = await Promise.all([
@@ -641,6 +662,7 @@ export async function createKeyPackageBundle(
     credential: makeMLSCredential(identity),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
     cipherSuite,
+    capabilities: options?.capabilities ?? defaultCapabilities(),
   })
   return { ...result, ownerDID: identity.id }
 }
