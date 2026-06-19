@@ -5,19 +5,26 @@ import type {
   FetchResult,
   HubStore,
   HubStoreEvents,
+  PublishParams,
   PurgeParams,
   StoredMessage,
-  StoreParams,
 } from '@enkaku/hub-protocol'
 
 type MessageRecord = {
   sequenceID: string
   senderDID: string
-  groupID?: string
+  topicID: string
   payload: Uint8Array
   recipients: Set<string>
   storedAt: number
 }
+
+export type MemoryStoreOptions = {
+  /** Per-topic max retained messages; oldest are trimmed beyond this. Default 1000. */
+  maxDepth?: number
+}
+
+const DEFAULT_MAX_DEPTH = 1000
 
 function formatSequenceID(counter: number): string {
   return String(counter).padStart(12, '0')
@@ -25,29 +32,54 @@ function formatSequenceID(counter: number): string {
 
 /**
  * In-memory implementation of HubStore for testing and development.
+ *
+ * Single message copy + per-subscriber delivery index + refcount GC. Recipients
+ * are resolved from the subscription table at publish time, never passed in.
  */
-export function createMemoryStore(): HubStore {
+export function createMemoryStore(options: MemoryStoreOptions = {}): HubStore {
+  const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH
   let counter = 0
   const messages = new Map<string, MessageRecord>()
   const deliveries = new Map<string, Array<string>>()
+  const subscriptions = new Map<string, Set<string>>()
+  const topicMessages = new Map<string, Array<string>>()
   const keyPackages = new Map<string, Array<string>>()
-  const groupMembers = new Map<string, Set<string>>()
   const events = new EventEmitter<HubStoreEvents>()
 
-  function removeDelivery(recipientDID: string, sequenceID: string): void {
-    const recipientDeliveries = deliveries.get(recipientDID)
-    if (recipientDeliveries == null) return
-
-    const index = recipientDeliveries.indexOf(sequenceID)
-    if (index !== -1) {
-      recipientDeliveries.splice(index, 1)
+  // Remove a message entirely: every recipient delivery list, the topic log,
+  // and the message record.
+  function deleteMessage(sequenceID: string): void {
+    const record = messages.get(sequenceID)
+    if (record == null) return
+    for (const recipient of record.recipients) {
+      const list = deliveries.get(recipient)
+      if (list != null) {
+        const index = list.indexOf(sequenceID)
+        if (index !== -1) list.splice(index, 1)
+      }
     }
+    const topicLog = topicMessages.get(record.topicID)
+    if (topicLog != null) {
+      const index = topicLog.indexOf(sequenceID)
+      if (index !== -1) topicLog.splice(index, 1)
+      if (topicLog.length === 0) topicMessages.delete(record.topicID)
+    }
+    messages.delete(sequenceID)
+  }
 
+  // Drop one subscriber's delivery of a message; GC the message when its last
+  // recipient is gone (refcount → 0).
+  function removeDelivery(recipientDID: string, sequenceID: string): void {
+    const list = deliveries.get(recipientDID)
+    if (list != null) {
+      const index = list.indexOf(sequenceID)
+      if (index !== -1) list.splice(index, 1)
+    }
     const record = messages.get(sequenceID)
     if (record != null) {
       record.recipients.delete(recipientDID)
       if (record.recipients.size === 0) {
-        messages.delete(sequenceID)
+        deleteMessage(sequenceID)
       }
     }
   }
@@ -55,37 +87,57 @@ export function createMemoryStore(): HubStore {
   return {
     events,
 
-    async store(params: StoreParams): Promise<string> {
+    async publish(params: PublishParams): Promise<string> {
       counter++
       const sequenceID = formatSequenceID(counter)
+
+      // Recipients = current subscribers minus the sender. Zero recipients
+      // (no subscribers, or only the sender) → drop immediately, store nothing.
+      const subscribers = subscriptions.get(params.topicID)
+      const recipients = new Set<string>()
+      if (subscribers != null) {
+        for (const did of subscribers) {
+          if (did !== params.senderDID) recipients.add(did)
+        }
+      }
+      if (recipients.size === 0) {
+        return sequenceID
+      }
 
       const record: MessageRecord = {
         sequenceID,
         senderDID: params.senderDID,
+        topicID: params.topicID,
         payload: params.payload,
-        recipients: new Set(params.recipients),
+        recipients,
         storedAt: Date.now(),
       }
-      if (params.groupID != null) {
-        record.groupID = params.groupID
-      }
-
       messages.set(sequenceID, record)
 
-      for (const recipient of params.recipients) {
-        let recipientDeliveries = deliveries.get(recipient)
-        if (recipientDeliveries == null) {
-          recipientDeliveries = []
-          deliveries.set(recipient, recipientDeliveries)
+      for (const recipient of recipients) {
+        let list = deliveries.get(recipient)
+        if (list == null) {
+          list = []
+          deliveries.set(recipient, list)
         }
-        recipientDeliveries.push(sequenceID)
+        list.push(sequenceID)
+      }
+
+      let topicLog = topicMessages.get(params.topicID)
+      if (topicLog == null) {
+        topicLog = []
+        topicMessages.set(params.topicID, topicLog)
+      }
+      topicLog.push(sequenceID)
+      // Per-topic max-depth trim: drop oldest beyond the bound.
+      while (topicLog.length > maxDepth) {
+        deleteMessage(topicLog[0])
       }
 
       return sequenceID
     },
 
     async fetch(params: FetchParams): Promise<FetchResult> {
-      // Process acks first if provided
       if (params.ack != null && params.ack.length > 0) {
         for (const sequenceID of params.ack) {
           removeDelivery(params.recipientDID, sequenceID)
@@ -97,7 +149,6 @@ export function createMemoryStore(): HubStore {
         return { messages: [], cursor: null }
       }
 
-      // Filter by after cursor
       let startIndex = 0
       if (params.after != null) {
         const afterIndex = recipientDeliveries.indexOf(params.after)
@@ -115,15 +166,12 @@ export function createMemoryStore(): HubStore {
       for (const sequenceID of selected) {
         const record = messages.get(sequenceID)
         if (record != null) {
-          const msg: StoredMessage = {
+          resultMessages.push({
             sequenceID: record.sequenceID,
             senderDID: record.senderDID,
+            topicID: record.topicID,
             payload: record.payload,
-          }
-          if (record.groupID != null) {
-            msg.groupID = record.groupID
-          }
-          resultMessages.push(msg)
+          })
         }
       }
 
@@ -134,7 +182,6 @@ export function createMemoryStore(): HubStore {
       if (hasMore) {
         result.hasMore = true
       }
-
       return result
     },
 
@@ -147,29 +194,59 @@ export function createMemoryStore(): HubStore {
     async purge(params: PurgeParams): Promise<Array<string>> {
       const threshold = Date.now() - params.olderThan * 1000
       const purgedIDs: Array<string> = []
-
       for (const [sequenceID, record] of messages) {
         if (record.storedAt <= threshold) {
           purgedIDs.push(sequenceID)
-          // Remove all delivery records for this message
-          for (const recipient of record.recipients) {
-            const recipientDeliveries = deliveries.get(recipient)
-            if (recipientDeliveries != null) {
-              const index = recipientDeliveries.indexOf(sequenceID)
-              if (index !== -1) {
-                recipientDeliveries.splice(index, 1)
-              }
-            }
-          }
-          messages.delete(sequenceID)
+          deleteMessage(sequenceID)
         }
       }
-
       if (purgedIDs.length > 0) {
         await events.emit('purge', { sequenceIDs: purgedIDs })
       }
-
       return purgedIDs
+    },
+
+    async subscribe(subscriberDID: string, topicID: string): Promise<void> {
+      let subs = subscriptions.get(topicID)
+      if (subs == null) {
+        subs = new Set()
+        subscriptions.set(topicID, subs)
+      }
+      subs.add(subscriberDID)
+    },
+
+    async unsubscribe(subscriberDID: string, topicID: string): Promise<void> {
+      const subs = subscriptions.get(topicID)
+      if (subs != null) {
+        subs.delete(subscriberDID)
+        if (subs.size === 0) {
+          subscriptions.delete(topicID)
+        }
+      }
+      // Drop this subscriber's pending deliveries for the topic.
+      const list = deliveries.get(subscriberDID)
+      if (list != null) {
+        for (const sequenceID of [...list]) {
+          const record = messages.get(sequenceID)
+          if (record != null && record.topicID === topicID) {
+            removeDelivery(subscriberDID, sequenceID)
+          }
+        }
+      }
+      // Last subscriber gone → drop the whole topic log immediately.
+      if (!subscriptions.has(topicID)) {
+        const topicLog = topicMessages.get(topicID)
+        if (topicLog != null) {
+          for (const sequenceID of [...topicLog]) {
+            deleteMessage(sequenceID)
+          }
+        }
+      }
+    },
+
+    async getSubscribers(topicID: string): Promise<Array<string>> {
+      const subs = subscriptions.get(topicID)
+      return subs == null ? [] : [...subs]
     },
 
     async storeKeyPackage(ownerDID: string, keyPackage: string): Promise<void> {
@@ -186,29 +263,6 @@ export function createMemoryStore(): HubStore {
       if (packages == null || packages.length === 0) return []
       const n = count ?? 1
       return packages.splice(0, n)
-    },
-
-    async addGroupMember(groupID: string, did: string): Promise<void> {
-      let members = groupMembers.get(groupID)
-      if (members == null) {
-        members = new Set()
-        groupMembers.set(groupID, members)
-      }
-      members.add(did)
-    },
-
-    async removeGroupMember(groupID: string, did: string): Promise<void> {
-      const members = groupMembers.get(groupID)
-      if (members == null) return
-      members.delete(did)
-      if (members.size === 0) {
-        groupMembers.delete(groupID)
-      }
-    },
-
-    async getGroupMembers(groupID: string): Promise<Array<string>> {
-      const members = groupMembers.get(groupID)
-      return members == null ? [] : [...members]
     },
   }
 }
