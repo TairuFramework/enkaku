@@ -3,7 +3,10 @@ import type { TransportType } from '@enkaku/transport'
 import type { ReplyData, RequestData } from './client.js'
 import type { BroadcastMessage } from './transport.js'
 
-export type BroadcastHandler = (prm: unknown) => unknown | Promise<unknown>
+export type BroadcastHandler = (
+  prm: unknown,
+  context?: { senderDID?: string },
+) => unknown | Promise<unknown>
 export type SuppressConfig = { jitterMs?: number; suppressTtlMs?: number }
 export type SuppressibleHandler = BroadcastHandler & { suppress: SuppressConfig }
 
@@ -65,6 +68,7 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
     prc: string,
     request: RequestData,
     handler: BroadcastHandler | SuppressibleHandler,
+    senderDID?: string,
   ): Promise<void> => {
     if (isSuppressible(handler)) {
       const { jitterMs = DEFAULT_JITTER_MS } = handler.suppress
@@ -76,7 +80,7 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
 
     let reply: ReplyData
     try {
-      const ok = await handler(request.prm)
+      const ok = await handler(request.prm, { senderDID })
       reply = { kind: 'res', rid: request.rid, from, ok }
     } catch (error) {
       reply = {
@@ -122,7 +126,7 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
       }
       const handler = handlers[payload.prc]
       if (handler != null) {
-        void handleRequest(payload.prc, data as RequestData, handler)
+        void handleRequest(payload.prc, data as RequestData, handler, msg.senderDID)
       }
     }
   })().catch(() => {})

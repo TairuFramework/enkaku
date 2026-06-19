@@ -31,4 +31,6 @@ export {
   type BroadcastTransportParams,
   type ByteTransform,
   createBroadcastTransport,
+  type Unwrap,
+  type UnwrapResult,
 } from './transport.js'
