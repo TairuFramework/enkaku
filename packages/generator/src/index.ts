@@ -137,7 +137,10 @@ export function fromEmitter<
   }
 }
 
-export async function* fromStream<T>(stream: ReadableStream<T>): AsyncGenerator<T> {
+export async function* fromStream<T>(
+  stream: ReadableStream<T>,
+  options: { preventCancel?: boolean } = {},
+): AsyncGenerator<T> {
   const reader = stream.getReader()
   try {
     while (true) {
@@ -148,6 +151,12 @@ export async function* fromStream<T>(stream: ReadableStream<T>): AsyncGenerator<
       yield value
     }
   } finally {
+    if (!options.preventCancel) {
+      // Early return / break / throw: cancel the source so its cancel()
+      // callback runs and resources are released. cancel() on an
+      // already-closed stream is a no-op, so normal completion is unaffected.
+      await reader.cancel().catch(() => {})
+    }
     reader.releaseLock()
   }
 }
