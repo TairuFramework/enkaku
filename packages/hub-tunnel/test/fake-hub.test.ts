@@ -18,26 +18,25 @@ async function collect(
 }
 
 describe('FakeHub fixture', () => {
-  test('delivers frames in order from sender to recipient', async () => {
+  test('delivers frames in order from publisher to subscriber', async () => {
     const hub = new FakeHub()
     const a = 'did:key:alice'
     const b = 'did:key:bob'
+    const topic = 'topic:t'
 
+    hub.subscribe(b, topic)
     const subscription = hub.receive(b)
     const received = collect(subscription, 5)
 
     for (let i = 0; i < 5; i++) {
-      await hub.send({
-        senderDID: a,
-        recipients: [b],
-        payload: textEncoder.encode(`msg-${i}`),
-      })
+      await hub.publish({ senderDID: a, topicID: topic, payload: textEncoder.encode(`msg-${i}`) })
     }
 
     const messages = await received
     expect(messages).toHaveLength(5)
     for (let i = 0; i < 5; i++) {
       expect(messages[i].senderDID).toBe(a)
+      expect(messages[i].topicID).toBe(topic)
       expect(textDecoder.decode(messages[i].payload)).toBe(`msg-${i}`)
     }
     subscription.return()
@@ -47,17 +46,15 @@ describe('FakeHub fixture', () => {
     const hub = new FakeHub()
     const a = 'did:key:alice'
     const b = 'did:key:bob'
+    const topic = 'topic:t'
 
+    hub.subscribe(b, topic)
     const subscription = hub.receive(b)
     const received = collect(subscription, 4)
 
     hub.dropNext(1)
     for (let i = 0; i < 5; i++) {
-      await hub.send({
-        senderDID: a,
-        recipients: [b],
-        payload: textEncoder.encode(`msg-${i}`),
-      })
+      await hub.publish({ senderDID: a, topicID: topic, payload: textEncoder.encode(`msg-${i}`) })
     }
 
     const messages = await received

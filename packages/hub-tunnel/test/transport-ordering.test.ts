@@ -13,18 +13,22 @@ describe('createHubTunnelTransport ordering', () => {
     const sessionID = 's1'
     const localDID = 'did:peer:local'
     const peerDID = 'did:peer:remote'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
 
     const localTransport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
     })
     const peerTransport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID: peerDID,
-      peerDID: localDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
     })
 
     try {
@@ -70,18 +74,22 @@ describe('createHubTunnelTransport ordering', () => {
     const sessionID = 's1'
     const localDID = 'did:peer:local'
     const peerDID = 'did:peer:remote'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
 
     const localTransport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
     })
     const peerTransport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID: peerDID,
-      peerDID: localDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
     })
 
     try {

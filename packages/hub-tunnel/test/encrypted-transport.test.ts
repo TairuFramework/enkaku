@@ -20,18 +20,22 @@ describe('createEncryptedHubTunnelTransport', () => {
     const groupID = 'group-1'
     const aDID = 'did:peer:a'
     const bDID = 'did:peer:b'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
 
     const sentEnvelopes: Array<Uint8Array> = []
     const observedHub = {
-      send: hub.send.bind(hub),
+      publish: hub.publish.bind(hub),
+      subscribe: hub.subscribe.bind(hub),
       receive: hub.receive.bind(hub),
       events: hub.events,
     }
     const recordingHub = {
-      send: async (params: Parameters<typeof observedHub.send>[0]) => {
+      publish: async (params: Parameters<typeof observedHub.publish>[0]) => {
         sentEnvelopes.push(params.payload)
-        return await observedHub.send(params)
+        return await observedHub.publish(params)
       },
+      subscribe: observedHub.subscribe,
       receive: observedHub.receive,
       events: observedHub.events,
     }
@@ -40,7 +44,8 @@ describe('createEncryptedHubTunnelTransport', () => {
       hub: recordingHub,
       sessionID,
       localDID: aDID,
-      peerDID: bDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       encryptor: identityEncryptor,
       groupID,
     })
@@ -48,7 +53,8 @@ describe('createEncryptedHubTunnelTransport', () => {
       hub: recordingHub,
       sessionID,
       localDID: bDID,
-      peerDID: aDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
       encryptor: identityEncryptor,
       groupID,
     })
@@ -88,12 +94,15 @@ describe('createEncryptedHubTunnelTransport', () => {
     const groupID = 'group-2'
     const aDID = 'did:peer:a2'
     const bDID = 'did:peer:b2'
+    const topicA = 'topic:a2'
+    const topicB = 'topic:b2'
 
     const aTransport = createEncryptedHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID: aDID,
-      peerDID: bDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       encryptor: identityEncryptor,
       groupID,
     })
@@ -101,15 +110,17 @@ describe('createEncryptedHubTunnelTransport', () => {
       hub,
       sessionID,
       localDID: bDID,
-      peerDID: aDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
       encryptor: identityEncryptor,
       groupID,
     })
 
     try {
-      await hub.send({
+      hub.subscribe(bDID, topicA)
+      await hub.publish({
         senderDID: aDID,
-        recipients: [bDID],
+        topicID: topicA,
         payload: new TextEncoder().encode('not-an-envelope'),
       })
 

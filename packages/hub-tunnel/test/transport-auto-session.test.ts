@@ -1,4 +1,3 @@
-import type { StoreParams } from '@enkaku/hub-protocol'
 import { describe, expect, test } from 'vitest'
 
 import { SessionNotEstablishedError } from '../src/errors.js'
@@ -16,18 +15,22 @@ describe('createHubTunnelTransport auto-sessionID', () => {
     const sessionID = 's-auto-1'
     const localDID = 'did:peer:auto-local-1'
     const peerDID = 'did:peer:auto-remote-1'
+    const topicA = 'topic:auto-1-a'
+    const topicB = 'topic:auto-1-b'
 
     const receiver = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID: { auto: true },
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
     })
     const sender = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID: peerDID,
-      peerDID: localDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
     })
 
     try {
@@ -59,6 +62,8 @@ describe('createHubTunnelTransport auto-sessionID', () => {
     const sessionID = 's-auto-2'
     const localDID = 'did:peer:auto-local-2'
     const peerDID = 'did:peer:auto-remote-2'
+    const topicA = 'topic:auto-2-a'
+    const topicB = 'topic:auto-2-b'
 
     const events: Array<ObservabilityEvent> = []
 
@@ -66,7 +71,8 @@ describe('createHubTunnelTransport auto-sessionID', () => {
       hub,
       sessionID: { auto: true },
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       onEvent: (event) => {
         events.push(event)
       },
@@ -75,7 +81,8 @@ describe('createHubTunnelTransport auto-sessionID', () => {
       hub,
       sessionID,
       localDID: peerDID,
-      peerDID: localDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
     })
 
     try {
@@ -90,9 +97,10 @@ describe('createHubTunnelTransport auto-sessionID', () => {
         seq: 0,
         body: { header: {}, payload: { typ: 'test', msg: 'should-be-dropped' } },
       }
-      await hub.send({
+      hub.subscribe(localDID, topicA)
+      await hub.publish({
         senderDID: peerDID,
-        recipients: [localDID],
+        topicID: topicA,
         payload: encodeFrame(wrongFrame),
       })
 
@@ -123,13 +131,15 @@ describe('createHubTunnelTransport auto-sessionID', () => {
   test('outbound write before session is locked rejects with SessionNotEstablishedError', async () => {
     const hub = new FakeHub()
     const localDID = 'did:peer:auto-local-3'
-    const peerDID = 'did:peer:auto-remote-3'
+    const topicA = 'topic:auto-3-a'
+    const topicB = 'topic:auto-3-b'
 
     const receiver = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID: { auto: true },
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
     })
 
     try {
@@ -151,13 +161,16 @@ describe('createHubTunnelTransport auto-sessionID', () => {
     const sessionID = 's-auto-4'
     const localDID = 'did:peer:auto-local-4'
     const peerDID = 'did:peer:auto-remote-4'
+    const topicA = 'topic:auto-4-a'
+    const topicB = 'topic:auto-4-b'
 
     const sentPayloads: Array<Uint8Array> = []
     const recordingHub: HubLike = {
-      send: async (params: StoreParams) => {
+      publish: async (params) => {
         sentPayloads.push(params.payload)
-        return await hub.send(params)
+        return await hub.publish(params)
       },
+      subscribe: hub.subscribe.bind(hub),
       receive: hub.receive.bind(hub),
       events: hub.events,
     }
@@ -166,13 +179,15 @@ describe('createHubTunnelTransport auto-sessionID', () => {
       hub: recordingHub,
       sessionID: { auto: true },
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
     })
     const sender = createHubTunnelTransport<Msg, Msg>({
       hub: recordingHub,
       sessionID,
       localDID: peerDID,
-      peerDID: localDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
     })
 
     try {
@@ -210,18 +225,22 @@ describe('createHubTunnelTransport auto-sessionID', () => {
     const sessionID = 's-compat'
     const localDID = 'did:peer:compat-local'
     const peerDID = 'did:peer:compat-remote'
+    const topicA = 'topic:compat-a'
+    const topicB = 'topic:compat-b'
 
     const receiver = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
     })
     const sender = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID: peerDID,
-      peerDID: localDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
     })
 
     try {

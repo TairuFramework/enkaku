@@ -34,6 +34,8 @@ function createE2ESetup(): E2ESetup {
   const groupID = 'g1'
   const serverDID = 'did:peer:server'
   const clientDID = 'did:peer:client'
+  const topicA = 'topic:a'
+  const topicB = 'topic:b'
 
   const serverEncryptor = new FakeEncryptor({ key: SHARED_KEY })
   const clientEncryptor = new FakeEncryptor({ key: SHARED_KEY })
@@ -42,7 +44,8 @@ function createE2ESetup(): E2ESetup {
     hub,
     sessionID,
     localDID: serverDID,
-    peerDID: clientDID,
+    sendTopicID: topicB,
+    receiveTopicID: topicA,
     encryptor: serverEncryptor,
     groupID,
   })
@@ -50,7 +53,8 @@ function createE2ESetup(): E2ESetup {
     hub,
     sessionID,
     localDID: clientDID,
-    peerDID: serverDID,
+    sendTopicID: topicA,
+    receiveTopicID: topicB,
     encryptor: clientEncryptor,
     groupID,
   })

@@ -16,12 +16,14 @@ type Msg = {
 }
 
 describe('createEncryptedHubTunnelTransport wire opacity', () => {
-  test('hub/send payload bytes contain no plaintext frame fields or body markers', async () => {
+  test('hub/publish payload bytes contain no plaintext frame fields or body markers', async () => {
     const hub = new FakeHub()
     const sessionID = 'session-opacity'
     const groupID = 'group-opacity'
     const aDID = 'did:peer:opacity-a'
     const bDID = 'did:peer:opacity-b'
+    const topicA = 'topic:opacity-a'
+    const topicB = 'topic:opacity-b'
 
     const sharedKey = new Uint8Array([0x9e, 0x21, 0xb7, 0x05, 0xc4, 0x6f, 0x83, 0x1d])
     const aEncryptor = new FakeEncryptor({ key: sharedKey })
@@ -29,10 +31,11 @@ describe('createEncryptedHubTunnelTransport wire opacity', () => {
 
     const sentPayloads: Array<Uint8Array> = []
     const recordingHub = {
-      send: async (params: Parameters<typeof hub.send>[0]) => {
+      publish: async (params: Parameters<typeof hub.publish>[0]) => {
         sentPayloads.push(params.payload)
-        return await hub.send(params)
+        return await hub.publish(params)
       },
+      subscribe: hub.subscribe.bind(hub),
       receive: hub.receive.bind(hub),
       events: hub.events,
     }
@@ -41,7 +44,8 @@ describe('createEncryptedHubTunnelTransport wire opacity', () => {
       hub: recordingHub,
       sessionID,
       localDID: aDID,
-      peerDID: bDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       encryptor: aEncryptor,
       groupID,
     })
@@ -49,7 +53,8 @@ describe('createEncryptedHubTunnelTransport wire opacity', () => {
       hub: recordingHub,
       sessionID,
       localDID: bDID,
-      peerDID: aDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
       encryptor: bEncryptor,
       groupID,
     })

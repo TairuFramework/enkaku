@@ -15,6 +15,7 @@ const sendInboundFrame = async (
   sessionID: string,
   peerDID: string,
   localDID: string,
+  receiveTopicID: string,
   seq: number,
   msg: string,
 ): Promise<void> => {
@@ -25,9 +26,10 @@ const sendInboundFrame = async (
     seq,
     body: { header: {}, payload: { typ: 'test', msg } },
   }
-  await hub.send({
+  hub.subscribe(localDID, receiveTopicID)
+  await hub.publish({
     senderDID: peerDID,
-    recipients: [localDID],
+    topicID: receiveTopicID,
     payload: encodeFrame(frame),
   })
 }
@@ -38,20 +40,23 @@ describe('createHubTunnelTransport lifecycle', () => {
     const sessionID = 's-abort'
     const localDID = 'did:peer:local'
     const peerDID = 'did:peer:remote'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
     const controller = new AbortController()
 
     const transport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       signal: controller.signal,
     })
 
     try {
       expect(hub.subscriberCount(localDID)).toBe(1)
 
-      await sendInboundFrame(hub, sessionID, peerDID, localDID, 0, 'first')
+      await sendInboundFrame(hub, sessionID, peerDID, localDID, topicA, 0, 'first')
       const first = await transport.read()
       expect((first.value as Msg).payload.msg).toBe('first')
 
@@ -75,7 +80,8 @@ describe('createHubTunnelTransport lifecycle', () => {
     const hub = new FakeHub()
     const sessionID = 's-pre-abort'
     const localDID = 'did:peer:local'
-    const peerDID = 'did:peer:remote'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
     const controller = new AbortController()
     controller.abort(new Error('already cancelled'))
 
@@ -83,7 +89,8 @@ describe('createHubTunnelTransport lifecycle', () => {
       hub,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       signal: controller.signal,
     })
 
@@ -104,13 +111,15 @@ describe('createHubTunnelTransport lifecycle', () => {
     const hub = new FakeHub()
     const sessionID = 's-idle'
     const localDID = 'did:peer:local'
-    const peerDID = 'did:peer:remote'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
 
     const transport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       idleTimeoutMs: 50,
     })
 
@@ -133,18 +142,21 @@ describe('createHubTunnelTransport lifecycle', () => {
     const sessionID = 's-idle-reset'
     const localDID = 'did:peer:local'
     const peerDID = 'did:peer:remote'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
 
     const transport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       idleTimeoutMs: 100,
     })
 
     try {
       await sleep(50)
-      await sendInboundFrame(hub, sessionID, peerDID, localDID, 0, 'keepalive')
+      await sendInboundFrame(hub, sessionID, peerDID, localDID, topicA, 0, 'keepalive')
       const result = await transport.read()
       expect((result.value as Msg).payload.msg).toBe('keepalive')
 

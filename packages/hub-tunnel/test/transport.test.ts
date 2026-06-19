@@ -19,18 +19,22 @@ describe('createHubTunnelTransport', () => {
     const sessionID = 's1'
     const serverDID = 'did:peer:server'
     const clientDID = 'did:peer:client'
+    const topicToServer = 'topic:to-server'
+    const topicToClient = 'topic:to-client'
 
     const serverTransport = createHubTunnelTransport<EchoClientMessage, EchoServerMessage>({
       hub,
       sessionID,
       localDID: serverDID,
-      peerDID: clientDID,
+      sendTopicID: topicToClient,
+      receiveTopicID: topicToServer,
     })
     const clientTransport = createHubTunnelTransport<EchoServerMessage, EchoClientMessage>({
       hub,
       sessionID,
       localDID: clientDID,
-      peerDID: serverDID,
+      sendTopicID: topicToServer,
+      receiveTopicID: topicToClient,
     })
 
     const server = serve<EchoProtocol>({
