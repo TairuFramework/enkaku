@@ -45,13 +45,20 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
   const sleep = params.sleep ?? defaultSleep
   const getJitterMs = params.getJitterMs ?? defaultJitter
 
-  // Request IDs for which any reply (ours or another peer's) has been observed.
-  const repliedTo = new Set<string>()
+  // Maps request IDs to their expiry timer handle. First-writer-wins: once a rid
+  // is registered, subsequent markReplied calls for the same rid are no-ops so
+  // the original (possibly longer) TTL is never shortened by the looped-back reply.
+  const suppressTimers = new Map<string, ReturnType<typeof setTimeout>>()
   let running = true
 
   const markReplied = (rid: string, ttlMs: number) => {
-    repliedTo.add(rid)
-    setTimeout(() => repliedTo.delete(rid), ttlMs)
+    if (suppressTimers.has(rid)) {
+      return
+    }
+    const timer = setTimeout(() => {
+      suppressTimers.delete(rid)
+    }, ttlMs)
+    suppressTimers.set(rid, timer)
   }
 
   const handleRequest = async (
@@ -62,7 +69,7 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
     if (isSuppressible(handler)) {
       const { jitterMs = DEFAULT_JITTER_MS } = handler.suppress
       await sleep(getJitterMs(jitterMs))
-      if (repliedTo.has(request.rid)) {
+      if (suppressTimers.has(request.rid)) {
         return
       }
     }
@@ -83,7 +90,8 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
       ? (handler.suppress.suppressTtlMs ?? DEFAULT_SUPPRESS_TTL_MS)
       : DEFAULT_SUPPRESS_TTL_MS
     markReplied(request.rid, ttlMs)
-    await transport.write({ payload: { typ: 'event', prc, data: reply } })
+    // Best-effort write: ignore rejections (e.g. transport disposed mid-flight).
+    await transport.write({ payload: { typ: 'event', prc, data: reply } }).catch(() => {})
   }
 
   type InboundData = {
@@ -122,6 +130,10 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
   return {
     dispose: async () => {
       running = false
+      for (const timer of suppressTimers.values()) {
+        clearTimeout(timer)
+      }
+      suppressTimers.clear()
       await transport.dispose()
     },
   }

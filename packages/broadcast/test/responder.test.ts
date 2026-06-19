@@ -3,7 +3,7 @@ import { describe, expect, test, vi } from 'vitest'
 import { createMemoryBus } from '../src/bus.js'
 import { BroadcastClient } from '../src/client.js'
 import { createBroadcastResponder, suppressible } from '../src/responder.js'
-import { type BroadcastMessage, createBroadcastTransport } from '../src/transport.js'
+import { createBroadcastTransport } from '../src/transport.js'
 
 const TOPIC = 'group-topic'
 
