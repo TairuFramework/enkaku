@@ -64,13 +64,13 @@ Existing `Server` / `Client` attach to a `BroadcastTransport` unchanged for even
 
 ### b. `BroadcastClient`
 
-A thin orchestrator over a **single bound bus topic**. Bus operations only — no DID, no directed addressing (those are group-rpc concerns). Adds no multi-reply correlation to the core.
+A **standalone helper** (not a subclass of `Client`) over a **single bound bus topic**. It does *not* extend `Client`: `Client`'s entire value is private `rid`→single-controller correlation, which is exactly wrong for a 1→N bus, and its `#read()`/`#controllers` are private and unoverridable. The only overlap with `Client` is `dispatch` (a one-liner). So the bus client composes a `BroadcastTransport` and correlates entirely at the helper layer. The core `Client` stays pure `rid`-1:1 (Decision A). Bus operations only — no DID, no directed addressing.
 
 - **`dispatch(event)`** — fire-and-forget broadcast on the bus topic.
-- **`request(prm, { errorThreshold, timeoutMs })`** — broadcast a request-event; **first non-error reply wins**, the rest are ignored. `≥ errorThreshold` error replies → throw. No win before `timeoutMs` → throw. This is anycast-with-failover (Kubun's catch-up).
+- **`request(prm, { errorThreshold, timeoutMs })`** — broadcast a request-event tagged with a generated `requestID`; **first non-error reply wins**, the rest are ignored. `≥ errorThreshold` error replies → throw. No win before `timeoutMs` → throw. Anycast-with-failover (Kubun's catch-up).
 - **`gather(prm, { quorum, timeoutMs })`** — broadcast; **collect all replies** up to `quorum` or `timeoutMs`, return the collection. (census / poll)
 
-Reply demultiplexing for `request` / `gather` keys on `(rid, senderDID)` at the helper layer, never in the core `Client`.
+**Reply path = on the bus (self-contained).** Responders reply by dispatching a reply-event on the *same* bus topic, tagged with the `requestID`. The requester collects from the bus inbound it already reads, matching `(requestID, senderDID)`. No inbox coupling. Every member sees replies, but `suppressible` collapses responders to ~one, bounding the noise. Correlation by `(requestID, senderDID)` lives entirely in this helper, never in the core `Client`.
 
 **Directed stream/channel are NOT on `BroadcastClient`.** 1→1 RPC is just the existing `Client` over a directed transport (hub-tunnel given a pair of topic IDs) — single responder ⇒ normal `rid` correlation ⇒ full semantics, no fan-in. group-rpc wires this (it owns the DID→inbox-topic mapping); broadcast contributes nothing DID-specific.
 
@@ -203,19 +203,39 @@ const comms = createGroupComms({
   handlers: { circle: { /* … */ }, sync: { /* … */ } },
 })
 
-comms.protocol('circle').dispatch(evt)                                  // 1→N broadcast
-await comms.protocol('sync').request(prm, { errorThreshold, timeoutMs }) // anycast catch-up
-await comms.protocol('sync').gather(prm, { quorum, timeoutMs })          // collect
-comms.protocol('circle').channel(targetDID, /* … */)                    // 1→1 directed RPC
+const foo = comms.protocol('circle')   // one protocol, all 4 call types defined
+
+// BUS (1→N) — no target:
+foo.dispatch('changed', data)                                     // event → broadcast
+await foo.request('catchup', prm, { errorThreshold, timeoutMs })  // anycast, first-wins
+const replies = await foo.gather('census', prm, { quorum, timeoutMs })
+
+// DIRECTED (1→1) — explicit target:
+const peer = foo.to(targetDID)
+await peer.request('fetch', prm)         // directed request
+const s = peer.stream('subscribe', prm)  // directed stream
+const c = peer.channel('sync', prm)      // directed channel
+
 // MLS commit → comms re-derives topics, unsubscribes old / subscribes new — automatic
 ```
+
+### Routing & DX: addressing selects the transport
+
+A protocol keeps **all 4 call types**. group-rpc routes each call by **how it's addressed**, never by splitting the protocol:
+
+- **Bus surface** (`foo.…`, no target): `dispatch` (event), `request` (anycast first-wins), `gather` (collect). Goes over the `BroadcastTransport`.
+- **Directed surface** (`foo.to(peerDID).…`): `request` / `stream` / `channel` to one peer. `.to(peerDID)` lives on the group-rpc protocol surface (not on `BroadcastClient`, which stays DID-free) and returns a plain **`Client<Protocol>`** — the existing client, same protocol type — bound to a directed hub-tunnel scoped to that peer (send → the peer's inbox topic, receive ← your own). Single responder ⇒ full `rid`-1:1 semantics.
+
+**Type-level safety:** `stream` / `channel` exist *only* on the `.to(peer)` result, never on the bus surface. Calling stream/channel without a target is a **compile error**, so the fan-in cliff is unrepresentable — clients never "fail to support" them, they're simply only reachable where they work. `request` is available in both modes (anycast vs ask-one-peer); `dispatch` likewise (broadcast vs directed fire-and-forget).
+
+**Handlers support all 4, unchanged.** The existing `Server` handler shape already covers event/request/stream/channel. group-rpc runs **two `Server` instances per protocol sharing the same handlers object**: a **bus Server** on the `BroadcastTransport` (fires event + anycast-request handlers) and an **inbox Server** on the directed transport (fires directed request/stream/channel handlers). Handler code is transport-agnostic — it demuxes by `prc` as today and never knows which path delivered a message. A `stream` handler only ever fires on the inbox Server because stream is only ever sent directed.
 
 `createGroupComms` owns:
 
 - topic derivation from the live group: `deriveTopicID(secret, epoch, label)` per protocol + the inbox/discovery conventions above;
 - hub `subscribe` / `unsubscribe` per protocol topic + own inbox;
 - a `BroadcastTransport` per protocol wired with the group's MLS `wrap` / `unwrap`;
-- a `Server` (handlers) + `BroadcastClient` per protocol for bus traffic, plus a directed `Client` over a topic-pair hub-tunnel for `stream` / `channel` to a target peer (mapping `targetDID` → inbox topic IDs);
+- per protocol: a `BroadcastClient` + a **bus `Server`** on that transport, and a lazily-created directed transport + plain `Client` + **inbox `Server`** per target peer (mapping `targetDID` → inbox topic IDs). The bus and inbox `Server`s share one handlers object;
 - **epoch-rotation resubscribe**: on MLS commit, re-derive topics, subscribe new, unsubscribe old (old topics hit zero subscribers → hub drops them; removed members can't derive the new topics);
 - a typed `.protocol(name)` surface exposing `dispatch` / `request` / `gather` / `stream` / `channel`.
 
