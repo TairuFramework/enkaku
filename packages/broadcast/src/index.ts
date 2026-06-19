@@ -16,6 +16,14 @@ export {
   type RequestData,
   type RequestOptions,
 } from './client.js'
+export {
+  type BroadcastHandler,
+  type BroadcastResponderParams,
+  createBroadcastResponder,
+  type SuppressConfig,
+  type SuppressibleHandler,
+  suppressible,
+} from './responder.js'
 export { deriveTopicID } from './topic.js'
 export {
   type BroadcastMessage,
