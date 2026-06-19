@@ -8,3 +8,9 @@ export const PACKAGE_NAME = '@enkaku/broadcast'
 
 export { type BroadcastBus, createMemoryBus } from './bus.js'
 export { deriveTopicID } from './topic.js'
+export {
+  type BroadcastMessage,
+  type BroadcastTransportParams,
+  type ByteTransform,
+  createBroadcastTransport,
+} from './transport.js'
