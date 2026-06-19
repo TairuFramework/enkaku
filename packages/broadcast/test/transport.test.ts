@@ -1,5 +1,6 @@
 import type { ReadableStreamReadResult } from 'node:stream/web'
 
+import { fromUTF } from '@enkaku/codec'
 import { describe, expect, test } from 'vitest'
 
 import { createMemoryBus } from '../src/bus.js'
@@ -69,6 +70,57 @@ describe('createBroadcastTransport', () => {
     // If the readable was never closed, the 500 ms timeout fires first — test failure.
     expect(result).not.toBe(TIMEOUT)
     expect((result as ReadableStreamReadResult<BroadcastMessage>).done).toBe(true)
+  })
+
+  test('write() rejects non-event payloads', async () => {
+    const bus = createMemoryBus()
+    const transport = createBroadcastTransport({ topicID: 'topic-x', bus })
+
+    await expect(
+      transport.write({ payload: { typ: 'request', prc: 'x', data: {} } }),
+    ).rejects.toThrow(/event/i)
+
+    await transport.dispose()
+  })
+
+  test('write() resolves for a normal event payload', async () => {
+    const bus = createMemoryBus()
+    const transport = createBroadcastTransport({ topicID: 'topic-x', bus })
+
+    // A normal event write resolves without error.
+    await expect(transport.write(makeMessage('ok', {}))).resolves.toBeUndefined()
+
+    await transport.dispose()
+  })
+
+  test('a per-message decode failure does not kill the stream', async () => {
+    const bus = createMemoryBus()
+    const receiver = createBroadcastTransport({ topicID: 'topic-x', bus })
+
+    // Inject raw bytes that cannot be decoded as JSON.
+    bus.publish('topic-x', fromUTF('this-is-not-valid-json{{{{'))
+
+    // Let the microtask queue settle so the failing decode runs and is discarded.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0))
+
+    // Now publish a well-formed event — the subscription must still be alive.
+    const sender = createBroadcastTransport({ topicID: 'topic-x', bus })
+    await sender.write(makeMessage('hello', { n: 1 }))
+
+    const TIMEOUT = 'timeout' as const
+    const result = await Promise.race([
+      receiver.read(),
+      new Promise<typeof TIMEOUT>((resolve) => setTimeout(() => resolve(TIMEOUT), 500)),
+    ])
+
+    // If the readable was killed, the timeout fires and this assertion fails.
+    expect(result).not.toBe(TIMEOUT)
+    expect((result as ReadableStreamReadResult<BroadcastMessage>).value).toEqual(
+      makeMessage('hello', { n: 1 }),
+    )
+
+    await sender.dispose()
+    await receiver.dispose()
   })
 
   test('applies wrap on write and unwrap on read (round-trip)', async () => {

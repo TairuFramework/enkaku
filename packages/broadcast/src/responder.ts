@@ -103,7 +103,7 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
     err?: string
   }
 
-  ;(async () => {
+  void (async () => {
     for await (const msg of transport) {
       if (!running) {
         break
@@ -125,7 +125,7 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
         void handleRequest(payload.prc, data as RequestData, handler)
       }
     }
-  })()
+  })().catch(() => {})
 
   return {
     dispose: async () => {

@@ -1,3 +1,4 @@
+import { fromUTF } from '@enkaku/codec'
 import { describe, expect, test, vi } from 'vitest'
 
 import { createMemoryBus } from '../src/bus.js'
@@ -44,6 +45,32 @@ describe('createBroadcastResponder', () => {
     await expect(
       client.request('boom', {}, { errorThreshold: 1, timeoutMs: 1000 }),
     ).rejects.toThrow(/error/i)
+
+    await client.dispose()
+    await responder.dispose()
+  })
+
+  test('keeps answering valid requests after a malformed inbound message', async () => {
+    const bus = createMemoryBus()
+    const responder = createBroadcastResponder({
+      transport: createBroadcastTransport({ topicID: TOPIC, bus }),
+      from: 'peer-1',
+      handlers: { ping: () => 'pong' },
+    })
+    const client = new BroadcastClient({
+      transport: createBroadcastTransport({ topicID: TOPIC, bus }),
+    })
+
+    // Inject raw non-JSON bytes directly onto the bus, bypassing the transport's
+    // write() guard. This simulates an undecryptable message from another group.
+    bus.publish(TOPIC, fromUTF('not-valid-json{{{{'))
+
+    // Let the failing decode settle — the stream must NOT die.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0))
+
+    // The responder and client transports should still be functional.
+    const result = await client.request('ping', {}, { timeoutMs: 1000 })
+    expect(result).toBe('pong')
 
     await client.dispose()
     await responder.dispose()

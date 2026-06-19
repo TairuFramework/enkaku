@@ -61,13 +61,10 @@ export function createBroadcastTransport<R = BroadcastMessage, W = BroadcastMess
       unsubscribe = bus.subscribe(topicID, (payload) => {
         Promise.resolve(unwrap(payload))
           .then((bytes) => controller.enqueue(decode<R>(bytes)))
-          .catch((error) => {
-            // Bug 2 fix: unsubscribe before erroring so no further enqueue/error calls
-            // land on an already-errored controller.
-            unsubscribe?.()
-            unsubscribe = undefined
-            readerClosed = true
-            controller.error(error)
+          .catch(() => {
+            // Per-message decode/unwrap failure: drop this message and keep the
+            // subscription alive so later valid messages still arrive.
+            // Expected for messages from other groups/epochs where decryption fails.
           })
       })
     },
@@ -80,6 +77,12 @@ export function createBroadcastTransport<R = BroadcastMessage, W = BroadcastMess
 
   const writable = new WritableStream<W>({
     async write(value) {
+      const typ = (value as BroadcastMessage | undefined)?.payload?.typ
+      if (typ !== 'event') {
+        throw new Error(
+          `Broadcast transport only carries 'event' payloads; got '${typ ?? 'undefined'}'`,
+        )
+      }
       const bytes = await wrap(encode(value))
       await bus.publish(topicID, bytes)
     },
