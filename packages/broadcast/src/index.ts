@@ -7,6 +7,15 @@
 export const PACKAGE_NAME = '@enkaku/broadcast'
 
 export { type BroadcastBus, createMemoryBus } from './bus.js'
+export {
+  BroadcastClient,
+  type BroadcastClientParams,
+  type GatheredReply,
+  type GatherOptions,
+  type ReplyData,
+  type RequestData,
+  type RequestOptions,
+} from './client.js'
 export { deriveTopicID } from './topic.js'
 export {
   type BroadcastMessage,
