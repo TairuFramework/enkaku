@@ -491,6 +491,40 @@ importers:
         specifier: 'catalog:'
         version: 2.0.0-rc.13(@noble/ciphers@2.2.0)(@noble/curves@2.2.0)
 
+  packages/group-rpc:
+    dependencies:
+      '@enkaku/broadcast':
+        specifier: workspace:^
+        version: link:../broadcast
+      '@enkaku/client':
+        specifier: workspace:^
+        version: link:../client
+      '@enkaku/codec':
+        specifier: workspace:^
+        version: link:../codec
+      '@enkaku/hub-protocol':
+        specifier: workspace:^
+        version: link:../hub-protocol
+      '@enkaku/hub-tunnel':
+        specifier: workspace:^
+        version: link:../hub-tunnel
+      '@enkaku/protocol':
+        specifier: workspace:^
+        version: link:../protocol
+      '@enkaku/server':
+        specifier: workspace:^
+        version: link:../server
+      '@enkaku/transport':
+        specifier: workspace:^
+        version: link:../transport
+      '@noble/hashes':
+        specifier: 'catalog:'
+        version: 2.2.0
+    devDependencies:
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.9.3)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(jsdom@27.4.0(@noble/hashes@2.2.0))(vite@8.0.16(@types/node@25.9.3)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
+
   packages/hd-keystore:
     dependencies:
       '@enkaku/log':
