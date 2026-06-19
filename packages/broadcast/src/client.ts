@@ -21,22 +21,32 @@ function defaultRandomID(): string {
   return globalThis.crypto.randomUUID()
 }
 
-type Collector = (reply: ReplyData) => void
+type PendingEntry = {
+  collect: (reply: ReplyData) => void
+  onDispose: () => void
+}
 
 export class BroadcastClient extends Disposer {
   #transport: TransportType<BroadcastMessage, BroadcastMessage>
   #getRandomID: () => string
-  #pending: Map<string, Collector> = new Map()
+  #pending: Map<string, PendingEntry> = new Map()
 
   constructor(params: BroadcastClientParams) {
     super({
       dispose: async (reason?: unknown) => {
+        // Snapshot and clear before settling so in-flight collect() calls are no-ops.
+        const entries = [...this.#pending.values()]
+        this.#pending.clear()
+        for (const entry of entries) {
+          entry.onDispose()
+        }
         await this.#transport.dispose(reason)
       },
     })
     this.#transport = params.transport
     this.#getRandomID = params.getRandomID ?? defaultRandomID
-    this.#read()
+    // Bug 1 fix: discard the promise intentionally; errors are best-effort here.
+    void this.#read().catch(() => {})
   }
 
   async #read(): Promise<void> {
@@ -47,7 +57,7 @@ export class BroadcastClient extends Disposer {
       }
       const data = payload.data as Partial<ReplyData> | undefined
       if (data?.kind === 'res' && typeof data.rid === 'string') {
-        this.#pending.get(data.rid)?.(data as ReplyData)
+        this.#pending.get(data.rid)?.collect(data as ReplyData)
       }
     }
   }
@@ -71,17 +81,24 @@ export class BroadcastClient extends Disposer {
         clearTimeout(timer)
         this.#pending.delete(rid)
       }
-      this.#pending.set(rid, (reply) => {
-        if (reply.err != null) {
-          errorCount += 1
-          if (errorCount >= errorThreshold) {
-            cleanup()
-            reject(new Error(`Broadcast request "${prc}" failed after ${errorCount} errors`))
+      this.#pending.set(rid, {
+        collect: (reply) => {
+          if (reply.err != null) {
+            errorCount += 1
+            if (errorCount >= errorThreshold) {
+              cleanup()
+              reject(new Error(`Broadcast request "${prc}" failed after ${errorCount} errors`))
+            }
+            return
           }
-          return
-        }
-        cleanup()
-        resolve(reply.ok)
+          cleanup()
+          resolve(reply.ok)
+        },
+        // Bug 2 fix: reject immediately on dispose rather than wait for timeout.
+        onDispose: () => {
+          clearTimeout(timer)
+          reject(new Error('BroadcastClient disposed'))
+        },
       })
       this.#transport
         .write({ payload: { typ: 'event', prc, data: { kind: 'req', rid, prm } } })
@@ -101,7 +118,7 @@ export class BroadcastClient extends Disposer {
     const quorum = options.quorum ?? Number.POSITIVE_INFINITY
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
 
-    return new Promise<Array<GatheredReply>>((resolve) => {
+    return new Promise<Array<GatheredReply>>((resolve, reject) => {
       const replies: Array<GatheredReply> = []
       const seen = new Set<string>()
       const finish = () => {
@@ -110,19 +127,31 @@ export class BroadcastClient extends Disposer {
         resolve(replies)
       }
       const timer = setTimeout(finish, timeoutMs)
-      this.#pending.set(rid, (reply) => {
-        if (reply.err != null || seen.has(reply.from)) {
-          return
-        }
-        seen.add(reply.from)
-        replies.push({ from: reply.from, value: reply.ok })
-        if (replies.length >= quorum) {
-          finish()
-        }
+      this.#pending.set(rid, {
+        collect: (reply) => {
+          if (reply.err != null || seen.has(reply.from)) {
+            return
+          }
+          seen.add(reply.from)
+          replies.push({ from: reply.from, value: reply.ok })
+          if (replies.length >= quorum) {
+            finish()
+          }
+        },
+        // Bug 2 fix: resolve with partial replies on dispose rather than wait for timeout.
+        onDispose: () => {
+          clearTimeout(timer)
+          resolve(replies)
+        },
       })
       this.#transport
         .write({ payload: { typ: 'event', prc, data: { kind: 'req', rid, prm } } })
-        .catch(() => finish())
+        // Bug 3 fix: reject on write failure (was silently resolving with []).
+        .catch((error) => {
+          clearTimeout(timer)
+          this.#pending.delete(rid)
+          reject(error)
+        })
     })
   }
 }

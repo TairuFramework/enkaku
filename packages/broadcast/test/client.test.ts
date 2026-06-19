@@ -81,6 +81,27 @@ describe('BroadcastClient.request', () => {
 
     await client.dispose()
   })
+
+  test('pending request rejects promptly when client is disposed', async () => {
+    const bus = createMemoryBus()
+    const client = new BroadcastClient({
+      transport: createBroadcastTransport({ topicID: TOPIC, bus }),
+    })
+
+    // Long timeout rules out natural expiry.
+    const req = client.request('noop', {}, { timeoutMs: 30_000 })
+    await client.dispose()
+
+    // Race: a 500 ms guard fires and fails the test if req doesn't settle promptly.
+    await expect(
+      Promise.race([
+        req.catch((e: Error) => e.message),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('request did not settle promptly')), 500),
+        ),
+      ]),
+    ).resolves.toMatch(/disposed/i)
+  })
 })
 
 describe('BroadcastClient.gather', () => {
@@ -115,5 +136,59 @@ describe('BroadcastClient.gather', () => {
 
     await client.dispose()
     await r1.dispose()
+  })
+
+  test('pending gather resolves with partial replies when client is disposed', async () => {
+    const bus = createMemoryBus()
+    const r1 = startResponder(bus, 'peer-1', () => ({ ok: 'partial' }))
+    const client = new BroadcastClient({
+      transport: createBroadcastTransport({ topicID: TOPIC, bus }),
+    })
+
+    // Quorum of 99 and long timeout so neither natural condition fires.
+    const gatherPromise = client.gather('census', {}, { quorum: 99, timeoutMs: 30_000 })
+
+    // Allow peer-1 to reply before we dispose.
+    await new Promise((resolve) => setTimeout(resolve, 100))
+
+    await client.dispose()
+
+    // Race: a 500 ms guard fires and fails the test if gather doesn't settle promptly.
+    await expect(
+      Promise.race([
+        gatherPromise,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('gather did not settle promptly')), 500),
+        ),
+      ]),
+    ).resolves.toEqual([{ from: 'peer-1', value: 'partial' }])
+
+    await r1.dispose()
+  })
+})
+
+describe('BroadcastClient.dispatch', () => {
+  test('dispatched event is received by listeners on the same topic', async () => {
+    const bus = createMemoryBus()
+    const clientTransport = createBroadcastTransport({ topicID: TOPIC, bus })
+    const listenerTransport = createBroadcastTransport({ topicID: TOPIC, bus })
+    const client = new BroadcastClient({ transport: clientTransport })
+
+    // Start listening before dispatch so the subscription is in place.
+    const receivedPromise = (async (): Promise<unknown> => {
+      for await (const msg of listenerTransport as AsyncIterable<BroadcastMessage>) {
+        if (msg.payload.typ === 'event' && msg.payload.prc === 'test-event') {
+          return msg.payload.data
+        }
+      }
+    })()
+
+    await client.dispatch('test-event', { hello: 'world' })
+    const received = await receivedPromise
+
+    expect(received).toEqual({ hello: 'world' })
+
+    await client.dispose()
+    await listenerTransport.dispose()
   })
 })
