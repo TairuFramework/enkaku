@@ -408,4 +408,66 @@ describe('fromStream()', () => {
     expect(await iterator.next()).toEqual({ done: true, value: undefined })
     expect(readable.locked).toBe(false)
   })
+
+  test('cancels the source stream on early return', async () => {
+    let cancelled = false
+    const stream = new ReadableStream<number>({
+      start(controller) {
+        controller.enqueue(1)
+        controller.enqueue(2)
+      },
+      cancel() {
+        cancelled = true
+      },
+    })
+
+    const iterator = fromStream(stream)
+    expect(await iterator.next()).toEqual({ done: false, value: 1 })
+    await iterator.return(undefined)
+
+    expect(cancelled).toBe(true)
+    expect(stream.locked).toBe(false)
+  })
+
+  test('does not cancel the source on early return when preventCancel is set', async () => {
+    let cancelled = false
+    const stream = new ReadableStream<number>({
+      start(controller) {
+        controller.enqueue(1)
+        controller.enqueue(2)
+      },
+      cancel() {
+        cancelled = true
+      },
+    })
+
+    const iterator = fromStream(stream, { preventCancel: true })
+    expect(await iterator.next()).toEqual({ done: false, value: 1 })
+    await iterator.return(undefined)
+
+    expect(cancelled).toBe(false)
+    expect(stream.locked).toBe(false)
+  })
+
+  test('does not invoke cancel side effects on normal completion', async () => {
+    let cancelled = false
+    const stream = new ReadableStream<number>({
+      start(controller) {
+        controller.enqueue(1)
+        controller.enqueue(2)
+        controller.close()
+      },
+      cancel() {
+        cancelled = true
+      },
+    })
+
+    const values: Array<number> = []
+    for await (const value of fromStream(stream)) {
+      values.push(value)
+    }
+
+    expect(values).toEqual([1, 2])
+    expect(cancelled).toBe(false)
+  })
 })
