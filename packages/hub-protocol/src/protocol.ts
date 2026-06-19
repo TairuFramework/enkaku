@@ -1,21 +1,16 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
 
 export const hubProtocol = {
-  'hub/send': {
+  'hub/publish': {
     type: 'request',
-    description: 'Send opaque message to explicit recipients',
+    description: 'Publish an opaque message to a topic; fans out to current subscribers',
     param: {
       type: 'object',
       properties: {
-        recipients: {
-          type: 'array',
-          items: { type: 'string', maxLength: 256 },
-          minItems: 1,
-          maxItems: 100,
-        },
+        topicID: { type: 'string', minLength: 1, maxLength: 256 },
         payload: { type: 'string', contentEncoding: 'base64', maxLength: 1048576 },
       },
-      required: ['recipients', 'payload'],
+      required: ['topicID', 'payload'],
       additionalProperties: false,
     },
     result: {
@@ -27,39 +22,54 @@ export const hubProtocol = {
       additionalProperties: false,
     },
   },
-  'hub/group/send': {
+  'hub/subscribe': {
     type: 'request',
-    description: 'Send opaque message to all members of a group',
+    description: 'Subscribe to a topic, creating a durable inbox for the caller',
     param: {
       type: 'object',
       properties: {
-        groupID: { type: 'string', minLength: 1, maxLength: 128 },
-        payload: { type: 'string', contentEncoding: 'base64', maxLength: 1048576 },
+        topicID: { type: 'string', minLength: 1, maxLength: 256 },
       },
-      required: ['groupID', 'payload'],
+      required: ['topicID'],
       additionalProperties: false,
     },
     result: {
       type: 'object',
       properties: {
-        sequenceID: { type: 'string' },
+        subscribed: { type: 'boolean' },
       },
-      required: ['sequenceID'],
+      required: ['subscribed'],
+      additionalProperties: false,
+    },
+  },
+  'hub/unsubscribe': {
+    type: 'request',
+    description: "Unsubscribe from a topic, dropping the caller's inbox for it",
+    param: {
+      type: 'object',
+      properties: {
+        topicID: { type: 'string', minLength: 1, maxLength: 256 },
+      },
+      required: ['topicID'],
+      additionalProperties: false,
+    },
+    result: {
+      type: 'object',
+      properties: {
+        unsubscribed: { type: 'boolean' },
+      },
+      required: ['unsubscribed'],
       additionalProperties: false,
     },
   },
   'hub/receive': {
     type: 'channel',
-    description: 'Bidirectional mailbox channel — hub pushes messages, device pushes acks',
+    description:
+      'Bidirectional mailbox channel — hub pushes messages across all subscribed topics, device pushes acks',
     param: {
       type: 'object',
       properties: {
         after: { type: 'string', maxLength: 64 },
-        groupIDs: {
-          type: 'array',
-          items: { type: 'string', maxLength: 128 },
-          maxItems: 100,
-        },
       },
       additionalProperties: false,
     },
@@ -80,10 +90,10 @@ export const hubProtocol = {
       properties: {
         sequenceID: { type: 'string' },
         senderDID: { type: 'string' },
-        groupID: { type: 'string' },
+        topicID: { type: 'string' },
         payload: { type: 'string', contentEncoding: 'base64' },
       },
-      required: ['sequenceID', 'senderDID', 'payload'],
+      required: ['sequenceID', 'senderDID', 'topicID', 'payload'],
       additionalProperties: false,
     },
     result: {
@@ -135,52 +145,6 @@ export const hubProtocol = {
         keyPackages: { type: 'array', items: { type: 'string' } },
       },
       required: ['keyPackages'],
-      additionalProperties: false,
-    },
-  },
-  'hub/group/join': {
-    type: 'request',
-    description: 'Register as a member of a group on the hub',
-    param: {
-      type: 'object',
-      properties: {
-        groupID: { type: 'string', minLength: 1, maxLength: 128 },
-        credential: { type: 'string', minLength: 1, maxLength: 16384 },
-        delegationChain: {
-          type: 'array',
-          items: { type: 'string', maxLength: 16384 },
-          maxItems: 10,
-        },
-      },
-      required: ['groupID', 'credential'],
-      additionalProperties: false,
-    },
-    result: {
-      type: 'object',
-      properties: {
-        joined: { type: 'boolean' },
-      },
-      required: ['joined'],
-      additionalProperties: false,
-    },
-  },
-  'hub/group/leave': {
-    type: 'request',
-    description: 'Unregister from a group on the hub',
-    param: {
-      type: 'object',
-      properties: {
-        groupID: { type: 'string', minLength: 1, maxLength: 128 },
-      },
-      required: ['groupID'],
-      additionalProperties: false,
-    },
-    result: {
-      type: 'object',
-      properties: {
-        left: { type: 'boolean' },
-      },
-      required: ['left'],
       additionalProperties: false,
     },
   },

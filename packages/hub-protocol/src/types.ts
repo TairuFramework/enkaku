@@ -4,15 +4,14 @@ import type { EventEmitter } from '@enkaku/event'
 export type StoredMessage = {
   sequenceID: string
   senderDID: string
-  groupID?: string
+  topicID: string
   payload: Uint8Array
 }
 
-export type StoreParams = {
+export type PublishParams = {
   senderDID: string
-  recipients: Array<string>
+  topicID: string
   payload: Uint8Array
-  groupID?: string
 }
 
 export type FetchParams = {
@@ -43,13 +42,13 @@ export type HubStoreEvents = {
 
 export type HubStore = {
   events: EventEmitter<HubStoreEvents>
-  store(params: StoreParams): Promise<string>
+  publish(params: PublishParams): Promise<string>
   fetch(params: FetchParams): Promise<FetchResult>
   ack(params: AckParams): Promise<void>
   purge(params: PurgeParams): Promise<Array<string>>
+  subscribe(subscriberDID: string, topicID: string): Promise<void>
+  unsubscribe(subscriberDID: string, topicID: string): Promise<void>
+  getSubscribers(topicID: string): Promise<Array<string>>
   storeKeyPackage(ownerDID: string, keyPackage: string): Promise<void>
   fetchKeyPackages(ownerDID: string, count?: number): Promise<Array<string>>
-  addGroupMember(groupID: string, did: string): Promise<void>
-  removeGroupMember(groupID: string, did: string): Promise<void>
-  getGroupMembers(groupID: string): Promise<Array<string>>
 }
