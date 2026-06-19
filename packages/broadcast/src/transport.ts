@@ -41,16 +41,40 @@ export function createBroadcastTransport<R = BroadcastMessage, W = BroadcastMess
   const { topicID, bus, wrap = identity, unwrap = identity, signal } = params
 
   let unsubscribe: (() => void) | undefined
+  let readableController: ReadableStreamDefaultController<R> | undefined
+  let readerClosed = false
+
+  function closeReadable() {
+    if (!readerClosed) {
+      readerClosed = true
+      try {
+        readableController?.close()
+      } catch {
+        // already closed or errored — ignore
+      }
+    }
+  }
+
   const readable = new ReadableStream<R>({
     start(controller) {
+      readableController = controller
       unsubscribe = bus.subscribe(topicID, (payload) => {
         Promise.resolve(unwrap(payload))
           .then((bytes) => controller.enqueue(decode<R>(bytes)))
-          .catch((error) => controller.error(error))
+          .catch((error) => {
+            // Bug 2 fix: unsubscribe before erroring so no further enqueue/error calls
+            // land on an already-errored controller.
+            unsubscribe?.()
+            unsubscribe = undefined
+            readerClosed = true
+            controller.error(error)
+          })
       })
     },
     cancel() {
       unsubscribe?.()
+      unsubscribe = undefined
+      readerClosed = true
     },
   })
 
@@ -60,7 +84,10 @@ export function createBroadcastTransport<R = BroadcastMessage, W = BroadcastMess
       await bus.publish(topicID, bytes)
     },
     close() {
+      // Bug 1 fix: also close the readable controller so parked readers unblock.
       unsubscribe?.()
+      unsubscribe = undefined
+      closeReadable()
     },
   })
 
