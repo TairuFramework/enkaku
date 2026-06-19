@@ -84,4 +84,26 @@ describe('createHubMux', () => {
     await mux.dispose()
     expect(hub.subscriberCount('topic:q')).toBe(0)
   })
+
+  test('a sink created inside an onInbound listener receives the triggering message (lazy-accept race)', async () => {
+    const hub = new FakeHub()
+    const mux = createHubMux({ hub, localDID: 'bob' })
+    const got: Array<string> = []
+    let started = false
+    // Mirrors the directed inbox acceptor: onInbound synchronously creates a
+    // receive sink on first inbound, which must still receive that first frame.
+    mux.onInbound('topic:lazy', () => {
+      if (started) return
+      started = true
+      const sub = mux.hubLike.receive('bob')
+      void (async () => {
+        for await (const msg of sub) got.push(toUTF(msg.payload))
+      })()
+    })
+
+    await hub.publish({ senderDID: 'alice', topicID: 'topic:lazy', payload: fromUTF('first') })
+    await flush()
+    expect(got).toEqual(['first'])
+    await mux.dispose()
+  })
 })
