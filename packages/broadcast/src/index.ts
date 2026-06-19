@@ -16,6 +16,7 @@ export {
   type RequestData,
   type RequestOptions,
 } from './client.js'
+export { defineGroupProtocol, type GroupProtocolDefinition } from './protocol.js'
 export {
   type BroadcastHandler,
   type BroadcastResponderParams,
