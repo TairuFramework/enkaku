@@ -1,8 +1,10 @@
 import { createIdentity, randomIdentity } from '@enkaku/token'
 import {
   decode,
+  defaultCapabilities,
   defaultExtensionTypes,
   encode,
+  makeCustomExtension,
   mlsMessageDecoder,
   mlsMessageEncoder,
   nodeTypes,
@@ -143,6 +145,81 @@ describe('joinGroupExternal — stale device recovery', () => {
       }
     }).length
     expect(bobLeafCount).toBe(1)
+  })
+
+  test('a member rejoins a group that uses a non-default GroupContext extension', async () => {
+    const alice = randomIdentity()
+    const bob = randomIdentity()
+    const carol = randomIdentity()
+
+    // A custom GroupContext extension the group depends on. Every member leaf
+    // must advertise its type or ts-mls rejects the leaf.
+    const customExtensionType = 0xf100
+    const customExtension = makeCustomExtension({
+      extensionType: customExtensionType,
+      extensionData: new TextEncoder().encode('genesis-anchor'),
+    })
+    const base = defaultCapabilities()
+    const extensionAwareCapabilities = {
+      ...base,
+      extensions: [...base.extensions, customExtensionType],
+    }
+
+    // Alice creates the group carrying the custom extension. Bob joins via
+    // Welcome with a leaf that advertises it.
+    const { group: aliceGroup } = await createGroup(alice, 'ext-rejoin-group', {
+      extensions: [customExtension],
+    })
+    const { invite: bobInvite } = await createInvite({
+      group: aliceGroup,
+      identity: alice,
+      recipientDID: bob.id,
+      permission: 'member',
+    })
+    const bobKP = await createKeyPackageBundle(bob, { capabilities: extensionAwareCapabilities })
+    const { welcomeMessage: bobWelcome, newGroup: aliceAfterBob } = await commitInvite(
+      aliceGroup,
+      bobKP.publicPackage,
+    )
+    const { group: bobGroup, credential: bobCred } = await processWelcome({
+      identity: bob,
+      invite: bobInvite,
+      welcome: bobWelcome,
+      keyPackageBundle: bobKP,
+      ratchetTree: aliceAfterBob.state.ratchetTree,
+    })
+    expect(bobGroup.epoch).toBe(1n)
+
+    // Alice advances the epoch while Bob is offline.
+    const carolKP = await createKeyPackageBundle(carol, {
+      capabilities: extensionAwareCapabilities,
+    })
+    const { newGroup: aliceAfterCarol } = await commitInvite(aliceAfterBob, carolKP.publicPackage)
+    const carolLeaf = aliceAfterCarol.findMemberLeafIndex(carol.id)
+    expect(carolLeaf).toBeDefined()
+    const { newGroup: aliceAdvanced } = await removeMember(aliceAfterCarol, carolLeaf as number)
+    expect(bobGroup.epoch).toBe(1n)
+
+    // Bob rejoins externally WITHOUT passing capabilities. The join must derive
+    // the group's extension set from the GroupInfo so his rejoining leaf
+    // advertises the custom extension; otherwise ts-mls rejects the join with
+    // "client does not support every extension in the GroupContext".
+    const { groupInfo } = await exportGroupInfo({ group: aliceAdvanced })
+    const { commitMessage, group: bobRejoined } = await joinGroupExternal({
+      identity: bob,
+      groupInfo,
+      credential: bobCred,
+      resync: true,
+    })
+    expect(bobRejoined.epoch).toBe(aliceAdvanced.epoch + 1n)
+
+    // Alice processes the rejoin commit and round-trip messaging resumes.
+    const decodedRejoin = decode(mlsMessageDecoder, commitMessage)
+    if (decodedRejoin == null) throw new Error('failed to decode rejoin commit')
+    await aliceAdvanced.processMessage(decodedRejoin)
+    const { message } = await aliceAdvanced.encrypt(new TextEncoder().encode('back with ext'))
+    const got = await bobRejoined.decrypt(message)
+    expect(new TextDecoder().decode(got)).toBe('back with ext')
   })
 
   test('rejects when identity.id does not match credential.id (resync guard)', async () => {

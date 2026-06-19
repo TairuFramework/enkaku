@@ -367,12 +367,17 @@ export class GroupHandle {
 // ---------------------------------------------------------------------------
 
 /**
- * Build the leaf-node capabilities for a group creator. RFC 9420 requires a
- * member's leaf to advertise every non-default GroupContext extension type the
- * group uses; we derive that set from the group's extensions so it cannot
- * desync. An explicit `override` (GroupOptions.capabilities) wins verbatim.
+ * Build the leaf-node capabilities for a member joining or creating a group.
+ * RFC 9420 requires a member's leaf to advertise every non-default GroupContext
+ * extension type the group uses; we derive that set from the group's extensions
+ * so it cannot desync. This applies equally to a creator (extensions from the
+ * group being created) and to an external rejoiner (extensions from the
+ * GroupInfo it resyncs against) — a rejoining leaf that advertises only the
+ * defaults is rejected by ts-mls with "client does not support every extension
+ * in the GroupContext". An explicit `override` (GroupOptions.capabilities) wins
+ * verbatim.
  */
-function buildCreatorCapabilities(
+function buildLeafCapabilities(
   extensions: ReadonlyArray<GroupContextExtension>,
   override?: Capabilities,
 ): Capabilities {
@@ -403,7 +408,7 @@ export async function createGroup(
     credential: makeMLSCredential(identity),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
     cipherSuite: context.cipherSuite,
-    capabilities: buildCreatorCapabilities(extensions, options?.capabilities),
+    capabilities: buildLeafCapabilities(extensions, options?.capabilities),
   }).then((keyPackage) => {
     return mlsCreateGroup({
       context,
@@ -855,10 +860,16 @@ export async function joinGroupExternal(
   // Discriminated-union narrow via the literal wireformat tag — no cast needed.
   const { groupInfo } = message
 
+  // The rejoining leaf must advertise every GroupContext extension the group
+  // uses (e.g. a genesis-anchor extension), or ts-mls rejects the external
+  // join with "client does not support every extension in the GroupContext".
+  // Derive them from the GroupInfo being resynced against, honoring an explicit
+  // capabilities override.
   const keyPackage = await generateKeyPackageWithKey({
     credential: makeMLSCredential(identity),
     signatureKeyPair: { signKey: identity.privateKey, publicKey: identity.publicKey },
     cipherSuite: context.cipherSuite,
+    capabilities: buildLeafCapabilities(groupInfo.groupContext.extensions, options?.capabilities),
   })
 
   const { publicMessage, newState } = await mlsJoinGroupExternal({
