@@ -7,6 +7,7 @@ import {
   type SuppressConfig,
 } from '@enkaku/broadcast'
 import type { Client } from '@enkaku/client'
+import type { StoredMessage } from '@enkaku/hub-protocol'
 import type { HubLike } from '@enkaku/hub-tunnel'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import type { ProcedureHandlers } from '@enkaku/server'
@@ -15,6 +16,7 @@ import { createGroupBusServer } from './bus-server.js'
 import type { GroupCrypto, GroupMLS } from './crypto.js'
 import { createDirectedClient, createInboxAcceptor } from './directed.js'
 import { adaptBusHandlers } from './handlers.js'
+import { decodeHandshakeFrame, HANDSHAKE_KIND } from './handshake.js'
 import { createHubMux, type HubMux } from './hub-mux.js'
 import { handshakeTopic, inboxTopic, protocolTopic } from './topic.js'
 
@@ -149,7 +151,39 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
     }
   }
 
+  const rebuildEpoch = async (): Promise<void> => {
+    await teardownEpoch()
+    await buildEpoch()
+  }
+
   let handshakeUnsubscribe: (() => void) | undefined
+  let handshakeTail: Promise<void> = Promise.resolve()
+
+  // Serialize inbound handshake processing: Commits must apply in MLS order, and
+  // both processCommit and the epoch rebuild are async. Each op waits for init to
+  // finish, then runs to completion before the next begins.
+  const onHandshakeMessage = (message: StoredMessage): void => {
+    handshakeTail = handshakeTail
+      .then(async () => {
+        await ready
+        if (mls == null) return
+        let frame: ReturnType<typeof decodeHandshakeFrame>
+        try {
+          frame = decodeHandshakeFrame(message.payload)
+        } catch {
+          return // ignore malformed frames on the handshake topic
+        }
+        if (frame.kind === HANDSHAKE_KIND.commit) {
+          const { advanced } = await mls.processCommit(frame.payload, {
+            senderDID: message.senderDID,
+          })
+          if (advanced) await rebuildEpoch()
+        }
+        // recovery kinds are handled in a later step
+      })
+      .catch(() => {})
+  }
+
   const initHandshake = async (): Promise<void> => {
     if (mls == null) return
     const recoverySecret = await mls.exportRecoverySecret()
@@ -157,9 +191,7 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
     // Subscribed once for the peer's whole life — deliberately NOT rebuilt on
     // resync, so a peer stranded on a stale epoch always shares this rendezvous
     // with the live group. Released only on dispose.
-    handshakeUnsubscribe = mux.onInbound(topicID, () => {
-      // Inbound handshake handling is wired in the next step.
-    })
+    handshakeUnsubscribe = mux.onInbound(topicID, onHandshakeMessage)
   }
 
   const ready = (async () => {
@@ -183,8 +215,7 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
     },
     resync: async () => {
       await ready
-      await teardownEpoch()
-      await buildEpoch()
+      await rebuildEpoch()
     },
     dispose: async () => {
       await ready
