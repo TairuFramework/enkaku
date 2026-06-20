@@ -380,6 +380,7 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
       for (const timer of pendingReplies.values()) clearTimeout(timer)
       recoveryTimers.clear()
       pendingReplies.clear()
+      suppressedRequests.clear()
       await teardownEpoch()
       await mux.dispose()
     },

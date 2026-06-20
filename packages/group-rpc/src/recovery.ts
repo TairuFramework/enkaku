@@ -16,6 +16,9 @@ export function decodeRecoveryRequest(payload: Uint8Array): string {
 
 export function encodeRecoveryReply(requestID: string, groupInfo: Uint8Array): Uint8Array {
   const rid = fromUTF(requestID)
+  if (rid.length > 0xffff) {
+    throw new Error('recovery reply requestID is too long')
+  }
   const out = new Uint8Array(2 + rid.length + groupInfo.length)
   new DataView(out.buffer).setUint16(0, rid.length, true)
   out.set(rid, 2)
