@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/otel",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "OpenTelemetry integration for Enkaku RPC",
