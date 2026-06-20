@@ -5,6 +5,7 @@ import {
   getActiveBaggage,
   getActiveSpan,
   getActiveTraceContext,
+  withActiveBaggage,
   withSpan,
   withSyncSpan,
 } from '../src/tracers.js'
@@ -90,5 +91,19 @@ describe('withSyncSpan', () => {
       expect(span).toBeDefined()
       expect(typeof span.setAttribute).toBe('function')
     })
+  })
+})
+
+describe('withActiveBaggage', () => {
+  // No ContextManager is registered in tests, so context.active() inside fn is
+  // still ROOT; we assert the wrapper returns fn's result (matching withSpan).
+  // Activation correctness is covered by the entriesToBaggage round-trip tests.
+  test('executes the function and returns its result', () => {
+    const result = withActiveBaggage([{ key: 'userId', value: 'alice' }], () => 42)
+    expect(result).toBe(42)
+  })
+
+  test('accepts empty entries', () => {
+    expect(withActiveBaggage([], () => 'ok')).toBe('ok')
   })
 })

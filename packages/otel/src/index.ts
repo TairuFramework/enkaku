@@ -32,6 +32,7 @@ export {
   getActiveSpan,
   getActiveTraceContext,
   type TraceContext,
+  withActiveBaggage,
   withSpan,
   withSyncSpan,
 } from './tracers.js'

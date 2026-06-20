@@ -1,7 +1,7 @@
 import type { Context, SpanOptions, Tracer } from '@opentelemetry/api'
 import { context, propagation, type Span, SpanStatusCode, trace } from '@opentelemetry/api'
 
-import { type BaggageEntry, baggageToEntries } from './baggage.js'
+import { type BaggageEntry, baggageToEntries, entriesToBaggage } from './baggage.js'
 import { ZERO_TRACE_ID } from './semantic.js'
 
 const ENKAKU_VERSION = '0.1.0'
@@ -96,4 +96,14 @@ export async function withSpan<T>(
       span.end()
     }
   })
+}
+
+/**
+ * Activate the given baggage entries for the duration of `fn`, so a handler's
+ * `getActiveBaggage()` reflects the client's baggage. Symmetric with the
+ * read-only `getActiveBaggage`.
+ */
+export function withActiveBaggage<T>(entries: Array<BaggageEntry>, fn: () => T): T {
+  const baggage = entriesToBaggage(entries)
+  return context.with(propagation.setBaggage(context.active(), baggage), fn)
 }
