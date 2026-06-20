@@ -220,11 +220,13 @@ describe('entriesToBaggage', () => {
       { key: 'toString', value: 'v1' },
       { key: 'constructor', value: 'v2' },
       { key: 'hasOwnProperty', value: 'v3' },
+      { key: '__proto__', value: 'v4' },
     ]
     const result = baggageToEntries(entriesToBaggage(entries))
     expect(result).toContainEqual({ key: 'toString', value: 'v1' })
     expect(result).toContainEqual({ key: 'constructor', value: 'v2' })
     expect(result).toContainEqual({ key: 'hasOwnProperty', value: 'v3' })
-    expect(result).toHaveLength(3)
+    expect(result).toContainEqual({ key: '__proto__', value: 'v4' })
+    expect(result).toHaveLength(4)
   })
 })
