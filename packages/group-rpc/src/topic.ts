@@ -5,6 +5,9 @@ import { sha256 } from '@noble/hashes/sha2.js'
 /** Reserved label for per-member unicast inbox topics. */
 export const INBOX_LABEL = 'enkaku/inbox/v1'
 
+/** Reserved label for the non-rotating MLS-handshake/recovery topic. */
+export const HANDSHAKE_LABEL = 'enkaku/handshake/v1'
+
 const DISCOVERY_PREFIX = 'enkaku/discovery/v1'
 const SEP = '\0'
 
@@ -29,6 +32,16 @@ export function protocolTopic(
  */
 export function inboxTopic(secret: Uint8Array, epoch: number, memberDID: string): string {
   return deriveTopicID(secret, epoch, INBOX_LABEL, memberDID)
+}
+
+/**
+ * The non-rotating MLS-handshake/recovery topic, derived from the
+ * epoch-independent recovery secret (epoch fixed at `0`). Stable for the group's
+ * whole life so every member — including one stranded on a stale epoch — can
+ * always derive the rendezvous. Opaque to the hub.
+ */
+export function handshakeTopic(recoverySecret: Uint8Array): string {
+  return deriveTopicID(recoverySecret, 0, HANDSHAKE_LABEL)
 }
 
 /**

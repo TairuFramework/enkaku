@@ -12,15 +12,17 @@ import type { ProtocolDefinition } from '@enkaku/protocol'
 import type { ProcedureHandlers } from '@enkaku/server'
 
 import { createGroupBusServer } from './bus-server.js'
-import type { GroupCrypto } from './crypto.js'
+import type { GroupCrypto, GroupMLS } from './crypto.js'
 import { createDirectedClient, createInboxAcceptor } from './directed.js'
 import { adaptBusHandlers } from './handlers.js'
 import { createHubMux, type HubMux } from './hub-mux.js'
-import { inboxTopic, protocolTopic } from './topic.js'
+import { handshakeTopic, inboxTopic, protocolTopic } from './topic.js'
 
 export type GroupPeerParams<Protocols extends Record<string, ProtocolDefinition>> = {
   hub: HubLike
   crypto: GroupCrypto
+  /** MLS lifecycle port. When provided, the peer runs the handshake lane. */
+  mls?: GroupMLS
   localDID: string
   protocols: Protocols
   handlers: { [K in keyof Protocols]: ProcedureHandlers<Protocols[K]> }
@@ -51,7 +53,7 @@ type ProtocolRuntime = {
 export function createGroupPeer<Protocols extends Record<string, ProtocolDefinition>>(
   params: GroupPeerParams<Protocols>,
 ): GroupPeer<Protocols> {
-  const { hub, crypto, localDID, protocols, handlers, suppress } = params
+  const { hub, crypto, mls, localDID, protocols, handlers, suppress } = params
   const getRandomID = params.getRandomID
   const mux: HubMux = createHubMux({ hub, localDID })
 
@@ -147,7 +149,23 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
     }
   }
 
-  const ready = buildEpoch()
+  let handshakeUnsubscribe: (() => void) | undefined
+  const initHandshake = async (): Promise<void> => {
+    if (mls == null) return
+    const recoverySecret = await mls.exportRecoverySecret()
+    const topicID = handshakeTopic(recoverySecret)
+    // Subscribed once for the peer's whole life — deliberately NOT rebuilt on
+    // resync, so a peer stranded on a stale epoch always shares this rendezvous
+    // with the live group. Released only on dispose.
+    handshakeUnsubscribe = mux.onInbound(topicID, () => {
+      // Inbound handshake handling is wired in the next step.
+    })
+  }
+
+  const ready = (async () => {
+    await initHandshake()
+    await buildEpoch()
+  })()
   const withReady = async <T>(fn: () => T | Promise<T>): Promise<T> => {
     await ready
     return fn()
@@ -170,6 +188,7 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
     },
     dispose: async () => {
       await ready
+      handshakeUnsubscribe?.()
       await teardownEpoch()
       await mux.dispose()
     },
