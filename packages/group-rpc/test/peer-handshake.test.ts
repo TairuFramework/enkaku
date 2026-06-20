@@ -135,4 +135,43 @@ describe('handshake topic lifecycle', () => {
 
     await bob.peer.dispose()
   })
+
+  test('localCommitted publishes to receivers and resyncs the sender', async () => {
+    const hub = new FakeHub()
+    const recoverySecret = new Uint8Array(32).fill(0x55)
+    const alice = makeMLSPeer(hub, 'alice', recoverySecret)
+    const bob = makeMLSPeer(hub, 'bob', recoverySecret)
+    await flush()
+
+    const secret = await alice.crypto.exportSecret()
+    expect(hub.subscriberCount(protocolTopic(secret, 1, 'chat'))).toBe(2)
+
+    // Alice produced a Commit and already applied it locally: advance her epoch.
+    alice.crypto.setEpoch(2)
+    await alice.peer.localCommitted(new Uint8Array([7]))
+    await flush()
+
+    // Bob received the Commit, advanced, and resynced; Alice rebuilt to epoch 2.
+    expect(bob.mls.epoch()).toBe(2)
+    expect(hub.subscriberCount(protocolTopic(secret, 1, 'chat'))).toBe(0)
+    expect(hub.subscriberCount(protocolTopic(secret, 2, 'chat'))).toBe(2)
+
+    await alice.peer.dispose()
+    await bob.peer.dispose()
+  })
+
+  test('localCommitted is a no-op without an MLS port', async () => {
+    const hub = new FakeHub()
+    const crypto = createFakeCrypto({ epoch: 1, localDID: 'alice' })
+    const peer = createGroupPeer<Protocols>({
+      hub,
+      crypto,
+      localDID: 'alice',
+      protocols: { chat },
+      handlers: { chat: {} } as never,
+    })
+    await flush()
+    await expect(peer.localCommitted(new Uint8Array([1]))).resolves.toBeUndefined()
+    await peer.dispose()
+  })
 })

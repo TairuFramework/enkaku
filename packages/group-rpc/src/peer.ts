@@ -16,7 +16,7 @@ import { createGroupBusServer } from './bus-server.js'
 import type { GroupCrypto, GroupMLS } from './crypto.js'
 import { createDirectedClient, createInboxAcceptor } from './directed.js'
 import { adaptBusHandlers } from './handlers.js'
-import { decodeHandshakeFrame, HANDSHAKE_KIND } from './handshake.js'
+import { decodeHandshakeFrame, encodeHandshakeFrame, HANDSHAKE_KIND } from './handshake.js'
 import { createHubMux, type HubMux } from './hub-mux.js'
 import { handshakeTopic, inboxTopic, protocolTopic } from './topic.js'
 
@@ -41,6 +41,12 @@ export type ProtocolSurface<Protocol extends ProtocolDefinition> = {
 
 export type GroupPeer<Protocols extends Record<string, ProtocolDefinition>> = {
   protocol: <K extends keyof Protocols>(name: K) => ProtocolSurface<Protocols[K]>
+  /**
+   * Announce a Commit the consumer just produced (and already applied locally):
+   * fan it out on the handshake topic and rebuild this peer's app topics to the
+   * now-current epoch. No-op when the peer has no MLS port.
+   */
+  localCommitted: (commit: Uint8Array) => Promise<void>
   resync: () => Promise<void>
   dispose: () => Promise<void>
 }
@@ -157,6 +163,7 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
   }
 
   let handshakeUnsubscribe: (() => void) | undefined
+  let handshakeTopicID: string | undefined
   let handshakeTail: Promise<void> = Promise.resolve()
 
   // Serialize inbound handshake processing: Commits must apply in MLS order, and
@@ -188,10 +195,27 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
     if (mls == null) return
     const recoverySecret = await mls.exportRecoverySecret()
     const topicID = handshakeTopic(recoverySecret)
+    handshakeTopicID = topicID
     // Subscribed once for the peer's whole life — deliberately NOT rebuilt on
     // resync, so a peer stranded on a stale epoch always shares this rendezvous
     // with the live group. Released only on dispose.
     handshakeUnsubscribe = mux.onInbound(topicID, onHandshakeMessage)
+  }
+
+  // Fan out a locally-produced Commit and rebuild this peer's app topics. The
+  // publish + rebuild ride the same serial tail as inbound processing so they
+  // never interleave with a concurrently-received Commit.
+  const localCommitted = async (commit: Uint8Array): Promise<void> => {
+    await ready
+    if (mls == null || handshakeTopicID == null) return
+    const topicID = handshakeTopicID
+    const frame = encodeHandshakeFrame(HANDSHAKE_KIND.commit, commit)
+    const op = handshakeTail.then(async () => {
+      await mux.bus.publish(topicID, frame)
+      await rebuildEpoch()
+    })
+    handshakeTail = op.catch(() => {})
+    await op
   }
 
   const ready = (async () => {
@@ -213,6 +237,7 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
         to: (memberDID) => surfaceFor(key).to(memberDID),
       } as ProtocolSurface<Protocols[K]>
     },
+    localCommitted,
     resync: async () => {
       await ready
       await rebuildEpoch()
