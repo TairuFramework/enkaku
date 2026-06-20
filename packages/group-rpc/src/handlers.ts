@@ -48,7 +48,7 @@ export function adaptBusHandlers(
           message: busMessage(context?.senderDID),
         })
       }
-      requestHandlers[prc] = suppressible(fn, suppress)
+      requestHandlers[prc] = Object.keys(suppress).length > 0 ? suppressible(fn, suppress) : fn
     }
   }
 
