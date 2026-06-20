@@ -11,6 +11,7 @@ export {
   type BaggageEntry,
   type BaggageProperty,
   baggageToEntries,
+  entriesToBaggage,
   formatBaggage,
   parseBaggage,
 } from './baggage.js'

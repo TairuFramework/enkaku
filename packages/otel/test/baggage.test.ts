@@ -1,7 +1,7 @@
 import { baggageEntryMetadataFromString, propagation } from '@opentelemetry/api'
 import { describe, expect, test } from 'vitest'
 
-import { baggageToEntries, formatBaggage, parseBaggage } from '../src/baggage.js'
+import { baggageToEntries, entriesToBaggage, formatBaggage, parseBaggage } from '../src/baggage.js'
 
 describe('formatBaggage', () => {
   test('formats a single member', () => {
@@ -175,5 +175,43 @@ describe('baggageToEntries', () => {
         properties: [{ key: 'ttl', value: '30' }, { key: 'internal' }],
       },
     ])
+  })
+})
+
+describe('entriesToBaggage', () => {
+  test('round-trips plain entries through baggageToEntries', () => {
+    const entries = [
+      { key: 'userId', value: 'alice smith,jr' },
+      { key: 'region', value: 'eu' },
+    ]
+    expect(baggageToEntries(entriesToBaggage(entries))).toEqual(entries)
+  })
+
+  test('round-trips entries with properties (lossless)', () => {
+    const entries = [
+      { key: 'k', value: 'v', properties: [{ key: 'secure' }, { key: 'ttl', value: '30' }] },
+    ]
+    expect(baggageToEntries(entriesToBaggage(entries))).toEqual(entries)
+  })
+
+  test('round-trips a property value with special characters', () => {
+    const entries = [{ key: 'k', value: 'v', properties: [{ key: 'note', value: 'hello world' }] }]
+    expect(baggageToEntries(entriesToBaggage(entries))).toEqual(entries)
+  })
+
+  test('drops members with invalid (non-token) keys', () => {
+    const entries = [
+      { key: 'bad key', value: 'v' },
+      { key: 'good', value: 'v' },
+    ]
+    expect(baggageToEntries(entriesToBaggage(entries))).toEqual([{ key: 'good', value: 'v' }])
+  })
+
+  test('keeps the first occurrence of a duplicate key', () => {
+    const entries = [
+      { key: 'a', value: '1' },
+      { key: 'a', value: '2' },
+    ]
+    expect(baggageToEntries(entriesToBaggage(entries))).toEqual([{ key: 'a', value: '1' }])
   })
 })

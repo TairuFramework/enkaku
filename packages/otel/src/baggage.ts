@@ -1,4 +1,9 @@
-import type { Baggage } from '@opentelemetry/api'
+import {
+  type Baggage,
+  type BaggageEntryMetadata,
+  baggageEntryMetadataFromString,
+  propagation,
+} from '@opentelemetry/api'
 
 import { logger } from './log.js'
 
@@ -157,4 +162,55 @@ export function baggageToEntries(baggage: Baggage): Array<BaggageEntry> {
     }
     return entry
   })
+}
+
+// Serialize structured properties into a W3C metadata tail (`k=v;k2;k3=v3`),
+// percent-encoding values — the inverse of the `parseProperties` step in
+// `baggageToEntries`. Drops properties with non-token keys or un-encodable
+// values, same tolerance as `formatBaggage`.
+function propertiesToMetadata(properties: Array<BaggageProperty>): string {
+  const out: Array<string> = []
+  for (const prop of properties) {
+    if (!isToken(prop.key)) {
+      logger.warn('dropping invalid baggage property {key}', { key: prop.key })
+      continue
+    }
+    if (prop.value === undefined) {
+      out.push(prop.key)
+    } else {
+      const encoded = safeEncode(prop.value)
+      if (encoded === undefined) {
+        logger.warn('dropping baggage property with un-encodable value {key}', { key: prop.key })
+        continue
+      }
+      out.push(`${prop.key}=${encoded}`)
+    }
+  }
+  return out.join(';')
+}
+
+/**
+ * Convert enkaku `BaggageEntry` records into an OpenTelemetry `Baggage`. The
+ * inverse of `baggageToEntries`: structured `properties` are folded back into
+ * OTel's opaque per-entry metadata string, so the result round-trips losslessly.
+ * Drops members with non-token keys and keeps the first occurrence of a
+ * duplicate key. Never throws.
+ */
+export function entriesToBaggage(entries: Array<BaggageEntry>): Baggage {
+  const record: Record<string, { value: string; metadata?: BaggageEntryMetadata }> = {}
+  for (const entry of entries) {
+    if (!isToken(entry.key)) {
+      logger.warn('dropping invalid baggage member {key}', { key: entry.key })
+      continue
+    }
+    if (entry.key in record) {
+      continue
+    }
+    const tail = entry.properties ? propertiesToMetadata(entry.properties) : ''
+    record[entry.key] =
+      tail === ''
+        ? { value: entry.value }
+        : { value: entry.value, metadata: baggageEntryMetadataFromString(tail) }
+  }
+  return propagation.createBaggage(record)
 }
