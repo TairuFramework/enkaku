@@ -1,6 +1,6 @@
 /**
  * Abstraction over a 1→N publish/subscribe bus addressed by opaque topic IDs.
- * The hub implements this in Phase 2; `createMemoryBus` is the in-process fake.
+ * The hub implements this; `createMemoryBus` is the in-process fake.
  */
 export type BroadcastBus = {
   publish(topicID: string, payload: Uint8Array): void | Promise<void>

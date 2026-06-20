@@ -23,7 +23,13 @@ type Sink = {
 /**
  * Multiplex a single hub `receive` drain into a BroadcastBus view, a HubLike
  * view (for directed tunnels), and an onInbound hook (for lazy directed-server
- * accept). See the plan's "Design notes" for the ordering and refcount rules.
+ * accept).
+ *
+ * Per inbound message, in order: (1) fire `onInbound` listeners for the topic,
+ * then (2) push to every `hubLike.receive` sink — so a listener may create a
+ * directed tunnel synchronously and still receive the triggering frame. Topics
+ * are refcounted across all three views: the first registration subscribes on
+ * the hub, the last removal unsubscribes.
  */
 export function createHubMux(params: HubMuxParams): HubMux {
   const { hub, localDID } = params

@@ -45,7 +45,7 @@ export class BroadcastClient extends Disposer {
     })
     this.#transport = params.transport
     this.#getRandomID = params.getRandomID ?? defaultRandomID
-    // Bug 1 fix: discard the promise intentionally; errors are best-effort here.
+    // Discard the promise intentionally; read errors are best-effort here.
     void this.#read().catch(() => {})
   }
 
@@ -94,7 +94,7 @@ export class BroadcastClient extends Disposer {
           cleanup()
           resolve(reply.ok)
         },
-        // Bug 2 fix: reject immediately on dispose rather than wait for timeout.
+        // Reject immediately on dispose rather than wait for the timeout.
         onDispose: () => {
           clearTimeout(timer)
           reject(new Error('BroadcastClient disposed'))
@@ -138,7 +138,7 @@ export class BroadcastClient extends Disposer {
             finish()
           }
         },
-        // Bug 2 fix: resolve with partial replies on dispose rather than wait for timeout.
+        // Resolve with partial replies on dispose rather than wait for the timeout.
         onDispose: () => {
           clearTimeout(timer)
           resolve(replies)
@@ -146,7 +146,7 @@ export class BroadcastClient extends Disposer {
       })
       this.#transport
         .write({ payload: { typ: 'event', prc, data: { kind: 'req', rid, prm, gather: true } } })
-        // Bug 3 fix: reject on write failure (was silently resolving with []).
+        // Reject on write failure rather than silently resolving with no replies.
         .catch((error) => {
           clearTimeout(timer)
           this.#pending.delete(rid)
