@@ -11,11 +11,13 @@ export {
   type BaggageEntry,
   type BaggageProperty,
   baggageToEntries,
+  entriesToBaggage,
   formatBaggage,
   parseBaggage,
 } from './baggage.js'
 export {
   extractTraceContext,
+  extractW3CTraceContext,
   injectTraceContext,
   setSpanOnContext,
   withActiveContext,
@@ -30,6 +32,7 @@ export {
   getActiveSpan,
   getActiveTraceContext,
   type TraceContext,
+  withActiveBaggage,
   withSpan,
   withSyncSpan,
 } from './tracers.js'

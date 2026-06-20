@@ -1,13 +1,17 @@
 import {
   type Context,
   context,
+  createTraceState,
   ROOT_CONTEXT,
   type Span,
+  type SpanContext,
   TraceFlags,
   trace,
 } from '@opentelemetry/api'
 
 import { ZERO_TRACE_ID } from './semantic.js'
+import { parseTraceparent } from './traceparent.js'
+import { formatTracestate, parseTracestate } from './tracestate.js'
 
 /**
  * Inject the active span's trace context into a token header.
@@ -43,6 +47,36 @@ export function extractTraceContext(header: Record<string, unknown>): Context | 
     traceFlags: TraceFlags.SAMPLED,
   })
   return remoteContext
+}
+
+/**
+ * Build an OTel Context from a request's W3C trace headers in `_meta`. Parses
+ * `meta.traceparent` (and optional `meta.tracestate`) into a remote SpanContext.
+ * Returns undefined when no valid `traceparent` is present, so callers pay
+ * nothing when tracing is off. Pairs with `withActiveContext` for activation.
+ */
+export function extractW3CTraceContext(meta: Record<string, unknown>): Context | undefined {
+  const traceparent = meta.traceparent
+  if (typeof traceparent !== 'string') {
+    return undefined
+  }
+  const parsed = parseTraceparent(traceparent)
+  if (parsed == null) {
+    return undefined
+  }
+  const spanContext: SpanContext = {
+    traceId: parsed.traceID,
+    spanId: parsed.spanID,
+    traceFlags: parsed.traceFlags,
+    isRemote: true,
+  }
+  if (typeof meta.tracestate === 'string') {
+    const formatted = formatTracestate(parseTracestate(meta.tracestate))
+    if (formatted !== '') {
+      spanContext.traceState = createTraceState(formatted)
+    }
+  }
+  return trace.setSpanContext(ROOT_CONTEXT, spanContext)
 }
 
 export function withActiveContext<T>(parentContext: Context | undefined, fn: () => T): T {
