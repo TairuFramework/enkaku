@@ -70,7 +70,9 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
     handler: BroadcastHandler | SuppressibleHandler,
     senderDID?: string,
   ): Promise<void> => {
-    if (isSuppressible(handler)) {
+    // Gather requests must reach every responder — bypass storm-collapse.
+    const isGather = request.gather === true
+    if (!isGather && isSuppressible(handler)) {
       const { jitterMs = DEFAULT_JITTER_MS } = handler.suppress
       await sleep(getJitterMs(jitterMs))
       if (suppressTimers.has(request.rid)) {
@@ -93,7 +95,9 @@ export function createBroadcastResponder(params: BroadcastResponderParams): {
     const ttlMs = isSuppressible(handler)
       ? (handler.suppress.suppressTtlMs ?? DEFAULT_SUPPRESS_TTL_MS)
       : DEFAULT_SUPPRESS_TTL_MS
-    markReplied(request.rid, ttlMs)
+    if (!isGather) {
+      markReplied(request.rid, ttlMs)
+    }
     // Best-effort write: ignore rejections (e.g. transport disposed mid-flight).
     await transport.write({ payload: { typ: 'event', prc, data: reply } }).catch(() => {})
   }

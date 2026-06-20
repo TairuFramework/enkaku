@@ -97,8 +97,8 @@ describe('createBroadcastResponder', () => {
       transport: createBroadcastTransport({ topicID: TOPIC, bus }),
     })
 
-    const replies = await client.gather('catchup', {}, { timeoutMs: 200 })
-    expect(replies).toEqual([{ from: 'peer-1', value: 'answer' }])
+    const result = await client.request('catchup', {}, { timeoutMs: 200 })
+    expect(result).toBe('answer')
     expect(slowHandler).not.toHaveBeenCalled()
 
     await client.dispose()

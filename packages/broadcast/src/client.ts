@@ -3,7 +3,7 @@ import type { TransportType } from '@enkaku/transport'
 
 import type { BroadcastMessage } from './transport.js'
 
-export type RequestData = { kind: 'req'; rid: string; prm: unknown }
+export type RequestData = { kind: 'req'; rid: string; prm: unknown; gather?: boolean }
 export type ReplyData = { kind: 'res'; rid: string; from: string; ok?: unknown; err?: string }
 
 export type RequestOptions = { errorThreshold?: number; timeoutMs?: number }
@@ -145,7 +145,7 @@ export class BroadcastClient extends Disposer {
         },
       })
       this.#transport
-        .write({ payload: { typ: 'event', prc, data: { kind: 'req', rid, prm } } })
+        .write({ payload: { typ: 'event', prc, data: { kind: 'req', rid, prm, gather: true } } })
         // Bug 3 fix: reject on write failure (was silently resolving with []).
         .catch((error) => {
           clearTimeout(timer)
