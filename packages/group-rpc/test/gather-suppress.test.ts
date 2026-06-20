@@ -9,7 +9,7 @@ const flush = () => new Promise((r) => setTimeout(r, 40))
 
 const chat = {
   'chat/census': { type: 'request', param: { type: 'object' }, result: { type: 'object' } },
-} as unknown as ProtocolDefinition
+} as const satisfies ProtocolDefinition
 
 type Protocols = { chat: typeof chat }
 

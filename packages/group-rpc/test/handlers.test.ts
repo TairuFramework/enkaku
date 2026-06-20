@@ -8,7 +8,7 @@ const protocol = {
   'app/echo': { type: 'request' },
   'app/fetch': { type: 'request' },
   'app/sub': { type: 'stream', receive: { type: 'object' } },
-} as unknown as ProtocolDefinition
+} as const satisfies ProtocolDefinition
 
 describe('adaptBusHandlers', () => {
   test('maps event procedures to handlers receiving data and sender at message.iss', async () => {

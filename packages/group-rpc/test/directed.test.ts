@@ -1,3 +1,4 @@
+import type { Client } from '@enkaku/client'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import type { ProcedureHandlers } from '@enkaku/server'
 import { describe, expect, test } from 'vitest'
@@ -12,9 +13,10 @@ const EPOCH = 1
 
 const protocol = {
   'rpc/double': { type: 'request', param: { type: 'object' }, result: { type: 'object' } },
-} as unknown as ProtocolDefinition
+} as const satisfies ProtocolDefinition
 
-type Handlers = ProcedureHandlers<typeof protocol>
+type Protocol = typeof protocol
+type Handlers = ProcedureHandlers<Protocol>
 
 function member(hub: FakeHub, localDID: string, handlers: Record<string, unknown>) {
   const mux = createHubMux({ hub, localDID })
@@ -36,7 +38,7 @@ describe('directed RPC', () => {
       'rpc/double': (ctx: { param: { n: number } }) => ({ n: ctx.param.n * 2 }),
     })
     const aliceMux = createHubMux({ hub, localDID: 'alice' })
-    const { client, dispose } = createDirectedClient({
+    const { client, dispose } = createDirectedClient<Protocol>({
       mux: aliceMux,
       localDID: 'alice',
       memberDID: 'bob',
@@ -59,9 +61,16 @@ describe('directed RPC', () => {
     const bob = member(hub, 'bob', {
       'rpc/double': (ctx: { param: { n: number } }) => ({ n: ctx.param.n * 2 }),
     })
-    const callers = ['alice', 'carol'].map((localDID, i) => {
+
+    type CallerEntry = {
+      mux: ReturnType<typeof createHubMux>
+      client: Client<Protocol>
+      dispose: () => Promise<void>
+      n: number
+    }
+    const callers: Array<CallerEntry> = ['alice', 'carol'].map((localDID, i) => {
       const mux = createHubMux({ hub, localDID })
-      const { client, dispose } = createDirectedClient({
+      const { client, dispose } = createDirectedClient<Protocol>({
         mux,
         localDID,
         memberDID: 'bob',

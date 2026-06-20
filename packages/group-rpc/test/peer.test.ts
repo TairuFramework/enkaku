@@ -11,7 +11,7 @@ const chat = {
   'chat/changed': { type: 'event', data: { type: 'object' } },
   'chat/echo': { type: 'request', param: { type: 'object' }, result: { type: 'object' } },
   'chat/double': { type: 'request', param: { type: 'object' }, result: { type: 'object' } },
-} as unknown as ProtocolDefinition
+} as const satisfies ProtocolDefinition
 
 type Protocols = { chat: typeof chat }
 
