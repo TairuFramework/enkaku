@@ -5,7 +5,15 @@
  */
 
 export { defineGroupProtocol, type GroupProtocolDefinition } from '@enkaku/broadcast'
-export type { GroupCrypto } from './crypto.js'
+export type { CommitContext, GroupCrypto, GroupMLS } from './crypto.js'
+export {
+  decodeHandshakeFrame,
+  encodeHandshakeFrame,
+  HANDSHAKE_KIND,
+  HANDSHAKE_MAGIC,
+  HANDSHAKE_VERSION,
+  type HandshakeKind,
+} from './handshake.js'
 export {
   createGroupPeer,
   type GroupPeer,
