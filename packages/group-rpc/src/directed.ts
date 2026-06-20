@@ -1,3 +1,4 @@
+import { defaultRandomID } from '@enkaku/broadcast'
 import { Client } from '@enkaku/client'
 import { createHubTunnelTransport, decodeFrame } from '@enkaku/hub-tunnel'
 import type { ClientTransportOf, ProtocolDefinition, ServerTransportOf } from '@enkaku/protocol'
@@ -6,7 +7,7 @@ import { type ProcedureHandlers, Server } from '@enkaku/server'
 import type { HubMux } from './hub-mux.js'
 import { inboxTopic } from './topic.js'
 
-export type DirectedClientParams<Protocol extends ProtocolDefinition> = {
+export type DirectedClientParams = {
   mux: HubMux
   localDID: string
   memberDID: string
@@ -15,16 +16,12 @@ export type DirectedClientParams<Protocol extends ProtocolDefinition> = {
   getRandomID?: () => string
 }
 
-function defaultRandomID(): string {
-  return globalThis.crypto.randomUUID()
-}
-
 /**
  * Directed 1:1 RPC client to a single member, over a hub-tunnel transport whose
  * send/receive topics are the two members' inbox topics for the current epoch.
  */
 export function createDirectedClient<Protocol extends ProtocolDefinition>(
-  params: DirectedClientParams<Protocol>,
+  params: DirectedClientParams,
 ): { client: Client<Protocol>; dispose: () => Promise<void> } {
   const { mux, localDID, memberDID, secret, epoch } = params
   const getRandomID = params.getRandomID ?? defaultRandomID

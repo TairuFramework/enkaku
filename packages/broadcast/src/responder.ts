@@ -2,6 +2,7 @@ import type { TransportType } from '@enkaku/transport'
 
 import type { ReplyData, RequestData } from './client.js'
 import type { BroadcastMessage } from './transport.js'
+import { defaultJitter, defaultSleep, isSuppressible } from './utils.js'
 
 export type BroadcastHandler = (
   prm: unknown,
@@ -19,18 +20,6 @@ export function suppressible(
   config: SuppressConfig = {},
 ): SuppressibleHandler {
   return Object.assign(handler.bind(null) as BroadcastHandler, { suppress: config })
-}
-
-function isSuppressible(handler: BroadcastHandler): handler is SuppressibleHandler {
-  return (handler as SuppressibleHandler).suppress != null
-}
-
-function defaultSleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-function defaultJitter(maxMs: number): number {
-  return Math.floor(Math.random() * (maxMs + 1))
 }
 
 export type BroadcastResponderParams = {

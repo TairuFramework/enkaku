@@ -104,14 +104,23 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
   }
 
   const teardownEpoch = async (): Promise<void> => {
+    // Disposal order is independent across runtimes and within a runtime, so tear
+    // everything down concurrently and surface every failure rather than dying
+    // on the first.
+    const disposals: Array<Promise<unknown>> = []
     for (const runtime of runtimes.values()) {
-      for (const directed of runtime.directed.values()) await directed.dispose()
+      for (const directed of runtime.directed.values()) disposals.push(directed.dispose())
       runtime.directed.clear()
-      await runtime.busServer.dispose()
-      await runtime.acceptor.dispose()
-      await runtime.client.dispose()
+      disposals.push(runtime.busServer.dispose())
+      disposals.push(runtime.acceptor.dispose())
+      disposals.push(runtime.client.dispose())
     }
     runtimes = new Map()
+    const results = await Promise.allSettled(disposals)
+    const reasons = results.flatMap((r) => (r.status === 'rejected' ? [r.reason] : []))
+    if (reasons.length > 0) {
+      throw new AggregateError(reasons, 'Group epoch teardown failed')
+    }
   }
 
   const surfaceFor = (name: string): ProtocolSurface<ProtocolDefinition> => {

@@ -4,8 +4,6 @@
  * @module group-rpc
  */
 
-export const PACKAGE_NAME = '@enkaku/group-rpc'
-
 export { defineGroupProtocol, type GroupProtocolDefinition } from '@enkaku/broadcast'
 export type { GroupCrypto } from './crypto.js'
 export {

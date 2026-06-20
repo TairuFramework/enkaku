@@ -1,8 +1,10 @@
-import type {
-  BroadcastHandler,
-  BroadcastMessage,
-  SuppressConfig,
-  SuppressibleHandler,
+import {
+  type BroadcastHandler,
+  type BroadcastMessage,
+  defaultJitter,
+  defaultSleep,
+  isSuppressible,
+  type SuppressibleHandler,
 } from '@enkaku/broadcast'
 import type { TransportType } from '@enkaku/transport'
 
@@ -21,16 +23,6 @@ export type GroupBusServerParams = {
   requestHandlers: Record<string, BroadcastHandler | SuppressibleHandler>
   sleep?: (ms: number) => Promise<void>
   getJitterMs?: (maxMs: number) => number
-}
-
-function defaultSleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-function defaultJitter(maxMs: number): number {
-  return Math.floor(Math.random() * (maxMs + 1))
-}
-function isSuppressible(handler: BroadcastHandler): handler is SuppressibleHandler {
-  return (handler as SuppressibleHandler).suppress != null
 }
 
 /**
@@ -121,5 +113,3 @@ export function createGroupBusServer(params: GroupBusServerParams): {
     },
   }
 }
-
-export type { SuppressConfig }

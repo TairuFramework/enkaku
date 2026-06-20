@@ -4,8 +4,6 @@
  * @module broadcast
  */
 
-export const PACKAGE_NAME = '@enkaku/broadcast'
-
 export { type BroadcastBus, createMemoryBus } from './bus.js'
 export {
   BroadcastClient,
@@ -34,3 +32,4 @@ export {
   type Unwrap,
   type UnwrapResult,
 } from './transport.js'
+export { defaultJitter, defaultRandomID, defaultSleep, isSuppressible } from './utils.js'

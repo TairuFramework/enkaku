@@ -2,6 +2,7 @@ import { Disposer } from '@enkaku/async'
 import type { TransportType } from '@enkaku/transport'
 
 import type { BroadcastMessage } from './transport.js'
+import { defaultRandomID } from './utils.js'
 
 export type RequestData = { kind: 'req'; rid: string; prm: unknown; gather?: boolean }
 export type ReplyData = { kind: 'res'; rid: string; from: string; ok?: unknown; err?: string }
@@ -16,10 +17,6 @@ export type BroadcastClientParams = {
 }
 
 const DEFAULT_TIMEOUT_MS = 5000
-
-function defaultRandomID(): string {
-  return globalThis.crypto.randomUUID()
-}
 
 type PendingEntry = {
   collect: (reply: ReplyData) => void
