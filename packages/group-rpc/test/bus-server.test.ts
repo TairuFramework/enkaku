@@ -103,9 +103,8 @@ describe('createGroupBusServer', () => {
       }),
     )
     const alice = clientOn(bus, 'did:key:alice')
-    const replies = await alice.gather('app/census', {}, { timeoutMs: 300 })
-    expect(replies.length).toBeGreaterThanOrEqual(1)
-    expect(replies.length).toBeLessThan(3)
+    const result = await alice.request('app/census', {}, { timeoutMs: 300 })
+    expect((result as { from: string }).from).toMatch(/^b[123]$/)
     for (const s of servers) await s.dispose()
     await alice.dispose()
   })

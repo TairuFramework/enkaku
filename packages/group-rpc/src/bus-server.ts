@@ -10,7 +10,7 @@ const DEFAULT_JITTER_MS = 250
 const DEFAULT_SUPPRESS_TTL_MS = 30_000
 
 type ReplyData = { kind: 'res'; rid: string; from: string; ok?: unknown; err?: string }
-type RequestData = { kind: 'req'; rid: string; prm: unknown }
+type RequestData = { kind: 'req'; rid: string; prm: unknown; gather?: boolean }
 
 export type GroupBusServerParams = {
   transport: TransportType<BroadcastMessage, BroadcastMessage>
@@ -61,7 +61,8 @@ export function createGroupBusServer(params: GroupBusServerParams): {
     handler: BroadcastHandler | SuppressibleHandler,
     senderDID?: string,
   ): Promise<void> => {
-    if (isSuppressible(handler)) {
+    const isGather = request.gather === true
+    if (!isGather && isSuppressible(handler)) {
       const { jitterMs = DEFAULT_JITTER_MS } = handler.suppress
       await sleep(getJitterMs(jitterMs))
       if (suppressTimers.has(request.rid)) return
@@ -81,11 +82,11 @@ export function createGroupBusServer(params: GroupBusServerParams): {
     const ttlMs = isSuppressible(handler)
       ? (handler.suppress.suppressTtlMs ?? DEFAULT_SUPPRESS_TTL_MS)
       : DEFAULT_SUPPRESS_TTL_MS
-    markReplied(request.rid, ttlMs)
+    if (!isGather) markReplied(request.rid, ttlMs)
     await transport.write({ payload: { typ: 'event', prc, data: reply } }).catch(() => {})
   }
 
-  type InboundData = { kind?: string; rid?: string; prm?: unknown }
+  type InboundData = { kind?: string; rid?: string; prm?: unknown; gather?: boolean }
 
   void (async () => {
     for await (const msg of transport) {
