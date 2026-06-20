@@ -169,26 +169,36 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
   // Serialize inbound handshake processing: Commits must apply in MLS order, and
   // both processCommit and the epoch rebuild are async. Each op waits for init to
   // finish, then runs to completion before the next begins.
-  const onHandshakeMessage = (message: StoredMessage): void => {
+  const onHandshakeMessage = (message: StoredMessage, ack: () => void): void => {
     handshakeTail = handshakeTail
       .then(async () => {
         await ready
-        if (mls == null) return
+        if (mls == null) {
+          ack()
+          return
+        }
         let frame: ReturnType<typeof decodeHandshakeFrame>
         try {
           frame = decodeHandshakeFrame(message.payload)
         } catch {
-          return // ignore malformed frames on the handshake topic
+          ack() // drop malformed frames; acking stops poison redelivery
+          return
         }
         if (frame.kind === HANDSHAKE_KIND.commit) {
           const { advanced } = await mls.processCommit(frame.payload, {
             senderDID: message.senderDID,
           })
           if (advanced) await rebuildEpoch()
+          ack() // durably handled
+          return
         }
         // recovery kinds are handled in a later step
+        ack()
       })
-      .catch(() => {})
+      .catch(() => {
+        // processing failed (e.g. processCommit threw) — do NOT ack, so the hub
+        // redelivers and we retry.
+      })
   }
 
   const initHandshake = async (): Promise<void> => {
