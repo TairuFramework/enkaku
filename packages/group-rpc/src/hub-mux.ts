@@ -8,10 +8,17 @@ export type HubMuxParams = {
   localDID: string
 }
 
+/**
+ * An onInbound listener. `ack` marks the message durably handled so a durable
+ * hub stops redelivering it; a listener that does not need the durability gate
+ * (e.g. an idempotent app consumer) may ignore it.
+ */
+export type InboundListener = (message: StoredMessage, ack: () => void) => void
+
 export type HubMux = {
   readonly bus: BroadcastBus
   readonly hubLike: HubLike
-  onInbound: (topicID: string, listener: (message: StoredMessage) => void) => () => void
+  onInbound: (topicID: string, listener: InboundListener) => () => void
   dispose: () => Promise<void>
 }
 
@@ -34,7 +41,7 @@ type Sink = {
 export function createHubMux(params: HubMuxParams): HubMux {
   const { hub, localDID } = params
 
-  const listeners = new Map<string, Set<(message: StoredMessage) => void>>()
+  const listeners = new Map<string, Set<InboundListener>>()
   const refcount = new Map<string, number>()
   const sinks = new Set<Sink>()
   let disposed = false
@@ -57,7 +64,7 @@ export function createHubMux(params: HubMuxParams): HubMux {
     }
   }
 
-  const onInbound = (topicID: string, listener: (message: StoredMessage) => void): (() => void) => {
+  const onInbound = (topicID: string, listener: InboundListener): (() => void) => {
     let set = listeners.get(topicID)
     if (set == null) {
       set = new Set()
@@ -88,9 +95,12 @@ export function createHubMux(params: HubMuxParams): HubMux {
       }
       if (disposed || result.done) return
       const message = result.value
+      const ack = () => {
+        void Promise.resolve(subscription.ack?.(message.sequenceID)).catch(() => {})
+      }
       for (const listener of listeners.get(message.topicID) ?? []) {
         try {
-          listener(message)
+          listener(message, ack)
         } catch {
           // listener errors must not kill the drain
         }

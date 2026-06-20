@@ -13,6 +13,13 @@ import { decodeFrame, encodeFrame, type HubFrame } from './frame.js'
 
 export type HubReceiveSubscription = AsyncIterable<StoredMessage> & {
   return?: () => void
+  /**
+   * Acknowledge a delivered message as durably handled, so the hub stops
+   * redelivering it on reconnect. Optional: a live/in-memory transport that
+   * never redelivers can omit it. A durable transport coalesces acks (batching)
+   * below this contract.
+   */
+  ack?: (sequenceID: string) => void | Promise<void>
 }
 
 export type HubLikeEvent =
