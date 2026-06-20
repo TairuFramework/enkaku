@@ -20,4 +20,17 @@ export {
   type GroupPeerParams,
   type ProtocolSurface,
 } from './peer.js'
-export { discoveryTopic, INBOX_LABEL, inboxTopic, protocolTopic } from './topic.js'
+export {
+  decodeRecoveryReply,
+  decodeRecoveryRequest,
+  encodeRecoveryReply,
+  encodeRecoveryRequest,
+} from './recovery.js'
+export {
+  discoveryTopic,
+  HANDSHAKE_LABEL,
+  handshakeTopic,
+  INBOX_LABEL,
+  inboxTopic,
+  protocolTopic,
+} from './topic.js'

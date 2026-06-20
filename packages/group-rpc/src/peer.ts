@@ -1,6 +1,8 @@
 import {
   BroadcastClient,
   createBroadcastTransport,
+  defaultJitter,
+  defaultRandomID,
   type GatheredReply,
   type GatherOptions,
   type RequestOptions,
@@ -18,7 +20,16 @@ import { createDirectedClient, createInboxAcceptor } from './directed.js'
 import { adaptBusHandlers } from './handlers.js'
 import { decodeHandshakeFrame, encodeHandshakeFrame, HANDSHAKE_KIND } from './handshake.js'
 import { createHubMux, type HubMux } from './hub-mux.js'
+import {
+  decodeRecoveryReply,
+  decodeRecoveryRequest,
+  encodeRecoveryReply,
+  encodeRecoveryRequest,
+} from './recovery.js'
 import { handshakeTopic, inboxTopic, protocolTopic } from './topic.js'
+
+const DEFAULT_RECOVERY_TIMEOUT_MS = 5000
+const DEFAULT_RECOVERY_JITTER_MS = 250
 
 export type GroupPeerParams<Protocols extends Record<string, ProtocolDefinition>> = {
   hub: HubLike
@@ -30,6 +41,8 @@ export type GroupPeerParams<Protocols extends Record<string, ProtocolDefinition>
   handlers: { [K in keyof Protocols]: ProcedureHandlers<Protocols[K]> }
   suppress?: SuppressConfig
   getRandomID?: () => string
+  /** Recovery rendezvous tuning. `getDelayMs` is the responder reply jitter. */
+  recovery?: { timeoutMs?: number; getDelayMs?: () => number }
 }
 
 export type ProtocolSurface<Protocol extends ProtocolDefinition> = {
@@ -47,6 +60,13 @@ export type GroupPeer<Protocols extends Record<string, ProtocolDefinition>> = {
    * now-current epoch. No-op when the peer has no MLS port.
    */
   localCommitted: (commit: Uint8Array) => Promise<void>
+  /**
+   * Deep recovery for a peer stranded past the handshake backlog: request current
+   * state on the handshake topic, apply the first reply, and resync. Returns
+   * whether the epoch advanced. No-op (`advanced:false`) without an MLS port or
+   * if no reply arrives before the timeout.
+   */
+  recover: () => Promise<{ advanced: boolean }>
   resync: () => Promise<void>
   dispose: () => Promise<void>
 }
@@ -63,6 +83,8 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
 ): GroupPeer<Protocols> {
   const { hub, crypto, mls, localDID, protocols, handlers, suppress } = params
   const getRandomID = params.getRandomID
+  const recoveryTimeoutMs = params.recovery?.timeoutMs ?? DEFAULT_RECOVERY_TIMEOUT_MS
+  const getReplyDelayMs = params.recovery?.getDelayMs ?? (() => defaultJitter(DEFAULT_RECOVERY_JITTER_MS))
   const mux: HubMux = createHubMux({ hub, localDID })
 
   let runtimes = new Map<string, ProtocolRuntime>()
@@ -166,6 +188,61 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
   let handshakeTopicID: string | undefined
   let handshakeTail: Promise<void> = Promise.resolve()
 
+  // Recovery rendezvous state, keyed by requestID.
+  const recoveryWaiters = new Map<string, (groupInfo: Uint8Array | null) => void>()
+  const recoveryTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  const pendingReplies = new Map<string, ReturnType<typeof setTimeout>>()
+  const suppressedRequests = new Set<string>()
+
+  // Responder: after a jitter delay, answer a recovery request with current
+  // GroupInfo — unless another responder's reply has already been observed
+  // (storm-collapse), in which case the scheduled reply is cancelled.
+  const handleRecoveryRequest = (requestID: string): void => {
+    if (mls == null || handshakeTopicID == null) return
+    if (suppressedRequests.has(requestID) || pendingReplies.has(requestID)) return
+    const port = mls
+    const topicID = handshakeTopicID
+    const timer = setTimeout(() => {
+      pendingReplies.delete(requestID)
+      void (async () => {
+        try {
+          const groupInfo = await port.exportGroupInfo()
+          await mux.bus.publish(
+            topicID,
+            encodeHandshakeFrame(
+              HANDSHAKE_KIND.recoveryReply,
+              encodeRecoveryReply(requestID, groupInfo),
+            ),
+          )
+        } catch {
+          // a failed reply just means another responder (or a retry) covers it
+        }
+      })()
+    }, getReplyDelayMs())
+    pendingReplies.set(requestID, timer)
+  }
+
+  // Requester + storm-collapse: a reply resolves the local waiter (if any) and
+  // suppresses this peer's own pending reply for the same request.
+  const handleRecoveryReply = (reply: { requestID: string; groupInfo: Uint8Array }): void => {
+    suppressedRequests.add(reply.requestID)
+    const replyTimer = pendingReplies.get(reply.requestID)
+    if (replyTimer != null) {
+      clearTimeout(replyTimer)
+      pendingReplies.delete(reply.requestID)
+    }
+    const waiter = recoveryWaiters.get(reply.requestID)
+    if (waiter != null) {
+      recoveryWaiters.delete(reply.requestID)
+      const timer = recoveryTimers.get(reply.requestID)
+      if (timer != null) {
+        clearTimeout(timer)
+        recoveryTimers.delete(reply.requestID)
+      }
+      waiter(reply.groupInfo)
+    }
+  }
+
   // Serialize inbound handshake processing: Commits must apply in MLS order, and
   // both processCommit and the epoch rebuild are async. Each op waits for init to
   // finish, then runs to completion before the next begins.
@@ -192,7 +269,16 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
           ack() // durably handled
           return
         }
-        // recovery kinds are handled in a later step
+        if (frame.kind === HANDSHAKE_KIND.recoveryRequest) {
+          handleRecoveryRequest(decodeRecoveryRequest(frame.payload))
+          ack()
+          return
+        }
+        if (frame.kind === HANDSHAKE_KIND.recoveryReply) {
+          handleRecoveryReply(decodeRecoveryReply(frame.payload))
+          ack()
+          return
+        }
         ack()
       })
       .catch(() => {
@@ -228,6 +314,40 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
     await op
   }
 
+  const recover = async (): Promise<{ advanced: boolean }> => {
+    await ready
+    if (mls == null || handshakeTopicID == null) return { advanced: false }
+    const port = mls
+    const topicID = handshakeTopicID
+    const requestID = (getRandomID ?? defaultRandomID)()
+    const groupInfo = await new Promise<Uint8Array | null>((resolve) => {
+      recoveryWaiters.set(requestID, resolve)
+      recoveryTimers.set(
+        requestID,
+        setTimeout(() => {
+          recoveryTimers.delete(requestID)
+          if (recoveryWaiters.delete(requestID)) resolve(null)
+        }, recoveryTimeoutMs),
+      )
+      void Promise.resolve(
+        mux.bus.publish(
+          topicID,
+          encodeHandshakeFrame(HANDSHAKE_KIND.recoveryRequest, encodeRecoveryRequest(requestID)),
+        ),
+      ).catch(() => {})
+    })
+    if (groupInfo == null) return { advanced: false }
+    let result = { advanced: false }
+    const op = handshakeTail.then(async () => {
+      const r = await port.applyRecovery(groupInfo)
+      if (r.advanced) await rebuildEpoch()
+      result = r
+    })
+    handshakeTail = op.catch(() => {})
+    await op
+    return result
+  }
+
   const ready = (async () => {
     await initHandshake()
     await buildEpoch()
@@ -248,6 +368,7 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
       } as ProtocolSurface<Protocols[K]>
     },
     localCommitted,
+    recover,
     resync: async () => {
       await ready
       await rebuildEpoch()
@@ -255,6 +376,10 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
     dispose: async () => {
       await ready
       handshakeUnsubscribe?.()
+      for (const timer of recoveryTimers.values()) clearTimeout(timer)
+      for (const timer of pendingReplies.values()) clearTimeout(timer)
+      recoveryTimers.clear()
+      pendingReplies.clear()
       await teardownEpoch()
       await mux.dispose()
     },

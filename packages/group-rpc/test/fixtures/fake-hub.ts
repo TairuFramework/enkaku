@@ -16,6 +16,8 @@ export class FakeHub implements HubLike {
   #sequence = 0
   #topics = new Map<string, Set<string>>()
   #sinks = new Map<string, Set<Sink>>()
+  /** Append-only log of every published message, for test assertions. */
+  published: Array<StoredMessage> = []
 
   subscribe(subscriberDID: string, topicID: string): void {
     let set = this.#topics.get(topicID)
@@ -35,18 +37,16 @@ export class FakeHub implements HubLike {
 
   async publish(params: HubPublishParams): Promise<{ sequenceID: string }> {
     const sequenceID = String(++this.#sequence)
-    const subscribers = this.#topics.get(params.topicID)
-    if (subscribers != null) {
-      const message: StoredMessage = {
-        sequenceID,
-        senderDID: params.senderDID,
-        topicID: params.topicID,
-        payload: params.payload,
-      }
-      for (const did of [...subscribers]) {
-        if (did === params.senderDID) continue
-        for (const sink of this.#sinks.get(did) ?? []) sink.push(message)
-      }
+    const message: StoredMessage = {
+      sequenceID,
+      senderDID: params.senderDID,
+      topicID: params.topicID,
+      payload: params.payload,
+    }
+    this.published.push(message)
+    for (const did of [...(this.#topics.get(params.topicID) ?? [])]) {
+      if (did === params.senderDID) continue
+      for (const sink of this.#sinks.get(did) ?? []) sink.push(message)
     }
     return { sequenceID }
   }
