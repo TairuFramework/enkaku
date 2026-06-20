@@ -6,7 +6,7 @@ import {
   type Unwrap,
 } from '@enkaku/broadcast'
 import { fromUTF, toUTF } from '@enkaku/codec'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import { createGroupBusServer } from '../src/bus-server.js'
 
@@ -91,13 +91,14 @@ describe('createGroupBusServer', () => {
 
   test('suppressible handlers collapse a storm', async () => {
     const bus = createMemoryBus()
-    const servers = ['b1', 'b2', 'b3'].map((from) =>
+    const handlerFns = ['b1', 'b2', 'b3'].map((from) => vi.fn(() => ({ from })))
+    const servers = handlerFns.map((fn, i) =>
       createGroupBusServer({
-        transport: serverTransport(bus, from),
-        from,
+        transport: serverTransport(bus, `b${i + 1}`),
+        from: `b${i + 1}`,
         eventHandlers: {},
         requestHandlers: {
-          'app/census': suppressible(() => ({ from }), { jitterMs: 5, suppressTtlMs: 1000 }),
+          'app/census': suppressible(fn, { jitterMs: 5, suppressTtlMs: 1000 }),
         },
         getJitterMs: (max) => max,
       }),
@@ -105,6 +106,9 @@ describe('createGroupBusServer', () => {
     const alice = clientOn(bus, 'did:key:alice')
     const result = await alice.request('app/census', {}, { timeoutMs: 300 })
     expect((result as { from: string }).from).toMatch(/^b[123]$/)
+    const totalCalls = handlerFns.reduce((n, fn) => n + fn.mock.calls.length, 0)
+    expect(totalCalls).toBeGreaterThanOrEqual(1)
+    expect(totalCalls).toBeLessThan(3)
     for (const s of servers) await s.dispose()
     await alice.dispose()
   })
