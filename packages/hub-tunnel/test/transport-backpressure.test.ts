@@ -12,13 +12,16 @@ describe('createHubTunnelTransport backpressure', () => {
     const sessionID = 's1'
     const localDID = 'did:peer:local'
     const peerDID = 'did:peer:remote'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
     const inboxCapacity = 10
 
     const transport = createHubTunnelTransport<{ msg: string }, { msg: string }>({
       hub,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       inboxCapacity,
     })
 
@@ -26,6 +29,7 @@ describe('createHubTunnelTransport backpressure', () => {
       expect(hub.subscriberCount(localDID)).toBe(1)
 
       const total = 50
+      hub.subscribe(localDID, topicA)
       for (let i = 0; i < total; i++) {
         const frame: HubFrame = {
           v: 1,
@@ -34,9 +38,9 @@ describe('createHubTunnelTransport backpressure', () => {
           seq: i,
           body: { header: {}, payload: { typ: 'test', msg: `m-${i}` } },
         }
-        await hub.send({
+        await hub.publish({
           senderDID: peerDID,
-          recipients: [localDID],
+          topicID: topicA,
           payload: encodeFrame(frame),
         })
       }

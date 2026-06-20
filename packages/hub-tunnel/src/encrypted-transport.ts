@@ -1,5 +1,5 @@
 import { fromB64, toB64 } from '@enkaku/codec'
-import type { StoredMessage, StoreParams } from '@enkaku/hub-protocol'
+import type { StoredMessage } from '@enkaku/hub-protocol'
 import type { TransportType } from '@enkaku/transport'
 
 import type { Encryptor } from './encryptor.js'
@@ -9,6 +9,7 @@ import type { ObservabilityEventListener } from './events.js'
 import {
   createHubTunnelTransport,
   type HubLike,
+  type HubPublishParams,
   type HubReceiveSubscription,
   type HubTunnelTransportParams,
 } from './transport.js'
@@ -28,7 +29,7 @@ type WrapHubParams = {
 
 function wrapHub({ hub, encryptor, groupID, onEvent, onEncryptError }: WrapHubParams): HubLike {
   const wrapped: HubLike = {
-    async send(params: StoreParams): Promise<{ sequenceID: string }> {
+    async publish(params: HubPublishParams): Promise<{ sequenceID: string }> {
       let ciphertextBytes: Uint8Array
       try {
         ciphertextBytes = await encryptor.encrypt(params.payload)
@@ -42,15 +43,20 @@ function wrapHub({ hub, encryptor, groupID, onEvent, onEncryptError }: WrapHubPa
         groupID,
         ciphertext: toB64(ciphertextBytes),
       }
-      return await hub.send({
+      return await hub.publish({
         senderDID: params.senderDID,
-        recipients: params.recipients,
+        topicID: params.topicID,
         payload: encodeEnvelope(envelope),
-        ...(params.groupID == null ? {} : { groupID: params.groupID }),
       })
     },
-    receive(deviceDID: string): HubReceiveSubscription {
-      const inner = hub.receive(deviceDID)
+    subscribe(subscriberDID: string, topicID: string): Promise<void> | void {
+      return hub.subscribe(subscriberDID, topicID)
+    },
+    unsubscribe(subscriberDID: string, topicID: string): Promise<void> | void {
+      return hub.unsubscribe?.(subscriberDID, topicID)
+    },
+    receive(subscriberDID: string): HubReceiveSubscription {
+      const inner = hub.receive(subscriberDID)
       const innerIterator = inner[Symbol.asyncIterator]()
 
       const iterator: AsyncIterator<StoredMessage> = {
@@ -84,8 +90,8 @@ function wrapHub({ hub, encryptor, groupID, onEvent, onEncryptError }: WrapHubPa
             const decrypted: StoredMessage = {
               sequenceID: message.sequenceID,
               senderDID: message.senderDID,
+              topicID: message.topicID,
               payload: plaintext,
-              ...(message.groupID == null ? {} : { groupID: message.groupID }),
             }
             return { value: decrypted, done: false }
           }
@@ -100,13 +106,6 @@ function wrapHub({ hub, encryptor, groupID, onEvent, onEncryptError }: WrapHubPa
         [Symbol.asyncIterator]() {
           return iterator
         },
-        // Subscription-level dispose. `createHubTunnelTransport` only ever
-        // calls `iterator.return?.()`, so this path is unreachable from
-        // inside this package; it exists for callers that hold the
-        // subscription object directly. Invoking it disposes the underlying
-        // tunnel inbox and breaks the listener "shared inbox across spawns"
-        // pattern — only call from a stop/cleanup path that is intentionally
-        // tearing down the whole stream.
         return() {
           inner.return?.()
         },

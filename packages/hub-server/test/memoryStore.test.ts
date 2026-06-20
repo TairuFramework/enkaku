@@ -2,217 +2,137 @@ import { describe, expect, test, vi } from 'vitest'
 
 import { createMemoryStore } from '../src/memoryStore.js'
 
-describe('createMemoryStore', () => {
-  test('store returns a sequence ID', async () => {
+const ALICE = 'did:key:alice'
+const BOB = 'did:key:bob'
+const CAROL = 'did:key:carol'
+const TOPIC = 'topic:1'
+
+describe('createMemoryStore pub/sub', () => {
+  test('publish stores nothing when the topic has no subscribers (drop)', async () => {
     const store = createMemoryStore()
-    const id = await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([1, 2, 3]),
+    const id = await store.publish({
+      senderDID: ALICE,
+      topicID: TOPIC,
+      payload: new Uint8Array([1]),
     })
     expect(typeof id).toBe('string')
-    expect(id.length).toBeGreaterThan(0)
-  })
-
-  test('fetch returns stored messages for recipient', async () => {
-    const store = createMemoryStore()
-    await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([1, 2, 3]),
-    })
-    const result = await store.fetch({ recipientDID: 'did:key:bob' })
-    expect(result.messages).toHaveLength(1)
-    expect(result.messages[0].senderDID).toBe('did:key:alice')
-    expect(result.messages[0].payload).toEqual(new Uint8Array([1, 2, 3]))
-    expect(result.cursor).toBe(result.messages[0].sequenceID)
-  })
-
-  test('fetch returns empty for unknown recipient', async () => {
-    const store = createMemoryStore()
-    const result = await store.fetch({ recipientDID: 'did:key:unknown' })
-    expect(result.messages).toHaveLength(0)
-    expect(result.cursor).toBeNull()
-  })
-
-  test('fetch respects after cursor', async () => {
-    const store = createMemoryStore()
-    const id1 = await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([1]),
-    })
-    await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([2]),
-    })
-    const result = await store.fetch({ recipientDID: 'did:key:bob', after: id1 })
-    expect(result.messages).toHaveLength(1)
-    expect(result.messages[0].payload).toEqual(new Uint8Array([2]))
-  })
-
-  test('fetch respects limit and sets hasMore', async () => {
-    const store = createMemoryStore()
-    for (let i = 0; i < 5; i++) {
-      await store.store({
-        senderDID: 'did:key:alice',
-        recipients: ['did:key:bob'],
-        payload: new Uint8Array([i]),
-      })
-    }
-    const result = await store.fetch({ recipientDID: 'did:key:bob', limit: 2 })
-    expect(result.messages).toHaveLength(2)
-    expect(result.hasMore).toBe(true)
-    expect(result.messages[0].payload).toEqual(new Uint8Array([0]))
-    expect(result.messages[1].payload).toEqual(new Uint8Array([1]))
-  })
-
-  test('fetch with ack acknowledges previous messages', async () => {
-    const store = createMemoryStore()
-    const id1 = await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([1]),
-    })
-    await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([2]),
-    })
-    // Ack first message while fetching
-    await store.fetch({
-      recipientDID: 'did:key:bob',
-      ack: [id1],
-    })
-    // Re-fetching after ack should not return acked message
-    const result2 = await store.fetch({ recipientDID: 'did:key:bob' })
-    expect(result2.messages).toHaveLength(1)
-    expect(result2.messages[0].payload).toEqual(new Uint8Array([2]))
-  })
-
-  test('ack removes delivery record for recipient', async () => {
-    const store = createMemoryStore()
-    const id = await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([1]),
-    })
-    await store.ack({ recipientDID: 'did:key:bob', sequenceIDs: [id] })
-    const result = await store.fetch({ recipientDID: 'did:key:bob' })
+    const result = await store.fetch({ recipientDID: BOB })
     expect(result.messages).toHaveLength(0)
   })
 
-  test('reference counting: message deleted when all recipients ack', async () => {
+  test('publish fans out to current subscribers (minus sender)', async () => {
     const store = createMemoryStore()
-    const id = await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob', 'did:key:carol'],
-      payload: new Uint8Array([1]),
-    })
-    await store.ack({ recipientDID: 'did:key:bob', sequenceIDs: [id] })
-    const carolResult = await store.fetch({ recipientDID: 'did:key:carol' })
-    expect(carolResult.messages).toHaveLength(1)
-    await store.ack({ recipientDID: 'did:key:carol', sequenceIDs: [id] })
-    const carolResult2 = await store.fetch({ recipientDID: 'did:key:carol' })
-    expect(carolResult2.messages).toHaveLength(0)
+    await store.subscribe(BOB, TOPIC)
+    await store.subscribe(ALICE, TOPIC)
+    await store.publish({ senderDID: ALICE, topicID: TOPIC, payload: new Uint8Array([1, 2]) })
+
+    const bob = await store.fetch({ recipientDID: BOB })
+    expect(bob.messages).toHaveLength(1)
+    expect(bob.messages[0].topicID).toBe(TOPIC)
+    expect(bob.messages[0].senderDID).toBe(ALICE)
+    expect(bob.messages[0].payload).toEqual(new Uint8Array([1, 2]))
+
+    // Sender is excluded from its own publish.
+    const alice = await store.fetch({ recipientDID: ALICE })
+    expect(alice.messages).toHaveLength(0)
   })
 
-  test('store with groupID preserves it in fetched messages', async () => {
+  test('getSubscribers reflects subscribe / unsubscribe', async () => {
     const store = createMemoryStore()
-    await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([1]),
-      groupID: 'group-123',
-    })
-    const result = await store.fetch({ recipientDID: 'did:key:bob' })
-    expect(result.messages[0].groupID).toBe('group-123')
+    expect(await store.getSubscribers(TOPIC)).toEqual([])
+    await store.subscribe(BOB, TOPIC)
+    await store.subscribe(BOB, TOPIC) // idempotent
+    expect(await store.getSubscribers(TOPIC)).toEqual([BOB])
+    await store.unsubscribe(BOB, TOPIC)
+    expect(await store.getSubscribers(TOPIC)).toEqual([])
   })
 
-  test('store without groupID has no groupID in fetched messages', async () => {
+  test('unsubscribe clears the subscriber pending deliveries for that topic', async () => {
     const store = createMemoryStore()
-    await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([1]),
-    })
-    const result = await store.fetch({ recipientDID: 'did:key:bob' })
-    expect(result.messages[0].groupID).toBeUndefined()
+    await store.subscribe(BOB, TOPIC)
+    await store.subscribe(CAROL, TOPIC)
+    await store.publish({ senderDID: ALICE, topicID: TOPIC, payload: new Uint8Array([1]) })
+
+    await store.unsubscribe(BOB, TOPIC)
+    expect((await store.fetch({ recipientDID: BOB })).messages).toHaveLength(0)
+    // Carol still has hers.
+    expect((await store.fetch({ recipientDID: CAROL })).messages).toHaveLength(1)
   })
 
-  test('purge removes messages older than threshold', async () => {
+  test('last unsubscribe drops the whole topic log immediately', async () => {
     const store = createMemoryStore()
-    await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([1]),
-    })
-    const purged = await store.purge({ olderThan: 0 })
-    expect(purged.length).toBeGreaterThan(0)
-    const result = await store.fetch({ recipientDID: 'did:key:bob' })
-    expect(result.messages).toHaveLength(0)
+    await store.subscribe(BOB, TOPIC)
+    await store.publish({ senderDID: ALICE, topicID: TOPIC, payload: new Uint8Array([1]) })
+    await store.unsubscribe(BOB, TOPIC)
+    // Re-subscribe and confirm no backlog survived.
+    await store.subscribe(BOB, TOPIC)
+    expect((await store.fetch({ recipientDID: BOB })).messages).toHaveLength(0)
   })
 
-  test('purge emits purge event', async () => {
+  test('maxDepth trims the oldest message per topic on publish', async () => {
+    const store = createMemoryStore({ maxDepth: 2 })
+    await store.subscribe(BOB, TOPIC)
+    await store.publish({ senderDID: ALICE, topicID: TOPIC, payload: new Uint8Array([1]) })
+    await store.publish({ senderDID: ALICE, topicID: TOPIC, payload: new Uint8Array([2]) })
+    await store.publish({ senderDID: ALICE, topicID: TOPIC, payload: new Uint8Array([3]) })
+
+    const result = await store.fetch({ recipientDID: BOB })
+    expect(result.messages.map((m) => m.payload[0])).toEqual([2, 3])
+  })
+
+  test('refcount GC: message removed when its last subscriber acks', async () => {
     const store = createMemoryStore()
-    await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
+    await store.subscribe(BOB, TOPIC)
+    await store.subscribe(CAROL, TOPIC)
+    const id = await store.publish({
+      senderDID: ALICE,
+      topicID: TOPIC,
       payload: new Uint8Array([1]),
     })
+    await store.ack({ recipientDID: BOB, sequenceIDs: [id] })
+    expect((await store.fetch({ recipientDID: CAROL })).messages).toHaveLength(1)
+    await store.ack({ recipientDID: CAROL, sequenceIDs: [id] })
+    expect((await store.fetch({ recipientDID: CAROL })).messages).toHaveLength(0)
+  })
+
+  test('fetch respects after cursor, limit, and hasMore', async () => {
+    const store = createMemoryStore()
+    await store.subscribe(BOB, TOPIC)
+    const id1 = await store.publish({
+      senderDID: ALICE,
+      topicID: TOPIC,
+      payload: new Uint8Array([1]),
+    })
+    await store.publish({ senderDID: ALICE, topicID: TOPIC, payload: new Uint8Array([2]) })
+    await store.publish({ senderDID: ALICE, topicID: TOPIC, payload: new Uint8Array([3]) })
+
+    const after = await store.fetch({ recipientDID: BOB, after: id1 })
+    expect(after.messages.map((m) => m.payload[0])).toEqual([2, 3])
+
+    const limited = await store.fetch({ recipientDID: BOB, limit: 1 })
+    expect(limited.messages).toHaveLength(1)
+    expect(limited.hasMore).toBe(true)
+  })
+
+  test('purge removes aged messages and emits the purge event', async () => {
+    const store = createMemoryStore()
+    await store.subscribe(BOB, TOPIC)
+    await store.publish({ senderDID: ALICE, topicID: TOPIC, payload: new Uint8Array([1]) })
     const handler = vi.fn()
     store.events.on('purge', handler)
-    await store.purge({ olderThan: 0 })
+    const purged = await store.purge({ olderThan: 0 })
+    expect(purged.length).toBeGreaterThan(0)
     expect(handler).toHaveBeenCalledWith(
       expect.objectContaining({ sequenceIDs: expect.any(Array) }),
     )
-  })
-
-  test('sequence IDs are monotonically ordered', async () => {
-    const store = createMemoryStore()
-    const id1 = await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([1]),
-    })
-    const id2 = await store.store({
-      senderDID: 'did:key:alice',
-      recipients: ['did:key:bob'],
-      payload: new Uint8Array([2]),
-    })
-    expect(id1 < id2).toBe(true)
+    expect((await store.fetch({ recipientDID: BOB })).messages).toHaveLength(0)
   })
 
   test('key package store and fetch', async () => {
     const store = createMemoryStore()
-    await store.storeKeyPackage('did:key:alice', 'kp-1')
-    await store.storeKeyPackage('did:key:alice', 'kp-2')
-    const packages = await store.fetchKeyPackages('did:key:alice', 1)
-    expect(packages).toEqual(['kp-1'])
-    const remaining = await store.fetchKeyPackages('did:key:alice')
-    expect(remaining).toEqual(['kp-2'])
-  })
-
-  test('addGroupMember adds members idempotently', async () => {
-    const store = createMemoryStore()
-    await store.addGroupMember('g1', 'did:key:alice')
-    await store.addGroupMember('g1', 'did:key:bob')
-    await store.addGroupMember('g1', 'did:key:alice') // duplicate
-    const members = await store.getGroupMembers('g1')
-    expect([...members].sort()).toEqual(['did:key:alice', 'did:key:bob'])
-  })
-
-  test('removeGroupMember removes a single member without touching others', async () => {
-    const store = createMemoryStore()
-    await store.addGroupMember('g1', 'did:key:alice')
-    await store.addGroupMember('g1', 'did:key:bob')
-    await store.removeGroupMember('g1', 'did:key:alice')
-    expect(await store.getGroupMembers('g1')).toEqual(['did:key:bob'])
-  })
-
-  test('getGroupMembers returns empty array for unknown group', async () => {
-    const store = createMemoryStore()
-    expect(await store.getGroupMembers('nope')).toEqual([])
+    await store.storeKeyPackage(ALICE, 'kp-1')
+    await store.storeKeyPackage(ALICE, 'kp-2')
+    expect(await store.fetchKeyPackages(ALICE, 1)).toEqual(['kp-1'])
+    expect(await store.fetchKeyPackages(ALICE)).toEqual(['kp-2'])
   })
 })

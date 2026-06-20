@@ -18,6 +18,8 @@ describe('createEncryptedHubTunnelTransport decrypt failures', () => {
     const groupID = 'group-decrypt-fail'
     const aDID = 'did:peer:a'
     const bDID = 'did:peer:b'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
 
     const aEncryptor = new FakeEncryptor({ key: SHARED_KEY })
     const bEncryptor = new FakeEncryptor({ key: SHARED_KEY })
@@ -33,7 +35,8 @@ describe('createEncryptedHubTunnelTransport decrypt failures', () => {
       hub,
       sessionID,
       localDID: aDID,
-      peerDID: bDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       encryptor: aEncryptor,
       groupID,
     })
@@ -41,7 +44,8 @@ describe('createEncryptedHubTunnelTransport decrypt failures', () => {
       hub,
       sessionID,
       localDID: bDID,
-      peerDID: aDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
       encryptor: bEncryptor,
       groupID,
       onEvent: (event) => {

@@ -19,6 +19,7 @@ const sendInboundFrame = async (
   sessionID: string,
   peerDID: string,
   localDID: string,
+  receiveTopicID: string,
   seq: number,
   msg: string,
 ): Promise<void> => {
@@ -29,9 +30,10 @@ const sendInboundFrame = async (
     seq,
     body: { header: {}, payload: { typ: 'test', msg } },
   }
-  await hub.send({
+  hub.subscribe(localDID, receiveTopicID)
+  await hub.publish({
     senderDID: peerDID,
-    recipients: [localDID],
+    topicID: receiveTopicID,
     payload: encodeFrame(frame),
   })
 }
@@ -42,19 +44,22 @@ describe('createHubTunnelTransport reconnect', () => {
     const sessionID = 's-reconnect'
     const localDID = 'did:peer:local'
     const peerDID = 'did:peer:remote'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
 
     const transport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       reconnectTimeoutMs: 50,
     })
 
     try {
       expect(hub.subscriberCount(localDID)).toBe(1)
 
-      await sendInboundFrame(hub, sessionID, peerDID, localDID, 0, 'hello')
+      await sendInboundFrame(hub, sessionID, peerDID, localDID, topicA, 0, 'hello')
       const first = await transport.read()
       expect((first.value as Msg).payload.msg).toBe('hello')
 
@@ -77,12 +82,15 @@ describe('createHubTunnelTransport reconnect', () => {
     const sessionID = 's-reconnect-cleared'
     const localDID = 'did:peer:local'
     const peerDID = 'did:peer:remote'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
 
     const transport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       reconnectTimeoutMs: 200,
     })
 
@@ -94,7 +102,7 @@ describe('createHubTunnelTransport reconnect', () => {
 
       expect(hub.subscriberCount(localDID)).toBe(1)
 
-      await sendInboundFrame(hub, sessionID, peerDID, localDID, 0, 'after-reconnect')
+      await sendInboundFrame(hub, sessionID, peerDID, localDID, topicA, 0, 'after-reconnect')
       const result = await transport.read()
       expect((result.value as Msg).payload.msg).toBe('after-reconnect')
     } finally {
@@ -112,17 +120,22 @@ describe('createHubTunnelTransport reconnect', () => {
     const sessionID = 's-no-events'
     const localDID = 'did:peer:local'
     const peerDID = 'did:peer:remote'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
 
     const hubWithoutEvents: HubLike = {
-      send: (params) => fakeHub.send(params),
-      receive: (deviceDID): HubReceiveSubscription => fakeHub.receive(deviceDID),
+      publish: (params) => fakeHub.publish(params),
+      subscribe: (subscriberDID: string, topicID: string) =>
+        fakeHub.subscribe(subscriberDID, topicID),
+      receive: (subscriberDID: string): HubReceiveSubscription => fakeHub.receive(subscriberDID),
     }
 
     const transport = createHubTunnelTransport<Msg, Msg>({
       hub: hubWithoutEvents,
       sessionID,
       localDID,
-      peerDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       reconnectTimeoutMs: 50,
     })
 
@@ -130,7 +143,7 @@ describe('createHubTunnelTransport reconnect', () => {
       await sleep(100)
       expect(fakeHub.subscriberCount(localDID)).toBe(1)
 
-      await sendInboundFrame(fakeHub, sessionID, peerDID, localDID, 0, 'still-alive')
+      await sendInboundFrame(fakeHub, sessionID, peerDID, localDID, topicA, 0, 'still-alive')
       const result = await transport.read()
       expect((result.value as Msg).payload.msg).toBe('still-alive')
     } finally {

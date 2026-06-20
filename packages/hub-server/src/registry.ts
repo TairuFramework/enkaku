@@ -2,51 +2,35 @@ import type { StoredMessage } from '@enkaku/hub-protocol'
 
 export type ClientEntry = {
   did: string
-  groups: Set<string>
   sendMessage: ((message: StoredMessage) => void) | null
 }
 
+/**
+ * Tracks online clients and their live receive-channel writers. Subscription
+ * state is durable in the store, not here — the registry only routes live
+ * fan-out to currently-connected subscribers.
+ */
 export class HubClientRegistry {
   #clients = new Map<string, ClientEntry>()
-  #groupMembers = new Map<string, Set<string>>()
 
   register(did: string): ClientEntry {
     const existing = this.#clients.get(did)
     if (existing != null) {
       return existing
     }
-    const entry: ClientEntry = {
-      did,
-      groups: new Set(),
-      sendMessage: null,
-    }
+    const entry: ClientEntry = { did, sendMessage: null }
     this.#clients.set(did, entry)
     return entry
   }
 
   unregister(did: string): void {
-    const entry = this.#clients.get(did)
-    if (entry == null) return
-    for (const groupID of entry.groups) {
-      const members = this.#groupMembers.get(groupID)
-      if (members != null) {
-        members.delete(did)
-        if (members.size === 0) {
-          this.#groupMembers.delete(groupID)
-        }
-      }
-    }
     this.#clients.delete(did)
   }
 
-  /**
-   * Removes the entry only when it is idle: no bound receive writer and no
-   * group memberships. Group members must stay registered while offline so
-   * hub/group/send keeps routing to them through the store.
-   */
+  /** Removes the entry only when no receive writer is bound. */
   unregisterIfIdle(did: string): void {
     const entry = this.#clients.get(did)
-    if (entry != null && entry.sendMessage == null && entry.groups.size === 0) {
+    if (entry != null && entry.sendMessage == null) {
       this.#clients.delete(did)
     }
   }
@@ -65,45 +49,6 @@ export class HubClientRegistry {
     if (entry != null) {
       entry.sendMessage = null
     }
-  }
-
-  joinGroup(did: string, groupID: string): void {
-    const entry = this.#clients.get(did)
-    if (entry == null) {
-      throw new Error(`Client ${did} not registered`)
-    }
-    entry.groups.add(groupID)
-    const members = this.#groupMembers.get(groupID) ?? new Set()
-    members.add(did)
-    this.#groupMembers.set(groupID, members)
-  }
-
-  leaveGroup(did: string, groupID: string): void {
-    const entry = this.#clients.get(did)
-    if (entry == null) return
-    entry.groups.delete(groupID)
-    const members = this.#groupMembers.get(groupID)
-    if (members != null) {
-      members.delete(did)
-      if (members.size === 0) {
-        this.#groupMembers.delete(groupID)
-      }
-    }
-  }
-
-  getOnlineGroupMembers(groupID: string): Array<string> {
-    const members = this.#groupMembers.get(groupID)
-    if (members == null) return []
-    return [...members].filter((did) => {
-      const entry = this.#clients.get(did)
-      return entry?.sendMessage != null
-    })
-  }
-
-  getGroupMembers(groupID: string): Array<string> {
-    const members = this.#groupMembers.get(groupID)
-    if (members == null) return []
-    return [...members]
   }
 
   getClient(did: string): ClientEntry | undefined {

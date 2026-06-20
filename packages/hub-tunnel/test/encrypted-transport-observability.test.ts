@@ -22,6 +22,8 @@ describe('hub-tunnel observability events', () => {
     const groupID = 'group-envelope'
     const aDID = 'did:peer:obs-a-1'
     const bDID = 'did:peer:obs-b-1'
+    const topicA = 'topic:obs-1-a'
+    const topicB = 'topic:obs-1-b'
 
     const aEncryptor = new FakeEncryptor({ key: SHARED_KEY })
     const bEncryptor = new FakeEncryptor({ key: SHARED_KEY })
@@ -32,7 +34,8 @@ describe('hub-tunnel observability events', () => {
       hub,
       sessionID,
       localDID: aDID,
-      peerDID: bDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       encryptor: aEncryptor,
       groupID,
     })
@@ -40,7 +43,8 @@ describe('hub-tunnel observability events', () => {
       hub,
       sessionID,
       localDID: bDID,
-      peerDID: aDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
       encryptor: bEncryptor,
       groupID,
       onEvent: (event) => {
@@ -49,9 +53,10 @@ describe('hub-tunnel observability events', () => {
     })
 
     try {
-      await hub.send({
+      hub.subscribe(bDID, topicB)
+      await hub.publish({
         senderDID: aDID,
-        recipients: [bDID],
+        topicID: topicB,
         payload: new TextEncoder().encode('not-an-envelope'),
       })
 
@@ -91,6 +96,8 @@ describe('hub-tunnel observability events', () => {
     const groupID = 'group-decrypt'
     const aDID = 'did:peer:obs-a-2'
     const bDID = 'did:peer:obs-b-2'
+    const topicA = 'topic:obs-2-a'
+    const topicB = 'topic:obs-2-b'
 
     const aEncryptor = new FakeEncryptor({ key: SHARED_KEY })
     const bEncryptor = new FakeEncryptor({ key: SHARED_KEY })
@@ -102,7 +109,8 @@ describe('hub-tunnel observability events', () => {
       hub,
       sessionID,
       localDID: aDID,
-      peerDID: bDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       encryptor: aEncryptor,
       groupID,
     })
@@ -110,7 +118,8 @@ describe('hub-tunnel observability events', () => {
       hub,
       sessionID,
       localDID: bDID,
-      peerDID: aDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
       encryptor: bEncryptor,
       groupID,
       onEvent: (event) => {
@@ -147,12 +156,14 @@ describe('hub-tunnel observability events', () => {
     }
   })
 
-  test('sender mismatch emits frame-dropped:sender-mismatch', async () => {
+  test('topic mismatch emits frame-dropped:topic-mismatch', async () => {
     const hub = new FakeHub()
     const sessionID = 'session-sender'
     const aDID = 'did:peer:obs-a-3'
     const bDID = 'did:peer:obs-b-3'
-    const otherDID = 'did:peer:obs-other-3'
+    const topicA = 'topic:obs-3-a'
+    const topicB = 'topic:obs-3-b'
+    const wrongTopic = 'topic:obs-3-wrong'
 
     const events: Array<ObservabilityEvent> = []
 
@@ -160,19 +171,22 @@ describe('hub-tunnel observability events', () => {
       hub,
       sessionID,
       localDID: aDID,
-      peerDID: bDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
     })
     const bTransport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID: bDID,
-      peerDID: aDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
       onEvent: (event) => {
         events.push(event)
       },
     })
 
     try {
+      // Publish a frame to a wrong topic that bDID is subscribed to (but not receiveTopicID)
       const intruderFrame: HubFrame = {
         v: 1,
         sessionID,
@@ -180,9 +194,10 @@ describe('hub-tunnel observability events', () => {
         seq: 0,
         body: { header: {}, payload: { typ: 'test', msg: 'intruder' } },
       }
-      await hub.send({
-        senderDID: otherDID,
-        recipients: [bDID],
+      hub.subscribe(bDID, wrongTopic)
+      await hub.publish({
+        senderDID: aDID,
+        topicID: wrongTopic,
         payload: encodeFrame(intruderFrame),
       })
 
@@ -191,7 +206,7 @@ describe('hub-tunnel observability events', () => {
       expect(received.value).toEqual(msg('real'))
 
       const dropped = events.filter(
-        (e) => e.type === 'frame-dropped' && e.reason === 'sender-mismatch',
+        (e) => e.type === 'frame-dropped' && e.reason === 'topic-mismatch',
       )
       expect(dropped.length).toBe(1)
     } finally {
@@ -215,6 +230,8 @@ describe('hub-tunnel observability events', () => {
     const sessionID = 'session-good'
     const aDID = 'did:peer:obs-a-4'
     const bDID = 'did:peer:obs-b-4'
+    const topicA = 'topic:obs-4-a'
+    const topicB = 'topic:obs-4-b'
 
     const events: Array<ObservabilityEvent> = []
 
@@ -222,13 +239,15 @@ describe('hub-tunnel observability events', () => {
       hub,
       sessionID,
       localDID: aDID,
-      peerDID: bDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
     })
     const bTransport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID: bDID,
-      peerDID: aDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
       onEvent: (event) => {
         events.push(event)
       },
@@ -242,9 +261,10 @@ describe('hub-tunnel observability events', () => {
         seq: 0,
         body: { header: {}, payload: { typ: 'test', msg: 'wrong-session' } },
       }
-      await hub.send({
+      hub.subscribe(bDID, topicB)
+      await hub.publish({
         senderDID: aDID,
-        recipients: [bDID],
+        topicID: topicB,
         payload: encodeFrame(wrongSessionFrame),
       })
 
@@ -277,6 +297,8 @@ describe('hub-tunnel observability events', () => {
     const sessionID = 'session-dedup'
     const aDID = 'did:peer:obs-a-5'
     const bDID = 'did:peer:obs-b-5'
+    const topicA = 'topic:obs-5-a'
+    const topicB = 'topic:obs-5-b'
 
     const events: Array<ObservabilityEvent> = []
 
@@ -284,13 +306,15 @@ describe('hub-tunnel observability events', () => {
       hub,
       sessionID,
       localDID: aDID,
-      peerDID: bDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
     })
     const bTransport = createHubTunnelTransport<Msg, Msg>({
       hub,
       sessionID,
       localDID: bDID,
-      peerDID: aDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
       onEvent: (event) => {
         events.push(event)
       },

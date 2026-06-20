@@ -39,6 +39,7 @@ export {
   type HubLikeEvent,
   type HubLikeEventListener,
   type HubLikeEvents,
+  type HubPublishParams,
   type HubReceiveSubscription,
   type HubTunnelSessionID,
   type HubTunnelTransportParams,

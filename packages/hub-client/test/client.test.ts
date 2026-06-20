@@ -1,10 +1,9 @@
 import { Client } from '@enkaku/client'
 import { fromUTF, toB64 } from '@enkaku/codec'
-import { createGroupCapability, delegateGroupMembership } from '@enkaku/group'
 import type { HubProtocol } from '@enkaku/hub-protocol'
 import { createHub, createMemoryStore } from '@enkaku/hub-server'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
-import { type OwnIdentity, randomIdentity, stringifyToken } from '@enkaku/token'
+import { randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
 import { describe, expect, test } from 'vitest'
 
@@ -14,6 +13,8 @@ type HubTransports = DirectTransports<
   AnyServerMessageOf<HubProtocol>,
   AnyClientMessageOf<HubProtocol>
 >
+
+const TOPIC = 'topic:chat'
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -47,38 +48,22 @@ function createTestClient(testHub: ReturnType<typeof createTestHub>, identity = 
   return { client, identity, transports }
 }
 
-async function membershipCredential(
-  owner: OwnIdentity,
-  memberDID: string,
-  groupID: string,
-): Promise<string> {
-  if (owner.id === memberDID) {
-    return stringifyToken(await createGroupCapability(owner, groupID))
-  }
-  return stringifyToken(
-    await delegateGroupMembership({
-      identity: owner,
-      groupID,
-      recipientDID: memberDID,
-      permission: 'member',
-    }),
-  )
-}
-
 describe('HubClient', () => {
-  test('send to explicit recipients and receive', async () => {
+  test('publish to a topic and receive', async () => {
     const testHub = createTestHub()
     const { client: alice, transports: aliceT } = createTestClient(testHub)
-    const { client: bob, identity: bobIdentity, transports: bobT } = createTestClient(testHub)
+    const { client: bob, transports: bobT } = createTestClient(testHub)
 
+    await bob.subscribe(TOPIC)
     const channel = bob.receive()
     const reader = channel.readable.getReader()
     await delay(50)
 
-    await alice.send({ recipients: [bobIdentity.id], payload: encodePayload('hello') })
+    await alice.publish({ topicID: TOPIC, payload: encodePayload('hello') })
 
     const msg = await reader.read()
     expect(msg.done).toBe(false)
+    expect(msg.value?.topicID).toBe(TOPIC)
     expect(msg.value?.payload).toBe(encodePayload('hello'))
 
     channel.close()
@@ -88,74 +73,26 @@ describe('HubClient', () => {
     await bobT.dispose()
   })
 
-  test('groupSend and receive with group', async () => {
+  test('receive across multiple subscribed topics', async () => {
     const testHub = createTestHub()
-    const { client: alice, identity: aliceIdentity, transports: aliceT } = createTestClient(testHub)
-    const { client: bob, identity: bobIdentity, transports: bobT } = createTestClient(testHub)
+    const { client: alice, transports: aliceT } = createTestClient(testHub)
+    const { client: bob, transports: bobT } = createTestClient(testHub)
 
-    await alice.joinGroup({
-      groupID: 'chat',
-      credential: await membershipCredential(aliceIdentity, aliceIdentity.id, 'chat'),
-    })
-    await bob.joinGroup({
-      groupID: 'chat',
-      credential: await membershipCredential(aliceIdentity, bobIdentity.id, 'chat'),
-    })
-
+    await bob.subscribe('topic:chat')
+    await bob.subscribe('topic:work')
     const channel = bob.receive()
     const reader = channel.readable.getReader()
     await delay(50)
 
-    await alice.groupSend({ groupID: 'chat', payload: encodePayload('group-hello') })
-
-    const msg = await reader.read()
-    expect(msg.done).toBe(false)
-    expect(msg.value?.payload).toBe(encodePayload('group-hello'))
-    expect(msg.value?.groupID).toBe('chat')
-
-    channel.close()
-    await expect(channel).rejects.toEqual('Close')
-    await delay(50)
-    await aliceT.dispose()
-    await bobT.dispose()
-  })
-
-  test('receive with groupIDs filter', async () => {
-    const testHub = createTestHub()
-    const { client: alice, identity: aliceIdentity, transports: aliceT } = createTestClient(testHub)
-    const { client: bob, identity: bobIdentity, transports: bobT } = createTestClient(testHub)
-
-    await alice.joinGroup({
-      groupID: 'chat',
-      credential: await membershipCredential(aliceIdentity, aliceIdentity.id, 'chat'),
-    })
-    await alice.joinGroup({
-      groupID: 'work',
-      credential: await membershipCredential(aliceIdentity, aliceIdentity.id, 'work'),
-    })
-    await bob.joinGroup({
-      groupID: 'chat',
-      credential: await membershipCredential(aliceIdentity, bobIdentity.id, 'chat'),
-    })
-    await bob.joinGroup({
-      groupID: 'work',
-      credential: await membershipCredential(aliceIdentity, bobIdentity.id, 'work'),
-    })
-
-    const channel = bob.receive({ groupIDs: ['chat'] })
-    const reader = channel.readable.getReader()
-    await delay(50)
-
-    await alice.groupSend({ groupID: 'work', payload: encodePayload('work-msg') })
-    await alice.groupSend({ groupID: 'chat', payload: encodePayload('chat-msg') })
-    await alice.send({ recipients: [bobIdentity.id], payload: encodePayload('direct-msg') })
-
-    await delay(100)
+    await alice.publish({ topicID: 'topic:chat', payload: encodePayload('chat-msg') })
     const msg1 = await reader.read()
+    expect(msg1.value?.topicID).toBe('topic:chat')
     expect(msg1.value?.payload).toBe(encodePayload('chat-msg'))
 
+    await alice.publish({ topicID: 'topic:work', payload: encodePayload('work-msg') })
     const msg2 = await reader.read()
-    expect(msg2.value?.payload).toBe(encodePayload('direct-msg'))
+    expect(msg2.value?.topicID).toBe('topic:work')
+    expect(msg2.value?.payload).toBe(encodePayload('work-msg'))
 
     channel.close()
     await expect(channel).rejects.toEqual('Close')
@@ -164,20 +101,22 @@ describe('HubClient', () => {
     await bobT.dispose()
   })
 
-  test('joinGroup and leaveGroup', async () => {
+  test('subscribe then unsubscribe stops delivery', async () => {
     const testHub = createTestHub()
-    const { client, identity, transports } = createTestClient(testHub)
+    const { client: alice, transports: aliceT } = createTestClient(testHub)
+    const { client: bob, identity: bobIdentity, transports: bobT } = createTestClient(testHub)
 
-    const result = await client.joinGroup({
-      groupID: 'test-group',
-      credential: await membershipCredential(identity, identity.id, 'test-group'),
-    })
-    expect(result.joined).toBe(true)
+    const sub = await bob.subscribe(TOPIC)
+    expect(sub.subscribed).toBe(true)
+    const unsub = await bob.unsubscribe(TOPIC)
+    expect(unsub.unsubscribed).toBe(true)
 
-    const leaveResult = await client.leaveGroup('test-group')
-    expect(leaveResult.left).toBe(true)
+    await alice.publish({ topicID: TOPIC, payload: encodePayload('gone') })
+    await delay(50)
+    expect((await testHub.store.fetch({ recipientDID: bobIdentity.id })).messages).toHaveLength(0)
 
-    await transports.dispose()
+    await aliceT.dispose()
+    await bobT.dispose()
   })
 
   test('uploadKeyPackages and fetchKeyPackages', async () => {

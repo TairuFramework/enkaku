@@ -1,8 +1,8 @@
-import type { StoredMessage, StoreParams } from '@enkaku/hub-protocol'
+import type { StoredMessage } from '@enkaku/hub-protocol'
 
-import type { HubLikeEvent, HubLikeEventListener } from '../../src/transport.js'
+import type { HubLikeEvent, HubLikeEventListener, HubPublishParams } from '../../src/transport.js'
 
-export type FakeHubSendParams = StoreParams
+export type FakeHubPublishParams = HubPublishParams
 export type FakeHubMessage = StoredMessage
 
 type Subscriber = {
@@ -20,7 +20,10 @@ type DeliveryAction =
 
 export class FakeHub {
   #sequence = 0
+  // subscriberDID → set of live receive streams
   #subscribers = new Map<string, Set<Subscriber>>()
+  // topicID → set of subscriberDIDs
+  #topics = new Map<string, Set<string>>()
   #pendingDrops = 0
   #pendingDuplicates = 0
   #pendingDelays: Array<number> = []
@@ -55,24 +58,45 @@ export class FakeHub {
     this.#emitEvent({ type: 'disconnected' })
   }
 
-  async send(params: FakeHubSendParams): Promise<{ sequenceID: string }> {
+  subscribe(subscriberDID: string, topicID: string): void {
+    let set = this.#topics.get(topicID)
+    if (set == null) {
+      set = new Set()
+      this.#topics.set(topicID, set)
+    }
+    set.add(subscriberDID)
+  }
+
+  unsubscribe(subscriberDID: string, topicID: string): void {
+    const set = this.#topics.get(topicID)
+    if (set == null) return
+    set.delete(subscriberDID)
+    if (set.size === 0) {
+      this.#topics.delete(topicID)
+    }
+  }
+
+  async publish(params: FakeHubPublishParams): Promise<{ sequenceID: string }> {
     const sequenceID = String(++this.#sequence)
     const message: FakeHubMessage = {
       sequenceID,
       senderDID: params.senderDID,
+      topicID: params.topicID,
       payload: params.payload,
-      ...(params.groupID == null ? {} : { groupID: params.groupID }),
     }
 
-    for (const recipient of params.recipients) {
-      const action = this.#nextAction()
-      this.#deliver(recipient, message, action)
+    const recipients = this.#topics.get(params.topicID)
+    if (recipients != null) {
+      for (const recipient of recipients) {
+        const action = this.#nextAction()
+        this.#deliver(recipient, message, action)
+      }
     }
 
     return { sequenceID }
   }
 
-  receive(deviceDID: string): AsyncIterable<FakeHubMessage> & { return: () => void } {
+  receive(subscriberDID: string): AsyncIterable<FakeHubMessage> & { return: () => void } {
     const queue: Array<FakeHubMessage> = []
     const waiters: Array<(value: IteratorResult<FakeHubMessage>) => void> = []
     let closed = false
@@ -97,19 +121,19 @@ export class FakeHub {
       },
     }
 
-    let set = this.#subscribers.get(deviceDID)
+    let set = this.#subscribers.get(subscriberDID)
     if (set == null) {
       set = new Set()
-      this.#subscribers.set(deviceDID, set)
+      this.#subscribers.set(subscriberDID, set)
     }
     set.add(subscriber)
 
     const detach = (): void => {
-      const current = this.#subscribers.get(deviceDID)
+      const current = this.#subscribers.get(subscriberDID)
       if (current != null) {
         current.delete(subscriber)
         if (current.size === 0) {
-          this.#subscribers.delete(deviceDID)
+          this.#subscribers.delete(subscriberDID)
         }
       }
     }
@@ -145,18 +169,18 @@ export class FakeHub {
     }
   }
 
-  subscriberCount(deviceDID: string): number {
-    const set = this.#subscribers.get(deviceDID)
+  subscriberCount(subscriberDID: string): number {
+    const set = this.#subscribers.get(subscriberDID)
     return set == null ? 0 : set.size
   }
 
-  disconnect(deviceDID: string): void {
-    const set = this.#subscribers.get(deviceDID)
+  disconnect(subscriberDID: string): void {
+    const set = this.#subscribers.get(subscriberDID)
     if (set == null) return
     for (const subscriber of set) {
       subscriber.close()
     }
-    this.#subscribers.delete(deviceDID)
+    this.#subscribers.delete(subscriberDID)
   }
 
   dropNext(n: number): void {

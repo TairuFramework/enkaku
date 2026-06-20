@@ -5,31 +5,19 @@ export type HubClientParams = {
   client: Client<HubProtocol>
 }
 
-export type SendParams = {
-  recipients: Array<string>
+export type PublishParams = {
+  topicID: string
   payload: string
-}
-
-export type GroupSendParams = {
-  groupID: string
-  payload: string
-}
-
-export type JoinGroupParams = {
-  groupID: string
-  credential: string
-  delegationChain?: Array<string>
 }
 
 export type ReceiveOptions = {
   after?: string
-  groupIDs?: Array<string>
 }
 
 type ReceiveMessage = {
   sequenceID: string
   senderDID: string
-  groupID?: string
+  topicID: string
   payload: string
 }
 
@@ -48,15 +36,21 @@ export class HubClient {
     return this.#client
   }
 
-  send(params: SendParams): RequestCall<{ sequenceID: string }> {
-    return this.#client.request('hub/send', {
-      param: { recipients: params.recipients, payload: params.payload },
+  publish(params: PublishParams): RequestCall<{ sequenceID: string }> {
+    return this.#client.request('hub/publish', {
+      param: { topicID: params.topicID, payload: params.payload },
     })
   }
 
-  groupSend(params: GroupSendParams): RequestCall<{ sequenceID: string }> {
-    return this.#client.request('hub/group/send', {
-      param: { groupID: params.groupID, payload: params.payload },
+  subscribe(topicID: string): RequestCall<{ subscribed: boolean }> {
+    return this.#client.request('hub/subscribe', {
+      param: { topicID },
+    })
+  }
+
+  unsubscribe(topicID: string): RequestCall<{ unsubscribed: boolean }> {
+    return this.#client.request('hub/unsubscribe', {
+      param: { topicID },
     })
   }
 
@@ -66,24 +60,7 @@ export class HubClient {
     return this.#client.createChannel('hub/receive', {
       param: {
         after: options?.after,
-        groupIDs: options?.groupIDs,
       },
-    })
-  }
-
-  joinGroup(params: JoinGroupParams): RequestCall<{ joined: boolean }> {
-    return this.#client.request('hub/group/join', {
-      param: {
-        groupID: params.groupID,
-        credential: params.credential,
-        delegationChain: params.delegationChain,
-      },
-    })
-  }
-
-  leaveGroup(groupID: string): RequestCall<{ left: boolean }> {
-    return this.#client.request('hub/group/leave', {
-      param: { groupID },
     })
   }
 

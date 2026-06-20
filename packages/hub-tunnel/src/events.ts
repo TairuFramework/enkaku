@@ -3,7 +3,7 @@ import type { DecryptError, EnvelopeDecodeError } from './errors.js'
 export type FrameDroppedReason =
   | 'envelope-decode'
   | 'decrypt'
-  | 'sender-mismatch'
+  | 'topic-mismatch'
   | 'session-mismatch'
   | 'dedup'
 

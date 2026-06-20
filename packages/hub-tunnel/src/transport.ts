@@ -1,5 +1,5 @@
 import { AbortInterruption, TimeoutInterruption } from '@enkaku/async'
-import type { StoredMessage, StoreParams } from '@enkaku/hub-protocol'
+import type { StoredMessage } from '@enkaku/hub-protocol'
 import { Transport, type TransportType } from '@enkaku/transport'
 
 import {
@@ -26,9 +26,17 @@ export type HubLikeEvents = {
   subscribe: (listener: HubLikeEventListener) => () => void
 }
 
+export type HubPublishParams = {
+  senderDID: string
+  topicID: string
+  payload: Uint8Array
+}
+
 export type HubLike = {
-  send: (params: StoreParams) => Promise<{ sequenceID: string }>
-  receive: (deviceDID: string) => HubReceiveSubscription
+  publish: (params: HubPublishParams) => Promise<{ sequenceID: string }>
+  subscribe: (subscriberDID: string, topicID: string) => Promise<void> | void
+  unsubscribe?: (subscriberDID: string, topicID: string) => Promise<void> | void
+  receive: (subscriberDID: string) => HubReceiveSubscription
   events?: HubLikeEvents
 }
 
@@ -37,8 +45,16 @@ export type HubTunnelSessionID = string | { auto: true }
 export type HubTunnelTransportParams = {
   hub: HubLike
   sessionID: HubTunnelSessionID
+  /**
+   * The authenticated DID used to drain the receive stream (`hub.receive`) and
+   * stamp published frames (`senderDID`). NOT a routing key — routing is by
+   * `sendTopicID` / `receiveTopicID`.
+   */
   localDID: string
-  peerDID: string
+  /** Topic this transport publishes its outbound frames to. */
+  sendTopicID: string
+  /** Topic this transport subscribes to and accepts inbound frames from. */
+  receiveTopicID: string
   inboxCapacity?: number
   idleTimeoutMs?: number
   reconnectTimeoutMs?: number
@@ -46,10 +62,8 @@ export type HubTunnelTransportParams = {
   onEvent?: ObservabilityEventListener
   /**
    * Fired exactly once when the peer signals graceful end-of-session via the
-   * `session-end` frame kind. Listeners use this to dispose the transport
-   * deterministically (so a fresh transport can be spawned for the next
-   * session arriving on the same peer-keyed inbox). Non-error path —
-   * `teardown(error)` paths emit through `onEvent` instead.
+   * `session-end` frame kind. Non-error path — `teardown(error)` paths emit
+   * through `onEvent` instead.
    */
   onSessionEnd?: () => void
 }
@@ -57,16 +71,18 @@ export type HubTunnelTransportParams = {
 const DEFAULT_INBOX_CAPACITY = 1024
 
 /**
- * Build a hub-tunnel transport. The returned `TransportType` reads from a
- * single inbox subscription and writes to the hub via `hub.send`.
+ * Build a hub-tunnel transport over the pub/sub hub API. The returned
+ * `TransportType` subscribes to `receiveTopicID`, reads from a single inbox
+ * subscription (filtering to that topic), and writes to the hub via
+ * `hub.publish` on `sendTopicID`.
  *
  * **Contract notes (relied on by callers):**
- * - `hub.receive(localDID)` is called **exactly once** during construction.
- *   Callers wrapping `HubLike` (e.g. `createEncryptedHubTunnelTransport`)
- *   can rely on this for resource accounting.
+ * - `hub.subscribe(localDID, receiveTopicID)` and `hub.receive(localDID)` are
+ *   each called **exactly once** during construction.
  * - On any teardown path (signal abort, idle timeout, encrypt failure,
  *   peer-side `session-end`, manual `transport.dispose()`), this transport
- *   sends a best-effort `session-end` frame to the peer.
+ *   publishes a best-effort `session-end` frame to `sendTopicID` and
+ *   best-effort `hub.unsubscribe?.(localDID, receiveTopicID)`.
  */
 export function createHubTunnelTransport<R, W>(
   params: HubTunnelTransportParams,
@@ -75,7 +91,8 @@ export function createHubTunnelTransport<R, W>(
     hub,
     sessionID,
     localDID,
-    peerDID,
+    sendTopicID,
+    receiveTopicID,
     signal,
     idleTimeoutMs,
     reconnectTimeoutMs,
@@ -88,6 +105,9 @@ export function createHubTunnelTransport<R, W>(
 
   let outboundSeq = 0
   let expectedSeq = 0
+  // Best-effort subscribe; rejection is swallowed (the receive stream still
+  // attaches, and a missing subscription simply yields no inbound frames).
+  void Promise.resolve(hub.subscribe(localDID, receiveTopicID)).catch(() => {})
   const subscription = hub.receive(localDID)
   const iterator = subscription[Symbol.asyncIterator]()
 
@@ -119,16 +139,12 @@ export function createHubTunnelTransport<R, W>(
       v: 1,
       sessionID: lockedSessionID,
       kind: 'session-end',
-      // Out-of-band control frame — does not advance `outboundSeq` so the
-      // data-stream sequence numbers stay dense for debugging.
       seq: outboundSeq,
     }
-    // Best-effort: fire-and-forget; failure here means the peer never sees
-    // the end marker and falls back on its own teardown signals (idle, etc.).
     void hub
-      .send({
+      .publish({
         senderDID: localDID,
-        recipients: [peerDID],
+        topicID: sendTopicID,
         payload: encodeFrame(frame),
       })
       .catch(() => {
@@ -149,11 +165,12 @@ export function createHubTunnelTransport<R, W>(
       signal.removeEventListener('abort', abortHandler)
       abortHandler = undefined
     }
-    // Always notify the peer the session is ending — abort, idle, and graceful
-    // close all warrant a clean end marker so the responder can dispose its
-    // locked transport and accept a fresh session. Best-effort; if hub.send
-    // throws we swallow it (the peer falls back on its own teardown signals).
     sendSessionEnd()
+    try {
+      void Promise.resolve(hub.unsubscribe?.(localDID, receiveTopicID)).catch(() => {})
+    } catch {
+      // ignore
+    }
     if (error !== undefined && readableController != null) {
       try {
         readableController.error(error)
@@ -216,8 +233,8 @@ export function createHubTunnelTransport<R, W>(
               return
             }
             const message = result.value
-            if (message.senderDID !== peerDID) {
-              onEvent?.({ type: 'frame-dropped', reason: 'sender-mismatch' })
+            if (message.topicID !== receiveTopicID) {
+              onEvent?.({ type: 'frame-dropped', reason: 'topic-mismatch' })
               continue
             }
             let frame: HubFrame
@@ -235,10 +252,6 @@ export function createHubTunnelTransport<R, W>(
               continue
             }
             if (frame.kind === 'session-end') {
-              // Peer signaled graceful end-of-session. Close the readable and
-              // notify the caller via `onSessionEnd` so they can dispose the
-              // transport (no error path) — that emits `events.disposed` and
-              // any listener spawn loop can re-arm for the next session.
               torndown = true
               clearIdleTimer()
               try {
@@ -251,7 +264,6 @@ export function createHubTunnelTransport<R, W>(
               return
             }
             if (frame.kind !== 'message') {
-              // Defensive — schema validation already restricted to 'message' or 'session-end'.
               continue
             }
             if (frame.seq < expectedSeq) {
@@ -296,9 +308,9 @@ export function createHubTunnelTransport<R, W>(
         seq: outboundSeq++,
         body: value as unknown as Extract<HubFrame, { kind: 'message' }>['body'],
       }
-      await hub.send({
+      await hub.publish({
         senderDID: localDID,
-        recipients: [peerDID],
+        topicID: sendTopicID,
         payload: encodeFrame(frame),
       })
       markActivity()

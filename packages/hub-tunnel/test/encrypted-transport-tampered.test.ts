@@ -18,6 +18,8 @@ describe('createEncryptedHubTunnelTransport tampered ciphertext', () => {
     const groupID = 'group-tampered'
     const aDID = 'did:peer:a'
     const bDID = 'did:peer:b'
+    const topicA = 'topic:a'
+    const topicB = 'topic:b'
 
     const aEncryptor = new FakeEncryptor({ key: SHARED_KEY })
     const bEncryptor = new FakeEncryptor({ key: SHARED_KEY })
@@ -30,7 +32,8 @@ describe('createEncryptedHubTunnelTransport tampered ciphertext', () => {
       hub,
       sessionID,
       localDID: aDID,
-      peerDID: bDID,
+      sendTopicID: topicB,
+      receiveTopicID: topicA,
       encryptor: aEncryptor,
       groupID,
     })
@@ -38,7 +41,8 @@ describe('createEncryptedHubTunnelTransport tampered ciphertext', () => {
       hub,
       sessionID,
       localDID: bDID,
-      peerDID: aDID,
+      sendTopicID: topicA,
+      receiveTopicID: topicB,
       encryptor: bEncryptor,
       groupID,
       onEvent: (event) => {

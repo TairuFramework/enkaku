@@ -1,5 +1,5 @@
 /**
- * Hub protocol for blind relay messaging with mailbox semantics.
+ * Hub protocol for blind pub/sub messaging over opaque topic IDs.
  *
  * @module hub-protocol
  */
@@ -12,7 +12,7 @@ export type {
   FetchResult,
   HubStore,
   HubStoreEvents,
+  PublishParams,
   PurgeParams,
   StoredMessage,
-  StoreParams,
 } from './types.js'
