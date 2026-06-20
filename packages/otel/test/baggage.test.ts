@@ -214,4 +214,17 @@ describe('entriesToBaggage', () => {
     ]
     expect(baggageToEntries(entriesToBaggage(entries))).toEqual([{ key: 'a', value: '1' }])
   })
+
+  test('keeps entries whose keys collide with Object.prototype members', () => {
+    const entries = [
+      { key: 'toString', value: 'v1' },
+      { key: 'constructor', value: 'v2' },
+      { key: 'hasOwnProperty', value: 'v3' },
+    ]
+    const result = baggageToEntries(entriesToBaggage(entries))
+    expect(result).toContainEqual({ key: 'toString', value: 'v1' })
+    expect(result).toContainEqual({ key: 'constructor', value: 'v2' })
+    expect(result).toContainEqual({ key: 'hasOwnProperty', value: 'v3' })
+    expect(result).toHaveLength(3)
+  })
 })

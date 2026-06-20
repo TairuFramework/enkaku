@@ -197,7 +197,10 @@ function propertiesToMetadata(properties: Array<BaggageProperty>): string {
  * duplicate key. Never throws.
  */
 export function entriesToBaggage(entries: Array<BaggageEntry>): Baggage {
-  const record: Record<string, { value: string; metadata?: BaggageEntryMetadata }> = {}
+  const record = Object.create(null) as Record<
+    string,
+    { value: string; metadata?: BaggageEntryMetadata }
+  >
   for (const entry of entries) {
     if (!isToken(entry.key)) {
       logger.warn('dropping invalid baggage member {key}', { key: entry.key })
