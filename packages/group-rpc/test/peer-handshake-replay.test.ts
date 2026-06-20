@@ -6,7 +6,7 @@ import { createGroupPeer } from '../src/peer.js'
 import { handshakeTopic } from '../src/topic.js'
 import { DurableFakeHub } from './fixtures/durable-fake-hub.js'
 import { createFakeCrypto } from './fixtures/fake-crypto.js'
-import { createFakeMLS } from './fixtures/fake-mls.js'
+import { createMemoryGroupMLS } from '../src/memory-group-mls.js'
 
 const flush = () => new Promise((r) => setTimeout(r, 30))
 
@@ -18,7 +18,7 @@ type Protocols = { chat: typeof chat }
 
 function makeDurablePeer(hub: DurableFakeHub, localDID: string, recoverySecret: Uint8Array) {
   const crypto = createFakeCrypto({ epoch: 1, localDID })
-  const mls = createFakeMLS({ recoverySecret, epoch: 1, onAdvance: (e) => crypto.setEpoch(e) })
+  const mls = createMemoryGroupMLS({ recoverySecret, epoch: 1, onAdvance: (e) => crypto.setEpoch(e) })
   const peer = createGroupPeer<Protocols>({
     hub,
     crypto,

@@ -6,7 +6,7 @@ import { createGroupPeer } from '../src/peer.js'
 import { handshakeTopic, protocolTopic } from '../src/topic.js'
 import { createFakeCrypto } from './fixtures/fake-crypto.js'
 import { FakeHub } from './fixtures/fake-hub.js'
-import { createFakeMLS } from './fixtures/fake-mls.js'
+import { createMemoryGroupMLS } from '../src/memory-group-mls.js'
 
 const flush = () => new Promise((r) => setTimeout(r, 30))
 
@@ -19,7 +19,7 @@ type Protocols = { chat: typeof chat }
 /** Build an MLS-enabled peer whose fake MLS keeps the fake crypto's epoch in step. */
 function makeMLSPeer(hub: FakeHub, localDID: string, recoverySecret: Uint8Array) {
   const crypto = createFakeCrypto({ epoch: 1, localDID })
-  const mls = createFakeMLS({ recoverySecret, epoch: 1, onAdvance: (e) => crypto.setEpoch(e) })
+  const mls = createMemoryGroupMLS({ recoverySecret, epoch: 1, onAdvance: (e) => crypto.setEpoch(e) })
   const peer = createGroupPeer<Protocols>({
     hub,
     crypto,
@@ -50,7 +50,7 @@ describe('handshake topic lifecycle', () => {
     const hub = new FakeHub()
     const recoverySecret = new Uint8Array(32).fill(0x33)
     const crypto = createFakeCrypto({ epoch: 1, localDID: 'alice' })
-    const mls = createFakeMLS({ recoverySecret })
+    const mls = createMemoryGroupMLS({ recoverySecret })
     const peer = createGroupPeer<Protocols>({
       hub,
       crypto,

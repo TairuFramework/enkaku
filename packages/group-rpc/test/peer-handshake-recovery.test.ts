@@ -6,7 +6,7 @@ import { createGroupPeer } from '../src/peer.js'
 import { handshakeTopic, protocolTopic } from '../src/topic.js'
 import { createFakeCrypto } from './fixtures/fake-crypto.js'
 import { FakeHub } from './fixtures/fake-hub.js'
-import { createFakeMLS } from './fixtures/fake-mls.js'
+import { createMemoryGroupMLS } from '../src/memory-group-mls.js'
 
 const flush = (ms = 30) => new Promise((r) => setTimeout(r, ms))
 
@@ -24,7 +24,7 @@ function makePeer(
   recovery?: { timeoutMs?: number; getDelayMs?: () => number },
 ) {
   const crypto = createFakeCrypto({ epoch, localDID })
-  const mls = createFakeMLS({ recoverySecret, epoch, onAdvance: (e) => crypto.setEpoch(e) })
+  const mls = createMemoryGroupMLS({ recoverySecret, epoch, onAdvance: (e) => crypto.setEpoch(e) })
   const peer = createGroupPeer<Protocols>({
     hub,
     crypto,
