@@ -17,6 +17,7 @@ export {
 } from './baggage.js'
 export {
   extractTraceContext,
+  extractW3CTraceContext,
   injectTraceContext,
   setSpanOnContext,
   withActiveContext,
