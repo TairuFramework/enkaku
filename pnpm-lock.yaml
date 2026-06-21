@@ -956,15 +956,15 @@ importers:
       '@enkaku/electron':
         specifier: workspace:*
         version: link:../../packages/electron
-      '@enkaku/electron-keystore':
-        specifier: workspace:*
-        version: link:../../packages/electron-keystore
       '@enkaku/server':
         specifier: workspace:*
         version: link:../../packages/server
       '@enkaku/transport':
         specifier: workspace:*
         version: link:../../packages/transport
+      '@kokuin/electron':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@kokuin/token':
         specifier: ^0.1.0
         version: 0.1.0
@@ -1011,12 +1011,12 @@ importers:
 
   tests/e2e-web:
     dependencies:
-      '@enkaku/browser-keystore':
-        specifier: workspace:*
-        version: link:../../packages/browser-keystore
-      '@enkaku/token':
-        specifier: workspace:*
-        version: link:../../packages/token
+      '@kokuin/browser':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
       react:
         specifier: 'catalog:'
         version: 19.2.3
@@ -3590,8 +3590,14 @@ packages:
   '@kigu/dev@0.1.0':
     resolution: {integrity: sha512-OPZxcjUXf03B2QriQ5+3Tar1s8t0D1rg39TDGDpdKDlDpHmu/F15EJ6+nD7VbNhD6ZoV8ussA9sL0vRSudcaog==}
 
+  '@kokuin/browser@0.1.0':
+    resolution: {integrity: sha512-XXwcD7QN1qAhXPfguAuJ8XC+bqxEj3V30b9IlPkfvGM4t2HSLXZy73Q0XweQjTQnmUhDV8YB/lRfThEyN6Es8Q==}
+
   '@kokuin/capability@0.1.0':
     resolution: {integrity: sha512-LFLn4ZpMqOeAi1P0D6QvIdZ44I+lo5jXgYMj6VwMLP3KhznVk6emYx40xXQXYlrN0hxVFnQbFq2MysmDUgPdsA==}
+
+  '@kokuin/electron@0.1.0':
+    resolution: {integrity: sha512-hqZhDofRTAZrflu8mrH71s9s0FnQ/BsNFh+oHOb0NhCoIG50dCWgGKEVmOQ0lGYKDBdWFAuWNZDGPVxRQrg8OA==}
 
   '@kokuin/token@0.1.0':
     resolution: {integrity: sha512-sGVum8HULkU+Tk+bmWHbKN7ub6wEr/9PXKXf/aUxL6Vy81MCYk0cdFMmzep+WGcfRyo0/6HnF0PPHXhh30+dig==}
@@ -16161,9 +16167,25 @@ snapshots:
       - supports-color
       - vite
 
+  '@kokuin/browser@0.1.0':
+    dependencies:
+      '@kokuin/token': 0.1.0
+      '@sozai/async': 0.1.0
+      '@sozai/codec': 0.1.0
+      '@sozai/log': 0.1.0
+      '@sozai/otel': 0.1.0
+
   '@kokuin/capability@0.1.0':
     dependencies:
       '@kokuin/token': 0.1.0
+
+  '@kokuin/electron@0.1.0':
+    dependencies:
+      '@kokuin/token': 0.1.0
+      '@sozai/codec': 0.1.0
+      '@sozai/log': 0.1.0
+      '@sozai/otel': 0.1.0
+      electron-store: 11.0.2
 
   '@kokuin/token@0.1.0':
     dependencies:

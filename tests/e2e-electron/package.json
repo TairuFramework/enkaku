@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@enkaku/client": "workspace:*",
-    "@enkaku/electron-keystore": "workspace:*",
+    "@kokuin/electron": "^0.1.0",
     "@enkaku/electron": "workspace:*",
     "@enkaku/server": "workspace:*",
     "@kokuin/token": "^0.1.0",

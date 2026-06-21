@@ -108,6 +108,8 @@ minimumReleaseAgeExclude:
   - '@sozai/result@0.1.0'
   - '@sozai/runtime@0.1.0'
   - '@sozai/stream@0.1.0'
+  - '@kokuin/browser@0.1.0'
+  - '@kokuin/electron@0.1.0'
 
 nodeLinker: hoisted
 

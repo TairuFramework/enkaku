@@ -1,5 +1,5 @@
-import { provideSigningIdentity } from '@enkaku/browser-keystore'
-import { type Token, verifyToken } from '@enkaku/token'
+import { provideSigningIdentity } from '@kokuin/browser'
+import { type Token, verifyToken } from '@kokuin/token'
 import { useState } from 'react'
 import { Button, StyleSheet, Text, View } from 'react-native'
 
