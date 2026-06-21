@@ -14,11 +14,13 @@ export {
   HANDSHAKE_VERSION,
   type HandshakeKind,
 } from './handshake.js'
+
 export {
   createMemoryGroupMLS,
   type MemoryGroupMLS,
   type MemoryGroupMLSOptions,
 } from './memory-group-mls.js'
+
 export {
   createGroupPeer,
   type GroupPeer,
