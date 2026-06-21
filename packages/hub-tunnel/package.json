@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/hub-tunnel",
-  "version": "0.17.2",
+  "version": "0.17.3",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Peer-to-peer Enkaku transport tunneled through a hub relay",

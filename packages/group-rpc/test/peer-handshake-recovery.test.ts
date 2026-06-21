@@ -2,11 +2,11 @@ import type { ProtocolDefinition } from '@enkaku/protocol'
 import { describe, expect, test } from 'vitest'
 
 import { decodeHandshakeFrame, HANDSHAKE_KIND } from '../src/handshake.js'
+import { createMemoryGroupMLS } from '../src/memory-group-mls.js'
 import { createGroupPeer } from '../src/peer.js'
 import { handshakeTopic, protocolTopic } from '../src/topic.js'
 import { createFakeCrypto } from './fixtures/fake-crypto.js'
 import { FakeHub } from './fixtures/fake-hub.js'
-import { createMemoryGroupMLS } from '../src/memory-group-mls.js'
 
 const flush = (ms = 30) => new Promise((r) => setTimeout(r, ms))
 

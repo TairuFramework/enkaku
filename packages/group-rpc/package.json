@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/group-rpc",
-  "version": "0.17.1",
+  "version": "0.17.2",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "High-level MLS-aware group RPC for Enkaku: bus broadcast/anycast/gather plus directed RPC over the pub/sub hub",

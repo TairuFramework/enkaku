@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/hub-protocol",
-  "version": "0.17.1",
+  "version": "0.17.2",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
   "description": "Hub protocol types for Enkaku E2EE group routing",
