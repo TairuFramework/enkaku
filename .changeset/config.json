@@ -7,13 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": [
-    "@enkaku/group",
-    "@enkaku/broadcast",
-    "@enkaku/hub-protocol",
-    "@enkaku/hub-client",
-    "@enkaku/hub-server",
-    "@enkaku/hub-tunnel",
-    "@enkaku/group-rpc"
-  ]
+  "ignore": []
 }
