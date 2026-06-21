@@ -1,7 +1,7 @@
 {
   "name": "e2e-electron",
   "productName": "e2e-electron",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
