@@ -9,9 +9,9 @@
     "test:speculos": "./test-speculos.sh"
   },
   "devDependencies": {
-    "@enkaku/hd-keystore": "workspace:^",
-    "@enkaku/ledger-identity": "workspace:^",
-    "@enkaku/token": "workspace:^",
+    "@kokuin/deterministic": "^0.1.0",
+    "@kokuin/ledger-device": "^0.1.0",
+    "@kokuin/token": "^0.1.0",
     "@noble/curves": "catalog:",
     "@scure/bip39": "catalog:",
     "vitest": "catalog:"

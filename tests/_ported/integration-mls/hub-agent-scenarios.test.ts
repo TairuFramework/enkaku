@@ -1,8 +1,4 @@
 import { Client } from '@enkaku/client'
-import { createGroupCapability, delegateGroupMembership } from '@enkaku/group'
-import { HubClient } from '@enkaku/hub-client'
-import type { HubProtocol } from '@enkaku/hub-protocol'
-import { createHub, createMemoryStore } from '@enkaku/hub-server'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
 import { DirectTransports } from '@enkaku/transport'
 import {
@@ -14,6 +10,10 @@ import {
   now,
 } from '@kokuin/capability'
 import { type OwnIdentity, randomIdentity, stringifyToken } from '@kokuin/token'
+import { HubClient } from '@kumiai/hub-client'
+import type { HubProtocol } from '@kumiai/hub-protocol'
+import { createHub, createMemoryStore } from '@kumiai/hub-server'
+import { createGroupCapability, delegateGroupMembership } from '@kumiai/mls'
 import { describe, expect, test } from 'vitest'
 
 type HubTransports = DirectTransports<

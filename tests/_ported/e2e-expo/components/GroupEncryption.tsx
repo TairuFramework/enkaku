@@ -1,3 +1,4 @@
+import { randomIdentity } from '@kokuin/token'
 import {
   commitInvite,
   createGroup,
@@ -5,8 +6,7 @@ import {
   createKeyPackageBundle,
   nobleCryptoProvider,
   processWelcome,
-} from '@enkaku/group'
-import { randomIdentity } from '@enkaku/token'
+} from '@kumiai/mls'
 import { useState } from 'react'
 import { Button, Text } from 'react-native'
 

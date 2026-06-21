@@ -1,5 +1,5 @@
-import { provideFullIdentity } from '@enkaku/expo-keystore'
-import { type SignedToken, type Token, verifyToken } from '@enkaku/token'
+import { provideFullIdentity } from '@kokuin/expo'
+import { type SignedToken, type Token, verifyToken } from '@kokuin/token'
 import { useState } from 'react'
 import { Button, Text } from 'react-native'
 

@@ -1,4 +1,4 @@
-import { polyfillCrypto } from '@enkaku/expo-runtime'
+import { polyfillCrypto } from '@sozai/runtime-expo'
 import { registerRootComponent } from 'expo'
 
 import App from './App'

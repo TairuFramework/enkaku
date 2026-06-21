@@ -12,10 +12,10 @@
     "test": "MAESTRO_CLI_NO_ANALYTICS=true MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED=true maestro test .maestro/"
   },
   "dependencies": {
-    "@enkaku/expo-keystore": "workspace:^",
-    "@enkaku/expo-runtime": "workspace:^",
-    "@enkaku/group": "workspace:^",
-    "@enkaku/token": "workspace:^",
+    "@kokuin/expo": "^0.1.0",
+    "@sozai/runtime-expo": "^0.1.0",
+    "@kumiai/mls": "^0.1.0",
+    "@kokuin/token": "^0.1.0",
     "expo": "catalog:",
     "expo-status-bar": "catalog:",
     "react": "catalog:",

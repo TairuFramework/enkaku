@@ -1,12 +1,12 @@
 import { Client } from '@enkaku/client'
-import type { StoredMessage, StoreParams } from '@enkaku/hub-protocol'
+import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { type ProcedureHandlers, type RequestHandler, serve } from '@enkaku/server'
+import type { StoredMessage, StoreParams } from '@kumiai/hub-protocol'
 import {
   createHubTunnelTransport,
   type HubLike,
   type HubReceiveSubscription,
-} from '@enkaku/hub-tunnel'
-import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { type ProcedureHandlers, type RequestHandler, serve } from '@enkaku/server'
+} from '@kumiai/hub-tunnel'
 import { describe, expect, test } from 'vitest'
 
 // ---------------------------------------------------------------------------

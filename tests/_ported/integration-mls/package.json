@@ -1,0 +1,23 @@
+{
+  "name": "@kumiai/integration-mls-tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@kumiai/mls": "^0.1.0",
+    "@kumiai/hub-client": "^0.1.0",
+    "@kumiai/hub-protocol": "^0.1.0",
+    "@kumiai/hub-server": "^0.1.0",
+    "@kumiai/hub-tunnel": "^0.1.0",
+    "@enkaku/client": "^0.18.0",
+    "@enkaku/protocol": "^0.18.0",
+    "@enkaku/transport": "^0.18.0",
+    "@enkaku/server": "^0.18.0",
+    "@kokuin/capability": "^0.1.0",
+    "@kokuin/token": "^0.1.0",
+    "vitest": "^4.1.9"
+  }
+}

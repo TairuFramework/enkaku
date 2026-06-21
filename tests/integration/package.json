@@ -23,10 +23,6 @@
     "@sozai/event": "^0.1.0",
     "@enkaku/http-fetch": "workspace:^",
     "@enkaku/http-serve": "workspace:^",
-    "@enkaku/hub-client": "workspace:^",
-    "@enkaku/hub-protocol": "workspace:^",
-    "@enkaku/hub-server": "workspace:^",
-    "@enkaku/hub-tunnel": "workspace:^",
     "@enkaku/node-streams": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
@@ -37,8 +33,5 @@
     "@opentelemetry/sdk-trace-base": "catalog:",
     "@opentelemetry/sdk-trace-node": "catalog:",
     "get-port": "catalog:"
-  },
-  "devDependencies": {
-    "@enkaku/group": "workspace:^"
   }
 }

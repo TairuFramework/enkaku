@@ -1,5 +1,5 @@
 /**
- * Integration tests: Ledger app (via Speculos) + @enkaku/ledger-identity.
+ * Integration tests: Ledger app (via Speculos) + @kokuin/ledger-device.
  *
  * Run with: ./test.sh (or pnpm run test:speculos)
  *
@@ -12,15 +12,15 @@
  * Tests auto-skip if Speculos is not available.
  */
 
-import { HDKeyStore } from '@enkaku/hd-keystore'
+import { HDKeyStore } from '@kokuin/deterministic'
 import {
   CLA,
   createLedgerIdentityProvider,
   encodeDerivationPath,
   INS,
   type LedgerTransport,
-} from '@enkaku/ledger-identity'
-import { createTokenEncrypter, isFullIdentity, verifyToken } from '@enkaku/token'
+} from '@kokuin/ledger-device'
+import { createTokenEncrypter, isFullIdentity, verifyToken } from '@kokuin/token'
 import { x25519 } from '@noble/curves/ed25519.js'
 import { describe, expect, test } from 'vitest'
 

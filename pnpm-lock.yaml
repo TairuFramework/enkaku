@@ -126,9 +126,6 @@ catalogs:
     expo-secure-store:
       specifier: ^56.0.4
       version: 56.0.4
-    expo-status-bar:
-      specifier: ~56.0.4
-      version: 56.0.4
     get-port:
       specifier: ^7.2.0
       version: 7.2.0
@@ -147,9 +144,6 @@ catalogs:
     react-dom:
       specifier: 19.2.3
       version: 19.2.3
-    react-native:
-      specifier: 0.85.3
-      version: 0.85.3
     react-native-electron:
       specifier: ^0.22.1
       version: 0.22.1
@@ -1015,40 +1009,6 @@ importers:
         specifier: 'catalog:'
         version: 8.0.16(@types/node@26.0.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
 
-  tests/e2e-expo:
-    dependencies:
-      '@enkaku/expo-keystore':
-        specifier: workspace:^
-        version: link:../../packages/expo-keystore
-      '@enkaku/expo-runtime':
-        specifier: workspace:^
-        version: link:../../packages/expo-runtime
-      '@enkaku/group':
-        specifier: workspace:^
-        version: link:../../packages/group
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../../packages/token
-      expo:
-        specifier: 'catalog:'
-        version: 56.0.12(@babel/core@7.29.7)(@expo/dom-webview@56.0.5)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.2(encoding@0.1.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
-      expo-status-bar:
-        specifier: 'catalog:'
-        version: 56.0.4(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)
-      react:
-        specifier: 'catalog:'
-        version: 19.2.3
-      react-native:
-        specifier: 'catalog:'
-        version: 0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3)
-    devDependencies:
-      '@types/react':
-        specifier: 'catalog:'
-        version: 19.2.17
-      typescript:
-        specifier: 'catalog:'
-        version: 6.0.3
-
   tests/e2e-web:
     dependencies:
       '@enkaku/browser-keystore':
@@ -1100,18 +1060,6 @@ importers:
       '@enkaku/http-serve':
         specifier: workspace:^
         version: link:../../packages/http-serve
-      '@enkaku/hub-client':
-        specifier: workspace:^
-        version: link:../../packages/hub-client
-      '@enkaku/hub-protocol':
-        specifier: workspace:^
-        version: link:../../packages/hub-protocol
-      '@enkaku/hub-server':
-        specifier: workspace:^
-        version: link:../../packages/hub-server
-      '@enkaku/hub-tunnel':
-        specifier: workspace:^
-        version: link:../../packages/hub-tunnel
       '@enkaku/node-streams':
         specifier: workspace:^
         version: link:../../packages/node-streams
@@ -1148,31 +1096,6 @@ importers:
       get-port:
         specifier: 'catalog:'
         version: 7.2.0
-    devDependencies:
-      '@enkaku/group':
-        specifier: workspace:^
-        version: link:../../packages/group
-
-  tests/ledger:
-    devDependencies:
-      '@enkaku/hd-keystore':
-        specifier: workspace:^
-        version: link:../../packages/hd-keystore
-      '@enkaku/ledger-identity':
-        specifier: workspace:^
-        version: link:../../packages/ledger-identity
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../../packages/token
-      '@noble/curves':
-        specifier: 'catalog:'
-        version: 2.2.0
-      '@scure/bip39':
-        specifier: 'catalog:'
-        version: 2.2.0
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@26.0.0)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(jsdom@27.4.0(@noble/hashes@2.2.0))(vite@8.0.16(@types/node@26.0.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
 
   website:
     dependencies:
@@ -6999,13 +6922,6 @@ packages:
   expo-server@56.0.5:
     resolution: {integrity: sha512-SmM2p2g3Jrktpiazcst+OxhjSzOHXKAY4BPURHYHXvApzzoybMmrNF4IEZ8DKZ145BhSe4ydAmlEFCRTsdtgUQ==}
     engines: {node: '>=20.16.0'}
-
-  expo-status-bar@56.0.4:
-    resolution: {integrity: sha512-IGs/fDfkHXofy2ZQrGiXayhFK04HB85FZXorhcEhDZEcqASKgSqpak+HwUtAaR0MeTJwWyHNF7I6VmVbbp8EcA==}
-    peerDependencies:
-      expo: '*'
-      react: '*'
-      react-native: '*'
 
   expo@56.0.12:
     resolution: {integrity: sha512-FxgdI/Yqva6iJOThZIHfvxlKPxs4EC4uScUnEswwSArR/Fj9k430O13R590LcOQTsdNsjIs+GBHwjfoAY6vmAQ==}
@@ -19909,12 +19825,6 @@ snapshots:
       expo: 56.0.12(@babel/core@7.29.7)(@expo/dom-webview@56.0.5)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.2(encoding@0.1.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
 
   expo-server@56.0.5: {}
-
-  expo-status-bar@56.0.4(expo@56.0.12)(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3):
-    dependencies:
-      expo: 56.0.12(@babel/core@7.29.7)(@expo/dom-webview@56.0.5)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.2(encoding@0.1.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
-      react: 19.2.3
-      react-native: 0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3)
 
   expo@56.0.12(@babel/core@7.29.7)(@expo/dom-webview@56.0.5)(react-dom@19.2.3(react@19.2.3))(react-native-web@0.21.2(encoding@0.1.13)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-native@0.85.3(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.2.3))(react@19.2.3)(typescript@6.0.3):
     dependencies:
