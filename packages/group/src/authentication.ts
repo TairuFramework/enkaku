@@ -4,7 +4,7 @@ import {
   getAlgorithmAndPublicKey,
   getSignatureInfo,
   isPeer4,
-} from '@enkaku/token'
+} from '@kokuin/token'
 import type { AuthenticationService, Credential } from 'ts-mls'
 import { defaultCredentialTypes } from 'ts-mls'
 

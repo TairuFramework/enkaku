@@ -10,9 +10,9 @@
  * @module transport
  */
 
-import { Disposer } from '@enkaku/async'
-import { EventEmitter } from '@enkaku/event'
-import { createConnection, writeTo } from '@enkaku/stream'
+import { Disposer } from '@sozai/async'
+import { EventEmitter } from '@sozai/event'
+import { createConnection, writeTo } from '@sozai/stream'
 
 export type TransportStream<R, W> = ReadableWritablePair<R, W> | Promise<ReadableWritablePair<R, W>>
 

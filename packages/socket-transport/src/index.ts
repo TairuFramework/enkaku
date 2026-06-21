@@ -11,9 +11,9 @@
  */
 
 import { createConnection, type Socket } from 'node:net'
-import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
-import { type FromJSONLinesOptions, fromJSONLines, writeTo } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
+import { AttributeKeys, createTracer, SpanNames, withSpan } from '@sozai/otel'
+import { type FromJSONLinesOptions, fromJSONLines, writeTo } from '@sozai/stream'
 
 const tracer = createTracer('transport.socket')
 

@@ -1,6 +1,6 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { createUnsignedToken as unsignedToken } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
+import { createUnsignedToken as unsignedToken } from '@kokuin/token'
 import { describe, expect, test, vi } from 'vitest'
 
 import { Client } from '../src/client.js'

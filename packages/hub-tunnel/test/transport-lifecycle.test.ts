@@ -1,4 +1,4 @@
-import { AbortInterruption, TimeoutInterruption } from '@enkaku/async'
+import { AbortInterruption, TimeoutInterruption } from '@sozai/async'
 import { describe, expect, test } from 'vitest'
 
 import { encodeFrame, type HubFrame, type HubFrameMessageBody } from '../src/frame.js'

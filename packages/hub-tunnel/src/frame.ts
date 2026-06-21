@@ -1,4 +1,4 @@
-import { createValidator, type Schema } from '@enkaku/schema'
+import { createValidator, type Schema } from '@sozai/schema'
 
 import { FrameDecodeError } from './errors.js'
 

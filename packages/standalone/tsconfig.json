@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.build.json",
+  "extends": "@kigu/dev/tsconfig.json",
   "compilerOptions": {
     "lib": ["es2025", "dom"],
     "rootDir": "./src",

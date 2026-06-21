@@ -1,5 +1,5 @@
-import { fromUTF, toUTF } from '@enkaku/codec'
 import type { StoredMessage } from '@enkaku/hub-protocol'
+import { fromUTF, toUTF } from '@sozai/codec'
 import { describe, expect, test } from 'vitest'
 
 import { createHubMux } from '../src/hub-mux.js'

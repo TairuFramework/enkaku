@@ -1,12 +1,12 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { DirectTransports } from '@enkaku/transport'
 import {
   createIdentity,
   createInMemoryDIDCache,
   getPeer4ShortForm,
   isPeer4,
   randomIdentity,
-} from '@enkaku/token'
-import { DirectTransports } from '@enkaku/transport'
+} from '@kokuin/token'
 import { describe, expect, test } from 'vitest'
 
 import { type ProcedureHandlers, serve } from '../src/index.js'

@@ -27,7 +27,7 @@
   "sideEffects": false,
   "scripts": {
     "build:clean": "del lib",
-    "build:js": "swc src -d ./lib --config-file ../../swc.json --strip-leading-paths",
+    "build:js": "swc src -d ./lib --config-file ../../node_modules/@kigu/dev/swc.json --strip-leading-paths",
     "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
     "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
     "test:types": "tsc --noEmit --skipLibCheck -p tsconfig.test.json",
@@ -36,7 +36,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/event": "workspace:^",
+    "@sozai/event": "^0.1.0",
     "@enkaku/protocol": "workspace:^"
   }
 }

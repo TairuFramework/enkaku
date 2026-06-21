@@ -5,7 +5,7 @@ import {
   suppressible,
   type Unwrap,
 } from '@enkaku/broadcast'
-import { fromUTF, toUTF } from '@enkaku/codec'
+import { fromUTF, toUTF } from '@sozai/codec'
 import { describe, expect, test, vi } from 'vitest'
 
 import { createGroupBusServer } from '../src/bus-server.js'

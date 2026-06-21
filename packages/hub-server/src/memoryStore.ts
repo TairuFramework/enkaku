@@ -1,4 +1,3 @@
-import { EventEmitter } from '@enkaku/event'
 import type {
   AckParams,
   FetchParams,
@@ -9,6 +8,7 @@ import type {
   PurgeParams,
   StoredMessage,
 } from '@enkaku/hub-protocol'
+import { EventEmitter } from '@sozai/event'
 
 type MessageRecord = {
   sequenceID: string

@@ -1,7 +1,26 @@
-import { DisposeInterruption, Disposer } from '@enkaku/async'
-import type { VerifyTokenHook } from '@enkaku/capability'
-import { EventEmitter } from '@enkaku/event'
-import { getEnkakuLogger, type Logger } from '@enkaku/log'
+import {
+  type AnyClientMessageOf,
+  type AnyServerPayloadOf,
+  createClientMessageSchema,
+  ErrorCodes,
+  type ProtocolDefinition,
+  type ServerTransportOf,
+} from '@enkaku/protocol'
+import type { VerifyTokenHook } from '@kokuin/capability'
+import {
+  createInMemoryDIDCache,
+  type DIDCache,
+  type DIDResolver,
+  type Identity,
+  isSignedToken,
+  normalizeDID,
+  type SignedToken,
+  type Token,
+  verifyToken,
+} from '@kokuin/token'
+import { DisposeInterruption, Disposer } from '@sozai/async'
+import { EventEmitter } from '@sozai/event'
+import { getLogger, type Logger } from '@sozai/log'
 import {
   AttributeKeys,
   createTracer,
@@ -13,33 +32,14 @@ import {
   TraceFlags,
   type Tracer,
   withActiveContext,
-} from '@enkaku/otel'
-import {
-  type AnyClientMessageOf,
-  type AnyServerPayloadOf,
-  createClientMessageSchema,
-  ErrorCodes,
-  type ProtocolDefinition,
-  type ServerTransportOf,
-} from '@enkaku/protocol'
-import { createRuntime, type Runtime } from '@enkaku/runtime'
+} from '@sozai/otel'
+import { createRuntime, type Runtime } from '@sozai/runtime'
 import {
   createValidator,
   type StandardSchemaV1,
   ValidationError,
   type Validator,
-} from '@enkaku/schema'
-import {
-  createInMemoryDIDCache,
-  type DIDCache,
-  type DIDResolver,
-  type Identity,
-  isSignedToken,
-  normalizeDID,
-  type SignedToken,
-  type Token,
-  verifyToken,
-} from '@enkaku/token'
+} from '@sozai/schema'
 
 import {
   type AccessRules,
@@ -821,7 +821,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     const serverID = params.identity?.id
     this.#logger =
       params.logger ??
-      getEnkakuLogger('server', { serverID: serverID ?? this.#runtime.getRandomID() })
+      getLogger(['enkaku', 'server'], { serverID: serverID ?? this.#runtime.getRandomID() })
     this.#tracer = params.tracer ?? defaultTracer
 
     const accessRules = (params as { accessRules?: AccessRules }).accessRules

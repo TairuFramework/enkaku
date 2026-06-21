@@ -1,6 +1,6 @@
 import type { ReadableStreamReadResult } from 'node:stream/web'
 
-import { fromUTF } from '@enkaku/codec'
+import { fromUTF } from '@sozai/codec'
 import { describe, expect, test } from 'vitest'
 
 import { createMemoryBus } from '../src/bus.js'

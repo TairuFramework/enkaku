@@ -1,5 +1,5 @@
-import { createValidator, isType } from '@enkaku/schema'
-import { createUnsignedToken } from '@enkaku/token'
+import { createUnsignedToken } from '@kokuin/token'
+import { createValidator, isType } from '@sozai/schema'
 import { describe, expect, test } from 'vitest'
 
 import {

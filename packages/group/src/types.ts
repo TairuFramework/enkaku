@@ -1,4 +1,4 @@
-import type { DIDCache, DIDResolver } from '@enkaku/token'
+import type { DIDCache, DIDResolver } from '@kokuin/token'
 import type {
   Capabilities,
   CryptoProvider,

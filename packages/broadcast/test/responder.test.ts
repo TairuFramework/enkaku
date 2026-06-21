@@ -1,4 +1,4 @@
-import { fromUTF } from '@enkaku/codec'
+import { fromUTF } from '@sozai/codec'
 import { describe, expect, test, vi } from 'vitest'
 
 import { createMemoryBus } from '../src/bus.js'

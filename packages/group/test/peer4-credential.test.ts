@@ -3,7 +3,7 @@ import {
   createInMemoryDIDCache,
   type MultiKeyIdentity,
   stringifyToken,
-} from '@enkaku/token'
+} from '@kokuin/token'
 import { describe, expect, it } from 'vitest'
 
 import { validateGroupCapability } from '../src/capability.js'

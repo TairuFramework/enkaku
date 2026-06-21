@@ -1,4 +1,4 @@
-import { createIdentity, randomIdentity } from '@enkaku/token'
+import { createIdentity, randomIdentity } from '@kokuin/token'
 import { decode, mlsMessageDecoder, type NodeLeaf, nodeTypes, wireformats } from 'ts-mls'
 import { describe, expect, it, test } from 'vitest'
 

@@ -1,7 +1,7 @@
 import { setTimeout } from 'node:timers/promises'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import { serve } from '@enkaku/server'
-import { createUnsignedToken } from '@enkaku/token'
+import { createUnsignedToken } from '@kokuin/token'
 import { describe, expect, test, vi } from 'vitest'
 
 import { createServerBridge, ServerTransport } from '../src/index.js'

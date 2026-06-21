@@ -1,5 +1,5 @@
-import type { CapabilityToken } from '@enkaku/capability'
-import { type DIDCache, decodePeer4, isPeer4, type SignedToken } from '@enkaku/token'
+import type { CapabilityToken } from '@kokuin/capability'
+import { type DIDCache, decodePeer4, isPeer4, type SignedToken } from '@kokuin/token'
 
 import type { GroupPermission } from './capability.js'
 

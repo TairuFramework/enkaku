@@ -1,4 +1,4 @@
-import { fromUTF, toUTF } from '@enkaku/codec'
+import { fromUTF, toUTF } from '@sozai/codec'
 
 /**
  * Payload codecs for the recovery rendezvous carried on the handshake lane. A

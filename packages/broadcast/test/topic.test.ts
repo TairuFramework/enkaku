@@ -1,4 +1,4 @@
-import { fromUTF } from '@enkaku/codec'
+import { fromUTF } from '@sozai/codec'
 import { describe, expect, test } from 'vitest'
 
 import { deriveTopicID } from '../src/topic.js'

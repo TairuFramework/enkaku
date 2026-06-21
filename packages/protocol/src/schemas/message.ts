@@ -1,5 +1,5 @@
-import type { Schema } from '@enkaku/schema'
-import { signedHeaderSchema, signedPayloadSchema, unsignedHeaderSchema } from '@enkaku/token'
+import { signedHeaderSchema, signedPayloadSchema, unsignedHeaderSchema } from '@kokuin/token'
+import type { Schema } from '@sozai/schema'
 
 /** @internal */
 function mergeSignedPayload(payloadSchema: Schema): Schema {

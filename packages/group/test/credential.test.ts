@@ -3,7 +3,7 @@ import {
   createInMemoryDIDCache,
   randomIdentity,
   stringifyToken,
-} from '@enkaku/token'
+} from '@kokuin/token'
 import { defaultCredentialTypes } from 'ts-mls'
 import { describe, expect, it, test } from 'vitest'
 

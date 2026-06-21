@@ -27,7 +27,7 @@
   "sideEffects": false,
   "scripts": {
     "build:clean": "del lib",
-    "build:js": "swc src -d ./lib --config-file ../../swc.json --strip-leading-paths",
+    "build:js": "swc src -d ./lib --config-file ../../node_modules/@kigu/dev/swc.json --strip-leading-paths",
     "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
     "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
     "test:types": "tsc --noEmit --skipLibCheck -p tsconfig.test.json",
@@ -36,14 +36,14 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/codec": "workspace:^",
-    "@enkaku/event": "workspace:^",
+    "@sozai/codec": "^0.1.0",
+    "@sozai/event": "^0.1.0",
     "@enkaku/group": "workspace:^",
     "@enkaku/hub-protocol": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
-    "@enkaku/stream": "workspace:^",
-    "@enkaku/token": "workspace:^"
+    "@sozai/stream": "^0.1.0",
+    "@kokuin/token": "^0.1.0"
   },
   "devDependencies": {
     "@enkaku/client": "workspace:^",

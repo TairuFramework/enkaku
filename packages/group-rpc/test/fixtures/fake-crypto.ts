@@ -1,5 +1,5 @@
 import type { Unwrap } from '@enkaku/broadcast'
-import { fromUTF, toUTF } from '@enkaku/codec'
+import { fromUTF, toUTF } from '@sozai/codec'
 
 import type { GroupCrypto } from '../../src/crypto.js'
 

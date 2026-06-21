@@ -1,5 +1,5 @@
-import type { SignedPayload, SignedToken, UnsignedToken } from '@enkaku/token'
 import type { TransportType } from '@enkaku/transport'
+import type { SignedPayload, SignedToken, UnsignedToken } from '@kokuin/token'
 
 import type { ProtocolDefinition } from '../schemas/protocol.js'
 import type { UnknownCallPayload, UnknownReplyPayload } from './calls.js'

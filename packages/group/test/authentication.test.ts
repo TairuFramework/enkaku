@@ -1,4 +1,4 @@
-import { createIdentity, getSignatureInfo, randomIdentity } from '@enkaku/token'
+import { createIdentity, getSignatureInfo, randomIdentity } from '@kokuin/token'
 import { ed25519 } from '@noble/curves/ed25519.js'
 import { defaultCredentialTypes } from 'ts-mls'
 import { describe, expect, test } from 'vitest'
@@ -182,7 +182,7 @@ describe('createDIDAuthenticationService — peer4', () => {
     // Craft a synthetic peer4 doc that has the sig key in verificationMethod
     // but lacks the authentication array entirely. The auth service must
     // reject because no VM is authorized to sign.
-    const { encodePeer4 } = await import('@enkaku/token')
+    const { encodePeer4 } = await import('@kokuin/token')
     const sigKey = identity.keys.find((k) => k.purpose === 'sig')
     if (sigKey == null) throw new Error('expected a sig key')
     const tamperedDoc = {

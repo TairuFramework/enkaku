@@ -1,6 +1,6 @@
-import { AbortInterruption, TimeoutInterruption } from '@enkaku/async'
 import type { StoredMessage } from '@enkaku/hub-protocol'
 import { Transport, type TransportType } from '@enkaku/transport'
+import { AbortInterruption, TimeoutInterruption } from '@sozai/async'
 
 import {
   BackpressureError,

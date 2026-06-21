@@ -1,5 +1,5 @@
-import { Disposer } from '@enkaku/async'
 import type { TransportType } from '@enkaku/transport'
+import { Disposer } from '@sozai/async'
 
 import type { BroadcastMessage } from './transport.js'
 import { defaultRandomID } from './utils.js'

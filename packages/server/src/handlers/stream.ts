@@ -1,11 +1,11 @@
-import { AttributeKeys, getActiveSpan } from '@enkaku/otel'
 import type {
   AnyServerPayloadOf,
   ClientMessage,
   ProtocolDefinition,
   StreamPayloadOf,
 } from '@enkaku/protocol'
-import { createPipe, writeTo } from '@enkaku/stream'
+import { AttributeKeys, getActiveSpan } from '@sozai/otel'
+import { createPipe, writeTo } from '@sozai/stream'
 
 import type { HandlerContext, ReceiveType, RequestController, StreamHandler } from '../types.js'
 import { executeHandler } from '../utils.js'

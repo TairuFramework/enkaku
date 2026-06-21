@@ -1,7 +1,7 @@
 import { Client } from '@enkaku/client'
 import { serve } from '@enkaku/server'
-import { randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
+import { randomIdentity } from '@kokuin/token'
 import { describe, expect, test } from 'vitest'
 
 import {

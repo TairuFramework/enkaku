@@ -199,12 +199,6 @@ importers:
 
   packages/broadcast:
     dependencies:
-      '@enkaku/async':
-        specifier: workspace:^
-        version: link:../async
-      '@enkaku/codec':
-        specifier: workspace:^
-        version: link:../codec
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
@@ -214,6 +208,12 @@ importers:
       '@noble/hashes':
         specifier: 'catalog:'
         version: 2.2.0
+      '@sozai/async':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/codec':
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       vitest:
         specifier: 'catalog:'
@@ -255,30 +255,30 @@ importers:
 
   packages/client:
     dependencies:
-      '@enkaku/async':
-        specifier: workspace:^
-        version: link:../async
-      '@enkaku/event':
-        specifier: workspace:^
-        version: link:../event
-      '@enkaku/execution':
-        specifier: workspace:^
-        version: link:../execution
-      '@enkaku/log':
-        specifier: workspace:^
-        version: link:../log
-      '@enkaku/otel':
-        specifier: workspace:^
-        version: link:../otel
-      '@enkaku/runtime':
-        specifier: workspace:^
-        version: link:../runtime
-      '@enkaku/stream':
-        specifier: workspace:^
-        version: link:../stream
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/async':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/event':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/execution':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/log':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/otel':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/runtime':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/stream':
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       '@enkaku/protocol':
         specifier: workspace:^
@@ -433,15 +433,12 @@ importers:
 
   packages/group:
     dependencies:
-      '@enkaku/capability':
-        specifier: workspace:^
-        version: link:../capability
-      '@enkaku/runtime':
-        specifier: workspace:^
-        version: link:../runtime
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../token
+      '@kokuin/capability':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@noble/ciphers':
         specifier: 'catalog:'
         version: 2.2.0
@@ -451,6 +448,9 @@ importers:
       '@noble/hashes':
         specifier: 'catalog:'
         version: 2.2.0
+      '@sozai/runtime':
+        specifier: ^0.1.0
+        version: 0.1.0
       ts-mls:
         specifier: 'catalog:'
         version: 2.0.0-rc.13(@noble/ciphers@2.2.0)(@noble/curves@2.2.0)
@@ -463,9 +463,6 @@ importers:
       '@enkaku/client':
         specifier: workspace:^
         version: link:../client
-      '@enkaku/codec':
-        specifier: workspace:^
-        version: link:../codec
       '@enkaku/hub-protocol':
         specifier: workspace:^
         version: link:../hub-protocol
@@ -484,6 +481,9 @@ importers:
       '@noble/hashes':
         specifier: 'catalog:'
         version: 2.2.0
+      '@sozai/codec':
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       vitest:
         specifier: 'catalog:'
@@ -519,52 +519,52 @@ importers:
 
   packages/http-client-transport:
     dependencies:
-      '@enkaku/otel':
-        specifier: workspace:^
-        version: link:../otel
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
-      '@enkaku/runtime':
-        specifier: workspace:^
-        version: link:../runtime
-      '@enkaku/stream':
-        specifier: workspace:^
-        version: link:../stream
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@sozai/otel':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/runtime':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/stream':
+        specifier: ^0.1.0
+        version: 0.1.0
       eventsource-parser:
         specifier: 'catalog:'
         version: 3.1.0
 
   packages/http-server-transport:
     dependencies:
-      '@enkaku/async':
-        specifier: workspace:^
-        version: link:../async
-      '@enkaku/otel':
-        specifier: workspace:^
-        version: link:../otel
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
-      '@enkaku/runtime':
-        specifier: workspace:^
-        version: link:../runtime
-      '@enkaku/stream':
-        specifier: workspace:^
-        version: link:../stream
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@sozai/async':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/otel':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/runtime':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/stream':
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       '@enkaku/server':
         specifier: workspace:^
         version: link:../server
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
 
   packages/hub-client:
     dependencies:
@@ -575,9 +575,6 @@ importers:
         specifier: workspace:^
         version: link:../hub-protocol
     devDependencies:
-      '@enkaku/codec':
-        specifier: workspace:^
-        version: link:../codec
       '@enkaku/group':
         specifier: workspace:^
         version: link:../group
@@ -587,30 +584,27 @@ importers:
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../token
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/codec':
+        specifier: ^0.1.0
+        version: 0.1.0
 
   packages/hub-protocol:
     dependencies:
-      '@enkaku/event':
-        specifier: workspace:^
-        version: link:../event
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
+      '@sozai/event':
+        specifier: ^0.1.0
+        version: 0.1.0
 
   packages/hub-server:
     dependencies:
-      '@enkaku/codec':
-        specifier: workspace:^
-        version: link:../codec
-      '@enkaku/event':
-        specifier: workspace:^
-        version: link:../event
       '@enkaku/group':
         specifier: workspace:^
         version: link:../group
@@ -623,12 +617,18 @@ importers:
       '@enkaku/server':
         specifier: workspace:^
         version: link:../server
-      '@enkaku/stream':
-        specifier: workspace:^
-        version: link:../stream
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/codec':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/event':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/stream':
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       '@enkaku/client':
         specifier: workspace:^
@@ -639,21 +639,21 @@ importers:
 
   packages/hub-tunnel:
     dependencies:
-      '@enkaku/async':
-        specifier: workspace:^
-        version: link:../async
-      '@enkaku/codec':
-        specifier: workspace:^
-        version: link:../codec
       '@enkaku/hub-protocol':
         specifier: workspace:^
         version: link:../hub-protocol
-      '@enkaku/schema':
-        specifier: workspace:^
-        version: link:../schema
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@sozai/async':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/codec':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/schema':
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       '@enkaku/client':
         specifier: workspace:^
@@ -664,9 +664,9 @@ importers:
       '@enkaku/server':
         specifier: workspace:^
         version: link:../server
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
 
   packages/ledger-identity:
     dependencies:
@@ -738,12 +738,12 @@ importers:
 
   packages/node-streams-transport:
     dependencies:
-      '@enkaku/stream':
-        specifier: workspace:^
-        version: link:../stream
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@sozai/stream':
+        specifier: ^0.1.0
+        version: 0.1.0
 
   packages/otel:
     dependencies:
@@ -769,16 +769,16 @@ importers:
 
   packages/protocol:
     dependencies:
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
-      '@enkaku/schema':
-        specifier: workspace:^
-        version: link:../schema
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@sozai/schema':
+        specifier: ^0.1.0
+        version: 0.1.0
 
   packages/react:
     dependencies:
@@ -842,36 +842,36 @@ importers:
 
   packages/server:
     dependencies:
-      '@enkaku/async':
-        specifier: workspace:^
-        version: link:../async
-      '@enkaku/capability':
-        specifier: workspace:^
-        version: link:../capability
-      '@enkaku/event':
-        specifier: workspace:^
-        version: link:../event
-      '@enkaku/log':
-        specifier: workspace:^
-        version: link:../log
-      '@enkaku/otel':
-        specifier: workspace:^
-        version: link:../otel
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
-      '@enkaku/runtime':
-        specifier: workspace:^
-        version: link:../runtime
-      '@enkaku/schema':
-        specifier: workspace:^
-        version: link:../schema
-      '@enkaku/stream':
-        specifier: workspace:^
-        version: link:../stream
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../token
+      '@kokuin/capability':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/async':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/event':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/log':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/otel':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/runtime':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/schema':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/stream':
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       '@enkaku/transport':
         specifier: workspace:^
@@ -879,15 +879,15 @@ importers:
 
   packages/socket-transport:
     dependencies:
-      '@enkaku/otel':
-        specifier: workspace:^
-        version: link:../otel
-      '@enkaku/stream':
-        specifier: workspace:^
-        version: link:../stream
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@sozai/otel':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/stream':
+        specifier: ^0.1.0
+        version: 0.1.0
 
   packages/standalone:
     dependencies:
@@ -904,9 +904,9 @@ importers:
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
-      '@enkaku/token':
-        specifier: workspace:^
-        version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
 
   packages/stream:
     dependencies:
@@ -944,15 +944,15 @@ importers:
 
   packages/transport:
     dependencies:
-      '@enkaku/async':
-        specifier: workspace:^
-        version: link:../async
-      '@enkaku/event':
-        specifier: workspace:^
-        version: link:../event
-      '@enkaku/stream':
-        specifier: workspace:^
-        version: link:../stream
+      '@sozai/async':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/event':
+        specifier: ^0.1.0
+        version: 0.1.0
+      '@sozai/stream':
+        specifier: ^0.1.0
+        version: 0.1.0
 
   tests/e2e-electron:
     dependencies:
@@ -3667,6 +3667,9 @@ packages:
   '@kigu/dev@0.1.0':
     resolution: {integrity: sha512-OPZxcjUXf03B2QriQ5+3Tar1s8t0D1rg39TDGDpdKDlDpHmu/F15EJ6+nD7VbNhD6ZoV8ussA9sL0vRSudcaog==}
 
+  '@kokuin/capability@0.1.0':
+    resolution: {integrity: sha512-LFLn4ZpMqOeAi1P0D6QvIdZ44I+lo5jXgYMj6VwMLP3KhznVk6emYx40xXQXYlrN0hxVFnQbFq2MysmDUgPdsA==}
+
   '@kokuin/token@0.1.0':
     resolution: {integrity: sha512-sGVum8HULkU+Tk+bmWHbKN7ub6wEr/9PXKXf/aUxL6Vy81MCYk0cdFMmzep+WGcfRyo0/6HnF0PPHXhh30+dig==}
 
@@ -4492,8 +4495,17 @@ packages:
   '@slorber/remark-comment@1.0.0':
     resolution: {integrity: sha512-RCE24n7jsOj1M0UPvIQCHTe7fI0sFL4S2nwKVWwHyVr/wI/H8GosgsJGyhnsZoGFnD/P2hLf1mSbrrgSLN93NA==}
 
+  '@sozai/async@0.1.0':
+    resolution: {integrity: sha512-ef3GFPfwHU4bZmAFz8oh53FtiuEMoUPse8SF7rjntSJ2jSoW+tQy8UCR4nvy8sNH3V8tDQbKrLuQh+gKZTPwLA==}
+
   '@sozai/codec@0.1.0':
     resolution: {integrity: sha512-J5D0yQuBdlTjzhVewR6E9EjcOyBBqpUUSOnFVPD+zv0M86jRT3RUDrqnQ5bNm+OMtfo42u6KP046VAAaZgUj+w==}
+
+  '@sozai/event@0.1.0':
+    resolution: {integrity: sha512-SPl4rx0cwW5EcMKTF2Ucq8gnMu++aMdpLnyM4AFrISwrE65xVACgUwIEQ9uRwVvhoJfD0uSr6XTh6wArGsH9jQ==}
+
+  '@sozai/execution@0.1.0':
+    resolution: {integrity: sha512-IGs/F+cv/Gkfw5QRn72qlwH7jIsJ/+VC+1Jyuf195a5r7w2QX/z6EL2WX7M4HqZ5SP3meOLLk+j0Dy2tcdimWw==}
 
   '@sozai/log@0.1.0':
     resolution: {integrity: sha512-vhCp3GK9UguYwopntaz6/juJSKFpB9GAAsKC9nxdakdQrD/Ix4r5fmZWIPArNtynbzsaUwdVoFYmDzbu90UNxg==}
@@ -4501,8 +4513,17 @@ packages:
   '@sozai/otel@0.1.0':
     resolution: {integrity: sha512-wvNoICqneZUiWPYAM4NrNCLiIjdwZAbzCYRvWBDRqknJD2Mwvwrtwz/l0T87HWZECmKOQmXXcHogQ9odlg/uGA==}
 
+  '@sozai/result@0.1.0':
+    resolution: {integrity: sha512-m+08FIMZxf1EzQVrZfKZmkM1bqXadM0mTeb8Rmk0qTxkzr9UQww2KjfRNdNjrE8DKqcqQJNOWoxBPUgcd2wUGQ==}
+
+  '@sozai/runtime@0.1.0':
+    resolution: {integrity: sha512-9WpqQ/UKDOlNWfiGCDjuW3hl9+sXrXuX2lbGE80ITbrhzueagwrEdboYkQhrHN8s8I/F8/ZM9hz+Fv3j7gUk2Q==}
+
   '@sozai/schema@0.1.0':
     resolution: {integrity: sha512-IOF0uYpYqNEXeihzJboNpLcKUkH8y5rqXo/aXapVeLqqpWwleD2vIyoZSIoDRAQqfCQXy17uM4PDlDkIVdbocg==}
+
+  '@sozai/stream@0.1.0':
+    resolution: {integrity: sha512-JNKZGeEUHYBgilKocCqiDSBgkftaqchJL832fIBIkegr18XjlSM9wKnut2ju/QSldGSJ8XKGDEEBRwQRJGyQig==}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -16224,6 +16245,10 @@ snapshots:
       - supports-color
       - vite
 
+  '@kokuin/capability@0.1.0':
+    dependencies:
+      '@kokuin/token': 0.1.0
+
   '@kokuin/token@0.1.0':
     dependencies:
       '@noble/ciphers': 2.2.0
@@ -17092,9 +17117,18 @@ snapshots:
       micromark-util-character: 1.2.0
       micromark-util-symbol: 1.1.0
 
+  '@sozai/async@0.1.0': {}
+
   '@sozai/codec@0.1.0':
     dependencies:
       canonicalize: 3.0.0
+
+  '@sozai/event@0.1.0': {}
+
+  '@sozai/execution@0.1.0':
+    dependencies:
+      '@sozai/async': 0.1.0
+      '@sozai/result': 0.1.0
 
   '@sozai/log@0.1.0':
     dependencies:
@@ -17106,12 +17140,22 @@ snapshots:
       '@opentelemetry/api-logs': 0.219.0
       '@sozai/log': 0.1.0
 
+  '@sozai/result@0.1.0':
+    dependencies:
+      '@sozai/async': 0.1.0
+
+  '@sozai/runtime@0.1.0': {}
+
   '@sozai/schema@0.1.0':
     dependencies:
       '@standard-schema/spec': 1.1.0
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
       json-schema-to-ts: 3.1.1
+
+  '@sozai/stream@0.1.0':
+    dependencies:
+      '@sozai/async': 0.1.0
 
   '@standard-schema/spec@1.1.0': {}
 

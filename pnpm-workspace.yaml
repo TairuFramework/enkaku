@@ -95,6 +95,19 @@ minimumReleaseAgeExclude:
   - expo-modules-autolinking@56.0.11
   - expo-modules-core@56.0.12
   - expo@56.0.3
+  - '@kigu/dev@0.1.0'
+  - '@kokuin/token@0.1.0'
+  - '@sozai/codec@0.1.0'
+  - '@sozai/log@0.1.0'
+  - '@sozai/otel@0.1.0'
+  - '@sozai/schema@0.1.0'
+  - '@kokuin/capability@0.1.0'
+  - '@sozai/async@0.1.0'
+  - '@sozai/event@0.1.0'
+  - '@sozai/execution@0.1.0'
+  - '@sozai/result@0.1.0'
+  - '@sozai/runtime@0.1.0'
+  - '@sozai/stream@0.1.0'
 
 nodeLinker: hoisted
 

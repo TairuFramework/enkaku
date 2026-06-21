@@ -1,6 +1,6 @@
 import { Client } from '@enkaku/client'
 import { serve } from '@enkaku/server'
-import { randomIdentity } from '@enkaku/token'
+import { randomIdentity } from '@kokuin/token'
 import { describe, expect, test } from 'vitest'
 
 import { createEncryptedHubTunnelTransport } from '../src/encrypted-transport.js'

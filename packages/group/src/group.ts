@@ -7,7 +7,7 @@ import {
   type OwnIdentity,
   type SigningIdentity,
   stringifyToken,
-} from '@enkaku/token'
+} from '@kokuin/token'
 import {
   type Capabilities,
   type CiphersuiteName,

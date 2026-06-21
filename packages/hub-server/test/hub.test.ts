@@ -1,9 +1,9 @@
 import { Client } from '@enkaku/client'
-import { fromUTF, toB64 } from '@enkaku/codec'
 import type { HubProtocol, HubStore } from '@enkaku/hub-protocol'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
-import { type OwnIdentity, randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
+import { type OwnIdentity, randomIdentity } from '@kokuin/token'
+import { fromUTF, toB64 } from '@sozai/codec'
 import { describe, expect, test, vi } from 'vitest'
 
 import { createHandlers } from '../src/handlers.js'

@@ -10,6 +10,13 @@
  * @module http-client-transport
  */
 
+import type {
+  AnyClientMessageOf,
+  AnyServerMessageOf,
+  ProtocolDefinition,
+  TransportMessage,
+} from '@enkaku/protocol'
+import { Transport } from '@enkaku/transport'
 import {
   AttributeKeys,
   createTracer,
@@ -18,16 +25,9 @@ import {
   SpanNames,
   SpanStatusCode,
   withSpan,
-} from '@enkaku/otel'
-import type {
-  AnyClientMessageOf,
-  AnyServerMessageOf,
-  ProtocolDefinition,
-  TransportMessage,
-} from '@enkaku/protocol'
-import { createRuntime, type Runtime } from '@enkaku/runtime'
-import { createReadable, writeTo } from '@enkaku/stream'
-import { Transport } from '@enkaku/transport'
+} from '@sozai/otel'
+import { createRuntime, type Runtime } from '@sozai/runtime'
+import { createReadable, writeTo } from '@sozai/stream'
 import { createParser } from 'eventsource-parser'
 
 const tracer = createTracer('transport.http')

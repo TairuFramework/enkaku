@@ -1,6 +1,6 @@
-import { fromUTF, toB64U } from '@enkaku/codec'
 import { hkdf } from '@noble/hashes/hkdf.js'
 import { sha256 } from '@noble/hashes/sha2.js'
+import { fromUTF, toB64U } from '@sozai/codec'
 
 const TOPIC_INFO_PREFIX = 'enkaku/topic/v1'
 const SEP = '\0'

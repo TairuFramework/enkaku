@@ -11,8 +11,8 @@
  */
 
 import { Readable, Writable } from 'node:stream'
-import { createPipe, type FromJSONLinesOptions, fromJSONLines, toJSONLines } from '@enkaku/stream'
 import { Transport } from '@enkaku/transport'
+import { createPipe, type FromJSONLinesOptions, fromJSONLines, toJSONLines } from '@sozai/stream'
 
 export type Streams = { readable: Readable; writable: Writable }
 export type StreamsOrPromise = Streams | Promise<Streams>

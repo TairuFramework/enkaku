@@ -1,10 +1,10 @@
 import { Client } from '@enkaku/client'
-import { fromUTF, toB64 } from '@enkaku/codec'
 import type { HubProtocol } from '@enkaku/hub-protocol'
 import { createHub, createMemoryStore } from '@enkaku/hub-server'
 import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
-import { randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
+import { randomIdentity } from '@kokuin/token'
+import { fromUTF, toB64 } from '@sozai/codec'
 import { describe, expect, test } from 'vitest'
 
 import { HubClient } from '../src/client.js'

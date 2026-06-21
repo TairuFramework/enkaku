@@ -1,6 +1,6 @@
 import { deriveTopicID } from '@enkaku/broadcast'
-import { fromUTF, toB64U } from '@enkaku/codec'
 import { sha256 } from '@noble/hashes/sha2.js'
+import { fromUTF, toB64U } from '@sozai/codec'
 
 /** Reserved label for per-member unicast inbox topics. */
 export const INBOX_LABEL = 'enkaku/inbox/v1'

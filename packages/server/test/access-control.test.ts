@@ -1,6 +1,6 @@
-import { createCapability } from '@enkaku/capability'
 import type { AnyClientPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
-import { randomIdentity, stringifyToken } from '@enkaku/token'
+import { createCapability } from '@kokuin/capability'
+import { randomIdentity, stringifyToken } from '@kokuin/token'
 import { describe, expect, test, vi } from 'vitest'
 
 import { type AccessRule, checkClientToken } from '../src/access-control.js'

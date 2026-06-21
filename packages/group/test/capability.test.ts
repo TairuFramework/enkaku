@@ -1,4 +1,4 @@
-import { randomIdentity, stringifyToken } from '@enkaku/token'
+import { randomIdentity, stringifyToken } from '@kokuin/token'
 import { describe, expect, test } from 'vitest'
 
 import {

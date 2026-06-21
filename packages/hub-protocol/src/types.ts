@@ -1,4 +1,4 @@
-import type { EventEmitter } from '@enkaku/event'
+import type { EventEmitter } from '@sozai/event'
 
 /** Opaque message stored by the hub — minimal metadata for routing only. */
 export type StoredMessage = {

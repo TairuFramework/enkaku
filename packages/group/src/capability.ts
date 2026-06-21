@@ -5,8 +5,8 @@ import {
   checkDelegationChain,
   createCapability,
   type DelegationChainOptions,
-} from '@enkaku/capability'
-import { normalizeDID, type SigningIdentity, verifyToken } from '@enkaku/token'
+} from '@kokuin/capability'
+import { normalizeDID, type SigningIdentity, verifyToken } from '@kokuin/token'
 
 export type GroupPermission = 'admin' | 'member' | 'read'
 

@@ -1,4 +1,4 @@
-import type { EventEmitter } from '@enkaku/event'
+import type { EventEmitter } from '@sozai/event'
 
 import type { RequestError } from './error.js'
 

@@ -1,10 +1,10 @@
-import { toPromise } from '@enkaku/async'
 import {
   type ClientMessage,
   ErrorCodes,
   type EventPayloadOf,
   type ProtocolDefinition,
 } from '@enkaku/protocol'
+import { toPromise } from '@sozai/async'
 
 import { HandlerError } from '../error.js'
 import type { EventHandler, EventHandlerContext, HandlerContext } from '../types.js'

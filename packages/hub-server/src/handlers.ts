@@ -1,4 +1,3 @@
-import { fromB64, toB64 } from '@enkaku/codec'
 import type { HubProtocol, HubStore, StoredMessage } from '@enkaku/hub-protocol'
 import {
   type ChannelHandler,
@@ -6,6 +5,7 @@ import {
   type ProcedureHandlers,
   type RequestHandler,
 } from '@enkaku/server'
+import { fromB64, toB64 } from '@sozai/codec'
 
 import { createRateLimiter, type RateLimitConfig } from './rateLimit.js'
 import type { HubClientRegistry } from './registry.js'

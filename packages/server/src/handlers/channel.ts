@@ -1,11 +1,11 @@
-import { AttributeKeys, getActiveSpan } from '@enkaku/otel'
 import type {
   AnyServerPayloadOf,
   ChannelPayloadOf,
   ClientMessage,
   ProtocolDefinition,
 } from '@enkaku/protocol'
-import { createPipe, tap, writeTo } from '@enkaku/stream'
+import { AttributeKeys, getActiveSpan } from '@sozai/otel'
+import { createPipe, tap, writeTo } from '@sozai/stream'
 
 import type {
   ChannelController,

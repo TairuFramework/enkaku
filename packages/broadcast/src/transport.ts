@@ -1,5 +1,5 @@
-import { fromUTF, toUTF } from '@enkaku/codec'
 import { Transport, type TransportType } from '@enkaku/transport'
+import { fromUTF, toUTF } from '@sozai/codec'
 
 import type { BroadcastBus } from './bus.js'
 

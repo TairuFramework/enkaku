@@ -1,4 +1,4 @@
-import { fromUTF, toUTF } from '@enkaku/codec'
+import { fromUTF, toUTF } from '@sozai/codec'
 import { describe, expect, test } from 'vitest'
 
 import { createFakeCrypto } from './fixtures/fake-crypto.js'

@@ -1,5 +1,5 @@
-import { toPromise } from '@enkaku/async'
 import { type AnyServerPayloadOf, ErrorCodes, type ProtocolDefinition } from '@enkaku/protocol'
+import { toPromise } from '@sozai/async'
 
 import { HandlerError } from './error.js'
 import type {

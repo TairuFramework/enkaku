@@ -1,6 +1,6 @@
-import { fromB64, toB64 } from '@enkaku/codec'
 import type { StoredMessage } from '@enkaku/hub-protocol'
 import type { TransportType } from '@enkaku/transport'
+import { fromB64, toB64 } from '@sozai/codec'
 
 import type { Encryptor } from './encryptor.js'
 import { decodeEnvelope, encodeEnvelope, type TunnelEnvelope } from './envelope.js'

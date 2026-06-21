@@ -1,6 +1,6 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import type { FromSchema } from '@enkaku/schema'
 import type { ProcedureHandlers } from '@enkaku/server'
+import type { FromSchema } from '@sozai/schema'
 
 export const echoProtocol = {
   'echo/ping': {

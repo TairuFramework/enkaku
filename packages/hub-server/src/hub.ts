@@ -2,7 +2,7 @@ import { type HubProtocol, type HubStore, hubProtocol } from '@enkaku/hub-protoc
 import type { ServerTransportOf } from '@enkaku/protocol'
 import type { AccessRules, ResourceLimits, Server } from '@enkaku/server'
 import { serve } from '@enkaku/server'
-import type { Identity } from '@enkaku/token'
+import type { Identity } from '@kokuin/token'
 
 import {
   type AuthorizeHook,

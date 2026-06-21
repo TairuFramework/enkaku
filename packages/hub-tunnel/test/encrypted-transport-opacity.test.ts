@@ -1,4 +1,4 @@
-import { fromB64 } from '@enkaku/codec'
+import { fromB64 } from '@sozai/codec'
 import { describe, expect, test } from 'vitest'
 
 import { createEncryptedHubTunnelTransport } from '../src/encrypted-transport.js'

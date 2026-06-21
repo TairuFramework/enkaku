@@ -10,7 +10,9 @@
  * @module http-server-transport
  */
 
-import { type Deferred, defer } from '@enkaku/async'
+import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { Transport, type TransportEvents } from '@enkaku/transport'
+import { type Deferred, defer } from '@sozai/async'
 import {
   AttributeKeys,
   type Context,
@@ -19,11 +21,9 @@ import {
   parseTraceparent,
   SpanNames,
   SpanStatusCode,
-} from '@enkaku/otel'
-import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { createRuntime, type Runtime } from '@enkaku/runtime'
-import { createReadable, writeTo } from '@enkaku/stream'
-import { Transport, type TransportEvents } from '@enkaku/transport'
+} from '@sozai/otel'
+import { createRuntime, type Runtime } from '@sozai/runtime'
+import { createReadable, writeTo } from '@sozai/stream'
 
 const tracer = createTracer('transport.http')
 
