@@ -1,5 +1,5 @@
 import { fromB64, toB64 } from '@enkaku/codec'
-import type { KeyEntry } from '@enkaku/protocol'
+import type { KeyEntry } from '@kokuin/token'
 import * as SecureStore from 'expo-secure-store'
 
 import { randomPrivateKey, randomPrivateKeyAsync } from './utils.js'

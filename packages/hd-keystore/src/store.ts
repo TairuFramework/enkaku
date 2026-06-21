@@ -1,7 +1,7 @@
 import { getEnkakuLogger } from '@enkaku/log'
 import { AttributeKeys, createTracer, SpanNames, withSpan } from '@enkaku/otel'
-import type { KeyStore } from '@enkaku/protocol'
 import { createFullIdentity, type FullIdentity, type IdentityProvider } from '@enkaku/token'
+import type { KeyStore } from '@kokuin/token'
 import { mnemonicToSeedSync } from '@scure/bip39'
 
 import { resolveDerivationPath } from './derivation.js'

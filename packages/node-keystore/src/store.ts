@@ -1,5 +1,5 @@
 import { fromB64 } from '@enkaku/codec'
-import type { KeyStore } from '@enkaku/protocol'
+import type { KeyStore } from '@kokuin/token'
 import { type Credential, findCredentials, findCredentialsAsync } from '@napi-rs/keyring'
 
 import { NodeKeyEntry } from './entry.js'

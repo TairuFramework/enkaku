@@ -1,6 +1,6 @@
 import { fromB64, toB64 } from '@enkaku/codec'
-import type { KeyEntry } from '@enkaku/protocol'
 import { randomPrivateKey } from '@enkaku/token'
+import type { KeyEntry } from '@kokuin/token'
 import { AsyncEntry, Entry } from '@napi-rs/keyring'
 
 export class NodeKeyEntry implements KeyEntry<Uint8Array> {

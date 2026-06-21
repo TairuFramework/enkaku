@@ -41,6 +41,7 @@
     "@enkaku/log": "workspace:^",
     "@enkaku/otel": "workspace:^",
     "@enkaku/token": "workspace:^",
+    "@kokuin/token": "^0.1.0",
     "electron-store": "catalog:"
   },
   "devDependencies": {

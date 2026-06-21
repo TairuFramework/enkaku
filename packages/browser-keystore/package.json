@@ -40,7 +40,8 @@
     "@enkaku/codec": "workspace:^",
     "@enkaku/log": "workspace:^",
     "@enkaku/otel": "workspace:^",
-    "@enkaku/token": "workspace:^"
+    "@enkaku/token": "workspace:^",
+    "@kokuin/token": "^0.1.0"
   },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^",

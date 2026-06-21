@@ -1,6 +1,6 @@
 import { fromB64, toB64 } from '@enkaku/codec'
-import type { KeyEntry } from '@enkaku/protocol'
 import { randomPrivateKey } from '@enkaku/token'
+import type { KeyEntry } from '@kokuin/token'
 import { safeStorage } from 'electron'
 
 import type { KeyStorage } from './types.js'

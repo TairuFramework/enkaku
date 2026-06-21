@@ -1,4 +1,4 @@
-import type { KeyEntry } from '@enkaku/protocol'
+import type { KeyEntry } from '@kokuin/token'
 
 import { randomKeyPair } from './utils.js'
 

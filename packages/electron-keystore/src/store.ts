@@ -1,4 +1,4 @@
-import type { KeyStore } from '@enkaku/protocol'
+import type { KeyStore } from '@kokuin/token'
 import Store from 'electron-store'
 
 import { ElectronKeyEntry } from './entry.js'

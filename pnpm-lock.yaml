@@ -236,6 +236,9 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
     devDependencies:
       '@enkaku/protocol':
         specifier: workspace:^
@@ -308,6 +311,9 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
       electron-store:
         specifier: 'catalog:'
         version: 11.0.2
@@ -373,6 +379,9 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
       expo-crypto:
         specifier: 'catalog:'
         version: 56.0.4(expo@56.0.12)
@@ -491,6 +500,9 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@scure/bip39':
         specifier: 'catalog:'
         version: 2.2.0
@@ -710,6 +722,9 @@ importers:
       '@enkaku/token':
         specifier: workspace:^
         version: link:../token
+      '@kokuin/token':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@napi-rs/keyring':
         specifier: 'catalog:'
         version: 1.3.0
@@ -3652,6 +3667,9 @@ packages:
   '@kigu/dev@0.1.0':
     resolution: {integrity: sha512-OPZxcjUXf03B2QriQ5+3Tar1s8t0D1rg39TDGDpdKDlDpHmu/F15EJ6+nD7VbNhD6ZoV8ussA9sL0vRSudcaog==}
 
+  '@kokuin/token@0.1.0':
+    resolution: {integrity: sha512-sGVum8HULkU+Tk+bmWHbKN7ub6wEr/9PXKXf/aUxL6Vy81MCYk0cdFMmzep+WGcfRyo0/6HnF0PPHXhh30+dig==}
+
   '@leichtgewicht/ip-codec@2.0.5':
     resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
 
@@ -4473,6 +4491,18 @@ packages:
 
   '@slorber/remark-comment@1.0.0':
     resolution: {integrity: sha512-RCE24n7jsOj1M0UPvIQCHTe7fI0sFL4S2nwKVWwHyVr/wI/H8GosgsJGyhnsZoGFnD/P2hLf1mSbrrgSLN93NA==}
+
+  '@sozai/codec@0.1.0':
+    resolution: {integrity: sha512-J5D0yQuBdlTjzhVewR6E9EjcOyBBqpUUSOnFVPD+zv0M86jRT3RUDrqnQ5bNm+OMtfo42u6KP046VAAaZgUj+w==}
+
+  '@sozai/log@0.1.0':
+    resolution: {integrity: sha512-vhCp3GK9UguYwopntaz6/juJSKFpB9GAAsKC9nxdakdQrD/Ix4r5fmZWIPArNtynbzsaUwdVoFYmDzbu90UNxg==}
+
+  '@sozai/otel@0.1.0':
+    resolution: {integrity: sha512-wvNoICqneZUiWPYAM4NrNCLiIjdwZAbzCYRvWBDRqknJD2Mwvwrtwz/l0T87HWZECmKOQmXXcHogQ9odlg/uGA==}
+
+  '@sozai/schema@0.1.0':
+    resolution: {integrity: sha512-IOF0uYpYqNEXeihzJboNpLcKUkH8y5rqXo/aXapVeLqqpWwleD2vIyoZSIoDRAQqfCQXy17uM4PDlDkIVdbocg==}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -16194,6 +16224,16 @@ snapshots:
       - supports-color
       - vite
 
+  '@kokuin/token@0.1.0':
+    dependencies:
+      '@noble/ciphers': 2.2.0
+      '@noble/curves': 2.2.0
+      '@noble/hashes': 2.2.0
+      '@scure/base': 2.2.0
+      '@sozai/codec': 0.1.0
+      '@sozai/otel': 0.1.0
+      '@sozai/schema': 0.1.0
+
   '@leichtgewicht/ip-codec@2.0.5': {}
 
   '@listr2/prompt-adapter-inquirer@2.0.22(@inquirer/prompts@6.0.1)':
@@ -17051,6 +17091,27 @@ snapshots:
       micromark-factory-space: 1.1.0
       micromark-util-character: 1.2.0
       micromark-util-symbol: 1.1.0
+
+  '@sozai/codec@0.1.0':
+    dependencies:
+      canonicalize: 3.0.0
+
+  '@sozai/log@0.1.0':
+    dependencies:
+      '@logtape/logtape': 2.1.5
+
+  '@sozai/otel@0.1.0':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@opentelemetry/api-logs': 0.219.0
+      '@sozai/log': 0.1.0
+
+  '@sozai/schema@0.1.0':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      ajv: 8.20.0
+      ajv-formats: 3.0.1(ajv@8.20.0)
+      json-schema-to-ts: 3.1.1
 
   '@standard-schema/spec@1.1.0': {}
 
