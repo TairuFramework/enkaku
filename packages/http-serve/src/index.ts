@@ -7,7 +7,7 @@
  * npm install @enkaku/http-serve
  * ```
  *
- * @module http-server-transport
+ * @module http-serve
  */
 
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'

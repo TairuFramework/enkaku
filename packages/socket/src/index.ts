@@ -7,7 +7,7 @@
  * npm install @enkaku/socket
  * ```
  *
- * @module socket-transport
+ * @module socket
  */
 
 import { createConnection, type Socket } from 'node:net'

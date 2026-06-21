@@ -7,7 +7,7 @@
  * npm install @enkaku/message
  * ```
  *
- * @module message-transport
+ * @module message
  */
 
 import { Transport } from '@enkaku/transport'

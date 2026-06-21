@@ -7,7 +7,7 @@
  * npm install @enkaku/electron
  * ```
  *
- * @module electron-rpc
+ * @module electron
  */
 
 export { isAllowedSenderURL, type SenderURLAllowlist } from './allowlist.js'

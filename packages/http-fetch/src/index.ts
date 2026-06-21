@@ -7,7 +7,7 @@
  * npm install @enkaku/http-fetch
  * ```
  *
- * @module http-client-transport
+ * @module http-fetch
  */
 
 import type {

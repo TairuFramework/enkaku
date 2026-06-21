@@ -7,7 +7,7 @@
  * npm install @enkaku/node-streams
  * ```
  *
- * @module node-streams-transport
+ * @module node-streams
  */
 
 import { Readable, Writable } from 'node:stream'
