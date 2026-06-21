@@ -84,7 +84,8 @@ export function createGroupPeer<Protocols extends Record<string, ProtocolDefinit
   const { hub, crypto, mls, localDID, protocols, handlers, suppress } = params
   const getRandomID = params.getRandomID
   const recoveryTimeoutMs = params.recovery?.timeoutMs ?? DEFAULT_RECOVERY_TIMEOUT_MS
-  const getReplyDelayMs = params.recovery?.getDelayMs ?? (() => defaultJitter(DEFAULT_RECOVERY_JITTER_MS))
+  const getReplyDelayMs =
+    params.recovery?.getDelayMs ?? (() => defaultJitter(DEFAULT_RECOVERY_JITTER_MS))
   const mux: HubMux = createHubMux({ hub, localDID })
 
   let runtimes = new Map<string, ProtocolRuntime>()

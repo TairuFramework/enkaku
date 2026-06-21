@@ -7,11 +7,6 @@
 export { defineGroupProtocol, type GroupProtocolDefinition } from '@enkaku/broadcast'
 export type { CommitContext, GroupCrypto, GroupMLS } from './crypto.js'
 export {
-  createMemoryGroupMLS,
-  type MemoryGroupMLS,
-  type MemoryGroupMLSOptions,
-} from './memory-group-mls.js'
-export {
   decodeHandshakeFrame,
   encodeHandshakeFrame,
   HANDSHAKE_KIND,
@@ -19,6 +14,11 @@ export {
   HANDSHAKE_VERSION,
   type HandshakeKind,
 } from './handshake.js'
+export {
+  createMemoryGroupMLS,
+  type MemoryGroupMLS,
+  type MemoryGroupMLSOptions,
+} from './memory-group-mls.js'
 export {
   createGroupPeer,
   type GroupPeer,

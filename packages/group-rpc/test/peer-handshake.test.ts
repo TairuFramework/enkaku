@@ -2,11 +2,11 @@ import type { ProtocolDefinition } from '@enkaku/protocol'
 import { describe, expect, test } from 'vitest'
 
 import { encodeHandshakeFrame, HANDSHAKE_KIND } from '../src/handshake.js'
+import { createMemoryGroupMLS } from '../src/memory-group-mls.js'
 import { createGroupPeer } from '../src/peer.js'
 import { handshakeTopic, protocolTopic } from '../src/topic.js'
 import { createFakeCrypto } from './fixtures/fake-crypto.js'
 import { FakeHub } from './fixtures/fake-hub.js'
-import { createMemoryGroupMLS } from '../src/memory-group-mls.js'
 
 const flush = () => new Promise((r) => setTimeout(r, 30))
 
@@ -19,7 +19,11 @@ type Protocols = { chat: typeof chat }
 /** Build an MLS-enabled peer whose fake MLS keeps the fake crypto's epoch in step. */
 function makeMLSPeer(hub: FakeHub, localDID: string, recoverySecret: Uint8Array) {
   const crypto = createFakeCrypto({ epoch: 1, localDID })
-  const mls = createMemoryGroupMLS({ recoverySecret, epoch: 1, onAdvance: (e) => crypto.setEpoch(e) })
+  const mls = createMemoryGroupMLS({
+    recoverySecret,
+    epoch: 1,
+    onAdvance: (e) => crypto.setEpoch(e),
+  })
   const peer = createGroupPeer<Protocols>({
     hub,
     crypto,
