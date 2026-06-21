@@ -3,5 +3,5 @@
 ## Installation
 
 ```sh
-npm install @enkaku/electron-rpc
+npm install @enkaku/electron
 ```

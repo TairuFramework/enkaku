@@ -13,7 +13,7 @@
   "dependencies": {
     "@enkaku/client": "workspace:*",
     "@enkaku/electron-keystore": "workspace:*",
-    "@enkaku/electron-rpc": "workspace:*",
+    "@enkaku/electron": "workspace:*",
     "@enkaku/server": "workspace:*",
     "@enkaku/token": "workspace:*",
     "@enkaku/transport": "workspace:*",

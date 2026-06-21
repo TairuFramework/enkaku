@@ -1,4 +1,4 @@
-import { createRendererClient } from '@enkaku/electron-rpc/renderer'
+import { createRendererClient } from '@enkaku/electron/renderer'
 import { type Token, verifyToken } from '@enkaku/token'
 import { useState } from 'react'
 import { Button, StyleSheet, Text, View } from 'react-native'
