@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { serveProcess } from '@enkaku/electron'
 import { provideFullIdentityAsync } from '@enkaku/electron-keystore'
-import { stringifyToken } from '@enkaku/token'
+import { stringifyToken } from '@kokuin/token'
 import { app, BrowserWindow } from 'electron'
 
 import type { Protocol } from './protocol'

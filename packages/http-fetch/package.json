@@ -13,7 +13,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/http-client-transport"
+    "directory": "packages/http-fetch"
   },
   "type": "module",
   "main": "lib/index.js",

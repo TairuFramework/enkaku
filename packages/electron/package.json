@@ -12,7 +12,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/electron-rpc"
+    "directory": "packages/electron"
   },
   "type": "module",
   "main": "lib/index.js",

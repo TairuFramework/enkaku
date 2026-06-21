@@ -1,5 +1,5 @@
 import { createRendererClient } from '@enkaku/electron/renderer'
-import { type Token, verifyToken } from '@enkaku/token'
+import { type Token, verifyToken } from '@kokuin/token'
 import { useState } from 'react'
 import { Button, StyleSheet, Text, View } from 'react-native'
 

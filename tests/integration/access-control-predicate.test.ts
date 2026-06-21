@@ -1,8 +1,8 @@
 import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { type ProcedureHandlers, type RequestHandler, serve } from '@enkaku/server'
-import { randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
+import { randomIdentity } from '@kokuin/token'
 import { describe, expect, test } from 'vitest'
 
 const protocol = {

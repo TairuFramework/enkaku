@@ -12,8 +12,8 @@ import {
   type StreamHandler,
   serve,
 } from '@enkaku/server'
-import { createUnsignedToken } from '@enkaku/token'
 import { serve as serveHTTP } from '@hono/node-server'
+import { createUnsignedToken } from '@kokuin/token'
 import getPort from 'get-port'
 import { describe, expect, test, vi } from 'vitest'
 

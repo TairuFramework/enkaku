@@ -1,3 +1,10 @@
+import { Client } from '@enkaku/client'
+import { createGroupCapability, delegateGroupMembership } from '@enkaku/group'
+import { HubClient } from '@enkaku/hub-client'
+import type { HubProtocol } from '@enkaku/hub-protocol'
+import { createHub, createMemoryStore } from '@enkaku/hub-server'
+import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
+import { DirectTransports } from '@enkaku/transport'
 import {
   checkDelegationChain,
   createCapability,
@@ -5,16 +12,8 @@ import {
   createRevocationChecker,
   createRevocationRecord,
   now,
-} from '@enkaku/capability'
-
-import { Client } from '@enkaku/client'
-import { createGroupCapability, delegateGroupMembership } from '@enkaku/group'
-import { HubClient } from '@enkaku/hub-client'
-import type { HubProtocol } from '@enkaku/hub-protocol'
-import { createHub, createMemoryStore } from '@enkaku/hub-server'
-import type { AnyClientMessageOf, AnyServerMessageOf } from '@enkaku/protocol'
-import { type OwnIdentity, randomIdentity, stringifyToken } from '@enkaku/token'
-import { DirectTransports } from '@enkaku/transport'
+} from '@kokuin/capability'
+import { type OwnIdentity, randomIdentity, stringifyToken } from '@kokuin/token'
 import { describe, expect, test } from 'vitest'
 
 type HubTransports = DirectTransports<

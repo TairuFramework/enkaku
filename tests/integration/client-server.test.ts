@@ -8,8 +8,8 @@ import {
   type StreamHandler,
   serve,
 } from '@enkaku/server'
-import { createUnsignedToken } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
+import { createUnsignedToken } from '@kokuin/token'
 import { describe, expect, test, vi } from 'vitest'
 
 describe('client-server integration', () => {
