@@ -1,9 +1,20 @@
-import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const CORE = new Set([
-  'async', 'codec', 'event', 'execution', 'flow', 'generator',
-  'log', 'otel', 'patch', 'result', 'runtime', 'schema', 'stream',
+  'async',
+  'codec',
+  'event',
+  'execution',
+  'flow',
+  'generator',
+  'log',
+  'otel',
+  'patch',
+  'result',
+  'runtime',
+  'schema',
+  'stream',
 ])
 const IDENTITY = new Set(['token', 'capability'])
 

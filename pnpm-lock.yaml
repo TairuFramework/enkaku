@@ -517,7 +517,7 @@ importers:
         specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@26.0.0)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(jsdom@27.4.0(@noble/hashes@2.2.0))(vite@8.0.16(@types/node@26.0.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
 
-  packages/http-client-transport:
+  packages/http-fetch:
     dependencies:
       '@enkaku/protocol':
         specifier: workspace:^
@@ -538,7 +538,7 @@ importers:
         specifier: 'catalog:'
         version: 3.1.0
 
-  packages/http-server-transport:
+  packages/http-serve:
     dependencies:
       '@enkaku/protocol':
         specifier: workspace:^
@@ -702,7 +702,7 @@ importers:
         specifier: 'catalog:'
         version: 2.1.5
 
-  packages/message-transport:
+  packages/message:
     dependencies:
       '@enkaku/transport':
         specifier: workspace:^
@@ -736,7 +736,7 @@ importers:
         specifier: 'catalog:'
         version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@26.0.0)(@vitest/ui@4.1.9)(happy-dom@20.10.6)(jsdom@27.4.0(@noble/hashes@2.2.0))(vite@8.0.16(@types/node@26.0.0)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0))
 
-  packages/node-streams-transport:
+  packages/node-streams:
     dependencies:
       '@enkaku/transport':
         specifier: workspace:^
@@ -877,7 +877,7 @@ importers:
         specifier: workspace:^
         version: link:../transport
 
-  packages/socket-transport:
+  packages/socket:
     dependencies:
       '@enkaku/transport':
         specifier: workspace:^
@@ -1100,12 +1100,12 @@ importers:
       '@enkaku/event':
         specifier: workspace:^
         version: link:../../packages/event
-      '@enkaku/http-client-transport':
+      '@enkaku/http-fetch':
         specifier: workspace:^
-        version: link:../../packages/http-client-transport
-      '@enkaku/http-server-transport':
+        version: link:../../packages/http-fetch
+      '@enkaku/http-serve':
         specifier: workspace:^
-        version: link:../../packages/http-server-transport
+        version: link:../../packages/http-serve
       '@enkaku/hub-client':
         specifier: workspace:^
         version: link:../../packages/hub-client
@@ -1118,18 +1118,18 @@ importers:
       '@enkaku/hub-tunnel':
         specifier: workspace:^
         version: link:../../packages/hub-tunnel
-      '@enkaku/node-streams-transport':
+      '@enkaku/node-streams':
         specifier: workspace:^
-        version: link:../../packages/node-streams-transport
+        version: link:../../packages/node-streams
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../../packages/protocol
       '@enkaku/server':
         specifier: workspace:^
         version: link:../../packages/server
-      '@enkaku/socket-transport':
+      '@enkaku/socket':
         specifier: workspace:^
-        version: link:../../packages/socket-transport
+        version: link:../../packages/socket
       '@enkaku/token':
         specifier: workspace:^
         version: link:../../packages/token

@@ -3,5 +3,5 @@
 ## Installation
 
 ```sh
-npm install @enkaku/http-client-transport
+npm install @enkaku/http-fetch
 ```

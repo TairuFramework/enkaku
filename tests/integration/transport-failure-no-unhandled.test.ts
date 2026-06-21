@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { type ProcedureHandlers, serve } from '@enkaku/server'
-import { connectSocket, SocketTransport } from '@enkaku/socket-transport'
+import { connectSocket, SocketTransport } from '@enkaku/socket'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
 const protocol = {

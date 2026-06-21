@@ -4,7 +4,7 @@
  * ## Installation
  *
  * ```sh
- * npm install @enkaku/message-transport
+ * npm install @enkaku/message
  * ```
  *
  * @module message-transport

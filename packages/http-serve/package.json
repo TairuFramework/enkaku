@@ -1,20 +1,19 @@
 {
-  "name": "@enkaku/node-streams-transport",
+  "name": "@enkaku/http-serve",
   "version": "0.17.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Node Streams transport for Enkaku RPC clients and servers",
+  "description": "HTTP transport for Enkaku RPC servers",
   "keywords": [
+    "http",
+    "server",
     "transport",
-    "rpc",
-    "node",
-    "streams",
-    "ipc"
+    "rpc"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/node-streams-transport"
+    "directory": "packages/http-server-transport"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -37,7 +36,15 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@sozai/async": "^0.1.0",
+    "@sozai/otel": "^0.1.0",
+    "@enkaku/protocol": "workspace:^",
+    "@sozai/runtime": "^0.1.0",
     "@sozai/stream": "^0.1.0",
     "@enkaku/transport": "workspace:^"
+  },
+  "devDependencies": {
+    "@kokuin/token": "^0.1.0",
+    "@enkaku/server": "workspace:^"
   }
 }

@@ -4,7 +4,7 @@
  * ## Installation
  *
  * ```sh
- * npm install @enkaku/http-server-transport
+ * npm install @enkaku/http-serve
  * ```
  *
  * @module http-server-transport

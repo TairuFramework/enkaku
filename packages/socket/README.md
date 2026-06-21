@@ -3,5 +3,5 @@
 ## Installation
 
 ```sh
-npm install @enkaku/socket-transport
+npm install @enkaku/socket
 ```

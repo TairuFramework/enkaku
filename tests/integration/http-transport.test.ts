@@ -1,7 +1,7 @@
 import { setTimeout } from 'node:timers/promises'
 import { Client, RequestError } from '@enkaku/client'
-import { ClientTransport } from '@enkaku/http-client-transport'
-import { ServerTransport, type ServerTransportOptions } from '@enkaku/http-server-transport'
+import { ClientTransport } from '@enkaku/http-fetch'
+import { ServerTransport, type ServerTransportOptions } from '@enkaku/http-serve'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import {
   type ChannelHandler,

@@ -3,5 +3,5 @@
 ## Installation
 
 ```sh
-npm install @enkaku/node-streams-transport
+npm install @enkaku/node-streams
 ```

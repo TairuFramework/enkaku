@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Client } from '@enkaku/client'
-import { NodeStreamsTransport } from '@enkaku/node-streams-transport'
+import { NodeStreamsTransport } from '@enkaku/node-streams'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { describe, expect, test } from 'vitest'
 
