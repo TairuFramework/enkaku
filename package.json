@@ -8,23 +8,19 @@
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "lint": "biome check --write ./packages ./tests",
+    "format": "biome format --write .",
     "test": "turbo run test:types test:unit",
     "build:js": "turbo run build:js",
     "build:types": "pnpm run -r build:types",
-    "build": "pnpm run build:types && pnpm run build:js"
+    "build": "pnpm run build:types && pnpm run build:js",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm run build && changeset publish"
   },
   "devDependencies": {
-    "@biomejs/biome": "catalog:",
-    "@swc/cli": "catalog:",
-    "@swc/core": "catalog:",
-    "@types/node": "catalog:",
-    "@vitest/ui": "catalog:",
-    "del-cli": "catalog:",
-    "tsx": "catalog:",
-    "turbo": "catalog:",
+    "@kigu/dev": "^0.1.0",
+    "@changesets/cli": "^2.27.0",
     "typedoc": "catalog:",
-    "typedoc-plugin-markdown": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typedoc-plugin-markdown": "catalog:"
   }
 }
