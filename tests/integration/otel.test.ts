@@ -83,8 +83,8 @@ describe('end-to-end tracing', () => {
 
     // Should have client call span
     expect(spanNames).toContain('enkaku.client.call')
-    // Should have token sign span (client signs the message)
-    expect(spanNames).toContain('enkaku.token.sign')
+    // Token signing happens in @kokuin/token and joins the same trace
+    expect(spanNames).toContain('kokuin.token.sign')
     // Should have server handle span
     expect(spanNames).toContain('enkaku.server.handle')
 

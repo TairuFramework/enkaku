@@ -35,16 +35,17 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@sozai/async": "^0.1.0",
-    "@kokuin/capability": "^0.1.0",
-    "@sozai/event": "^0.1.0",
-    "@sozai/log": "^0.1.0",
-    "@sozai/otel": "^0.1.0",
-    "@sozai/runtime": "^0.1.0",
+    "@enkaku/otel": "workspace:^",
     "@enkaku/protocol": "workspace:^",
-    "@sozai/schema": "^0.1.0",
-    "@sozai/stream": "^0.1.0",
-    "@kokuin/token": "^0.1.0"
+    "@kokuin/capability": "catalog:",
+    "@kokuin/token": "catalog:",
+    "@sozai/async": "catalog:",
+    "@sozai/event": "catalog:",
+    "@sozai/log": "catalog:",
+    "@sozai/otel": "catalog:",
+    "@sozai/runtime": "catalog:",
+    "@sozai/schema": "catalog:",
+    "@sozai/stream": "catalog:"
   },
   "devDependencies": {
     "@enkaku/transport": "workspace:^"

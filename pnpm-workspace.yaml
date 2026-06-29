@@ -26,23 +26,36 @@ catalog:
   '@docusaurus/types': ^3.10.1
   '@electron-forge/cli': ^7.11.2
   '@electron-forge/plugin-vite': ^7.11.2
-  '@hono/node-server': ^2.0.5
+  '@hono/node-server': ^2.0.6
+  '@kigu/dev': ^0.1.1
+  '@kokuin/browser': ^0.1.2
+  '@kokuin/capability': ^0.1.0
+  '@kokuin/electron': ^0.1.1
+  '@kokuin/token': ^0.1.1
   '@opentelemetry/sdk-trace-base': ^2.8.0
   '@opentelemetry/sdk-trace-node': ^2.8.0
   '@orama/plugin-docusaurus-v3': ^3.1.18
-  '@playwright/test': 1.61.0
+  '@playwright/test': 1.61.1
+  '@sozai/async': ^0.1.0
+  '@sozai/event': ^0.1.0
+  '@sozai/execution': ^0.1.0
+  '@sozai/log': ^0.1.0
+  '@sozai/otel': ^0.2.0
+  '@sozai/runtime': ^0.1.0
+  '@sozai/schema': ^0.1.0
+  '@sozai/stream': ^0.1.0
   '@swc/cli': ^0.8.1
   '@swc/core': ^1.15.41
   '@testing-library/jest-dom': ^6.9.1
   '@testing-library/react': ^16.3.2
-  '@types/node': ^26.0.0
+  '@types/node': ^26.0.1
   '@types/react': ^19.2.17
   '@types/react-dom': ^19.2.3
-  '@vitejs/plugin-react': ^6.0.2
+  '@vitejs/plugin-react': ^6.0.3
   '@vitest/ui': ^4.1.9
   canonicalize: 3.0.0
   del-cli: ^7.0.0
-  electron: ^42.4.1
+  electron: ^42.5.0
   eventsource-parser: ^3.1.0
   get-port: ^7.2.0
   happy-dom: ^20.10.6
@@ -55,7 +68,7 @@ catalog:
   typedoc: ^0.28.19
   typedoc-plugin-markdown: ^4.12.0
   typescript: ^6.0.3
-  vite: ^8.0.16
+  vite: ^8.1.0
   vitest: ^4.1.9
 
 catalogMode: prefer
@@ -71,21 +84,9 @@ minimumReleaseAgeExclude:
   - expo-modules-autolinking@56.0.11
   - expo-modules-core@56.0.12
   - expo@56.0.3
-  - '@kigu/dev@0.1.0'
-  - '@kokuin/token@0.1.0'
-  - '@sozai/codec@0.1.0'
-  - '@sozai/log@0.1.0'
-  - '@sozai/otel@0.1.0'
-  - '@sozai/schema@0.1.0'
-  - '@kokuin/capability@0.1.0'
-  - '@sozai/async@0.1.0'
-  - '@sozai/event@0.1.0'
-  - '@sozai/execution@0.1.0'
-  - '@sozai/result@0.1.0'
-  - '@sozai/runtime@0.1.0'
-  - '@sozai/stream@0.1.0'
-  - '@kokuin/browser@0.1.0'
-  - '@kokuin/electron@0.1.0'
+  - '@kigu/*'
+  - '@kokuin/*'
+  - '@sozai/*'
 
 nodeLinker: hoisted
 

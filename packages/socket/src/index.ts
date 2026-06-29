@@ -11,8 +11,9 @@
  */
 
 import { createConnection, type Socket } from 'node:net'
+import { createTracer, EnkakuAttributeKeys, EnkakuSpanNames } from '@enkaku/otel'
 import { Transport } from '@enkaku/transport'
-import { AttributeKeys, createTracer, SpanNames, withSpan } from '@sozai/otel'
+import { AttributeKeys, withSpan } from '@sozai/otel'
 import { type FromJSONLinesOptions, fromJSONLines, writeTo } from '@sozai/stream'
 
 const tracer = createTracer('transport.socket')
@@ -23,9 +24,12 @@ export type SocketSource = SocketOrPromise | (() => SocketOrPromise)
 export async function connectSocket(path: string): Promise<Socket> {
   return withSpan(
     tracer,
-    SpanNames.TRANSPORT_SOCKET_CONNECT,
+    EnkakuSpanNames.TRANSPORT_SOCKET_CONNECT,
     {
-      attributes: { [AttributeKeys.TRANSPORT_TYPE]: 'socket', [AttributeKeys.NET_PEER_NAME]: path },
+      attributes: {
+        [EnkakuAttributeKeys.TRANSPORT_TYPE]: 'socket',
+        [AttributeKeys.NET_PEER_NAME]: path,
+      },
     },
     async () => {
       const socket = createConnection(path)

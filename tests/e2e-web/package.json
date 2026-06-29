@@ -10,8 +10,8 @@
     "test": "playwright test"
   },
   "dependencies": {
-    "@kokuin/browser": "^0.1.0",
-    "@kokuin/token": "^0.1.0",
+    "@kokuin/browser": "catalog:",
+    "@kokuin/token": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-native-web": "catalog:"

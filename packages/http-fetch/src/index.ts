@@ -10,6 +10,7 @@
  * @module http-fetch
  */
 
+import { createTracer, EnkakuAttributeKeys, EnkakuSpanNames } from '@enkaku/otel'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -19,10 +20,8 @@ import type {
 import { Transport } from '@enkaku/transport'
 import {
   AttributeKeys,
-  createTracer,
   formatTraceparent,
   getActiveTraceContext,
-  SpanNames,
   SpanStatusCode,
   withSpan,
 } from '@sozai/otel'
@@ -81,11 +80,11 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     signal?: AbortSignal,
   ): Promise<Response> {
     const sessionID = headers['enkaku-session-id']
-    const span = tracer.startSpan(SpanNames.TRANSPORT_HTTP_REQUEST, {
+    const span = tracer.startSpan(EnkakuSpanNames.TRANSPORT_HTTP_REQUEST, {
       attributes: {
         [AttributeKeys.HTTP_METHOD]: 'POST',
-        [AttributeKeys.TRANSPORT_TYPE]: 'http',
-        ...(sessionID != null ? { [AttributeKeys.TRANSPORT_SESSION_ID]: sessionID } : {}),
+        [EnkakuAttributeKeys.TRANSPORT_TYPE]: 'http',
+        ...(sessionID != null ? { [EnkakuAttributeKeys.TRANSPORT_SESSION_ID]: sessionID } : {}),
       },
     })
     try {
@@ -197,8 +196,8 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
   function connectSSESession(msg: AnyClientMessageOf<Protocol>): Promise<string> {
     return withSpan(
       tracer,
-      SpanNames.TRANSPORT_HTTP_SSE_CONNECT,
-      { attributes: { [AttributeKeys.TRANSPORT_TYPE]: 'http-sse' } },
+      EnkakuSpanNames.TRANSPORT_HTTP_SSE_CONNECT,
+      { attributes: { [EnkakuAttributeKeys.TRANSPORT_TYPE]: 'http-sse' } },
       async (span) => {
         const headers: Record<string, string> = {
           accept: 'text/event-stream',
@@ -212,7 +211,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
         if (sessionID == null) {
           throw new Error('Missing enkaku-session-id header in SSE response')
         }
-        span.setAttribute(AttributeKeys.TRANSPORT_SESSION_ID, sessionID)
+        span.setAttribute(EnkakuAttributeKeys.TRANSPORT_SESSION_ID, sessionID)
         consumeSSEStream(res)
         return sessionID
       },

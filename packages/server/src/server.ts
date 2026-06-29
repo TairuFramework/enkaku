@@ -1,3 +1,4 @@
+import { createTracer, EnkakuAttributeKeys, EnkakuSpanNames } from '@enkaku/otel'
 import {
   type AnyClientMessageOf,
   type AnyServerPayloadOf,
@@ -23,10 +24,8 @@ import { EventEmitter } from '@sozai/event'
 import { getLogger, type Logger } from '@sozai/log'
 import {
   AttributeKeys,
-  createTracer,
   extractTraceContext,
   type Span,
-  SpanNames,
   SpanStatusCode,
   setSpanOnContext,
   TraceFlags,
@@ -158,12 +157,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     ? (message: unknown) => {
         const result = validator(message)
         if (result instanceof ValidationError) {
-          const validationSpan = params.tracer.startSpan(SpanNames.SERVER_HANDLE, {
+          const validationSpan = params.tracer.startSpan(EnkakuSpanNames.SERVER_HANDLE, {
             attributes: { [AttributeKeys.RPC_SYSTEM]: 'enkaku' },
           })
           validationSpan.addEvent('enkaku.validation', {
-            [AttributeKeys.VALIDATION_SUCCESS]: false,
-            [AttributeKeys.VALIDATION_ERROR]: result.message,
+            [EnkakuAttributeKeys.VALIDATION_SUCCESS]: false,
+            [EnkakuAttributeKeys.VALIDATION_ERROR]: result.message,
           })
           validationSpan.setStatus({ code: SpanStatusCode.ERROR, message: 'Validation failed' })
           validationSpan.end()
@@ -352,7 +351,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
 
     return params.tracer.startSpan(
-      SpanNames.SERVER_HANDLE,
+      EnkakuSpanNames.SERVER_HANDLE,
       {
         attributes: {
           [AttributeKeys.RPC_SYSTEM]: 'enkaku',
@@ -372,17 +371,17 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     return () => {
       const spanCtx = setSpanOnContext(undefined, span)
       const result = withActiveContext(spanCtx, () => {
-        const handlerSpan = params.tracer.startSpan(SpanNames.SERVER_HANDLER)
+        const handlerSpan = params.tracer.startSpan(EnkakuSpanNames.SERVER_HANDLER)
         const handlerResult = handle()
 
         if (handlerResult instanceof Error) {
           if ('code' in handlerResult) {
             handlerSpan.setAttribute(
-              AttributeKeys.ERROR_CODE,
+              EnkakuAttributeKeys.ERROR_CODE,
               (handlerResult as Record<string, unknown>).code as string,
             )
           }
-          handlerSpan.setAttribute(AttributeKeys.ERROR_MESSAGE, handlerResult.message)
+          handlerSpan.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, handlerResult.message)
           handlerSpan.setStatus({ code: SpanStatusCode.ERROR, message: handlerResult.message })
           handlerSpan.recordException(handlerResult)
           handlerSpan.end()
@@ -397,11 +396,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           .catch((err: Error) => {
             if ('code' in err) {
               handlerSpan.setAttribute(
-                AttributeKeys.ERROR_CODE,
+                EnkakuAttributeKeys.ERROR_CODE,
                 (err as Record<string, unknown>).code as string,
               )
             }
-            handlerSpan.setAttribute(AttributeKeys.ERROR_MESSAGE, err.message)
+            handlerSpan.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, err.message)
             handlerSpan.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
             handlerSpan.recordException(err)
             handlerSpan.end()
@@ -413,11 +412,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       if (result instanceof Error) {
         if ('code' in result) {
           span.setAttribute(
-            AttributeKeys.ERROR_CODE,
+            EnkakuAttributeKeys.ERROR_CODE,
             (result as Record<string, unknown>).code as string,
           )
         }
-        span.setAttribute(AttributeKeys.ERROR_MESSAGE, result.message)
+        span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, result.message)
         span.setStatus({ code: SpanStatusCode.ERROR, message: result.message })
         span.recordException(result)
         span.end()
@@ -431,11 +430,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         .catch((err: Error) => {
           if ('code' in err) {
             span.setAttribute(
-              AttributeKeys.ERROR_CODE,
+              EnkakuAttributeKeys.ERROR_CODE,
               (err as Record<string, unknown>).code as string,
             )
           }
-          span.setAttribute(AttributeKeys.ERROR_MESSAGE, err.message)
+          span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, err.message)
           span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
           span.recordException(err)
           span.end()
@@ -449,14 +448,14 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         const span = createHandleSpan(message)
         if (validator != null) {
           span.addEvent('enkaku.validation', {
-            [AttributeKeys.VALIDATION_SUCCESS]: true,
+            [EnkakuAttributeKeys.VALIDATION_SUCCESS]: true,
           })
         }
 
         if (!checkMessageEncryption(message)) {
-          span.setAttribute(AttributeKeys.AUTH_REASON, 'encryption_required')
-          span.setAttribute(AttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
-          span.setAttribute(AttributeKeys.ERROR_MESSAGE, 'Encryption required')
+          span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, 'encryption_required')
+          span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
+          span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, 'Encryption required')
           span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
           span.end()
           handleEncryptionViolation(message)
@@ -469,14 +468,14 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         const span = createHandleSpan(message)
         if (validator != null) {
           span.addEvent('enkaku.validation', {
-            [AttributeKeys.VALIDATION_SUCCESS]: true,
+            [EnkakuAttributeKeys.VALIDATION_SUCCESS]: true,
           })
         }
 
         try {
           if (!isSignedToken(message as Token)) {
-            span.setAttribute(AttributeKeys.AUTH_REASON, 'unsigned_message')
-            span.setAttribute(AttributeKeys.AUTH_ALLOWED, false)
+            span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, 'unsigned_message')
+            span.setAttribute(EnkakuAttributeKeys.AUTH_ALLOWED, false)
             throw new Error('Message is not signed')
           }
           await verifyToken(message as SignedToken, {
@@ -495,19 +494,19 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           )
           const did = (message as unknown as SignedToken).payload.iss
           if (did != null) {
-            span.setAttribute(AttributeKeys.AUTH_DID, did)
+            span.setAttribute(EnkakuAttributeKeys.AUTH_DID, did)
           }
-          span.setAttribute(AttributeKeys.AUTH_ALLOWED, true)
+          span.setAttribute(EnkakuAttributeKeys.AUTH_ALLOWED, true)
         } catch (cause) {
           const did = isSignedToken(message as Token)
             ? (message as unknown as SignedToken).payload.iss
             : undefined
           if (did != null) {
-            span.setAttribute(AttributeKeys.AUTH_DID, did)
+            span.setAttribute(EnkakuAttributeKeys.AUTH_DID, did)
           }
-          span.setAttribute(AttributeKeys.AUTH_ALLOWED, false)
+          span.setAttribute(EnkakuAttributeKeys.AUTH_ALLOWED, false)
           if (!(cause as Error).message?.includes('unsigned')) {
-            span.setAttribute(AttributeKeys.AUTH_REASON, (cause as Error).message)
+            span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, (cause as Error).message)
           }
 
           const error = new HandlerError({
@@ -515,8 +514,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             code: ErrorCodes.ACCESS_DENIED,
             message: (cause as Error).message ?? 'Access denied',
           })
-          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
-          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
+          span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, error.message)
           span.setStatus({ code: SpanStatusCode.ERROR, message: error.message })
           span.recordException(error)
           span.end()
@@ -531,9 +530,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
 
         if (!checkMessageEncryption(message)) {
-          span.setAttribute(AttributeKeys.AUTH_REASON, 'encryption_required')
-          span.setAttribute(AttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
-          span.setAttribute(AttributeKeys.ERROR_MESSAGE, 'Encryption required')
+          span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, 'encryption_required')
+          span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
+          span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, 'Encryption required')
           span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
           span.end()
           handleEncryptionViolation(message)

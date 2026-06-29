@@ -12,11 +12,11 @@
   },
   "dependencies": {
     "@enkaku/client": "workspace:*",
-    "@kokuin/electron": "^0.1.0",
     "@enkaku/electron": "workspace:*",
     "@enkaku/server": "workspace:*",
-    "@kokuin/token": "^0.1.0",
     "@enkaku/transport": "workspace:*",
+    "@kokuin/electron": "catalog:",
+    "@kokuin/token": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-native-electron": "catalog:",

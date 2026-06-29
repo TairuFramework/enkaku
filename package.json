@@ -4,7 +4,7 @@
   "author": "Paul Le Cam",
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "lint": "biome check --write ./packages ./tests",
@@ -18,8 +18,8 @@
     "release": "pnpm run build && changeset publish"
   },
   "devDependencies": {
-    "@kigu/dev": "^0.1.0",
     "@changesets/cli": "^2.27.0",
+    "@kigu/dev": "catalog:",
     "typedoc": "catalog:",
     "typedoc-plugin-markdown": "catalog:"
   }

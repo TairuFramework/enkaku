@@ -1,8 +1,0 @@
-appId: dev.enkaku.e2e
----
-- launchApp
-- assertVisible: "Sign token"
-- tapOn: "Sign token"
-- assertVisible: "Verify token"
-- tapOn: "Verify token"
-- assertVisible: "Verified token: OK"

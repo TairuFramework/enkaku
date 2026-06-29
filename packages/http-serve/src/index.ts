@@ -10,16 +10,15 @@
  * @module http-serve
  */
 
+import { createTracer, EnkakuAttributeKeys, EnkakuSpanNames } from '@enkaku/otel'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { Transport, type TransportEvents } from '@enkaku/transport'
 import { type Deferred, defer } from '@sozai/async'
 import {
   AttributeKeys,
   type Context,
-  createTracer,
   extractTraceContext,
   parseTraceparent,
-  SpanNames,
   SpanStatusCode,
 } from '@sozai/otel'
 import { createRuntime, type Runtime } from '@sozai/runtime'
@@ -376,11 +375,11 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
 
     const span = tracer.startSpan(
-      SpanNames.TRANSPORT_HTTP_REQUEST,
+      EnkakuSpanNames.TRANSPORT_HTTP_REQUEST,
       {
         attributes: {
           [AttributeKeys.HTTP_METHOD]: request.method,
-          [AttributeKeys.TRANSPORT_TYPE]: 'http-server',
+          [EnkakuAttributeKeys.TRANSPORT_TYPE]: 'http-server',
         },
       },
       parentCtx,

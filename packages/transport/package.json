@@ -35,8 +35,8 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@sozai/async": "^0.1.0",
-    "@sozai/event": "^0.1.0",
-    "@sozai/stream": "^0.1.0"
+    "@sozai/async": "catalog:",
+    "@sozai/event": "catalog:",
+    "@sozai/stream": "catalog:"
   }
 }

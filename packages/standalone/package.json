@@ -41,7 +41,7 @@
     "@enkaku/transport": "workspace:^"
   },
   "devDependencies": {
-    "@kokuin/token": "^0.1.0",
-    "@enkaku/protocol": "workspace:^"
+    "@enkaku/protocol": "workspace:^",
+    "@kokuin/token": "catalog:"
   }
 }

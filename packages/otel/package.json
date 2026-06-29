@@ -1,20 +1,19 @@
 {
-  "name": "@enkaku/node-streams",
+  "name": "@enkaku/otel",
   "version": "0.18.0",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "Node Streams transport for Enkaku RPC clients and servers",
+  "description": "Enkaku OpenTelemetry span and attribute names",
   "keywords": [
-    "transport",
+    "opentelemetry",
+    "tracing",
     "rpc",
-    "node",
-    "streams",
-    "ipc"
+    "enkaku"
   ],
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
-    "directory": "packages/node-streams"
+    "directory": "packages/otel"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -37,7 +36,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@sozai/stream": "catalog:",
-    "@enkaku/transport": "workspace:^"
+    "@opentelemetry/api": "^1.9.1",
+    "@sozai/otel": "catalog:"
   }
 }
