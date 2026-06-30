@@ -21,8 +21,8 @@ describe('MemoryReplayCache', () => {
     const cache = new MemoryReplayCache({ maxEntries: 2, now: () => 1_000 })
     expect(cache.checkAndRecord('a', 100_000)).toBe(true)
     expect(cache.checkAndRecord('b', 100_000)).toBe(true)
-    expect(cache.checkAndRecord('c', 100_000)).toBe(true) // evicts 'a'
-    expect(cache.checkAndRecord('a', 100_000)).toBe(true) // 'a' gone -> fresh
-    expect(cache.checkAndRecord('b', 100_000)).toBe(false) // 'b' still present
+    expect(cache.checkAndRecord('b', 100_000)).toBe(false) // 'b' present -> replay
+    expect(cache.checkAndRecord('c', 100_000)).toBe(true) // over cap -> evicts oldest 'a'
+    expect(cache.checkAndRecord('a', 100_000)).toBe(true) // 'a' was evicted -> fresh
   })
 })
