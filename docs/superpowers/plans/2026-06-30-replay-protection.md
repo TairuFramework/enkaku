@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Stage:** planning
+**Stage:** executing
 
 **Goal:** Deduplicate authenticated server messages so a captured signed message cannot be replayed within its validity window.
 
