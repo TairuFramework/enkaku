@@ -1,3 +1,5 @@
+import { normalizeDID, type SignedToken } from '@kokuin/token'
+
 export type ReplayCache = {
   /**
    * Atomically check whether `key` was already recorded, and record it.
@@ -30,7 +32,7 @@ export class MemoryReplayCache implements ReplayCache {
     if (existing != null && existing > now) {
       return false
     }
-    // Delete-then-set keeps Map insertion order newest-last (LRU ordering).
+    // Delete-then-set keeps Map insertion order newest-last (insertion-order / FIFO eviction).
     this.#entries.delete(key)
     this.#entries.set(key, expiresAt)
     this.#evict(now)
@@ -50,4 +52,70 @@ export class MemoryReplayCache implements ReplayCache {
       this.#entries.delete(oldest)
     }
   }
+}
+
+export type ReplayOptions = {
+  enabled?: boolean
+  cache?: ReplayCache
+  maxAge?: number // milliseconds; fallback window for messages without exp
+  rejectStale?: boolean
+  maxEntries?: number
+  now?: () => number
+}
+
+export type ResolvedReplay = {
+  cache: ReplayCache
+  maxAge: number
+  rejectStale: boolean
+  now: () => number
+}
+
+const DEFAULT_MAX_AGE = 60_000
+
+export function resolveReplay(
+  options: ReplayOptions | undefined,
+  requireAuth: boolean,
+): ResolvedReplay | null {
+  if (!requireAuth) return null
+  if (options?.enabled === false) return null
+  const now = options?.now ?? Date.now
+  return {
+    cache: options?.cache ?? new MemoryReplayCache({ maxEntries: options?.maxEntries, now }),
+    maxAge: options?.maxAge ?? DEFAULT_MAX_AGE,
+    rejectStale: options?.rejectStale ?? true,
+    now,
+  }
+}
+
+export type ReplayCheckResult =
+  | { ok: true }
+  | { ok: false; reason: 'replay_detected' | 'replay_stale' }
+
+export async function checkReplay(
+  message: SignedToken,
+  resolved: ResolvedReplay,
+): Promise<ReplayCheckResult> {
+  const payload = message.payload as {
+    iss: string
+    jti?: string
+    exp?: number
+    iat?: number
+  }
+  const now = resolved.now()
+  // Token exp/iat claims are seconds; convert to milliseconds for comparison.
+  const expMs = payload.exp != null ? payload.exp * 1000 : undefined
+  const iatMs = payload.iat != null ? payload.iat * 1000 : undefined
+
+  if (resolved.rejectStale) {
+    if (expMs != null) {
+      if (now > expMs) return { ok: false, reason: 'replay_stale' }
+    } else if (iatMs != null && now > iatMs + resolved.maxAge) {
+      return { ok: false, reason: 'replay_stale' }
+    }
+  }
+
+  const expiresAt = expMs ?? (iatMs ?? now) + resolved.maxAge
+  const key = `${normalizeDID(payload.iss)}:${payload.jti ?? message.signature}`
+  const fresh = await resolved.cache.checkAndRecord(key, expiresAt)
+  return fresh ? { ok: true } : { ok: false, reason: 'replay_detected' }
 }
