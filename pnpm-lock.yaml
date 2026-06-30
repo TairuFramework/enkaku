@@ -442,6 +442,27 @@ importers:
         specifier: 'catalog:'
         version: 0.1.0
 
+  tests/deno:
+    dependencies:
+      '@enkaku/client':
+        specifier: workspace:^
+        version: link:../../packages/client
+      '@enkaku/http-fetch':
+        specifier: workspace:^
+        version: link:../../packages/http-fetch
+      '@enkaku/http-serve':
+        specifier: workspace:^
+        version: link:../../packages/http-serve
+      '@enkaku/protocol':
+        specifier: workspace:^
+        version: link:../../packages/protocol
+      '@enkaku/server':
+        specifier: workspace:^
+        version: link:../../packages/server
+      '@sozai/stream':
+        specifier: ^0.1.0
+        version: 0.1.0
+
   tests/e2e-electron:
     dependencies:
       '@enkaku/client':

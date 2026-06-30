@@ -1,0 +1,15 @@
+{
+  "name": "deno-tests",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@enkaku/client": "workspace:^",
+    "@enkaku/http-fetch": "workspace:^",
+    "@enkaku/http-serve": "workspace:^",
+    "@enkaku/protocol": "workspace:^",
+    "@enkaku/server": "workspace:^",
+    "@sozai/stream": "^0.1.0"
+  }
+}

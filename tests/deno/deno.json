@@ -1,5 +1,8 @@
 {
+  "nodeModulesDir": "manual",
+  "unstable": ["sloppy-imports"],
   "tasks": {
+    "check": "deno check --unstable-sloppy-imports stateful-client.ts stateful-server.ts",
     "stateful:serve": "deno serve --allow-env --reload stateful-server.ts",
     "stateful:run": "deno run --allow-net --reload stateful-client.ts"
   }
