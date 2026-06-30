@@ -2,6 +2,7 @@ packages:
   - packages/*
   - tests/*
   - website
+
 allowBuilds:
   '@biomejs/biome': true
   '@swc/core': false
@@ -72,19 +73,15 @@ catalog:
 catalogMode: prefer
 
 minimumReleaseAgeExclude:
-  - '@expo/cli@56.1.10'
-  - '@expo/fingerprint@0.19.1'
-  - '@expo/prebuild-config@56.0.12'
-  - '@expo/router-server@56.0.11'
-  - babel-preset-expo@56.0.11
-  - expo-asset@56.0.13
-  - expo-constants@56.0.14
-  - expo-modules-autolinking@56.0.11
-  - expo-modules-core@56.0.12
-  - expo@56.0.3
   - '@kigu/*'
   - '@kokuin/*'
   - '@sozai/*'
+
+overrides:
+  # extract-zip 2.0.1 (via @electron/packager) pulls yauzl 2.10.0, whose
+  # extraction lets Node exit 0 mid-package on some runtimes (node 24.17, 26).
+  # yauzl 3.x keeps the event loop alive through extraction. See e2e-desktop.
+  yauzl: ^3.4.0
 
 nodeLinker: hoisted
 

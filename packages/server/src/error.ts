@@ -1,7 +1,5 @@
 import type { ErrorReplyPayload } from '@enkaku/protocol'
 
-export { type ErrorCode, ErrorCodes } from '@enkaku/protocol'
-
 export type HandlerErrorParams<
   Code extends string = string,
   Data extends Record<string, unknown> = Record<string, unknown>,

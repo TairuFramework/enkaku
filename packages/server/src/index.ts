@@ -19,8 +19,6 @@ export type {
 } from './access-control.js'
 export { resolveEncryptionPolicy } from './access-control.js'
 export {
-  type ErrorCode,
-  ErrorCodes,
   HandlerError,
   type HandlerErrorParams,
 } from './error.js'
