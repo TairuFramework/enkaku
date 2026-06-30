@@ -1,48 +1,39 @@
 # Enkaku Roadmap
 
-## Completed Goals (Jan-Jun 2026)
+As of **0.18 (June 2026)**, Enkaku is the RPC-only layer of the five-repo Yulsi stack.
+Identity/auth → `@kokuin`, MLS/group/hub → `@kumiai`, runtime/async/schema/stream →
+`@sozai`, shared toolchain → `@kigu`. This roadmap covers Enkaku only (RPC core,
+transports, OTel naming, React bindings); relocated workstreams are tracked in their
+owning repos (see bottom).
 
-- **Audit remediation (June 2026)** — Full-repo audit closed in four sequential plans: token-verification hardening (signature/payload binding, `verifiedPublicKey` bypass, ES256 lowS), transport stability (16 fail-closed edge fixes), hub hardening (mandatory identity, group authz, lifecycle leaks, long-lived limits), platform fixes (ChaCha AEAD dispatch, EK08 invalid-message reply, typed error-code registry, electron-rpc sender allowlist). See `completed/2026-06-10-audit-remediation.complete.md`
+## Recent (2026)
 
-- **Security hardening** — Comprehensive audit (47 findings), 6 implementation waves, all critical/high items resolved
-- **Message-level encryption** — JWE with ECDH-ES + A256GCM, identity type hierarchy, 4 envelope modes
-- **Observability** — @enkaku/otel package, integrated across 10 packages, trace context propagation
-- **Transport modernization** — SSE redesign with POST-based sessions, fetch + eventsource-parser
-- **API refinement** — Unified `accessControl` parameter, event emitter rewrite (zero deps), downstream migration to Kubun/Mokei complete
-- **Agent documentation** — Progressive discovery system (6 domain skills), AGENTS.md, capability docs
-- **E2EE group communication** — @enkaku/group with MLS (ts-mls), hub protocol with fan-out routing, noble CryptoProvider for Hermes
-- **ts-mls v2 migration** — CryptoProvider rewrite, DID-based AuthenticationService, full API migration
-- **TS 6 + Vite 8 migration** — Restructured tsconfig hierarchy, test type-checking, `nodenext` resolution, SWC `esnext` target
-- **Hardware identity** — @enkaku/ledger-identity (custom BOLOS app, Ed25519 + X25519), @enkaku/hd-keystore (BIP39/SLIP-0010)
-- **Agent primitives** — @enkaku/capability (delegation, revocation), hub rewrite (blind relay, store-and-forward, ack semantics, opaque payloads)
-- **MLS external rejoin + null-safety** — `joinGroupExternal` resync path, ratchet tree null-safety guards
-- **Server/Client lifecycle** — Lifecycle events on Transport/Server/Client, benign teardown classification via `isBenignTeardownError`, `handlerError` discriminator (category × messageType)
-- **Hub tunnel transport** — `@enkaku/hub-tunnel` ported from Kubun: peer-to-peer transport over HubLike relay with pluggable end-to-end encryption
-- **Access control refactor** — Procedure-level policy enforcement consolidated
-- **did:peer:4 identifiers** — PQ-friendly multi-key DIDs in `@enkaku/token`: multibase/multihash, `DIDResolver`/`DIDCache`, `MultiKeyIdentity`, rotation assertions, `signToken` unified API
-- **did:peer:4 transport integration** — HTTP/WebSocket doc delivery, capability-layer cache threading, credential `longForm` plumbing
-- **did:peer:4 MLS auth service** — Self-contained `createDIDAuthenticationService` with peer4 binding, single-shape `MLSCredentialIdentity` JSON, `MultiKeyIdentity` ↔ `OwnIdentity` unification, `joinGroupExternal` resync guard
+- **0.18 stack refactor / repo split** — trimmed Enkaku to 13 RPC-only packages, retooled
+  onto `@kigu/dev`, published RPC at 0.18.0. `completed/2026-06-30-stack-refactoring`
+- **Transport framing/size limits** — bounded-memory knobs across all transports + the
+  JSON-lines framer (PR #36). `archive/2026-06`
+- **Channel `send` `prc` fix** — closed silent-drop of channel sends on validating servers.
+- **OTel W3C inbound** — server-side trace-context build + baggage activation (PR #42).
+- **Pre-split, now relocated** — group-messaging primitives, MLS auth/rejoin, generator/
+  stream fixes shipped in Enkaku earlier in 2026, then moved to `@kumiai`/`@sozai` in the split.
+- **Earlier 2026** — SSE/transport modernization, lifecycle events + `handlerError`
+  discriminator, access-control refactor. (Auth/MLS/identity milestones now live in
+  `@kokuin`/`@kumiai` history.)
 
 ## Current Focus
 
-- **MLS capability-layer member revocation** — Production blocker for fresh external join. Capability-layer mechanism to evict members beyond MLS's stale-rejoin gap. Design between revocation token, GroupContext banlist extension, or hybrid.
+Enkaku is in maintenance/hardening — no large feature in flight. Active backlog:
 
-## Near-term (ready when picked up)
+- **Replay protection** — `jti` dedup + `exp` policy on authenticated RPC messages
+  (server + protocol). Security hardening. `backlog/replay-protection.md`
+- **Docs & release gaps** — website docs lag the current API; typedoc + changesets.
+  Tracking only while consumers are stack-internal. `backlog/docs-release-gaps.md`
+- **Transport typed constructors** — additive DX helpers so consumers can't drop transport
+  type args and fall back to `as unknown as` casts. `backlog/transport-typed-constructors.md`
 
-- **peer4 auth-service polish** — Re-export `makeMLSCredential`, JSDoc on `createIdentity` / `IdentityKeySpec.privateKey`, decide on CHANGELOG convention
-- **Ledger root identity remainder** — Multi-Ledger support (personal + organizational), Ledger app catalog submission. GroupArchiver moved to Kubun scope.
+## Relocated workstreams (tracked in owning repos)
 
-## Blocked / waiting upstream
-
-- **peer4 MLS leaf rotation** — Blocked on ts-mls exporting `signLeafNodeUpdate` / `signWithLabel`. File upstream PR, vendor sign helper, or fall back to Remove+Add.
-- **ts-mls v2.0.0 stable upgrade** — Pin bump from `2.0.0-rc.10` when stable lands.
-- **TS 6 follow-ups** — Expo SDK TS 6 peer-dep, TS 7 `--stableTypeOrdering`, Disposable in es2025 lib, Electron Forge Vite 8 plugin.
-
-## Longer-term
-
-- **Post-quantum algorithms** — `paulmillr/noble-post-quantum` integration phased: (1) ML-DSA verifier-only, (2) Node + Electron signing, (3) JWE hybrid KEM (X25519+ML-KEM-768), (4) browser + Expo keystore refactor for large keys. Each phase its own design+plan.
-- **JWE multi-recipient** — `ECDH-ES+A256KW` + JSON Serialization. Useful when GroupArchiver / multi-root archival needs land.
-- **Remaining discovery skills** — `/enkaku:utilities` and `/enkaku:platform`. Nice-to-have.
-- **Replay protection** — jti dedup / nonce design for authenticated messages (`backlog/replay-protection.md`).
-- **MLS permission enforcement** — enforce admin/member/read on commits, sender- and receiver-side (`backlog/mls-permission-enforcement.md`); design with capability revocation.
-- **Docs & release gaps** — stale website docs, README stubs, typedoc coverage, changesets (`backlog/docs-release-gaps.md`). Tracking only while consumers are stack-internal.
+- **`@kokuin`** — identity, tokens, capabilities, keystores, Ledger, post-quantum algos, JWE multi-recipient
+- **`@kumiai`** — MLS/group, hub protocol/server/tunnel, broadcast, ts-mls upgrades, capability revocation
+- **`@kigu`** — shared toolchain (TS 6/7, catalog, biome/tsconfig, electron-forge)
+- **`@sozai`** — runtime, async, event, execution, schema, stream, log

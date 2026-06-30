@@ -228,9 +228,9 @@ const server = new Server({ protocol: myProtocol, transport })
 
 ## Related Domains
 
-- See `/enkaku:streaming` for stream utilities and data flow patterns
-- See `/enkaku:auth` for securing transport connections
-- See `/enkaku:execution` for handling messages after transport layer
+- See `/sozai:dataflow` for stream utilities and data flow patterns (moved to `@sozai`)
+- See `/kokuin:auth` for securing transport connections with identities (moved to `@kokuin`)
+- See `/enkaku:core-rpc` for handling messages after the transport layer
 
 ## Detailed Reference
 

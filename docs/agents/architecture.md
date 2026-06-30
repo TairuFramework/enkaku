@@ -6,25 +6,23 @@ Technical architecture and design patterns for the Enkaku RPC framework.
 
 ## What is Enkaku?
 
-Enkaku is a modern, type-safe RPC framework for TypeScript applications. It provides a complete solution for building remote procedure call systems with strong typing, multiple transport options (HTTP, WebSocket, streams), authentication, and schema validation. The framework is built as a monorepo with modular packages that can be used independently or together.
+Enkaku is a modern, type-safe RPC framework for TypeScript applications. It provides protocol-driven client-server communication with strong typing, multiple transport options (HTTP, WebSocket, Node.js streams, MessagePort, Electron IPC), and schema-validated runtime safety. The framework is a pnpm-workspaces monorepo of modular packages that can be used independently or together.
+
+Enkaku is the RPC layer of the five-repo Yulsi stack. Cross-cutting primitives it depends on come from sibling repos: build/tooling from `@kigu/*`, runtime/async/schema/transport utilities from `@sozai/*`, and identity/auth (tokens, capabilities, keystores) from `@kokuin/*`. Group/MLS and hub messaging now live downstream in `@kumiai/*` (formerly in-repo, moved out in the 0.18 stack refactor). Enkaku itself ships RPC core, transports, OTel naming, and React bindings only.
 
 ---
 
 ## Core Concepts
 
-**RPC (Remote Procedure Calls)**: Enkaku enables type-safe procedure calls between client and server with full TypeScript inference. Protocol definitions drive automatic type generation for both sides of the communication.
+**RPC (Remote Procedure Calls)**: Enkaku enables type-safe procedure calls between client and server with full TypeScript inference. Protocol definitions drive automatic type generation for both sides.
 
-**Transport Layer**: The framework supports multiple transport mechanisms (HTTP, WebSocket, Node.js streams, MessagePort, Electron IPC). Transport implementations are modular and can be swapped based on application needs.
+**Four procedure types**: request (single response), event (fire-and-forget), stream (server-to-client data flow), channel (bidirectional communication).
 
-**Authentication & Security**: Built-in token system provides JWT-like authentication with signing and verification, plus JWE message-level encryption using ECDH-ES key agreement and A256GCM. Keystore abstractions enable secure key management across different environments (Node.js, browser, React Native, Electron). Access control and encryption policy are enforced at the procedure level.
+**Transport Layer**: Multiple transport mechanisms (HTTP, WebSocket, Node.js streams, MessagePort, Electron IPC). Transport implementations are modular and swappable without changing application code.
 
-**Capabilities & Delegation**: A capability-based authorization model supports delegation chains — a root identity can delegate scoped permissions to subordinate keys. Revocation is implemented as a `VerifyTokenHook`, plugging into the existing token verification pipeline. The `IdentityProvider<T>` abstraction decouples identity creation from the backing store (software HD keystore, Ledger hardware wallet).
+**Authentication (external)**: Enkaku's server enforces access control and encryption policy at the procedure level, but the token/keystore/capability implementations live in `@kokuin/*` (`@kokuin/token`, `@kokuin/capability`). Enkaku consumes them; it no longer ships them.
 
-**Hub & Mailbox**: A blind relay hub provides store-and-forward messaging between devices. The hub sees only routing metadata (sender DID, recipient DIDs, opaque payload). Supports explicit recipient sends and group fan-out. Channel-based receive with ack semantics ensures reliable delivery.
-
-**Group Communication (MLS)**: End-to-end encrypted group communication using the MLS protocol (RFC 9420) via the ts-mls library. Groups support up to ~100 members with TreeKEM key management. Enkaku capabilities serve as MLS credentials, bridging the identity system with the group encryption layer.
-
-**Type Safety**: Heavy use of TypeScript generics ensures end-to-end type safety from protocol definitions through client calls to server handlers. Schema validation using JSON Schema and AJV provides runtime safety.
+**Type Safety**: Heavy use of TypeScript generics ensures end-to-end type safety from protocol definitions through client calls to server handlers. Schema validation (`@sozai/schema`, JSON Schema) provides runtime safety.
 
 ---
 
@@ -46,17 +44,13 @@ Enkaku is a modern, type-safe RPC framework for TypeScript applications. It prov
 - Register handlers using protocol procedure names
 - Implement proper error handling and propagation
 - Use execution chains for middleware-like functionality
-- Support access control and authentication
+- Support access control and authentication (via `@kokuin/*` identities)
 
 ### Transport Layer
 - Create transport abstractions for different communication methods
 - Implement bidirectional communication patterns
 - Handle connection lifecycle (connect, disconnect, error)
 - Support message serialization/deserialization
-
-### Hub-tunneled Transport
-
-When direct connectivity isn't possible (NAT, mobile, BYO relay), `@enkaku/hub-tunnel` provides a peer-to-peer transport that runs over a `HubLike` relay with end-to-end encryption supplied by the caller. See [../capabilities/domains/hub-tunnel.md](../capabilities/domains/hub-tunnel.md) for wire format and session lifecycle details.
 
 ### Streaming Patterns
 - Implement readable/writable stream interfaces
@@ -75,10 +69,12 @@ When direct connectivity isn't possible (NAT, mobile, BYO relay), `@enkaku/hub-t
 ## Architecture Overview
 
 ### Core Structure
-- **Monorepo**: Uses pnpm workspaces with packages in `packages/` directory
-- **Build System**: Turbo for build orchestration, SWC for compilation
-- **Testing**: Vitest test runner
+- **Monorepo**: pnpm workspaces with packages in `packages/`, tests in `tests/`, docs site in `website/`
+- **Tooling**: `@kigu/dev` provides shared biome/tsconfig/swc config; root `biome.json` and package tsconfigs extend it
+- **Build System**: Turbo for build orchestration, SWC for compilation (`esnext` target)
+- **Testing**: Vitest test runner (`test:types` + `test:unit` via Turbo)
 - **Linting**: Biome for code formatting and linting
+- **Versioning**: Changesets
 
 ### Package Structure
 All packages follow this standard layout:
@@ -94,62 +90,33 @@ packages/[package-name]/
 └── README.md
 ```
 
-### Key Packages
+### Key Packages (13)
 
 #### Core RPC
-- **protocol**: Core protocol definitions, schemas, and types
-- **client**: Client-side RPC implementation with typed procedure calls
-- **server**: Server-side RPC implementation with handler registration
-- **execution**: Execution chain management for procedures
-- **schema**: JSON Schema validation (AJV-based) for runtime type checking
-- **codec**: Message serialization and deserialization
-- **standalone**: Combined client and server for in-process RPC (no transport needed)
+- **protocol** (`@enkaku/protocol`): Core protocol definitions, schemas, and types
+- **client** (`@enkaku/client`): Client-side RPC implementation with typed procedure calls
+- **server** (`@enkaku/server`): Server-side RPC with handler registration, access control, and `HandlerError`
+- **standalone** (`@enkaku/standalone`): Combined client and server for in-process RPC (no transport needed)
 
 #### Transport
-- **transport**: Generic transport abstraction and interfaces
-- **http-client-transport**: HTTP transport for clients (POST-based sessions, SSE)
-- **http-server-transport**: HTTP transport for servers
-- **socket-transport**: WebSocket transport for clients and servers
-- **node-streams-transport**: Node.js streams transport
-- **message-transport**: MessagePort transport (web workers, iframes)
-- **electron-rpc**: Electron IPC transport
+- **transport** (`@enkaku/transport`): Generic transport abstraction and interfaces
+- **http-fetch** (`@enkaku/http-fetch`): HTTP transport for clients (POST-based sessions, SSE, fetch + eventsource-parser)
+- **http-serve** (`@enkaku/http-serve`): HTTP transport for servers (bounded request body, `413` on overflow)
+- **socket** (`@enkaku/socket`): WebSocket transport for clients and servers
+- **node-streams** (`@enkaku/node-streams`): Node.js streams transport
+- **message** (`@enkaku/message`): MessagePort transport (web workers, iframes)
+- **electron** (`@enkaku/electron`): Electron IPC transport (sender allowlist)
 
-#### Auth, Identity & Security
-- **token**: JWT signing/verification, JWE encryption (ECDH-ES + A256GCM), `IdentityProvider<T>` abstraction. Includes `did:peer:4` support: multibase/multihash helpers, `DIDResolver`/`DIDCache` contracts with in-memory cache (hash-binding enforced on write), `MultiKeyIdentity` builder via `createIdentity()`, rotation assertions linking old → new DIDs, unified `signToken(payload, options?)` API with optional `kid` and `embedLongForm`.
-- **capability**: Capability delegation chains, `RevocationBackend`, `createRevocationChecker` as `VerifyTokenHook`. Migrated to `signer.signToken` API.
-- **ledger-identity**: Ledger hardware wallet identity provider (APDU client for custom BOLOS app)
-- **hd-keystore**: Software HD keystore — BIP39 mnemonic to Ed25519 keys via SLIP-0010
-
-#### Keystores
-- **browser-keystore**: Browser keystore (IndexedDB, SubtleCrypto)
-- **node-keystore**: Node.js keystore (filesystem)
-- **expo-keystore**: React Native keystore
-- **electron-keystore**: Electron keystore
-
-#### Hub & Group Communication
-- **hub-protocol**: Protocol types for blind relay hub (send, group/send, receive)
-- **hub-server**: Hub server with `HubStore` abstraction, fan-out routing, ack-based delivery
-- **hub-client**: Hub client wrapper (send, groupSend, receive, group management)
-- **hub-tunnel**: Peer-to-peer transport tunneling Enkaku messages through a hub relay with pluggable end-to-end encryption. See [../capabilities/domains/hub-tunnel.md](../capabilities/domains/hub-tunnel.md).
-- **group**: E2EE group management using MLS (ts-mls), custom noble CryptoProvider for Hermes compatibility. Leaf credential is a single self-describing JSON shape (`MLSCredentialIdentity = { id; longForm? }`) — did:key omits `longForm`, did:peer:4 always carries it. Auth service (`createDIDAuthenticationService`) is self-contained: peer4 path decodes `longForm` inline, enforces hash binding, restricts to `doc.authentication` VMs, constant-time compares pubkey to MLS leaf signature key. Membership state (`MemberCredential`) lives outside the MLS leaf.
-
-#### Utilities
-- **async**: Async primitives (deferred, semaphore, disposables)
-- **event**: Zero-dependency event emitter
-- **flow**: Stateful flow execution
-- **generator**: Generator utilities
-- **stream**: Web streams utilities for transports
-- **result**: Option, Result, and AsyncResult primitives
-- **patch**: JSON patch utilities
-- **log**: Logging wrapper around LogTape (namespaced loggers, console sink)
-- **otel**: OpenTelemetry integration (tracer utilities, span helpers, semantic constants, trace context propagation)
-
-#### Runtime
-- **runtime**: Platform-provided primitives (`fetch`, `getRandomID`, `getRandomValues`). `createRuntime(overrides?)` resolves to `globalThis` defaults so consumers never branch on environment.
-- **expo-runtime**: Expo runtime via `expo/fetch` and `expo-crypto`, plus `polyfillCrypto`/`polyfillFetch`/`polyfill` helpers for React Native (Hermes).
+#### Observability
+- **otel** (`@enkaku/otel`): OpenTelemetry span/attribute names + W3C Trace Context propagation codecs (`traceparent`/`tracestate`/`baggage`, inbound + outbound)
 
 #### Platform
-- **react**: React bindings for Enkaku RPC client
+- **react** (`@enkaku/react`): React bindings for the Enkaku RPC client
+
+### External dependencies (sibling repos)
+- `@sozai/*` — `async`, `event`, `execution`, `log`, `otel`, `runtime`, `schema`, `stream`
+- `@kokuin/*` — `token`, `capability`
+- `@kigu/dev` — shared build/lint/test tooling
 
 ---
 
@@ -161,20 +128,19 @@ Each of `Transport`, `Server`, and `Client` exposes an `events` EventEmitter so 
 - **`Server.events`** — `handlerError` (discriminated by `category` ∈ {auth, limit, encryption, handler} and `messageType` ∈ {event, request, channel, stream, send}), `handlerTimeout`, `invalidMessage`, `handlerStart`, `handlerEnd`, `handlerAbort`, `writeDropped`, `writeFailed`, `disposing`, `disposed`, `transportAdded`, `transportRemoved`.
 - **`Client.events`** — `requestStart`, `requestEnd`, `requestError`, `writeDropped`, `transportError`, `transportReplaced`, `disposing`, `disposed`.
 
-Benign teardown errors (`AbortError`, `DisposeInterruption`, closed-writer/reader) are swallowed by the internal `safeWrite` wrapper and surface as `writeDropped` rather than unhandled rejections. Use `isBenignTeardownError` from `@enkaku/async` to classify errors in consumer code.
+Benign teardown errors (`AbortError`, `DisposeInterruption`, closed-writer/reader) are swallowed by the internal `safeWrite` wrapper and surface as `writeDropped` rather than unhandled rejections. Use `isBenignTeardownError` from `@sozai/async` to classify errors in consumer code.
 
 ---
 
 ## Available Skills
 
-The progressive discovery system provides focused guidance for specific domains. Skills are being built progressively -- use what's available:
+The progressive discovery system provides focused guidance for specific domains.
 
 ### Discovery
 - `/enkaku:discover` - Entry point for exploring capabilities by domain or use case
 
 ### Domain Skills
 - `/enkaku:transport` - HTTP, WebSocket, streams, custom transports
-- `/enkaku:auth` - Tokens, keystores, signing, verification, encryption
-- `/enkaku:streaming` - Stream utilities, async patterns, data flow
-- `/enkaku:validation` - Schema, codec, type generation
 - `/enkaku:core-rpc` - Protocol, client, server basics
+
+> The former `/enkaku:auth`, `/enkaku:validation`, and `/enkaku:streaming` skills were removed in the 0.18 split — their domains moved to `/kokuin:auth` + `/kokuin:capability` (identity/keystores) and `/sozai:validation` + `/sozai:dataflow` (schema/streaming). See `/enkaku:discover` for the cross-repo map.

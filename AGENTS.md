@@ -4,15 +4,17 @@
 
 ## What is Enkaku?
 
-Enkaku is a modern, type-safe RPC framework for TypeScript applications. It provides protocol-driven client-server communication with multiple transport layers (HTTP, WebSocket, Node.js streams), built-in JWT-like authentication and keystore management, and end-to-end type safety from protocol definitions through to handler implementations. It is the lowest-level framework in the Yulsi stack -- both Kubun and Mokei depend on it.
+Enkaku is a modern, type-safe RPC framework for TypeScript applications. It provides protocol-driven client-server communication with multiple transport layers (HTTP, WebSocket, Node.js streams, MessagePort, Electron IPC), schema-validated runtime safety, and end-to-end type safety from protocol definitions through to handler implementations.
+
+Enkaku is the RPC layer of the five-repo Yulsi stack. It depends on sibling repos rather than bundling cross-cutting concerns: build/tooling from `@kigu/*`, runtime/async/schema/stream/execution utilities from `@sozai/*`, and identity/auth (tokens, capabilities, keystores) from `@kokuin/*`. Group/MLS and hub messaging live downstream in `@kumiai/*`. As of the 0.18 stack refactor, this repo ships RPC core, transports, OTel naming, and React bindings only -- authentication and keystores are no longer in-repo.
 
 ## Key Concepts
 
 - **Protocol definitions** drive the entire type system -- define procedures once, get typed clients and servers automatically
 - **Four procedure types**: request (single response), event (fire-and-forget), stream (server-to-client data flow), channel (bidirectional communication)
 - **Transport abstraction** allows swapping communication mechanisms (HTTP, WebSocket, Node.js streams) without changing application code
-- **Token-based auth** with signing/verification and environment-specific keystores (Node.js, browser, React Native)
-- **Schema validation** using JSON Schema and AJV provides runtime type checking alongside compile-time safety
+- **Procedure-level access control** enforced by the server, using token/capability identities supplied by `@kokuin/*` (auth and keystores are no longer in-repo)
+- **Schema validation** using JSON Schema (`@sozai/schema`) provides runtime type checking alongside compile-time safety
 
 ## Quick Discovery
 
@@ -22,7 +24,7 @@ Use the progressive discovery system to explore capabilities:
 /enkaku:discover
 ```
 
-Domain skills: `/enkaku:transport`, `/enkaku:auth`, `/enkaku:streaming`, `/enkaku:validation`, `/enkaku:core-rpc`
+Domain skills: `/enkaku:transport`, `/enkaku:core-rpc`. Identity/auth and utility domains moved out in the 0.18 split -- see `/kokuin:*` and `/sozai:*` (mapped in `/enkaku:discover`).
 
 ## Commands
 

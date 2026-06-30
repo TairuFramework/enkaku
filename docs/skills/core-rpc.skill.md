@@ -371,8 +371,8 @@ const server = new Server<Protocol>({
 ## Related Domains
 
 - See `/enkaku:transport` for HTTP, socket, and other transport implementations
-- See `/enkaku:streaming` for advanced stream manipulation patterns
-- See `/enkaku:auth` for token signing and access control
+- See `/sozai:dataflow` for advanced stream manipulation patterns (moved to `@sozai`)
+- See `/kokuin:auth` for token signing and identity (moved to `@kokuin`)
 
 ## Detailed Reference
 
