@@ -1,7 +1,7 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { ValidationError } from '@enkaku/schema'
-import { randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
+import { randomIdentity } from '@kokuin/token'
+import { ValidationError } from '@sozai/schema'
 import { describe, expect, test, vi } from 'vitest'
 
 import {

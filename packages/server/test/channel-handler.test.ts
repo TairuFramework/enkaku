@@ -1,6 +1,6 @@
 import type { AnyServerPayloadOf, ProtocolDefinition } from '@enkaku/protocol'
-import { map } from '@enkaku/stream'
-import { createUnsignedToken } from '@enkaku/token'
+import { createUnsignedToken } from '@kokuin/token'
+import { map } from '@sozai/stream'
 import { describe, expect, test, vi } from 'vitest'
 
 import { handleChannel } from '../src/handlers/channel.js'

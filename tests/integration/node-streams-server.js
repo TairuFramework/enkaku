@@ -1,4 +1,4 @@
-import { NodeStreamsTransport } from '@enkaku/node-streams-transport'
+import { NodeStreamsTransport } from '@enkaku/node-streams'
 import { serve } from '@enkaku/server'
 
 serve({

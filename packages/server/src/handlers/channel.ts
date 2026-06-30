@@ -1,11 +1,12 @@
-import { AttributeKeys, getActiveSpan } from '@enkaku/otel'
+import { EnkakuAttributeKeys } from '@enkaku/otel'
 import type {
   AnyServerPayloadOf,
   ChannelPayloadOf,
   ClientMessage,
   ProtocolDefinition,
 } from '@enkaku/protocol'
-import { createPipe, tap, writeTo } from '@enkaku/stream'
+import { getActiveSpan } from '@sozai/otel'
+import { createPipe, tap, writeTo } from '@sozai/stream'
 
 import type {
   ChannelController,
@@ -70,7 +71,7 @@ export function handleChannel<
       }
       if (activeSpan != null) {
         activeSpan.addEvent('channel.message.sent', {
-          [AttributeKeys.MESSAGE_DIRECTION]: 'send',
+          [EnkakuAttributeKeys.MESSAGE_DIRECTION]: 'send',
         })
       }
       ctx.logger.trace('send value to channel {procedure} with ID {rid}: {val}', {
@@ -94,7 +95,7 @@ export function handleChannel<
     tap((value) => {
       if (activeSpan != null) {
         activeSpan.addEvent('channel.message.received', {
-          [AttributeKeys.MESSAGE_DIRECTION]: 'receive',
+          [EnkakuAttributeKeys.MESSAGE_DIRECTION]: 'receive',
         })
       }
       ctx.logger.trace('received value from channel {procedure} with ID {rid}: {value}', {

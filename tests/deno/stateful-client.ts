@@ -1,9 +1,10 @@
-import { Client } from 'https://esm.sh/@enkaku/client'
-import { ClientTransport } from 'https://esm.sh/@enkaku/http-client-transport'
-import { createArraySink } from 'https://esm.sh/@enkaku/stream'
+import { Client } from '@enkaku/client'
+import { ClientTransport } from '@enkaku/http-fetch'
+import { createArraySink } from '@sozai/stream'
+import type { Protocol } from './stateful-protocol.ts'
 
-const client = new Client({
-  transport: new ClientTransport({ url: 'http://localhost:8000' }),
+const client = new Client<Protocol>({
+  transport: new ClientTransport<Protocol>({ url: 'http://localhost:8000' }),
 })
 
 const stream = client.createStream('example:stream', { param: 3 })

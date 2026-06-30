@@ -1,6 +1,6 @@
-import { isBenignTeardownError } from '@enkaku/async'
 import type { AnyServerPayloadOf, ProtocolDefinition, ServerTransportOf } from '@enkaku/protocol'
-import { createUnsignedToken } from '@enkaku/token'
+import { createUnsignedToken } from '@kokuin/token'
+import { isBenignTeardownError } from '@sozai/async'
 
 import type { HandlerContext } from './types.js'
 

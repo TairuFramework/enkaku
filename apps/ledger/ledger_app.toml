@@ -1,4 +1,0 @@
-[app]
-build_directory = "./"
-sdk = "C"
-devices = ["nanos+", "nanox"]

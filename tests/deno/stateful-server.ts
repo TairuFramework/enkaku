@@ -1,8 +1,9 @@
-import { ServerTransport } from 'https://esm.sh/@enkaku/http-server-transport'
-import { serve } from 'https://esm.sh/@enkaku/server'
+import { ServerTransport } from '@enkaku/http-serve'
+import { serve } from '@enkaku/server'
+import type { Protocol } from './stateful-protocol.ts'
 
-const transport = new ServerTransport()
-serve({
+const transport = new ServerTransport<Protocol>()
+serve<Protocol>({
   requireAuth: false,
   handlers: {
     'example:request': () => {

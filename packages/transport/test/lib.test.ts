@@ -1,4 +1,4 @@
-import { createPipe } from '@enkaku/stream'
+import { createPipe } from '@sozai/stream'
 import { describe, expect, test, vi } from 'vitest'
 
 import { DirectTransports, Transport } from '../src/index.js'

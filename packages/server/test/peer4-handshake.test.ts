@@ -1,4 +1,5 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import { DirectTransports } from '@enkaku/transport'
 import {
   createIdentity,
   createInMemoryDIDCache,
@@ -8,8 +9,7 @@ import {
   type MultiKeyIdentity,
   type OwnIdentity,
   randomIdentity,
-} from '@enkaku/token'
-import { DirectTransports } from '@enkaku/transport'
+} from '@kokuin/token'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { type ProcedureHandlers, serve } from '../src/index.js'

@@ -3,8 +3,8 @@ import {
   checkCapability,
   type DelegationChainOptions,
   hasPartsMatch,
-} from '@enkaku/capability'
-import { normalizeDID, type SignedToken } from '@enkaku/token'
+} from '@kokuin/capability'
+import { normalizeDID, type SignedToken } from '@kokuin/token'
 
 export type EncryptionPolicy = 'required' | 'optional' | 'none'
 

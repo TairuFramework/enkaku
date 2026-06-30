@@ -1,4 +1,4 @@
-import { EventEmitter } from '@enkaku/event'
+import { EventEmitter } from '@sozai/event'
 import { describe, expect, test, vi } from 'vitest'
 
 import { safeWrite } from '../src/safe-write.js'
@@ -28,7 +28,7 @@ function fakeCtx(overrides: Partial<Record<string, unknown>> = {}) {
       debug: () => {},
       trace: () => {},
       warn: () => {},
-    } as unknown as import('@enkaku/log').Logger,
+    } as unknown as import('@sozai/log').Logger,
     signal: abortController.signal,
     ...overrides,
   }

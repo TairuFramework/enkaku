@@ -1,18 +1,4 @@
-import { Disposer, defer } from '@enkaku/async'
-import { EventEmitter } from '@enkaku/event'
-import { getEnkakuLogger, type Logger } from '@enkaku/log'
-import {
-  AttributeKeys,
-  createTracer,
-  injectTraceContext as otelInjectTraceContext,
-  type Span,
-  SpanNames,
-  SpanStatusCode,
-  setSpanOnContext,
-  type Tracer,
-  withActiveContext,
-  withSpan,
-} from '@enkaku/otel'
+import { createTracer, EnkakuAttributeKeys, EnkakuSpanNames } from '@enkaku/otel'
 import type {
   AnyClientMessageOf,
   AnyClientPayloadOf,
@@ -29,9 +15,22 @@ import type {
   ReturnOf,
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
-import { createRuntime, type Runtime } from '@enkaku/runtime'
-import { createPipe, writeTo } from '@enkaku/stream'
-import { createUnsignedToken, type Identity, isSigningIdentity } from '@enkaku/token'
+import { createUnsignedToken, type Identity, isSigningIdentity } from '@kokuin/token'
+import { Disposer, defer } from '@sozai/async'
+import { EventEmitter } from '@sozai/event'
+import { getLogger, type Logger } from '@sozai/log'
+import {
+  AttributeKeys,
+  injectTraceContext as otelInjectTraceContext,
+  type Span,
+  SpanStatusCode,
+  setSpanOnContext,
+  type Tracer,
+  withActiveContext,
+  withSpan,
+} from '@sozai/otel'
+import { createRuntime, type Runtime } from '@sozai/runtime'
+import { createPipe, writeTo } from '@sozai/stream'
 import { RequestError } from './error.js'
 import type { ClientEmitter, ClientEvents } from './events.js'
 import { safeWrite, type WriteTarget } from './safe-write.js'
@@ -288,7 +287,7 @@ export class Client<
     this.#handleTransportDisposed = params.handleTransportDisposed
     this.#handleTransportError = params.handleTransportError
     this.#logger =
-      params.logger ?? getEnkakuLogger('client', { clientID: this.#runtime.getRandomID() })
+      params.logger ?? getLogger(['enkaku', 'client'], { clientID: this.#runtime.getRandomID() })
     this.#tracer = params.tracer ?? defaultTracer
     this.#transport = params.transport
     // Start reading from transport
@@ -343,8 +342,8 @@ export class Client<
       },
       (error) => {
         if (error instanceof RequestError) {
-          span.setAttribute(AttributeKeys.ERROR_CODE, error.code)
-          span.setAttribute(AttributeKeys.ERROR_MESSAGE, error.message)
+          span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, error.code)
+          span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, error.message)
         }
         span.setStatus({
           code: SpanStatusCode.ERROR,
@@ -425,7 +424,7 @@ export class Client<
           const receiveSpan = this.#spans[msg.payload.rid]
           if (receiveSpan != null) {
             receiveSpan.addEvent('stream.message.received', {
-              [AttributeKeys.MESSAGE_DIRECTION]: 'receive',
+              [EnkakuAttributeKeys.MESSAGE_DIRECTION]: 'receive',
             })
           }
           void (controller as StreamController<unknown, unknown>).receive
@@ -546,7 +545,7 @@ export class Client<
     const config = args[0] ?? {}
     return withSpan(
       this.#tracer,
-      SpanNames.CLIENT_CALL,
+      EnkakuSpanNames.CLIENT_CALL,
       {
         attributes: {
           [AttributeKeys.RPC_SYSTEM]: 'enkaku',
@@ -581,7 +580,7 @@ export class Client<
     const config = args[0] ?? {}
     const rid = config.id ?? this.#runtime.getRandomID()
 
-    const span = this.#tracer.startSpan(SpanNames.CLIENT_CALL, {
+    const span = this.#tracer.startSpan(EnkakuSpanNames.CLIENT_CALL, {
       attributes: {
         [AttributeKeys.RPC_SYSTEM]: 'enkaku',
         [AttributeKeys.RPC_PROCEDURE]: procedure,
@@ -647,7 +646,7 @@ export class Client<
     const config = args[0] ?? {}
     const rid = config.id ?? this.#runtime.getRandomID()
 
-    const span = this.#tracer.startSpan(SpanNames.CLIENT_CALL, {
+    const span = this.#tracer.startSpan(EnkakuSpanNames.CLIENT_CALL, {
       attributes: {
         [AttributeKeys.RPC_SYSTEM]: 'enkaku',
         [AttributeKeys.RPC_PROCEDURE]: procedure,
@@ -728,7 +727,7 @@ export class Client<
     const config = args[0] ?? {}
     const rid = config.id ?? this.#runtime.getRandomID()
 
-    const span = this.#tracer.startSpan(SpanNames.CLIENT_CALL, {
+    const span = this.#tracer.startSpan(EnkakuSpanNames.CLIENT_CALL, {
       attributes: {
         [AttributeKeys.RPC_SYSTEM]: 'enkaku',
         [AttributeKeys.RPC_PROCEDURE]: procedure,
@@ -797,7 +796,7 @@ export class Client<
       const channelSpan = this.#spans[rid]
       if (channelSpan != null) {
         channelSpan.addEvent('channel.message.sent', {
-          [AttributeKeys.MESSAGE_DIRECTION]: 'send',
+          [EnkakuAttributeKeys.MESSAGE_DIRECTION]: 'send',
         })
       }
       this.#logger.trace('send value to channel {procedure} with ID {rid}: {value}', {

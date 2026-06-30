@@ -1,13 +1,14 @@
 {
   "name": "@enkaku/otel",
-  "version": "0.17.1",
+  "version": "0.18.1",
   "license": "MIT",
   "homepage": "https://enkaku.dev",
-  "description": "OpenTelemetry integration for Enkaku RPC",
+  "description": "Enkaku OpenTelemetry span and attribute names",
   "keywords": [
     "opentelemetry",
     "tracing",
-    "observability"
+    "rpc",
+    "enkaku"
   ],
   "repository": {
     "type": "git",
@@ -26,20 +27,16 @@
   "sideEffects": false,
   "scripts": {
     "build:clean": "del lib",
-    "build:js": "swc src -d ./lib --config-file ../../swc.json --strip-leading-paths",
+    "build:js": "swc src -d ./lib --config-file ../../node_modules/@kigu/dev/swc.json --strip-leading-paths",
     "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
     "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
-    "test:types": "tsc --noEmit --skipLibCheck -p tsconfig.test.json",
+    "test:types": "tsc --noEmit -p tsconfig.test.json",
     "test:unit": "vitest run",
     "test": "pnpm run test:types && pnpm run test:unit",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@enkaku/log": "workspace:^",
-    "@opentelemetry/api": "catalog:",
-    "@opentelemetry/api-logs": "catalog:"
-  },
-  "devDependencies": {
-    "vitest": "catalog:"
+    "@opentelemetry/api": "^1.9.1",
+    "@sozai/otel": "catalog:"
   }
 }

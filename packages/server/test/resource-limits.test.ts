@@ -1,6 +1,6 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { createUnsignedToken } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
+import { createUnsignedToken } from '@kokuin/token'
 import { describe, expect, test, vi } from 'vitest'
 
 import { type ProcedureHandlers, serve } from '../src/index.js'

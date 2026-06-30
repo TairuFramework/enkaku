@@ -1,4 +1,4 @@
-import { EventEmitter } from '@enkaku/event'
+import { EventEmitter } from '@sozai/event'
 import { describe, expect, test, vi } from 'vitest'
 
 import type { ClientEvents } from '../src/events.js'

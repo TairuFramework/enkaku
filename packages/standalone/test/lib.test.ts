@@ -1,6 +1,6 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import type { ChannelHandler, EventHandler, RequestHandler, StreamHandler } from '@enkaku/server'
-import { randomIdentity } from '@enkaku/token'
+import { randomIdentity } from '@kokuin/token'
 import { describe, expect, test, vi } from 'vitest'
 
 import { standalone } from '../src/index.js'

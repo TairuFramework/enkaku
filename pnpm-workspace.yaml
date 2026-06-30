@@ -2,6 +2,7 @@ packages:
   - packages/*
   - tests/*
   - website
+
 allowBuilds:
   '@biomejs/biome': true
   '@swc/core': false
@@ -26,75 +27,61 @@ catalog:
   '@docusaurus/types': ^3.10.1
   '@electron-forge/cli': ^7.11.2
   '@electron-forge/plugin-vite': ^7.11.2
-  '@hono/node-server': ^2.0.5
-  '@logtape/logtape': ^2.1.5
-  '@napi-rs/keyring': ^1.3.0
-  '@noble/ciphers': ^2.1.1
-  '@noble/curves': ^2.0.1
-  '@noble/hashes': ^2.0.0
-  '@opentelemetry/api': ^1.9.1
-  '@opentelemetry/api-logs': ^0.219.0
+  '@hono/node-server': ^2.0.6
+  '@kigu/dev': ^0.1.1
+  '@kokuin/capability': ^0.1.0
+  '@kokuin/electron': ^0.1.1
+  '@kokuin/token': ^0.1.1
   '@opentelemetry/sdk-trace-base': ^2.8.0
   '@opentelemetry/sdk-trace-node': ^2.8.0
   '@orama/plugin-docusaurus-v3': ^3.1.18
-  '@playwright/test': 1.61.0
-  '@scure/base': ^2.2.0
-  '@scure/bip39': ^2.2.0
-  '@standard-schema/spec': ^1.1.0
+  '@playwright/test': 1.61.1
+  '@sozai/async': ^0.1.0
+  '@sozai/event': ^0.1.0
+  '@sozai/execution': ^0.1.0
+  '@sozai/log': ^0.1.0
+  '@sozai/otel': ^0.2.0
+  '@sozai/runtime': ^0.1.0
+  '@sozai/schema': ^0.1.0
+  '@sozai/stream': ^0.1.0
   '@swc/cli': ^0.8.1
   '@swc/core': ^1.15.41
   '@testing-library/jest-dom': ^6.9.1
   '@testing-library/react': ^16.3.2
-  '@types/node': ^26.0.0
+  '@types/node': ^26.0.1
   '@types/react': ^19.2.17
-  '@types/react-dom': ^19.2.3
-  '@vitejs/plugin-react': ^6.0.2
+  '@vitejs/plugin-react': ^6.0.3
   '@vitest/ui': ^4.1.9
-  ajv: ^8.20.0
-  ajv-formats: ^3.0.1
   canonicalize: 3.0.0
   del-cli: ^7.0.0
-  electron: ^42.4.1
-  electron-store: ^11.0.2
+  electron: ^42.5.1
   eventsource-parser: ^3.1.0
-  expo: ~56.0.12
-  expo-crypto: ^56.0.4
-  expo-secure-store: ^56.0.4
-  expo-status-bar: ~56.0.4
   get-port: ^7.2.0
   happy-dom: ^20.10.6
-  json-schema-to-ts: ^3.1.1
-  micro-key-producer: ^0.8.6
-  playwright: ^1.55.0
   react: 19.2.3
   react-dom: 19.2.3
-  react-native: 0.85.3
   react-native-electron: ^0.22.1
   react-native-web: 0.21.2
-  ts-mls: 2.0.0-rc.13
   tsx: ^4.22.4
   turbo: ^2.9.18
   typedoc: ^0.28.19
   typedoc-plugin-markdown: ^4.12.0
   typescript: ^6.0.3
-  uint8arrays: ^6.1.1
-  undici: ^7.22.0
-  vite: ^8.0.16
+  vite: ^8.1.0
   vitest: ^4.1.9
 
 catalogMode: prefer
 
 minimumReleaseAgeExclude:
-  - '@expo/cli@56.1.10'
-  - '@expo/fingerprint@0.19.1'
-  - '@expo/prebuild-config@56.0.12'
-  - '@expo/router-server@56.0.11'
-  - babel-preset-expo@56.0.11
-  - expo-asset@56.0.13
-  - expo-constants@56.0.14
-  - expo-modules-autolinking@56.0.11
-  - expo-modules-core@56.0.12
-  - expo@56.0.3
+  - '@kigu/*'
+  - '@kokuin/*'
+  - '@sozai/*'
+
+overrides:
+  # extract-zip 2.0.1 (via @electron/packager) pulls yauzl 2.10.0, whose
+  # extraction lets Node exit 0 mid-package on some runtimes (node 24.17, 26).
+  # yauzl 3.x keeps the event loop alive through extraction. See e2e-desktop.
+  yauzl: ^3.4.0
 
 nodeLinker: hoisted
 

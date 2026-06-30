@@ -1,11 +1,12 @@
-import { AttributeKeys, getActiveSpan } from '@enkaku/otel'
+import { EnkakuAttributeKeys } from '@enkaku/otel'
 import type {
   AnyServerPayloadOf,
   ClientMessage,
   ProtocolDefinition,
   StreamPayloadOf,
 } from '@enkaku/protocol'
-import { createPipe, writeTo } from '@enkaku/stream'
+import { getActiveSpan } from '@sozai/otel'
+import { createPipe, writeTo } from '@sozai/stream'
 
 import type { HandlerContext, ReceiveType, RequestController, StreamHandler } from '../types.js'
 import { executeHandler } from '../utils.js'
@@ -52,7 +53,7 @@ export function handleStream<
       }
       if (activeSpan != null) {
         activeSpan.addEvent('stream.message.sent', {
-          [AttributeKeys.MESSAGE_DIRECTION]: 'send',
+          [EnkakuAttributeKeys.MESSAGE_DIRECTION]: 'send',
         })
       }
       ctx.logger.trace('send value to stream {procedure} with ID {rid}: {val}', {

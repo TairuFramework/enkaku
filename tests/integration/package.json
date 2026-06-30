@@ -1,6 +1,6 @@
 {
-  "name": "@enkaku/integration-tests",
-  "version": "0.1.0",
+  "name": "integration-tests",
+  "version": "0.0.0",
   "private": true,
   "license": "MIT",
   "keywords": [],
@@ -18,27 +18,20 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@enkaku/capability": "workspace:^",
     "@enkaku/client": "workspace:^",
-    "@enkaku/event": "workspace:^",
-    "@enkaku/http-client-transport": "workspace:^",
-    "@enkaku/http-server-transport": "workspace:^",
-    "@enkaku/hub-client": "workspace:^",
-    "@enkaku/hub-protocol": "workspace:^",
-    "@enkaku/hub-server": "workspace:^",
-    "@enkaku/hub-tunnel": "workspace:^",
-    "@enkaku/node-streams-transport": "workspace:^",
+    "@enkaku/http-fetch": "workspace:^",
+    "@enkaku/http-serve": "workspace:^",
+    "@enkaku/node-streams": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
-    "@enkaku/socket-transport": "workspace:^",
-    "@enkaku/token": "workspace:^",
+    "@enkaku/socket": "workspace:^",
     "@enkaku/transport": "workspace:^",
     "@hono/node-server": "catalog:",
+    "@kokuin/capability": "catalog:",
+    "@kokuin/token": "catalog:",
     "@opentelemetry/sdk-trace-base": "catalog:",
     "@opentelemetry/sdk-trace-node": "catalog:",
+    "@sozai/event": "catalog:",
     "get-port": "catalog:"
-  },
-  "devDependencies": {
-    "@enkaku/group": "workspace:^"
   }
 }

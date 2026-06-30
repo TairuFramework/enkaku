@@ -1,8 +1,8 @@
 import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { type ProcedureHandlers, type RequestHandler, serve } from '@enkaku/server'
-import { randomIdentity } from '@enkaku/token'
 import { DirectTransports } from '@enkaku/transport'
+import { randomIdentity } from '@kokuin/token'
 import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
@@ -83,8 +83,8 @@ describe('end-to-end tracing', () => {
 
     // Should have client call span
     expect(spanNames).toContain('enkaku.client.call')
-    // Should have token sign span (client signs the message)
-    expect(spanNames).toContain('enkaku.token.sign')
+    // Token signing happens in @kokuin/token and joins the same trace
+    expect(spanNames).toContain('kokuin.token.sign')
     // Should have server handle span
     expect(spanNames).toContain('enkaku.server.handle')
 

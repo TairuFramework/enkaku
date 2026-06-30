@@ -1,5 +1,3 @@
-import { DisposeInterruption } from '@enkaku/async'
-import type { Logger } from '@enkaku/log'
 import type {
   AnyClientMessageOf,
   AnyServerMessageOf,
@@ -9,9 +7,11 @@ import type {
   RequestPayloadOf,
   StreamPayloadOf,
 } from '@enkaku/protocol'
-import { createArraySink } from '@enkaku/stream'
-import { randomIdentity, createUnsignedToken as unsignedToken } from '@enkaku/token'
 import { DirectTransports, Transport } from '@enkaku/transport'
+import { randomIdentity, createUnsignedToken as unsignedToken } from '@kokuin/token'
+import { DisposeInterruption } from '@sozai/async'
+import type { Logger } from '@sozai/log'
+import { createArraySink } from '@sozai/stream'
 import { describe, expect, test, vi } from 'vitest'
 
 import { Client } from '../src/client.js'

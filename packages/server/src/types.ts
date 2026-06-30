@@ -1,6 +1,3 @@
-import type { DisposeInterruption } from '@enkaku/async'
-import type { EventEmitter } from '@enkaku/event'
-import type { Logger } from '@enkaku/log'
 import type {
   AnyRequestProcedureDefinition,
   AnyServerPayloadOf,
@@ -15,6 +12,9 @@ import type {
   ReturnOf,
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
+import type { DisposeInterruption } from '@sozai/async'
+import type { EventEmitter } from '@sozai/event'
+import type { Logger } from '@sozai/log'
 
 import type { HandlerError } from './error.js'
 

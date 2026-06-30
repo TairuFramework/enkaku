@@ -1,4 +1,4 @@
-import { isBenignTeardownError } from '@enkaku/async'
+import { isBenignTeardownError } from '@sozai/async'
 
 import type { ClientEmitter } from './events.js'
 

@@ -1,7 +1,7 @@
 {
   "name": "e2e-electron",
   "productName": "e2e-electron",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "private": true,
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
@@ -12,11 +12,11 @@
   },
   "dependencies": {
     "@enkaku/client": "workspace:*",
-    "@enkaku/electron-keystore": "workspace:*",
-    "@enkaku/electron-rpc": "workspace:*",
+    "@enkaku/electron": "workspace:*",
     "@enkaku/server": "workspace:*",
-    "@enkaku/token": "workspace:*",
     "@enkaku/transport": "workspace:*",
+    "@kokuin/electron": "catalog:",
+    "@kokuin/token": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-native-electron": "catalog:",

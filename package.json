@@ -4,27 +4,23 @@
   "author": "Paul Le Cam",
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@11.8.0",
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "prepare": "git config core.hooksPath .githooks",
     "lint": "biome check --write ./packages ./tests",
+    "format": "biome format --write .",
     "test": "turbo run test:types test:unit",
     "build:js": "turbo run build:js",
     "build:types": "pnpm run -r build:types",
-    "build": "pnpm run build:types && pnpm run build:js"
+    "build": "pnpm run build:types && pnpm run build:js",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "pnpm run build && changeset publish"
   },
   "devDependencies": {
-    "@biomejs/biome": "catalog:",
-    "@swc/cli": "catalog:",
-    "@swc/core": "catalog:",
-    "@types/node": "catalog:",
-    "@vitest/ui": "catalog:",
-    "del-cli": "catalog:",
-    "tsx": "catalog:",
-    "turbo": "catalog:",
+    "@changesets/cli": "^2.27.0",
+    "@kigu/dev": "catalog:",
     "typedoc": "catalog:",
-    "typedoc-plugin-markdown": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typedoc-plugin-markdown": "catalog:"
   }
 }

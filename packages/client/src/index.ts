@@ -23,8 +23,6 @@ export type {
 } from './client.js'
 export { Client } from './client.js'
 export {
-  type ErrorCode,
-  ErrorCodes,
   type ErrorObjectType,
   RequestError,
   type RequestErrorParams,

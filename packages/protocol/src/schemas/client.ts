@@ -1,4 +1,4 @@
-import type { Schema } from '@enkaku/schema'
+import type { Schema } from '@sozai/schema'
 
 import { createMessageSchema, type MessageType } from './message.js'
 import type {

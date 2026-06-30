@@ -1,6 +1,6 @@
-import { EventEmitter } from '@enkaku/event'
-import type { Logger } from '@enkaku/log'
 import type { ProtocolDefinition } from '@enkaku/protocol'
+import { EventEmitter } from '@sozai/event'
+import type { Logger } from '@sozai/log'
 import { describe, expect, test, vi } from 'vitest'
 
 import { HandlerError } from '../src/error.js'
