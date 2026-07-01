@@ -376,4 +376,4 @@ const server = new Server<Protocol>({
 
 ## Detailed Reference
 
-For complete API documentation, advanced patterns, and troubleshooting: `docs/capabilities/domains/core-rpc.md`
+For complete API documentation, advanced patterns, and troubleshooting: `docs/reference/domains/core-rpc.md`

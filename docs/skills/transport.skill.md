@@ -234,4 +234,4 @@ const server = new Server({ protocol: myProtocol, transport })
 
 ## Detailed Reference
 
-For complete API documentation, transport internals, and advanced patterns: `docs/capabilities/domains/transport.md`
+For complete API documentation, transport internals, and advanced patterns: `docs/reference/domains/transport.md`

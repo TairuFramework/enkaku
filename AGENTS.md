@@ -54,8 +54,8 @@ Load these files based on your current task:
 | Task | Files to read |
 |------|---------------|
 | Planning | `docs/agents/architecture.md` |
-| Implementation | `docs/agents/conventions.md`, `docs/agents/development.md` |
-| Review | `docs/agents/conventions.md`, `docs/agents/architecture.md`, `docs/agents/development.md` |
+| Implementation | the `conventions` and `development` skills |
+| Review | the `conventions` skill, `docs/agents/architecture.md`, the `development` skill |
 
 ## Workflow Skills
 
