@@ -7,6 +7,12 @@ import { MemoryReplayCache, type ProcedureHandlers, Server, serve } from '../src
 
 const protocol = {
   notify: { type: 'event', data: { type: 'object' } },
+  chat: {
+    type: 'channel',
+    send: { type: 'string' },
+    receive: { type: 'string' },
+    result: { type: 'string' },
+  },
 } as const satisfies ProtocolDefinition
 type Protocol = typeof protocol
 
@@ -201,4 +207,138 @@ test('uses a custom cache when provided', async () => {
   await transports.dispose()
 
   expect(spy).toHaveBeenCalled()
+})
+
+test('rejects a replayed signed channel send with EK09', async () => {
+  const expiresAt = nowSeconds() + 300
+  const signer = randomIdentity()
+  const receivedValues: Array<unknown> = []
+  const handler = vi.fn(async (ctx) => {
+    for await (const value of ctx.readable) {
+      receivedValues.push(value)
+    }
+    return 'done'
+  })
+  const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+
+  const server = serve<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { chat: { allow: true } },
+    transport: transports.server,
+  })
+
+  // Establish the channel with a valid signed token.
+  const channelMsg = await signer.signToken({
+    typ: 'channel',
+    aud: signer.id,
+    prc: 'chat',
+    rid: 'send-replay',
+    prm: undefined,
+    exp: expiresAt,
+  } as const)
+  await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  // Signed send from the channel owner, with a unique jti + future exp for a
+  // deterministic dedup key.
+  const sendMsg = await signer.signToken({
+    typ: 'send',
+    rid: 'send-replay',
+    val: 'hello',
+    jti: 'send-replay-1',
+    exp: expiresAt,
+  } as const)
+
+  await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  expect(receivedValues).toContain('hello')
+
+  const errorEvent = server.events.once('handlerError')
+  await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
+
+  const emitted = await errorEvent
+  expect(emitted).toEqual(
+    expect.objectContaining({
+      error: expect.objectContaining({ code: 'EK09' }),
+      category: 'auth',
+    }),
+  )
+
+  await server.dispose()
+  await transports.dispose()
+})
+
+test('rejects a replayed signed channel abort with EK09', async () => {
+  const expiresAt = nowSeconds() + 300
+  const signer = randomIdentity()
+
+  // The handler never resolves on its own -- resolution is fully controlled by the
+  // test so the channel controller stays alive across both abort writes, regardless
+  // of how fast the (unrelated) stream teardown from the first abort() call runs.
+  let resolveHandler: (value: string) => void = () => {}
+  const handlerDone = new Promise<string>((resolve) => {
+    resolveHandler = resolve
+  })
+  const handler = vi.fn(() => handlerDone)
+  const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+
+  const server = serve<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { chat: { allow: true } },
+    transport: transports.server,
+  })
+
+  // Establish the channel with a valid signed token.
+  const channelMsg = await signer.signToken({
+    typ: 'channel',
+    aud: signer.id,
+    prc: 'chat',
+    rid: 'abort-replay',
+    prm: undefined,
+    exp: expiresAt,
+  } as const)
+  await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  // Signed abort from the channel owner, with a unique jti + future exp for a
+  // deterministic dedup key.
+  const abortMsg = await signer.signToken({
+    typ: 'abort',
+    rid: 'abort-replay',
+    rsn: 'Close',
+    jti: 'abort-replay-1',
+    exp: expiresAt,
+  } as const)
+
+  const aborted = vi.fn()
+  server.events.on('handlerAbort', aborted)
+
+  await transports.client.write(abortMsg as unknown as AnyClientMessageOf<Protocol>)
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  expect(aborted).toHaveBeenCalledWith({ rid: 'abort-replay', reason: 'Close' })
+
+  const errorEvent = server.events.once('handlerError')
+  await transports.client.write(abortMsg as unknown as AnyClientMessageOf<Protocol>)
+
+  const emitted = await errorEvent
+  expect(emitted).toEqual(
+    expect.objectContaining({
+      error: expect.objectContaining({ code: 'EK09' }),
+      category: 'auth',
+    }),
+  )
+
+  resolveHandler('done')
+  await server.dispose()
+  await transports.dispose()
 })
