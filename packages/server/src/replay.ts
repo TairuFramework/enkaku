@@ -91,6 +91,11 @@ export type ReplayCheckResult =
   | { ok: true }
   | { ok: false; reason: 'replay_detected' | 'replay_stale' }
 
+/**
+ * Precondition: must only be called on messages that have already passed signature
+ * verification -- the dedup key falls back to `message.signature` when `jti` is absent,
+ * and that fallback is only tamper-safe once the signature itself is verified.
+ */
 export async function checkReplay(
   message: SignedToken,
   resolved: ResolvedReplay,

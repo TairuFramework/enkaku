@@ -29,6 +29,11 @@ export {
   type ResourceLimits,
 } from './limits.js'
 export {
+  MemoryReplayCache,
+  type ReplayCache,
+  type ReplayOptions,
+} from './replay.js'
+export {
   type ServeParams,
   Server,
   type ServerAccessOptions,

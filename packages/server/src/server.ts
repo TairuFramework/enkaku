@@ -52,6 +52,7 @@ import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { handleRequest, type RequestMessageOf } from './handlers/request.js'
 import { handleStream, type StreamMessageOf } from './handlers/stream.js'
 import { createResourceLimiter, type ResourceLimiter, type ResourceLimits } from './limits.js'
+import { checkReplay, type ReplayOptions, type ResolvedReplay, resolveReplay } from './replay.js'
 import { safeWrite } from './safe-write.js'
 import type {
   ChannelController,
@@ -86,6 +87,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
   handlers: ProcedureHandlers<Protocol>
   limiter: ResourceLimiter
   logger: Logger
+  replay?: ResolvedReplay | null
   signal: AbortSignal
   tracer: Tracer
   transport: ServerTransportOf<Protocol>
@@ -95,7 +97,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
 async function handleMessages<Protocol extends ProtocolDefinition>(
   params: HandleMessagesParams<Protocol>,
 ): Promise<void> {
-  const { events, handlers, limiter, logger, signal, transport, validator } = params
+  const { events, handlers, limiter, logger, replay, signal, transport, validator } = params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
   const context: HandlerContext<Protocol> = {
@@ -529,6 +531,30 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           return
         }
 
+        if (replay != null) {
+          const replayResult = await checkReplay(message as unknown as SignedToken, replay)
+          if (!replayResult.ok) {
+            span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, replayResult.reason)
+            span.setAttribute(EnkakuAttributeKeys.AUTH_ALLOWED, false)
+            const error = new HandlerError({
+              code: ErrorCodes.REPLAY_DETECTED,
+              message: 'Replay detected',
+            })
+            span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, error.code)
+            span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, error.message)
+            span.setStatus({ code: SpanStatusCode.ERROR, message: error.message })
+            span.recordException(error)
+            span.end()
+            if (message.payload.typ !== 'event') {
+              context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                rid: message.payload.rid,
+              })
+            }
+            emitHandlerError(events, 'auth', error, message.payload)
+            return
+          }
+        }
+
         if (!checkMessageEncryption(message)) {
           span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, 'encryption_required')
           span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
@@ -609,6 +635,20 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               emitHandlerError(events, 'auth', error, msg.payload)
               break
             }
+            if (replay != null) {
+              const replayResult = await checkReplay(msg as unknown as SignedToken, replay)
+              if (!replayResult.ok) {
+                const error = new HandlerError({
+                  code: ErrorCodes.REPLAY_DETECTED,
+                  message: 'Replay detected',
+                })
+                context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                  rid: msg.payload.rid,
+                })
+                emitHandlerError(events, 'auth', error, msg.payload)
+                break
+              }
+            }
             const abortIssuer = (msg as unknown as SignedToken).payload.iss
             if (
               controller.issuer != null &&
@@ -683,6 +723,20 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               emitHandlerError(events, 'auth', error, msg.payload)
               break
             }
+            if (replay != null) {
+              const replayResult = await checkReplay(msg as unknown as SignedToken, replay)
+              if (!replayResult.ok) {
+                const error = new HandlerError({
+                  code: ErrorCodes.REPLAY_DETECTED,
+                  message: 'Replay detected',
+                })
+                context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
+                  rid: msg.payload.rid,
+                })
+                emitHandlerError(events, 'auth', error, msg.payload)
+                break
+              }
+            }
             const sendIssuer = (msg as unknown as SignedToken).payload.iss
             if (
               controller.issuer != null &&
@@ -740,6 +794,7 @@ export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   limits?: Partial<ResourceLimits>
   logger?: Logger
   protocol?: Protocol
+  replay?: ReplayOptions
   resolver?: DIDResolver
   tracer?: Tracer
   signal?: AbortSignal
@@ -767,6 +822,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #handling: Array<HandlingTransport<Protocol>> = []
   #limiter: ResourceLimiter
   #logger: Logger
+  #replay: ResolvedReplay | null
   #tracer: Tracer
   #validator?: Validator<AnyClientMessageOf<Protocol>>
 
@@ -856,6 +912,8 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       }
     }
 
+    this.#replay = resolveReplay(params.replay, this.#accessControl.requireAuth)
+
     this.#limiter = createResourceLimiter(params.limits)
 
     if (params.protocol != null) {
@@ -927,6 +985,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       handlers: this.#handlers,
       limiter: this.#limiter,
       logger,
+      replay: this.#replay,
       signal: this.#abortController.signal,
       tracer: this.#tracer,
       transport,
