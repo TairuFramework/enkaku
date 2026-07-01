@@ -66,8 +66,12 @@ review (no blocking issues) + a focused re-review of the reorder. Full repo gree
 `pnpm test` 26/26 tasks, `pnpm run lint` warning-free across 184 files. 13 replay
 unit tests + 10 server integration tests.
 
-## Known follow-ups
+## Follow-ups (resolved)
 
-Extracted to `docs/agents/plans/backlog/replay-protection-followups.md` (both Minor,
-non-blocking): replay key recorded before the encryption-policy check; the three
-near-duplicate replay-gate blocks could share a helper.
+Both Minor review follow-ups were addressed on this branch:
+
+- The `process` path now runs the encryption-policy check **before** `checkReplay`,
+  so a message that fails encryption no longer consumes its dedup key (a corrected
+  retry may reuse its `jti`). Covered by a regression test.
+- The identical `send`/`abort` replay-rejection blocks were extracted into a shared
+  `rejectReplay(rid, payload)` helper.

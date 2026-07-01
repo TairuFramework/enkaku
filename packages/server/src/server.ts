@@ -111,6 +111,18 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   const running: Record<string, Promise<void>> = Object.create(null)
   const encoder = new TextEncoder()
 
+  // Standard replay rejection for control messages (send/abort): reply to the
+  // client by rid and emit an auth-category handlerError. The process path has
+  // its own span-aware variant inline.
+  function rejectReplay(rid: string, payload: { typ: string } & Record<string, unknown>): void {
+    const error = new HandlerError({
+      code: ErrorCodes.REPLAY_DETECTED,
+      message: 'Replay detected',
+    })
+    context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
+    emitHandlerError(events, 'auth', error, payload)
+  }
+
   // Periodic cleanup of expired controllers
   const cleanupInterval = setInterval(
     () => {
@@ -531,6 +543,18 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           return
         }
 
+        if (!checkMessageEncryption(message)) {
+          span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, 'encryption_required')
+          span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
+          span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, 'Encryption required')
+          span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
+          span.end()
+          handleEncryptionViolation(message)
+          return
+        }
+
+        // Replay check runs after the encryption gate so a message that fails
+        // encryption does not consume its dedup key (a corrected retry may reuse jti).
         if (replay != null) {
           const replayResult = await checkReplay(message as unknown as SignedToken, replay)
           if (!replayResult.ok) {
@@ -553,16 +577,6 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             emitHandlerError(events, 'auth', error, message.payload)
             return
           }
-        }
-
-        if (!checkMessageEncryption(message)) {
-          span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, 'encryption_required')
-          span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, 'EK_ENCRYPTION')
-          span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, 'Encryption required')
-          span.setStatus({ code: SpanStatusCode.ERROR, message: 'Encryption required' })
-          span.end()
-          handleEncryptionViolation(message)
-          return
         }
 
         processHandler(message, wrapHandle(span, handle))
@@ -636,14 +650,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             if (replay != null) {
               const replayResult = await checkReplay(msg as unknown as SignedToken, replay)
               if (!replayResult.ok) {
-                const error = new HandlerError({
-                  code: ErrorCodes.REPLAY_DETECTED,
-                  message: 'Replay detected',
-                })
-                context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
-                  rid: msg.payload.rid,
-                })
-                emitHandlerError(events, 'auth', error, msg.payload)
+                rejectReplay(msg.payload.rid, msg.payload)
                 break
               }
             }
@@ -727,14 +734,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             if (replay != null) {
               const replayResult = await checkReplay(msg as unknown as SignedToken, replay)
               if (!replayResult.ok) {
-                const error = new HandlerError({
-                  code: ErrorCodes.REPLAY_DETECTED,
-                  message: 'Replay detected',
-                })
-                context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
-                  rid: msg.payload.rid,
-                })
-                emitHandlerError(events, 'auth', error, msg.payload)
+                rejectReplay(msg.payload.rid, msg.payload)
                 break
               }
             }
