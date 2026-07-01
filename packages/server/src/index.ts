@@ -7,14 +7,6 @@
  * npm install @enkaku/server
  * ```
  *
- * ## Replay protection
- *
- * Authenticated servers reject replayed signed messages (`EK09`) via a pluggable
- * {@link ReplayCache}, configured with the `replay?: {@link ReplayOptions}` server
- * option. See the dedicated guide for the threat model, configuration, custom
- * caches, and security considerations:
- * `docs/capabilities/domains/replay-protection.md`.
- *
  * @module server
  */
 
