@@ -3,7 +3,13 @@ import { DirectTransports } from '@enkaku/transport'
 import { randomIdentity } from '@kokuin/token'
 import { expect, test, vi } from 'vitest'
 
-import { MemoryReplayCache, type ProcedureHandlers, Server, serve } from '../src/index.js'
+import {
+  MemoryReplayCache,
+  type ProcedureHandlers,
+  type ReplayCache,
+  Server,
+  serve,
+} from '../src/index.js'
 
 const protocol = {
   notify: { type: 'event', data: { type: 'object' } },
@@ -339,6 +345,179 @@ test('rejects a replayed signed channel abort with EK09', async () => {
   )
 
   resolveHandler('done')
+  await server.dispose()
+  await transports.dispose()
+})
+
+test('rejects a replayed abort even after its target controller is gone', async () => {
+  const expiresAt = nowSeconds() + 300
+  const signer = randomIdentity()
+
+  // Draining handler returns once the channel is aborted, so the controller is
+  // deleted before the replayed abort arrives -- exercising the path where the
+  // replay check must run before the controller-existence lookup.
+  const handler = vi.fn(async (ctx) => {
+    for await (const _value of ctx.readable) {
+      // drain until abort closes the stream
+    }
+    return 'done'
+  })
+  const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+
+  const server = serve<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { chat: { allow: true } },
+    transport: transports.server,
+  })
+
+  const channelMsg = await signer.signToken({
+    typ: 'channel',
+    aud: signer.id,
+    prc: 'chat',
+    rid: 'abort-gone',
+    prm: undefined,
+    exp: expiresAt,
+  } as const)
+  await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  const abortMsg = await signer.signToken({
+    typ: 'abort',
+    rid: 'abort-gone',
+    rsn: 'Close',
+    jti: 'abort-gone-1',
+    exp: expiresAt,
+  } as const)
+
+  const aborted = vi.fn()
+  server.events.on('handlerAbort', aborted)
+
+  // First abort is accepted and tears the controller down.
+  await transports.client.write(abortMsg as unknown as AnyClientMessageOf<Protocol>)
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  expect(aborted).toHaveBeenCalledWith({ rid: 'abort-gone', reason: 'Close' })
+
+  // Replaying the identical abort must still surface EK09, even though the
+  // controller it targets no longer exists.
+  const errorEvent = server.events.once('handlerError')
+  await transports.client.write(abortMsg as unknown as AnyClientMessageOf<Protocol>)
+
+  const emitted = await errorEvent
+  expect(emitted).toEqual(
+    expect.objectContaining({
+      error: expect.objectContaining({ code: 'EK09' }),
+      category: 'auth',
+    }),
+  )
+
+  await server.dispose()
+  await transports.dispose()
+})
+
+test('does not treat a reused jti from a different issuer as a replay', async () => {
+  const signerA = randomIdentity()
+  const signerB = randomIdentity()
+  const handler = vi.fn()
+  const handlers = { notify: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+  const errorHandler = vi.fn()
+
+  // Server authenticates but allows any issuer for `notify`.
+  const server = serve<Protocol>({
+    handlers,
+    identity: signerA,
+    accessRules: { notify: { allow: true } },
+    transport: transports.server,
+  })
+  server.events.on('handlerError', errorHandler)
+
+  // Two distinct issuers deliberately reuse the SAME jti value. The dedup key is
+  // namespaced by issuer, so the second must NOT be rejected as a replay.
+  const messageA = await signerA.signToken({
+    typ: 'event',
+    aud: signerA.id,
+    prc: 'notify',
+    data: 'from-a',
+    jti: 'shared-jti',
+    exp: nowSeconds() + 300,
+  } as const)
+  const messageB = await signerB.signToken({
+    typ: 'event',
+    aud: signerA.id,
+    prc: 'notify',
+    data: 'from-b',
+    jti: 'shared-jti',
+    exp: nowSeconds() + 300,
+  } as const)
+
+  await transports.client.write(messageA as unknown as AnyClientMessageOf<Protocol>)
+  await transports.client.write(messageB as unknown as AnyClientMessageOf<Protocol>)
+
+  await server.dispose()
+  await transports.dispose()
+
+  expect(handler).toHaveBeenCalledTimes(2)
+  expect(errorHandler).not.toHaveBeenCalled()
+})
+
+test('delegates the dedup decision to a custom cache', async () => {
+  const signer = randomIdentity()
+  const handler = vi.fn()
+  const handlers = { notify: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+
+  // A custom cache that reports every key as already-seen. If the server truly
+  // delegates the dedup decision, even the first message is rejected with EK09.
+  const seen: string[] = []
+  const cache: ReplayCache = {
+    checkAndRecord(key: string): boolean {
+      seen.push(key)
+      return false
+    },
+  }
+
+  const server = serve<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { notify: { allow: true } },
+    transport: transports.server,
+    replay: { cache },
+  })
+
+  const message = await signer.signToken({
+    typ: 'event',
+    aud: signer.id,
+    prc: 'notify',
+    data: 'hello',
+    jti: 'evt-delegate',
+    exp: nowSeconds() + 300,
+  } as const)
+
+  const errorEvent = server.events.once('handlerError')
+  await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+
+  const emitted = await errorEvent
+  expect(emitted).toEqual(
+    expect.objectContaining({
+      error: expect.objectContaining({ code: 'EK09' }),
+      category: 'auth',
+    }),
+  )
+  expect(handler).not.toHaveBeenCalled()
+  expect(seen).toHaveLength(1)
+  expect(seen[0]).toContain('evt-delegate')
+
   await server.dispose()
   await transports.dispose()
 })

@@ -25,6 +25,8 @@
  * - `cache?: ReplayCache` -- plug in a persistent or shared backend (e.g. Redis)
  *   instead of the built-in `MemoryReplayCache`, useful when running multiple server
  *   instances behind a load balancer. Must implement `checkAndRecord(key, expiresAt)`.
+ *   Note: a custom cache is responsible for its own clock/expiry; the server's `now`
+ *   (used for staleness) is not injected into it, so keep the two clocks consistent.
  * - `maxAge?: number` -- fallback dedup/staleness window, in **milliseconds**, used
  *   for messages that carry no `exp` claim. Defaults to 60_000 (60s).
  * - `rejectStale?: boolean` -- when `true` (the default), messages that are already
@@ -32,7 +34,10 @@
  *   rejected as stale before the replay cache is even consulted.
  * - `maxEntries?: number` -- caps the size of the default `MemoryReplayCache` (evicts
  *   expired entries first, then oldest-inserted). Ignored when a custom `cache` is
- *   supplied.
+ *   supplied. This bounds memory at the cost of a replay window: a flood of distinct
+ *   fresh keys can evict an older not-yet-expired entry, so size it above your expected
+ *   in-flight message volume, or supply a persistent `cache` if that trade-off is
+ *   unacceptable.
  *
  * **Units note:** token claims `exp` and `iat` are epoch **seconds** (per the JWT/token
  * convention), while `maxAge` (and the `expiresAt` passed to `ReplayCache.checkAndRecord`)

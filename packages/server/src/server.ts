@@ -602,10 +602,8 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       }
       switch (msg.payload.typ) {
         case 'abort': {
-          const controller = controllers[msg.payload.rid]
-          if (controller == null) {
-            break
-          }
+          // Verify signature and replay before looking up the controller so a replayed
+          // abort still surfaces EK09 even when its target controller is already gone.
           if (params.requireAuth) {
             if (!isSignedToken(msg as Token)) {
               const error = new HandlerError({
@@ -649,6 +647,12 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
                 break
               }
             }
+          }
+          const controller = controllers[msg.payload.rid]
+          if (controller == null) {
+            break
+          }
+          if (params.requireAuth) {
             const abortIssuer = (msg as unknown as SignedToken).payload.iss
             if (
               controller.issuer != null &&
@@ -688,12 +692,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           break
         }
         case 'send': {
-          const controller = controllers[msg.payload.rid] as ChannelController | undefined
-          if (controller == null) {
-            logger.debug('received send for unknown channel {rid}', { rid: msg.payload.rid })
-            break
-          }
-          // In authenticated mode, validate send messages against the channel owner
+          // In authenticated mode, verify signature and replay before the controller
+          // lookup so a replayed send still surfaces EK09 even when its target channel
+          // is already gone.
           if (params.requireAuth) {
             if (!isSignedToken(msg as Token)) {
               const error = new HandlerError({
@@ -737,6 +738,14 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
                 break
               }
             }
+          }
+          const controller = controllers[msg.payload.rid] as ChannelController | undefined
+          if (controller == null) {
+            logger.debug('received send for unknown channel {rid}', { rid: msg.payload.rid })
+            break
+          }
+          // In authenticated mode, validate send messages against the channel owner
+          if (params.requireAuth) {
             const sendIssuer = (msg as unknown as SignedToken).payload.iss
             if (
               controller.issuer != null &&
