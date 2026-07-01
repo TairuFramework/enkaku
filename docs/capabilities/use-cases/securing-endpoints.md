@@ -1008,6 +1008,7 @@ handlers: {
 
 ### Domain Documentation
 - [Authentication & Security](../domains/authentication.md) - Complete reference for token system, keystores, and DID-based authentication
+- [Replay Protection](../domains/replay-protection.md) - Dedup of replayed signed messages, `ReplayCache` config, and security considerations
 - [Core RPC](../domains/core-rpc.md) - Protocol definitions, client/server architecture, and message handling
 
 ### Related Use Cases

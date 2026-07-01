@@ -13,6 +13,7 @@ describe('ErrorCodes', () => {
       MESSAGE_TOO_LARGE: 'EK06',
       ENCRYPTION_REQUIRED: 'EK07',
       INVALID_MESSAGE: 'EK08',
+      REPLAY_DETECTED: 'EK09',
     })
   })
 

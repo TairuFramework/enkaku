@@ -33,7 +33,11 @@ describe('standalone', () => {
         prc: 'test',
         data: { hello: 'world' },
       })
-      expect(handler).toHaveBeenCalledWith({ data: { hello: 'world' }, message })
+      // sendEvent is fire-and-forget; the authenticated server processes the event
+      // asynchronously (verify + replay check), so wait for the handler to run.
+      await vi.waitFor(() =>
+        expect(handler).toHaveBeenCalledWith({ data: { hello: 'world' }, message }),
+      )
     })
   })
 

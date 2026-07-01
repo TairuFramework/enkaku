@@ -21,6 +21,8 @@ export const ErrorCodes = {
   ENCRYPTION_REQUIRED: 'EK07',
   /** EK08: Invalid protocol message (schema validation failed). */
   INVALID_MESSAGE: 'EK08',
+  /** EK09: Replay detected (duplicate or stale authenticated message). */
+  REPLAY_DETECTED: 'EK09',
 } as const
 
 /** Union of all known Enkaku server error code strings. */

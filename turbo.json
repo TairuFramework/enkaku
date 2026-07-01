@@ -3,10 +3,18 @@
   "tasks": {
     "clean": {},
     "build:js": {
-      "dependsOn": ["^clean"],
+      "dependsOn": ["^build:js"],
       "outputs": ["lib/**"]
     },
-    "test:types": {},
-    "test:unit": {}
+    "build:types": {
+      "dependsOn": ["^build:types"],
+      "outputs": ["lib/**/*.d.ts", "*.tsbuildinfo"]
+    },
+    "test:types": {
+      "dependsOn": ["^build:types"]
+    },
+    "test:unit": {
+      "dependsOn": ["^build:js"]
+    }
   }
 }
