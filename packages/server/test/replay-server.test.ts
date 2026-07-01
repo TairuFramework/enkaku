@@ -479,7 +479,7 @@ test('delegates the dedup decision to a custom cache', async () => {
 
   // A custom cache that reports every key as already-seen. If the server truly
   // delegates the dedup decision, even the first message is rejected with EK09.
-  const seen: string[] = []
+  const seen: Array<string> = []
   const cache: ReplayCache = {
     checkAndRecord(key: string): boolean {
       seen.push(key)
