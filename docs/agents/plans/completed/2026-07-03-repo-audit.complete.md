@@ -1,6 +1,10 @@
 # Repo audit — 2026-07-03
 
+**Status:** complete
+
 Full-repo audit covering correctness, documentation freshness, package hygiene, test coverage, and conventions compliance. Findings verified against source where noted.
+
+All actionable findings were triaged into plans on 2026-07-07: `next/2026-07-07-replay-protection-hardening.md`, `next/2026-07-07-client-transport-lifecycle-hardening.md`, `next/2026-07-07-stale-docs-cleanup.md`, `backlog/2026-07-07-test-coverage-gaps.md`, `backlog/2026-07-07-package-hygiene.md`; `backlog/docs-release-gaps.md` was rewritten to post-split scope. This file is kept as the audit record.
 
 **TLDR:** Code quality and conventions are excellent. Two real problem areas: (1) the new replay protection is largely ineffective as-is, plus several correctness bugs in client/transport lifecycle paths, and (2) ~8k lines of stale pre-0.18-split documentation in `docs/reference/` and `website/`. Test coverage is strong except for protocol schemas and electron.
 

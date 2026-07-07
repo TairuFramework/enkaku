@@ -22,12 +22,30 @@ owning repos (see bottom).
 
 ## Current Focus
 
-Enkaku is in maintenance/hardening — no large feature in flight. Active backlog:
+Enkaku is in maintenance/hardening — no large feature in flight. The 2026-07-03 repo audit
+(`completed/2026-07-03-repo-audit.complete.md`) set the current priorities.
 
-- **Replay protection** — `jti` dedup + `exp` policy on authenticated RPC messages
-  (server + protocol). Security hardening. `backlog/replay-protection.md`
-- **Docs & release gaps** — website docs lag the current API; typedoc + changesets.
-  Tracking only while consumers are stack-internal. `backlog/docs-release-gaps.md`
+Next (immediate):
+
+- **Replay protection hardening** — the 0.18.x replay feature (shipped
+  `completed/2026-07-01-replay-protection`) doesn't meet its threat model: no client
+  `jti`/`iat` means deterministic-signature dedup keys and inert staleness rejection.
+  `next/2026-07-07-replay-protection-hardening.md`
+- **Client/transport lifecycle hardening** — client read-loop death on malformed messages,
+  graceful-close hangs, socket write-after-close crash, SSE session timeout on live streams,
+  plus medium-severity backpressure/rid-reuse/race fixes.
+  `next/2026-07-07-client-transport-lifecycle-hardening.md`
+- **Stale docs cleanup** — ~8k lines of pre-split guidance in `docs/reference/` and
+  `website/`; regenerate typedoc output. `next/2026-07-07-stale-docs-cleanup.md`
+
+Backlog:
+
+- **Test coverage gaps** — protocol schema tests (highest leverage), electron/react/deno
+  gaps, socket + MessagePort integration coverage. `backlog/2026-07-07-test-coverage-gaps.md`
+- **Package hygiene & conventions sweep** — READMEs, script/catalog drift, `it` → `test`.
+  `backlog/2026-07-07-package-hygiene.md`
+- **Docs & release gaps** — README quality, release tags, DX ideas. Tracking only while
+  consumers are stack-internal. `backlog/docs-release-gaps.md`
 - **Transport typed constructors** — additive DX helpers so consumers can't drop transport
   type args and fall back to `as unknown as` casts. `backlog/transport-typed-constructors.md`
 
