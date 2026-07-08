@@ -58,6 +58,7 @@ export type ReplayOptions = {
   enabled?: boolean
   cache?: ReplayCache
   maxAge?: number // milliseconds; fallback window for messages without exp
+  leeway?: number // milliseconds; clock-skew tolerance for staleness
   rejectStale?: boolean
   maxEntries?: number
   now?: () => number
@@ -66,11 +67,13 @@ export type ReplayOptions = {
 export type ResolvedReplay = {
   cache: ReplayCache
   maxAge: number
+  leeway: number
   rejectStale: boolean
   now: () => number
 }
 
 const DEFAULT_MAX_AGE = 60_000
+const DEFAULT_LEEWAY = 5_000
 
 export function resolveReplay(
   options: ReplayOptions | undefined,
@@ -82,6 +85,7 @@ export function resolveReplay(
   return {
     cache: options?.cache ?? new MemoryReplayCache({ maxEntries: options?.maxEntries, now }),
     maxAge: options?.maxAge ?? DEFAULT_MAX_AGE,
+    leeway: options?.leeway ?? DEFAULT_LEEWAY,
     rejectStale: options?.rejectStale ?? true,
     now,
   }
@@ -113,13 +117,13 @@ export async function checkReplay(
 
   if (resolved.rejectStale) {
     if (expMs != null) {
-      if (now > expMs) return { ok: false, reason: 'replay_stale' }
-    } else if (iatMs != null && now > iatMs + resolved.maxAge) {
+      if (now > expMs + resolved.leeway) return { ok: false, reason: 'replay_stale' }
+    } else if (iatMs != null && now > iatMs + resolved.maxAge + resolved.leeway) {
       return { ok: false, reason: 'replay_stale' }
     }
   }
 
-  const expiresAt = expMs ?? (iatMs ?? now) + resolved.maxAge
+  const expiresAt = (expMs ?? (iatMs ?? now) + resolved.maxAge) + resolved.leeway
   const key = `${normalizeDID(payload.iss)}:${payload.jti ?? message.signature}`
   const fresh = await resolved.cache.checkAndRecord(key, expiresAt)
   return fresh ? { ok: true } : { ok: false, reason: 'replay_detected' }

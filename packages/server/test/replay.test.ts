@@ -147,3 +147,50 @@ describe('checkReplay', () => {
     expect(ErrorCodes.REPLAY_DETECTED).toBe('EK09')
   })
 })
+
+describe('clock-skew leeway', () => {
+  function signed(payload: Record<string, unknown>): SignedToken {
+    return { payload: { iss: 'did:key:zTest', ...payload }, signature: 'sig' } as SignedToken
+  }
+
+  test('iat within maxAge + leeway passes', async () => {
+    const now = 100_000
+    const resolved = resolveOrThrow({ maxAge: 10_000, leeway: 5_000, now: () => now })
+    // iat 12s ago: past maxAge (10s) but within maxAge + leeway (15s)
+    const result = await checkReplay(signed({ jti: 'a', iat: (now - 12_000) / 1000 }), resolved)
+    expect(result).toEqual({ ok: true })
+  })
+
+  test('iat beyond maxAge + leeway is stale', async () => {
+    const now = 100_000
+    const resolved = resolveOrThrow({ maxAge: 10_000, leeway: 5_000, now: () => now })
+    const result = await checkReplay(signed({ jti: 'b', iat: (now - 16_000) / 1000 }), resolved)
+    expect(result).toEqual({ ok: false, reason: 'replay_stale' })
+  })
+
+  test('exp within leeway passes', async () => {
+    const now = 100_000
+    const resolved = resolveOrThrow({ leeway: 5_000, now: () => now })
+    const result = await checkReplay(signed({ jti: 'c', exp: (now - 3_000) / 1000 }), resolved)
+    expect(result).toEqual({ ok: true })
+  })
+
+  test('recorded entry lives through the leeway tail (no replay slip)', async () => {
+    let now = 100_000
+    const cache = new MemoryReplayCache({ now: () => now })
+    const resolved = resolveOrThrow({ maxAge: 10_000, leeway: 5_000, cache, now: () => now })
+    const msg = signed({ jti: 'd', iat: now / 1000 })
+    expect(await checkReplay(msg, resolved)).toEqual({ ok: true })
+    now = 100_000 + 12_000 // past maxAge, within maxAge + leeway
+    // staleness still accepts it, and the cache must still hold the key -> replay
+    expect(await checkReplay(msg, resolved)).toEqual({ ok: false, reason: 'replay_detected' })
+  })
+
+  test('distinct jti on byte-identical intent both pass (regression for #1)', async () => {
+    const resolved = resolveOrThrow({ now: () => 100_000 })
+    const a = signed({ jti: 'unique-1', iat: 100 })
+    const b = signed({ jti: 'unique-2', iat: 100 })
+    expect(await checkReplay(a, resolved)).toEqual({ ok: true })
+    expect(await checkReplay(b, resolved)).toEqual({ ok: true })
+  })
+})
