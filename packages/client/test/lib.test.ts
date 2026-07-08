@@ -326,12 +326,6 @@ describe('Client', () => {
       })
 
       await client.sendEvent('test/event', { data: { hello: 'world' } })
-      const signedMessage = await clientIdentity.signToken({
-        aud: serverIdentity.id,
-        typ: 'event',
-        prc: 'test/event',
-        data: { hello: 'world' },
-      })
       expect(logger.trace).toHaveBeenCalledWith('send event {procedure} with data: {data}', {
         procedure: 'test/event',
         data: { hello: 'world' },
@@ -339,6 +333,22 @@ describe('Client', () => {
 
       const eventRead = await transports.server.read()
       expect(eventRead.done).toBe(false)
+      // The client now stamps a random jti and current iat onto every signed
+      // message (replay protection, see replay-claims.test.ts), so the exact
+      // signed payload can't be precomputed ahead of time. Instead, capture
+      // the claims the client actually used and rebuild the expected signed
+      // message from them to still assert the full signed payload matches.
+      const actualPayload = eventRead.value?.payload as Record<string, unknown>
+      expect(typeof actualPayload.jti).toBe('string')
+      expect(typeof actualPayload.iat).toBe('number')
+      const signedMessage = await clientIdentity.signToken({
+        jti: actualPayload.jti as string,
+        iat: actualPayload.iat as number,
+        aud: serverIdentity.id,
+        typ: 'event',
+        prc: 'test/event',
+        data: { hello: 'world' },
+      })
       expect(eventRead.value).toEqual(signedMessage)
       await transports.dispose()
     })

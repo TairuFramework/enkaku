@@ -221,6 +221,8 @@ type CreateMessage<Protocol extends ProtocolDefinition> = (
 function getCreateMessage<Protocol extends ProtocolDefinition>(
   identity?: Identity | Promise<Identity>,
   aud?: string,
+  getRandomID: () => string = () => globalThis.crypto.randomUUID(),
+  now: () => number = Date.now,
 ): CreateMessage<Protocol> {
   if (identity == null) {
     return createUnsignedToken
@@ -232,7 +234,10 @@ function getCreateMessage<Protocol extends ProtocolDefinition>(
       if (!isSigningIdentity(id)) {
         throw new Error('Identity does not support signing')
       }
-      return id.signToken(payload, { header })
+      return id.signToken<Record<string, unknown>>(
+        { jti: getRandomID(), iat: Math.floor(now() / 1000), ...payload },
+        { header },
+      )
     })
   }
 
@@ -253,6 +258,7 @@ export type ClientParams<Protocol extends ProtocolDefinition> = {
   transport: ClientTransportOf<Protocol>
   serverID?: string
   identity?: Identity | Promise<Identity>
+  now?: () => number
 }
 
 export class Client<
@@ -282,8 +288,13 @@ export class Client<
         this.#logger.debug('disposed')
       },
     })
-    this.#createMessage = getCreateMessage<Protocol>(params.identity, params.serverID)
     this.#runtime = params.runtime ?? createRuntime({ getRandomID: params.getRandomID })
+    this.#createMessage = getCreateMessage<Protocol>(
+      params.identity,
+      params.serverID,
+      this.#runtime.getRandomID,
+      params.now,
+    )
     this.#handleTransportDisposed = params.handleTransportDisposed
     this.#handleTransportError = params.handleTransportError
     this.#logger =
