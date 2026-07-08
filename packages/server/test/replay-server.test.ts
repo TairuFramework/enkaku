@@ -566,3 +566,51 @@ test('does not consume the replay key when a message fails the encryption check'
   await server.dispose()
   await transports.dispose()
 })
+
+test('a rejecting async replay cache surfaces transportError and disposes', async () => {
+  const signer = randomIdentity()
+  const handler = vi.fn()
+  const handlers = { notify: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+
+  const cache: ReplayCache = {
+    checkAndRecord: () => Promise.reject(new Error('cache backend down')),
+  }
+
+  // Built via the constructor + `.handle()` (rather than `serve()`) so the
+  // per-transport `handle()` promise -- the same convention used in
+  // transport-read-failure.test.ts -- is available to assert the read loop
+  // settles instead of hanging.
+  const server = new Server<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { notify: { allow: true } },
+    replay: { cache },
+  })
+
+  const message = await signer.signToken({
+    typ: 'event',
+    aud: signer.id,
+    prc: 'notify',
+    data: 'hello',
+    jti: 'evt-guard',
+    iat: nowSeconds(),
+  } as const)
+
+  const transportError = server.events.once('transportError')
+  const handling = server.handle(transports.server)
+  await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+
+  const emitted = await transportError
+  expect(emitted.error).toBeInstanceOf(Error)
+  expect(handler).not.toHaveBeenCalled()
+  // Pre-fix, the async cache rejection was an unhandled rejection and this
+  // promise never settled (the read loop hung instead of stopping cleanly).
+  await expect(handling).resolves.toBeUndefined()
+
+  await server.dispose()
+  await transports.dispose()
+})
