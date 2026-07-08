@@ -218,12 +218,19 @@ type CreateMessage<Protocol extends ProtocolDefinition> = (
   header?: Record<string, unknown>,
 ) => AnyClientMessageOf<Protocol> | Promise<AnyClientMessageOf<Protocol>>
 
-function getCreateMessage<Protocol extends ProtocolDefinition>(
-  identity?: Identity | Promise<Identity>,
-  aud?: string,
-  getRandomID: () => string = () => globalThis.crypto.randomUUID(),
-  now: () => number = Date.now,
-): CreateMessage<Protocol> {
+type GetCreateMessageParams = {
+  identity?: Identity | Promise<Identity>
+  aud?: string
+  getRandomID?: () => string
+  now?: () => number
+}
+
+function getCreateMessage<Protocol extends ProtocolDefinition>({
+  identity,
+  aud,
+  getRandomID = () => globalThis.crypto.randomUUID(),
+  now = Date.now,
+}: GetCreateMessageParams): CreateMessage<Protocol> {
   if (identity == null) {
     return createUnsignedToken
   }
@@ -289,12 +296,12 @@ export class Client<
       },
     })
     this.#runtime = params.runtime ?? createRuntime({ getRandomID: params.getRandomID })
-    this.#createMessage = getCreateMessage<Protocol>(
-      params.identity,
-      params.serverID,
-      this.#runtime.getRandomID,
-      params.now,
-    )
+    this.#createMessage = getCreateMessage<Protocol>({
+      identity: params.identity,
+      aud: params.serverID,
+      getRandomID: this.#runtime.getRandomID,
+      now: params.now,
+    })
     this.#handleTransportDisposed = params.handleTransportDisposed
     this.#handleTransportError = params.handleTransportError
     this.#logger =
