@@ -52,7 +52,13 @@ import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { handleRequest, type RequestMessageOf } from './handlers/request.js'
 import { handleStream, type StreamMessageOf } from './handlers/stream.js'
 import { createResourceLimiter, type ResourceLimiter, type ResourceLimits } from './limits.js'
-import { checkReplay, type ReplayOptions, type ResolvedReplay, resolveReplay } from './replay.js'
+import {
+  checkReplay,
+  type ReplayCheckResult,
+  type ReplayOptions,
+  type ResolvedReplay,
+  resolveReplay,
+} from './replay.js'
 import { safeWrite } from './safe-write.js'
 import type {
   ChannelController,
@@ -556,7 +562,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         // Replay check runs after the encryption gate so a message that fails
         // encryption does not consume its dedup key (a corrected retry may reuse jti).
         if (replay != null) {
-          const replayResult = await checkReplay(message as unknown as SignedToken, replay)
+          let replayResult: ReplayCheckResult
+          try {
+            replayResult = await checkReplay(message as unknown as SignedToken, replay)
+          } catch (cause) {
+            const error = new Error('Replay cache check failed', { cause })
+            logger.warn('replay cache check failed', { cause })
+            events.emit('transportError', { error })
+            await disposer.dispose()
+            return
+          }
           if (!replayResult.ok) {
             span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, replayResult.reason)
             span.setAttribute(EnkakuAttributeKeys.AUTH_ALLOWED, false)
@@ -648,7 +663,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               break
             }
             if (replay != null) {
-              const replayResult = await checkReplay(msg as unknown as SignedToken, replay)
+              let replayResult: ReplayCheckResult
+              try {
+                replayResult = await checkReplay(msg as unknown as SignedToken, replay)
+              } catch (cause) {
+                const error = new Error('Replay cache check failed', { cause })
+                logger.warn('replay cache check failed', { cause })
+                events.emit('transportError', { error })
+                await disposer.dispose()
+                return
+              }
               if (!replayResult.ok) {
                 rejectReplay(msg.payload.rid, msg.payload)
                 break
@@ -732,7 +756,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               break
             }
             if (replay != null) {
-              const replayResult = await checkReplay(msg as unknown as SignedToken, replay)
+              let replayResult: ReplayCheckResult
+              try {
+                replayResult = await checkReplay(msg as unknown as SignedToken, replay)
+              } catch (cause) {
+                const error = new Error('Replay cache check failed', { cause })
+                logger.warn('replay cache check failed', { cause })
+                events.emit('transportError', { error })
+                await disposer.dispose()
+                return
+              }
               if (!replayResult.ok) {
                 rejectReplay(msg.payload.rid, msg.payload)
                 break

@@ -218,10 +218,19 @@ type CreateMessage<Protocol extends ProtocolDefinition> = (
   header?: Record<string, unknown>,
 ) => AnyClientMessageOf<Protocol> | Promise<AnyClientMessageOf<Protocol>>
 
-function getCreateMessage<Protocol extends ProtocolDefinition>(
-  identity?: Identity | Promise<Identity>,
-  aud?: string,
-): CreateMessage<Protocol> {
+type GetCreateMessageParams = {
+  identity?: Identity | Promise<Identity>
+  aud?: string
+  getRandomID?: () => string
+  now?: () => number
+}
+
+function getCreateMessage<Protocol extends ProtocolDefinition>({
+  identity,
+  aud,
+  getRandomID = () => globalThis.crypto.randomUUID(),
+  now = Date.now,
+}: GetCreateMessageParams): CreateMessage<Protocol> {
   if (identity == null) {
     return createUnsignedToken
   }
@@ -232,7 +241,10 @@ function getCreateMessage<Protocol extends ProtocolDefinition>(
       if (!isSigningIdentity(id)) {
         throw new Error('Identity does not support signing')
       }
-      return id.signToken(payload, { header })
+      return id.signToken<Record<string, unknown>>(
+        { jti: getRandomID(), iat: Math.floor(now() / 1000), ...payload },
+        { header },
+      )
     })
   }
 
@@ -253,6 +265,7 @@ export type ClientParams<Protocol extends ProtocolDefinition> = {
   transport: ClientTransportOf<Protocol>
   serverID?: string
   identity?: Identity | Promise<Identity>
+  now?: () => number
 }
 
 export class Client<
@@ -282,8 +295,13 @@ export class Client<
         this.#logger.debug('disposed')
       },
     })
-    this.#createMessage = getCreateMessage<Protocol>(params.identity, params.serverID)
     this.#runtime = params.runtime ?? createRuntime({ getRandomID: params.getRandomID })
+    this.#createMessage = getCreateMessage<Protocol>({
+      identity: params.identity,
+      aud: params.serverID,
+      getRandomID: this.#runtime.getRandomID,
+      now: params.now,
+    })
     this.#handleTransportDisposed = params.handleTransportDisposed
     this.#handleTransportError = params.handleTransportError
     this.#logger =

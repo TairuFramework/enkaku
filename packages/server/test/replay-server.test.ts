@@ -566,3 +566,206 @@ test('does not consume the replay key when a message fails the encryption check'
   await server.dispose()
   await transports.dispose()
 })
+
+test('a rejecting async replay cache surfaces transportError and disposes', async () => {
+  const signer = randomIdentity()
+  const handler = vi.fn()
+  const handlers = { notify: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+
+  const cache: ReplayCache = {
+    checkAndRecord: () => Promise.reject(new Error('cache backend down')),
+  }
+
+  // Built via the constructor + `.handle()` (rather than `serve()`) so the
+  // per-transport `handle()` promise -- the same convention used in
+  // transport-read-failure.test.ts -- is available to assert the read loop
+  // settles instead of hanging.
+  const server = new Server<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { notify: { allow: true } },
+    replay: { cache },
+  })
+
+  const message = await signer.signToken({
+    typ: 'event',
+    aud: signer.id,
+    prc: 'notify',
+    data: 'hello',
+    jti: 'evt-guard',
+    iat: nowSeconds(),
+  } as const)
+
+  const transportError = server.events.once('transportError')
+  const handling = server.handle(transports.server)
+  await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+
+  const emitted = await transportError
+  expect(emitted.error).toBeInstanceOf(Error)
+  expect(handler).not.toHaveBeenCalled()
+  // Pre-fix, the async cache rejection was an unhandled rejection and this
+  // promise never settled (the read loop hung instead of stopping cleanly).
+  await expect(handling).resolves.toBeUndefined()
+
+  await server.dispose()
+  await transports.dispose()
+})
+
+test('a rejecting async replay cache surfaces transportError and disposes (send guard)', async () => {
+  const expiresAt = nowSeconds() + 300
+  const signer = randomIdentity()
+  const receivedValues: Array<unknown> = []
+  const handler = vi.fn(async (ctx) => {
+    for await (const value of ctx.readable) {
+      receivedValues.push(value)
+    }
+    return 'done'
+  })
+  const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+
+  // Rejects only the target `send` message's dedup key, so channel establishment
+  // (which also runs through `checkReplay` via the `process()` path) succeeds and
+  // the `send`-case guard inside `handleNext` is the one actually exercised.
+  const cache: ReplayCache = {
+    checkAndRecord: (key: string) =>
+      key.includes('send-guard') ? Promise.reject(new Error('cache backend down')) : true,
+  }
+
+  // Built via the constructor + `.handle()` (rather than `serve()`) so the
+  // per-transport `handle()` promise is available to assert the read loop
+  // settles instead of hanging.
+  const server = new Server<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { chat: { allow: true } },
+    replay: { cache },
+  })
+
+  const handling = server.handle(transports.server)
+
+  // Establish the channel with a valid signed token (accepted by the cache).
+  const channelMsg = await signer.signToken({
+    typ: 'channel',
+    aud: signer.id,
+    prc: 'chat',
+    rid: 'send-guard-rid',
+    prm: undefined,
+    exp: expiresAt,
+  } as const)
+  await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  // Signed send whose jti makes the dedup key match the rejecting cache branch.
+  const sendMsg = await signer.signToken({
+    typ: 'send',
+    rid: 'send-guard-rid',
+    val: 'hello',
+    jti: 'send-guard-1',
+    exp: expiresAt,
+  } as const)
+
+  const transportError = server.events.once('transportError')
+  await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
+
+  const emitted = await transportError
+  expect(emitted.error).toBeInstanceOf(Error)
+  // The rejected send must never reach the channel writer.
+  expect(receivedValues).not.toContain('hello')
+  // Pre-fix, the async cache rejection was an unhandled rejection and this
+  // promise never settled (the read loop hung instead of stopping cleanly).
+  await expect(handling).resolves.toBeUndefined()
+
+  await server.dispose()
+  await transports.dispose()
+})
+
+test('a rejecting async replay cache surfaces transportError and disposes (abort guard)', async () => {
+  const expiresAt = nowSeconds() + 300
+  const signer = randomIdentity()
+
+  // The handler never resolves on its own -- resolution is fully controlled by the
+  // test so the channel controller stays alive, regardless of how the (unrelated)
+  // stream teardown from a successful abort would otherwise run.
+  let resolveHandler: (value: string) => void = () => {}
+  const handlerDone = new Promise<string>((resolve) => {
+    resolveHandler = resolve
+  })
+  const handler = vi.fn(() => handlerDone)
+  const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+
+  // Rejects only the target `abort` message's dedup key, so channel establishment
+  // succeeds and the `abort`-case guard inside `handleNext` is the one actually
+  // exercised.
+  const cache: ReplayCache = {
+    checkAndRecord: (key: string) =>
+      key.includes('abort-guard') ? Promise.reject(new Error('cache backend down')) : true,
+  }
+
+  const server = new Server<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { chat: { allow: true } },
+    replay: { cache },
+  })
+
+  const handling = server.handle(transports.server)
+
+  // Establish the channel with a valid signed token (accepted by the cache).
+  const channelMsg = await signer.signToken({
+    typ: 'channel',
+    aud: signer.id,
+    prc: 'chat',
+    rid: 'abort-guard-rid',
+    prm: undefined,
+    exp: expiresAt,
+  } as const)
+  await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
+  await new Promise((resolve) => setTimeout(resolve, 50))
+
+  // Signed abort whose jti makes the dedup key match the rejecting cache branch.
+  const abortMsg = await signer.signToken({
+    typ: 'abort',
+    rid: 'abort-guard-rid',
+    rsn: 'Close',
+    jti: 'abort-guard-1',
+    exp: expiresAt,
+  } as const)
+
+  const aborted = vi.fn()
+  server.events.on('handlerAbort', aborted)
+
+  const transportError = server.events.once('transportError')
+  await transports.client.write(abortMsg as unknown as AnyClientMessageOf<Protocol>)
+
+  const emitted = await transportError
+  expect(emitted.error).toBeInstanceOf(Error)
+  // The rejected abort must never reach the controller with its own reason -- the
+  // guard's own `disposer.dispose()` call separately interrupts any live controller
+  // with a `DisposeInterruption`, so we assert on the specific reason from the
+  // replayed message rather than on the mock never having been called at all.
+  expect(aborted).not.toHaveBeenCalledWith({ rid: 'abort-guard-rid', reason: 'Close' })
+
+  // The guard's own `disposer.dispose()` call tears down the still-open channel,
+  // which awaits the in-flight handler promise settling -- resolve it now so that
+  // both `handling` and the eventual `server.dispose()` below can complete.
+  resolveHandler('done')
+
+  // Pre-fix, the async cache rejection was an unhandled rejection and this
+  // promise never settled (the read loop hung instead of stopping cleanly).
+  await expect(handling).resolves.toBeUndefined()
+
+  await server.dispose()
+  await transports.dispose()
+})

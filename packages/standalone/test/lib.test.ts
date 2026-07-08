@@ -27,17 +27,26 @@ describe('standalone', () => {
       const client = standalone<Protocol>({ test: handler }, { identity })
 
       await client.sendEvent('test', { data: { hello: 'world' } })
+      // sendEvent is fire-and-forget; the authenticated server processes the event
+      // asynchronously (verify + replay check), so wait for the handler to run.
+      await vi.waitFor(() => expect(handler).toHaveBeenCalledTimes(1))
+      // The client now stamps a random jti and current iat onto every signed
+      // message (replay protection), so the exact signed payload can't be
+      // precomputed. Capture the claims the client actually used and rebuild the
+      // expected signed message from them to still assert the full payload.
+      const received = handler.mock.calls[0][0] as { message: { payload: Record<string, unknown> } }
+      const actualPayload = received.message.payload
+      expect(typeof actualPayload.jti).toBe('string')
+      expect(typeof actualPayload.iat).toBe('number')
       const message = await identity.signToken({
+        jti: actualPayload.jti as string,
+        iat: actualPayload.iat as number,
         aud: identity.id,
         typ: 'event',
         prc: 'test',
         data: { hello: 'world' },
       })
-      // sendEvent is fire-and-forget; the authenticated server processes the event
-      // asynchronously (verify + replay check), so wait for the handler to run.
-      await vi.waitFor(() =>
-        expect(handler).toHaveBeenCalledWith({ data: { hello: 'world' }, message }),
-      )
+      expect(handler).toHaveBeenCalledWith({ data: { hello: 'world' }, message })
     })
   })
 
