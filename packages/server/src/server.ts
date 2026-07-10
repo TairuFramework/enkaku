@@ -129,6 +129,28 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     emitHandlerError(events, 'auth', error, payload)
   }
 
+  /**
+   * Abort a running handler without touching limiter bookkeeping: the handler's
+   * own completion path in `processHandler` releases its controller and slot,
+   * guarded by `running[rid] === returned`. Doing it here as well would release
+   * twice. (The timeout sweep is different — there the handler is abandoned, so
+   * it does the bookkeeping itself.)
+   */
+  function abortRunningHandler(rid: string, reason: unknown): void {
+    const controller = controllers[rid]
+    if (controller == null) {
+      return
+    }
+    controller.abort(reason)
+    events.emit('handlerAbort', { rid, reason })
+  }
+
+  // Trusted: TransportEvents is an in-process emitter, so `requestAborted` can
+  // only come from the transport implementation, never from the wire.
+  const unsubscribeRequestAborted = transport.events.on('requestAborted', ({ rid, reason }) => {
+    abortRunningHandler(rid, reason)
+  })
+
   // Periodic cleanup of expired controllers
   const cleanupInterval = setInterval(
     () => {
@@ -161,6 +183,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   const disposer = new Disposer({
     dispose: async () => {
       clearInterval(cleanupInterval)
+      unsubscribeRequestAborted()
       const interruption = new DisposeInterruption()
       // Abort all currently running handlers
       for (const rid of Object.keys(controllers)) {
@@ -700,11 +723,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               break
             }
           }
-          controller.abort(msg.payload.rsn)
-          events.emit('handlerAbort', {
-            rid: msg.payload.rid,
-            reason: msg.payload.rsn,
-          })
+          abortRunningHandler(msg.payload.rid, msg.payload.rsn)
           break
         }
         case 'channel': {

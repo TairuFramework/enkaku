@@ -1,4 +1,6 @@
 import type { ProtocolDefinition, ServerTransportOf } from '@enkaku/protocol'
+import type { TransportEvents } from '@enkaku/transport'
+import { EventEmitter } from '@sozai/event'
 import { describe, expect, test, vi } from 'vitest'
 
 import { Server } from '../src/index.js'
@@ -17,6 +19,7 @@ describe('Transport read failure', () => {
       read: vi.fn(() => Promise.reject(new Error('read boom'))),
       write: vi.fn(() => Promise.resolve()),
       dispose: vi.fn(() => Promise.resolve()),
+      events: new EventEmitter<TransportEvents>(),
     } as unknown as ServerTransportOf<Protocol>
 
     const server = new Server<Protocol>({
