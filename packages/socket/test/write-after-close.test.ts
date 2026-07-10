@@ -31,6 +31,21 @@ describe('socket write-after-close', () => {
     await expect(writer.write({ hello: 'world' })).rejects.toThrow(/closed/i)
   })
 
+  test('rejects the write when the socket is ended but not destroyed', async () => {
+    const socket = fakeSocket()
+    const { writable } = await createTransportStream<unknown, { hello: string }>(socket)
+
+    // end() (not destroy()) leaves `destroyed` false but flips `writableEnded`
+    // to true synchronously -- this isolates the `writableEnded` disjunct of
+    // the sink guard from the `destroyed` one.
+    socket.end()
+    expect(socket.destroyed).toBe(false)
+    expect(socket.writableEnded).toBe(true)
+
+    const writer = writable.getWriter()
+    await expect(writer.write({ hello: 'world' })).rejects.toThrow(/closed/i)
+  })
+
   test('a late socket error does not crash the process', async () => {
     const socket = fakeSocket()
     await createTransportStream<unknown, unknown>(socket)
