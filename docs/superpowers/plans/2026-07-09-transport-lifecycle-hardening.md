@@ -18,6 +18,7 @@
 - Use `type`, never `interface`.
 - Use `Array<T>`, never `T[]`.
 - Never use `any`. Use `unknown`, `Record<string, unknown>`, or a specific type.
+- Never use `protected` — it is a TypeScript-only modifier with no JavaScript runtime meaning. Members are public or `#private`. A base-class member a subclass in another package must reach stays public and is marked `/** @internal */`, as `Transport._getStream` already is.
 - Uppercase abbreviations in names: `ID` not `Id`, `HTTP` not `Http`, `SSE` not `Sse`.
 - `pnpm`/`pnpx` only. Never `npm`/`npx`.
 - Never edit generated files (`lib/`, `.gen.ts`, `__generated__/`).
@@ -50,56 +51,28 @@ The timeout sweep (`packages/server/src/server.ts:137-152`) calls `limiter.remov
 
 **Files:**
 - Modify: `packages/transport/src/index.ts:21-26`
-- Test: `packages/transport/test/request-aborted.test.ts` (create)
 
 **Interfaces:**
 - Consumes: nothing.
 - Produces: `TransportEvents['requestAborted']` with type `{ rid: string; reason?: unknown }`. Task 10 emits it from http-serve; Task 12 subscribes to it in the server.
 
-- [ ] **Step 1: Write the failing test**
+**No test file for this task, deliberately.** This is a pure type-level change: it widens a mapped type that `EventEmitter` is generic over. A runtime test could only assert that `EventEmitter.emit()` reaches a listener, which exercises `@sozai/event`, not Enkaku. Worse, it could not fail before the fix — `vitest` strips types rather than checking them, so emitting an unknown key succeeds at runtime. The red/green gate here is `tsc`. The event's *behavior* is covered where it is produced and consumed: Task 10 (http-serve emits it on client disconnect) and Task 12 (the server aborts the running handler on it).
 
-Create `packages/transport/test/request-aborted.test.ts`:
+- [ ] **Step 1: Write the failing type check**
+
+Add this line to any existing test in `packages/transport/test/` — `lib.test.ts` is fine — purely to make `tsc` reject it before the fix. Delete the line again in Step 3 once the type exists; it is scaffolding, not a test.
 
 ```ts
-import { describe, expect, test, vi } from 'vitest'
-
-import { Transport } from '../src/index.js'
-
-describe('TransportEvents.requestAborted', () => {
-  test('carries rid and reason to subscribers', async () => {
-    const transport = new Transport<string, string>({
-      stream: { readable: new ReadableStream<string>(), writable: new WritableStream<string>() },
-    })
-    const listener = vi.fn()
-    transport.events.on('requestAborted', listener)
-
-    await transport.events.emit('requestAborted', { rid: 'r1', reason: 'ClientDisconnected' })
-
-    expect(listener).toHaveBeenCalledWith({ rid: 'r1', reason: 'ClientDisconnected' })
-  })
-
-  test('reason is optional', async () => {
-    const transport = new Transport<string, string>({
-      stream: { readable: new ReadableStream<string>(), writable: new WritableStream<string>() },
-    })
-    const listener = vi.fn()
-    transport.events.on('requestAborted', listener)
-
-    await transport.events.emit('requestAborted', { rid: 'r2' })
-
-    expect(listener).toHaveBeenCalledWith({ rid: 'r2' })
-  })
-})
+    // scaffolding: delete after Step 3
+    transport.events.on('requestAborted', () => {})
 ```
 
 - [ ] **Step 2: Run the type check to verify it fails**
 
-`vitest` strips types rather than checking them, so `vitest run` would *pass* this test even without the fix — `EventEmitter` happily emits an unknown key at runtime. The failing check for this task is the type check:
-
 Run: `pnpm --filter @enkaku/transport exec tsc --noEmit -p tsconfig.test.json`
 Expected: FAIL — `'requestAborted'` is not assignable to the event-name parameter, because it is not a key of `TransportEvents`.
 
-- [ ] **Step 3: Add the event type**
+- [ ] **Step 3: Add the event type, and remove the scaffolding line**
 
 In `packages/transport/src/index.ts`, replace the `TransportEvents` type (lines 21-26):
 
@@ -122,16 +95,21 @@ export type TransportEvents = {
 - [ ] **Step 4: Run both checks to verify they pass**
 
 Run: `pnpm --filter @enkaku/transport exec tsc --noEmit -p tsconfig.test.json`
-Expected: no errors.
+Expected: no errors. Confirm the scaffolding line from Step 1 is gone.
 
-Run: `pnpm --filter @enkaku/transport exec vitest run test/request-aborted.test.ts`
-Expected: PASS, 2 tests.
+Run: `pnpm --filter @enkaku/transport exec vitest run`
+Expected: PASS — the existing suite, unchanged.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/transport/src/index.ts packages/transport/test/request-aborted.test.ts
-git commit -m "feat(transport): add requestAborted event to TransportEvents"
+git add packages/transport/src/index.ts
+git commit -m "feat(transport): add requestAborted event to TransportEvents
+
+Lets a transport implementation report that one request's peer went away.
+Behavior is covered where the event is produced (http-serve) and consumed
+(server); a unit test here could only exercise EventEmitter itself, and
+could not fail before the change since vitest does not typecheck."
 ```
 
 ---
@@ -2056,6 +2034,9 @@ export class ClientTransport<Protocol extends ProtocolDefinition> extends Transp
     this.#send = stream.send
     // Materialise the stream so dispose() closes the writable — and so aborts
     // the in-flight SSE fetch — even if nothing ever reads from this transport.
+    // `_getStream` is public-but-@internal by design: this repo does not use
+    // `protected` (TS-only, no runtime meaning), so that marker is how a base
+    // class exposes a member to its subclasses.
     void this._getStream()
   }
 
