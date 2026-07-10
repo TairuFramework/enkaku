@@ -46,6 +46,7 @@ export type ServerBridgeOptions = {
   allowedOrigin?: string | Array<string>
   getRandomID?: () => string
   onWriteError?: (event: TransportEvents['writeFailed']) => void
+  onRequestAborted?: (event: TransportEvents['requestAborted']) => void
   maxSessions?: number
   runtime?: Runtime
   sessionTimeoutMs?: number
@@ -123,10 +124,11 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const inflight: Map<string, InflightRequest> = new Map()
   const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
 
-  function clearSessionInflight(sessionID: string): void {
+  function clearSessionInflight(sessionID: string, reason: unknown = 'SessionClosed'): void {
     for (const [rid, entry] of inflight) {
       if (entry.type === 'stream' && entry.sessionID === sessionID) {
         inflight.delete(rid)
+        options.onRequestAborted?.({ rid, reason })
       }
     }
   }
@@ -344,6 +346,28 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           }
           inflightTimers.set(rid, timer)
 
+          request.signal.addEventListener(
+            'abort',
+            () => {
+              const entry = inflight.get(rid)
+              if (entry == null || entry.type !== 'request') {
+                // Already answered — nothing in flight to abort.
+                return
+              }
+              const pendingTimer = inflightTimers.get(rid)
+              if (pendingTimer != null) {
+                clearTimeout(pendingTimer)
+                inflightTimers.delete(rid)
+              }
+              inflight.delete(rid)
+              // The client is gone, but the deferred Response must still settle
+              // or its promise leaks.
+              entry.resolve(new Response(null, { status: 499 }))
+              options.onRequestAborted?.({ rid, reason: 'ClientDisconnected' })
+            },
+            { once: true },
+          )
+
           controller.enqueue(message)
           // Wait for reply from message handler
           return response.promise
@@ -399,7 +423,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
               controllerRef.close()
             } catch {}
             sessions.delete(sessionID)
-            clearSessionInflight(sessionID)
+            clearSessionInflight(sessionID, 'ClientDisconnected')
           })
 
           inflight.set(message.payload.rid, { type: 'stream', sessionID })
@@ -514,6 +538,9 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
       maxSessionBufferBytes: options.maxSessionBufferBytes,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
+      },
+      onRequestAborted: (event) => {
+        this.events.emit('requestAborted', event)
       },
     })
     super({ stream: bridge.stream })
