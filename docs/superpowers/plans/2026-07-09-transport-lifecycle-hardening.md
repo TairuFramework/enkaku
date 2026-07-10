@@ -1524,7 +1524,7 @@ Read it alongside the other defaults (after line 119):
   const maxSessionBufferBytes = options.maxSessionBufferBytes ?? 1_048_576 // 1 MiB
 ```
 
-Add `dropSession` immediately after `clearSessionInflight` (after line 130):
+Add `dropSession` immediately after `clearSessionInflight` (after line 130). It reports the failure through `reportWriteError` (below), not `options.onWriteError?.(...)` directly:
 
 ```ts
   /**
@@ -1543,9 +1543,38 @@ Add `dropSession` immediately after `clearSessionInflight` (after line 130):
     }
     sessions.delete(sessionID)
     clearSessionInflight(sessionID)
-    options.onWriteError?.({ error, rid })
+    reportWriteError(error, rid)
   }
 ```
+
+**Guard `onWriteError` against breaking session isolation.** `onWriteError` is a
+consumer-supplied callback, and every call to it happens inside — or reachable
+from — the single `writeTo(...)` sink shared by all sessions. Per the Web
+Streams spec, a synchronous throw from a sink's `write` callback errors the
+whole `WritableStream`, so a throwing `onWriteError` would break writes for
+every other session, destroying the very isolation this task provides. Wrap it
+once, beside `clearSessionInflight`:
+
+```ts
+  function reportWriteError(error: Error, rid?: string): void {
+    try {
+      options.onWriteError?.({ error, rid })
+    } catch {
+      // A throwing consumer callback must not error the shared writable and
+      // break every other session.
+    }
+  }
+```
+
+Then route EVERY sink-reachable `options.onWriteError?.(...)` through it — not
+only `dropSession`, but the three pre-existing branches in the sink too: the
+`Request not found` guard, the `Session not found` guard, and the
+`No controller for session` guard. (The `ServerTransport` wiring that re-emits
+`onWriteError` as a `writeFailed` transport event runs OUTSIDE the sink and
+stays as-is.) Add a test with a throwing `onWriteError`: overflow session A so
+`dropSession` fires the callback, then confirm a write to a separate session B
+still succeeds — red without the guard (B's write is rejected because the shared
+writable errored), green with it.
 
 Replace the `try`/`catch` in the writable sink (as Task 7 left it) with:
 
