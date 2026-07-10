@@ -44,11 +44,22 @@ describe('sendEvent write failures', () => {
     await client.dispose()
   })
 
-  test('rid-bearing writes still resolve and surface on the controller', async () => {
+  test('rid-bearing calls still surface the write failure to the caller', async () => {
     const client = new Client<Protocol>({ transport: createFailingWriteTransport() })
 
-    // The request call rejects via its controller, not via a safeWrite throw.
-    await expect(client.request('test/request', { id: 'r1' })).rejects.toBeDefined()
+    // This is an integration-level guard, not a discriminator: from the
+    // caller's side, a rid-bearing call rejecting here is consistent with
+    // either the `sent` promise's own rejection propagating through
+    // `createRequest`'s `sent.then(() => controller.result)`, or with
+    // `#write`'s `onFailure` aborting the per-rid controller with that same
+    // error object -- both paths reject with an identical error, so this
+    // assertion cannot tell them apart. The discriminating coverage lives in
+    // `packages/client/test/safe-write.test.ts`, which pins directly that
+    // `safeWrite` resolves for rid-bearing writes and invokes `onFailure`,
+    // and rejects for rid-less ones. This test only guards that the rid-less
+    // throw introduced alongside that behavior did not change rid-bearing
+    // calls: they must still reject rather than hang.
+    await expect(client.request('test/request', { id: 'r1' })).rejects.toThrow('socket exploded')
 
     await client.dispose()
   })
