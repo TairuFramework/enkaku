@@ -2302,6 +2302,15 @@ In `packages/server/src/server.ts`, add `abortRunningHandler` just after `reject
   }
 ```
 
+Because `reason` is now `unknown` (a `requestAborted` reason is transport-defined
+and opaque to the server), the `handlerAbort` event's `reason` field must be
+widened to accept it. In `packages/server/src/types.ts`, change
+`ServerEvents['handlerAbort'].reason` from its literal union
+(`'Close' | 'Timeout' | 'Transport' | DisposeInterruption | string | undefined`)
+to `unknown`, and drop the now-unused `DisposeInterruption` import from that
+file (it is still constructed in `server.ts`, so leave that import). `ServerEvents`
+is public, so this is a `minor` type change for the changeset in Task 14.
+
 Subscribe to the transport event immediately below that definition, so the handler is declared before it is referenced:
 
 ```ts
@@ -2745,6 +2754,7 @@ New public API:
 - `TransportEvents` gains `requestAborted: { rid: string; reason?: unknown }`.
 - `createServerBridge` gains `onRequestAborted`.
 - `@enkaku/http-fetch`: `TransportStream` gains `send`, and `ClientTransport.write` uses it rather than the writable's sink.
+- `@enkaku/server`: `ServerEvents['handlerAbort'].reason` widened from a literal union to `unknown` (it now also carries transport-defined `requestAborted` reasons).
 ```
 
 - [ ] **Step 2: Run the full test suite**
