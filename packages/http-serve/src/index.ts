@@ -52,6 +52,7 @@ export type ServerBridgeOptions = {
   maxInflightRequests?: number
   requestTimeoutMs?: number
   maxRequestBodySize?: number
+  maxSessionBufferBytes?: number
 }
 
 const VALID_PAYLOAD_TYPES = new Set(['abort', 'channel', 'event', 'request', 'send', 'stream'])
@@ -117,6 +118,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const maxInflightRequests = options.maxInflightRequests ?? 10_000
   const requestTimeoutMs = options.requestTimeoutMs ?? 30_000 // 30 seconds
   const maxRequestBodySize = options.maxRequestBodySize ?? 1_048_576 // 1 MiB
+  const maxSessionBufferBytes = options.maxSessionBufferBytes ?? 1_048_576 // 1 MiB
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
   const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
@@ -127,6 +129,25 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         inflight.delete(rid)
       }
     }
+  }
+
+  /**
+   * Tear down a session that can no longer be written to. Isolated per session
+   * on purpose: the bridge's writable sink is shared by every session, so
+   * blocking on one slow consumer would stall all the others.
+   */
+  function dropSession(sessionID: string, rid: string | undefined, error: Error): void {
+    const session = sessions.get(sessionID)
+    if (session?.controller != null) {
+      try {
+        session.controller.close()
+      } catch {
+        // Already closed or errored
+      }
+    }
+    sessions.delete(sessionID)
+    clearSessionInflight(sessionID)
+    options.onWriteError?.({ error, rid })
   }
 
   // Periodic cleanup of expired sessions
@@ -194,14 +215,21 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         // reads would otherwise be reaped at sessionTimeoutMs.
         session.lastAccess = Date.now()
       } catch (cause) {
-        options.onWriteError?.({
-          error: new Error(`Error writing to SSE feed for session: ${request.sessionID}`, {
-            cause,
-          }),
+        dropSession(
+          request.sessionID,
           rid,
-        })
-        sessions.delete(request.sessionID)
-        clearSessionInflight(request.sessionID)
+          new Error(`Error writing to SSE feed for session: ${request.sessionID}`, { cause }),
+        )
+        return
+      }
+      if ((session.controller.desiredSize ?? 0) <= 0) {
+        // The consumer has fallen maxSessionBufferBytes behind. Drop this session
+        // alone rather than growing its queue without bound.
+        dropSession(
+          request.sessionID,
+          rid,
+          new Error(`SSE buffer overflow for session: ${request.sessionID}`),
+        )
       }
     }
   })
@@ -336,14 +364,28 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             return Response.json({ error: 'Session limit reached' }, { headers, status: 503 })
           }
           const sessionID = runtime.getRandomID()
-          const [body, sseController] = createReadable<string>()
+          let sseController: ReadableStreamDefaultController<string> | undefined
+          const body = new ReadableStream<string>(
+            {
+              start(ctrl) {
+                sseController = ctrl
+              },
+            },
+            // A byte-denominated strategy makes `desiredSize` a live budget:
+            // decremented on enqueue, restored as the consumer pulls. `length`
+            // counts UTF-16 code units rather than the bytes TextEncoderStream
+            // will emit — proportional, cheap, and this is a safety bound rather
+            // than an accounting guarantee.
+            { highWaterMark: maxSessionBufferBytes, size: (chunk) => chunk.length },
+          )
+          const controllerRef = sseController as ReadableStreamDefaultController<string>
           // Send an SSE comment to flush response headers immediately.
-          sseController.enqueue(':\n\n')
-          sessions.set(sessionID, { controller: sseController, lastAccess: Date.now() })
+          controllerRef.enqueue(':\n\n')
+          sessions.set(sessionID, { controller: controllerRef, lastAccess: Date.now() })
 
           request.signal.addEventListener('abort', () => {
             try {
-              sseController.close()
+              controllerRef.close()
             } catch {}
             sessions.delete(sessionID)
             clearSessionInflight(sessionID)
@@ -439,6 +481,7 @@ export type ServerTransportOptions = {
   maxInflightRequests?: number
   requestTimeoutMs?: number
   maxRequestBodySize?: number
+  maxSessionBufferBytes?: number
 }
 
 export class ServerTransport<Protocol extends ProtocolDefinition> extends Transport<
@@ -457,6 +500,7 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
       maxInflightRequests: options.maxInflightRequests,
       requestTimeoutMs: options.requestTimeoutMs,
       maxRequestBodySize: options.maxRequestBodySize,
+      maxSessionBufferBytes: options.maxSessionBufferBytes,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
       },
