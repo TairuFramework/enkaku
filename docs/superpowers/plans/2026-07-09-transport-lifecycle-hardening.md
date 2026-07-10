@@ -406,7 +406,13 @@ describe('graceful remote close', () => {
     // Server closes its writable — the client's readable ends cleanly.
     await transports.server.dispose()
 
-    await expect(withTimeout(call, 1000)).rejects.toBeDefined()
+    // Deliberately NOT wrapped in withTimeout: that helper rejects with its own
+    // timeout Error, which `.rejects.toBeDefined()` would accept, so the test
+    // would pass on unfixed code. Let vitest's per-test timeout be the failure
+    // mode for a hang, and assert on *why* the call rejected.
+    // Determine the real rejection value empirically before asserting on it.
+    await expect(call).rejects.toBeDefined()
+    expect(client.signal.aborted).toBe(true)
 
     await client.dispose()
     await transports.dispose()
@@ -440,7 +446,9 @@ describe('graceful remote close', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --filter @enkaku/client exec vitest run test/graceful-close.test.ts`
-Expected: FAIL — all three tests reject with `timed out — graceful close was not handled` (or, for the second, the timeout message from `withTimeout`).
+Expected: FAIL. Tests 1 and 3 reject with `timed out — graceful close was not handled`. Test 2 hangs and is killed by vitest's per-test timeout.
+
+Check each of the three independently. A test that passes here proves nothing about the fix, and `withTimeout` makes that easy to get wrong: it rejects with an `Error`, so any assertion as loose as `.rejects.toBeDefined()` is satisfied by the helper's own timeout. That is why test 2 does not use it.
 
 - [ ] **Step 3: Dispose the transport on `done`**
 
