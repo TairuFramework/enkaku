@@ -280,6 +280,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             )
           }
           const rid = message.payload.rid
+          if (inflight.has(rid)) {
+            return Response.json({ error: 'Duplicate request ID' }, { headers, status: 409 })
+          }
           const response = defer<Response>()
           inflight.set(rid, { type: 'request', headers, ...response })
 
@@ -309,6 +312,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         // Stateful response message
         case 'channel':
         case 'stream': {
+          if (inflight.has(message.payload.rid)) {
+            return Response.json({ error: 'Duplicate request ID' }, { headers, status: 409 })
+          }
           const sid = request.headers.get('enkaku-session-id')
           if (sid != null) {
             // Existing session — validate and route through it
