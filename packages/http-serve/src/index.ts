@@ -132,6 +132,23 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   }
 
   /**
+   * Report a write failure to the consumer-supplied callback. Every call to
+   * this helper happens inside (or reachable from) the shared `writeTo(...)`
+   * sink below: per the Web Streams spec, a synchronous throw from a sink's
+   * write callback errors the whole WritableStream, breaking every session
+   * sharing it. `onWriteError` is user-supplied and must never be allowed to
+   * do that, so a throwing callback is swallowed here rather than propagated.
+   */
+  function reportWriteError(error: Error, rid?: string): void {
+    try {
+      options.onWriteError?.({ error, rid })
+    } catch {
+      // A throwing consumer callback must not error the shared writable and
+      // break every other session.
+    }
+  }
+
+  /**
    * Tear down a session that can no longer be written to. Isolated per session
    * on purpose: the bridge's writable sink is shared by every session, so
    * blocking on one slow consumer would stall all the others.
@@ -147,7 +164,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
     sessions.delete(sessionID)
     clearSessionInflight(sessionID)
-    options.onWriteError?.({ error, rid })
+    reportWriteError(error, rid)
   }
 
   // Periodic cleanup of expired sessions
@@ -177,7 +194,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     const { rid } = msg.payload
     const request = inflight.get(rid)
     if (request == null) {
-      options.onWriteError?.({ error: new Error('Request not found'), rid })
+      reportWriteError(new Error('Request not found'), rid)
       return
     }
     if (request.type === 'request') {
@@ -196,17 +213,11 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       const session = sessions.get(request.sessionID)
       if (session == null) {
         inflight.delete(rid)
-        options.onWriteError?.({
-          error: new Error(`Session not found: ${request.sessionID}`),
-          rid,
-        })
+        reportWriteError(new Error(`Session not found: ${request.sessionID}`), rid)
         return
       }
       if (session.controller == null) {
-        options.onWriteError?.({
-          error: new Error(`No controller for session: ${request.sessionID}`),
-          rid,
-        })
+        reportWriteError(new Error(`No controller for session: ${request.sessionID}`), rid)
         return
       }
       try {

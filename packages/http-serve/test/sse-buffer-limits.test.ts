@@ -73,4 +73,40 @@ describe('SSE buffer limits', () => {
 
     reader.releaseLock()
   })
+
+  test('a throwing onWriteError does not break isolation for other sessions', async () => {
+    const onWriteError = vi.fn(() => {
+      throw new Error('onWriteError consumer callback blew up')
+    })
+    const bridge = createServerBridge({
+      maxSessions: 2,
+      maxSessionBufferBytes: 256,
+      onWriteError,
+    })
+
+    // Session A: open it but never read its body, then overflow its buffer so
+    // dropSession fires and invokes the throwing onWriteError.
+    const resA = await bridge.handleRequest(createStreamPost('a1'))
+    expect(resA.status).toBe(200)
+
+    const writer = bridge.stream.writable.getWriter()
+    const big = 'x'.repeat(200)
+    for (let i = 0; i < 5; i++) {
+      await writer.write({ payload: { typ: 'receive', rid: 'a1', val: big } } as never)
+    }
+    writer.releaseLock()
+
+    expect(onWriteError).toHaveBeenCalled()
+
+    // Session B: a fresh, healthy session. If session A's throwing callback
+    // errored the shared writable, this write would reject instead of resolving.
+    const resB = await bridge.handleRequest(createStreamPost('b1'))
+    expect(resB.status).toBe(200)
+
+    const writerB = bridge.stream.writable.getWriter()
+    await expect(
+      writerB.write({ payload: { typ: 'receive', rid: 'b1', val: 'hello' } } as never),
+    ).resolves.toBeUndefined()
+    writerB.releaseLock()
+  })
 })
