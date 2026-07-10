@@ -64,7 +64,15 @@ export type TransportStreamParams = {
 export type TransportStream<Protocol extends ProtocolDefinition> = ReadableWritablePair<
   AnyServerMessageOf<Protocol>,
   AnyClientMessageOf<Protocol>
-> & { controller: ReadableStreamDefaultController<AnyServerMessageOf<Protocol>> }
+> & {
+  controller: ReadableStreamDefaultController<AnyServerMessageOf<Protocol>>
+  /**
+   * Send a single client message, rejecting if it could not be delivered.
+   * `ClientTransport.write` calls this instead of writing to `writable`,
+   * because a rejecting WritableStream sink errors its stream permanently.
+   */
+  send: (msg: AnyClientMessageOf<Protocol>) => Promise<void>
+}
 
 export function createTransportStream<Protocol extends ProtocolDefinition>(
   params: TransportStreamParams,
@@ -243,24 +251,27 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     }
     const res = await sendMessage(msg, headers)
     if (!res.ok) {
+      const rid = (msg.payload as { rid?: string }).rid
+      if (rid == null) {
+        // No controller to route the failure to — the send itself must reject,
+        // or the caller (client.sendEvent) sees a silent success.
+        throw new ResponseError(res)
+      }
       // Reject only this call: enqueue a synthetic error reply for its rid.
       // Session-level failures keep using controller.error elsewhere.
-      const rid = (msg.payload as { rid?: string }).rid
-      if (rid != null) {
-        try {
-          controller.enqueue({
-            payload: {
-              typ: 'error',
-              rid,
-              code: 'EK_HTTP_REQUEST_FAILED',
-              msg: `Transport request failed with status ${res.status} (${res.statusText})`,
-              data: { status: res.status },
-            },
-          } as unknown as AnyServerMessageOf<Protocol>)
-        } catch {
-          // Readable already closed or errored (e.g. a concurrent SSE disconnect) —
-          // there is no longer anywhere to deliver the per-rid error
-        }
+      try {
+        controller.enqueue({
+          payload: {
+            typ: 'error',
+            rid,
+            code: 'EK_HTTP_REQUEST_FAILED',
+            msg: `Transport request failed with status ${res.status} (${res.statusText})`,
+            data: { status: res.status },
+          },
+        } as unknown as AnyServerMessageOf<Protocol>)
+      } catch {
+        // Readable already closed or errored (e.g. a concurrent SSE disconnect) —
+        // there is no longer anywhere to deliver the per-rid error
       }
       return
     }
@@ -284,45 +295,56 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     }
   }
 
-  const writable = writeTo<AnyClientMessageOf<Protocol>>(
-    async (msg) => {
-      try {
-        if (msg.payload.typ === 'channel' || msg.payload.typ === 'stream') {
-          if (sessionState.status === 'idle') {
-            // First stream/channel message — connect SSE session
-            const promise = connectSSESession(msg)
-            sessionState = { status: 'connecting', promise }
-            promise
-              .then((sessionID) => {
-                if (sessionState.status === 'connecting') {
-                  sessionState = { status: 'connected', sessionID }
-                }
-              })
-              .catch((cause) => {
-                const error = new Error('Failed to connect SSE session', { cause })
-                sessionState = { status: 'error', error }
-                controller.error(error)
-              })
-            await promise
-          } else {
-            // Subsequent stream/channel messages — wait for session and send with ID
-            const sessionID = await getSessionID()
-            await sendClientMessage(msg, sessionID)
-          }
+  async function send(msg: AnyClientMessageOf<Protocol>): Promise<void> {
+    try {
+      if (msg.payload.typ === 'channel' || msg.payload.typ === 'stream') {
+        if (sessionState.status === 'idle') {
+          // First stream/channel message — connect SSE session
+          const promise = connectSSESession(msg)
+          sessionState = { status: 'connecting', promise }
+          promise
+            .then((sessionID) => {
+              if (sessionState.status === 'connecting') {
+                sessionState = { status: 'connected', sessionID }
+              }
+            })
+            .catch((cause) => {
+              const error = new Error('Failed to connect SSE session', { cause })
+              sessionState = { status: 'error', error }
+              controller.error(error)
+            })
+          await promise
         } else {
-          await sendClientMessage(msg)
+          // Subsequent stream/channel messages — wait for session and send with ID
+          const sessionID = await getSessionID()
+          await sendClientMessage(msg, sessionID)
         }
-      } catch (cause) {
-        controller.error(new Error('Transport write failed', { cause }))
+      } else {
+        await sendClientMessage(msg)
       }
-    },
+    } catch (cause) {
+      if (cause instanceof ResponseError) {
+        // The server answered and the connection is alive. Fail this message
+        // alone: erroring the readable would tear the whole transport down.
+        throw cause
+      }
+      const error = new Error('Transport write failed', { cause })
+      // Already-errored controllers ignore this, so the double call on the
+      // SSE-connect path above is harmless.
+      controller.error(error)
+      throw error
+    }
+  }
+
+  const writable = writeTo<AnyClientMessageOf<Protocol>>(
+    send,
     // The transport will call this method when disposing
     async () => {
       abortController.abort()
     },
   )
 
-  return { controller, readable, writable }
+  return { controller, readable, writable, send }
 }
 
 export type ClientTransportParams = {
@@ -336,7 +358,26 @@ export class ClientTransport<Protocol extends ProtocolDefinition> extends Transp
   AnyServerMessageOf<Protocol>,
   AnyClientMessageOf<Protocol>
 > {
+  #send: (msg: AnyClientMessageOf<Protocol>) => Promise<void>
+
   constructor(params: ClientTransportParams) {
-    super({ stream: createTransportStream<Protocol>(params) })
+    const stream = createTransportStream<Protocol>(params)
+    super({ stream })
+    this.#send = stream.send
+    // Materialise the stream so dispose() closes the writable — and so aborts
+    // the in-flight SSE fetch — even if nothing ever reads from this transport.
+    // `_getStream` is public-but-@internal by design: this repo does not use
+    // `protected` (TS-only, no runtime meaning), so that marker is how a base
+    // class exposes a member to its subclasses.
+    void this._getStream()
+  }
+
+  /**
+   * Bypass the WritableStream sink. A sink that rejects errors its stream
+   * permanently, so routing a failed message through it would let one rejected
+   * event kill every later write.
+   */
+  override write(value: AnyClientMessageOf<Protocol>): Promise<void> {
+    return this.#send(value)
   }
 }
