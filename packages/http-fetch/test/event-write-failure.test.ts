@@ -1,7 +1,7 @@
 import type { AnyClientMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { describe, expect, test, vi } from 'vitest'
 
-import { ClientTransport } from '../src/index.js'
+import { ClientTransport, ResponseError } from '../src/index.js'
 
 const protocol = {
   'test/event': { type: 'event' },
@@ -20,7 +20,7 @@ describe('http-fetch event write failures', () => {
       transport.write({
         payload: { typ: 'event', prc: 'test/event' },
       } as unknown as AnyClientMessageOf<Protocol>),
-    ).rejects.toThrow()
+    ).rejects.toThrow(ResponseError)
 
     await transport.dispose()
   })
