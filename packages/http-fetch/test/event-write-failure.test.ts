@@ -17,7 +17,9 @@ describe('http-fetch event write failures', () => {
     })
 
     await expect(
-      transport.write({ payload: { typ: 'event', prc: 'test/event' } } as unknown as AnyClientMessageOf<Protocol>),
+      transport.write({
+        payload: { typ: 'event', prc: 'test/event' },
+      } as unknown as AnyClientMessageOf<Protocol>),
     ).rejects.toThrow()
 
     await transport.dispose()
@@ -27,7 +29,9 @@ describe('http-fetch event write failures', () => {
     let calls = 0
     const fetchFn = vi.fn(async () => {
       calls += 1
-      return calls === 1 ? new Response('nope', { status: 500 }) : new Response(null, { status: 204 })
+      return calls === 1
+        ? new Response('nope', { status: 500 })
+        : new Response(null, { status: 204 })
     })
     const transport = new ClientTransport<Protocol>({
       url: 'http://localhost/',
@@ -35,12 +39,16 @@ describe('http-fetch event write failures', () => {
     })
 
     await expect(
-      transport.write({ payload: { typ: 'event', prc: 'test/event' } } as unknown as AnyClientMessageOf<Protocol>),
+      transport.write({
+        payload: { typ: 'event', prc: 'test/event' },
+      } as unknown as AnyClientMessageOf<Protocol>),
     ).rejects.toThrow()
 
     // The readable was not errored: a second event goes through.
     await expect(
-      transport.write({ payload: { typ: 'event', prc: 'test/event' } } as unknown as AnyClientMessageOf<Protocol>),
+      transport.write({
+        payload: { typ: 'event', prc: 'test/event' },
+      } as unknown as AnyClientMessageOf<Protocol>),
     ).resolves.toBeUndefined()
 
     await transport.dispose()
@@ -56,7 +64,9 @@ describe('http-fetch event write failures', () => {
     })
 
     await expect(
-      transport.write({ payload: { typ: 'event', prc: 'test/event' } } as unknown as AnyClientMessageOf<Protocol>),
+      transport.write({
+        payload: { typ: 'event', prc: 'test/event' },
+      } as unknown as AnyClientMessageOf<Protocol>),
     ).rejects.toThrow()
 
     await expect(transport.read()).rejects.toThrow(/Transport write failed/)
