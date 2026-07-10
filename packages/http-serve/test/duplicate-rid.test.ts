@@ -50,20 +50,32 @@ describe('duplicate request IDs', () => {
   test('a released rid can be reused', async () => {
     const bridge = createServerBridge()
 
-    void bridge.handleRequest(createRequestPost('r1'))
+    // First request, replied to with a 'first' result — this must delete the
+    // inflight entry for 'r1', releasing it for reuse.
+    const firstCall = bridge.handleRequest(createRequestPost('r1'))
     await new Promise((resolve) => setTimeout(resolve, 10))
 
-    // Server replies, which deletes the inflight entry.
     const writer = bridge.stream.writable.getWriter()
-    await writer.write({ payload: { typ: 'result', rid: 'r1', val: 'ok' } } as never)
+    await writer.write({ payload: { typ: 'result', rid: 'r1', val: 'first' } } as never)
     writer.releaseLock()
+
+    const firstRes = await firstCall
+    expect(firstRes.status).toBe(200)
+    const firstBody = await firstRes.json()
+    expect(firstBody.payload.val).toBe('first')
+
+    // Second request reusing the now-released rid must be ACCEPTED (not 409)
+    // and must receive its own distinct reply, not the first call's stale one.
+    const secondCall = bridge.handleRequest(createRequestPost('r1'))
     await new Promise((resolve) => setTimeout(resolve, 10))
 
-    void bridge.handleRequest(createRequestPost('r1'))
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    const writer2 = bridge.stream.writable.getWriter()
+    await writer2.write({ payload: { typ: 'result', rid: 'r1', val: 'second' } } as never)
+    writer2.releaseLock()
 
-    // The second one is now the in-flight holder; a third is refused.
-    const res = await bridge.handleRequest(createRequestPost('r1'))
-    expect(res.status).toBe(409)
+    const secondRes = await secondCall
+    expect(secondRes.status).toBe(200)
+    const secondBody = await secondRes.json()
+    expect(secondBody.payload.val).toBe('second')
   })
 })
