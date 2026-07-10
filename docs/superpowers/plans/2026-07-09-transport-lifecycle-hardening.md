@@ -556,11 +556,17 @@ describe('sendEvent write failures', () => {
     await client.dispose()
   })
 
-  test('rid-bearing writes still resolve and surface on the controller', async () => {
+  test('a rid-bearing call still surfaces its write failure to the caller', async () => {
     const client = new Client<Protocol>({ transport: createFailingWriteTransport() })
 
-    // The request call rejects via its controller, not via a safeWrite throw.
-    await expect(client.request('test/request', { id: 'r1' })).rejects.toBeDefined()
+    // An integration-level guard that the new rid-less throw did not change
+    // rid-bearing behavior. It cannot show *which* path rejected: `createRequest`
+    // returns `sent.then(() => controller.result)`, and `onFailure` aborts the
+    // controller with the same error object the write threw, so both paths reject
+    // with 'socket exploded'. The discriminating coverage is in safe-write.test.ts,
+    // which pins that safeWrite resolves for rid-bearing writes and rejects for
+    // rid-less ones.
+    await expect(client.request('test/request', { id: 'r1' })).rejects.toThrow('socket exploded')
 
     await client.dispose()
   })
