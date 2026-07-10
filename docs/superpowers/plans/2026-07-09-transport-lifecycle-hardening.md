@@ -1181,7 +1181,15 @@ Append to the `describe('session limits', ...)` block in `packages/http-serve/te
       const res1 = await bridge.handleRequest(createStreamPost('r1'))
       expect(res1.status).toBe(200)
 
-      vi.advanceTimersByTime(800)
+      // Timing note — do NOT shrink these to 800/800. The cleanup interval ticks
+      // at multiples of sessionTimeoutMs (1000ms) and expiry is a strict `>`, so
+      // at the t=1000 tick an unrefreshed session (1000 - 0) is exactly NOT
+      // expired. With 800/800 the decisive check lands before t=2000 and both
+      // fixed and unfixed sessions survive — the test passes on unfixed code.
+      // 1100 then 900 puts the decisive check at the t=2000 tick, where the
+      // unrefreshed session (2000 - 0 > 1000) is reaped and the refreshed one
+      // (2000 - 1100) survives.
+      vi.advanceTimersByTime(1100)
 
       // Server pushes a stream value for r1 — this must refresh lastAccess.
       const writer = bridge.stream.writable.getWriter()
@@ -1190,9 +1198,9 @@ Append to the `describe('session limits', ...)` block in `packages/http-serve/te
       } as never)
       writer.releaseLock()
 
-      vi.advanceTimersByTime(800)
+      vi.advanceTimersByTime(900)
 
-      // Only 800ms since the SSE write, so the session must still be alive:
+      // Only 900ms since the SSE write, so the session must still be alive:
       // a new session request hits maxSessions and is refused.
       const res2 = await bridge.handleRequest(createStreamPost('r2'))
       expect(res2.status).toBe(503)
@@ -1205,7 +1213,7 @@ Append to the `describe('session limits', ...)` block in `packages/http-serve/te
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --filter @enkaku/http-serve exec vitest run test/session-limits.test.ts`
-Expected: FAIL — `expected 200 to be 503`. The session was reaped despite the write.
+Expected: FAIL — `expected 200 to be 503`. The session was reaped at the t=2000 tick despite the outbound write, so a new session is wrongly accepted. If this test *passes* on unfixed code, the timing is wrong (see the timing note in the test) — it is not exercising the divergence.
 
 - [ ] **Step 3: Refresh `lastAccess` on enqueue**
 
