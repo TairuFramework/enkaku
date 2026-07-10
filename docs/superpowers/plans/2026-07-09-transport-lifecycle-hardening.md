@@ -1894,7 +1894,7 @@ Create `packages/http-fetch/test/event-write-failure.test.ts`:
 import type { AnyClientMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { describe, expect, test, vi } from 'vitest'
 
-import { ClientTransport } from '../src/index.js'
+import { ClientTransport, ResponseError } from '../src/index.js'
 
 const protocol = {
   'test/event': { type: 'event' },
@@ -1909,9 +1909,11 @@ describe('http-fetch event write failures', () => {
       fetch: fetchFn as unknown as typeof globalThis.fetch,
     })
 
+    // Name the error: a bare `.rejects.toThrow()` accepts any rejection, so an
+    // error-type regression would slip through. It must be a ResponseError.
     await expect(
       transport.write({ payload: { typ: 'event', prc: 'test/event' } } as unknown as AnyClientMessageOf<Protocol>),
-    ).rejects.toThrow()
+    ).rejects.toThrow(ResponseError)
 
     await transport.dispose()
   })
