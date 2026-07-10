@@ -190,6 +190,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       }
       try {
         session.controller.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
+        // Outbound traffic keeps the session alive: a stream whose consumer only
+        // reads would otherwise be reaped at sessionTimeoutMs.
+        session.lastAccess = Date.now()
       } catch (cause) {
         options.onWriteError?.({
           error: new Error(`Error writing to SSE feed for session: ${request.sessionID}`, {
