@@ -64,7 +64,14 @@ describe('graceful remote close', () => {
     // Server closes its writable — the client's readable ends cleanly.
     await transports.server.dispose()
 
-    await expect(withTimeout(call, 1000)).rejects.toBeDefined()
+    // No `withTimeout` here: if the client hangs, vitest's own per-test
+    // timeout fails the test, which is the correct signal. No handler was
+    // supplied, so `#setupTransport` takes the `this.abort('TransportDisposed')`
+    // path, and the per-rid controller is aborted with that same bare string
+    // reason (confirmed empirically — the rejection value is the string
+    // `'TransportDisposed'`, not an `Error`/`RequestError`).
+    await expect(call).rejects.toBe('TransportDisposed')
+    expect(client.signal.aborted).toBe(true)
 
     await client.dispose()
     await transports.dispose()
