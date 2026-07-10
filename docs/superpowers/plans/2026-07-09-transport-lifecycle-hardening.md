@@ -751,53 +751,37 @@ describe('socket write-after-close', () => {
     const socket = fakeSocket()
     const { writable } = await createTransportStream<unknown, { hello: string }>(socket)
 
-    const uncaught: Array<Error> = []
-    const onUncaught = (err: Error) => uncaught.push(err)
-    process.on('uncaughtException', onUncaught)
+    socket.destroy()
+    // Let the 'close' event settle the readable and run detach().
+    await new Promise((resolve) => setTimeout(resolve, 10))
 
-    try {
-      socket.destroy()
-      // Let the 'close' event settle the readable and run detach().
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      const writer = writable.getWriter()
-      await expect(writer.write({ hello: 'world' })).rejects.toThrow(/closed/i)
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-      expect(uncaught).toEqual([])
-    } finally {
-      process.off('uncaughtException', onUncaught)
-    }
+    const writer = writable.getWriter()
+    await expect(writer.write({ hello: 'world' })).rejects.toThrow(/closed/i)
   })
 
   test('a late socket error does not crash the process', async () => {
     const socket = fakeSocket()
     await createTransportStream<unknown, unknown>(socket)
 
-    const uncaught: Array<Error> = []
-    const onUncaught = (err: Error) => uncaught.push(err)
-    process.on('uncaughtException', onUncaught)
+    socket.destroy()
+    await new Promise((resolve) => setTimeout(resolve, 10))
 
-    try {
-      socket.destroy()
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      // detach() has run. With no listener left, this would be an uncaught throw.
-      socket.emit('error', new Error('EPIPE'))
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(uncaught).toEqual([])
-    } finally {
-      process.off('uncaughtException', onUncaught)
-    }
+    // detach() removes the readable's own 'error' listener, but the
+    // permanent listener installed by createTransportStream stays attached.
+    // With no listener at all, EventEmitter escalates 'error' into a
+    // synchronous throw out of emit() itself (Node's ERR_UNHANDLED_ERROR),
+    // not an async 'uncaughtException' -- so that's the mechanism to assert.
+    expect(() => socket.emit('error', new Error('EPIPE'))).not.toThrow()
   })
 })
 ```
 
+Do **not** reach for `process.on('uncaughtException')` here. It was tried and it never fires: an `'error'` emit with zero listeners throws synchronously out of `emit()`, in the caller's own stack, so the handler captures nothing in either the red or the green run — leaving `expect(uncaught).toEqual([])` trivially true and the test unable to fail.
+
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --filter @enkaku/socket exec vitest run test/write-after-close.test.ts`
-Expected: FAIL — the first test's `writer.write(...)` resolves instead of rejecting; the second records an entry in `uncaught`.
+Expected: FAIL — the first test's `writer.write(...)` resolves instead of rejecting; the second's `socket.emit('error', …)` throws `Error: EPIPE` straight out of `emit()`.
 
 - [ ] **Step 3: Keep a permanent error listener and guard the sink**
 
