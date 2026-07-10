@@ -385,6 +385,13 @@ export class Client<
       try {
         const next = await this.#transport.read()
         if (next.done) {
+          if (!this.signal.aborted) {
+            // The readable ended without anything disposing the transport, so
+            // `transport.disposed` would never resolve and the handler wired up
+            // in #setupTransport would never run. Dispose it here and let that
+            // handler abort controllers / swap in a replacement as usual.
+            void this.#transport.dispose()
+          }
           return
         }
         msg = next.value
