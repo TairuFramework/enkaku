@@ -1323,21 +1323,38 @@ describe('duplicate request IDs', () => {
   test('a released rid can be reused', async () => {
     const bridge = createServerBridge()
 
-    void bridge.handleRequest(createRequestPost('r1'))
+    // This is a regression guard, not a fix-dependent test: on unfixed code
+    // (no guard at all) reuse trivially works, so it passes before AND after the
+    // change. Its job is to fail if the guard ever OVER-fires and refuses a
+    // legitimately released rid. Do NOT rewrite it to assert 409 on a third
+    // call — that assertion holds identically whether reuse works or is broken
+    // (both collide → 409), so it cannot verify reuse. Assert instead that the
+    // reused call is accepted (200) and gets its OWN reply, not a stale one.
+    const firstCall = bridge.handleRequest(createRequestPost('r1'))
     await new Promise((resolve) => setTimeout(resolve, 10))
 
-    // Server replies, which deletes the inflight entry.
     const writer = bridge.stream.writable.getWriter()
-    await writer.write({ payload: { typ: 'result', rid: 'r1', val: 'ok' } } as never)
+    await writer.write({ payload: { typ: 'result', rid: 'r1', val: 'first' } } as never)
     writer.releaseLock()
+
+    const firstRes = await firstCall
+    expect(firstRes.status).toBe(200)
+    const firstBody = await firstRes.json()
+    expect(firstBody.payload.val).toBe('first')
+
+    // Second request reusing the now-released rid must be ACCEPTED (not 409)
+    // and must receive its own distinct reply, not the first call's stale one.
+    const secondCall = bridge.handleRequest(createRequestPost('r1'))
     await new Promise((resolve) => setTimeout(resolve, 10))
 
-    void bridge.handleRequest(createRequestPost('r1'))
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    const writer2 = bridge.stream.writable.getWriter()
+    await writer2.write({ payload: { typ: 'result', rid: 'r1', val: 'second' } } as never)
+    writer2.releaseLock()
 
-    // The second one is now the in-flight holder; a third is refused.
-    const res = await bridge.handleRequest(createRequestPost('r1'))
-    expect(res.status).toBe(409)
+    const secondRes = await secondCall
+    expect(secondRes.status).toBe(200)
+    const secondBody = await secondRes.json()
+    expect(secondBody.payload.val).toBe('second')
   })
 })
 ```
@@ -1345,7 +1362,7 @@ describe('duplicate request IDs', () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `pnpm --filter @enkaku/http-serve exec vitest run test/duplicate-rid.test.ts`
-Expected: FAIL — the first two tests hang or report a non-409 status.
+Expected: FAIL — the first two tests hang or report a non-409 status. The third (`a released rid can be reused`) is a regression guard: it PASSES on unfixed code (reuse always works when there is no guard) and must keep passing after. To confirm it can catch the regression it exists for, mutate the source so the guard over-fires (skip the inflight `delete` on reply) and check it goes red, then restore.
 
 - [ ] **Step 3: Guard `inflight.set`**
 
