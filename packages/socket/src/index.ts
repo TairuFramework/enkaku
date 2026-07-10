@@ -47,6 +47,14 @@ export async function createTransportStream<R, W>(
 ): Promise<ReadableWritablePair<R, W>> {
   const socket = await Promise.resolve(typeof source === 'function' ? source() : source)
 
+  // Attached once and never removed. A socket with zero 'error' listeners
+  // escalates any late error (a write on a destroyed socket, an EPIPE) to an
+  // uncaught exception, which takes the process down.
+  let socketError: Error | null = null
+  socket.on('error', (err: Error) => {
+    socketError = err
+  })
+
   const readable = new ReadableStream<Uint8Array>({
     start(controller) {
       let settled = false
@@ -88,6 +96,12 @@ export async function createTransportStream<R, W>(
 
   const writable = writeTo<W>(
     (msg) => {
+      if (socketError != null) {
+        throw socketError
+      }
+      if (socket.destroyed || socket.writableEnded) {
+        throw new Error('Socket is closed')
+      }
       socket.write(`${JSON.stringify(msg)}\n`)
     },
     () => {
