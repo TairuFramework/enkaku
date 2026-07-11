@@ -1,10 +1,15 @@
-import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
+import {
+  type AnyClientMessageOf,
+  type AnyServerMessageOf,
+  ErrorCodes,
+  type ProtocolDefinition,
+} from '@enkaku/protocol'
 import { DirectTransports } from '@enkaku/transport'
 import { randomIdentity } from '@kokuin/token'
 import { defer } from '@sozai/async'
 import { describe, expect, test, vi } from 'vitest'
 
-import { type ProcedureHandlers, serve } from '../src/index.js'
+import { type AllowContext, type ProcedureHandlers, serve } from '../src/index.js'
 
 const protocol = {
   chat: {
@@ -86,6 +91,79 @@ describe('auth-mode message ordering', () => {
     await transports.dispose()
   })
 
+  test('a blocked channel auth does not stall messages for other rids', async () => {
+    const serverSigner = randomIdentity()
+    const clientSigner = randomIdentity()
+
+    const receivedByRID: Record<string, Array<unknown>> = { c1: [], c2: [] }
+    const handler = vi.fn(
+      async (ctx: { readable: ReadableStream<unknown>; message: { payload: { rid: string } } }) => {
+        const rid = ctx.message.payload.rid
+        const reader = ctx.readable.getReader()
+        while (true) {
+          const next = await reader.read()
+          if (next.done) {
+            break
+          }
+          receivedByRID[rid]?.push(next.value)
+        }
+        return 'done'
+      },
+    )
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+
+    // Only c1's access check is gated: c2 must not have to wait behind it. An
+    // `await pending[rid]` in the send case would block the transport read loop
+    // and c2's channel open would never even be read.
+    const gate = defer<void>()
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverSigner,
+      accessRules: {
+        '*': {
+          allow: async ({ payload }: AllowContext) => {
+            // `rid` is on the signed token payload but not in ProcedureAccessPayload.
+            if ((payload as { rid?: string }).rid === 'c1') {
+              await gate.promise
+            }
+            return true
+          },
+        },
+      },
+      transport: transports.server,
+    })
+
+    const write = async (payload: Record<string, unknown>) => {
+      const message = await clientSigner.signToken({ ...payload, aud: serverSigner.id } as {
+        typ: string
+        aud: string
+      })
+      await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+    }
+
+    await write({ typ: 'channel', prc: 'chat', rid: 'c1' })
+    await write({ typ: 'send', prc: 'chat', rid: 'c1', val: 'blocked' })
+    await write({ typ: 'channel', prc: 'chat', rid: 'c2' })
+    await write({ typ: 'send', prc: 'chat', rid: 'c2', val: 'free' })
+
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // c2 flows while c1 is still stuck in its access check.
+    expect(receivedByRID.c2).toEqual(['free'])
+    expect(receivedByRID.c1).toEqual([])
+
+    gate.resolve()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(receivedByRID.c1).toEqual(['blocked'])
+
+    await server.dispose()
+    await transports.dispose()
+  })
+
   test('a send for a channel whose auth failed is still dropped', async () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
@@ -138,6 +216,17 @@ describe('auth-mode message ordering', () => {
     expect(receivedValues).toEqual([])
     expect(handler).not.toHaveBeenCalled()
 
+    // Positive control: the two assertions above also hold if nothing reached the
+    // server at all, so check the channel open really arrived and was rejected for
+    // the expected reason.
+    const reply = await transports.client.read()
+    expect(reply.done).toBe(false)
+    expect(reply.value?.payload).toMatchObject({
+      typ: 'error',
+      rid: 'c1',
+      code: ErrorCodes.ACCESS_DENIED,
+    })
+
     await server.dispose()
     await transports.dispose()
   })
@@ -186,8 +275,11 @@ describe('auth-mode message ordering', () => {
     }
 
     await new Promise((resolve) => setTimeout(resolve, 20))
-    expect(maxConcurrent).toBeGreaterThan(1)
+    // Release before asserting: the counter is already captured, and a failing
+    // expectation must not leave three access checks hanging on the gate.
     gate.resolve()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(maxConcurrent).toBeGreaterThan(1)
 
     await server.dispose()
     await transports.dispose()
