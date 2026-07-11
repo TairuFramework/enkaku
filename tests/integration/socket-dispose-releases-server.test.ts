@@ -63,6 +63,10 @@ describe('SocketTransport dispose releases the peer server', () => {
     // Let the server's write land before disposing, so the client's socket
     // genuinely has unread data queued when it is released.
     await new Promise((resolve) => setTimeout(resolve, 50))
+    // Assert the queuing actually happened -- otherwise a loaded CI box could
+    // delay the server's write past the sleep above, and this test would
+    // pass vacuously without ever exercising the backpressured-write path.
+    expect(connections[0]?.writableLength).toBeGreaterThan(0)
 
     await transport.dispose()
 
