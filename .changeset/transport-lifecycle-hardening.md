@@ -42,5 +42,5 @@ New public API:
 - `TransportEvents` gains `requestAborted: { rid: string; reason?: unknown }`.
 - `createServerBridge` gains `onRequestAborted`.
 - `@enkaku/http-fetch`: `TransportStream` gains `send`, and `ClientTransport.write` uses it rather than the writable's sink. Calls to `send` are serialized, so a channel `send` cannot overtake the `channel` open it belongs to.
-- `@enkaku/socket`: new exported type `CreateTransportStreamOptions<R>` (`FromJSONLinesOptions<R>` plus `highWaterMark`), and `SocketTransportParams<R>` is now `CreateTransportStreamOptions<R> & { socket, signal }` — it takes a type parameter and carries the JSON-lines and buffering options.
+- `@enkaku/socket`: new exported type `CreateTransportStreamOptions<R>` (`FromJSONLinesOptions<R>` plus `highWaterMark`). `SocketTransportParams<R>` is now based on it (`CreateTransportStreamOptions<R> & { socket, signal }`), so it carries the buffering options alongside the JSON-lines ones.
 - `@enkaku/server`: `ServerEvents['handlerAbort'].reason` widened from a literal union to `unknown` (it now also carries transport-defined `requestAborted` reasons).
