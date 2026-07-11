@@ -56,6 +56,22 @@ describe('connectSocket() timeout', () => {
     expect(socket.listenerCount('connect')).toBe(0)
   }, 500)
 
+  // Guards the no-op 'error' listener left behind by abandon(): a Node socket
+  // with zero 'error' listeners escalates a late error to a synchronous throw
+  // out of emit() (Node's ERR_UNHANDLED_ERROR), which would take the process
+  // down. cleanup() has already removed the real 'error' listener by the time
+  // the timeout fires, so this is the only thing standing in the way.
+  test('does not throw when the abandoned socket later emits a late error', async () => {
+    const socket = hangingSocket()
+    createConnectionMock.mockReturnValue(socket)
+
+    await expect(connectSocket('/hangs.sock', { timeoutMs: 20 })).rejects.toThrow(
+      'Socket connect timed out after 20ms',
+    )
+
+    expect(() => socket.emit('error', new Error('late ECONNREFUSED'))).not.toThrow()
+  }, 500)
+
   test('timeoutMs: 0 disables the timeout', async () => {
     const socket = hangingSocket()
     createConnectionMock.mockReturnValue(socket)
