@@ -265,7 +265,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   const disposer = new Disposer({
     dispose: async () => {
       clearInterval(cleanupInterval)
-      unsubscribeRequestAborted()
+      // Drain the per-rid barrier first: in `requireAuth` mode `process` is
+      // async, so a message whose access check is still in flight has not
+      // registered its controller yet — aborting now would miss it and the
+      // handler would start, with a signal nothing can ever abort, after
+      // `dispose()` resolved. `deliverInOrder` chains onto the same map, so
+      // this also drains control messages queued behind an auth check.
+      // Entries never reject (`track` and `deliverInOrder` swallow both
+      // settlements), and the wait is bounded by `cleanupTimeoutMs`, which
+      // `Server.dispose` already races against, so it cannot hang shutdown.
+      await Promise.all(Object.values(pending))
       const interruption = new DisposeInterruption()
       // Abort all currently running handlers
       for (const rid of Object.keys(controllers)) {
@@ -274,6 +283,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       }
       // Wait until all running handlers are done
       await Promise.all(Object.values(running))
+      // Unsubscribe last: until the handlers above are done, a peer going away
+      // can still abort one of them through `requestAborted`.
+      unsubscribeRequestAborted()
     },
     signal,
   })
