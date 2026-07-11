@@ -5,6 +5,7 @@
 '@enkaku/http-serve': minor
 '@enkaku/http-fetch': minor
 '@enkaku/server': minor
+'@enkaku/react': patch
 ---
 
 Client and transport lifecycle hardening.
@@ -18,6 +19,9 @@ Fixes:
 - `http-serve` rejects a duplicate in-flight request ID with `409` instead of overwriting the first caller's entry.
 - An HTTP client that disconnects now aborts its server handler, via the new `requestAborted` transport event.
 - In `requireAuth` mode, a channel `send` arriving immediately behind its channel open is no longer dropped.
+- Over `@enkaku/http-fetch`, a channel `send` issued right after `createChannel()` no longer overtakes the channel open on the wire.
+- Replacing a client transport no longer lets the read loop of the replaced transport dispose its replacement when the old readable ends.
+- `Server.dispose()` waits for in-flight access checks, so an authenticated request can no longer start its handler — with a signal nothing can abort — after `dispose()` resolved.
 
 New options:
 
@@ -27,12 +31,16 @@ New options:
 Behavior changes:
 
 - `client.sendEvent()` now rejects when the transport write fails for a non-teardown reason. It previously resolved as if the event had been delivered. Over `@enkaku/http-fetch`, a non-2xx response to an event rejects that call alone and leaves the transport usable.
+- `@enkaku/react`: `useSendEvent()` and `ReactClient.sendEvent()` propagate the client change above — they now **reject** on a write failure instead of resolving as if the event had been delivered.
 - `http-serve` returns `409` for a duplicate in-flight request ID.
 - An `http-serve` SSE session whose buffer overflows is closed rather than growing without bound.
+- `@enkaku/http-serve` answers a request whose client disconnected before the reply with the `499` status.
+- `@enkaku/server`: `Server.handle()` now requires `transport.events` at runtime — it subscribes to the transport's `requestAborted` event. `TransportType` already declares `events` as non-optional, so typed consumers are unaffected, but a duck-typed transport double or a JavaScript consumer without an `events` emitter now throws.
 
 New public API:
 
 - `TransportEvents` gains `requestAborted: { rid: string; reason?: unknown }`.
 - `createServerBridge` gains `onRequestAborted`.
-- `@enkaku/http-fetch`: `TransportStream` gains `send`, and `ClientTransport.write` uses it rather than the writable's sink.
+- `@enkaku/http-fetch`: `TransportStream` gains `send`, and `ClientTransport.write` uses it rather than the writable's sink. Calls to `send` are serialized, so a channel `send` cannot overtake the `channel` open it belongs to.
+- `@enkaku/socket`: new exported type `CreateTransportStreamOptions<R>` (`FromJSONLinesOptions<R>` plus `highWaterMark`), and `SocketTransportParams<R>` is now `CreateTransportStreamOptions<R> & { socket, signal }` — it takes a type parameter and carries the JSON-lines and buffering options.
 - `@enkaku/server`: `ServerEvents['handlerAbort'].reason` widened from a literal union to `unknown` (it now also carries transport-defined `requestAborted` reasons).
