@@ -380,23 +380,34 @@ export class Client<
   }
 
   async #read() {
+    // Pin the transport this loop owns. `#setupTransport()` starts a new
+    // `#read()` loop whenever the transport is replaced, while this one may
+    // still be parked on the old transport's `reader.read()` — a transport
+    // disposal only closes its writable, so its readable can end long after the
+    // swap. Reading `this.#transport` from here on would touch the replacement,
+    // which the newer loop owns.
+    const transport = this.#transport
     while (true) {
+      if (this.#transport !== transport) {
+        // Replaced — a newer loop owns the current transport
+        return
+      }
       let msg: AnyServerMessageOf<Protocol>
       try {
-        const next = await this.#transport.read()
+        const next = await transport.read()
         if (next.done) {
-          if (!this.signal.aborted) {
+          if (!this.signal.aborted && this.#transport === transport) {
             // The readable ended without anything disposing the transport, so
             // `transport.disposed` would never resolve and the handler wired up
             // in #setupTransport would never run. Dispose it here and let that
             // handler abort controllers / swap in a replacement as usual.
-            void this.#transport.dispose()
+            void transport.dispose()
           }
           return
         }
         msg = next.value
       } catch (cause) {
-        if (this.signal.aborted) {
+        if (this.signal.aborted || this.#transport !== transport) {
           return
         }
         this.#logger.debug('failed to read from transport', { cause })
