@@ -110,17 +110,32 @@ export type CreateTransportStreamOptions<R> = FromJSONLinesOptions<R> & {
 }
 
 /**
- * Resolve when the socket drains. Reject if it closes or errors first, or if
- * `signal` aborts, so a write can never hang on a drain event that will
- * never arrive.
+ * Resolve when the socket drains. Reject if it closes or errors first.
+ *
+ * If `signal` aborts, do NOT reject immediately -- a peer that is merely
+ * stalled (not dead) may resume reading and let the write drain normally, and
+ * an instant rejection here would error the write sink, which errors the
+ * WritableStream, which makes `writer.close()` reject *without ever running
+ * its close callback* -- skipping the flush-on-close grace entirely and
+ * letting `dispose()` destroy the socket with buffered bytes still queued.
+ * Instead, on abort, give the drain up to `END_GRACE_MS` more to arrive: if
+ * the peer recovers within that window, resolve as normal; only if the grace
+ * itself elapses do we give up and reject, so a genuinely dead peer still
+ * bounds the wait (and therefore `dispose()`) at ~`END_GRACE_MS`.
  */
 function waitForDrain(socket: Socket, signal?: AbortSignal): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+    let graceTimer: ReturnType<typeof setTimeout> | undefined
+
     function cleanup(): void {
       socket.off('drain', onDrain)
       socket.off('close', onClose)
       socket.off('error', onError)
       signal?.removeEventListener('abort', onAbort)
+      if (graceTimer != null) {
+        clearTimeout(graceTimer)
+        graceTimer = undefined
+      }
     }
     function onDrain(): void {
       cleanup()
@@ -135,17 +150,22 @@ function waitForDrain(socket: Socket, signal?: AbortSignal): Promise<void> {
       reject(err)
     }
     function onAbort(): void {
-      cleanup()
-      reject(signal?.reason ?? new Error('Socket drain aborted'))
-    }
-    if (signal?.aborted) {
-      onAbort()
-      return
+      // Keep listening for 'drain'/'close'/'error' during the grace -- only
+      // start the countdown to giving up.
+      graceTimer = setTimeout(() => {
+        cleanup()
+        reject(signal?.reason ?? new Error('Socket drain aborted'))
+      }, END_GRACE_MS)
+      graceTimer.unref()
     }
     socket.on('drain', onDrain)
     socket.on('close', onClose)
     socket.on('error', onError)
-    signal?.addEventListener('abort', onAbort, { once: true })
+    if (signal?.aborted) {
+      onAbort()
+    } else {
+      signal?.addEventListener('abort', onAbort, { once: true })
+    }
   })
 }
 
