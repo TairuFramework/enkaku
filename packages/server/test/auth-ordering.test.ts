@@ -91,6 +91,86 @@ describe('auth-mode message ordering', () => {
     await transports.dispose()
   })
 
+  test('multiple sends for one rid queue in arrival order behind auth', async () => {
+    const serverSigner = randomIdentity()
+    const clientSigner = randomIdentity()
+
+    const received: Array<unknown> = []
+    // ctx.readable is a ReadableStream (server/src/types.ts:98), so read it with
+    // a reader rather than for-await — the DOM lib type has no asyncIterator.
+    const handler = vi.fn(async (ctx: { readable: ReadableStream<unknown> }) => {
+      const reader = ctx.readable.getReader()
+      while (true) {
+        const next = await reader.read()
+        if (next.done) {
+          break
+        }
+        received.push(next.value)
+      }
+      return 'done'
+    })
+    const handlers = { chat: handler } as unknown as ProcedureHandlers<Protocol>
+
+    // Blocks the channel's access check — and only the channel's, because the
+    // send/abort paths never reach checkProcedureAccess.
+    const gate = defer<void>()
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+    const server = serve<Protocol>({
+      handlers,
+      identity: serverSigner,
+      accessRules: {
+        '*': {
+          allow: async () => {
+            await gate.promise
+            return true
+          },
+        },
+      },
+      transport: transports.server,
+    })
+
+    const channelMsg = await clientSigner.signToken({
+      typ: 'channel',
+      prc: 'chat',
+      rid: 'c1',
+      aud: serverSigner.id,
+    } as const)
+    const sendMsgs = await Promise.all(
+      ['one', 'two', 'three'].map((val) =>
+        clientSigner.signToken({
+          typ: 'send',
+          prc: 'chat',
+          rid: 'c1',
+          val,
+          aud: serverSigner.id,
+        } as const),
+      ),
+    )
+
+    await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
+    for (const sendMsg of sendMsgs) {
+      await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
+    }
+
+    // All three sends have raced ahead while the channel is stuck in its access
+    // check, so none of them can have been delivered yet.
+    await new Promise((resolve) => setTimeout(resolve, 30))
+    expect(received).toEqual([])
+
+    gate.resolve()
+    await new Promise((resolve) => setTimeout(resolve, 80))
+
+    // Arrival order must be preserved: this is the property `deliverInOrder`
+    // exists for, and it only shows up with more than one queued message per rid.
+    expect(received).toEqual(['one', 'two', 'three'])
+
+    await server.dispose()
+    await transports.dispose()
+  })
+
   test('a blocked channel auth does not stall messages for other rids', async () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
@@ -225,6 +305,7 @@ describe('auth-mode message ordering', () => {
       typ: 'error',
       rid: 'c1',
       code: ErrorCodes.ACCESS_DENIED,
+      msg: 'Access denied',
     })
 
     await server.dispose()
@@ -279,7 +360,7 @@ describe('auth-mode message ordering', () => {
     // expectation must not leave three access checks hanging on the gate.
     gate.resolve()
     await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(maxConcurrent).toBeGreaterThan(1)
+    expect(maxConcurrent).toBe(3)
 
     await server.dispose()
     await transports.dispose()

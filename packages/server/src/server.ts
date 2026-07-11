@@ -173,19 +173,17 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       try {
         deliver()
       } catch (cause) {
-        // The synchronous path would have thrown into `handleNext`; report the
-        // failure with at least that visibility rather than floating a rejection.
+        // `deliver()` cannot actually throw synchronously (context.send and
+        // events.emit never throw, and controller.writer.write() rejects rather
+        // than throws with its own .catch), so this is a floating-rejection
+        // guard: keep it, but only log — there is no well-typed HandlerError
+        // messageType for an arbitrary control message here, and no public
+        // event shape to invent one for.
         logger.warn('failed to deliver {typ} message for {rid}', {
           typ: payload.typ,
           rid,
           cause,
         })
-        emitHandlerError(
-          events,
-          'handler',
-          HandlerError.from(cause, { code: ErrorCodes.HANDLER_ERROR }),
-          payload,
-        )
       }
     }
     // A rejected barrier still delivers: an auth failure leaves no controller
