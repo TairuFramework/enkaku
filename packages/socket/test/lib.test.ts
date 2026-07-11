@@ -154,6 +154,49 @@ describe('createTransportStream()', () => {
     serverSocket.destroy()
     server.close()
   })
+
+  test('flushes buffered writes before the writer close resolves', async () => {
+    const { server, socketPath } = await createTestServer()
+    const connectionPromise = waitForConnection(server)
+
+    const socket = await connectSocket(socketPath)
+    const serverSocket = await connectionPromise
+    const stream = await createTransportStream<unknown, { payload: string }>(socket)
+
+    // Small enough that socket.write() returns `true` (no backpressure), so
+    // the write callback never awaits 'drain'. That is exactly the case that
+    // exposes the bug: a payload big enough to force a 'drain' wait would
+    // already be fully handed to the kernel by the time the write's promise
+    // resolves, masking the race regardless of the fix. A message under the
+    // socket's ~16 KiB write high-water mark is what genuinely races.
+    const payload = 'x'.repeat(10_000)
+    let receivedBytes = 0
+    const serverDone = new Promise<void>((resolve) => {
+      serverSocket.on('data', (chunk: Buffer) => {
+        receivedBytes += chunk.length
+      })
+      serverSocket.on('end', () => resolve())
+      // Mirrors Task 3's dispose hook, which destroy()s the socket right
+      // after the writer closes -- so the peer only ever sees a 'close',
+      // not a graceful 'end', when the bytes get cut off.
+      serverSocket.on('close', () => resolve())
+    })
+
+    const writer = stream.writable.getWriter()
+    // Deliberately not awaited: the close below must flush whatever is queued.
+    void writer.write({ payload })
+    await writer.close()
+    // Simulates Task 3's post-close destroy(). Without the fix, this lands
+    // while bytes are still queued in the socket's internal buffer.
+    socket.destroy()
+
+    await serverDone
+    // The full JSON line, not a truncated prefix
+    expect(receivedBytes).toBe(JSON.stringify({ payload }).length + 1)
+
+    serverSocket.destroy()
+    server.close()
+  })
 })
 
 describe('createTransportStream() error handling', () => {

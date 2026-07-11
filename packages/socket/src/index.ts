@@ -95,6 +95,7 @@ export async function connectSocket(
 }
 
 const DEFAULT_HIGH_WATER_MARK = 1_048_576 // 1 MiB
+const END_GRACE_MS = 2_000 // Max wait for a half-close to flush before giving up
 
 export type CreateTransportStreamOptions<R> = FromJSONLinesOptions<R> & {
   /** Bytes to buffer before pausing the socket / awaiting drain. Defaults to 1 MiB. */
@@ -208,8 +209,22 @@ export async function createTransportStream<R, W>(
         await waitForDrain(socket)
       }
     },
-    () => {
-      socket.end()
+    async () => {
+      // Wait for queued writes to actually flush, so a caller that closes the
+      // writer (or disposes the transport) does not cut off its own last message.
+      await new Promise<void>((resolve) => {
+        if (socket.destroyed || socket.writableEnded || socketError != null) {
+          resolve()
+          return
+        }
+        // A stalled peer must not hang the close
+        const timer = setTimeout(resolve, END_GRACE_MS)
+        timer.unref()
+        socket.end(() => {
+          clearTimeout(timer)
+          resolve()
+        })
+      })
       // Release the half-closed socket so it stops holding the event loop open
       socket.unref()
     },
