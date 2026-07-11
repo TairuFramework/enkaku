@@ -115,6 +115,34 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     signal,
   }
   const running: Record<string, Promise<void>> = Object.create(null)
+  /**
+   * Per-rid barrier for the auth-mode `process`, which is async and therefore
+   * un-awaited by the `handleNext` switch. `send` and `abort` await the entry
+   * for their rid before looking up its controller, so a message arriving right
+   * behind the call that creates the controller cannot overtake it. Distinct
+   * rids never wait on each other.
+   */
+  const pending: Record<string, Promise<void>> = Object.create(null)
+
+  function track(rid: string, result: void | Promise<void>): void {
+    if (!(result instanceof Promise)) {
+      // Non-auth mode: `process` is synchronous and the controller is already
+      // registered by the time it returns.
+      return
+    }
+    // Failures are surfaced by `process` itself; this barrier only cares that
+    // the attempt has finished.
+    const tracked = result.then(
+      () => {},
+      () => {},
+    )
+    pending[rid] = tracked
+    void tracked.then(() => {
+      if (pending[rid] === tracked) {
+        delete pending[rid]
+      }
+    })
+  }
   const encoder = new TextEncoder()
 
   // Standard replay rejection for control messages (send/abort): reply to the
@@ -702,6 +730,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               }
             }
           }
+          // Wait for any in-flight auth for this rid so the controller it will
+          // register is visible. Placed after this message's own signature and
+          // replay checks, so a forged abort cannot make the server wait.
+          await pending[msg.payload.rid]
           const controller = controllers[msg.payload.rid]
           if (controller == null) {
             break
@@ -728,7 +760,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
         case 'channel': {
           const message = msg as ChannelMessageOf<Protocol>
-          process(message, () => handleChannel(context, message))
+          track(
+            message.payload.rid,
+            process(message, () => handleChannel(context, message)),
+          )
           break
         }
         case 'event': {
@@ -738,7 +773,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
         case 'request': {
           const message = msg as unknown as RequestMessageOf<Protocol>
-          process(message, () => handleRequest(context, message))
+          track(
+            message.payload.rid,
+            process(message, () => handleRequest(context, message)),
+          )
           break
         }
         case 'send': {
@@ -791,6 +829,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               }
             }
           }
+          // Wait for any in-flight auth for this rid so the channel it will
+          // register is visible. Placed after this message's own signature and
+          // replay checks, so a forged send cannot make the server wait.
+          await pending[msg.payload.rid]
           const controller = controllers[msg.payload.rid] as ChannelController | undefined
           if (controller == null) {
             logger.debug('received send for unknown channel {rid}', { rid: msg.payload.rid })
@@ -824,7 +866,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
         case 'stream': {
           const message = msg as unknown as StreamMessageOf<Protocol>
-          process(message, () => handleStream(context, message))
+          track(
+            message.payload.rid,
+            process(message, () => handleStream(context, message)),
+          )
           break
         }
       }
