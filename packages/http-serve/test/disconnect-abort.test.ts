@@ -1,4 +1,5 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
+import { type ProcedureHandlers, serve } from '@enkaku/server'
 import { describe, expect, test, vi } from 'vitest'
 
 import { createServerBridge, ServerTransport } from '../src/index.js'
@@ -12,7 +13,9 @@ function createRequestPost(rid: string, signal: AbortSignal): Request {
   return new Request('http://localhost/', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ payload: { typ: 'request', rid, prc: 'test/request' } }),
+    // `header` is part of the token shape a real client sends, and the server
+    // reads it to extract the trace context.
+    body: JSON.stringify({ header: {}, payload: { typ: 'request', rid, prc: 'test/request' } }),
     signal,
   })
 }
@@ -58,7 +61,8 @@ describe('client disconnect', () => {
     }
     writer.releaseLock()
 
-    expect(onRequestAborted).toHaveBeenCalledWith(expect.objectContaining({ rid: 'r1' }))
+    // Exactly `dropSession`'s reason — not the SSE listener's 'ClientDisconnected'.
+    expect(onRequestAborted).toHaveBeenCalledWith({ rid: 'r1', reason: 'SessionClosed' })
   })
 
   test('ServerTransport re-emits requestAborted on its events emitter', async () => {
@@ -76,5 +80,37 @@ describe('client disconnect', () => {
     expect(listener).toHaveBeenCalledWith({ rid: 'r1', reason: 'ClientDisconnected' })
 
     await transport.dispose()
+  })
+
+  test('a disconnecting HTTP client aborts the handler of a Server on a ServerTransport', async () => {
+    // The whole seam, end to end: the bridge emits requestAborted, ServerTransport
+    // re-emits it on its events emitter, and the Server aborts the handler for the
+    // rid — none of which was covered jointly.
+    let handlerSignal: AbortSignal | undefined
+    const handlers = {
+      'test/request': (ctx: { signal: AbortSignal }) =>
+        new Promise((resolve) => {
+          handlerSignal = ctx.signal
+          ctx.signal.addEventListener('abort', () => resolve('aborted'), { once: true })
+        }),
+    } as unknown as ProcedureHandlers<Protocol>
+
+    const transport = new ServerTransport<Protocol>()
+    const server = serve<Protocol>({ handlers, requireAuth: false, transport })
+
+    const abort = new AbortController()
+    const pending = transport.fetch(createRequestPost('r1', abort.signal))
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(handlerSignal?.aborted).toBe(false)
+
+    // The HTTP client goes away before the handler replies.
+    abort.abort()
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(handlerSignal?.aborted).toBe(true)
+    expect(handlerSignal?.reason).toBe('ClientDisconnected')
+    expect((await pending).status).toBe(499)
+
+    await server.dispose()
   })
 })
