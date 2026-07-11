@@ -101,4 +101,29 @@ describe('TransportEvents lifecycle', () => {
 
     await transport.dispose()
   })
+
+  test('dispose() still emits disposed when the underlying stream rejected', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      const transport = new Transport<unknown, unknown>({
+        stream: () => Promise.reject(new Error('connect ENOENT')),
+      })
+      const disposed = vi.fn()
+      transport.events.on('disposed', disposed)
+
+      // Materializes `_stream` as a rejected promise -- the shape a failed
+      // connect leaves behind.
+      await expect(transport.read()).rejects.toThrow('connect ENOENT')
+
+      await transport.dispose()
+
+      expect(disposed).toHaveBeenCalledTimes(1)
+      // A rejected `_getWriter()` must not escape as a warned, swallowed
+      // dispose-callback failure -- 'disposed' is the only signal a caller
+      // that owns a socket has that it is safe to release it.
+      expect(warnSpy).not.toHaveBeenCalled()
+    } finally {
+      warnSpy.mockRestore()
+    }
+  })
 })
