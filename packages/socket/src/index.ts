@@ -236,23 +236,42 @@ export async function createTransportStream<R, W>(
 export type SocketTransportParams<R> = CreateTransportStreamOptions<R> & {
   socket: SocketSource | string
   signal?: AbortSignal
+  /** Connect timeout when `socket` is a path, in milliseconds. Defaults to 10_000. `0` disables it. */
+  connectTimeoutMs?: number
 }
 
 export class SocketTransport<R, W> extends Transport<R, W> {
   constructor(params: SocketTransportParams<R>) {
-    const { socket, signal, ...options } = params
-    const source = typeof socket === 'string' ? connectSocket(socket) : socket
-    super({ stream: () => createTransportStream(source, options), signal })
-    // Release the socket on dispose
-    if (typeof source !== 'function') {
-      this.events.on('disposed', async () => {
-        try {
-          const sock = await source
-          sock.unref()
-        } catch {
-          // Socket failed to connect or is already gone; nothing to release
-        }
-      })
+    const { connectTimeoutMs, socket, signal, ...options } = params
+    const source: SocketSource =
+      typeof socket === 'string'
+        ? () => connectSocket(socket, { timeoutMs: connectTimeoutMs, signal })
+        : socket
+
+    // Memoized so the socket this transport opened can be released on dispose.
+    // Transport caches the stream, so a function source is invoked at most once.
+    let socketPromise: Promise<Socket> | undefined =
+      typeof source === 'function' ? undefined : Promise.resolve(source)
+    function getSocket(): Promise<Socket> {
+      socketPromise ??= Promise.resolve((source as () => SocketOrPromise)())
+      return socketPromise
     }
+
+    super({ stream: () => createTransportStream(getSocket, options), signal })
+
+    this.events.on('disposed', async () => {
+      if (socketPromise == null) {
+        // A function source that was never invoked opened no socket to release
+        return
+      }
+      try {
+        const sock = await socketPromise
+        // unref() only stops the socket holding the event loop open -- it stays
+        // open, and the peer's server keeps seeing a live connection.
+        sock.destroy()
+      } catch {
+        // Socket failed to connect or is already gone; nothing to release
+      }
+    })
   }
 }

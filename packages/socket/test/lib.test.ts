@@ -260,11 +260,14 @@ describe('SocketTransport', () => {
     const transport = new SocketTransport<{ msg: string }, { msg: string }>({
       socket: socketPath,
     })
+    // The socket path now connects lazily on first read/write, so kick off the
+    // read before awaiting the server-side connection it triggers.
+    const readPromise = transport.read()
     const serverSocket = await connectionPromise
 
     // Server sends to client
     serverSocket.write('{"msg":"hello"}\n')
-    const result = await transport.read()
+    const result = await readPromise
     expect(result.value).toEqual({ msg: 'hello' })
 
     // Client sends to server
@@ -304,13 +307,16 @@ describe('SocketTransport', () => {
     server.close()
   })
 
-  test('accepts a Promise<Socket>', async () => {
+  test('accepts a Promise<Socket> and destroys it on dispose', async () => {
     const { server, socketPath } = await createTestServer()
     const connectionPromise = waitForConnection(server)
 
-    const transport = new SocketTransport<{ n: number }, unknown>({
-      socket: connectSocket(socketPath),
+    let opened: NetSocket | undefined
+    const socketPromise = connectSocket(socketPath).then((sock) => {
+      opened = sock
+      return sock
     })
+    const transport = new SocketTransport<{ n: number }, unknown>({ socket: socketPromise })
     const serverSocket = await connectionPromise
 
     serverSocket.write('{"n":7}\n')
@@ -318,11 +324,14 @@ describe('SocketTransport', () => {
     expect(result.value).toEqual({ n: 7 })
 
     await transport.dispose()
+
+    expect(opened?.destroyed).toBe(true)
+
     serverSocket.destroy()
     server.close()
   })
 
-  test('releases the socket handle on dispose without destroying it', async () => {
+  test('destroys the socket on dispose', async () => {
     const { server, socketPath } = await createTestServer()
     const connectionPromise = waitForConnection(server)
 
@@ -337,37 +346,85 @@ describe('SocketTransport', () => {
     const result = await transport.read()
     expect(result.value).toEqual({ n: 1 })
 
-    // Peer stays open (like the long-lived mokei daemon)
     await transport.dispose()
 
-    // unref() releases the loop hold; end() flushed pending writes; not a hard close
+    // The writer close flushed and half-closed it, then the disposed hook
+    // destroyed it -- unref() alone left the peer seeing a live connection.
     expect(unrefSpy).toHaveBeenCalled()
     expect(socket.writableEnded).toBe(true)
-    expect(socket.destroyed).toBe(false)
+    expect(socket.destroyed).toBe(true)
 
     serverSocket.destroy()
     server.close()
   })
 
-  test('releases the socket handle on dispose when the stream was never used', async () => {
+  test('destroys the socket on dispose when the stream was never used', async () => {
     const { server, socketPath } = await createTestServer()
     const connectionPromise = waitForConnection(server)
 
     const socket = await connectSocket(socketPath)
     const serverSocket = await connectionPromise
-    const unrefSpy = vi.spyOn(socket, 'unref')
 
     // Construct the transport but never read/write: the lazily-created transport
-    // stream is never materialized, so the writable-close cleanup never runs.
+    // stream is never materialized, so the writable-close cleanup never runs and
+    // the disposed hook is the only path that can release the socket.
     const transport = new SocketTransport<{ n: number }, unknown>({ socket })
 
     await transport.dispose()
 
-    // The idle connection's handle is still released via the disposed hook
-    expect(unrefSpy).toHaveBeenCalled()
-    expect(socket.destroyed).toBe(false)
+    expect(socket.destroyed).toBe(true)
 
     serverSocket.destroy()
+    server.close()
+  })
+
+  test('destroys the socket opened by a function source on dispose', async () => {
+    const { server, socketPath } = await createTestServer()
+    const connectionPromise = waitForConnection(server)
+
+    // The reconnecting-client shape: the socket is created by the source, so
+    // the caller has no handle on it and cannot release it itself.
+    let opened: NetSocket | undefined
+    const transport = new SocketTransport<{ n: number }, unknown>({
+      socket: async () => {
+        opened = await connectSocket(socketPath)
+        return opened
+      },
+    })
+    // The function source connects lazily on first read/write, so kick off the
+    // read before awaiting the server-side connection it triggers.
+    const readPromise = transport.read()
+    const serverSocket = await connectionPromise
+
+    serverSocket.write('{"n":3}\n')
+    const result = await readPromise
+    expect(result.value).toEqual({ n: 3 })
+
+    await transport.dispose()
+
+    expect(opened?.destroyed).toBe(true)
+
+    serverSocket.destroy()
+    server.close()
+  })
+
+  test('opens no socket when a function source transport is disposed unused', async () => {
+    const { server, socketPath } = await createTestServer()
+
+    let calls = 0
+    const transport = new SocketTransport<{ n: number }, unknown>({
+      socket: () => {
+        calls++
+        return connectSocket(socketPath)
+      },
+    })
+
+    await transport.dispose()
+
+    // Nothing was ever connected, so there is nothing to release -- and dispose
+    // must not connect one just to destroy it.
+    expect(calls).toBe(0)
+
     server.close()
   })
 })
