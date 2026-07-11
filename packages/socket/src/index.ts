@@ -21,7 +21,20 @@ const tracer = createTracer('transport.socket')
 export type SocketOrPromise = Socket | Promise<Socket>
 export type SocketSource = SocketOrPromise | (() => SocketOrPromise)
 
-export async function connectSocket(path: string): Promise<Socket> {
+const DEFAULT_CONNECT_TIMEOUT_MS = 10_000
+
+export type ConnectSocketOptions = {
+  /** Milliseconds before the connect attempt is abandoned. Defaults to 10_000. `0` disables the timeout. */
+  timeoutMs?: number
+  /** Aborts a pending connect attempt, destroying the socket. */
+  signal?: AbortSignal
+}
+
+export async function connectSocket(
+  path: string,
+  options: ConnectSocketOptions = {},
+): Promise<Socket> {
+  const { timeoutMs = DEFAULT_CONNECT_TIMEOUT_MS, signal } = options
   return withSpan(
     tracer,
     EnkakuSpanNames.TRANSPORT_SOCKET_CONNECT,
@@ -32,10 +45,50 @@ export async function connectSocket(path: string): Promise<Socket> {
       },
     },
     async () => {
+      signal?.throwIfAborted()
       const socket = createConnection(path)
       return new Promise<Socket>((resolve, reject) => {
-        socket.on('connect', () => resolve(socket))
-        socket.on('error', (err) => reject(err))
+        let timer: ReturnType<typeof setTimeout> | undefined
+
+        function cleanup(): void {
+          if (timer != null) {
+            clearTimeout(timer)
+          }
+          socket.off('connect', onConnect)
+          socket.off('error', onError)
+          signal?.removeEventListener('abort', onAbort)
+        }
+        function onConnect(): void {
+          cleanup()
+          resolve(socket)
+        }
+        function onError(error: Error): void {
+          cleanup()
+          reject(error)
+        }
+        function abandon(reason: unknown): void {
+          cleanup()
+          // The abandoned attempt may still fail (a late ECONNREFUSED). With no
+          // 'error' listener at all, Node escalates that to an uncaught throw.
+          socket.on('error', () => {})
+          socket.destroy()
+          reject(reason)
+        }
+        function onAbort(): void {
+          abandon(signal?.reason ?? new Error('Socket connect aborted'))
+        }
+
+        socket.once('connect', onConnect)
+        socket.once('error', onError)
+        signal?.addEventListener('abort', onAbort, { once: true })
+
+        if (timeoutMs > 0 && Number.isFinite(timeoutMs)) {
+          timer = setTimeout(() => {
+            abandon(new Error(`Socket connect timed out after ${timeoutMs}ms`))
+          }, timeoutMs)
+          // The timer must not hold the event loop open on its own
+          timer.unref()
+        }
       })
     },
   )
