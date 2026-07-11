@@ -307,6 +307,8 @@ const result = await client.request('myProcedure', { param: 'value' })
 - JSONL format allows streaming and framing
 - Server creates transport per connection
 - Connection cleanup handled by socket events
+- When `socket` is a path string, the connection is made lazily, on the transport's first read or write -- not in the constructor. `connectSocket(path, { timeoutMs, signal })` bounds that attempt (10s by default; `timeoutMs: 0` disables it), and `SocketTransport` accepts the same budget as `connectTimeoutMs`
+- `transport.dispose()` flushes pending writes, then destroys the socket -- for every source shape, including a function source. A prior version only `unref()`d the socket, which left it open and could hang a peer server that waits for its connections to drain before closing
 
 **Performance considerations**:
 - Unix sockets faster than TCP for same-host
