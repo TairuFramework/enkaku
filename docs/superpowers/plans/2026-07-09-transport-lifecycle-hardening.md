@@ -2658,32 +2658,78 @@ The `stream` case (lines 806-810):
 
 The `event` case (lines 715-719) keeps calling `process` directly — events have no rid and nothing awaits them.
 
-Now make `send` and `abort` wait. In the `abort` case, insert immediately before `const controller = controllers[msg.payload.rid]` (line 682):
+Now make `send` and `abort` respect the barrier. **Do not `await pending[rid]` in the switch case.** `handleNext` only reads the next message once the switch body returns, so an `await` there stalls the *entire* transport read loop — and the promise being awaited runs the user-supplied async `allow` predicate, which is unbounded. `@enkaku/http-serve` multiplexes every SSE session over a single server transport, so one client's slow access check would stall every other client. (The original draft of this task did exactly that; review caught it and the user approved the chaining approach below instead.)
+
+Chain instead of awaiting. Add next to `track`:
 
 ```ts
-          // Wait for any in-flight auth for this rid so the controller it will
-          // register is visible. Placed after this message's own signature and
-          // replay checks, so a forged abort cannot make the server wait.
-          await pending[msg.payload.rid]
-          const controller = controllers[msg.payload.rid]
+  /**
+   * Deliver a control message (`send`/`abort`) after any in-flight auth for its
+   * rid, without ever blocking the transport read loop: `handleNext` only reads
+   * the next message once the switch body returns, and the promise being waited
+   * on runs the user-supplied async `allow` predicate. Awaiting it here would let
+   * one slow access check stall every other client sharing the transport (all SSE
+   * sessions of `@enkaku/http-serve` are multiplexed over a single one).
+   *
+   * So we chain instead of awaiting: with nothing pending for the rid — always
+   * the case in non-auth mode — the delivery runs synchronously, otherwise it is
+   * queued onto the barrier and the resulting chain becomes the new barrier, so a
+   * later control message for the same rid still queues behind this one.
+   */
+  function deliverInOrder(
+    rid: string,
+    payload: { typ: string } & Record<string, unknown>,
+    deliver: () => void,
+  ): void {
+    const prior = pending[rid]
+    if (prior == null) {
+      deliver()
+      return
+    }
+    const run = () => {
+      try {
+        deliver()
+      } catch (cause) {
+        // `deliver()` cannot actually throw synchronously (context.send and
+        // events.emit never throw, and controller.writer.write() rejects rather
+        // than throws with its own .catch), so this is a floating-rejection
+        // guard: keep it, but only log — there is no well-typed HandlerError
+        // messageType for an arbitrary control message here, and no public
+        // event shape to invent one for.
+        logger.warn('failed to deliver {typ} message for {rid}', { typ: payload.typ, rid, cause })
+      }
+    }
+    // A rejected barrier still delivers: an auth failure leaves no controller
+    // registered, so the delivery drops the message, which is the intended
+    // outcome. Handling both settlements keeps `chained` non-rejecting.
+    const chained = prior.then(run, run)
+    pending[rid] = chained
+    void chained.then(() => {
+      if (pending[rid] === chained) {
+        delete pending[rid]
+      }
+    })
+  }
 ```
 
-In the `send` case, insert immediately before `const controller = controllers[msg.payload.rid] as ChannelController | undefined` (line 775):
+Then in both the `abort` and `send` cases, wrap the existing controller lookup and its body in a `deliver` closure and hand it to `deliverInOrder(rid, payload, deliver)`. Place the call **after** that message's own signature-verification and replay checks — that ordering is a security property: a forged or replayed message must never make the server queue work.
 
-```ts
-          // Wait for any in-flight auth for this rid so the channel it will
-          // register is visible. Placed after this message's own signature and
-          // replay checks, so a forged send cannot make the server wait.
-          await pending[msg.payload.rid]
-          const controller = controllers[msg.payload.rid] as ChannelController | undefined
-```
+Two consequences worth stating:
 
-`await undefined` is a no-op, so both are safe when nothing is pending — which is always the case in non-auth mode.
+- **Ordering across messages for one rid is preserved** because `pending[rid] = chained` reassigns the barrier synchronously (no `await` between reading `prior` and writing `chained`), so a second `send` for the same rid chains behind the first. The identity-guarded cleanup (`if (pending[rid] === chained) delete pending[rid]`) means a settling older chain never deletes a newer one.
+- **Non-auth mode is untouched.** `track` no-ops on a non-Promise, so `pending` is never populated and `deliverInOrder` takes the `prior == null` branch — a fully synchronous delivery with no added microtask tick.
 
 - [ ] **Step 4: Run tests to verify they pass**
 
+Two more tests belong in `auth-ordering.test.ts` beyond the three above, both added during review:
+
+1. **The read loop stays free.** With an `allow` that gates rid `c1` but resolves immediately for `c2`: open `c1`, send to `c1`, then open `c2` and send to `c2` — assert `c2`'s handler receives its value while `c1` is still gated. This is the test that discriminates the chaining fix from the `await` one (red on the `await` version with `expected [] to deeply equal [ 'free' ]` — `c2`'s channel open was never even read).
+2. **Ordering across sends for one rid.** Open gated channel `c1`, write three sends (`'one'`, `'two'`, `'three'`), assert nothing received while gated, resolve the gate, assert `['one', 'two', 'three']` **in order**. Without this, an implementation that chains onto `prior` but never writes `pending[rid] = chained` back would pass every other test.
+
+Also give the auth-failure-drop test a positive control — its two absence assertions alone are satisfied by nothing ever reaching the server. Read the reply and assert `{ typ: 'error', rid: 'c1', code: ErrorCodes.ACCESS_DENIED, msg: 'Access denied' }` (the payload field is `msg`, not `message` — see `HandlerError.toPayload`). And tighten the concurrency test to `expect(maxConcurrent).toBe(3)`; `toBeGreaterThan(1)` still passes if a regression serialised two of the three opens.
+
 Run: `pnpm --filter @enkaku/server exec vitest run test/auth-ordering.test.ts`
-Expected: PASS, 3 tests.
+Expected: PASS, 5 tests.
 
 Run: `pnpm --filter @enkaku/server exec vitest run`
 Expected: PASS. `test/channel-send-auth.test.ts` and `test/replay-server.test.ts` exercise the `send` path most heavily.
