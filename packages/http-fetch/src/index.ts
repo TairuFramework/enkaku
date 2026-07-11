@@ -70,6 +70,9 @@ export type TransportStream<Protocol extends ProtocolDefinition> = ReadableWrita
    * Send a single client message, rejecting if it could not be delivered.
    * `ClientTransport.write` calls this instead of writing to `writable`,
    * because a rejecting WritableStream sink errors its stream permanently.
+   * Calls are serialized: a message issued while an earlier one is still in
+   * flight is only sent once that one settles, so a channel `send` cannot
+   * overtake the `channel` open it belongs to.
    */
   send: (msg: AnyClientMessageOf<Protocol>) => Promise<void>
 }
@@ -336,15 +339,32 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     }
   }
 
+  /**
+   * Writing through a WritableStream implicitly serialized sends: per the Web
+   * Streams spec, the sink is only invoked for write N+1 once write N settles.
+   * `ClientTransport.write` bypasses the sink on purpose (a rejecting sink
+   * errors its stream permanently, so one failed event would kill the whole
+   * transport), which also made writes concurrent — letting a channel `send`
+   * POST land before the `channel` open it belongs to, which the server then
+   * drops as an unknown channel. Restore the ordering explicitly here.
+   */
+  let queue: Promise<unknown> = Promise.resolve()
+  function sendSerial(msg: AnyClientMessageOf<Protocol>): Promise<void> {
+    const next = queue.then(() => send(msg))
+    // A rejected send must not poison the chain for the messages behind it.
+    queue = next.catch(() => {})
+    return next
+  }
+
   const writable = writeTo<AnyClientMessageOf<Protocol>>(
-    send,
+    sendSerial,
     // The transport will call this method when disposing
     async () => {
       abortController.abort()
     },
   )
 
-  return { controller, readable, writable, send }
+  return { controller, readable, writable, send: sendSerial }
 }
 
 export type ClientTransportParams = {
