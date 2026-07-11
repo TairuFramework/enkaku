@@ -100,18 +100,27 @@ const END_GRACE_MS = 2_000 // Max wait for a half-close to flush before giving u
 export type CreateTransportStreamOptions<R> = FromJSONLinesOptions<R> & {
   /** Bytes to buffer before pausing the socket / awaiting drain. Defaults to 1 MiB. */
   highWaterMark?: number
+  /**
+   * Aborts a pending `write()` that is stuck awaiting 'drain' -- a peer that
+   * never reads gives no 'drain', 'close', or 'error', so without this a
+   * write (and anything awaiting the writer, including `Transport.dispose()`)
+   * can hang forever.
+   */
+  signal?: AbortSignal
 }
 
 /**
- * Resolve when the socket drains. Reject if it closes or errors first, so a
- * write can never hang on a drain event that will never arrive.
+ * Resolve when the socket drains. Reject if it closes or errors first, or if
+ * `signal` aborts, so a write can never hang on a drain event that will
+ * never arrive.
  */
-function waitForDrain(socket: Socket): Promise<void> {
+function waitForDrain(socket: Socket, signal?: AbortSignal): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     function cleanup(): void {
       socket.off('drain', onDrain)
       socket.off('close', onClose)
       socket.off('error', onError)
+      signal?.removeEventListener('abort', onAbort)
     }
     function onDrain(): void {
       cleanup()
@@ -125,9 +134,18 @@ function waitForDrain(socket: Socket): Promise<void> {
       cleanup()
       reject(err)
     }
+    function onAbort(): void {
+      cleanup()
+      reject(signal?.reason ?? new Error('Socket drain aborted'))
+    }
+    if (signal?.aborted) {
+      onAbort()
+      return
+    }
     socket.on('drain', onDrain)
     socket.on('close', onClose)
     socket.on('error', onError)
+    signal?.addEventListener('abort', onAbort, { once: true })
   })
 }
 
@@ -136,7 +154,7 @@ export async function createTransportStream<R, W>(
   options?: CreateTransportStreamOptions<R>,
 ): Promise<ReadableWritablePair<R, W>> {
   const socket = await Promise.resolve(typeof source === 'function' ? source() : source)
-  const { highWaterMark = DEFAULT_HIGH_WATER_MARK, ...jsonOptions } = options ?? {}
+  const { highWaterMark = DEFAULT_HIGH_WATER_MARK, signal, ...jsonOptions } = options ?? {}
 
   // Attached once and never removed. A socket with zero 'error' listeners
   // escalates any late error (a write on a destroyed socket, an EPIPE) to an
@@ -206,7 +224,7 @@ export async function createTransportStream<R, W>(
       }
       if (!socket.write(`${JSON.stringify(msg)}\n`)) {
         // Returning a promise makes WritableStream apply backpressure upstream.
-        await waitForDrain(socket)
+        await waitForDrain(socket, signal)
       }
     },
     async () => {
@@ -264,7 +282,10 @@ export class SocketTransport<R, W> extends Transport<R, W> {
         // thunk and open a fresh, live socket that the already-fired 'disposed'
         // hook will never destroy -- an orphan connection nobody owns.
         this.signal.throwIfAborted()
-        return createTransportStream(getSocket, options)
+        // this.signal aborts synchronously when dispose() is called, before
+        // its dispose callback runs -- so a write stuck awaiting 'drain' on
+        // an unreading peer rejects immediately instead of hanging dispose().
+        return createTransportStream(getSocket, { ...options, signal: this.signal })
       },
       signal,
     })
