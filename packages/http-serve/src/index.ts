@@ -128,7 +128,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     for (const [rid, entry] of inflight) {
       if (entry.type === 'stream' && entry.sessionID === sessionID) {
         inflight.delete(rid)
-        options.onRequestAborted?.({ rid, reason })
+        reportRequestAborted(rid, reason)
       }
     }
   }
@@ -147,6 +147,22 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     } catch {
       // A throwing consumer callback must not error the shared writable and
       // break every other session.
+    }
+  }
+
+  /**
+   * Report an aborted request to the consumer-supplied callback. Same hazard as
+   * `reportWriteError`: `clearSessionInflight` is reachable from the shared
+   * `writeTo(...)` sink (via `dropSession`), from the session sweep interval
+   * (where a throw becomes an uncaught exception) and from the SSE abort
+   * listener, so a throwing `onRequestAborted` must never propagate.
+   */
+  function reportRequestAborted(rid: string, reason: unknown): void {
+    try {
+      options.onRequestAborted?.({ rid, reason })
+    } catch {
+      // A throwing consumer callback must not error the shared writable and
+      // break every other session, nor crash the process from the sweep timer.
     }
   }
 
@@ -363,7 +379,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
               // The client is gone, but the deferred Response must still settle
               // or its promise leaks.
               entry.resolve(new Response(null, { status: 499 }))
-              options.onRequestAborted?.({ rid, reason: 'ClientDisconnected' })
+              reportRequestAborted(rid, 'ClientDisconnected')
             },
             { once: true },
           )
