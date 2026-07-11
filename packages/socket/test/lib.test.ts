@@ -428,6 +428,12 @@ describe('SocketTransport', () => {
     server.close()
   })
 
+  // A short, explicit timeout: without the dispose guard, read() opens a
+  // fresh connection and then hangs waiting for data that never arrives, so
+  // it never rejects at all. Racing it against a short delay -- rather than
+  // just awaiting it -- lets the test reach the concrete connection-count
+  // assertion below instead of failing only on the harness's default 5000ms
+  // timeout, which would mask that assertion entirely.
   test('a read() after dispose rejects and opens no orphan socket', async () => {
     const { server, socketPath } = await createTestServer()
     let connections = 0
@@ -439,11 +445,18 @@ describe('SocketTransport', () => {
     // Never read/write before disposing -- the lazy connect never fires.
     await transport.dispose()
 
-    await expect(transport.read()).rejects.toThrow()
+    await expect(
+      Promise.race([
+        transport.read(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('read() did not settle')), 200),
+        ),
+      ]),
+    ).rejects.toThrow()
     // Give a would-be connection a chance to land before asserting.
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(connections).toBe(0)
 
     server.close()
-  })
+  }, 1000)
 })
