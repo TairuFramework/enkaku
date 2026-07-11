@@ -253,11 +253,21 @@ export class SocketTransport<R, W> extends Transport<R, W> {
     let socketPromise: Promise<Socket> | undefined =
       typeof source === 'function' ? undefined : Promise.resolve(source)
     function getSocket(): Promise<Socket> {
-      socketPromise ??= Promise.resolve((source as () => SocketOrPromise)())
+      socketPromise ??= Promise.resolve(typeof source === 'function' ? source() : source)
       return socketPromise
     }
 
-    super({ stream: () => createTransportStream(getSocket, options), signal })
+    super({
+      stream: () => {
+        // The socket path/factory connects lazily on first read/write. Without this
+        // guard, a read() or write() called after dispose() would still run this
+        // thunk and open a fresh, live socket that the already-fired 'disposed'
+        // hook will never destroy -- an orphan connection nobody owns.
+        this.signal.throwIfAborted()
+        return createTransportStream(getSocket, options)
+      },
+      signal,
+    })
 
     this.events.on('disposed', async () => {
       if (socketPromise == null) {

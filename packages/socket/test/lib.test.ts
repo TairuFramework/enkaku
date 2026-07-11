@@ -427,4 +427,23 @@ describe('SocketTransport', () => {
 
     server.close()
   })
+
+  test('a read() after dispose rejects and opens no orphan socket', async () => {
+    const { server, socketPath } = await createTestServer()
+    let connections = 0
+    server.on('connection', () => {
+      connections++
+    })
+
+    const transport = new SocketTransport<{ n: number }, unknown>({ socket: socketPath })
+    // Never read/write before disposing -- the lazy connect never fires.
+    await transport.dispose()
+
+    await expect(transport.read()).rejects.toThrow()
+    // Give a would-be connection a chance to land before asserting.
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(connections).toBe(0)
+
+    server.close()
+  })
 })
