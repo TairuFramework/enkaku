@@ -12,7 +12,6 @@ import type {
   ReturnOf,
   StreamProcedureDefinition,
 } from '@enkaku/protocol'
-import type { DisposeInterruption } from '@sozai/async'
 import type { EventEmitter } from '@sozai/event'
 import type { Logger } from '@sozai/log'
 
@@ -172,7 +171,9 @@ export type ServerEvents = {
   disposing: { reason?: unknown }
   handlerAbort: {
     rid: string
-    reason: 'Close' | 'Timeout' | 'Transport' | DisposeInterruption | string | undefined
+    // Widened to `unknown`: this now also carries reasons from `requestAborted`,
+    // a transport-defined event whose `reason` is opaque to the server.
+    reason: unknown
   }
   handlerEnd: { rid: string; procedure: string }
   handlerError: {

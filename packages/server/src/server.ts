@@ -1,10 +1,12 @@
 import { createTracer, EnkakuAttributeKeys, EnkakuSpanNames } from '@enkaku/otel'
 import {
+  type AbortCallPayload,
   type AnyClientMessageOf,
   type AnyServerPayloadOf,
   createClientMessageSchema,
   ErrorCodes,
   type ProtocolDefinition,
+  type SendCallPayload,
   type ServerTransportOf,
 } from '@enkaku/protocol'
 import type { VerifyTokenHook } from '@kokuin/capability'
@@ -115,6 +117,86 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     signal,
   }
   const running: Record<string, Promise<void>> = Object.create(null)
+  /**
+   * Per-rid barrier for the auth-mode `process`, which is async and therefore
+   * un-awaited by the `handleNext` switch. `send` and `abort` chain their
+   * controller lookup onto the entry for their rid, so a message arriving right
+   * behind the call that creates the controller cannot overtake it. Distinct
+   * rids never wait on each other, and the read loop never waits at all.
+   */
+  const pending: Record<string, Promise<void>> = Object.create(null)
+
+  function track(rid: string, result: void | Promise<void>): void {
+    if (!(result instanceof Promise)) {
+      // Non-auth mode: `process` is synchronous and the controller is already
+      // registered by the time it returns.
+      return
+    }
+    // Failures are surfaced by `process` itself; this barrier only cares that
+    // the attempt has finished.
+    const tracked = result.then(
+      () => {},
+      () => {},
+    )
+    pending[rid] = tracked
+    void tracked.then(() => {
+      if (pending[rid] === tracked) {
+        delete pending[rid]
+      }
+    })
+  }
+
+  /**
+   * Deliver a control message (`send`/`abort`) after any in-flight auth for its
+   * rid, without ever blocking the transport read loop: `handleNext` only reads
+   * the next message once the switch body returns, and the promise being waited
+   * on runs the user-supplied async `allow` predicate. Awaiting it here would let
+   * one slow access check stall every other client sharing the transport (all SSE
+   * sessions of `@enkaku/http-serve` are multiplexed over a single one).
+   *
+   * So we chain instead of awaiting: with nothing pending for the rid — always
+   * the case in non-auth mode — the delivery runs synchronously, otherwise it is
+   * queued onto the barrier and the resulting chain becomes the new barrier, so a
+   * later control message for the same rid still queues behind this one.
+   */
+  function deliverInOrder(
+    rid: string,
+    payload: { typ: string } & Record<string, unknown>,
+    deliver: () => void,
+  ): void {
+    const prior = pending[rid]
+    if (prior == null) {
+      deliver()
+      return
+    }
+    const run = () => {
+      try {
+        deliver()
+      } catch (cause) {
+        // `deliver()` cannot actually throw synchronously (context.send and
+        // events.emit never throw, and controller.writer.write() rejects rather
+        // than throws with its own .catch), so this is a floating-rejection
+        // guard: keep it, but only log — there is no well-typed HandlerError
+        // messageType for an arbitrary control message here, and no public
+        // event shape to invent one for.
+        logger.warn('failed to deliver {typ} message for {rid}', {
+          typ: payload.typ,
+          rid,
+          cause,
+        })
+      }
+    }
+    // A rejected barrier still delivers: an auth failure leaves no controller
+    // registered, so the delivery drops the message, which is the intended
+    // outcome. Handling both settlements keeps `chained` non-rejecting.
+    const chained = prior.then(run, run)
+    pending[rid] = chained
+    void chained.then(() => {
+      if (pending[rid] === chained) {
+        delete pending[rid]
+      }
+    })
+  }
   const encoder = new TextEncoder()
 
   // Standard replay rejection for control messages (send/abort): reply to the
@@ -128,6 +210,28 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
     emitHandlerError(events, 'auth', error, payload)
   }
+
+  /**
+   * Abort a running handler without touching limiter bookkeeping: the handler's
+   * own completion path in `processHandler` releases its controller and slot,
+   * guarded by `running[rid] === returned`. Doing it here as well would release
+   * twice. (The timeout sweep is different — there the handler is abandoned, so
+   * it does the bookkeeping itself.)
+   */
+  function abortRunningHandler(rid: string, reason: unknown): void {
+    const controller = controllers[rid]
+    if (controller == null) {
+      return
+    }
+    controller.abort(reason)
+    events.emit('handlerAbort', { rid, reason })
+  }
+
+  // Trusted: TransportEvents is an in-process emitter, so `requestAborted` can
+  // only come from the transport implementation, never from the wire.
+  const unsubscribeRequestAborted = transport.events.on('requestAborted', ({ rid, reason }) => {
+    abortRunningHandler(rid, reason)
+  })
 
   // Periodic cleanup of expired controllers
   const cleanupInterval = setInterval(
@@ -161,6 +265,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   const disposer = new Disposer({
     dispose: async () => {
       clearInterval(cleanupInterval)
+      // Drain the per-rid barrier first: in `requireAuth` mode `process` is
+      // async, so a message whose access check is still in flight has not
+      // registered its controller yet — aborting now would miss it and the
+      // handler would start, with a signal nothing can ever abort, after
+      // `dispose()` resolved. `deliverInOrder` chains onto the same map, so
+      // this also drains control messages queued behind an auth check.
+      // Entries never reject (`track` and `deliverInOrder` swallow both
+      // settlements), and the wait is bounded by `cleanupTimeoutMs`, which
+      // `Server.dispose` already races against, so it cannot hang shutdown.
+      await Promise.all(Object.values(pending))
       const interruption = new DisposeInterruption()
       // Abort all currently running handlers
       for (const rid of Object.keys(controllers)) {
@@ -169,6 +283,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       }
       // Wait until all running handlers are done
       await Promise.all(Object.values(running))
+      // Unsubscribe last: until the handlers above are done, a peer going away
+      // can still abort one of them through `requestAborted`.
+      unsubscribeRequestAborted()
     },
     signal,
   })
@@ -679,37 +796,45 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               }
             }
           }
-          const controller = controllers[msg.payload.rid]
-          if (controller == null) {
-            break
-          }
-          if (params.requireAuth) {
-            const abortIssuer = (msg as unknown as SignedToken).payload.iss
-            if (
-              controller.issuer != null &&
-              normalizeDID(abortIssuer) !== normalizeDID(controller.issuer)
-            ) {
-              const error = new HandlerError({
-                code: ErrorCodes.ACCESS_DENIED,
-                message: 'Abort issuer does not match owner',
-              })
-              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
-                rid: msg.payload.rid,
-              })
-              emitHandlerError(events, 'auth', error, msg.payload)
-              break
+          // Deliver behind any in-flight auth for this rid so the controller it
+          // will register is visible. Placed after this message's own signature
+          // and replay checks, so a forged abort cannot make the server queue work.
+          // Cast: the switch discriminates `msg.payload`, but the narrowing is not
+          // carried into the closure below, so name the payload type here.
+          const abortPayload = msg.payload as AbortCallPayload
+          const abortRID = abortPayload.rid
+          deliverInOrder(abortRID, abortPayload, () => {
+            const controller = controllers[abortRID]
+            if (controller == null) {
+              return
             }
-          }
-          controller.abort(msg.payload.rsn)
-          events.emit('handlerAbort', {
-            rid: msg.payload.rid,
-            reason: msg.payload.rsn,
+            if (params.requireAuth) {
+              const abortIssuer = (msg as unknown as SignedToken).payload.iss
+              if (
+                controller.issuer != null &&
+                normalizeDID(abortIssuer) !== normalizeDID(controller.issuer)
+              ) {
+                const error = new HandlerError({
+                  code: ErrorCodes.ACCESS_DENIED,
+                  message: 'Abort issuer does not match owner',
+                })
+                context.send(error.toPayload(abortRID) as AnyServerPayloadOf<Protocol>, {
+                  rid: abortRID,
+                })
+                emitHandlerError(events, 'auth', error, abortPayload)
+                return
+              }
+            }
+            abortRunningHandler(abortRID, abortPayload.rsn)
           })
           break
         }
         case 'channel': {
           const message = msg as ChannelMessageOf<Protocol>
-          process(message, () => handleChannel(context, message))
+          track(
+            message.payload.rid,
+            process(message, () => handleChannel(context, message)),
+          )
           break
         }
         case 'event': {
@@ -719,7 +844,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
         case 'request': {
           const message = msg as unknown as RequestMessageOf<Protocol>
-          process(message, () => handleRequest(context, message))
+          track(
+            message.payload.rid,
+            process(message, () => handleRequest(context, message)),
+          )
           break
         }
         case 'send': {
@@ -772,40 +900,51 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               }
             }
           }
-          const controller = controllers[msg.payload.rid] as ChannelController | undefined
-          if (controller == null) {
-            logger.debug('received send for unknown channel {rid}', { rid: msg.payload.rid })
-            break
-          }
-          // In authenticated mode, validate send messages against the channel owner
-          if (params.requireAuth) {
-            const sendIssuer = (msg as unknown as SignedToken).payload.iss
-            if (
-              controller.issuer != null &&
-              normalizeDID(sendIssuer) !== normalizeDID(controller.issuer)
-            ) {
-              const error = new HandlerError({
-                code: ErrorCodes.ACCESS_DENIED,
-                message: 'Send issuer does not match channel owner',
-              })
-              context.send(error.toPayload(msg.payload.rid) as AnyServerPayloadOf<Protocol>, {
-                rid: msg.payload.rid,
-              })
-              emitHandlerError(events, 'auth', error, msg.payload)
-              break
+          // Deliver behind any in-flight auth for this rid so the channel it will
+          // register is visible. Placed after this message's own signature and
+          // replay checks, so a forged send cannot make the server queue work.
+          // Cast: the switch discriminates `msg.payload`, but the narrowing is not
+          // carried into the closure below, so name the payload type here.
+          const sendPayload = msg.payload as SendCallPayload<string, unknown>
+          const sendRID = sendPayload.rid
+          deliverInOrder(sendRID, sendPayload, () => {
+            const controller = controllers[sendRID] as ChannelController | undefined
+            if (controller == null) {
+              logger.debug('received send for unknown channel {rid}', { rid: sendRID })
+              return
             }
-          }
-          const sendRid = msg.payload.rid
-          controller.writer.write(msg.payload.val).catch((cause) => {
-            const error = new Error('Failed to write to channel', { cause })
-            logger.debug('failed to write send value to channel {rid}', { rid: sendRid, cause })
-            events.emit('writeFailed', { error, rid: sendRid })
+            // In authenticated mode, validate send messages against the channel owner
+            if (params.requireAuth) {
+              const sendIssuer = (msg as unknown as SignedToken).payload.iss
+              if (
+                controller.issuer != null &&
+                normalizeDID(sendIssuer) !== normalizeDID(controller.issuer)
+              ) {
+                const error = new HandlerError({
+                  code: ErrorCodes.ACCESS_DENIED,
+                  message: 'Send issuer does not match channel owner',
+                })
+                context.send(error.toPayload(sendRID) as AnyServerPayloadOf<Protocol>, {
+                  rid: sendRID,
+                })
+                emitHandlerError(events, 'auth', error, sendPayload)
+                return
+              }
+            }
+            controller.writer.write(sendPayload.val).catch((cause) => {
+              const error = new Error('Failed to write to channel', { cause })
+              logger.debug('failed to write send value to channel {rid}', { rid: sendRID, cause })
+              events.emit('writeFailed', { error, rid: sendRID })
+            })
           })
           break
         }
         case 'stream': {
           const message = msg as unknown as StreamMessageOf<Protocol>
-          process(message, () => handleStream(context, message))
+          track(
+            message.payload.rid,
+            process(message, () => handleStream(context, message)),
+          )
           break
         }
       }

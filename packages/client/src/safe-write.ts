@@ -24,9 +24,13 @@ export type SafeWriteParams = {
  * Send a client message through the transport. Classifies any failure as
  * either a benign teardown (swallowed → `writeDropped` event) or a real
  * transport failure (`writeFailed` event + `onFailure` hook for per-call
- * surfacing). Never rejects, so fire-and-forget callers do not need a
- * `.catch`; direct callers can still observe the failure by subscribing to
- * the events emitter or by supplying `onFailure`.
+ * surfacing).
+ *
+ * Rejects only for rid-less messages (events). A rid-bearing message already
+ * surfaces its failure through `onFailure`, which aborts the per-rid
+ * controller so the awaited call rejects there. A rid-less message has no
+ * controller, so throwing is the only way its caller can learn the write
+ * failed.
  */
 export async function safeWrite(params: SafeWriteParams): Promise<void> {
   const { transport, message, rid, events, signal, onFailure } = params
@@ -44,5 +48,8 @@ export async function safeWrite(params: SafeWriteParams): Promise<void> {
     }
     await events.emit('writeFailed', { error: error as Error, rid })
     onFailure?.(error as Error)
+    if (rid == null) {
+      throw error
+    }
   }
 }

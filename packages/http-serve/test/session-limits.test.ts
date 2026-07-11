@@ -88,4 +88,32 @@ describe('session limits', () => {
     const res = await bridge.handleRequest(createStreamPost('r1'))
     expect(res.status).toBe(200)
   })
+
+  test('an outbound SSE write refreshes the session timeout', async () => {
+    vi.useFakeTimers()
+    try {
+      const bridge = createServerBridge({ maxSessions: 1, sessionTimeoutMs: 1000 })
+
+      const res1 = await bridge.handleRequest(createStreamPost('r1'))
+      expect(res1.status).toBe(200)
+
+      vi.advanceTimersByTime(1100)
+
+      // Server pushes a stream value for r1 — this must refresh lastAccess.
+      const writer = bridge.stream.writable.getWriter()
+      await writer.write({
+        payload: { typ: 'receive', rid: 'r1', val: 'tick' },
+      } as never)
+      writer.releaseLock()
+
+      vi.advanceTimersByTime(900)
+
+      // Only 900ms since the SSE write, so the session must still be alive:
+      // a new session request hits maxSessions and is refused.
+      const res2 = await bridge.handleRequest(createStreamPost('r2'))
+      expect(res2.status).toBe(503)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
 })

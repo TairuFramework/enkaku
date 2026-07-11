@@ -54,20 +54,42 @@ describe('client safeWrite', () => {
     expect(dropped).toHaveBeenCalledWith(expect.objectContaining({ reason: 'disposing' }))
   })
 
-  test('emits writeFailed on non-benign errors and never rejects', async () => {
+  test('emits writeFailed on non-benign errors and rejects rid-less writes', async () => {
     const transport = fakeTransport('boom')
     const events = new EventEmitter<ClientEvents>()
     const failed = vi.fn()
     events.on('writeFailed', failed)
 
+    await expect(
+      safeWrite({
+        transport,
+        message: 'x',
+        events,
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toThrow('non-benign')
+
+    expect(failed).toHaveBeenCalled()
+  })
+
+  test('emits writeFailed on non-benign errors and resolves rid-bearing writes', async () => {
+    const transport = fakeTransport('boom')
+    const events = new EventEmitter<ClientEvents>()
+    const failed = vi.fn()
+    const onFailure = vi.fn()
+    events.on('writeFailed', failed)
+
     await safeWrite({
       transport,
       message: 'x',
+      rid: 'r1',
       events,
       signal: new AbortController().signal,
+      onFailure,
     })
 
     expect(failed).toHaveBeenCalled()
+    expect(onFailure).toHaveBeenCalled()
   })
 
   test('surfaces benign errors outside disposal via writeFailed', async () => {
@@ -78,12 +100,14 @@ describe('client safeWrite', () => {
     events.on('writeFailed', failed)
     events.on('writeDropped', dropped)
 
-    await safeWrite({
-      transport,
-      message: 'x',
-      events,
-      signal: new AbortController().signal,
-    })
+    await expect(
+      safeWrite({
+        transport,
+        message: 'x',
+        events,
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toThrow('Invalid state: WritableStream is closed')
 
     expect(dropped).not.toHaveBeenCalled()
     expect(failed).toHaveBeenCalled()

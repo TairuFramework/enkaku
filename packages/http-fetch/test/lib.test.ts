@@ -1,7 +1,7 @@
 import type { AnyClientMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
-import { createTransportStream, ResponseError } from '../src/index.js'
+import { ClientTransport, createTransportStream, ResponseError } from '../src/index.js'
 
 // Minimal protocol for testing
 const protocol = {
@@ -600,6 +600,83 @@ describe('ClientTransport', () => {
     expect(result.value).toEqual(responsePayload)
     expect(customFetch).toHaveBeenCalledTimes(1)
     expect(globalFetchSpy).not.toHaveBeenCalled()
+
+    await transport.dispose()
+  })
+
+  test('a send issued behind an unresolved channel open does not overtake it', async () => {
+    const calls: Array<string> = []
+    let releaseChannel: (() => void) | undefined
+
+    globalThis.fetch = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const req = input instanceof Request ? input : new Request(input, init)
+      const body = JSON.parse(await req.text()) as { payload: { typ: string } }
+      calls.push(`fetch:${body.payload.typ}`)
+      if (body.payload.typ === 'channel') {
+        // Hold the channel POST open: the SSE session is not established yet.
+        await new Promise<void>((resolve) => {
+          releaseChannel = resolve
+        })
+        return createSSEResponse('held-session')
+      }
+      return new Response(null, { status: 204 })
+    }) as typeof fetch
+
+    const transport = new ClientTransport<Protocol>({ url: 'http://localhost/rpc' })
+
+    // The natural client usage: createChannel() immediately followed by send().
+    const opened = transport.write({
+      payload: { typ: 'channel', rid: 'c1', prc: 'test/channel' },
+    } as unknown as ClientMessage)
+    const sent = transport.write({
+      payload: { typ: 'send', rid: 'c1', prc: 'test/channel', val: 'v' },
+    } as unknown as ClientMessage)
+
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    // The channel POST is still in flight, so the server has no controller for
+    // c1 yet — the send POST must not have been issued.
+    expect(calls).toEqual(['fetch:channel'])
+
+    releaseChannel?.()
+    await opened
+    await sent
+    expect(calls).toEqual(['fetch:channel', 'fetch:send'])
+
+    await transport.dispose()
+  })
+
+  test('a non-2xx event write rejects that call alone and leaves the transport usable', async () => {
+    let fetchCallCount = 0
+    globalThis.fetch = vi.fn(async () => {
+      fetchCallCount++
+      if (fetchCallCount === 1) {
+        return new Response('Server Error', { status: 500, statusText: 'Internal Server Error' })
+      }
+      return new Response(JSON.stringify({ payload: { typ: 'result', rid: 'r1', val: 'ok' } }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
+    }) as typeof fetch
+
+    const transport = new ClientTransport<Protocol>({ url: 'http://localhost/rpc' })
+
+    const error = await transport
+      .write({ payload: { typ: 'event', prc: 'test/event' } } as unknown as ClientMessage)
+      .then(
+        () => null,
+        (reason: unknown) => reason,
+      )
+    expect(error).toBeInstanceOf(ResponseError)
+    expect((error as ResponseError).message).toBe(
+      'Transport request failed with status 500 (Internal Server Error)',
+    )
+
+    // The failed write must not poison the serialization chain nor the transport.
+    await transport.write({
+      payload: { typ: 'request', rid: 'r1', prc: 'test/request' },
+    } as unknown as ClientMessage)
+    const result = await transport.read()
+    expect(result.value).toEqual({ payload: { typ: 'result', rid: 'r1', val: 'ok' } })
 
     await transport.dispose()
   })

@@ -272,10 +272,10 @@ export class Client<
   Protocol extends ProtocolDefinition,
   ClientDefinitions extends ClientDefinitionsType<Protocol> = ClientDefinitionsType<Protocol>,
 > extends Disposer {
-  #controllers: Record<string, AnyClientController> = {}
+  #controllers: Record<string, AnyClientController> = Object.create(null)
   #createMessage: CreateMessage<Protocol>
   #runtime: Runtime
-  #spans: Record<string, Span> = {}
+  #spans: Record<string, Span> = Object.create(null)
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   #handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
@@ -319,7 +319,7 @@ export class Client<
     for (const controller of Object.values(this.#controllers)) {
       controller.abort(reason)
     }
-    this.#controllers = {}
+    this.#controllers = Object.create(null)
   }
 
   #setupTransport(): void {
@@ -380,16 +380,34 @@ export class Client<
   }
 
   async #read() {
+    // Pin the transport this loop owns. `#setupTransport()` starts a new
+    // `#read()` loop whenever the transport is replaced, while this one may
+    // still be parked on the old transport's `reader.read()` — a transport
+    // disposal only closes its writable, so its readable can end long after the
+    // swap. Reading `this.#transport` from here on would touch the replacement,
+    // which the newer loop owns.
+    const transport = this.#transport
     while (true) {
+      if (this.#transport !== transport) {
+        // Replaced — a newer loop owns the current transport
+        return
+      }
       let msg: AnyServerMessageOf<Protocol>
       try {
-        const next = await this.#transport.read()
+        const next = await transport.read()
         if (next.done) {
+          if (!this.signal.aborted && this.#transport === transport) {
+            // The readable ended without anything disposing the transport, so
+            // `transport.disposed` would never resolve and the handler wired up
+            // in #setupTransport would never run. Dispose it here and let that
+            // handler abort controllers / swap in a replacement as usual.
+            void transport.dispose()
+          }
           return
         }
         msg = next.value
       } catch (cause) {
-        if (this.signal.aborted) {
+        if (this.signal.aborted || this.#transport !== transport) {
           return
         }
         this.#logger.debug('failed to read from transport', { cause })
@@ -411,55 +429,61 @@ export class Client<
         return
       }
 
-      const controller = this.#controllers[msg.payload.rid]
-      if (controller == null) {
-        this.#logger.warn('controller not found for request {rid}', {
-          rid: msg.payload.rid,
-        })
-        continue
-      }
+      try {
+        const controller = this.#controllers[msg.payload.rid]
+        if (controller == null) {
+          this.#logger.warn('controller not found for request {rid}', {
+            rid: msg.payload.rid,
+          })
+          continue
+        }
 
-      switch (msg.payload.typ) {
-        case 'error': {
-          const error = RequestError.fromPayload(msg.payload)
-          this.#logger.debug('error reply for {type} {procedure} with ID {rid}: {error}', {
-            type: controller.type,
-            procedure: controller.procedure,
-            rid: msg.payload.rid,
-            error,
-          })
-          controller.error(error)
-          delete this.#controllers[msg.payload.rid]
-          break
-        }
-        case 'receive': {
-          this.#logger.trace('receive reply for {type} {procedure} with ID {rid}: {receive}', {
-            type: controller.type,
-            procedure: controller.procedure,
-            rid: msg.payload.rid,
-            receive: msg.payload.val,
-          })
-          const receiveSpan = this.#spans[msg.payload.rid]
-          if (receiveSpan != null) {
-            receiveSpan.addEvent('stream.message.received', {
-              [EnkakuAttributeKeys.MESSAGE_DIRECTION]: 'receive',
+        switch (msg.payload.typ) {
+          case 'error': {
+            const error = RequestError.fromPayload(msg.payload)
+            this.#logger.debug('error reply for {type} {procedure} with ID {rid}: {error}', {
+              type: controller.type,
+              procedure: controller.procedure,
+              rid: msg.payload.rid,
+              error,
             })
+            controller.error(error)
+            delete this.#controllers[msg.payload.rid]
+            break
           }
-          void (controller as StreamController<unknown, unknown>).receive
-            ?.write(msg.payload.val)
-            .catch(() => {})
-          break
+          case 'receive': {
+            this.#logger.trace('receive reply for {type} {procedure} with ID {rid}: {receive}', {
+              type: controller.type,
+              procedure: controller.procedure,
+              rid: msg.payload.rid,
+              receive: msg.payload.val,
+            })
+            const receiveSpan = this.#spans[msg.payload.rid]
+            if (receiveSpan != null) {
+              receiveSpan.addEvent('stream.message.received', {
+                [EnkakuAttributeKeys.MESSAGE_DIRECTION]: 'receive',
+              })
+            }
+            void (controller as StreamController<unknown, unknown>).receive
+              ?.write(msg.payload.val)
+              .catch(() => {})
+            break
+          }
+          case 'result':
+            this.#logger.trace('result reply for {type} {procedure} with ID {rid}: {result}', {
+              type: controller.type,
+              procedure: controller.procedure,
+              rid: msg.payload.rid,
+              result: msg.payload.val,
+            })
+            controller.ok(msg.payload.val)
+            delete this.#controllers[msg.payload.rid]
+            break
         }
-        case 'result':
-          this.#logger.trace('result reply for {type} {procedure} with ID {rid}: {result}', {
-            type: controller.type,
-            procedure: controller.procedure,
-            rid: msg.payload.rid,
-            result: msg.payload.val,
-          })
-          controller.ok(msg.payload.val)
-          delete this.#controllers[msg.payload.rid]
-          break
+      } catch (cause) {
+        // A malformed or hostile server message must never kill the read loop:
+        // doing so hangs every in-flight and future request on this client.
+        this.#logger.warn('failed to handle server message', { cause })
       }
     }
   }

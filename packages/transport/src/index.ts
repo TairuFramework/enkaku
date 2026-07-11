@@ -23,6 +23,13 @@ export type TransportEvents = {
   readFailed: { error: Error }
   disposing: { reason?: unknown }
   disposed: { reason?: unknown }
+  /**
+   * Emitted by a transport implementation when the peer for a specific
+   * request goes away — an HTTP client disconnecting, an SSE session being
+   * dropped. Trusted by the server because it originates in-process and
+   * cannot arrive over the wire.
+   */
+  requestAborted: { rid: string; reason?: unknown }
 }
 
 /**

@@ -46,12 +46,14 @@ export type ServerBridgeOptions = {
   allowedOrigin?: string | Array<string>
   getRandomID?: () => string
   onWriteError?: (event: TransportEvents['writeFailed']) => void
+  onRequestAborted?: (event: TransportEvents['requestAborted']) => void
   maxSessions?: number
   runtime?: Runtime
   sessionTimeoutMs?: number
   maxInflightRequests?: number
   requestTimeoutMs?: number
   maxRequestBodySize?: number
+  maxSessionBufferBytes?: number
 }
 
 const VALID_PAYLOAD_TYPES = new Set(['abort', 'channel', 'event', 'request', 'send', 'stream'])
@@ -117,16 +119,70 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const maxInflightRequests = options.maxInflightRequests ?? 10_000
   const requestTimeoutMs = options.requestTimeoutMs ?? 30_000 // 30 seconds
   const maxRequestBodySize = options.maxRequestBodySize ?? 1_048_576 // 1 MiB
+  const maxSessionBufferBytes = options.maxSessionBufferBytes ?? 1_048_576 // 1 MiB
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
   const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
 
-  function clearSessionInflight(sessionID: string): void {
+  function clearSessionInflight(sessionID: string, reason: unknown = 'SessionClosed'): void {
     for (const [rid, entry] of inflight) {
       if (entry.type === 'stream' && entry.sessionID === sessionID) {
         inflight.delete(rid)
+        reportRequestAborted(rid, reason)
       }
     }
+  }
+
+  /**
+   * Report a write failure to the consumer-supplied callback. Every call to
+   * this helper happens inside (or reachable from) the shared `writeTo(...)`
+   * sink below: per the Web Streams spec, a synchronous throw from a sink's
+   * write callback errors the whole WritableStream, breaking every session
+   * sharing it. `onWriteError` is user-supplied and must never be allowed to
+   * do that, so a throwing callback is swallowed here rather than propagated.
+   */
+  function reportWriteError(error: Error, rid?: string): void {
+    try {
+      options.onWriteError?.({ error, rid })
+    } catch {
+      // A throwing consumer callback must not error the shared writable and
+      // break every other session.
+    }
+  }
+
+  /**
+   * Report an aborted request to the consumer-supplied callback. Same hazard as
+   * `reportWriteError`: `clearSessionInflight` is reachable from the shared
+   * `writeTo(...)` sink (via `dropSession`), from the session sweep interval
+   * (where a throw becomes an uncaught exception) and from the SSE abort
+   * listener, so a throwing `onRequestAborted` must never propagate.
+   */
+  function reportRequestAborted(rid: string, reason: unknown): void {
+    try {
+      options.onRequestAborted?.({ rid, reason })
+    } catch {
+      // A throwing consumer callback must not error the shared writable and
+      // break every other session, nor crash the process from the sweep timer.
+    }
+  }
+
+  /**
+   * Tear down a session that can no longer be written to. Isolated per session
+   * on purpose: the bridge's writable sink is shared by every session, so
+   * blocking on one slow consumer would stall all the others.
+   */
+  function dropSession(sessionID: string, rid: string | undefined, error: Error): void {
+    const session = sessions.get(sessionID)
+    if (session?.controller != null) {
+      try {
+        session.controller.close()
+      } catch {
+        // Already closed or errored
+      }
+    }
+    sessions.delete(sessionID)
+    clearSessionInflight(sessionID)
+    reportWriteError(error, rid)
   }
 
   // Periodic cleanup of expired sessions
@@ -156,7 +212,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     const { rid } = msg.payload
     const request = inflight.get(rid)
     if (request == null) {
-      options.onWriteError?.({ error: new Error('Request not found'), rid })
+      reportWriteError(new Error('Request not found'), rid)
       return
     }
     if (request.type === 'request') {
@@ -175,30 +231,34 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       const session = sessions.get(request.sessionID)
       if (session == null) {
         inflight.delete(rid)
-        options.onWriteError?.({
-          error: new Error(`Session not found: ${request.sessionID}`),
-          rid,
-        })
+        reportWriteError(new Error(`Session not found: ${request.sessionID}`), rid)
         return
       }
       if (session.controller == null) {
-        options.onWriteError?.({
-          error: new Error(`No controller for session: ${request.sessionID}`),
-          rid,
-        })
+        reportWriteError(new Error(`No controller for session: ${request.sessionID}`), rid)
         return
       }
       try {
         session.controller.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
+        // Outbound traffic keeps the session alive: a stream whose consumer only
+        // reads would otherwise be reaped at sessionTimeoutMs.
+        session.lastAccess = Date.now()
       } catch (cause) {
-        options.onWriteError?.({
-          error: new Error(`Error writing to SSE feed for session: ${request.sessionID}`, {
-            cause,
-          }),
+        dropSession(
+          request.sessionID,
           rid,
-        })
-        sessions.delete(request.sessionID)
-        clearSessionInflight(request.sessionID)
+          new Error(`Error writing to SSE feed for session: ${request.sessionID}`, { cause }),
+        )
+        return
+      }
+      if ((session.controller.desiredSize ?? 0) <= 0) {
+        // The consumer has fallen maxSessionBufferBytes behind. Drop this session
+        // alone rather than growing its queue without bound.
+        dropSession(
+          request.sessionID,
+          rid,
+          new Error(`SSE buffer overflow for session: ${request.sessionID}`),
+        )
       }
     }
   })
@@ -277,6 +337,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             )
           }
           const rid = message.payload.rid
+          if (inflight.has(rid)) {
+            return Response.json({ error: 'Duplicate request ID' }, { headers, status: 409 })
+          }
           const response = defer<Response>()
           inflight.set(rid, { type: 'request', headers, ...response })
 
@@ -299,6 +362,28 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           }
           inflightTimers.set(rid, timer)
 
+          request.signal.addEventListener(
+            'abort',
+            () => {
+              const entry = inflight.get(rid)
+              if (entry == null || entry.type !== 'request') {
+                // Already answered — nothing in flight to abort.
+                return
+              }
+              const pendingTimer = inflightTimers.get(rid)
+              if (pendingTimer != null) {
+                clearTimeout(pendingTimer)
+                inflightTimers.delete(rid)
+              }
+              inflight.delete(rid)
+              // The client is gone, but the deferred Response must still settle
+              // or its promise leaks.
+              entry.resolve(new Response(null, { status: 499 }))
+              reportRequestAborted(rid, 'ClientDisconnected')
+            },
+            { once: true },
+          )
+
           controller.enqueue(message)
           // Wait for reply from message handler
           return response.promise
@@ -306,6 +391,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         // Stateful response message
         case 'channel':
         case 'stream': {
+          if (inflight.has(message.payload.rid)) {
+            return Response.json({ error: 'Duplicate request ID' }, { headers, status: 409 })
+          }
           const sid = request.headers.get('enkaku-session-id')
           if (sid != null) {
             // Existing session — validate and route through it
@@ -327,17 +415,31 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             return Response.json({ error: 'Session limit reached' }, { headers, status: 503 })
           }
           const sessionID = runtime.getRandomID()
-          const [body, sseController] = createReadable<string>()
+          let sseController: ReadableStreamDefaultController<string> | undefined
+          const body = new ReadableStream<string>(
+            {
+              start(ctrl) {
+                sseController = ctrl
+              },
+            },
+            // A byte-denominated strategy makes `desiredSize` a live budget:
+            // decremented on enqueue, restored as the consumer pulls. `length`
+            // counts UTF-16 code units rather than the bytes TextEncoderStream
+            // will emit — proportional, cheap, and this is a safety bound rather
+            // than an accounting guarantee.
+            { highWaterMark: maxSessionBufferBytes, size: (chunk) => chunk.length },
+          )
+          const controllerRef = sseController as ReadableStreamDefaultController<string>
           // Send an SSE comment to flush response headers immediately.
-          sseController.enqueue(':\n\n')
-          sessions.set(sessionID, { controller: sseController, lastAccess: Date.now() })
+          controllerRef.enqueue(':\n\n')
+          sessions.set(sessionID, { controller: controllerRef, lastAccess: Date.now() })
 
           request.signal.addEventListener('abort', () => {
             try {
-              sseController.close()
+              controllerRef.close()
             } catch {}
             sessions.delete(sessionID)
-            clearSessionInflight(sessionID)
+            clearSessionInflight(sessionID, 'ClientDisconnected')
           })
 
           inflight.set(message.payload.rid, { type: 'stream', sessionID })
@@ -430,6 +532,7 @@ export type ServerTransportOptions = {
   maxInflightRequests?: number
   requestTimeoutMs?: number
   maxRequestBodySize?: number
+  maxSessionBufferBytes?: number
 }
 
 export class ServerTransport<Protocol extends ProtocolDefinition> extends Transport<
@@ -448,8 +551,12 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
       maxInflightRequests: options.maxInflightRequests,
       requestTimeoutMs: options.requestTimeoutMs,
       maxRequestBodySize: options.maxRequestBodySize,
+      maxSessionBufferBytes: options.maxSessionBufferBytes,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
+      },
+      onRequestAborted: (event) => {
+        this.events.emit('requestAborted', event)
       },
     })
     super({ stream: bridge.stream })
