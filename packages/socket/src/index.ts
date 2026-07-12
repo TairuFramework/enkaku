@@ -302,9 +302,10 @@ export class SocketTransport<R, W> extends Transport<R, W> {
         // thunk and open a fresh, live socket that the already-fired 'disposed'
         // hook will never destroy -- an orphan connection nobody owns.
         this.signal.throwIfAborted()
-        // this.signal aborts synchronously when dispose() is called, before
-        // its dispose callback runs -- so a write stuck awaiting 'drain' on
-        // an unreading peer rejects immediately instead of hanging dispose().
+        // this.signal aborts synchronously when dispose() is called, before its
+        // dispose callback runs -- so a write parked on 'drain' against an
+        // unreading peer gets END_GRACE_MS to drain, then rejects. A peer that
+        // recovers still flushes; one that never reads cannot hang dispose().
         return createTransportStream(getSocket, { ...options, signal: this.signal })
       },
       signal,
