@@ -10,6 +10,6 @@
     "@enkaku/http-serve": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
-    "@sozai/stream": "^0.1.0"
+    "@sozai/stream": "^0.2.0"
   }
 }
