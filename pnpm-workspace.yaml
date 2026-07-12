@@ -18,32 +18,32 @@ blockExoticSubdeps: false
 catalog:
   '@biomejs/biome': ^2.5.0
   '@dipakparmar/docusaurus-plugin-umami': ^2.4.0
-  '@docusaurus/core': ^3.10.1
-  '@docusaurus/faster': ^3.10.1
-  '@docusaurus/module-type-aliases': ^3.10.1
-  '@docusaurus/preset-classic': ^3.10.1
-  '@docusaurus/theme-mermaid': ^3.10.1
-  '@docusaurus/tsconfig': ^3.10.1
-  '@docusaurus/types': ^3.10.1
+  '@docusaurus/core': ^3.10.2
+  '@docusaurus/faster': ^3.10.2
+  '@docusaurus/module-type-aliases': ^3.10.2
+  '@docusaurus/preset-classic': ^3.10.2
+  '@docusaurus/theme-mermaid': ^3.10.2
+  '@docusaurus/tsconfig': ^3.10.2
+  '@docusaurus/types': ^3.10.2
   '@electron-forge/cli': ^7.11.2
   '@electron-forge/plugin-vite': ^7.11.2
   '@hono/node-server': ^2.0.8
   '@kigu/dev': ^0.1.2
-  '@kokuin/capability': ^0.1.0
-  '@kokuin/electron': ^0.2.0
-  '@kokuin/token': ^0.1.1
+  '@kokuin/capability': ^0.2.0
+  '@kokuin/electron': ^0.3.0
+  '@kokuin/token': ^0.2.0
   '@opentelemetry/sdk-trace-base': ^2.9.0
   '@opentelemetry/sdk-trace-node': ^2.9.0
   '@orama/plugin-docusaurus-v3': ^3.1.18
   '@playwright/test': 1.61.1
-  '@sozai/async': ^0.1.0
-  '@sozai/event': ^0.1.0
-  '@sozai/execution': ^0.1.0
+  '@sozai/async': ^0.2.0
+  '@sozai/event': ^0.1.1
+  '@sozai/execution': ^0.2.0
   '@sozai/log': ^0.1.0
   '@sozai/otel': ^0.2.0
   '@sozai/runtime': ^0.1.0
-  '@sozai/schema': ^0.1.0
-  '@sozai/stream': ^0.1.0
+  '@sozai/schema': ^0.1.1
+  '@sozai/stream': ^0.2.0
   '@swc/cli': ^0.8.1
   '@swc/core': ^1.15.41
   '@testing-library/jest-dom': ^6.9.1
