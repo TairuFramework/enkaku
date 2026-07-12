@@ -112,6 +112,10 @@ const netServer = createServer(async (socket) => {
 netServer.listen('/tmp/my-app.sock')
 ```
 
+`connectSocket(path, { timeoutMs, signal })` bounds the connect attempt (10s by default; `timeoutMs: 0` disables). `SocketTransport` accepts `connectTimeoutMs` when `socket` is a path string, and connects lazily on first read/write.
+
+`transport.dispose()` flushes pending writes, then **destroys** the socket — including one opened by a function source. Do not also destroy it yourself; a second `destroy()` is a no-op, but the transport already owns the release.
+
 **Use case**: IPC, microservices on same host, daemon processes
 
 **Key points**:

@@ -66,11 +66,15 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
       dispose: async (reason?: unknown) => {
         await this.#events.emit('disposing', { reason })
         if (this._stream != null) {
-          const writer = await this._getWriter()
           try {
+            const writer = await this._getWriter()
             await writer.close()
           } catch {
-            // Ignore error closing writer in case it's already closed
+            // Ignore error getting the writer (e.g. the stream itself
+            // rejected -- a failed connect) or closing it (e.g. already
+            // closed). Either way 'disposed' below must still fire: it is
+            // the only signal a caller that owns a resource behind this
+            // transport gets that it is safe to release it.
           }
         }
         await this.#events.emit('disposed', { reason })

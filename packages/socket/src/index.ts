@@ -21,7 +21,20 @@ const tracer = createTracer('transport.socket')
 export type SocketOrPromise = Socket | Promise<Socket>
 export type SocketSource = SocketOrPromise | (() => SocketOrPromise)
 
-export async function connectSocket(path: string): Promise<Socket> {
+const DEFAULT_CONNECT_TIMEOUT_MS = 10_000
+
+export type ConnectSocketOptions = {
+  /** Milliseconds before the connect attempt is abandoned. Defaults to 10_000. `0` disables the timeout. */
+  timeoutMs?: number
+  /** Aborts a pending connect attempt, destroying the socket. */
+  signal?: AbortSignal
+}
+
+export async function connectSocket(
+  path: string,
+  options: ConnectSocketOptions = {},
+): Promise<Socket> {
+  const { timeoutMs = DEFAULT_CONNECT_TIMEOUT_MS, signal } = options
   return withSpan(
     tracer,
     EnkakuSpanNames.TRANSPORT_SOCKET_CONNECT,
@@ -32,32 +45,97 @@ export async function connectSocket(path: string): Promise<Socket> {
       },
     },
     async () => {
+      signal?.throwIfAborted()
       const socket = createConnection(path)
       return new Promise<Socket>((resolve, reject) => {
-        socket.on('connect', () => resolve(socket))
-        socket.on('error', (err) => reject(err))
+        let timer: ReturnType<typeof setTimeout> | undefined
+
+        function cleanup(): void {
+          if (timer != null) {
+            clearTimeout(timer)
+          }
+          socket.off('connect', onConnect)
+          socket.off('error', onError)
+          signal?.removeEventListener('abort', onAbort)
+        }
+        function onConnect(): void {
+          cleanup()
+          resolve(socket)
+        }
+        function onError(error: Error): void {
+          cleanup()
+          reject(error)
+        }
+        function abandon(reason: unknown): void {
+          cleanup()
+          // The abandoned attempt may still fail (a late ECONNREFUSED). With no
+          // 'error' listener at all, Node escalates that to an uncaught throw.
+          socket.on('error', () => {})
+          socket.destroy()
+          reject(reason)
+        }
+        function onAbort(): void {
+          abandon(signal?.reason ?? new Error('Socket connect aborted'))
+        }
+
+        socket.once('connect', onConnect)
+        socket.once('error', onError)
+        signal?.addEventListener('abort', onAbort, { once: true })
+
+        if (timeoutMs > 0 && Number.isFinite(timeoutMs)) {
+          timer = setTimeout(() => {
+            abandon(new Error(`Socket connect timed out after ${timeoutMs}ms`))
+          }, timeoutMs)
+          // The timer must not hold the event loop open on its own
+          timer.unref()
+        }
       })
     },
   )
 }
 
 const DEFAULT_HIGH_WATER_MARK = 1_048_576 // 1 MiB
+const END_GRACE_MS = 2_000 // Max wait for a half-close to flush before giving up
 
 export type CreateTransportStreamOptions<R> = FromJSONLinesOptions<R> & {
   /** Bytes to buffer before pausing the socket / awaiting drain. Defaults to 1 MiB. */
   highWaterMark?: number
+  /**
+   * Aborts a pending `write()` that is stuck awaiting 'drain' -- a peer that
+   * never reads gives no 'drain', 'close', or 'error', so without this a
+   * write (and anything awaiting the writer, including `Transport.dispose()`)
+   * can hang forever.
+   */
+  signal?: AbortSignal
 }
 
 /**
- * Resolve when the socket drains. Reject if it closes or errors first, so a
- * write can never hang on a drain event that will never arrive.
+ * Resolve when the socket drains. Reject if it closes or errors first.
+ *
+ * If `signal` aborts, do NOT reject immediately -- a peer that is merely
+ * stalled (not dead) may resume reading and let the write drain normally, and
+ * an instant rejection here would error the write sink, which errors the
+ * WritableStream, which makes `writer.close()` reject *without ever running
+ * its close callback* -- skipping the flush-on-close grace entirely and
+ * letting `dispose()` destroy the socket with buffered bytes still queued.
+ * Instead, on abort, give the drain up to `END_GRACE_MS` more to arrive: if
+ * the peer recovers within that window, resolve as normal; only if the grace
+ * itself elapses do we give up and reject, so a genuinely dead peer still
+ * bounds the wait (and therefore `dispose()`) at ~`END_GRACE_MS`.
  */
-function waitForDrain(socket: Socket): Promise<void> {
+function waitForDrain(socket: Socket, signal?: AbortSignal): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+    let graceTimer: ReturnType<typeof setTimeout> | undefined
+
     function cleanup(): void {
       socket.off('drain', onDrain)
       socket.off('close', onClose)
       socket.off('error', onError)
+      signal?.removeEventListener('abort', onAbort)
+      if (graceTimer != null) {
+        clearTimeout(graceTimer)
+        graceTimer = undefined
+      }
     }
     function onDrain(): void {
       cleanup()
@@ -71,9 +149,23 @@ function waitForDrain(socket: Socket): Promise<void> {
       cleanup()
       reject(err)
     }
+    function onAbort(): void {
+      // Keep listening for 'drain'/'close'/'error' during the grace -- only
+      // start the countdown to giving up.
+      graceTimer = setTimeout(() => {
+        cleanup()
+        reject(signal?.reason ?? new Error('Socket drain aborted'))
+      }, END_GRACE_MS)
+      graceTimer.unref()
+    }
     socket.on('drain', onDrain)
     socket.on('close', onClose)
     socket.on('error', onError)
+    if (signal?.aborted) {
+      onAbort()
+    } else {
+      signal?.addEventListener('abort', onAbort, { once: true })
+    }
   })
 }
 
@@ -82,7 +174,7 @@ export async function createTransportStream<R, W>(
   options?: CreateTransportStreamOptions<R>,
 ): Promise<ReadableWritablePair<R, W>> {
   const socket = await Promise.resolve(typeof source === 'function' ? source() : source)
-  const { highWaterMark = DEFAULT_HIGH_WATER_MARK, ...jsonOptions } = options ?? {}
+  const { highWaterMark = DEFAULT_HIGH_WATER_MARK, signal, ...jsonOptions } = options ?? {}
 
   // Attached once and never removed. A socket with zero 'error' listeners
   // escalates any late error (a write on a destroyed socket, an EPIPE) to an
@@ -152,11 +244,25 @@ export async function createTransportStream<R, W>(
       }
       if (!socket.write(`${JSON.stringify(msg)}\n`)) {
         // Returning a promise makes WritableStream apply backpressure upstream.
-        await waitForDrain(socket)
+        await waitForDrain(socket, signal)
       }
     },
-    () => {
-      socket.end()
+    async () => {
+      // Wait for queued writes to actually flush, so a caller that closes the
+      // writer (or disposes the transport) does not cut off its own last message.
+      await new Promise<void>((resolve) => {
+        if (socket.destroyed || socket.writableEnded || socketError != null) {
+          resolve()
+          return
+        }
+        // A stalled peer must not hang the close
+        const timer = setTimeout(resolve, END_GRACE_MS)
+        timer.unref()
+        socket.end(() => {
+          clearTimeout(timer)
+          resolve()
+        })
+      })
       // Release the half-closed socket so it stops holding the event loop open
       socket.unref()
     },
@@ -168,23 +274,56 @@ export async function createTransportStream<R, W>(
 export type SocketTransportParams<R> = CreateTransportStreamOptions<R> & {
   socket: SocketSource | string
   signal?: AbortSignal
+  /** Connect timeout when `socket` is a path, in milliseconds. Defaults to 10_000. `0` disables it. */
+  connectTimeoutMs?: number
 }
 
 export class SocketTransport<R, W> extends Transport<R, W> {
   constructor(params: SocketTransportParams<R>) {
-    const { socket, signal, ...options } = params
-    const source = typeof socket === 'string' ? connectSocket(socket) : socket
-    super({ stream: () => createTransportStream(source, options), signal })
-    // Release the socket on dispose
-    if (typeof source !== 'function') {
-      this.events.on('disposed', async () => {
-        try {
-          const sock = await source
-          sock.unref()
-        } catch {
-          // Socket failed to connect or is already gone; nothing to release
-        }
-      })
+    const { connectTimeoutMs, socket, signal, ...options } = params
+    const source: SocketSource =
+      typeof socket === 'string'
+        ? () => connectSocket(socket, { timeoutMs: connectTimeoutMs, signal })
+        : socket
+
+    // Memoized so the socket this transport opened can be released on dispose.
+    // Transport caches the stream, so a function source is invoked at most once.
+    let socketPromise: Promise<Socket> | undefined =
+      typeof source === 'function' ? undefined : Promise.resolve(source)
+    function getSocket(): Promise<Socket> {
+      socketPromise ??= Promise.resolve(typeof source === 'function' ? source() : source)
+      return socketPromise
     }
+
+    super({
+      stream: () => {
+        // The socket path/factory connects lazily on first read/write. Without this
+        // guard, a read() or write() called after dispose() would still run this
+        // thunk and open a fresh, live socket that the already-fired 'disposed'
+        // hook will never destroy -- an orphan connection nobody owns.
+        this.signal.throwIfAborted()
+        // this.signal aborts synchronously when dispose() is called, before its
+        // dispose callback runs -- so a write parked on 'drain' against an
+        // unreading peer gets END_GRACE_MS to drain, then rejects. A peer that
+        // recovers still flushes; one that never reads cannot hang dispose().
+        return createTransportStream(getSocket, { ...options, signal: this.signal })
+      },
+      signal,
+    })
+
+    this.events.on('disposed', async () => {
+      if (socketPromise == null) {
+        // A function source that was never invoked opened no socket to release
+        return
+      }
+      try {
+        const sock = await socketPromise
+        // unref() only stops the socket holding the event loop open -- it stays
+        // open, and the peer's server keeps seeing a live connection.
+        sock.destroy()
+      } catch {
+        // Socket failed to connect or is already gone; nothing to release
+      }
+    })
   }
 }
