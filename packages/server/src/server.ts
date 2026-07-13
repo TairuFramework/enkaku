@@ -286,6 +286,18 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       // Unsubscribe last: until the handlers above are done, a peer going away
       // can still abort one of them through `requestAborted`.
       unsubscribeRequestAborted()
+      // On every route where this disposer disposes itself (replay-cache
+      // throw, transport read error, `next.done`), `Server.handle()` splices
+      // the handling entry out of `#handling` as soon as `disposer.disposed`
+      // (which IS `handling.done`) resolves -- so `Server.dispose()`'s own
+      // `handling.transport.dispose()` call and its force-dispose path never
+      // get a chance to run for this transport. Nothing else would close it.
+      // Dispose it here, after the `running` drain above, so handlers get
+      // their chance to flush a final reply first. `Transport.dispose()` is
+      // idempotent, so `Server.dispose()` disposing it again afterwards
+      // (when this route runs from inside a still-live server, not one of
+      // its own self-dispose routes) is harmless.
+      await transport.dispose()
     },
     signal,
   })

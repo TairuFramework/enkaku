@@ -1,10 +1,16 @@
-import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
-import { DirectTransports } from '@enkaku/transport'
+import type {
+  AnyClientMessageOf,
+  AnyServerMessageOf,
+  ProtocolDefinition,
+  ServerTransportOf,
+} from '@enkaku/protocol'
+import { DirectTransports, type TransportEvents } from '@enkaku/transport'
 import { createUnsignedToken, randomIdentity } from '@kokuin/token'
 import { defer } from '@sozai/async'
+import { EventEmitter } from '@sozai/event'
 import { describe, expect, test, vi } from 'vitest'
 
-import { type ProcedureHandlers, serve } from '../src/index.js'
+import { type ProcedureHandlers, Server, serve } from '../src/index.js'
 
 const protocol = {
   'test/slow': { type: 'request', result: { type: 'string' } },
@@ -204,4 +210,145 @@ describe('messages arriving while dispose() is draining', () => {
 
     await transports.dispose()
   }, 40_000)
+})
+
+describe('self-dispose routes leave the transport behind', () => {
+  // `disposer.disposed` (server.ts) IS `handling.done` (Server.handle()), and
+  // `handle()` splices the handling entry out of `#handling` as soon as `done`
+  // resolves. On every route where `handleMessages` disposes *itself* --
+  // replay-cache throw, transport read error, `next.done` -- that splice can
+  // happen before `Server.dispose()` ever runs, so its
+  // `handling.transport.dispose()` call and force-dispose path never get a
+  // chance to run either. Nothing else closes the transport: a healthy
+  // transport whose only fault was a broken replay cache (or a peer that hung
+  // up) is abandoned open.
+  test('a replay-cache failure disposes its own transport once server.dispose() resolves', async () => {
+    const signer = randomIdentity()
+    const handlers = {
+      'test/slow': () => 'first',
+      'test/second': () => 'second',
+    } as unknown as ProcedureHandlers<Protocol>
+
+    const cache = {
+      checkAndRecord: () => {
+        throw new Error('replay cache exploded')
+      },
+    }
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+    const server = serve<Protocol>({
+      handlers,
+      identity: signer,
+      accessRules: { '*': { allow: true } },
+      transport: transports.server,
+      replay: { cache },
+      limits: { cleanupTimeoutMs: 500 },
+    })
+
+    const message = await signer.signToken({
+      typ: 'request',
+      prc: 'test/slow',
+      rid: 'r1',
+      aud: signer.id,
+    } as const)
+    await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+
+    // Let the cache throw and take the (now non-deadlocking) self-dispose route.
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    await server.dispose()
+
+    // Race rather than bare-await `transports.server.disposed`: on unfixed code
+    // that promise never settles, so a bare await would just time out the whole
+    // test with no indication of what failed. Racing gives a concrete assertion
+    // failure instead.
+    const outcome = await Promise.race([
+      transports.server.disposed.then(() => 'disposed'),
+      new Promise((resolve) => setTimeout(() => resolve('not-disposed'), 300)),
+    ])
+
+    expect(outcome).toBe('disposed')
+
+    await transports.dispose()
+  })
+
+  test('a peer hanging up (transport.read() returning done) disposes its own transport', async () => {
+    // Disposing only the client side closes the client's writable half of the
+    // connection, which surfaces as `done: true` on the *server's* next
+    // `transport.read()` -- the same as a real peer disconnecting. This never
+    // calls `server.dispose()` at all: it exercises handleMessages' own
+    // self-dispose route (server.ts:735) in isolation.
+    const handlers = {
+      'test/slow': () => 'first',
+      'test/second': () => 'second',
+    } as unknown as ProcedureHandlers<Protocol>
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+    const server = serve<Protocol>({ handlers, requireAuth: false, transport: transports.server })
+
+    // A message first, so the client's writer is actually established --
+    // `Transport.dispose()` only closes the underlying writable if `_stream`
+    // was already obtained by a prior read/write, otherwise there is nothing
+    // for it to close and the server never sees `done`.
+    await transports.client.write(
+      createUnsignedToken({
+        typ: 'request',
+        rid: 'r1',
+        prc: 'test/slow',
+      }) as AnyClientMessageOf<Protocol>,
+    )
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    await transports.client.dispose()
+
+    const outcome = await Promise.race([
+      transports.server.disposed.then(() => 'disposed'),
+      new Promise((resolve) => setTimeout(() => resolve('not-disposed'), 300)),
+    ])
+
+    expect(outcome).toBe('disposed')
+
+    // `Server.handle()` splices its handling entry out on a `.then()` chained
+    // onto `disposer.disposed` itself, one more microtask hop past the point
+    // where `transports.server.disposed` above resolves -- give it a tick.
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(server.activeTransportsCount).toBe(0)
+
+    await server.dispose()
+  })
+
+  test('a transport read error disposes its own transport', async () => {
+    // Exercises the transport-read-error self-dispose route (server.ts:731) in
+    // isolation, via a hand-rolled transport whose `read()` rejects on first
+    // call -- mirroring transport-read-failure.test.ts, but asserting on
+    // `dispose` having actually been called rather than just on `handle()`
+    // settling.
+    const failingTransport = {
+      read: vi.fn(() => Promise.reject(new Error('read boom'))),
+      write: vi.fn(() => Promise.resolve()),
+      dispose: vi.fn(() => Promise.resolve()),
+      events: new EventEmitter<TransportEvents>(),
+    } as unknown as ServerTransportOf<Protocol>
+
+    const server = new Server<Protocol>({
+      handlers: {
+        'test/slow': () => 'first',
+        'test/second': () => 'second',
+      } as unknown as ProcedureHandlers<Protocol>,
+      protocol,
+      requireAuth: false,
+    })
+
+    await server.handle(failingTransport)
+
+    expect(failingTransport.dispose).toHaveBeenCalled()
+
+    await server.dispose()
+  })
 })
