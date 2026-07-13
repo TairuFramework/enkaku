@@ -584,6 +584,19 @@ So a message *arriving during* the drain is still read, auth-checked, and can re
 
 **Check `disposer.signal`, not the `signal` param.** `handleMessages` reaches `dispose()` by two routes: the server's `#abortController` (arriving as the `signal` param) *and* direct `disposer.dispose()` calls from the transport-read-error, stream-`done`, and replay-cache-failure paths. Only `disposer.signal` is aborted on both, because `Disposer.dispose()` calls `this.abort()`. Checking the param would silently miss the direct routes — and one of those routes is what Step 1's second test exercises.
 
+**This task also fixes a THIRD defect, found during Task 1's review.** `Server` (`server.ts:1011-1050`) forwards `params.signal` to `Disposer` and its dispose callback opens with `await this.#events.emit('disposing', ...)`. If the signal is **already aborted** at construction, `Disposer` invokes that callback synchronously from inside `super()` — before the derived constructor body has run, so `this` is still in TDZ. The `ReferenceError` is caught by `Disposer`, warned, and `disposed` **resolves anyway**.
+
+Confirmed empirically against the current source:
+
+```
+Disposer dispose callback rejected ReferenceError: Must call super constructor in derived class before accessing 'this'
+server.disposed: DISPOSED_RESOLVED
+disposing fired: 0
+disposed fired: 0
+```
+
+So `new Server({ ..., signal })` with an already-fired signal reports successful disposal while never disposing its transports, never aborting its handlers, and never clearing the cleanup interval. `Transport` and `DirectTransports` had the identical flaw and were fixed in Task 1 (commit `d0e9ae0`) by yielding a microtask at the top of the dispose callback before any `this` access. Apply the same fix here, and mirror Task 1's test. `Client` does **not** forward a signal to `Disposer`, so it is unaffected — leave it alone.
+
 **This task also fixes a second, previously unknown defect on the same file.** `server.ts:689` — when the replay cache throws, `process()` does `await disposer.dispose()`. But `process()` is itself an entry in the `pending` map, and the disposer's first act is `await Promise.all(Object.values(pending))`. `process` waits on `dispose`; `dispose` waits on `process`. The graceful path never completes, and `Server.dispose()` escapes only via its `cleanupTimeoutMs` race — burning the whole 30s default on every replay-cache failure. Measured: unresolved after 3s on the default timeout, ~700ms with a 500ms one.
 
 The two fixes are in one task because they are in one file and their tests interlock: the deadlock route is also the only route that proves the bail must check `disposer.signal` rather than the `signal` param.
@@ -591,7 +604,11 @@ The two fixes are in one task because they are in one file and their tests inter
 **Files:**
 - Modify: `packages/server/src/server.ts:689` — `await disposer.dispose()` → `void disposer.dispose()`
 - Modify: `packages/server/src/server.ts` — inside `handleNext()`, after the `next.done` check and before `processMessage`
+- Modify: `packages/server/src/server.ts:1011-1050` — microtask yield at the top of `Server`'s dispose callback, mirroring `d0e9ae0`
 - Test: `packages/server/test/dispose-read-window.test.ts` (create)
+- Test: `packages/server/test/dispose-aborted-signal.test.ts` (create) — the already-aborted-signal case
+
+Read commit `d0e9ae0` (`git show d0e9ae0`) before writing the third fix: it is the same fix on `Transport`/`DirectTransports`, including the comment that explains why the microtask yield exists. Match it, and match its test's shape — assert that `disposing` and `disposed` actually fire and that disposal really happened, NOT merely that no console warning appeared.
 
 **Interfaces:**
 - Consumes: `disposer` (the `Disposer` declared at `server.ts:265`) and `logger` (destructured from `params` at `server.ts:108`) — both already in scope inside `handleNext()` and inside `process()`. `ReplayCache` is `{ checkAndRecord(key: string, expiresAt: number): boolean | Promise<boolean> }` (`src/replay.ts:3`); a test cache may be an object literal of that shape. Replay protection only runs in auth mode — `resolveReplay` returns `null` when `requireAuth` is false — so the replay tests need a real `identity`.
@@ -1046,6 +1063,8 @@ Match the bump level and frontmatter style of any existing changeset files. If n
 Previously `signal` was accepted, declared on `TransportParams`, and silently dropped: aborting it did nothing. Every transport subclass (`SocketTransport`, `NodeStreamsTransport`, `MessageTransport`) passes `signal` up to the base class, so all of them were affected — a caller wiring up a signal expecting "abort tears this down" got no dispose, no `disposed` event, and a leaked underlying resource.
 
 Aborting the signal now runs the same graceful teardown as calling `dispose()`: `disposing` is emitted, queued writes are flushed (bounded), then `disposed` is emitted and the resource behind the transport is released. If you pass a `signal` today and rely on it *not* disposing the transport, stop passing it.
+
+Also fixes teardown for a transport constructed with a signal that is **already aborted**. The disposal callback previously ran before the instance had finished initializing, threw internally, and was swallowed — so `dispose()` resolved successfully while `disposing`/`disposed` never fired and the underlying resource was never released. This affected `DirectTransports` already, and would have affected every transport once `signal` was wired through.
 ```
 
 `.changeset/socket-release-destroys.md`:
@@ -1074,6 +1093,8 @@ Two shutdown fixes.
 **`Server` no longer reads and admits new messages while `dispose()` is draining.** `dispose()` aborts every registered handler controller, then waits for the in-flight ones to finish. But the read loop never checked whether disposal had started, so a message arriving *during* that wait was still read, authenticated, and could register its controller after the abort-all sweep had already passed — leaving a handler running on a signal nothing would ever abort, after `dispose()` had resolved. Such messages are now dropped with a warning log and the read loop stops. Clients receive no reply for them; they see the transport close, as they would anyway.
 
 **`dispose()` no longer deadlocks when the replay cache throws.** On that path the server awaited its own disposer from inside a handler-tracking entry that the disposer itself waits on, so the graceful shutdown path could never complete and `dispose()` only returned once `cleanupTimeoutMs` (30 seconds by default) expired and force-disposed the transports. This only affects servers with a custom `ReplayCache` that can throw — a remote cache losing its connection, for example; the built-in in-memory cache never does.
+
+**A `Server` constructed with an already-aborted `signal` now actually disposes.** Previously the teardown callback ran before the instance had finished initializing, threw internally, and was swallowed — so `dispose()` reported success while the server never disposed its transports, never aborted its handlers, and never cleared its cleanup interval.
 ```
 
 - [ ] **Step 3: Lint**
