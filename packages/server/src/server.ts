@@ -1046,6 +1046,16 @@ export type ServerAccessOptions =
 export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   cache?: DIDCache
   encryptionPolicy?: EncryptionPolicy
+  /**
+   * Must be collision-resistant. Defaults to `crypto.randomUUID()`.
+   *
+   * Events carry no `rid` of their own, so the server mints one from this to key
+   * the event's in-flight access check in its dispose barrier. That synthetic ID
+   * shares a namespace with real message `rid`s: an ID that collided with one
+   * would let a client's `send`/`abort` queue behind the event's access check
+   * instead of its own, reordering or dropping it. A counter or any other
+   * non-unique override is therefore unsafe here.
+   */
   getRandomID?: () => string
   runtime?: Runtime
   handlers: ProcedureHandlers<Protocol>
