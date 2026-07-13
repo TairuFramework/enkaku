@@ -116,7 +116,9 @@ Each fix gets a test that asserts the *property*, not the mechanism.
 
 ## Out of scope
 
-- Linking `handleRequest`'s per-handler `AbortController` to `ctx.signal`. Once no handler can start after the sweep, every registered controller is reachable by it. Worth doing on its own merits — defense in depth — but it is a separate change with its own blast radius across all four handler types, and folding it in here would blur what this branch is testing.
+- **Linking per-handler `AbortController`s to `ctx.signal`.** Considered and dropped as redundant. `handleRequest`, `handleStream`, and `handleChannel` all register their controller in `ctx.controllers`, and the disposer's sweep aborts every entry in that map before awaiting `running` — so in-flight handlers of those three types are already aborted immediately on dispose. The only thing that made the unlinked controller matter was the post-sweep registration window, which §3 closes. Linking them would add a second path to an abort the sweep already performs.
+
+- **Aborting in-flight event handlers.** `handleEvent` is the one handler type that registers no controller and exposes no `signal` on its context. `processHandler` still reserves a limiter slot and tracks it in `running`, so on dispose an in-flight event handler is *awaited but never aborted* — a slow one blocks shutdown until `cleanupTimeoutMs` expires. This is deliberate, not an oversight to fix here: events are fire-and-forget with no reply, "let it finish" is a coherent policy for them, and `cleanupTimeoutMs` bounds the cost. Giving them a signal would mean adding a public field to `EventHandlerContext` — additive but real API surface, and a different change from the three defects this branch fixes. Revisit if a slow event handler ever actually stalls a shutdown.
 - An `ErrorCodes` entry for server shutdown (see §3).
 - Any change to `mokei`. §2 is deliberately shaped so mokei needs none.
 
