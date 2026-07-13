@@ -57,9 +57,28 @@ socket.unref()                        // does NOT close the socket
 
 That consumer exists: mokei's `host-monitor` does `createTransportStream(connectSocket(socketPath))` and builds its own `Disposer` that closes the HTTP server and the pipes but never touches the socket.
 
-Fix: after the flush settles (or its grace expires), `destroy()` the socket unconditionally, replacing the `unref()`.
+Fix: release the socket — `destroy()`, not `unref()` — at **every terminal exit of the writable sink**.
 
-Rejected alternative: destroy *only* when the grace expires. That closes the stalled-peer case but leaves a second one open — a peer that reads fine but keeps its own side open never triggers the grace, so `end()` half-closes, the callback resolves normally, and the socket lingers with a live read side. Release must mean destroy on every path, not on the unhappy one.
+The sink has three of them, and only one runs the `close` callback. This was verified empirically against the WHATWG streams implementation, because it is the crux of the fix:
+
+| Exit | Sink callback invoked |
+|---|---|
+| clean close, healthy peer | `close` |
+| clean close, stalled peer (the `end()` flush grace expires) | `close` |
+| the sink's `write()` **rejects** | **none** |
+| explicit `writer.abort(reason)` | `abort` |
+
+When `write()` rejects, the WritableStream errors and neither `close` nor `abort` ever runs — a subsequent `writer.close()` simply rejects with `Invalid state: WritableStream is closed`. That is not a corner case: it is the stalled-peer path. A bare consumer passing a `signal` (a public option on `CreateTransportStreamOptions`) gets exactly this — `waitForDrain` gives up after the grace, rejects the write, and the stream errors with the socket still open and no callback left to release it.
+
+`SocketTransport` survives that path only because `dispose()` catches the rejected `writer.close()` and fires `disposed` regardless, whose hook destroys the socket. A bare consumer has no `disposed` hook, so it has nothing.
+
+So: an idempotent `releaseSocket()` (`socket.destroy()`), called from
+
+- the `close` callback, after the flush settles or its grace expires;
+- a new `abort` callback (`writeTo` accepts one — `@sozai/stream` `writable.ts` — and `createTransportStream` does not currently pass it);
+- a `catch` around the `write` body, before it rethrows.
+
+Rejected alternative: destroy *only* when the `end()` grace expires. That closes one stalled-peer route but leaves two open — the rejecting-write exit above, and a peer that reads fine yet keeps its own side open, which never triggers the grace at all, so `end()` half-closes, the callback resolves normally, and the socket lingers with a live read side. Release must mean destroy on every exit, not on the unhappy one.
 
 Rejected alternative: return a disposer alongside the stream pair. Honest, but it is a breaking signature change to an exported function, it requires updating mokei, and it is opt-in — a future bare consumer that forgets still leaks. Destroying inside the close callback fixes mokei without touching mokei.
 
@@ -103,9 +122,13 @@ Each fix gets a test that asserts the *property*, not the mechanism.
 - `SocketTransport` with an external signal: abort, expect `disposed` to fire *and the socket to end up `destroyed`*. The socket assertion is the point — the signal reaching `dispose()` is worthless if the release hook does not then run.
 - Abort *during a pending connect*: expect the connect to reject and disposal to still complete cleanly (the double-fire path).
 
-**Socket release (`packages/socket`):**
-- Bare `createTransportStream`, close the writable against a **stalled peer** (one that never reads): expect the socket to be `destroyed` after the grace, not merely unref'd.
-- Bare `createTransportStream`, close the writable against a **healthy peer**: expect queued bytes to arrive at the peer *and* the socket to end up `destroyed`. This is the case option B would have missed — it is the regression guard for the rejected alternative.
+**Socket release (`packages/socket`):** one test per terminal exit of the sink, each asserting `socket.destroyed`.
+
+- Bare `createTransportStream`, close the writable against a **healthy peer**: expect the queued bytes to arrive at the peer *and* the socket to end up `destroyed`. Guards the rejected "only on grace expiry" alternative, which leaves this socket half-open.
+- Bare `createTransportStream` **with a `signal`**, against a peer that never reads: abort the signal so `waitForDrain` gives up and the sink's `write()` **rejects**. Expect the socket to be `destroyed`. This is the exit that runs no sink callback at all, so it is the one the original spec would have missed entirely — the highest-value test of the three.
+- Bare `createTransportStream`, explicit `writer.abort(reason)`: expect the socket to be `destroyed`. Covers the `abort` callback that is not currently passed to `writeTo`.
+
+A bare consumer with **no** signal against a never-reading peer is deliberately *not* tested: the write parks in `waitForDrain` forever with nothing to abort it, so `close()` is never even reached. That is the pre-existing hang `signal` exists to solve, not a release bug, and it is out of scope here.
 
 **Server drain window (`packages/server`):**
 - Start `dispose()`, deliver a message while the drain is in flight, and assert **no new handler ran** — the observable failure today is a handler executing after `dispose()` resolved. Assert the warning was logged.
