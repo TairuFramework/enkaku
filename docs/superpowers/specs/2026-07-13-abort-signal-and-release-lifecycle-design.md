@@ -10,8 +10,9 @@ Three pre-existing lifecycle defects, all instances of the same broken promise: 
 1. `Transport` accepts `params.signal` and drops it — aborting it disposes nothing.
 2. `createTransportStream` releases its socket with `unref()`, which does not close it — a bare consumer leaks the socket.
 3. `Server.dispose()` keeps reading and admitting messages while it drains — a handler can start after the abort-all sweep and run on a signal nothing will ever abort.
+4. `Server.dispose()` deadlocks when the replay cache throws, stalling every shutdown on that path for the full `cleanupTimeoutMs` (30s by default).
 
-Each was found by a whole-branch review (2026-07-11 and 2026-07-12) and left as a `next/` item. They are specced together because they are one invariant, and because fixing any one in isolation leaves the chain broken at the next link.
+The first three were found by whole-branch reviews (2026-07-11 and 2026-07-12) and left as `next/` items. The fourth was found while verifying that §3's test was not vacuous, and was previously unknown. They are specced together because they are one invariant, and because fixing any one in isolation leaves the chain broken at the next link.
 
 ## Background
 
@@ -107,7 +108,33 @@ Fix: in `handleNext()`, once a message has been read and disposal has begun, log
 
 The whole path is bounded by the existing `cleanupTimeoutMs` race in `Server.dispose`, so it cannot hang shutdown.
 
-### 4. Folded in: `http-serve` guarded-callback test gap
+### 4. `Server.dispose()` deadlocks when the replay cache throws
+
+Found while checking that §3's test was not vacuous. Pre-existing, previously unknown, and untested — no test covers the replay-cache-failure path at all.
+
+`packages/server/src/server.ts:689`. The auth-mode `process()` is async, so `handleNext` registers it in the `pending` map via `track()` and does **not** await it. When `checkReplay` throws, `process()` does:
+
+```ts
+events.emit('transportError', { error })
+await disposer.dispose()
+return
+```
+
+But the disposer's first act is `await Promise.all(Object.values(pending))` — and `pending` contains the very `process()` call now sitting inside `await disposer.dispose()`. `process` waits on `dispose`; `dispose` waits on `process`. Circular.
+
+The graceful path therefore never completes. `Server.dispose()` escapes only through its `cleanupTimeoutMs` race, which then force-disposes the transports — so shutdown burns the **entire timeout, 30 seconds by default**, on every replay-cache failure.
+
+Verified empirically: with the default timeout, `Server.dispose()` had not resolved after 3s; with `cleanupTimeoutMs: 500` it resolved in ~700ms. That is the signature of a graceful path that never completes and a force path that does.
+
+Narrow but real. The in-memory cache never throws, so this needs a custom `ReplayCache` — a Redis-backed one losing its connection is exactly the case, and is exactly the deployment where a 30-second shutdown stall is most expensive.
+
+**Fix:** `void disposer.dispose()` rather than `await`. Nothing follows it but `return`, and `Disposer.dispose()` calls `this.abort()` synchronously, so `disposer.signal` is aborted immediately and §3's bail still sees it on the very next read.
+
+The other four `disposer.dispose()` call sites (lines 725, 729, 790, 894) are in `handleNext`'s direct flow, are never registered in `pending`, and do not deadlock. Only the one inside `process()` does.
+
+This is also what makes §3's second test honest: on this route the disposer is disposed while the read loop keeps running, so it is the *only* route that discriminates between checking `disposer.signal` and checking the `signal` param. Confirmed empirically — a handler for a message arriving after the cache failure runs today.
+
+### 5. Folded in: `http-serve` guarded-callback test gap
 
 `packages/http-serve/src/index.ts`. `reportRequestAborted` is a guarded helper — it swallows a throwing `requestAborted` listener so one bad subscriber cannot take down the server. Only the `dropSession` path has a throwing-callback test. The sweep interval and the SSE listener are guarded by construction (they route through `clearSessionInflight`), but the request-`signal` listener (~line 437) calls `reportRequestAborted` **directly**, untested.
 
@@ -132,7 +159,11 @@ A bare consumer with **no** signal against a never-reading peer is deliberately 
 
 **Server drain window (`packages/server`):**
 - Start `dispose()`, deliver a message while the drain is in flight, and assert **no new handler ran** — the observable failure today is a handler executing after `dispose()` resolved. Assert the warning was logged.
-- Cover both dispose routes, since the fix hinges on checking `disposer.signal` rather than the param: dispose via `Server.dispose()` (the `signal`-param route) and via a transport read failure (the direct route).
+- The same, on the **replay-cache-failure route**: a `ReplayCache` whose `checkAndRecord` throws on its first call and succeeds afterwards. This is the only route on which the disposer is disposed *while the read loop keeps running*, so it is the only one that discriminates between checking `disposer.signal` and checking the `signal` param — the latter is never aborted here. The cache must succeed on the second call, or message 2 would bail at the replay gate regardless of the fix and the test would prove nothing. Confirmed to fail on unfixed code: the handler runs.
+- A transport-read-failure test would be **vacuous** and is deliberately not written: that path `return`s from `handleNext` immediately, so the loop stops and no message is admitted, fix or no fix.
+
+**Server dispose deadlock (`packages/server`):**
+- With a throwing replay cache, assert `Server.dispose()` resolves *promptly* — well inside a `cleanupTimeoutMs` set low enough that the force path would be distinguishable. The red signal must be a timeout attributable to the graceful path never completing, not a generic slow test.
 
 **http-serve:**
 - Mirror the existing `dropSession` throwing-listener test onto the request-`signal` listener path.

@@ -44,8 +44,9 @@ Full suite (types + unit): `pnpm run test`. Unit only: `pnpm run test:unit`.
 | `packages/socket/src/index.ts:237-269` | Modify — `releaseSocket()` at all three sink exits | 2 |
 | `packages/socket/test/socket-release.test.ts` | Create — one test per sink exit | 2 |
 | `packages/socket/test/signal-dispose.test.ts` | Create — `SocketTransport` external-signal integration | 3 |
+| `packages/server/src/server.ts:689` | Modify — `void disposer.dispose()`, breaking the deadlock | 4 |
 | `packages/server/src/server.ts:717-955` | Modify — `handleNext()` bails once disposing | 4 |
-| `packages/server/test/dispose-read-window.test.ts` | Create — no handler starts mid-drain, both dispose routes | 4 |
+| `packages/server/test/dispose-read-window.test.ts` | Create — no handler starts mid-drain; dispose does not deadlock | 4 |
 | `packages/http-serve/test/disconnect-abort.test.ts` | Modify — add throwing-`onRequestAborted` isolation test | 5 |
 | `.changeset/*.md` | Create — one per behavior-changing package | 6 |
 
@@ -583,13 +584,18 @@ So a message *arriving during* the drain is still read, auth-checked, and can re
 
 **Check `disposer.signal`, not the `signal` param.** `handleMessages` reaches `dispose()` by two routes: the server's `#abortController` (arriving as the `signal` param) *and* direct `disposer.dispose()` calls from the transport-read-error, stream-`done`, and replay-cache-failure paths. Only `disposer.signal` is aborted on both, because `Disposer.dispose()` calls `this.abort()`. Checking the param would silently miss the direct routes — and one of those routes is what Step 1's second test exercises.
 
+**This task also fixes a second, previously unknown defect on the same file.** `server.ts:689` — when the replay cache throws, `process()` does `await disposer.dispose()`. But `process()` is itself an entry in the `pending` map, and the disposer's first act is `await Promise.all(Object.values(pending))`. `process` waits on `dispose`; `dispose` waits on `process`. The graceful path never completes, and `Server.dispose()` escapes only via its `cleanupTimeoutMs` race — burning the whole 30s default on every replay-cache failure. Measured: unresolved after 3s on the default timeout, ~700ms with a 500ms one.
+
+The two fixes are in one task because they are in one file and their tests interlock: the deadlock route is also the only route that proves the bail must check `disposer.signal` rather than the `signal` param.
+
 **Files:**
+- Modify: `packages/server/src/server.ts:689` — `await disposer.dispose()` → `void disposer.dispose()`
 - Modify: `packages/server/src/server.ts` — inside `handleNext()`, after the `next.done` check and before `processMessage`
 - Test: `packages/server/test/dispose-read-window.test.ts` (create)
 
 **Interfaces:**
-- Consumes: `disposer` (the `Disposer` declared at `server.ts:265`) and `logger` (destructured from `params` at `server.ts:108`) — both already in scope inside `handleNext()`.
-- Produces: no signature change. Behavior: messages read after disposal has begun are dropped with a `logger.warn`, and the read loop stops recursing.
+- Consumes: `disposer` (the `Disposer` declared at `server.ts:265`) and `logger` (destructured from `params` at `server.ts:108`) — both already in scope inside `handleNext()` and inside `process()`. `ReplayCache` is `{ checkAndRecord(key: string, expiresAt: number): boolean | Promise<boolean> }` (`src/replay.ts:3`); a test cache may be an object literal of that shape. Replay protection only runs in auth mode — `resolveReplay` returns `null` when `requireAuth` is false — so the replay tests need a real `identity`.
+- Produces: no signature change. Behavior: messages read after disposal has begun are dropped with a `logger.warn` and the read loop stops; a throwing replay cache no longer strands `dispose()`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -598,7 +604,7 @@ Create `packages/server/test/dispose-read-window.test.ts`:
 ```ts
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { DirectTransports } from '@enkaku/transport'
-import { createUnsignedToken } from '@kokuin/token'
+import { createUnsignedToken, randomIdentity } from '@kokuin/token'
 import { defer } from '@sozai/async'
 import { describe, expect, test, vi } from 'vitest'
 
@@ -671,57 +677,143 @@ describe('messages arriving while dispose() is draining', () => {
     await transports.dispose()
   })
 
-  test('a message read after a transport read failure does not start a handler', async () => {
-    // The second dispose route. Here nothing aborts the server's #abortController:
-    // handleNext() calls disposer.dispose() directly. Only `disposer.signal` is
-    // aborted on this path, so a bail that checked the `signal` param would miss it.
+  test('a message read after a replay-cache failure does not start a handler', async () => {
+    // THE DISCRIMINATING TEST. This is the only route on which the disposer is
+    // disposed *while the read loop keeps running*: the auth-mode `process()` is
+    // async and handleNext does NOT await it (it goes into `pending` via track()),
+    // so when checkReplay throws and process() calls disposer.dispose(), handleNext
+    // is still parked on transport.read().
+    //
+    // Crucially, the server's #abortController -- which arrives as the `signal`
+    // param -- is NEVER aborted here. So a bail that checked `signal` instead of
+    // `disposer.signal` sails straight past this and runs the handler. Every other
+    // dispose route returns from handleNext immediately, killing the loop, and so
+    // cannot tell the two checks apart.
+    //
+    // Verified on unfixed code: the handler runs.
+    const signer = randomIdentity()
     const secondHandler = vi.fn(() => 'should never run')
     const handlers = {
-      'test/slow': () => 'ok',
+      'test/slow': () => 'first',
       'test/second': secondHandler,
     } as unknown as ProcedureHandlers<Protocol>
+
+    // Throws on the FIRST check only, succeeds afterwards. If it threw every time,
+    // message 2 would bail at the replay gate regardless of the fix and the test
+    // would be vacuous -- it would pass on unfixed code.
+    let calls = 0
+    const cache = {
+      checkAndRecord: () => {
+        calls += 1
+        if (calls === 1) {
+          throw new Error('replay cache exploded')
+        }
+        return true
+      },
+    }
 
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
     >()
-
-    // Make the *first* read fail, then fall through to the real one, so the
-    // server disposes via the direct route while the transport stays readable.
-    const serverTransport = transports.server
-    const originalRead = serverTransport.read.bind(serverTransport)
-    let failed = false
-    vi.spyOn(serverTransport, 'read').mockImplementation(async () => {
-      if (!failed) {
-        failed = true
-        throw new Error('Transport read failed')
-      }
-      return await originalRead()
+    const server = serve<Protocol>({
+      handlers,
+      identity: signer,
+      accessRules: { '*': { allow: true } },
+      transport: transports.server,
+      replay: { cache },
+      limits: { cleanupTimeoutMs: 500 },
     })
 
-    const server = serve<Protocol>({ handlers, requireAuth: false, transport: serverTransport })
+    const m1 = await signer.signToken({
+      typ: 'request',
+      prc: 'test/slow',
+      rid: 'r1',
+      aud: signer.id,
+    } as const)
+    await transports.client.write(m1 as unknown as AnyClientMessageOf<Protocol>)
 
-    // The first read throws, which routes straight to disposer.dispose().
-    await new Promise((resolve) => setTimeout(resolve, 20))
+    // Let the cache throw and take the dispose route.
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(calls).toBe(1)
 
-    await transports.client.write(
-      createUnsignedToken({
-        typ: 'request',
-        rid: 'r2',
-        prc: 'test/second',
-      }) as AnyClientMessageOf<Protocol>,
-    )
-    await new Promise((resolve) => setTimeout(resolve, 30))
+    const m2 = await signer.signToken({
+      typ: 'request',
+      prc: 'test/second',
+      rid: 'r2',
+      aud: signer.id,
+    } as const)
+    await transports.client.write(m2 as unknown as AnyClientMessageOf<Protocol>)
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(secondHandler).not.toHaveBeenCalled()
 
     await server.dispose()
     await transports.dispose()
   })
+
+  test('dispose() does not deadlock when the replay cache throws', async () => {
+    // server.ts:689 does `await disposer.dispose()` from inside process(), which is
+    // itself an entry in `pending` -- and the disposer's first act is to await every
+    // entry in `pending`. process waits on dispose; dispose waits on process.
+    //
+    // The graceful path therefore never completes and Server.dispose() escapes only
+    // via its cleanupTimeoutMs race, burning the whole timeout (30s by default).
+    // Measured: unresolved after 3s on the default timeout; ~700ms with a 500ms one.
+    //
+    // cleanupTimeoutMs is set high here on purpose: it is the force path's budget, so
+    // the fixed graceful path must resolve *well inside* it. Under the deadlock this
+    // test reds on the 2s race below -- a timeout attributable to the graceful path
+    // never completing, not to a generically slow test.
+    const signer = randomIdentity()
+    const handlers = {
+      'test/slow': () => 'first',
+      'test/second': () => 'second',
+    } as unknown as ProcedureHandlers<Protocol>
+
+    const cache = {
+      checkAndRecord: () => {
+        throw new Error('replay cache exploded')
+      },
+    }
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<Protocol>,
+      AnyClientMessageOf<Protocol>
+    >()
+    const server = serve<Protocol>({
+      handlers,
+      identity: signer,
+      accessRules: { '*': { allow: true } },
+      transport: transports.server,
+      replay: { cache },
+      limits: { cleanupTimeoutMs: 30_000 },
+    })
+
+    const message = await signer.signToken({
+      typ: 'request',
+      prc: 'test/slow',
+      rid: 'r1',
+      aud: signer.id,
+    } as const)
+    await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    const outcome = await Promise.race([
+      server.dispose().then(() => 'resolved'),
+      new Promise((resolve) => setTimeout(() => resolve('deadlocked'), 2_000)),
+    ])
+
+    expect(outcome).toBe('resolved')
+
+    await transports.dispose()
+  }, 40_000)
 })
 ```
 
-`createUnsignedToken` (from `@kokuin/token`, already a dependency of this package) builds the `{ header, payload }` shape the server expects — `createHandleSpan` reads `message.header` to extract the trace context, so a raw `{ payload }` object is not sufficient. This is the same helper `lifecycle-events.test.ts` uses.
+`createUnsignedToken` (from `@kokuin/token`, already a dependency of this package) builds the `{ header, payload }` shape the server expects — `createHandleSpan` reads `message.header` to extract the trace context, so a raw `{ payload }` object is not sufficient. This is the same helper `lifecycle-events.test.ts` uses. The auth-mode tests use `signer.signToken(...)` instead, as `replay-server.test.ts` does — replay protection only runs in auth mode (`resolveReplay` returns `null` when `requireAuth` is false), so the discriminating route is unreachable without a real identity.
+
+**A transport-read-failure test is deliberately NOT written.** That path `return`s from `handleNext` immediately, so the loop stops and message 2 is never read — it would pass on unfixed code and prove nothing. It was in an earlier draft of this plan and was cut for exactly that reason.
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
@@ -729,13 +821,45 @@ describe('messages arriving while dispose() is draining', () => {
 pnpm --filter @enkaku/server exec vitest run test/dispose-read-window.test.ts
 ```
 
-Expected: the first test FAILS — `expect(secondHandler).not.toHaveBeenCalled()` receives 1 call. That is the defect: a handler started after the abort-all sweep.
+Expected, all three RED, each on a concrete value rather than a bare timeout:
 
-The second test may already pass, because after the direct `disposer.dispose()` the read loop `return`s rather than recursing, so nothing reads message 2. Keep it anyway: it is the regression guard that pins the bail to `disposer.signal` rather than the `signal` param. If a later refactor makes that loop keep reading, this test is what catches it.
+1. mid-drain drop — `expect(secondHandler).not.toHaveBeenCalled()` receives 1 call. A handler started after the abort-all sweep.
+2. replay-cache-failure drop — same assertion, same failure. Confirmed against unfixed code before this plan was written.
+3. deadlock — `expect(outcome).toBe('resolved')` receives `'deadlocked'`.
 
-- [ ] **Step 3: Bail out of the read loop once disposing**
+If any of the three passes here, stop and say so: it means the test cannot discriminate and needs reworking, not that the code is fine. Eight plan-authored tests on the two preceding branches passed on unfixed code.
 
-In `packages/server/src/server.ts`, inside `handleNext()`, insert the check immediately after the `next.done` block and before `const msg = processMessage(next.value)`:
+- [ ] **Step 3: Fix the dispose deadlock**
+
+`packages/server/src/server.ts:689`, inside the async auth-mode `process()`. `handleNext` registers this call in `pending` via `track()` and does not await it — and the disposer's first act is `await Promise.all(Object.values(pending))`. So `await disposer.dispose()` here makes `process` wait on `dispose` while `dispose` waits on `process`.
+
+Change the `await` to `void`:
+
+```ts
+          if (replay != null) {
+            let replayResult: ReplayCheckResult
+            try {
+              replayResult = await checkReplay(message as unknown as SignedToken, replay)
+            } catch (cause) {
+              const error = new Error('Replay cache check failed', { cause })
+              logger.warn('replay cache check failed', { cause })
+              events.emit('transportError', { error })
+              // NOT awaited: this `process()` call is itself an entry in `pending`,
+              // and the disposer awaits every entry in `pending` before it does
+              // anything else -- so awaiting here deadlocks the graceful path and
+              // strands shutdown until cleanupTimeoutMs (30s) force-disposes.
+              // dispose() aborts its signal synchronously, so handleNext's bail
+              // still sees it on the very next read.
+              void disposer.dispose()
+              return
+            }
+```
+
+Leave the other four `disposer.dispose()` call sites (lines 725, 729, 790, 894) alone. They sit in `handleNext`'s direct flow, are never registered in `pending`, and do not deadlock.
+
+- [ ] **Step 4: Bail out of the read loop once disposing**
+
+In the same file, inside `handleNext()`, insert the check immediately after the `next.done` block and before `const msg = processMessage(next.value)`:
 
 ```ts
     if (next.done) {
@@ -748,10 +872,11 @@ In `packages/server/src/server.ts`, inside `handleNext()`, insert the check imme
     // would run to completion after dispose() resolved. Drop the message and stop
     // reading.
     //
-    // `disposer.signal`, not the `signal` param: handleMessages reaches dispose()
-    // both from the server's #abortController (which arrives as `signal`) and from
-    // direct disposer.dispose() calls above and in the replay path. Disposer.dispose()
-    // calls this.abort(), so only its own signal is aborted on every route.
+    // `disposer.signal`, not the `signal` param: the async `process()` disposes the
+    // disposer directly when the replay cache throws, and on that route the server's
+    // #abortController -- which is what arrives as `signal` -- is never aborted at
+    // all, while this loop keeps running. Only the disposer's own signal is aborted
+    // on every route, because Disposer.dispose() calls this.abort().
     if (disposer.signal.aborted) {
       logger.warn('dropped message received while disposing', {
         typ: (next.value as { payload?: { typ?: unknown } }).payload?.typ,
@@ -764,31 +889,53 @@ In `packages/server/src/server.ts`, inside `handleNext()`, insert the check imme
 
 The `return` — rather than a `break` or a recursive call — is the point: once disposal has started there is no reason to keep reading, and the loop ends here.
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [ ] **Step 5: Run the tests to verify they pass**
 
 ```bash
 pnpm --filter @enkaku/server exec vitest run test/dispose-read-window.test.ts
 ```
 
-Expected: PASS, both.
+Expected: PASS, all three.
 
-- [ ] **Step 5: Run the whole server suite for regressions**
+- [ ] **Step 6: Prove each test discriminates**
+
+Green tests are worthless if they would also be green on the unfixed code — the failure mode that bit the two preceding branches eight times. Revert each fix independently and confirm the right tests go red:
+
+```bash
+# Revert ONLY the bail (Step 4), keep the deadlock fix. Then:
+pnpm --filter @enkaku/server exec vitest run test/dispose-read-window.test.ts
+```
+Expected: tests 1 and 2 RED, test 3 GREEN.
+
+```bash
+# Revert ONLY the deadlock fix (Step 3), keep the bail. Then:
+pnpm --filter @enkaku/server exec vitest run test/dispose-read-window.test.ts
+```
+Expected: test 3 RED. (Test 2 sets `cleanupTimeoutMs: 500`, so it stays green — it is asserting the drop, not the timing.)
+
+Restore both fixes before continuing. Report the observed red/green matrix in your report file; a fix whose revert leaves the suite green has no test guarding it and must be reported, not quietly accepted.
+
+- [ ] **Step 7: Run the whole server suite for regressions**
 
 ```bash
 pnpm --filter @enkaku/server exec vitest run
 ```
 
-Expected: PASS. Watch `dispose-pending-auth.test.ts` (the sibling case this completes — a message whose auth is *already* in flight must still be swept, which the `pending` barrier handles and this bail must not disturb), `dispose-timeout.test.ts`, and `handling-cleanup.test.ts`.
+Expected: PASS. Watch `dispose-pending-auth.test.ts` (the sibling case this completes — a message whose auth is *already* in flight must still be swept, which the `pending` barrier handles and this bail must not disturb), `dispose-timeout.test.ts`, `handling-cleanup.test.ts`, and `replay-server.test.ts`.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add packages/server/src/server.ts packages/server/test/dispose-read-window.test.ts
-git commit -m "fix(server): stop admitting messages once disposal starts
+git commit -m "fix(server): stop admitting messages once disposal starts, and unblock dispose
 
 handleNext() never checked whether dispose() had begun, so a message arriving
 mid-drain could register its controller after the abort-all sweep and run to
-completion on a signal nothing would ever abort."
+completion on a signal nothing would ever abort.
+
+The replay-cache-failure path also awaited disposer.dispose() from inside a
+pending entry that the disposer itself awaits, deadlocking the graceful path and
+stranding shutdown until cleanupTimeoutMs force-disposed it."
 ```
 
 ---
@@ -922,11 +1069,11 @@ The socket is now released on every exit from the writable sink: a clean close (
 '@enkaku/server': patch
 ---
 
-`Server` no longer reads and admits new messages while `dispose()` is draining.
+Two shutdown fixes.
 
-`dispose()` aborts every registered handler controller, then waits for the in-flight ones to finish. But the read loop never checked whether disposal had started, so a message arriving *during* that wait was still read, authenticated, and could register its controller after the abort-all sweep had already passed — leaving a handler running on a signal nothing would ever abort, after `dispose()` had resolved.
+**`Server` no longer reads and admits new messages while `dispose()` is draining.** `dispose()` aborts every registered handler controller, then waits for the in-flight ones to finish. But the read loop never checked whether disposal had started, so a message arriving *during* that wait was still read, authenticated, and could register its controller after the abort-all sweep had already passed — leaving a handler running on a signal nothing would ever abort, after `dispose()` had resolved. Such messages are now dropped with a warning log and the read loop stops. Clients receive no reply for them; they see the transport close, as they would anyway.
 
-Messages read once disposal has begun are now dropped with a warning log and the read loop stops. Clients receive no reply for such a message; they see the transport close, as they would anyway.
+**`dispose()` no longer deadlocks when the replay cache throws.** On that path the server awaited its own disposer from inside a handler-tracking entry that the disposer itself waits on, so the graceful shutdown path could never complete and `dispose()` only returned once `cleanupTimeoutMs` (30 seconds by default) expired and force-disposed the transports. This only affects servers with a custom `ReplayCache` that can throw — a remote cache losing its connection, for example; the built-in in-memory cache never does.
 ```
 
 - [ ] **Step 3: Lint**
@@ -963,7 +1110,9 @@ Done when all of the following hold:
 - [ ] Aborting a `signal` passed to any transport fires `disposed` (Task 1).
 - [ ] Aborting a `signal` passed to a `SocketTransport` leaves the socket `destroyed` (Task 3 — the end-to-end property, and the reason Tasks 1 and 2 are both needed).
 - [ ] A bare `createTransportStream` socket ends up `destroyed` on all three sink exits, including the rejecting-write exit that runs no callback (Task 2).
-- [ ] No handler starts from a message read after `Server.dispose()` has begun, on both dispose routes (Task 4).
+- [ ] No handler starts from a message read after disposal has begun — including on the replay-cache-failure route, where the `signal` param is never aborted and only `disposer.signal` catches it (Task 4).
+- [ ] `Server.dispose()` resolves promptly when the replay cache throws, instead of stranding shutdown until `cleanupTimeoutMs` (Task 4).
+- [ ] Every fix has been shown to red its own test when reverted (Task 4 Step 6, and the mutation checks in Tasks 2 and 3). A fix whose revert leaves the suite green is unguarded and must be reported.
 - [ ] Three changesets exist; `@enkaku/http-serve` has none, because it only gained a test.
 
 ## Out of Scope
