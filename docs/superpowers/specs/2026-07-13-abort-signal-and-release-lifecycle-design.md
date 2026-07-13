@@ -1,0 +1,131 @@
+# Abort signal and resource release lifecycle
+
+**Date:** 2026-07-13
+**Branch:** `abort-signal-and-release-lifecycle`
+
+## Summary
+
+Three pre-existing lifecycle defects, all instances of the same broken promise: *an abort signal should tear a thing down, and tearing it down should release the resource underneath it.* Today none of the three hold end to end.
+
+1. `Transport` accepts `params.signal` and drops it — aborting it disposes nothing.
+2. `createTransportStream` releases its socket with `unref()`, which does not close it — a bare consumer leaks the socket.
+3. `Server.dispose()` keeps reading and admitting messages while it drains — a handler can start after the abort-all sweep and run on a signal nothing will ever abort.
+
+Each was found by a whole-branch review (2026-07-11 and 2026-07-12) and left as a `next/` item. They are specced together because they are one invariant, and because fixing any one in isolation leaves the chain broken at the next link.
+
+## Background
+
+`Disposer` (`@sozai/async`) is the shared teardown primitive. It extends `AbortController`, exposes `disposed`, and — importantly — already wires an external signal to teardown:
+
+```ts
+this.#unsubscribeSignal = onAbort(params.signal, () => this.dispose(params.signal?.reason))
+```
+
+So "abort this signal, and the thing disposes" is a capability the base class already provides. The defects below are all cases where a layer either fails to opt into it or fails to finish the job once it fires.
+
+## Design
+
+### 1. `Transport` forwards `params.signal` to `Disposer`
+
+`packages/transport/src/index.ts`. The constructor takes `params.signal`, declares it in `TransportParams`, and calls `super({ dispose })` — without it. `DirectTransports`, in the same file, does forward it (`super({ ...options, dispose })`). The inconsistency is the bug.
+
+Fix: `super({ dispose, signal: params.signal })`.
+
+**Semantics of `signal`:** aborting it is a remote control for `dispose()`. It runs the same graceful path — emit `disposing`, `writer.close()` (which flushes queued bytes), emit `disposed` — not a hard kill. This is what `Disposer` implements, what `DirectTransports` already ships, and the flush is bounded (`END_GRACE_MS` on socket), so "graceful" cannot hang. A caller wanting immediate teardown destroys its own resource.
+
+**Blast radius.** `Transport` is the base class for every transport in the repo. Every subclass already passes `signal` up to `super` — `SocketTransport` (`socket/src/index.ts:311`), `NodeStreamsTransport` (`node-streams/src/index.ts:62`), `MessageTransport` (`message/src/index.ts:71`). They have been passing it into a black hole. So the entire fix lives in `Transport`; no subclass changes.
+
+`SocketTransport` is the one to check for a double-fire, because it uses `signal` for two other things:
+
+- `connectSocket(socket, { signal })` — aborts a *pending connect*, destroying the half-built socket.
+- the drain wait uses `this.signal` (the transport's own), not `params.signal`.
+
+After the fix, aborting the external signal both rejects a pending connect *and* disposes the transport. That is correct and not a conflict: the `disposed` hook awaits `socketPromise` inside a `try/catch`, so the rejected connect is swallowed and there is nothing to release. Assert it rather than assume it.
+
+This is a behavior change to a public type's meaning — from "cancels the connect" to "disposes the transport" — even though it is the behavior the type already promised. It gets its own changeset.
+
+### 2. `createTransportStream` destroys its socket on release
+
+`packages/socket/src/index.ts`, the writable's close callback (~line 250). Today:
+
+```ts
+socket.end(() => { /* flushed */ })   // half-close, bounded by END_GRACE_MS
+socket.unref()                        // does NOT close the socket
+```
+
+`unref()` only stops the socket holding the event loop open. It stays open, and the peer's server keeps seeing a live connection. `SocketTransport` gets away with this because its `disposed` hook calls `sock.destroy()`. A consumer using `createTransportStream` **bare** — with no `Transport` on top — has no `disposed` event to hook and so has no release path at all.
+
+That consumer exists: mokei's `host-monitor` does `createTransportStream(connectSocket(socketPath))` and builds its own `Disposer` that closes the HTTP server and the pipes but never touches the socket.
+
+Fix: after the flush settles (or its grace expires), `destroy()` the socket unconditionally, replacing the `unref()`.
+
+Rejected alternative: destroy *only* when the grace expires. That closes the stalled-peer case but leaves a second one open — a peer that reads fine but keeps its own side open never triggers the grace, so `end()` half-closes, the callback resolves normally, and the socket lingers with a live read side. Release must mean destroy on every path, not on the unhappy one.
+
+Rejected alternative: return a disposer alongside the stream pair. Honest, but it is a breaking signature change to an exported function, it requires updating mokei, and it is opt-in — a future bare consumer that forgets still leaks. Destroying inside the close callback fixes mokei without touching mokei.
+
+`SocketTransport`'s `disposed` hook stays: it is still the only release path when the stream thunk never ran (transport disposed before any read or write, so no writable, so no close callback). `destroy()` is idempotent, so the two paths overlapping is fine. The observable change for existing `SocketTransport` users is that the socket dies at close-callback time rather than at `disposed`-hook time — marginally earlier, same outcome. The flush still runs first, so nothing is cut off.
+
+### 3. `Server` stops admitting messages once disposal starts
+
+`packages/server/src/server.ts`. `handleNext()` reads, processes, and tail-recurses, and never checks whether disposal has begun. The disposer meanwhile does: drain `pending` (auth in flight) → abort every registered controller → drain `running` → unsubscribe.
+
+So a message *arriving during* the drain is still read, auth-checked, and can register its controller **after** the abort-all sweep. `handleRequest` gives that handler a fresh `AbortController` (`handlers/request.ts:38`) which is registered in `ctx.controllers` but never linked to `ctx.signal` — so once the sweep has passed, nothing aborts it. It runs to completion on a dead signal, after `dispose()` has resolved.
+
+The 2026-07-11 lifecycle-hardening branch closed the "already in flight when `dispose()` was called" case. This is the "arrives while `dispose()` is running" case.
+
+Fix: in `handleNext()`, once a message has been read and disposal has begun, log a warning and return **without recursing**. Do not process it, do not reply.
+
+**Check `disposer.signal`, not the `signal` param.** `handleMessages` reaches `dispose()` by two routes: the server's `#abortController` (arriving via the `signal` param) *and* direct `disposer.dispose()` calls from the transport-read-error, stream-`done`, and replay-cache-failure paths. Only `disposer.signal` is aborted on both — `Disposer.dispose()` calls `this.abort()`. Checking the param would miss the direct routes.
+
+**Placement:** after `await transport.read()` resolves and `next.done` is false, before `processMessage`. A check *before* the read is useless — the read is parked waiting on a peer that may never send — and once we stop recursing the loop is over anyway.
+
+**Why this is sufficient, with the existing `pending` barrier.** Disposal cannot interleave between the check and controller registration:
+
+- non-auth mode: `process` is synchronous, so the controller is registered in the same turn as the check.
+- auth mode: `process` is async, and `track()` records it in `pending` — which the disposer awaits *before* the abort-all sweep. A message that passed the check is therefore swept.
+
+**No reply to the client.** A `request`/`stream`/`channel` client whose message lands mid-drain gets no answer and falls back to its own timeout or to the transport disconnect. Considered and rejected: an `ErrorCodes` entry for "server going away". It costs a protocol-visible error code to serve a window that only opens once `dispose()` has started, and a client racing a server shutdown has to handle the disconnect regardless. The warning log gives the *server* operator visibility without adding protocol surface; the client side can be revisited if the dangling read proves to matter in practice.
+
+The whole path is bounded by the existing `cleanupTimeoutMs` race in `Server.dispose`, so it cannot hang shutdown.
+
+### 4. Folded in: `http-serve` guarded-callback test gap
+
+`packages/http-serve/src/index.ts`. `reportRequestAborted` is a guarded helper — it swallows a throwing `requestAborted` listener so one bad subscriber cannot take down the server. Only the `dropSession` path has a throwing-callback test. The sweep interval and the SSE listener are guarded by construction (they route through `clearSessionInflight`), but the request-`signal` listener (~line 437) calls `reportRequestAborted` **directly**, untested.
+
+No live defect — the guard works today. But a future edit there could reintroduce a raw unguarded call and nothing would catch it. One mirrored isolation test closes it. Folded in because the branch is already in this territory and the alternative is a `next/` item whose entire content is "write one test".
+
+## Testing
+
+Each fix gets a test that asserts the *property*, not the mechanism.
+
+**Transport signal (`packages/transport`, `packages/socket`):**
+- Abort an external signal passed to a `Transport`; expect `disposed` to fire and `transport.signal.aborted` to be true. This is the exact case the reviewer reproduced against the built lib and found broken.
+- `SocketTransport` with an external signal: abort, expect `disposed` to fire *and the socket to end up `destroyed`*. The socket assertion is the point — the signal reaching `dispose()` is worthless if the release hook does not then run.
+- Abort *during a pending connect*: expect the connect to reject and disposal to still complete cleanly (the double-fire path).
+
+**Socket release (`packages/socket`):**
+- Bare `createTransportStream`, close the writable against a **stalled peer** (one that never reads): expect the socket to be `destroyed` after the grace, not merely unref'd.
+- Bare `createTransportStream`, close the writable against a **healthy peer**: expect queued bytes to arrive at the peer *and* the socket to end up `destroyed`. This is the case option B would have missed — it is the regression guard for the rejected alternative.
+
+**Server drain window (`packages/server`):**
+- Start `dispose()`, deliver a message while the drain is in flight, and assert **no new handler ran** — the observable failure today is a handler executing after `dispose()` resolved. Assert the warning was logged.
+- Cover both dispose routes, since the fix hinges on checking `disposer.signal` rather than the param: dispose via `Server.dispose()` (the `signal`-param route) and via a transport read failure (the direct route).
+
+**http-serve:**
+- Mirror the existing `dropSession` throwing-listener test onto the request-`signal` listener path.
+
+## Out of scope
+
+- Linking `handleRequest`'s per-handler `AbortController` to `ctx.signal`. Once no handler can start after the sweep, every registered controller is reachable by it. Worth doing on its own merits — defense in depth — but it is a separate change with its own blast radius across all four handler types, and folding it in here would blur what this branch is testing.
+- An `ErrorCodes` entry for server shutdown (see §3).
+- Any change to `mokei`. §2 is deliberately shaped so mokei needs none.
+
+## Changesets
+
+One per package, because they are different stories for a consumer:
+
+- `@enkaku/transport` — `signal` now disposes the transport. Behavior change to a public contract; the one to read before upgrading.
+- `@enkaku/socket` — `createTransportStream` now destroys its socket on release. Fixes the bare-consumer leak.
+- `@enkaku/server` — no longer admits messages once disposal has started.
+
+`@enkaku/http-serve` gets no changeset: §4 adds a test and changes no behavior.
