@@ -10,6 +10,7 @@ import { defer } from '@sozai/async'
 import { EventEmitter } from '@sozai/event'
 import { describe, expect, test, vi } from 'vitest'
 
+import type { AllowContext } from '../src/access-control.js'
 import { type ProcedureHandlers, Server, serve } from '../src/index.js'
 
 const protocol = {
@@ -350,5 +351,126 @@ describe('self-dispose routes leave the transport behind', () => {
     expect(failingTransport.dispose).toHaveBeenCalled()
 
     await server.dispose()
+  })
+})
+
+describe('ordering: transport disposal must wait for the running-handler drain', () => {
+  // Pins `await transport.dispose()` (server.ts, end of handleMessages' own
+  // disposer) to running AFTER the `pending`/`running` drains. Moving that line
+  // to the TOP of the disposer callback -- closing the transport before any
+  // still-finishing handler gets a chance to flush its reply -- does NOT fail
+  // the rest of the server suite: every other test's in-flight handler either
+  // never sends (its controller was aborted with a non-'Close' reason, so
+  // `safeWrite`'s `canSend` guard drops the send before it ever reaches the
+  // transport) or finishes before dispose() is ever called. This test is the
+  // only one that exercises a handler which is still legitimately running --
+  // never aborted -- at the moment the transport would be (mis)closed.
+  test('a handler still running when dispose() is called still delivers its reply', async () => {
+    const protocol = {
+      'gate/hold': { type: 'request', result: { type: 'string' } },
+      'gate/reply': { type: 'request', result: { type: 'string' } },
+    } as const satisfies ProtocolDefinition
+    type GateProtocol = typeof protocol
+
+    // Distinct from the server's identity: a self-signed token short-circuits
+    // checkClientToken on `iss === serverID` before checkProcedureAccess ever
+    // runs, which would make the predicate below never fire and this test
+    // vacuous.
+    const serverSigner = randomIdentity()
+    const clientSigner = randomIdentity()
+
+    // r1 ('gate/hold') parks its OWN access check on `authGate`, which keeps
+    // r1's entry in `pending` and therefore holds open the disposer's
+    // `await Promise.all(Object.values(pending))` -- the abort-all sweep cannot
+    // run until that resolves.
+    const authGate = defer<void>()
+    // r2 ('gate/reply') parks its HANDLER (not its access check) on
+    // `replyGate`. Its access check resolves immediately, so by the time
+    // dispose() is called r2 is already out of `pending` and into `running`,
+    // untouched by the abort sweep for as long as r1 keeps `pending` open.
+    const replyGate = defer<void>()
+
+    const handlers = {
+      'gate/hold': () => 'unused',
+      'gate/reply': () => replyGate.promise.then(() => 'reply-value'),
+    } as unknown as ProcedureHandlers<GateProtocol>
+
+    const transports = new DirectTransports<
+      AnyServerMessageOf<GateProtocol>,
+      AnyClientMessageOf<GateProtocol>
+    >()
+    const server = serve<GateProtocol>({
+      handlers,
+      identity: serverSigner,
+      accessRules: {
+        '*': {
+          allow: async (ctx: AllowContext) => {
+            if (ctx.procedure === 'gate/hold') {
+              await authGate.promise
+            }
+            return true
+          },
+        },
+      },
+      transport: transports.server,
+    })
+
+    const holdMessage = await clientSigner.signToken({
+      typ: 'request',
+      prc: 'gate/hold',
+      rid: 'r1',
+      aud: serverSigner.id,
+    } as const)
+    await transports.client.write(holdMessage as unknown as AnyClientMessageOf<GateProtocol>)
+    // Let r1's access check reach and park on authGate.
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    const replyMessage = await clientSigner.signToken({
+      typ: 'request',
+      prc: 'gate/reply',
+      rid: 'r2',
+      aud: serverSigner.id,
+    } as const)
+    await transports.client.write(replyMessage as unknown as AnyClientMessageOf<GateProtocol>)
+    // Let r2's access check resolve and its handler start (and park on
+    // replyGate) -- so r2 is out of `pending` and into `running` before
+    // dispose() is called.
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    // Begin disposal. Fixed code blocks here on `await Promise.all(pending)`
+    // (r1 is still parked on authGate) before it ever reaches
+    // `transport.dispose()`. Mutated code (transport.dispose() moved to the
+    // top) closes the transport right now, before either drain runs.
+    const disposed = server.dispose()
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    // Let r2's handler finish and send its reply *while dispose() is still
+    // draining `pending`* -- r2's controller was never aborted (the abort
+    // sweep can't run until r1 clears `pending`), so this is a legitimate send
+    // racing only the transport's own disposal, not the abort path.
+    replyGate.resolve()
+
+    // Race rather than a bare await: under the mutated code the transport is
+    // already closed, so the client's read never resolves with a value at all
+    // (DirectTransports surfaces the peer's dispose as `done: true` on some
+    // schedule, if at all) -- a bare await would just hang the test.
+    const response = await Promise.race([
+      transports.client.read(),
+      new Promise<{ done: true; value: undefined }>((resolve) =>
+        setTimeout(() => resolve({ done: true, value: undefined }), 300),
+      ),
+    ])
+
+    expect(response.value?.payload.typ).toBe('result')
+    expect(response.value?.payload.rid).toBe('r2')
+    expect((response.value?.payload as Record<string, unknown> | undefined)?.val).toBe(
+      'reply-value',
+    )
+
+    // Let dispose() finish.
+    authGate.resolve()
+    await disposed
+
+    await transports.dispose()
   })
 })

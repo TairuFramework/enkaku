@@ -297,7 +297,23 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       // idempotent, so `Server.dispose()` disposing it again afterwards
       // (when this route runs from inside a still-live server, not one of
       // its own self-dispose routes) is harmless.
-      await transport.dispose()
+      //
+      // Bounded, not a bare `await`: this whole function IS `disposer.disposed`,
+      // which IS `handling.done`, which is what the promise returned by
+      // `Server.handle()` resolves on -- so a third-party transport whose
+      // `dispose()` never settles (e.g. `writer.close()` parked on an
+      // unflushable sink) would leave `handle()` pending forever. `@enkaku/socket`
+      // bounds its own dispose (`END_GRACE_MS`), but nothing here can assume a
+      // third-party transport does the same, so race it against the same
+      // `cleanupTimeoutMs` bound `Server.dispose()` already uses for its own
+      // force-dispose path, and proceed without throwing on timeout. The
+      // `.catch` exists only so a `transport.dispose()` that eventually settles
+      // (or rejects) after we've already moved on doesn't surface as an
+      // unhandled rejection.
+      await Promise.race([
+        transport.dispose().catch(() => {}),
+        new Promise<void>((resolve) => setTimeout(resolve, limiter.limits.cleanupTimeoutMs)),
+      ])
     },
     signal,
   })
@@ -1080,7 +1096,11 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
 
         // Force dispose any remaining transports only if timed out
         if (!gracefulDone) {
-          for (const handling of this.#handling) {
+          // Snapshot: `handle()`'s `done.then()` splices entries out of
+          // `this.#handling` as each one settles, concurrently with this loop
+          // iterating that same live array -- which can skip elements. This is
+          // the backstop the whole shutdown premise rests on, so iterate a copy.
+          for (const handling of [...this.#handling]) {
             try {
               await handling.transport.dispose()
             } catch {
