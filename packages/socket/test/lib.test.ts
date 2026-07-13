@@ -1,7 +1,7 @@
 import { createServer, type Socket as NetSocket, type Server } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, test, vi } from 'vitest'
+import { describe, expect, test } from 'vitest'
 
 import { connectSocket, createTransportStream, SocketTransport } from '../src/index.js'
 
@@ -337,7 +337,6 @@ describe('SocketTransport', () => {
 
     const socket = await connectSocket(socketPath)
     const serverSocket = await connectionPromise
-    const unrefSpy = vi.spyOn(socket, 'unref')
 
     const transport = new SocketTransport<{ n: number }, unknown>({ socket })
 
@@ -348,9 +347,10 @@ describe('SocketTransport', () => {
 
     await transport.dispose()
 
-    // The writer close flushed and half-closed it, then the disposed hook
-    // destroyed it -- unref() alone left the peer seeing a live connection.
-    expect(unrefSpy).toHaveBeenCalled()
+    // The writer close flushed and half-closed it, then destroyed it directly
+    // (releaseSocket(), not unref() -- unref() alone left the peer seeing a
+    // live connection). The disposed hook's own destroy() afterwards is a
+    // harmless no-op on an already-destroyed socket.
     expect(socket.writableEnded).toBe(true)
     expect(socket.destroyed).toBe(true)
 

@@ -234,17 +234,36 @@ export async function createTransportStream<R, W>(
     new ByteLengthQueuingStrategy({ highWaterMark }),
   ).pipeThrough(fromJSONLines<R>(jsonOptions))
 
+  // Releasing a socket means destroy(), not unref(): end() only half-closes it
+  // and unref() only stops it holding the event loop open, so on both counts the
+  // peer keeps seeing a live connection. Idempotent, so SocketTransport's own
+  // 'disposed' hook destroying it again afterwards is harmless.
+  function releaseSocket(): void {
+    if (!socket.destroyed) {
+      socket.destroy()
+    }
+  }
+
   const writable = writeTo<W>(
     async (msg) => {
-      if (socketError != null) {
-        throw socketError
-      }
-      if (socket.destroyed || socket.writableEnded) {
-        throw new Error('Socket is closed')
-      }
-      if (!socket.write(`${JSON.stringify(msg)}\n`)) {
-        // Returning a promise makes WritableStream apply backpressure upstream.
-        await waitForDrain(socket, signal)
+      try {
+        if (socketError != null) {
+          throw socketError
+        }
+        if (socket.destroyed || socket.writableEnded) {
+          throw new Error('Socket is closed')
+        }
+        if (!socket.write(`${JSON.stringify(msg)}\n`)) {
+          // Returning a promise makes WritableStream apply backpressure upstream.
+          await waitForDrain(socket, signal)
+        }
+      } catch (cause) {
+        // A rejecting write errors the WritableStream, and an errored stream runs
+        // NEITHER the `close` nor the `abort` callback below -- a later close()
+        // just rejects with 'Invalid state'. So this is the only place a bare
+        // consumer's socket can be released on the stalled-peer path.
+        releaseSocket()
+        throw cause
       }
     },
     async () => {
@@ -263,8 +282,12 @@ export async function createTransportStream<R, W>(
           resolve()
         })
       })
-      // Release the half-closed socket so it stops holding the event loop open
-      socket.unref()
+      releaseSocket()
+    },
+    async () => {
+      // Explicit writer.abort(): the caller has given up on the stream, so there
+      // is nothing left to flush.
+      releaseSocket()
     },
   )
 
