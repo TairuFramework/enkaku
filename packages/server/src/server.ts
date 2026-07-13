@@ -96,6 +96,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
   limiter: ResourceLimiter
   logger: Logger
   replay?: ResolvedReplay | null
+  runtime: Runtime
   signal: AbortSignal
   tracer: Tracer
   transport: ServerTransportOf<Protocol>
@@ -105,7 +106,8 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
 async function handleMessages<Protocol extends ProtocolDefinition>(
   params: HandleMessagesParams<Protocol>,
 ): Promise<void> {
-  const { events, handlers, limiter, logger, replay, signal, transport, validator } = params
+  const { events, handlers, limiter, logger, replay, runtime, signal, transport, validator } =
+    params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
   const context: HandlerContext<Protocol> = {
@@ -310,10 +312,24 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       // `.catch` exists only so a `transport.dispose()` that eventually settles
       // (or rejects) after we've already moved on doesn't surface as an
       // unhandled rejection.
-      await Promise.race([
-        transport.dispose().catch(() => {}),
-        new Promise<void>((resolve) => setTimeout(resolve, limiter.limits.cleanupTimeoutMs)),
-      ])
+      //
+      // `Promise.race` does not cancel the loser, so the timer MUST be cleared in a
+      // `finally`. This disposer runs on every normal client hang-up, and
+      // `transport.dispose()` wins that race every time -- leaving one live
+      // `cleanupTimeoutMs` timer per disconnect, each holding the event loop open
+      // for 30s while the transport count already reports clean. `clearTimeout`,
+      // not `unref()`: `@enkaku/server` is isomorphic and `unref()` is Node-only.
+      let disposeTimer: ReturnType<typeof setTimeout> | undefined
+      try {
+        await Promise.race([
+          transport.dispose().catch(() => {}),
+          new Promise<void>((resolve) => {
+            disposeTimer = setTimeout(resolve, limiter.limits.cleanupTimeoutMs)
+          }),
+        ])
+      } finally {
+        clearTimeout(disposeTimer)
+      }
     },
     signal,
   })
@@ -890,7 +906,17 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
         case 'event': {
           const message = msg as EventMessageOf<Protocol>
-          process(message, () => handleEvent(context, message))
+          // Events carry no rid, so key the barrier on a fresh random one. Nothing
+          // can address that key -- no `send`/`abort` can target it and no other
+          // message can collide with it -- so the entry only ever gates the
+          // disposer's drain below, which is exactly what it is for: in auth mode
+          // `process` is async, and an event whose access check is still in flight
+          // must not be left running past `dispose()`. It registers no controller,
+          // so events stay fire-and-forget and un-abortable, as designed.
+          track(
+            runtime.getRandomID(),
+            process(message, () => handleEvent(context, message)),
+          )
           break
         }
         case 'request': {
@@ -1077,35 +1103,67 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         this.#abortController.abort()
 
         const cleanupTimeout = this.#limiter.limits.cleanupTimeoutMs
-        const timeoutPromise = new Promise<void>((resolve) => {
-          setTimeout(resolve, cleanupTimeout)
-        })
 
-        // Race between graceful cleanup and timeout
-        const gracefulDone = await Promise.race([
-          Promise.all(
-            this.#handling.map(async (handling) => {
-              // Wait until all handlers are done - they might still need to flush messages to the transport
-              await handling.done
-              // Dispose transport
-              await handling.transport.dispose()
+        // Both races below arm a timer that the winning promise does not cancel --
+        // `Promise.race` never cancels the loser -- so each is cleared in a
+        // `finally`. Left armed, the graceful timer holds the event loop open for
+        // `cleanupTimeoutMs` after `dispose()` has already resolved. `clearTimeout`,
+        // not `unref()`: `@enkaku/server` is isomorphic and `unref()` is Node-only.
+        let gracefulTimer: ReturnType<typeof setTimeout> | undefined
+        let gracefulDone: boolean
+        try {
+          // Race between graceful cleanup and timeout
+          gracefulDone = await Promise.race([
+            Promise.all(
+              this.#handling.map(async (handling) => {
+                // Wait until all handlers are done - they might still need to flush messages to the transport
+                await handling.done
+                // Dispose transport
+                await handling.transport.dispose()
+              }),
+            ).then(() => true),
+            new Promise<boolean>((resolve) => {
+              gracefulTimer = setTimeout(() => resolve(false), cleanupTimeout)
             }),
-          ).then(() => true),
-          timeoutPromise.then(() => false),
-        ])
+          ])
+        } finally {
+          clearTimeout(gracefulTimer)
+        }
 
         // Force dispose any remaining transports only if timed out
         if (!gracefulDone) {
-          // Snapshot: `handle()`'s `done.then()` splices entries out of
-          // `this.#handling` as each one settles, concurrently with this loop
-          // iterating that same live array -- which can skip elements. This is
-          // the backstop the whole shutdown premise rests on, so iterate a copy.
-          for (const handling of [...this.#handling]) {
-            try {
-              await handling.transport.dispose()
-            } catch {
-              // Ignore errors during forced cleanup
-            }
+          // This backstop must itself be bounded, and must not be serial.
+          //
+          // Bounded: a bare `await handling.transport.dispose()` here is unbounded,
+          // and this path is reached precisely when something did not settle in
+          // time. `Disposer.dispose()` hands back the same never-settling deferred
+          // on a second call, so a transport whose `dispose()` never resolves would
+          // hang `Server.dispose()` FOREVER -- turning the bound added to protect
+          // `Server.handle()` into an unbounded wait here.
+          //
+          // Parallel: one hostile transport must not delay disposal of every
+          // transport after it in the list.
+          //
+          // Snapshot (`[...]`): `handle()`'s `done.then()` splices entries out of
+          // `this.#handling` as each one settles. Against the SERIAL loop this
+          // replaced, that splice could interleave with the iteration and skip an
+          // element. `.map()` below is synchronous, so nothing can interleave with
+          // it and the copy is belt-and-braces today -- it is kept so that adding
+          // an `await` inside this body cannot silently reintroduce the skip.
+          let forceTimer: ReturnType<typeof setTimeout> | undefined
+          try {
+            await Promise.race([
+              Promise.all(
+                // `.catch`: ignore errors during forced cleanup, and keep a
+                // late-settling rejection from surfacing as an unhandled one.
+                [...this.#handling].map((handling) => handling.transport.dispose().catch(() => {})),
+              ),
+              new Promise<void>((resolve) => {
+                forceTimer = setTimeout(resolve, cleanupTimeout)
+              }),
+            ])
+          } finally {
+            clearTimeout(forceTimer)
           }
         }
 
@@ -1232,6 +1290,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       limiter: this.#limiter,
       logger,
       replay: this.#replay,
+      runtime: this.#runtime,
       signal: this.#abortController.signal,
       tracer: this.#tracer,
       transport,
