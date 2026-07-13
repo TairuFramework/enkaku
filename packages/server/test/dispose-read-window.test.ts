@@ -41,6 +41,9 @@ describe('messages arriving while dispose() is draining', () => {
     >()
     const server = serve<Protocol>({ handlers, requireAuth: false, transport: transports.server })
 
+    const r1Started = server.events.once('handlerStart', {
+      filter: (data) => data.rid === 'r1',
+    })
     await transports.client.write(
       createUnsignedToken({
         typ: 'request',
@@ -48,11 +51,23 @@ describe('messages arriving while dispose() is draining', () => {
         prc: 'test/slow',
       }) as AnyClientMessageOf<Protocol>,
     )
-    await new Promise((resolve) => setTimeout(resolve, 20))
+    await r1Started
 
     // Begin disposal. The sweep aborts r1's controller, then awaits `running`.
+    //
+    // Driven off the `handlerAbort` event rather than a guessed delay: `Disposer`
+    // (@sozai/async) sets `disposer.signal.aborted` synchronously the instant
+    // `dispose()`/`abort()` is called, well before the async dispose body (which
+    // emits `handlerAbort` once it reaches the abort-all loop) ever runs -- so by
+    // the time this event fires, the window `handleNext`'s bail is supposed to
+    // catch message 2 in is unconditionally already open. A bare `setTimeout`
+    // guess for "is dispose() draining yet" could, on a slow box, resolve before
+    // that window opens, or after the drain has already finished -- either way
+    // message 2 would never actually land mid-drain and the test would pass
+    // vacuously. Waiting on the real event this way cannot miss the window.
+    const r1Aborted = server.events.once('handlerAbort', { filter: (data) => data.rid === 'r1' })
     const disposed = server.dispose()
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    await r1Aborted
 
     // Message 2 lands *while dispose() is draining*. The transport is still
     // readable -- it is only disposed after `handling.done` resolves.
@@ -63,6 +78,10 @@ describe('messages arriving while dispose() is draining', () => {
         prc: 'test/second',
       }) as AnyClientMessageOf<Protocol>,
     )
+    // Give handleNext a chance to read (and, correctly, drop) message 2 before
+    // the drain it is racing completes. This wait is ordinary async settling
+    // time, not a guess about when the drain window opens -- that part is now
+    // pinned by the event above.
     await new Promise((resolve) => setTimeout(resolve, 20))
 
     // Let handler 1 finish so dispose() can complete.
@@ -134,10 +153,22 @@ describe('messages arriving while dispose() is draining', () => {
       rid: 'r1',
       aud: signer.id,
     } as const)
-    await transports.client.write(m1 as unknown as AnyClientMessageOf<Protocol>)
 
-    // Let the cache throw and take the dispose route.
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    // Let the cache throw and take the dispose route -- driven off the
+    // `transportError` event this catch block emits rather than a guessed
+    // delay. `events.emit(...)` (@sozai/event) invokes its listeners
+    // synchronously as part of building the settle list, before its own first
+    // internal `await` -- so our listener (and thus this promise's
+    // resolution) fires before `void disposer.dispose()`, the very next
+    // statement in that catch block, has run. Since resuming from an `await`
+    // always costs at least one microtask, by the time this `await` hands
+    // control back to us, `disposer.dispose()` -- and with it,
+    // `disposer.signal.aborted` -- is unconditionally already set. A bare
+    // `setTimeout` guess here risks firing before that point on a loaded box,
+    // which would make message 2 land too early and pass this test vacuously.
+    const replayCacheFailed = server.events.once('transportError')
+    await transports.client.write(m1 as unknown as AnyClientMessageOf<Protocol>)
+    await replayCacheFailed
     expect(calls).toBe(1)
 
     const m2 = await signer.signToken({
@@ -147,6 +178,9 @@ describe('messages arriving while dispose() is draining', () => {
       aud: signer.id,
     } as const)
     await transports.client.write(m2 as unknown as AnyClientMessageOf<Protocol>)
+    // Give handleNext a chance to read (and, correctly, drop) message 2. This
+    // wait is ordinary async settling time, not a guess about when the replay
+    // failure occurs -- that part is now pinned by the event above.
     await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(secondHandler).not.toHaveBeenCalled()

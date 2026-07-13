@@ -381,9 +381,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   function processHandler(
     message: ProcessMessageOf<Protocol>,
     handle: () => Error | Promise<void>,
+    // Only set (and only consulted) for the 'event' case: events carry no rid of
+    // their own, so the caller mints one and threads it through here rather than
+    // this function minting its own -- see the 'event' switch case below for why
+    // there must be exactly one generator for that synthetic id.
+    eventRID?: string,
   ) {
-    const rid =
-      message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
+    const rid = message.payload.typ === 'event' ? (eventRID as string) : message.payload.rid
 
     const procedure = (message.payload as Record<string, unknown>).prc as string | undefined
     const longLived = procedure != null && limiter.limits.longLivedProcedures.includes(procedure)
@@ -625,7 +629,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   }
 
   const process = !params.requireAuth
-    ? (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
+    ? (
+        message: ProcessMessageOf<Protocol>,
+        handle: () => Error | Promise<void>,
+        eventRID?: string,
+      ) => {
         const span = createHandleSpan(message)
         if (validator != null) {
           span.addEvent('enkaku.validation', {
@@ -643,9 +651,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           return
         }
 
-        processHandler(message, wrapHandle(span, handle))
+        processHandler(message, wrapHandle(span, handle), eventRID)
       }
-    : async (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
+    : async (
+        message: ProcessMessageOf<Protocol>,
+        handle: () => Error | Promise<void>,
+        eventRID?: string,
+      ) => {
         const span = createHandleSpan(message)
         if (validator != null) {
           span.addEvent('enkaku.validation', {
@@ -761,7 +773,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           }
         }
 
-        processHandler(message, wrapHandle(span, handle))
+        processHandler(message, wrapHandle(span, handle), eventRID)
       }
 
   async function handleNext() {
@@ -906,16 +918,22 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
         case 'event': {
           const message = msg as EventMessageOf<Protocol>
-          // Events carry no rid, so key the barrier on a fresh random one. Nothing
-          // can address that key -- no `send`/`abort` can target it and no other
-          // message can collide with it -- so the entry only ever gates the
-          // disposer's drain below, which is exactly what it is for: in auth mode
-          // `process` is async, and an event whose access check is still in flight
-          // must not be left running past `dispose()`. It registers no controller,
-          // so events stay fire-and-forget and un-abortable, as designed.
+          // Events carry no rid, so mint a single fresh one and thread it through
+          // both `track` and `processHandler` (via `process`'s `eventRID` param) --
+          // one generator, one namespace. Nothing can address this key -- no
+          // `send`/`abort` can target it and no other message can collide with it
+          // (runtime.getRandomID() is collision-resistant, see the
+          // ServerBaseParams.getRandomID contract) -- so it only ever gates the
+          // disposer's drain below and the limiter's per-rid bookkeeping
+          // (controllers/running), which is exactly what both are for: in auth
+          // mode `process` is async, and an event whose access check is still in
+          // flight must not be left running past `dispose()`. It registers no
+          // controller that `send`/`abort` can look up, so events stay
+          // fire-and-forget and un-abortable, as designed.
+          const eventRID = runtime.getRandomID()
           track(
-            runtime.getRandomID(),
-            process(message, () => handleEvent(context, message)),
+            eventRID,
+            process(message, () => handleEvent(context, message), eventRID),
           )
           break
         }
@@ -1049,12 +1067,15 @@ export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   /**
    * Must be collision-resistant. Defaults to `crypto.randomUUID()`.
    *
-   * Events carry no `rid` of their own, so the server mints one from this to key
-   * the event's in-flight access check in its dispose barrier. That synthetic ID
-   * shares a namespace with real message `rid`s: an ID that collided with one
-   * would let a client's `send`/`abort` queue behind the event's access check
-   * instead of its own, reordering or dropping it. A counter or any other
-   * non-unique override is therefore unsafe here.
+   * Events carry no `rid` of their own, so the server mints one from this --
+   * once per event, threaded through both the dispose barrier and the
+   * resource limiter's per-rid bookkeeping (`controllers`/`running`), rather
+   * than two independently-generated ids. That synthetic ID shares a namespace
+   * with real message `rid`s: an ID that collided with one would let a
+   * client's `send`/`abort` queue behind the event's access check instead of
+   * its own, reordering or dropping it, and would corrupt the limiter's
+   * bookkeeping for the collided rid. A counter or any other non-unique
+   * override is therefore unsafe here.
    */
   getRandomID?: () => string
   runtime?: Runtime
