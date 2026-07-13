@@ -686,7 +686,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             const error = new Error('Replay cache check failed', { cause })
             logger.warn('replay cache check failed', { cause })
             events.emit('transportError', { error })
-            await disposer.dispose()
+            // NOT awaited: this `process()` call is itself an entry in `pending`,
+            // and the disposer awaits every entry in `pending` before it does
+            // anything else -- so awaiting here deadlocks the graceful path and
+            // strands shutdown until cleanupTimeoutMs (30s) force-disposes.
+            // dispose() aborts its signal synchronously, so handleNext's bail
+            // still sees it on the very next read.
+            void disposer.dispose()
             return
           }
           if (!replayResult.ok) {
@@ -727,6 +733,23 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
     if (next.done) {
       await disposer.dispose()
+      return
+    }
+
+    // Disposal has begun: the abort-all sweep may already have run, so a handler
+    // registered from here on would hold a controller nothing will ever abort and
+    // would run to completion after dispose() resolved. Drop the message and stop
+    // reading.
+    //
+    // `disposer.signal`, not the `signal` param: the async `process()` disposes the
+    // disposer directly when the replay cache throws, and on that route the server's
+    // #abortController -- which is what arrives as `signal` -- is never aborted at
+    // all, while this loop keeps running. Only the disposer's own signal is aborted
+    // on every route, because Disposer.dispose() calls this.abort().
+    if (disposer.signal.aborted) {
+      logger.warn('dropped message received while disposing', {
+        typ: (next.value as { payload?: { typ?: unknown } }).payload?.typ,
+      })
       return
     }
 
@@ -1010,6 +1033,16 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   constructor(params: ServerParams<Protocol>) {
     super({
       dispose: async (reason?: unknown) => {
+        // Disposer wires an already-aborted `params.signal` to dispose()
+        // synchronously inside its own (super) constructor, i.e. before this
+        // derived constructor's body -- and therefore `this` -- has finished
+        // initializing. Yielding a microtask here defers every subsequent
+        // access of `this` until after the constructor returns, whichever
+        // path triggered dispose(). Do not remove this even though it looks
+        // like a no-op: without it, an already-aborted signal throws a
+        // ReferenceError that Disposer swallows, and disposal silently
+        // never happens.
+        await Promise.resolve()
         await this.#events.emit('disposing', { reason })
 
         // Signal messages handler to stop execution and run cleanup logic
