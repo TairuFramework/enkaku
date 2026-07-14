@@ -1,6 +1,7 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { DirectTransports } from '@enkaku/transport'
 import { createUnsignedToken } from '@kokuin/token'
+import { createRuntime } from '@sozai/runtime'
 import { describe, expect, test, vi } from 'vitest'
 
 import { type ProcedureHandlers, serve } from '../src/index.js'
@@ -40,7 +41,7 @@ describe('event rid generation', () => {
       handlers,
       requireAuth: false,
       transport: transports.server,
-      getRandomID,
+      runtime: createRuntime({ getRandomID }),
     })
 
     const handlerStart = vi.fn()

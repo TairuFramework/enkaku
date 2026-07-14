@@ -38,7 +38,8 @@
   "dependencies": {
     "@enkaku/client": "workspace:^",
     "@enkaku/server": "workspace:^",
-    "@enkaku/transport": "workspace:^"
+    "@enkaku/transport": "workspace:^",
+    "@sozai/runtime": "catalog:"
   },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^",

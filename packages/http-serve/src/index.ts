@@ -44,7 +44,6 @@ type InflightRequest =
 
 export type ServerBridgeOptions = {
   allowedOrigin?: string | Array<string>
-  getRandomID?: () => string
   onWriteError?: (event: TransportEvents['writeFailed']) => void
   onRequestAborted?: (event: TransportEvents['requestAborted']) => void
   maxSessions?: number
@@ -108,7 +107,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   type Incoming = AnyClientMessageOf<Protocol>
   type Outgoing = AnyServerMessageOf<Protocol>
 
-  const runtime = options.runtime ?? createRuntime({ getRandomID: options.getRandomID })
+  const runtime = options.runtime ?? createRuntime()
   const allowedOrigins = Array.isArray(options.allowedOrigin)
     ? options.allowedOrigin
     : options.allowedOrigin != null
@@ -525,7 +524,6 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
 
 export type ServerTransportOptions = {
   allowedOrigin?: string | Array<string>
-  getRandomID?: () => string
   maxSessions?: number
   runtime?: Runtime
   sessionTimeoutMs?: number
@@ -544,7 +542,6 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
   constructor(options: ServerTransportOptions = {}) {
     const bridge = createServerBridge<Protocol>({
       allowedOrigin: options.allowedOrigin,
-      getRandomID: options.getRandomID,
       maxSessions: options.maxSessions,
       runtime: options.runtime,
       sessionTimeoutMs: options.sessionTimeoutMs,

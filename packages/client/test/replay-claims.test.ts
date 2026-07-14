@@ -2,6 +2,7 @@ import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from 
 import { DirectTransports } from '@enkaku/transport'
 import { randomIdentity } from '@kokuin/token'
 import type { Logger } from '@sozai/log'
+import { createRuntime } from '@sozai/runtime'
 import { describe, expect, test, vi } from 'vitest'
 
 import { Client } from '../src/client.js'
@@ -43,7 +44,7 @@ describe('replay claims on signed messages', () => {
       transport: transports.client,
       identity,
       logger: testLogger(),
-      getRandomID,
+      runtime: createRuntime({ getRandomID }),
       now: () => NOW_MS,
     })
 

@@ -760,7 +760,7 @@ return client
 class Client<Protocol extends ProtocolDefinition> {
   constructor(params: {
     transport: ClientTransportOf<Protocol>
-    getRandomID?: () => string
+    runtime?: Runtime
     handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
     handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
     serverID?: string
@@ -829,7 +829,7 @@ function standalone<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,
   options?: {
     accessControl?: false | true | ProcedureAccessRecord
-    getRandomID?: () => string
+    runtime?: Runtime
     protocol?: Protocol
     signal?: AbortSignal
     identity?: Identity

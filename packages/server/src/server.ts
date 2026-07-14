@@ -1030,14 +1030,13 @@ export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   cache?: DIDCache
   encryptionPolicy?: EncryptionPolicy
   /**
-   * Must be collision-resistant. Defaults to `crypto.randomUUID()`.
+   * Defaults to `createRuntime()`.
    *
-   * The server mints a synthetic `rid` from this for each event, sharing a
-   * namespace with client-supplied `rid`s. A collision would misroute a client's
-   * `send`/`abort` and corrupt the limiter's per-rid bookkeeping, so a counter
-   * (or anything else non-unique) is unsafe here.
+   * Its `getRandomID` must be collision-resistant: the server mints a synthetic
+   * `rid` from it for each event, sharing a namespace with client-supplied `rid`s.
+   * A collision would misroute a client's `send`/`abort` and corrupt the limiter's
+   * per-rid bookkeeping, so a counter (or anything else non-unique) is unsafe.
    */
-  getRandomID?: () => string
   runtime?: Runtime
   handlers: ProcedureHandlers<Protocol>
   limits?: Partial<ResourceLimits>
@@ -1140,7 +1139,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     })
     this.#abortController = new AbortController()
     this.#events = new EventEmitter<ServerEvents>()
-    this.#runtime = params.runtime ?? createRuntime({ getRandomID: params.getRandomID })
+    this.#runtime = params.runtime ?? createRuntime()
     this.#handlers = params.handlers
     this.#cache = params.cache ?? createInMemoryDIDCache()
     this.#resolver = params.resolver

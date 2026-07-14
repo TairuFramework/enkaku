@@ -221,14 +221,14 @@ type CreateMessage<Protocol extends ProtocolDefinition> = (
 type GetCreateMessageParams = {
   identity?: Identity | Promise<Identity>
   aud?: string
-  getRandomID?: () => string
+  getRandomID: () => string
   now?: () => number
 }
 
 function getCreateMessage<Protocol extends ProtocolDefinition>({
   identity,
   aud,
-  getRandomID = () => globalThis.crypto.randomUUID(),
+  getRandomID,
   now = Date.now,
 }: GetCreateMessageParams): CreateMessage<Protocol> {
   if (identity == null) {
@@ -254,7 +254,7 @@ function getCreateMessage<Protocol extends ProtocolDefinition>({
 }
 
 export type ClientParams<Protocol extends ProtocolDefinition> = {
-  getRandomID?: () => string
+  /** Defaults to `createRuntime()`. Its `getRandomID` must be collision-resistant. */
   runtime?: Runtime
   // biome-ignore lint/suspicious/noConfusingVoidType: return type
   handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
@@ -295,7 +295,7 @@ export class Client<
         this.#logger.debug('disposed')
       },
     })
-    this.#runtime = params.runtime ?? createRuntime({ getRandomID: params.getRandomID })
+    this.#runtime = params.runtime ?? createRuntime()
     this.#createMessage = getCreateMessage<Protocol>({
       identity: params.identity,
       aud: params.serverID,

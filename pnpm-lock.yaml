@@ -419,6 +419,9 @@ importers:
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@sozai/runtime':
+        specifier: 'catalog:'
+        version: 0.1.0
     devDependencies:
       '@enkaku/protocol':
         specifier: workspace:^
