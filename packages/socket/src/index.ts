@@ -234,10 +234,8 @@ export async function createTransportStream<R, W>(
     new ByteLengthQueuingStrategy({ highWaterMark }),
   ).pipeThrough(fromJSONLines<R>(jsonOptions))
 
-  // Releasing a socket means destroy(), not unref(): end() only half-closes it
-  // and unref() only stops it holding the event loop open, so on both counts the
-  // peer keeps seeing a live connection. Idempotent, so SocketTransport's own
-  // 'disposed' hook destroying it again afterwards is harmless.
+  // Release means destroy(). `end()` only half-closes and `unref()` only drops the
+  // event-loop reference -- neither closes the socket. Idempotent.
   function releaseSocket(): void {
     if (!socket.destroyed) {
       socket.destroy()
@@ -258,10 +256,8 @@ export async function createTransportStream<R, W>(
           await waitForDrain(socket, signal)
         }
       } catch (cause) {
-        // A rejecting write errors the WritableStream, and an errored stream runs
-        // NEITHER the `close` nor the `abort` callback below -- a later close()
-        // just rejects with 'Invalid state'. So this is the only place a bare
-        // consumer's socket can be released on the stalled-peer path.
+        // A rejecting write errors the stream, which runs NEITHER callback below.
+        // This is the only release point on the stalled-peer path.
         releaseSocket()
         throw cause
       }
@@ -285,8 +281,7 @@ export async function createTransportStream<R, W>(
       releaseSocket()
     },
     async () => {
-      // Explicit writer.abort(): the caller has given up on the stream, so there
-      // is nothing left to flush.
+      // abort(): caller gave up, nothing left to flush.
       releaseSocket()
     },
   )
