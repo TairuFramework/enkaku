@@ -55,6 +55,10 @@ It also failed once, instructively. A review-driven fix commit shipped **without
 
 Final state: 48/48 turbo tasks green uncached, lint clean.
 
-## Known follow-up
+## Upstream fix, landed
 
-The already-aborted-signal defect is a property of `Disposer` itself, which lives upstream in `@sozai/async` and is consumed here from the registry (`catalog:`, `0.2.0`) rather than as a workspace link. The fix therefore could not land in this repo. Three microtask yields — in `Transport`, `DirectTransports`, and `Server` — are the local patch and must stay until a fixed `@sozai/async` ships and the catalog is bumped; each carries a comment explaining why the apparently-pointless `await Promise.resolve()` is load-bearing. The upstream fix is written up in the `sozai` repo's own `next/` queue, listing the three sites to strip once released.
+The already-aborted-signal defect was a property of `Disposer` itself, which lives upstream in `@sozai/async` and is consumed here from the registry (`catalog:`) rather than as a workspace link — so it could not be fixed in this repo. The branch shipped a local patch instead: a microtask yield at the top of the dispose callback in `Transport`, `DirectTransports`, and `Server`, deferring every `this` access until after construction.
+
+`@sozai/async@0.2.1` fixes it in the base class, deferring the signal-triggered `dispose()` by a microtask so the derived constructor always completes first. The catalog moved to `^0.2.1` and all three local yields are gone.
+
+That floor is load-bearing, and mutation-proven: pinned back to `0.2.0` with the yields removed, all three already-aborted-signal tests red (two in `@enkaku/transport`, one in `@enkaku/server`). Do not relax the range.

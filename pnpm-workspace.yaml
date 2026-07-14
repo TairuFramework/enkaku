@@ -36,10 +36,10 @@ catalog:
   '@opentelemetry/sdk-trace-node': ^2.9.0
   '@orama/plugin-docusaurus-v3': ^3.1.18
   '@playwright/test': 1.61.1
-  '@sozai/async': ^0.2.0
+  '@sozai/async': ^0.2.1
   '@sozai/event': ^0.1.1
   '@sozai/execution': ^0.2.0
-  '@sozai/log': ^0.1.0
+  '@sozai/log': ^0.1.1
   '@sozai/otel': ^0.2.0
   '@sozai/runtime': ^0.1.0
   '@sozai/schema': ^0.1.1

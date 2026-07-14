@@ -1118,16 +1118,6 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   constructor(params: ServerParams<Protocol>) {
     super({
       dispose: async (reason?: unknown) => {
-        // Disposer wires an already-aborted `params.signal` to dispose()
-        // synchronously inside its own (super) constructor, i.e. before this
-        // derived constructor's body -- and therefore `this` -- has finished
-        // initializing. Yielding a microtask here defers every subsequent
-        // access of `this` until after the constructor returns, whichever
-        // path triggered dispose(). Do not remove this even though it looks
-        // like a no-op: without it, an already-aborted signal throws a
-        // ReferenceError that Disposer swallows, and disposal silently
-        // never happens.
-        await Promise.resolve()
         await this.#events.emit('disposing', { reason })
 
         // Signal messages handler to stop execution and run cleanup logic

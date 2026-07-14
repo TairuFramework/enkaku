@@ -64,16 +64,6 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
   constructor(params: TransportParams<R, W>) {
     super({
       dispose: async (reason?: unknown) => {
-        // Disposer wires an already-aborted `params.signal` to dispose()
-        // synchronously inside its own (super) constructor, i.e. before this
-        // derived constructor's body -- and therefore `this` -- has finished
-        // initializing. Yielding a microtask here defers every subsequent
-        // access of `this` until after the constructor returns, whichever
-        // path triggered dispose(). Do not remove this even though it looks
-        // like a no-op: without it, an already-aborted signal throws a
-        // ReferenceError that Disposer swallows, and disposal silently
-        // never happens.
-        await Promise.resolve()
         await this.#events.emit('disposing', { reason })
         if (this._stream != null) {
           try {
@@ -176,12 +166,6 @@ export class DirectTransports<ToClient, ToServer> extends Disposer {
     super({
       ...options,
       dispose: async (reason?: unknown) => {
-        // See the matching comment in Transport's constructor: an
-        // already-aborted `signal` runs this callback synchronously inside
-        // Disposer's own constructor, before this class's constructor body
-        // has set `this.#client`/`this.#server`. The microtask yield defers
-        // that access until after construction completes.
-        await Promise.resolve()
         await Promise.all([this.#client.dispose(reason), this.#server.dispose(reason)])
       },
     })

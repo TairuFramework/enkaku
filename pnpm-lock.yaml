@@ -64,8 +64,8 @@ catalogs:
       specifier: 1.61.1
       version: 1.61.1
     '@sozai/async':
-      specifier: ^0.2.0
-      version: 0.2.0
+      specifier: ^0.2.1
+      version: 0.2.1
     '@sozai/event':
       specifier: ^0.1.1
       version: 0.1.1
@@ -73,8 +73,8 @@ catalogs:
       specifier: ^0.2.0
       version: 0.2.0
     '@sozai/log':
-      specifier: ^0.1.0
-      version: 0.1.0
+      specifier: ^0.1.1
+      version: 0.1.1
     '@sozai/otel':
       specifier: ^0.2.0
       version: 0.2.0
@@ -175,7 +175,7 @@ importers:
         version: 0.2.0
       '@sozai/async':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@sozai/event':
         specifier: 'catalog:'
         version: 0.1.1
@@ -184,7 +184,7 @@ importers:
         version: 0.2.0
       '@sozai/log':
         specifier: 'catalog:'
-        version: 0.1.0
+        version: 0.1.1
       '@sozai/otel':
         specifier: 'catalog:'
         version: 0.2.0
@@ -261,7 +261,7 @@ importers:
         version: link:../transport
       '@sozai/async':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@sozai/otel':
         specifier: 'catalog:'
         version: 0.2.0
@@ -369,13 +369,13 @@ importers:
         version: 0.2.0
       '@sozai/async':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@sozai/event':
         specifier: 'catalog:'
         version: 0.1.1
       '@sozai/log':
         specifier: 'catalog:'
-        version: 0.1.0
+        version: 0.1.1
       '@sozai/otel':
         specifier: 'catalog:'
         version: 0.2.0
@@ -431,7 +431,7 @@ importers:
     dependencies:
       '@sozai/async':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@sozai/event':
         specifier: 'catalog:'
         version: 0.1.1
@@ -2585,6 +2585,9 @@ packages:
   '@logtape/logtape@2.2.1':
     resolution: {integrity: sha512-SkRptJUEAbGuf+/blXDxDa8sSq8no+lxJlfwPTMzrHIULOMsNZRaqT2qF3H9tmGOsaLYc+uF3orRCQfoH0qKzA==}
 
+  '@logtape/logtape@2.2.4':
+    resolution: {integrity: sha512-2rALzv9m4ibE5FyB8/FMm5MPMMlK7ujgy3ufricVKIxj6e7SZbw4w6J16/fRAsXgdDlOXPUA0aa6XoEQvdlKxw==}
+
   '@malept/cross-spawn-promise@2.0.0':
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
     engines: {node: '>= 12.13.0'}
@@ -3243,8 +3246,8 @@ packages:
   '@slorber/remark-comment@1.0.0':
     resolution: {integrity: sha512-RCE24n7jsOj1M0UPvIQCHTe7fI0sFL4S2nwKVWwHyVr/wI/H8GosgsJGyhnsZoGFnD/P2hLf1mSbrrgSLN93NA==}
 
-  '@sozai/async@0.2.0':
-    resolution: {integrity: sha512-bwXozVnxD3DNND76+Hg4zmz5/sBsip1DOeuggR+zLY6LXoI99bOwsty7SU1lD57FwVJLx6Hyp1O5Ka7DfMKUcg==}
+  '@sozai/async@0.2.1':
+    resolution: {integrity: sha512-pWJtDAlWSAUpRmqFQluyYKHuoQFOLmdy9/WT0EBWvqWTTe6s/Vy8+e2BxS2YMOK6vwsPuwSSEOlf6PvdF597+A==}
 
   '@sozai/codec@0.2.0':
     resolution: {integrity: sha512-HBbJY76Vso59kGJMxgGAtcnPYugY5TCWR4lhzJsjjtaX1oTs1F8SUWliUmgcRJZfHmnJO4tY03J7C/iy6SqXvw==}
@@ -3257,6 +3260,9 @@ packages:
 
   '@sozai/log@0.1.0':
     resolution: {integrity: sha512-vhCp3GK9UguYwopntaz6/juJSKFpB9GAAsKC9nxdakdQrD/Ix4r5fmZWIPArNtynbzsaUwdVoFYmDzbu90UNxg==}
+
+  '@sozai/log@0.1.1':
+    resolution: {integrity: sha512-LoKzEz6qWWAV4KeAsyn35YD7ooCoFPyEgrCWwpSaKk3xuvEP2b1ejwFz90GvA/y8cCnfZqtXK4FnPz/VnfmlwQ==}
 
   '@sozai/otel@0.2.0':
     resolution: {integrity: sha512-QA6VNAabL9D36nALM92fTtvTO2V9wI3P72rvQFFj9dRNZyZ9s4l9PK5RXKEMNN1KFgYUKus+7KBMiqRo6kYrTw==}
@@ -13593,6 +13599,8 @@ snapshots:
 
   '@logtape/logtape@2.2.1': {}
 
+  '@logtape/logtape@2.2.4': {}
+
   '@malept/cross-spawn-promise@2.0.0':
     dependencies:
       cross-spawn: 7.0.6
@@ -14304,7 +14312,7 @@ snapshots:
       micromark-util-character: 1.2.0
       micromark-util-symbol: 1.1.0
 
-  '@sozai/async@0.2.0': {}
+  '@sozai/async@0.2.1': {}
 
   '@sozai/codec@0.2.0':
     dependencies:
@@ -14312,26 +14320,30 @@ snapshots:
 
   '@sozai/event@0.1.1':
     dependencies:
-      '@sozai/async': 0.2.0
+      '@sozai/async': 0.2.1
 
   '@sozai/execution@0.2.0':
     dependencies:
-      '@sozai/async': 0.2.0
+      '@sozai/async': 0.2.1
       '@sozai/result': 0.1.1
 
   '@sozai/log@0.1.0':
     dependencies:
       '@logtape/logtape': 2.2.1
 
+  '@sozai/log@0.1.1':
+    dependencies:
+      '@logtape/logtape': 2.2.4
+
   '@sozai/otel@0.2.0':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/api-logs': 0.219.0
-      '@sozai/log': 0.1.0
+      '@sozai/log': 0.1.1
 
   '@sozai/result@0.1.1':
     dependencies:
-      '@sozai/async': 0.2.0
+      '@sozai/async': 0.2.1
 
   '@sozai/runtime@0.1.0': {}
 
@@ -14344,7 +14356,7 @@ snapshots:
 
   '@sozai/stream@0.2.0':
     dependencies:
-      '@sozai/async': 0.2.0
+      '@sozai/async': 0.2.1
 
   '@standard-schema/spec@1.1.0': {}
 
