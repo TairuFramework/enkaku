@@ -1,6 +1,6 @@
 ---
-name: enkaku:core-rpc
-description: Core RPC patterns - protocol definitions, client/server setup, and type-safe calls
+name: core-rpc
+description: Use when working on Enkaku protocol definitions, client/server setup, handlers, or type-safe calls.
 ---
 
 # Enkaku Core RPC
@@ -77,7 +77,7 @@ type MyProtocol = typeof myProtocol
 
 ```typescript
 import { Client } from '@enkaku/client'
-import { ClientTransport } from '@enkaku/http-client-transport'
+import { ClientTransport } from '@enkaku/http-fetch'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 
 const myProtocol = {
@@ -131,8 +131,8 @@ await client.dispose()
 ### Pattern 3: Creating a Server with Handlers
 
 ```typescript
-import { Server } from '@enkaku/server'
-import { ServerTransport } from '@enkaku/http-server-transport'
+import { serve } from '@enkaku/server'
+import { ServerTransport } from '@enkaku/http-serve'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 
 const myProtocol = {
@@ -155,10 +155,10 @@ const transport = new ServerTransport<MyProtocol>({
   allowedOrigin: ['https://example.com']
 })
 
-const server = new Server<MyProtocol>({
+const server = serve<MyProtocol>({
   protocol: myProtocol,
   transport,
-  public: true,
+  requireAuth: false,
   handlers: {
     greet: async ({ param }) => {
       return `Hello, ${param.name}!`
@@ -185,12 +185,16 @@ Bun.serve({
 **Use case**: Implement RPC handlers on the server side
 
 **Key points**:
-- Handlers are type-checked against protocol definitions
+- Handlers are type-checked against protocol definitions, and the map is **not** partial --
+  every procedure in the protocol needs an entry
 - Request handlers receive `{ param, signal, message }` context
-- Stream handlers add `writable` stream for sending data to client
-- Handlers return the result value or throw errors
-- Server validates messages against protocol schema when provided
-- `public: true` disables authentication (use for public APIs)
+- Stream handlers add a `writable` stream for sending data to the client. They are not
+  generators, and their return value is the call's *result*, separate from what they write
+- Closing the writer is optional -- the server drains and closes the pipe once the handler
+  settles
+- Server validates messages against protocol schema when `protocol` is provided
+- An access option is **required**: `requireAuth: false` for a public API, or an `identity`.
+  Omitting both throws at construction
 
 ### Pattern 4: Standalone Client/Server (Same Process)
 
@@ -291,8 +295,9 @@ const protocol = {
 
 type Protocol = typeof protocol
 
-const server = new Server<Protocol>({
-  public: true,
+const server = serve<Protocol>({
+  requireAuth: false,
+  transport,
   handlers: {
     'user/logout': ({ data }) => {
       console.log('User logged out:', data.userId)
@@ -377,3 +382,6 @@ const server = new Server<Protocol>({
 ## Detailed Reference
 
 For complete API documentation, advanced patterns, and troubleshooting: `docs/reference/domains/core-rpc.md`
+
+For replay protection — the server-side dedup layer, the `ReplayCache` interface, and the
+`EK09` (`REPLAY_DETECTED`) error: `docs/reference/domains/replay-protection.md`

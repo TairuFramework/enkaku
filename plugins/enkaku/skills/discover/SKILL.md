@@ -1,6 +1,6 @@
 ---
-name: enkaku:discover
-description: Explore Enkaku RPC capabilities by domain or use case
+name: discover
+description: Use when exploring Enkaku RPC capabilities - progressive discovery of this repo's domain skills.
 ---
 
 # Enkaku Capability Discovery
@@ -23,7 +23,7 @@ and the shared utilities it builds on live in sibling repos — see *Cross-repo*
 - **Core RPC** — protocol definitions, client, server, standalone.
   Define a protocol once and get typed clients and servers: the four procedure types
   (request, event, stream, channel), handler registration, execution chains, access control,
-  and lifecycle events.
+  replay protection, and lifecycle events.
   → `/enkaku:core-rpc`
 
 ### By Use Case (when you know what to build)
