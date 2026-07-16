@@ -37,20 +37,20 @@ catalogs:
       specifier: ^7.11.2
       version: 7.11.2
     '@hono/node-server':
-      specifier: ^2.0.8
-      version: 2.0.8
+      specifier: ^2.0.9
+      version: 2.0.9
     '@kigu/dev':
       specifier: ^0.1.2
       version: 0.1.2
     '@kokuin/capability':
-      specifier: ^0.2.0
-      version: 0.2.0
+      specifier: ^0.2.1
+      version: 0.2.1
     '@kokuin/electron':
+      specifier: ^0.4.0
+      version: 0.4.0
+    '@kokuin/token':
       specifier: ^0.3.0
       version: 0.3.0
-    '@kokuin/token':
-      specifier: ^0.2.0
-      version: 0.2.0
     '@opentelemetry/sdk-trace-base':
       specifier: ^2.9.0
       version: 2.9.0
@@ -64,20 +64,20 @@ catalogs:
       specifier: 1.61.1
       version: 1.61.1
     '@sozai/async':
-      specifier: ^0.2.0
-      version: 0.2.0
+      specifier: ^0.2.1
+      version: 0.2.1
     '@sozai/event':
       specifier: ^0.1.1
       version: 0.1.1
     '@sozai/execution':
-      specifier: ^0.2.0
-      version: 0.2.0
+      specifier: ^0.2.1
+      version: 0.2.1
     '@sozai/log':
-      specifier: ^0.1.0
-      version: 0.1.0
-    '@sozai/otel':
       specifier: ^0.2.0
       version: 0.2.0
+    '@sozai/otel':
+      specifier: ^0.3.0
+      version: 0.3.0
     '@sozai/runtime':
       specifier: ^0.1.0
       version: 0.1.0
@@ -172,22 +172,22 @@ importers:
         version: link:../otel
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
       '@sozai/async':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@sozai/event':
         specifier: 'catalog:'
         version: 0.1.1
       '@sozai/execution':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@sozai/log':
         specifier: 'catalog:'
-        version: 0.1.0
+        version: 0.2.0
       '@sozai/otel':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
       '@sozai/runtime':
         specifier: 'catalog:'
         version: 0.1.0
@@ -237,7 +237,7 @@ importers:
         version: link:../transport
       '@sozai/otel':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
       '@sozai/runtime':
         specifier: 'catalog:'
         version: 0.1.0
@@ -261,10 +261,10 @@ importers:
         version: link:../transport
       '@sozai/async':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@sozai/otel':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
       '@sozai/runtime':
         specifier: 'catalog:'
         version: 0.1.0
@@ -277,7 +277,7 @@ importers:
         version: link:../server
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
 
   packages/message:
     dependencies:
@@ -301,13 +301,13 @@ importers:
         version: 1.9.1
       '@sozai/otel':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
 
   packages/protocol:
     dependencies:
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
     devDependencies:
       '@enkaku/transport':
         specifier: workspace:^
@@ -363,22 +363,22 @@ importers:
         version: link:../protocol
       '@kokuin/capability':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
       '@sozai/async':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@sozai/event':
         specifier: 'catalog:'
         version: 0.1.1
       '@sozai/log':
         specifier: 'catalog:'
-        version: 0.1.0
+        version: 0.2.0
       '@sozai/otel':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
       '@sozai/runtime':
         specifier: 'catalog:'
         version: 0.1.0
@@ -403,7 +403,7 @@ importers:
         version: link:../transport
       '@sozai/otel':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
       '@sozai/stream':
         specifier: 'catalog:'
         version: 0.2.0
@@ -419,19 +419,22 @@ importers:
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@sozai/runtime':
+        specifier: 'catalog:'
+        version: 0.1.0
     devDependencies:
       '@enkaku/protocol':
         specifier: workspace:^
         version: link:../protocol
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
 
   packages/transport:
     dependencies:
       '@sozai/async':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@sozai/event':
         specifier: 'catalog:'
         version: 0.1.1
@@ -476,10 +479,10 @@ importers:
         version: link:../../packages/transport
       '@kokuin/electron':
         specifier: 'catalog:'
-        version: 0.3.0
+        version: 0.4.0
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
       react:
         specifier: 'catalog:'
         version: 19.2.3
@@ -549,13 +552,13 @@ importers:
         version: link:../../packages/transport
       '@hono/node-server':
         specifier: 'catalog:'
-        version: 2.0.8(hono@4.12.27)
+        version: 2.0.9(hono@4.12.27)
       '@kokuin/capability':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.2.1
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.2.0
+        version: 0.3.0
       '@opentelemetry/sdk-trace-base':
         specifier: 'catalog:'
         version: 2.9.0(@opentelemetry/api@1.9.1)
@@ -2316,8 +2319,8 @@ packages:
   '@hapi/topo@5.1.0':
     resolution: {integrity: sha512-foQZKJig7Ob0BMAYBfcJk8d77QtOe7Wo4ox7ff1lQYoNNAb6jwcY1ncdoy2e9wQZzvNy7ODZCYJkK8kzmcAnAg==}
 
-  '@hono/node-server@2.0.8':
-    resolution: {integrity: sha512-GuCWzLxwg218fy1JaHculFsdcuY12hxit83V+algozTPnwhNjLrRL/Alg9OYjLZLoUZ1rw/S4CdTMsnkSKCmFA==}
+  '@hono/node-server@2.0.9':
+    resolution: {integrity: sha512-cNMw3ziCdDcx0+ldta60zvUL5XO0OLt521n2hjPp0PB0ugczDCEczXsf33qQbkKIXWGFQ03f0LC85u6YK8pCLA==}
     engines: {node: '>=20'}
     peerDependencies:
       hono: ^4
@@ -2550,17 +2553,17 @@ packages:
   '@kigu/dev@0.1.2':
     resolution: {integrity: sha512-sNjY7BK4AJ9evWpvgFPQDVJE8eXoY+xzJu5CtGD0J70isbQ7d992QIca1S2T7c5X7ynGZc0iFVBCUmtKF7SEuQ==}
 
-  '@kokuin/capability@0.2.0':
-    resolution: {integrity: sha512-iNIjlx+1cUKNPR8P4sISI/Zu52BQFN2HagfannU0TwnKrVF2jPXhTzCqt9Ir4IT8xSXnSMLwaXlz/Z1cfXXrKA==}
+  '@kokuin/capability@0.2.1':
+    resolution: {integrity: sha512-SCAis58pnh9cyheTSVDYzqUw6BvR+RdJ1qghjp4luXPW8adxXbCBCs4DsH3IL+okoeHXDE+Rs8HCchnqHm79HQ==}
 
-  '@kokuin/electron@0.3.0':
-    resolution: {integrity: sha512-VmW+HK8UbGpvaFQsVVM8Ez3xRMwX8IMNzt7OnbbyFFzQU35LsIqpj9lfSplMSXAPuOD30VG2IRPHNly9ZAEuCQ==}
+  '@kokuin/electron@0.4.0':
+    resolution: {integrity: sha512-+EnTU6iUfa7ypc0i+lvXLoNykqlUpM0Gd/75yZ9cA9QMU9jom8qwHyHw4kKoAoKQWS+mBLQOgg3Y7Ml5pgMmUA==}
 
-  '@kokuin/otel@0.1.0':
-    resolution: {integrity: sha512-eRN3SdICQZAMNilprC4szHXQUGUVdD3zM5d+qcJVi0Df59dyAF9Ca6urxAMYQyvPHIpUk98k+jn8Tgm73k5RYw==}
+  '@kokuin/otel@0.3.0':
+    resolution: {integrity: sha512-XwnBYkrglkV0aVcPx/ajDL6DNAZgFeZ7cNyzAHMW6ex4/RyY9xJ7htNYzl/sCFlYMNQ8M/lPayrzYf3hdN4dUQ==}
 
-  '@kokuin/token@0.2.0':
-    resolution: {integrity: sha512-GaDSiBtGvBr3VkDp8tnnk3ZElD72NqCTd5W63C2jOiz45GgZ2bbDOvEx8SbCwCXB6ULb/F+zM07F3ilaO3xILw==}
+  '@kokuin/token@0.3.0':
+    resolution: {integrity: sha512-31bRe9buWFFiSaNHvpGFgjWmp0IOXrkr7hHKgr/lrIB174budAaY0QE4XEmCIa69ziItwtNdFpwcWagHD/CU/g==}
 
   '@leichtgewicht/ip-codec@2.0.5':
     resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
@@ -2582,8 +2585,8 @@ packages:
   '@lit/reactive-element@2.1.2':
     resolution: {integrity: sha512-pbCDiVMnne1lYUIaYNN5wrwQXDtHaYtg7YEFPeW+hws6U47WeFvISGUWekPGKWOP1ygrs0ef0o1VJMk1exos5A==}
 
-  '@logtape/logtape@2.2.1':
-    resolution: {integrity: sha512-SkRptJUEAbGuf+/blXDxDa8sSq8no+lxJlfwPTMzrHIULOMsNZRaqT2qF3H9tmGOsaLYc+uF3orRCQfoH0qKzA==}
+  '@logtape/logtape@2.2.4':
+    resolution: {integrity: sha512-2rALzv9m4ibE5FyB8/FMm5MPMMlK7ujgy3ufricVKIxj6e7SZbw4w6J16/fRAsXgdDlOXPUA0aa6XoEQvdlKxw==}
 
   '@malept/cross-spawn-promise@2.0.0':
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
@@ -2788,8 +2791,8 @@ packages:
     engines: {node: ^12.13.0 || ^14.15.0 || >=16.0.0}
     deprecated: This functionality has been moved to @npmcli/fs
 
-  '@opentelemetry/api-logs@0.219.0':
-    resolution: {integrity: sha512-FFx7YnaYJlIjqWW/AG/yAZ0L/NEY724PipXXXQLdtZPbLwBGbUMTGL1i/esI56TWfTUXxhLfpgrnWJCG8aUJyg==}
+  '@opentelemetry/api-logs@0.220.0':
+    resolution: {integrity: sha512-CmVa4ImJ+ynfrPMNaAXHET6Bhb44SwzmfyVJFq9ni2jgXJR/l7C6gfVFddNmHP+ZOkP9cf4f9DBe68qVLTHc9w==}
     engines: {node: '>=8.0.0'}
 
   '@opentelemetry/api@1.9.1':
@@ -3243,8 +3246,8 @@ packages:
   '@slorber/remark-comment@1.0.0':
     resolution: {integrity: sha512-RCE24n7jsOj1M0UPvIQCHTe7fI0sFL4S2nwKVWwHyVr/wI/H8GosgsJGyhnsZoGFnD/P2hLf1mSbrrgSLN93NA==}
 
-  '@sozai/async@0.2.0':
-    resolution: {integrity: sha512-bwXozVnxD3DNND76+Hg4zmz5/sBsip1DOeuggR+zLY6LXoI99bOwsty7SU1lD57FwVJLx6Hyp1O5Ka7DfMKUcg==}
+  '@sozai/async@0.2.1':
+    resolution: {integrity: sha512-pWJtDAlWSAUpRmqFQluyYKHuoQFOLmdy9/WT0EBWvqWTTe6s/Vy8+e2BxS2YMOK6vwsPuwSSEOlf6PvdF597+A==}
 
   '@sozai/codec@0.2.0':
     resolution: {integrity: sha512-HBbJY76Vso59kGJMxgGAtcnPYugY5TCWR4lhzJsjjtaX1oTs1F8SUWliUmgcRJZfHmnJO4tY03J7C/iy6SqXvw==}
@@ -3252,17 +3255,20 @@ packages:
   '@sozai/event@0.1.1':
     resolution: {integrity: sha512-kWsu7tKy9SLq5mn8ZavcGqPg7E37mwMkI3F96cstNFh1zexmYqHphMl0ya43oXY/3ONW4j8o/zziw82MYrbLnA==}
 
-  '@sozai/execution@0.2.0':
-    resolution: {integrity: sha512-9beq2wuO+sIUqp7dClhkkf5R2iFMqdkS6KoyYwBI4iDT0XjhFZcc3ueqmiq7x2fQqiOiSg45m3hPTUnU2PsVPQ==}
+  '@sozai/execution@0.2.1':
+    resolution: {integrity: sha512-vQLquTIbnD+WQBpszBsDGQlU5DBIip/gZ7aqq0uHem2C5aN/TGPCrcpqelyiYMGswBNEJ2u/CL6/EmIo4cBHRA==}
 
-  '@sozai/log@0.1.0':
-    resolution: {integrity: sha512-vhCp3GK9UguYwopntaz6/juJSKFpB9GAAsKC9nxdakdQrD/Ix4r5fmZWIPArNtynbzsaUwdVoFYmDzbu90UNxg==}
+  '@sozai/lock@0.1.0':
+    resolution: {integrity: sha512-A9Gkw7DlG7kj0wDlK9RuUMd+PIZoIFlRAI19TCTmPW/G7wvx/c1/OQ8b66d4rFQZVkpeb6G/GAyOglx8rC84BA==}
 
-  '@sozai/otel@0.2.0':
-    resolution: {integrity: sha512-QA6VNAabL9D36nALM92fTtvTO2V9wI3P72rvQFFj9dRNZyZ9s4l9PK5RXKEMNN1KFgYUKus+7KBMiqRo6kYrTw==}
+  '@sozai/log@0.2.0':
+    resolution: {integrity: sha512-QxBBFSSC9be7Es/r2KYPs/yMWu/zGl+oV4QJE8ycaN47KP1CtoOXd7M6dPsHhHJfHYNFTOmXW4DJ9ALq3f8cyg==}
 
-  '@sozai/result@0.1.1':
-    resolution: {integrity: sha512-0WPhOLkd7xTBqxqc5Wmcr3+a9jjjUCLvH4FLyiAZh43qLkFFt4qFYv/RGVngmxMonzHGEm38xrKTLjfRfiMcvA==}
+  '@sozai/otel@0.3.0':
+    resolution: {integrity: sha512-NDS0yyuGid/LMDaLTiFCohEQWjet7hSvf/iznHofe2HDbEc0CoyeJrPjsXLVm6zJYyUwQLj4P06wdL5m9Wm2zQ==}
+
+  '@sozai/result@0.2.0':
+    resolution: {integrity: sha512-voMSX9KYJG6zlCvCYmiBvhMmgM1rCXQw0I/tOK+GaaXtZTDL+GXOhdN9eAs6tI/bLKub6UqZwsS/iw2JFKujTw==}
 
   '@sozai/runtime@0.1.0':
     resolution: {integrity: sha512-9WpqQ/UKDOlNWfiGCDjuW3hl9+sXrXuX2lbGE80ITbrhzueagwrEdboYkQhrHN8s8I/F8/ZM9hz+Fv3j7gUk2Q==}
@@ -13229,7 +13235,7 @@ snapshots:
     dependencies:
       '@hapi/hoek': 9.3.0
 
-  '@hono/node-server@2.0.8(hono@4.12.27)':
+  '@hono/node-server@2.0.9(hono@4.12.27)':
     dependencies:
       hono: 4.12.27
 
@@ -13545,33 +13551,34 @@ snapshots:
       - supports-color
       - vite
 
-  '@kokuin/capability@0.2.0':
+  '@kokuin/capability@0.2.1':
     dependencies:
-      '@kokuin/token': 0.2.0
+      '@kokuin/token': 0.3.0
 
-  '@kokuin/electron@0.3.0':
+  '@kokuin/electron@0.4.0':
     dependencies:
-      '@kokuin/otel': 0.1.0
-      '@kokuin/token': 0.2.0
+      '@kokuin/otel': 0.3.0
+      '@kokuin/token': 0.3.0
       '@sozai/codec': 0.2.0
-      '@sozai/log': 0.1.0
-      '@sozai/otel': 0.2.0
+      '@sozai/lock': 0.1.0
+      '@sozai/log': 0.2.0
+      '@sozai/otel': 0.3.0
       electron-store: 11.0.2
 
-  '@kokuin/otel@0.1.0':
+  '@kokuin/otel@0.3.0':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@sozai/otel': 0.2.0
+      '@sozai/otel': 0.3.0
 
-  '@kokuin/token@0.2.0':
+  '@kokuin/token@0.3.0':
     dependencies:
-      '@kokuin/otel': 0.1.0
+      '@kokuin/otel': 0.3.0
       '@noble/ciphers': 2.2.0
       '@noble/curves': 2.2.0
       '@noble/hashes': 2.2.0
       '@scure/base': 2.2.0
       '@sozai/codec': 0.2.0
-      '@sozai/otel': 0.2.0
+      '@sozai/otel': 0.3.0
       '@sozai/schema': 0.1.1
 
   '@leichtgewicht/ip-codec@2.0.5': {}
@@ -13591,7 +13598,7 @@ snapshots:
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.6.0
 
-  '@logtape/logtape@2.2.1': {}
+  '@logtape/logtape@2.2.4': {}
 
   '@malept/cross-spawn-promise@2.0.0':
     dependencies:
@@ -13798,7 +13805,7 @@ snapshots:
       mkdirp: 1.0.4
       rimraf: 3.0.2
 
-  '@opentelemetry/api-logs@0.219.0':
+  '@opentelemetry/api-logs@0.220.0':
     dependencies:
       '@opentelemetry/api': 1.9.1
 
@@ -14304,7 +14311,7 @@ snapshots:
       micromark-util-character: 1.2.0
       micromark-util-symbol: 1.1.0
 
-  '@sozai/async@0.2.0': {}
+  '@sozai/async@0.2.1': {}
 
   '@sozai/codec@0.2.0':
     dependencies:
@@ -14312,26 +14319,30 @@ snapshots:
 
   '@sozai/event@0.1.1':
     dependencies:
-      '@sozai/async': 0.2.0
+      '@sozai/async': 0.2.1
 
-  '@sozai/execution@0.2.0':
+  '@sozai/execution@0.2.1':
     dependencies:
-      '@sozai/async': 0.2.0
-      '@sozai/result': 0.1.1
+      '@sozai/async': 0.2.1
+      '@sozai/result': 0.2.0
 
-  '@sozai/log@0.1.0':
+  '@sozai/lock@0.1.0':
     dependencies:
-      '@logtape/logtape': 2.2.1
+      '@sozai/async': 0.2.1
 
-  '@sozai/otel@0.2.0':
+  '@sozai/log@0.2.0':
+    dependencies:
+      '@logtape/logtape': 2.2.4
+
+  '@sozai/otel@0.3.0':
     dependencies:
       '@opentelemetry/api': 1.9.1
-      '@opentelemetry/api-logs': 0.219.0
-      '@sozai/log': 0.1.0
+      '@opentelemetry/api-logs': 0.220.0
+      '@sozai/log': 0.2.0
 
-  '@sozai/result@0.1.1':
+  '@sozai/result@0.2.0':
     dependencies:
-      '@sozai/async': 0.2.0
+      '@sozai/async': 0.2.1
 
   '@sozai/runtime@0.1.0': {}
 
@@ -14344,7 +14355,7 @@ snapshots:
 
   '@sozai/stream@0.2.0':
     dependencies:
-      '@sozai/async': 0.2.0
+      '@sozai/async': 0.2.1
 
   '@standard-schema/spec@1.1.0': {}
 

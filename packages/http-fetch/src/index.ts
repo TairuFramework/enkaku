@@ -102,11 +102,14 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       const traceCtx = getActiveTraceContext()
       const requestHeaders: Record<string, string> = { ...headers }
       if (traceCtx != null) {
-        requestHeaders.traceparent = formatTraceparent(
+        const traceparent = formatTraceparent(
           traceCtx.traceID,
           traceCtx.spanID,
           traceCtx.traceFlags,
         )
+        if (traceparent != null) {
+          requestHeaders.traceparent = traceparent
+        }
       }
       const res = await runtime.fetch(params.url, {
         method: 'POST',

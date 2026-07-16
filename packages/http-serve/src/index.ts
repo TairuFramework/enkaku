@@ -14,13 +14,7 @@ import { createTracer, EnkakuAttributeKeys, EnkakuSpanNames } from '@enkaku/otel
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { Transport, type TransportEvents } from '@enkaku/transport'
 import { type Deferred, defer } from '@sozai/async'
-import {
-  AttributeKeys,
-  type Context,
-  extractTraceContext,
-  parseTraceparent,
-  SpanStatusCode,
-} from '@sozai/otel'
+import { AttributeKeys, extractW3CTraceContext, SpanStatusCode } from '@sozai/otel'
 import { createRuntime, type Runtime } from '@sozai/runtime'
 import { createReadable, writeTo } from '@sozai/stream'
 
@@ -44,7 +38,6 @@ type InflightRequest =
 
 export type ServerBridgeOptions = {
   allowedOrigin?: string | Array<string>
-  getRandomID?: () => string
   onWriteError?: (event: TransportEvents['writeFailed']) => void
   onRequestAborted?: (event: TransportEvents['requestAborted']) => void
   maxSessions?: number
@@ -108,7 +101,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   type Incoming = AnyClientMessageOf<Protocol>
   type Outgoing = AnyServerMessageOf<Protocol>
 
-  const runtime = options.runtime ?? createRuntime({ getRandomID: options.getRandomID })
+  const runtime = options.runtime ?? createRuntime()
   const allowedOrigins = Array.isArray(options.allowedOrigin)
     ? options.allowedOrigin
     : options.allowedOrigin != null
@@ -464,17 +457,10 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   }
 
   async function handleRequest(request: Request): Promise<Response> {
-    const traceparentHeader = request.headers.get('traceparent')
-    const traceparentData =
-      traceparentHeader != null ? parseTraceparent(traceparentHeader) : undefined
-
-    let parentCtx: Context | undefined
-    if (traceparentData != null) {
-      parentCtx = extractTraceContext({
-        tid: traceparentData.traceID,
-        sid: traceparentData.spanID,
-      })
-    }
+    const parentCtx = extractW3CTraceContext({
+      traceparent: request.headers.get('traceparent') ?? undefined,
+      tracestate: request.headers.get('tracestate') ?? undefined,
+    })
 
     const span = tracer.startSpan(
       EnkakuSpanNames.TRANSPORT_HTTP_REQUEST,
@@ -525,7 +511,6 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
 
 export type ServerTransportOptions = {
   allowedOrigin?: string | Array<string>
-  getRandomID?: () => string
   maxSessions?: number
   runtime?: Runtime
   sessionTimeoutMs?: number
@@ -544,7 +529,6 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
   constructor(options: ServerTransportOptions = {}) {
     const bridge = createServerBridge<Protocol>({
       allowedOrigin: options.allowedOrigin,
-      getRandomID: options.getRandomID,
       maxSessions: options.maxSessions,
       runtime: options.runtime,
       sessionTimeoutMs: options.sessionTimeoutMs,

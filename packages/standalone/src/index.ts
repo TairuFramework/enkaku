@@ -14,9 +14,11 @@ import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { type ProcedureHandlers, type ServerAccessOptions, serve } from '@enkaku/server'
 import { DirectTransports } from '@enkaku/transport'
+import { createRuntime, type Runtime } from '@sozai/runtime'
 
 export type StandaloneOptions<Protocol extends ProtocolDefinition> = {
-  getRandomID?: () => string
+  /** Defaults to `createRuntime()`. Shared by the client and the server. */
+  runtime?: Runtime
   protocol?: Protocol
   signal?: AbortSignal
 } & ServerAccessOptions
@@ -25,7 +27,8 @@ export function standalone<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,
   options: StandaloneOptions<Protocol> = { requireAuth: false },
 ): Client<Protocol> {
-  const { getRandomID, protocol, signal } = options
+  const { protocol, signal } = options
+  const runtime = options.runtime ?? createRuntime()
   const transports = new DirectTransports<
     AnyServerMessageOf<Protocol>,
     AnyClientMessageOf<Protocol>
@@ -36,6 +39,7 @@ export function standalone<Protocol extends ProtocolDefinition>(
       handlers,
       identity: options.identity,
       protocol,
+      runtime,
       signal,
       transport: transports.server,
       accessRules: options.accessRules,
@@ -45,6 +49,7 @@ export function standalone<Protocol extends ProtocolDefinition>(
       handlers,
       requireAuth: false,
       protocol,
+      runtime,
       signal,
       transport: transports.server,
     })
@@ -52,7 +57,7 @@ export function standalone<Protocol extends ProtocolDefinition>(
 
   const serverID = options.identity?.id
   return new Client<Protocol>({
-    getRandomID,
+    runtime,
     serverID,
     identity: options.identity,
     transport: transports.client,

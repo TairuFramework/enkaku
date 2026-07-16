@@ -234,17 +234,32 @@ export async function createTransportStream<R, W>(
     new ByteLengthQueuingStrategy({ highWaterMark }),
   ).pipeThrough(fromJSONLines<R>(jsonOptions))
 
+  // Release means destroy(). `end()` only half-closes and `unref()` only drops the
+  // event-loop reference -- neither closes the socket. Idempotent.
+  function releaseSocket(): void {
+    if (!socket.destroyed) {
+      socket.destroy()
+    }
+  }
+
   const writable = writeTo<W>(
     async (msg) => {
-      if (socketError != null) {
-        throw socketError
-      }
-      if (socket.destroyed || socket.writableEnded) {
-        throw new Error('Socket is closed')
-      }
-      if (!socket.write(`${JSON.stringify(msg)}\n`)) {
-        // Returning a promise makes WritableStream apply backpressure upstream.
-        await waitForDrain(socket, signal)
+      try {
+        if (socketError != null) {
+          throw socketError
+        }
+        if (socket.destroyed || socket.writableEnded) {
+          throw new Error('Socket is closed')
+        }
+        if (!socket.write(`${JSON.stringify(msg)}\n`)) {
+          // Returning a promise makes WritableStream apply backpressure upstream.
+          await waitForDrain(socket, signal)
+        }
+      } catch (cause) {
+        // A rejecting write errors the stream, which runs NEITHER callback below.
+        // This is the only release point on the stalled-peer path.
+        releaseSocket()
+        throw cause
       }
     },
     async () => {
@@ -263,8 +278,11 @@ export async function createTransportStream<R, W>(
           resolve()
         })
       })
-      // Release the half-closed socket so it stops holding the event loop open
-      socket.unref()
+      releaseSocket()
+    },
+    async () => {
+      // abort(): caller gave up, nothing left to flush.
+      releaseSocket()
     },
   )
 

@@ -26,11 +26,11 @@ import { EventEmitter } from '@sozai/event'
 import { getLogger, type Logger } from '@sozai/log'
 import {
   AttributeKeys,
-  extractTraceContext,
+  extractW3CTraceContext,
+  parseTraceparent,
   type Span,
   SpanStatusCode,
   setSpanOnContext,
-  TraceFlags,
   type Tracer,
   withActiveContext,
 } from '@sozai/otel'
@@ -96,6 +96,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
   limiter: ResourceLimiter
   logger: Logger
   replay?: ResolvedReplay | null
+  runtime: Runtime
   signal: AbortSignal
   tracer: Tracer
   transport: ServerTransportOf<Protocol>
@@ -105,7 +106,8 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
 async function handleMessages<Protocol extends ProtocolDefinition>(
   params: HandleMessagesParams<Protocol>,
 ): Promise<void> {
-  const { events, handlers, limiter, logger, replay, signal, transport, validator } = params
+  const { events, handlers, limiter, logger, replay, runtime, signal, transport, validator } =
+    params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
   const context: HandlerContext<Protocol> = {
@@ -286,6 +288,28 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       // Unsubscribe last: until the handlers above are done, a peer going away
       // can still abort one of them through `requestAborted`.
       unsubscribeRequestAborted()
+      // Close the transport. On the self-dispose routes (replay-cache throw, read
+      // error, `next.done`) `handle()` splices this entry out of `#handling` the
+      // moment we resolve, so `Server.dispose()` never sees it -- nothing else
+      // would close it. Idempotent, so a later `Server.dispose()` is harmless.
+      //
+      // Bounded: this function IS `handling.done`, so a transport whose `dispose()`
+      // never settles would leave `handle()` pending forever. Timer cleared in a
+      // `finally` -- `Promise.race` does not cancel the loser, and `dispose()` wins
+      // this race on every clean hang-up, so a leaked timer per disconnect would
+      // hold the event loop open for `cleanupTimeoutMs`. `clearTimeout`, not
+      // `unref()`: this package is isomorphic.
+      let disposeTimer: ReturnType<typeof setTimeout> | undefined
+      try {
+        await Promise.race([
+          transport.dispose().catch(() => {}),
+          new Promise<void>((resolve) => {
+            disposeTimer = setTimeout(resolve, limiter.limits.cleanupTimeoutMs)
+          }),
+        ])
+      } finally {
+        clearTimeout(disposeTimer)
+      }
     },
     signal,
   })
@@ -337,9 +361,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   function processHandler(
     message: ProcessMessageOf<Protocol>,
     handle: () => Error | Promise<void>,
+    // Events only. They carry no rid, so the caller mints one and passes it in --
+    // minting a second one here would split the event across two rid namespaces.
+    eventRID?: string,
   ) {
-    const rid =
-      message.payload.typ === 'event' ? Math.random().toString(36).slice(2) : message.payload.rid
+    const rid = message.payload.typ === 'event' ? (eventRID as string) : message.payload.rid
 
     const procedure = (message.payload as Record<string, unknown>).prc as string | undefined
     const longLived = procedure != null && limiter.limits.longLivedProcedures.includes(procedure)
@@ -460,7 +486,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
   function getParentContext(message: ProcessMessageOf<Protocol>) {
     const header = message.header as Record<string, unknown>
-    return extractTraceContext(header)
+    return extractW3CTraceContext(header)
   }
 
   function createHandleSpan(message: ProcessMessageOf<Protocol>) {
@@ -476,12 +502,14 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     const links: Array<{
       context: { traceId: string; spanId: string; traceFlags: number; isRemote: boolean }
     }> = []
-    if (typeof header.tid === 'string' && typeof header.sid === 'string') {
+    const traceparent =
+      typeof header.traceparent === 'string' ? parseTraceparent(header.traceparent) : undefined
+    if (traceparent != null) {
       links.push({
         context: {
-          traceId: header.tid,
-          spanId: header.sid,
-          traceFlags: TraceFlags.SAMPLED,
+          traceId: traceparent.traceID,
+          spanId: traceparent.spanID,
+          traceFlags: traceparent.traceFlags,
           isRemote: true,
         },
       })
@@ -581,7 +609,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   }
 
   const process = !params.requireAuth
-    ? (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
+    ? (
+        message: ProcessMessageOf<Protocol>,
+        handle: () => Error | Promise<void>,
+        eventRID?: string,
+      ) => {
         const span = createHandleSpan(message)
         if (validator != null) {
           span.addEvent('enkaku.validation', {
@@ -599,9 +631,13 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           return
         }
 
-        processHandler(message, wrapHandle(span, handle))
+        processHandler(message, wrapHandle(span, handle), eventRID)
       }
-    : async (message: ProcessMessageOf<Protocol>, handle: () => Error | Promise<void>) => {
+    : async (
+        message: ProcessMessageOf<Protocol>,
+        handle: () => Error | Promise<void>,
+        eventRID?: string,
+      ) => {
         const span = createHandleSpan(message)
         if (validator != null) {
           span.addEvent('enkaku.validation', {
@@ -686,7 +722,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             const error = new Error('Replay cache check failed', { cause })
             logger.warn('replay cache check failed', { cause })
             events.emit('transportError', { error })
-            await disposer.dispose()
+            // NOT awaited: this `process()` call is itself an entry in `pending`,
+            // which the disposer drains first -- awaiting here deadlocks it.
+            // `dispose()` aborts its signal synchronously, so handleNext still
+            // bails on the very next read.
+            void disposer.dispose()
             return
           }
           if (!replayResult.ok) {
@@ -711,7 +751,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           }
         }
 
-        processHandler(message, wrapHandle(span, handle))
+        processHandler(message, wrapHandle(span, handle), eventRID)
       }
 
   async function handleNext() {
@@ -727,6 +767,19 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
     if (next.done) {
       await disposer.dispose()
+      return
+    }
+
+    // Disposing: the abort-all sweep may already have run, so a handler started
+    // now would hold a controller nothing will ever abort. Drop and stop reading.
+    //
+    // `disposer.signal`, NOT the `signal` param: on the replay-cache route
+    // `process()` disposes the disposer directly and `signal` is never aborted,
+    // while this loop keeps running.
+    if (disposer.signal.aborted) {
+      logger.warn('dropped message received while disposing', {
+        typ: (next.value as { payload?: { typ?: unknown } }).payload?.typ,
+      })
       return
     }
 
@@ -839,7 +892,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
         case 'event': {
           const message = msg as EventMessageOf<Protocol>
-          process(message, () => handleEvent(context, message))
+          // Events carry no rid. Mint one and thread it through BOTH `track` and
+          // `processHandler` -- two separately-generated ids would leave the event
+          // out of the dispose drain, so an in-flight access check (async in auth
+          // mode) could outlive `dispose()`. Unaddressable by design: no
+          // `send`/`abort` can target it, so events stay fire-and-forget.
+          const eventRID = runtime.getRandomID()
+          track(
+            eventRID,
+            process(message, () => handleEvent(context, message), eventRID),
+          )
           break
         }
         case 'request': {
@@ -969,7 +1031,14 @@ export type ServerAccessOptions =
 export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   cache?: DIDCache
   encryptionPolicy?: EncryptionPolicy
-  getRandomID?: () => string
+  /**
+   * Defaults to `createRuntime()`.
+   *
+   * Its `getRandomID` must be collision-resistant: the server mints a synthetic
+   * `rid` from it for each event, sharing a namespace with client-supplied `rid`s.
+   * A collision would misroute a client's `send`/`abort` and corrupt the limiter's
+   * per-rid bookkeeping, so a counter (or anything else non-unique) is unsafe.
+   */
   runtime?: Runtime
   handlers: ProcedureHandlers<Protocol>
   limits?: Partial<ResourceLimits>
@@ -1016,31 +1085,53 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         this.#abortController.abort()
 
         const cleanupTimeout = this.#limiter.limits.cleanupTimeoutMs
-        const timeoutPromise = new Promise<void>((resolve) => {
-          setTimeout(resolve, cleanupTimeout)
-        })
 
-        // Race between graceful cleanup and timeout
-        const gracefulDone = await Promise.race([
-          Promise.all(
-            this.#handling.map(async (handling) => {
-              // Wait until all handlers are done - they might still need to flush messages to the transport
-              await handling.done
-              // Dispose transport
-              await handling.transport.dispose()
+        // Both races below MUST clear their timer in a `finally`: `Promise.race`
+        // does not cancel the loser, so a left-armed timer holds the event loop open
+        // for `cleanupTimeoutMs` after `dispose()` resolved. `clearTimeout`, not
+        // `unref()`: this package is isomorphic.
+        let gracefulTimer: ReturnType<typeof setTimeout> | undefined
+        let gracefulDone: boolean
+        try {
+          // Race between graceful cleanup and timeout
+          gracefulDone = await Promise.race([
+            Promise.all(
+              this.#handling.map(async (handling) => {
+                // Wait until all handlers are done - they might still need to flush messages to the transport
+                await handling.done
+                // Dispose transport
+                await handling.transport.dispose()
+              }),
+            ).then(() => true),
+            new Promise<boolean>((resolve) => {
+              gracefulTimer = setTimeout(() => resolve(false), cleanupTimeout)
             }),
-          ).then(() => true),
-          timeoutPromise.then(() => false),
-        ])
+          ])
+        } finally {
+          clearTimeout(gracefulTimer)
+        }
 
         // Force dispose any remaining transports only if timed out
         if (!gracefulDone) {
-          for (const handling of this.#handling) {
-            try {
-              await handling.transport.dispose()
-            } catch {
-              // Ignore errors during forced cleanup
-            }
+          // Bounded, because we only get here when something already failed to settle:
+          // `Disposer.dispose()` returns the same never-settling deferred on a second
+          // call, so a bare `await` would hang `Server.dispose()` forever.
+          // Parallel, so one hostile transport cannot delay the rest.
+          // Snapshot (`[...]`): `handle()` splices entries out of `#handling` as they
+          // settle, which would skip elements if an `await` ever lands in this body.
+          let forceTimer: ReturnType<typeof setTimeout> | undefined
+          try {
+            await Promise.race([
+              Promise.all(
+                // `.catch`: a late rejection here must not surface as unhandled.
+                [...this.#handling].map((handling) => handling.transport.dispose().catch(() => {})),
+              ),
+              new Promise<void>((resolve) => {
+                forceTimer = setTimeout(resolve, cleanupTimeout)
+              }),
+            ])
+          } finally {
+            clearTimeout(forceTimer)
           }
         }
 
@@ -1050,7 +1141,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     })
     this.#abortController = new AbortController()
     this.#events = new EventEmitter<ServerEvents>()
-    this.#runtime = params.runtime ?? createRuntime({ getRandomID: params.getRandomID })
+    this.#runtime = params.runtime ?? createRuntime()
     this.#handlers = params.handlers
     this.#cache = params.cache ?? createInMemoryDIDCache()
     this.#resolver = params.resolver
@@ -1167,6 +1258,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       limiter: this.#limiter,
       logger,
       replay: this.#replay,
+      runtime: this.#runtime,
       signal: this.#abortController.signal,
       tracer: this.#tracer,
       transport,

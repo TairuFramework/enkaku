@@ -113,4 +113,61 @@ describe('client disconnect', () => {
 
     await server.dispose()
   })
+
+  test('a throwing onRequestAborted does not break the disconnect path', async () => {
+    // The request-signal listener calls reportRequestAborted *directly*, unlike
+    // the sweep and the SSE listener which route through clearSessionInflight.
+    // So its guard is the one with no test of its own: a future edit that dropped
+    // the try/catch would go unnoticed. Mirrors the onWriteError isolation test
+    // in sse-buffer-limits.test.ts.
+    //
+    // WHATWG event dispatch reports listener exceptions through the global error
+    // mechanism, so `abort.abort()` itself cannot throw synchronously to the
+    // caller -- a dropped try/catch in `reportRequestAborted` does not surface as
+    // a thrown error here, it surfaces as a process-level `uncaughtException`.
+    // Capture that with a scoped listener so the red (if the guard regresses) is
+    // a concrete `expect` failure rather than the whole test process going down.
+    const onRequestAborted = vi.fn(() => {
+      throw new Error('onRequestAborted consumer callback blew up')
+    })
+    const bridge = createServerBridge({ onRequestAborted })
+
+    const abort = new AbortController()
+    const pending = bridge.handleRequest(createRequestPost('r1', abort.signal))
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    // r2 is kept PENDING through r1's throwing abort below: a corrupted shared
+    // sink (rather than just a swallowed exception) would surface on IT, not on
+    // a later, unrelated request the way a sequential-only proxy could not
+    // distinguish -- mirrors the cross-session isolation proof in
+    // sse-buffer-limits.test.ts:113, but for a request rather than a session.
+    const abort2 = new AbortController()
+    const pending2 = bridge.handleRequest(createRequestPost('r2', abort2.signal))
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    const uncaught: Array<Error> = []
+    const onUncaughtException = (error: Error) => uncaught.push(error)
+    process.once('uncaughtException', onUncaughtException)
+    try {
+      abort.abort()
+      await new Promise((resolve) => setTimeout(resolve, 10))
+    } finally {
+      process.removeListener('uncaughtException', onUncaughtException)
+    }
+
+    expect(onRequestAborted).toHaveBeenCalledWith({ rid: 'r1', reason: 'ClientDisconnected' })
+    // The throw must not have escaped past reportRequestAborted's try/catch: if
+    // the guard were removed, `uncaught` would carry the listener's exception.
+    expect(uncaught).toHaveLength(0)
+
+    // The throw must not have escaped: the deferred Response still settles rather
+    // than leaking, and the bridge is still usable for a fresh request.
+    expect((await pending).status).toBe(499)
+
+    // r2 was still in flight -- concurrently, not merely afterwards -- when r1's
+    // callback threw. Confirm it settles correctly rather than having been
+    // corrupted by the throw.
+    abort2.abort()
+    expect((await pending2).status).toBe(499)
+  })
 })

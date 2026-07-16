@@ -1,16 +1,18 @@
 import path from 'node:path'
 import { serveProcess } from '@enkaku/electron'
-import { provideFullIdentityAsync } from '@kokuin/electron'
+import { ElectronKeyStore } from '@kokuin/electron'
 import { stringifyToken } from '@kokuin/token'
 import { app, BrowserWindow } from 'electron'
 
 import type { Protocol } from './protocol'
 
+const keyStore = ElectronKeyStore.open({ name: 'EnkakuKeystore' })
+
 serveProcess<Protocol>({
   requireAuth: false,
   handlers: {
     sign: async ({ param }) => {
-      const identity = await provideFullIdentityAsync('EnkakuKeystore', param.keyID ?? 'test')
+      const identity = await keyStore.provideIdentity(param.keyID ?? 'test')
       const token = await identity.signToken(param.payload)
       return stringifyToken(token)
     },

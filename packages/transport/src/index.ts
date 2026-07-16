@@ -79,6 +79,9 @@ export class Transport<R, W> extends Disposer implements TransportType<R, W> {
         }
         await this.#events.emit('disposed', { reason })
       },
+      // Disposer wires this to dispose(). Dropping it silently makes every
+      // subclass's `signal` a no-op: aborting tears nothing down.
+      signal: params.signal,
     })
     this.#events = new EventEmitter<TransportEvents>()
     this.#params = params
