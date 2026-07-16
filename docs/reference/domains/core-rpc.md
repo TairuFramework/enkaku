@@ -22,7 +22,7 @@ The core design philosophy is **protocol-first**: you define a protocol object u
 - `createServerMessageSchema()` - Generate validation schema for server messages
 - Type utilities: `DataOf<T>`, `ReturnOf<T>`, `AnyClientMessageOf<P>`, `AnyServerMessageOf<P>`
 
-**Dependencies**: `@enkaku/token`
+**Dependencies**: `@kokuin/token`
 
 **Core concepts**:
 - Protocol is a plain object mapping procedure names to definitions
@@ -60,7 +60,7 @@ const protocol = {
 - `RequestError` - Error class for RPC errors
 - Type utilities: `ClientDefinitionsType<P>`, `RequestDefinitionsType<P>`, etc.
 
-**Dependencies**: `@enkaku/async`, `@enkaku/execution`, `@enkaku/stream`, `@enkaku/token`
+**Dependencies**: `@enkaku/otel`, `@kokuin/token`, `@sozai/async`, `@sozai/event`, `@sozai/execution`, `@sozai/log`, `@sozai/otel`, `@sozai/runtime`, `@sozai/stream`
 
 **How it works**:
 - Client reads from transport and routes messages to active procedure calls
@@ -98,7 +98,7 @@ const result = await client.request('greet', {
 - `ProcedureHandlers<Protocol>` - Type for handler map
 - `ServerEvents` - Event types for server lifecycle
 
-**Dependencies**: `@enkaku/async`, `@enkaku/capability`, `@enkaku/event`, `@enkaku/protocol`, `@enkaku/schema`, `@enkaku/stream`, `@enkaku/token`
+**Dependencies**: `@enkaku/otel`, `@enkaku/protocol`, `@kokuin/capability`, `@kokuin/token`, `@sozai/async`, `@sozai/event`, `@sozai/log`, `@sozai/otel`, `@sozai/runtime`, `@sozai/schema`, `@sozai/stream`
 
 **How it works**:
 - Server reads from transport and dispatches to handlers
@@ -113,12 +113,18 @@ const result = await client.request('greet', {
 - Channel: `{ param, signal, message, readable, writable }`
 - Event: `{ data, message }`
 
-**Access control**:
-- `accessControl: false` - Public access, no authentication required
-- `accessControl: true` - All procedures require authentication (must provide `identity`)
-- `accessControl: ProcedureAccessRecord` - Granular per-procedure access control
-- Per-procedure values: `boolean`, `Array<string>` (allowed DIDs), or `ProcedureAccessConfig` with `allow` and `encryption` fields
-- `encryptionPolicy?: 'required' | 'optional' | 'none'` - Global encryption policy, overridable per-procedure
+**Access control** (`ServerAccessOptions`, a **required** union -- the constructor throws if
+neither branch is satisfied):
+- `{ requireAuth: false }` - Public access, no authentication. Must be passed explicitly; a
+  server without `identity` that omits it throws at construction
+- `{ identity }` - Authenticated server. Identities come from `@kokuin/token`
+- `{ identity, accessRules }` - Granular per-procedure access control. `AccessRules` is
+  `Record<string, AccessRule>`, keyed by procedure-name pattern
+- `AccessRule` is `{ allow: true | Array<string> | AllowPredicate; encryption?: EncryptionPolicy }`
+  -- note `allow: true`, not `boolean`, plus a predicate form `(ctx: AllowContext) => boolean |
+  Promise<boolean>`
+- `encryptionPolicy?: 'required' | 'optional' | 'none'` - Global encryption policy, overridable
+  per-procedure via a rule's `encryption`
 
 ### Standalone Package: @enkaku/standalone
 
@@ -128,13 +134,13 @@ const result = await client.request('greet', {
 - `standalone<Protocol>(handlers, options)` - Create client with in-process server
 - `StandaloneOptions<Protocol>` - Configuration type
 
-**Dependencies**: `@enkaku/client`, `@enkaku/server`, `@enkaku/transport`
+**Dependencies**: `@enkaku/client`, `@enkaku/server`, `@enkaku/transport`, `@sozai/runtime`
 
 **How it works**:
-- Creates DirectTransports for in-memory communication
-- Starts server with provided handlers
-- Returns client connected via direct transport
-- Zero network overhead - perfect for testing
+- Creates a `DirectTransports` pair for in-memory communication
+- Starts a server with the provided handlers via `serve()`
+- Returns a client connected to the other end of the pair
+- No network hop
 
 **Use cases**:
 - Unit testing RPC handlers
@@ -294,7 +300,7 @@ type AddResult = ReturnOf<MyProtocol['math/add']['result']>
 
 ```typescript
 import { Client } from '@enkaku/client'
-import { ClientTransport } from '@enkaku/http-client-transport'
+import { ClientTransport } from '@enkaku/http-fetch'
 import { RequestError } from '@enkaku/client'
 
 const transport = new ClientTransport<MyProtocol>({
@@ -326,13 +332,15 @@ const request = client.request('longOperation', {
   signal: controller.signal
 })
 
-setTimeout(() => controller.abort(), 5000) // Timeout after 5s
+setTimeout(() => controller.abort('Timed out'), 5000) // Timeout after 5s
 
 try {
   await request
 } catch (err) {
-  if (err instanceof AbortSignal) {
-    console.log('Request was aborted')
+  // The rejection value is the signal's abort *reason*, not an AbortSignal.
+  // `err instanceof AbortSignal` is always false -- AbortSignal is not an error class.
+  if (err === controller.signal.reason) {
+    console.log('Request was aborted:', err)
   }
 }
 
@@ -356,11 +364,12 @@ client.disposed.then(() => {
 
 **Key points**:
 - `RequestError` indicates server returned error response
-- Other errors (network, serialization) are standard Error objects
-- AbortSignal errors indicate cancellation
-- `handleTransportError` enables automatic reconnection
+- Cancellation surfaces as the signal's abort *reason*, not as an `AbortSignal` instance
+- `handleTransportError` enables reconnection: return a replacement transport to adopt it,
+  return nothing to abort the client. Its sibling `handleTransportDisposed` does the same when
+  the transport is disposed rather than erroring
 - `signal` parameter allows per-request cancellation
-- Always dispose client to clean up resources
+- Dispose the client to release its transport and abort in-flight calls
 
 ### Pattern: Server Stream and Channel Handlers
 
@@ -368,12 +377,17 @@ client.disposed.then(() => {
 
 **Implementation**:
 
+`ProcedureHandlers<Protocol>` is a non-partial mapped type: the handler map must contain an
+entry for **every** procedure in the protocol. The example below assumes a `StreamProtocol`
+declaring exactly these four.
+
 ```typescript
-import { Server } from '@enkaku/server'
+import { serve } from '@enkaku/server'
 import type { StreamHandler, ChannelHandler } from '@enkaku/server'
 
-const server = new Server<MyProtocol>({
-  accessControl: false,
+const server = serve<StreamProtocol>({
+  requireAuth: false,
+  transport,
   handlers: {
     // Stream: Server pushes data to client
     'metrics/live': async ({ writable, signal }) => {
@@ -381,17 +395,11 @@ const server = new Server<MyProtocol>({
 
       const interval = setInterval(async () => {
         const metric = await collectMetric()
-        try {
-          await writer.write(metric)
-        } catch (err) {
-          clearInterval(interval)
-        }
+        await writer.write(metric)
       }, 1000)
 
-      // Cleanup when client disconnects
       signal.addEventListener('abort', () => {
         clearInterval(interval)
-        writer.close()
       })
 
       // Keep streaming until aborted
@@ -468,12 +476,17 @@ const server = new Server<MyProtocol>({
 ```
 
 **Key points**:
-- Stream handlers write to `writable` stream
+- Stream handlers write to `writable` stream -- they are not generators
 - Channel handlers read from `readable` and write to `writable`
-- Always close writer when done or on abort
+- Closing the writer is optional: once the handler settles, the server drains and closes the
+  receive pipe itself. Close explicitly when you want the client's readable to end before the
+  handler returns
+- Writes after abort are dropped by the server rather than throwing, so a `try/catch` around
+  `writer.write` will not detect a disconnect -- use `signal`
 - Use `signal` to detect client disconnect
 - For infinite streams, wait on signal abort promise
-- Handle backpressure with `writer.ready` if needed
+- The handler's return value is the call's *result*, distinct from the data written to
+  `writable`
 
 ### Pattern: Server with Schema Validation
 
@@ -482,20 +495,21 @@ const server = new Server<MyProtocol>({
 **Implementation**:
 
 ```typescript
-import { Server } from '@enkaku/server'
-import { ServerTransport } from '@enkaku/http-server-transport'
+import { serve } from '@enkaku/server'
+import { ServerTransport } from '@enkaku/http-serve'
 
 const transport = new ServerTransport<MyProtocol>()
 
-const server = new Server<MyProtocol>({
+const server = serve<MyProtocol>({
   protocol: myProtocol, // Enable validation
   transport,
-  accessControl: false,
+  requireAuth: false,
   handlers: {
     'math/add': async ({ param }) => {
       // param is guaranteed to match schema
       return param.a + param.b
     }
+    // ...plus an entry for every other procedure in MyProtocol
   }
 })
 
@@ -506,19 +520,20 @@ server.events.on('invalidMessage', ({ error, message }) => {
 })
 
 // Listen for handler errors
-server.events.on('handlerError', ({ error, payload, rid }) => {
+server.events.on('handlerError', ({ error, payload, category, messageType }) => {
   console.error('Handler error:', error)
   console.log('Procedure:', payload.prc)
-  console.log('Request ID:', rid)
+  console.log('Category:', category, 'Message type:', messageType)
 })
 ```
 
 **Key points**:
-- Providing `protocol` enables JSON Schema validation
-- Invalid messages trigger `invalidMessage` event
-- Handler errors trigger `handlerError` event
-- Validation happens before handlers are called
-- Invalid messages are rejected automatically
+- Providing `protocol` enables JSON Schema validation. Without it the server logs that
+  validation is disabled and dispatches unvalidated
+- Invalid messages trigger `invalidMessage` event and are rejected before any handler runs
+- Handler errors trigger `handlerError` event. Its payload is `{ error, payload, category,
+  messageType }` -- there is no `rid` on this event; `rid` appears on `handlerStart`,
+  `handlerEnd`, `handlerAbort`, and `handlerTimeout`
 - Events allow custom logging/monitoring
 
 ### Pattern: Using Standalone for Testing
@@ -657,7 +672,8 @@ Handler contexts are typed based on procedure type:
 
 ### Client and Transport
 
-Client is generic over transport type:
+`Client` is generic over `Protocol`, not over the transport. The transport type is derived from
+the protocol, and arrives as the required `transport` constructor field:
 
 ```typescript
 import type { ClientTransportOf } from '@enkaku/protocol'
@@ -675,7 +691,8 @@ Client reads `ServerMessage` and writes `ClientMessage`:
 
 ### Server and Transport
 
-Server is generic over transport type:
+`Server` is likewise generic over `Protocol` only. Transports arrive as
+`transports?: Array<ServerTransportOf<Protocol>>`:
 
 ```typescript
 import type { ServerTransportOf } from '@enkaku/protocol'
@@ -693,19 +710,29 @@ Server reads `ClientMessage` and writes `ServerMessage`:
 
 ### Standalone Integration
 
-Standalone combines all packages:
+Standalone builds on `@enkaku/client`, `@enkaku/server`, and `@enkaku/transport`:
 
 ```typescript
-// Internally creates:
-const transports = new DirectTransports<ServerMessage, ClientMessage>()
+// Internally, roughly:
+const transports = new DirectTransports<
+  AnyServerMessageOf<Protocol>,
+  AnyClientMessageOf<Protocol>
+>({ signal })
 
-const server = new Server({
+serve<Protocol>({
+  handlers,
+  protocol,
+  runtime,
+  signal,
   transport: transports.server,
-  handlers
+  requireAuth: false, // or `identity` (+ optional `accessRules`) when one is supplied
 })
 
-const client = new Client({
-  transport: transports.client
+const client = new Client<Protocol>({
+  runtime,
+  serverID,
+  identity,
+  transport: transports.client,
 })
 
 return client
@@ -715,77 +742,97 @@ return client
 
 ### Protocol Definition
 
+Schemas below are `Schema` values from `@sozai/schema` -- there is no exported `JSONSchema`
+type. `error` is an `ErrorObjectDefinition`, which constrains the shape: `required` must be
+`['code', 'message']` or `['code', 'message', 'data']`, and `additionalProperties` must be
+`false`.
+
 ```typescript
 // Event procedure
 {
   type: 'event',
-  data?: JSONSchema, // Optional event data
+  data?: Schema, // Optional event data; must be an object-type schema
   description?: string
 }
 
 // Request procedure
 {
   type: 'request',
-  param?: JSONSchema, // Optional request parameter
-  result?: JSONSchema, // Optional result (defaults to void)
-  error?: ErrorSchema, // Optional custom error schema
+  param?: Schema, // Optional request parameter
+  result?: Schema, // Optional result (defaults to void)
+  error?: ErrorObjectDefinition, // Optional custom error schema
   description?: string
 }
 
 // Stream procedure
 {
   type: 'stream',
-  param?: JSONSchema,
-  receive: JSONSchema, // Required: type of streamed values
-  result?: JSONSchema,
-  error?: ErrorSchema,
+  param?: Schema,
+  receive: Schema, // Required: type of streamed values
+  result?: Schema,
+  error?: ErrorObjectDefinition,
   description?: string
 }
 
 // Channel procedure
 {
   type: 'channel',
-  param?: JSONSchema,
-  send: JSONSchema, // Required: client to server type
-  receive: JSONSchema, // Required: server to client type
-  result?: JSONSchema,
-  error?: ErrorSchema,
+  param?: Schema,
+  send: Schema, // Required: client to server type
+  receive: Schema, // Required: server to client type
+  result?: Schema,
+  error?: ErrorObjectDefinition,
   description?: string
 }
 ```
 
 ### Client Class
 
+The call methods take a conditional tuple: when a procedure declares no `param`/`data`, the
+config argument is optional; when it declares one, the config **and** its `param`/`data` field
+are required. `Identity` comes from `@kokuin/token`.
+
 ```typescript
-class Client<Protocol extends ProtocolDefinition> {
-  constructor(params: {
-    transport: ClientTransportOf<Protocol>
-    runtime?: Runtime
-    handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
-    handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
-    serverID?: string
-    identity?: SigningIdentity | Promise<SigningIdentity>
-  })
+class Client<
+  Protocol extends ProtocolDefinition,
+  ClientDefinitions extends ClientDefinitionsType<Protocol> = ClientDefinitionsType<Protocol>,
+> extends Disposer {
+  constructor(params: ClientParams<Protocol>)
+  // ClientParams<Protocol> = {
+  //   transport: ClientTransportOf<Protocol>   // the only required field
+  //   runtime?: Runtime
+  //   handleTransportDisposed?: (signal: AbortSignal) => ClientTransportOf<Protocol> | void
+  //   handleTransportError?: (error: Error) => ClientTransportOf<Protocol> | void
+  //   logger?: Logger
+  //   tracer?: Tracer
+  //   serverID?: string
+  //   identity?: Identity | Promise<Identity>
+  //   now?: () => number
+  // }
 
   sendEvent<Procedure>(
     procedure: Procedure,
-    data?: Data
+    // required when the procedure declares `data`
+    config?: { data?: Data; header?: AnyHeader },
   ): Promise<void>
 
   request<Procedure>(
     procedure: Procedure,
-    config?: { id?: string; param?: Param; signal?: AbortSignal }
-  ): RequestCall<Result>
+    // required when the procedure declares `param`
+    config?: { header?: AnyHeader; id?: string; param?: Param; signal?: AbortSignal },
+  ): RequestCall<Result> & Promise<Result>
 
   createStream<Procedure>(
     procedure: Procedure,
-    config?: { id?: string; param?: Param; signal?: AbortSignal }
+    config?: { header?: AnyHeader; id?: string; param?: Param; signal?: AbortSignal },
   ): StreamCall<Receive, Result>
 
   createChannel<Procedure>(
     procedure: Procedure,
-    config?: { id?: string; param?: Param; signal?: AbortSignal }
+    config?: { header?: AnyHeader; id?: string; param?: Param; signal?: AbortSignal },
   ): ChannelCall<Receive, Send, Result>
+
+  get events(): ClientEmitter
 
   dispose(reason?: unknown): Promise<void>
 
@@ -797,29 +844,54 @@ class Client<Protocol extends ProtocolDefinition> {
 ### Server Class
 
 ```typescript
-class Server<Protocol extends ProtocolDefinition> {
-  constructor(params: {
-    handlers: ProcedureHandlers<Protocol>
-    accessControl?: false | true | ProcedureAccessRecord
-    encryptionPolicy?: EncryptionPolicy
-    identity?: Identity
-    protocol?: Protocol
-    signal?: AbortSignal
-    transports?: Array<ServerTransportOf<Protocol>>
-  })
+class Server<Protocol extends ProtocolDefinition> extends Disposer {
+  constructor(params: ServerParams<Protocol>)
+  // ServerParams<Protocol> = ServerBaseParams<Protocol> & ServerAccessOptions
+  //
+  // ServerBaseParams<Protocol> = {
+  //   handlers: ProcedureHandlers<Protocol>   // required; non-partial over every procedure
+  //   cache?: DIDCache
+  //   encryptionPolicy?: EncryptionPolicy     // 'required' | 'optional' | 'none'
+  //   limits?: Partial<ResourceLimits>
+  //   logger?: Logger
+  //   protocol?: Protocol                     // enables message validation
+  //   replay?: ReplayOptions
+  //   resolver?: DIDResolver
+  //   runtime?: Runtime
+  //   signal?: AbortSignal
+  //   tracer?: Tracer
+  //   transports?: Array<ServerTransportOf<Protocol>>
+  //   verifyToken?: VerifyTokenHook
+  // }
+  //
+  // ServerAccessOptions =                      // required -- pick a branch
+  //   | { identity?: undefined; requireAuth: false; accessRules?: never }
+  //   | { identity: Identity; accessRules?: AccessRules }
 
   handle(
     transport: ServerTransportOf<Protocol>,
-    options?: { accessControl?: false | true | ProcedureAccessRecord }
+    options?: {
+      accessRules?: false | AccessRules
+      logger?: Logger
+      verifyToken?: VerifyTokenHook
+    },
   ): Promise<void>
 
   get events(): ServerEmitter
+  get activeTransportsCount(): number
 
-  dispose(): Promise<void>
+  dispose(reason?: unknown): Promise<void>
 
   get signal(): AbortSignal
   get disposed(): Promise<void>
 }
+
+// Convenience wrapper for the single-transport case
+function serve<Protocol extends ProtocolDefinition>(
+  params: Omit<ServerBaseParams<Protocol>, 'transports'>
+    & { transport: ServerTransportOf<Protocol> }
+    & ServerAccessOptions,
+): Server<Protocol>
 ```
 
 ### Standalone Function
@@ -827,14 +899,14 @@ class Server<Protocol extends ProtocolDefinition> {
 ```typescript
 function standalone<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,
-  options?: {
-    accessControl?: false | true | ProcedureAccessRecord
-    runtime?: Runtime
-    protocol?: Protocol
-    signal?: AbortSignal
-    identity?: Identity
-  }
+  options: StandaloneOptions<Protocol> = { requireAuth: false },
 ): Client<Protocol>
+
+// StandaloneOptions<Protocol> = {
+//   runtime?: Runtime        // shared by the client and the server
+//   protocol?: Protocol
+//   signal?: AbortSignal
+// } & ServerAccessOptions    // so: `requireAuth: false`, or `{ identity, accessRules? }`
 ```
 
 ## Examples by Scenario
@@ -893,16 +965,16 @@ export const apiProtocol = {
 export type ApiProtocol = typeof apiProtocol
 
 // server.ts
-import { Server } from '@enkaku/server'
-import { ServerTransport } from '@enkaku/http-server-transport'
+import { serve } from '@enkaku/server'
+import { ServerTransport } from '@enkaku/http-serve'
 import { apiProtocol, type ApiProtocol } from './shared/protocol'
 
 const transport = new ServerTransport<ApiProtocol>()
 
-const server = new Server<ApiProtocol>({
+const server = serve<ApiProtocol>({
   protocol: apiProtocol,
   transport,
-  accessControl: false,
+  requireAuth: false,
   handlers: {
     'users/list': async () => {
       return await db.users.findMany()
@@ -924,7 +996,7 @@ Bun.serve({
 
 // client.ts
 import { Client } from '@enkaku/client'
-import { ClientTransport } from '@enkaku/http-client-transport'
+import { ClientTransport } from '@enkaku/http-fetch'
 import type { ApiProtocol } from './shared/protocol'
 
 const transport = new ClientTransport<ApiProtocol>({
@@ -1000,8 +1072,9 @@ const streamProtocol = {
 type StreamProtocol = typeof streamProtocol
 
 // server.ts
-const server = new Server<StreamProtocol>({
-  accessControl: false,
+const server = serve<StreamProtocol>({
+  requireAuth: false,
+  transport,
   handlers: {
     'stock/watch': async ({ param, writable, signal }) => {
       const writer = writable.getWriter()
@@ -1110,8 +1183,9 @@ type ChatProtocol = typeof chatProtocol
 // server.ts
 const rooms = new Map<string, Set<WritableStreamDefaultWriter>>()
 
-const server = new Server<ChatProtocol>({
-  accessControl: false,
+const server = serve<ChatProtocol>({
+  requireAuth: false,
+  transport,
   handlers: {
     'chat/room': async ({ param, readable, writable, signal }) => {
       const writer = writable.getWriter()
@@ -1284,6 +1358,7 @@ const protocol = {
 ```typescript
 // Ensure handler exists for all procedures
 const server = new Server<MyProtocol>({
+  requireAuth: false,
   handlers: {
     'user/get': async ({ param }) => {
       // Handler implementation
@@ -1294,6 +1369,7 @@ const server = new Server<MyProtocol>({
 
 // TypeScript will error - add all handlers
 const server = new Server<MyProtocol>({
+  requireAuth: false,
   handlers: {
     'user/get': async ({ param }) => { ... },
     'user/create': async ({ param }) => { ... }
@@ -1304,16 +1380,27 @@ const server = new Server<MyProtocol>({
 await client.request('user/get', ...) // Correct
 await client.request('getUser', ...) // Wrong - no such procedure
 
-// Ensure server is handling transport
-const server = new Server({ ... })
+// A Server built without transports handles nothing until you attach one
+const server = new Server<MyProtocol>({ requireAuth: false, handlers: { ... } })
 server.handle(transport) // Don't forget this!
 
-// Or use serve() convenience function
-const server = serve({
+// Or pass them up front
+const server = new Server<MyProtocol>({
+  requireAuth: false,
+  handlers: { ... },
+  transports: [transport],
+})
+
+// Or use the serve() convenience function for the single-transport case
+const server = serve<MyProtocol>({
+  requireAuth: false,
   transport,
-  handlers: { ... }
+  handlers: { ... },
 })
 ```
+
+An unhandled procedure does not produce an error reply: the server emits `handlerError` and
+sends nothing, so the client call simply never settles. That is the hang.
 
 ### Issue: Stream Not Receiving Data
 
@@ -1321,14 +1408,14 @@ const server = serve({
 
 **Causes**:
 - Handler not writing to writable stream
-- Writer not flushed or closed
-- Handler exiting too early
-- Client not reading from readable
+- Handler exiting too early -- the server drains and closes the receive pipe once the handler
+  settles, so anything not yet written is never sent
 
 **Solutions**:
 ```typescript
 // Server: Ensure writing to writable
 const server = new Server<MyProtocol>({
+  requireAuth: false,
   handlers: {
     'data/stream': async ({ writable }) => {
       const writer = writable.getWriter()
@@ -1337,7 +1424,8 @@ const server = new Server<MyProtocol>({
       await writer.write({ value: 1 })
       await writer.write({ value: 2 })
 
-      // MUST close when done
+      // Optional: the server closes the pipe itself once this handler settles.
+      // Close explicitly only to end the client's readable before returning.
       await writer.close()
 
       return 'Done'
@@ -1345,23 +1433,24 @@ const server = new Server<MyProtocol>({
   }
 })
 
-// Client: Must consume readable
+// Client: consume the readable
 const stream = client.createStream('data/stream')
 
-// Option 1: Async iteration
-for await (const data of stream.readable) {
-  console.log(data)
-}
-
-// Option 2: Pipe to writable
-await stream.readable.pipeTo(someWritable)
-
-// Option 3: Get reader
+// Option 1: Get reader -- portable everywhere
 const reader = stream.readable.getReader()
 while (true) {
   const { done, value } = await reader.read()
   if (done) break
   console.log(value)
+}
+
+// Option 2: Pipe to a writable
+await stream.readable.pipeTo(someWritable)
+
+// Option 3: Async iteration -- convenient, but ReadableStream async iteration is
+// not implemented in every browser
+for await (const data of stream.readable) {
+  console.log(data)
 }
 ```
 
@@ -1370,15 +1459,14 @@ while (true) {
 **Symptoms**: Client request never resolves
 
 **Causes**:
-- Handler not returning or throwing
-- Handler awaiting aborted signal
-- Network connection lost
-- Server crashed
+- Handler never settles -- the result reply is only sent once the handler's promise resolves
+- No handler registered for the procedure: the server emits `handlerError` and sends no reply
 
 **Solutions**:
 ```typescript
 // Ensure handler returns
 const server = new Server<MyProtocol>({
+  requireAuth: false,
   handlers: {
     'compute': async ({ param }) => {
       const result = await heavyComputation(param)
@@ -1401,11 +1489,11 @@ try {
 }
 
 // Handle transport errors
-const client = new Client({
+const client = new Client<MyProtocol>({
   transport,
   handleTransportError: (error) => {
     console.error('Transport error:', error)
-    // Return new transport or abort
+    // Return a replacement transport to keep going, or nothing to abort the client
   }
 })
 
@@ -1421,10 +1509,11 @@ server.events.on('handlerError', ({ error, payload }) => {
 **Symptoms**: Memory usage grows over time
 
 **Causes**:
-- Not closing streams after use
+- Abandoned calls that are never closed or aborted
 - Not disposing client/server
-- Accumulating abandoned streams
-- Event listeners not removed
+
+Note the server bounds its own exposure: live controllers and concurrent handlers are capped by
+`ResourceLimits` (`EK03`/`EK04`), and expired controllers are evicted on timeout (`EK05`).
 
 **Solutions**:
 ```typescript
@@ -1457,7 +1546,8 @@ process.on('SIGTERM', async () => {
 })
 
 // Server: Clean up on abort
-const server = new Server({
+const server = new Server<MyProtocol>({
+  requireAuth: false,
   handlers: {
     'data/stream': async ({ writable, signal }) => {
       const writer = writable.getWriter()
@@ -1465,10 +1555,10 @@ const server = new Server({
         writer.write(getData())
       }, 1000)
 
-      // IMPORTANT: Cleanup on abort
+      // IMPORTANT: release your own resources on abort. The pipe itself is
+      // drained and closed by the server once this handler settles.
       signal.addEventListener('abort', () => {
         clearInterval(interval)
-        writer.close()
       })
 
       await new Promise(r => signal.addEventListener('abort', r))
@@ -1479,25 +1569,27 @@ const server = new Server({
 
 ### Issue: Protocol Changes Break Clients
 
-**Symptoms**: Runtime errors after protocol update
+**Symptoms**: Calls that used to work start failing after a protocol update
+
+**What actually happens**: there is no protocol negotiation or versioning in Enkaku. The
+`protocol` server param drives one thing -- message validation. A client sending a message the
+server's protocol rejects gets an `EK08` (`INVALID_MESSAGE`) error reply, and the server emits
+`invalidMessage`. A procedure the server has no handler for produces no reply at all, so the
+call hangs (see *Handler Never Called*).
 
 **Causes**:
-- Client using old protocol definition
-- Server using new protocol definition
-- Breaking changes to param/result schemas
+- Client and server built against different protocol definitions
+- Breaking changes to param schemas -- the server validates *client* messages, so a param that
+  no longer matches is rejected
 - Removed or renamed procedures
 
-**Solutions**:
-```typescript
-// Versioned protocols
-const protocolV1 = {
-  'user/get': {
-    type: 'request',
-    param: { type: 'string' },
-    result: { type: 'object', properties: { name: { type: 'string' } } }
-  }
-} as const satisfies ProtocolDefinition
+**Solutions**: this is a deployment concern, not a framework feature. Prefer additive changes
+(new optional fields, new procedures), and if you need two incompatible protocols live at once,
+run two servers on separate endpoints and route to them at your HTTP layer -- Enkaku itself has
+no version-routing surface.
 
+```typescript
+// Additive change: existing clients keep working, new clients see the new field
 const protocolV2 = {
   'user/get': {
     type: 'request',
@@ -1511,27 +1603,4 @@ const protocolV2 = {
     }
   }
 } as const satisfies ProtocolDefinition
-
-// Server supports both versions
-const serverV1 = new Server<typeof protocolV1>({
-  handlers: {
-    'user/get': async ({ param }) => {
-      const user = await db.getUser(param)
-      return { name: user.name }
-    }
-  }
-})
-
-const serverV2 = new Server<typeof protocolV2>({
-  handlers: {
-    'user/get': async ({ param }) => {
-      const user = await db.getUser(param)
-      return { name: user.name, email: user.email }
-    }
-  }
-})
-
-// Deploy both, route by version header
-// Or: Use additive changes only (new optional fields, new procedures)
-// Or: Deprecation warnings before removal
 ```
