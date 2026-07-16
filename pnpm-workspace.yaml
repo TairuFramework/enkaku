@@ -27,20 +27,20 @@ catalog:
   '@docusaurus/types': ^3.10.2
   '@electron-forge/cli': ^7.11.2
   '@electron-forge/plugin-vite': ^7.11.2
-  '@hono/node-server': ^2.0.8
+  '@hono/node-server': ^2.0.9
   '@kigu/dev': ^0.1.2
-  '@kokuin/capability': ^0.2.0
-  '@kokuin/electron': ^0.3.0
-  '@kokuin/token': ^0.2.0
+  '@kokuin/capability': ^0.2.1
+  '@kokuin/electron': ^0.4.0
+  '@kokuin/token': ^0.3.0
   '@opentelemetry/sdk-trace-base': ^2.9.0
   '@opentelemetry/sdk-trace-node': ^2.9.0
   '@orama/plugin-docusaurus-v3': ^3.1.18
   '@playwright/test': 1.61.1
   '@sozai/async': ^0.2.1
   '@sozai/event': ^0.1.1
-  '@sozai/execution': ^0.2.0
-  '@sozai/log': ^0.1.1
-  '@sozai/otel': ^0.2.0
+  '@sozai/execution': ^0.2.1
+  '@sozai/log': ^0.2.0
+  '@sozai/otel': ^0.3.0
   '@sozai/runtime': ^0.1.0
   '@sozai/schema': ^0.1.1
   '@sozai/stream': ^0.2.0

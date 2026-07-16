@@ -26,11 +26,11 @@ import { EventEmitter } from '@sozai/event'
 import { getLogger, type Logger } from '@sozai/log'
 import {
   AttributeKeys,
-  extractTraceContext,
+  extractW3CTraceContext,
+  parseTraceparent,
   type Span,
   SpanStatusCode,
   setSpanOnContext,
-  TraceFlags,
   type Tracer,
   withActiveContext,
 } from '@sozai/otel'
@@ -486,7 +486,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
 
   function getParentContext(message: ProcessMessageOf<Protocol>) {
     const header = message.header as Record<string, unknown>
-    return extractTraceContext(header)
+    return extractW3CTraceContext(header)
   }
 
   function createHandleSpan(message: ProcessMessageOf<Protocol>) {
@@ -502,12 +502,14 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     const links: Array<{
       context: { traceId: string; spanId: string; traceFlags: number; isRemote: boolean }
     }> = []
-    if (typeof header.tid === 'string' && typeof header.sid === 'string') {
+    const traceparent =
+      typeof header.traceparent === 'string' ? parseTraceparent(header.traceparent) : undefined
+    if (traceparent != null) {
       links.push({
         context: {
-          traceId: header.tid,
-          spanId: header.sid,
-          traceFlags: TraceFlags.SAMPLED,
+          traceId: traceparent.traceID,
+          spanId: traceparent.spanID,
+          traceFlags: traceparent.traceFlags,
           isRemote: true,
         },
       })

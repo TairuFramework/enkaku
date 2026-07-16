@@ -21,7 +21,7 @@ import { EventEmitter } from '@sozai/event'
 import { getLogger, type Logger } from '@sozai/log'
 import {
   AttributeKeys,
-  injectTraceContext as otelInjectTraceContext,
+  injectW3CTraceContext as otelInjectTraceContext,
   type Span,
   SpanStatusCode,
   setSpanOnContext,
