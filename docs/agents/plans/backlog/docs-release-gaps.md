@@ -1,7 +1,7 @@
 # Documentation & Release Infrastructure Gaps
 
 **Priority:** backlog, low (consumers are stack-internal). Tracking only — no implementation planned.
-**Origin:** June 2026 audit (`completed/2026-06-10-audit-remediation.complete.md`); rewritten 2026-07-07 to post-0.18-split scope (13 RPC-only packages). The bulk pre-split doc staleness (~8k lines in `docs/reference/` + `website/`) is now tracked in `next/2026-07-07-stale-docs-cleanup.md`, not here.
+**Origin:** June 2026 audit (`completed/2026-06-10-audit-remediation.complete.md`); rewritten 2026-07-07 to post-0.18-split scope (13 RPC-only packages). The bulk pre-split doc staleness is not tracked here: the `docs/reference/` half was completed on 2026-07-16, and the `website/` half is now `backlog/2026-07-16-website-post-split-rewrite.md`.
 
 ## READMEs
 

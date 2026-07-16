@@ -35,11 +35,12 @@ Next (immediate):
   graceful-close hangs, socket write-after-close crash, SSE session timeout on live streams,
   plus medium-severity backpressure/rid-reuse/race fixes.
   `next/2026-07-07-client-transport-lifecycle-hardening.md`
-- **Stale docs cleanup** — ~8k lines of pre-split guidance in `docs/reference/` and
-  `website/`; regenerate typedoc output. `next/2026-07-07-stale-docs-cleanup.md`
 
 Backlog:
 
+- **Website post-split rewrite** — typedoc lists 14 packages that no longer exist, sidebars
+  link ~24 dead API pages, and every prose page imports a removed package. Expect API drift,
+  not just renames. `backlog/2026-07-16-website-post-split-rewrite.md`
 - **Test coverage gaps** — protocol schema tests (highest leverage), electron/react/deno
   gaps, socket + MessagePort integration coverage. `backlog/2026-07-07-test-coverage-gaps.md`
 - **Package hygiene & conventions sweep** — READMEs, script/catalog drift, `it` → `test`.
