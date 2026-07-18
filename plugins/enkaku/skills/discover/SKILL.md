@@ -13,11 +13,12 @@ and the shared utilities it builds on live in sibling repos — see *Cross-repo*
 
 ### By Domain (when you know the technical area)
 
-- **Transport** — HTTP, WebSocket, Node streams, MessagePort, Electron IPC.
+- **Transport** — HTTP, TCP/Unix sockets, Node streams, MessagePort, Electron IPC.
   Choose your transport based on communication pattern and deployment: HTTP for
-  request-response and serverless, WebSocket for bidirectional real-time, Node streams for
-  pipe-based local IPC, MessagePort for workers/iframes, Electron IPC for desktop. Each has
-  different latency, scalability, and browser-compatibility trade-offs.
+  request-response, serverless, and server-to-client streaming over SSE; sockets for
+  process-to-process IPC on one host; Node streams for pipe-based local IPC; MessagePort for
+  workers/iframes; Electron IPC for desktop. Each has different latency, scalability, and
+  browser-compatibility trade-offs. There is no WebSocket transport in this repo.
   → `/enkaku:transport`
 
 - **Core RPC** — protocol definitions, client, server, standalone.
@@ -30,8 +31,9 @@ and the shared utilities it builds on live in sibling repos — see *Cross-repo*
 
 - **Building an RPC server** — protocol definition → typed handlers → routing →
   execution-chain middleware → transport. `/enkaku:core-rpc` + `/enkaku:transport`.
-- **Adding real-time communication** — persistent WebSocket connections, connection
-  lifecycle events, reconnection. `/enkaku:transport`.
+- **Adding real-time communication** — server-to-client push over SSE-backed HTTP channels, or
+  a persistent socket/MessagePort connection. Note there is no built-in reconnection: an SSE
+  disconnect resets the transport to idle and errors the readable. `/enkaku:transport`.
 - **In-process / testing** — `@enkaku/standalone` wires client and server directly with no
   transport. `/enkaku:core-rpc`.
 
@@ -47,13 +49,16 @@ and the shared utilities it builds on live in sibling repos — see *Cross-repo*
 - **@enkaku/transport** — generic transport abstraction.
 - **@enkaku/http-fetch** — HTTP client transport (POST sessions, SSE).
 - **@enkaku/http-serve** — HTTP server transport (bounded body, `413` on overflow).
-- **@enkaku/socket** — WebSocket transport (client + server).
+- **@enkaku/socket** — TCP/Unix socket transport over `node:net`. Exports `SocketTransport`,
+  which takes a socket, a socket factory, or a path to connect to; the package provides no
+  listener, so a server supplies its own accepted sockets.
 - **@enkaku/node-streams** — Node.js streams transport.
 - **@enkaku/message** — MessagePort transport (workers, iframes).
 - **@enkaku/electron** — Electron IPC transport (sender allowlist).
 
 **Observability / Platform**
-- **@enkaku/otel** — OpenTelemetry span/attribute names + W3C Trace Context codecs.
+- **@enkaku/otel** — Enkaku's OpenTelemetry naming: `createTracer`, `EnkakuSpanNames`,
+  `EnkakuAttributeKeys`. The W3C Trace Context codecs live in `@sozai/otel`.
 - **@enkaku/react** — React bindings for the RPC client.
 
 ## Cross-repo (moved out in the 0.18 split)

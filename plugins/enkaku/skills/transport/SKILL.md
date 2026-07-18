@@ -1,6 +1,6 @@
 ---
 name: transport
-description: Use when choosing or configuring an Enkaku transport - HTTP, WebSocket, Node streams, MessagePort, or Electron IPC.
+description: Use when choosing or configuring an Enkaku transport - HTTP, TCP/Unix sockets, Node streams, MessagePort, or Electron IPC.
 ---
 
 # Enkaku Transport Layer

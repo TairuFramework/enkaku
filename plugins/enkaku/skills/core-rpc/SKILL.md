@@ -261,7 +261,8 @@ for await (const num of fib.readable) {
 ### Pattern 5: Handling Different Procedure Types
 
 ```typescript
-import { Server } from '@enkaku/server'
+import { serve } from '@enkaku/server'
+import { ServerTransport } from '@enkaku/http-serve'
 import type { ProtocolDefinition } from '@enkaku/protocol'
 
 const protocol = {

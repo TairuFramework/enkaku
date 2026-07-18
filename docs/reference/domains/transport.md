@@ -153,9 +153,10 @@ than this package -- Electron's main process exposes `MessagePortMain`, not `Mes
 **Purpose**: Enkaku RPC across the Electron main/renderer boundary.
 
 **Key exports**:
-- `serveProcess(params)` / `handleProcessPort(options)` - main-process serving
+- `serveProcess(params)` / `handleProcessPort(name, handler, options?)` - main-process serving
 - `createMainTransportStream<R, W>(input)` - stream from a `MessagePortMain`
-- `createRendererClient(options)` / `createRendererTransportStream(options)` - renderer side
+- `createRendererClient(options?)` / `createRendererTransportStream<R, W>(name)` - renderer side,
+  where `name` is the bridge name (not an options object)
 - `isAllowedSenderURL(url, allowlist)` / `SenderURLAllowlist` - sender validation, where the
   allowlist is `Array<string | RegExp>`
 
