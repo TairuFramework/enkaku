@@ -810,6 +810,8 @@ class Client<
   //   now?: () => number
   // }
 
+  // `AnyHeader` is `Record<string, unknown>`. It is not re-exported from
+  // `@enkaku/client`, so import it by that structural type rather than by name.
   sendEvent<Procedure>(
     procedure: Procedure,
     // required when the procedure declares `data`
