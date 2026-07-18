@@ -13,6 +13,14 @@
 - Catalog gaps: `@opentelemetry/api` (otel), `@sozai/stream` (tests/deno duplicates the catalog entry exactly), `@testing-library/dom` (react). `tests/e2e-electron` uses `workspace:*` instead of `workspace:^`.
 - `tests/integration/package.json` carries publish-style cruft (`main`/`types`/`exports`/`files` pointing at a nonexistent `lib/`) for a private no-build package.
 - Lock is partially deduped: `@types/node` 26.0.1 and 26.1.0 both present in `pnpm-lock.yaml`.
+- `AnyHeader` (`packages/client/src/client.ts:42`) is part of the public call surface — it types
+  the `header` option on `sendEvent`, `request`, `createStream`, and `createChannel` — but
+  `packages/client/src/index.ts` does not re-export it and it is not in `@enkaku/protocol`, so
+  `import type { AnyHeader } from '@enkaku/client'` does not compile. Either export it or leave
+  it internal deliberately. (Found 2026-07-18 while verifying `docs/reference/domains/core-rpc.md`,
+  which now documents it as `Record<string, unknown>` with the caveat.)
+- `packages/client/src/index.ts` module docblock says `npm install @enkaku/client`; AGENTS.md
+  mandates pnpm. Check the other 12 packages for the same.
 
 ## Conventions (near-perfect otherwise)
 

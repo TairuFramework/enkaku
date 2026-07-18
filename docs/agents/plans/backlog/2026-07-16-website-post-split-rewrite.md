@@ -2,7 +2,7 @@
 
 **Origin:** split out of `next/2026-07-07-stale-docs-cleanup.md` on 2026-07-16. That item
 assumed the website needed a cleanup; scoping found a rewrite. The reference-docs half was
-completed separately (`docs/superpowers/specs/2026-07-16-stale-docs-cleanup-design.md`).
+completed separately -- see `completed/2026-07-18-stale-docs-cleanup.complete.md`.
 
 The 0.18 split removed 14 of the packages the site documents and renamed every transport. The
 site still describes the pre-split world throughout.

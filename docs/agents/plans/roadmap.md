@@ -8,6 +8,10 @@ owning repos (see bottom).
 
 ## Recent (2026)
 
+- **Stale pre-split docs cleanup** — deleted ~8.4k orphaned lines, verified the two surviving
+  reference docs claim-by-claim against source (134 claims, 9 wrong), and shipped the discovery
+  skills as an in-repo plugin so `/enkaku:discover` resolves.
+  `completed/2026-07-18-stale-docs-cleanup.complete.md`
 - **0.18 stack refactor / repo split** — trimmed Enkaku to 13 RPC-only packages, retooled
   onto `@kigu/dev`, published RPC at 0.18.0. `completed/2026-06-30-stack-refactoring`
 - **Transport framing/size limits** — bounded-memory knobs across all transports + the
@@ -47,6 +51,9 @@ Backlog:
   `backlog/2026-07-07-package-hygiene.md`
 - **Docs & release gaps** — README quality, release tags, DX ideas. Tracking only while
   consumers are stack-internal. `backlog/docs-release-gaps.md`
+- **Sibling-repo skill plugins** — `kokuin` and `sozai` carry the same unwired `docs/skills/`
+  enkaku just migrated; verify content against source before serving it.
+  `backlog/2026-07-18-sibling-repo-skill-plugins.md`
 - **Transport typed constructors** — additive DX helpers so consumers can't drop transport
   type args and fall back to `as unknown as` casts. `backlog/transport-typed-constructors.md`
 
