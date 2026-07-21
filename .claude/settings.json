@@ -6,9 +6,17 @@
         "repo": "TairuFramework/kigu"
       },
       "autoUpdate": true
+    },
+    "enkaku": {
+      "source": {
+        "source": "github",
+        "repo": "TairuFramework/enkaku"
+      },
+      "autoUpdate": true
     }
   },
   "enabledPlugins": {
-    "kigu@kigu": true
+    "kigu@kigu": true,
+    "enkaku@enkaku": true
   }
 }

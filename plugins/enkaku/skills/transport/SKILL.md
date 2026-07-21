@@ -1,6 +1,6 @@
 ---
-name: enkaku:transport
-description: Transport layer patterns, packages, and usage examples
+name: transport
+description: Use when choosing or configuring an Enkaku transport - HTTP, TCP/Unix sockets, Node streams, MessagePort, or Electron IPC.
 ---
 
 # Enkaku Transport Layer
@@ -9,30 +9,39 @@ description: Transport layer patterns, packages, and usage examples
 
 **Core**: `@enkaku/transport`
 
-**Implementations**: `@enkaku/http-client-transport`, `@enkaku/http-server-transport`, `@enkaku/socket-transport`, `@enkaku/node-streams-transport`, `@enkaku/message-transport`
+**Implementations**: `@enkaku/http-fetch`, `@enkaku/http-serve`, `@enkaku/socket`, `@enkaku/node-streams`, `@enkaku/message`, `@enkaku/electron`
 
 ## Key Patterns
+
+`Client` takes no `protocol` option -- the protocol is a type parameter. `serve()` takes a
+singular `transport`; `new Server()` takes plural `transports`. Either way an access option is
+required: `requireAuth: false` or an `identity`.
 
 ### Pattern 1: HTTP Request-Response (Client-Server)
 
 ```typescript
 import { Client } from '@enkaku/client'
-import { ClientTransport } from '@enkaku/http-client-transport'
-import { Server } from '@enkaku/server'
-import { ServerTransport } from '@enkaku/http-server-transport'
+import { ClientTransport } from '@enkaku/http-fetch'
+import { serve } from '@enkaku/server'
+import { ServerTransport } from '@enkaku/http-serve'
 import type { MyProtocol } from './protocol'
 
 // Client side
 const transport = new ClientTransport<MyProtocol>({
   url: 'https://api.example.com/rpc'
 })
-const client = new Client({ protocol: myProtocol, transport })
+const client = new Client<MyProtocol>({ transport })
 
 // Server side
 const serverTransport = new ServerTransport<MyProtocol>({
   allowedOrigin: ['https://example.com']
 })
-const server = new Server({ protocol: myProtocol, transport: serverTransport })
+const server = serve<MyProtocol>({
+  requireAuth: false,
+  protocol: myProtocol,
+  transport: serverTransport,
+  handlers,
+})
 
 // Use with Bun/Deno/Node HTTP server
 Bun.serve({
@@ -45,32 +54,35 @@ Bun.serve({
 
 **Key points**:
 - HTTP client handles SSE for streams/channels automatically
-- Server bridge manages CORS and session state
-- Compatible with standard HTTP servers (Bun, Deno, Node)
+- Server transport manages CORS (including OPTIONS preflight) and session state
+- Any host that speaks `Request` -> `Response` can serve it
 - Request-response uses immediate responses, streams use Server-Sent Events
 - No persistent connection needed for simple requests
+- `allowedOrigin` defaults to none: a request carrying an `Origin` header is rejected `403`
+  unless you configure it
+- SSE sessions are held in-process, so streams and channels need sticky routing to one instance
 
 ### Pattern 2: In-Process Communication (Direct Transport)
 
 ```typescript
 import { Client } from '@enkaku/client'
-import { Server } from '@enkaku/server'
+import { serve } from '@enkaku/server'
 import { DirectTransports } from '@enkaku/transport'
 import type { MyProtocol } from './protocol'
 
 const transports = new DirectTransports<ToClient, ToServer>()
 
-const client = new Client({
+const client = new Client<MyProtocol>({ transport: transports.client })
+
+const server = serve<MyProtocol>({
+  requireAuth: false,
   protocol: myProtocol,
-  transport: transports.client
+  transport: transports.server,
+  handlers,
 })
 
-const server = new Server({
-  protocol: myProtocol,
-  transport: transports.server
-})
-
-// Perfect for testing or same-process scenarios
+// Perfect for testing or same-process scenarios.
+// `@enkaku/standalone` wraps this whole pattern: standalone(handlers, options)
 await client.request('myProcedure', { param: 'value' })
 ```
 
@@ -86,7 +98,7 @@ await client.request('myProcedure', { param: 'value' })
 ### Pattern 3: Socket-Based IPC (Unix/TCP Sockets)
 
 ```typescript
-import { SocketTransport, connectSocket } from '@enkaku/socket-transport'
+import { SocketTransport, connectSocket } from '@enkaku/socket'
 import type { MyProtocol } from './protocol'
 
 // Client connecting to Unix socket
@@ -97,16 +109,21 @@ const clientTransport = new SocketTransport<
   socket: '/tmp/my-app.sock'
 })
 
-// Server accepting socket connections
+// Server accepting socket connections -- @enkaku/socket is connect-only,
+// so the accept loop is plain node:net
 import { createServer } from 'node:net'
-import { Server } from '@enkaku/server'
+import { serve } from '@enkaku/server'
 
 const netServer = createServer(async (socket) => {
   const transport = new SocketTransport<ClientMessage, ServerMessage>({
     socket
   })
-  const server = new Server({ protocol: myProtocol, transport })
-  // Server will handle messages from this socket
+  const server = serve<MyProtocol>({
+    requireAuth: false,
+    protocol: myProtocol,
+    transport,
+    handlers,
+  })
 })
 
 netServer.listen('/tmp/my-app.sock')
@@ -120,16 +137,18 @@ netServer.listen('/tmp/my-app.sock')
 
 **Key points**:
 - Uses newline-delimited JSON (JSONL) format
-- Works with Unix domain sockets or TCP sockets
-- Lower latency than HTTP for local communication
-- Automatic connection management and error handling
+- A `socket` **string is an IPC/Unix path only** -- it goes to node's `createConnection(path)`,
+  which never parses `host:port`. For TCP, build the `Socket` yourself and pass the instance
+- Connect-only: no server/listen API. Bring your own `node:net` accept loop
+- Automatic error propagation from socket to stream
 - Each socket connection gets its own transport instance
 
 ### Pattern 4: MessagePort (Web Workers, Electron)
 
 ```typescript
-import { MessageTransport } from '@enkaku/message-transport'
+import { MessageTransport } from '@enkaku/message'
 import { Client } from '@enkaku/client'
+import { serve } from '@enkaku/server'
 import type { MyProtocol } from './protocol'
 
 // Main thread
@@ -138,29 +157,36 @@ const worker = new Worker('./worker.js')
 worker.postMessage({ port: port2 }, [port2])
 
 const transport = new MessageTransport<ToMain, ToWorker>({ port: port1 })
-const client = new Client({ protocol: myProtocol, transport })
+const client = new Client<MyProtocol>({ transport })
 
 // Worker thread (worker.js)
 self.addEventListener('message', (event) => {
   const port = event.data.port
   const transport = new MessageTransport<ToWorker, ToMain>({ port })
-  const server = new Server({ protocol: myProtocol, transport })
+  const server = serve<MyProtocol>({
+    requireAuth: false,
+    protocol: myProtocol,
+    transport,
+    handlers,
+  })
 })
 ```
 
-**Use case**: Web Workers, Service Workers, Electron IPC, cross-origin iframes
+**Use case**: Web Workers, Service Workers, cross-origin iframes
 
 **Key points**:
 - Browser-native MessagePort API
-- Zero serialization overhead (structured clone)
-- Works in all modern browsers
+- No JSON serialization -- values go through structured clone
+- Does **not** transfer transferables: `postMessage` is called with no transfer list, so an
+  `ArrayBuffer` is copied, not detached
 - Ideal for offloading work to Web Workers
-- Supports transferable objects
+- For Electron, use `@enkaku/electron` -- the main process exposes `MessagePortMain`, not
+  `MessagePort`
 
 ### Pattern 5: Node Streams (Process Pipes, Custom Streams)
 
 ```typescript
-import { NodeStreamsTransport } from '@enkaku/node-streams-transport'
+import { NodeStreamsTransport } from '@enkaku/node-streams'
 import { spawn } from 'node:child_process'
 
 // Parent process communicating with child
@@ -175,7 +201,7 @@ const transport = new NodeStreamsTransport<FromChild, ToChild>({
   }
 })
 
-const client = new Client({ protocol: myProtocol, transport })
+const client = new Client<MyProtocol>({ transport })
 
 // Child process (child.js)
 const transport = new NodeStreamsTransport<ToChild, FromChild>({
@@ -185,17 +211,22 @@ const transport = new NodeStreamsTransport<ToChild, FromChild>({
   }
 })
 
-const server = new Server({ protocol: myProtocol, transport })
+const server = serve<MyProtocol>({
+  requireAuth: false,
+  protocol: myProtocol,
+  transport,
+  handlers,
+})
 ```
 
 **Use case**: Child processes, stdin/stdout pipes, custom Node streams
 
 **Key points**:
-- Works with any Node.js Readable/Writable streams
+- Works with any `{ readable: Readable; writable: Writable }` pair
 - Uses JSON Lines format (newline-delimited JSON)
 - Perfect for CLI tools and child process communication
-- Automatic backpressure handling
-- Compatible with process.stdin/stdout
+- Never write to stdout directly alongside it -- that corrupts the JSONL frame stream. Use
+  stderr for logging
 
 ## When to Use What
 
@@ -214,15 +245,19 @@ const server = new Server({ protocol: myProtocol, transport })
 
 **Use SocketTransport** when:
 - Building microservices on the same host
-- Need low-latency IPC between Node processes
+- Need IPC between Node processes without an HTTP stack
 - Working with daemon processes or background services
 - Unix domain sockets are available (Linux/macOS)
 
 **Use MessageTransport** when:
 - Offloading work to Web Workers
-- Building browser extensions or Electron apps
+- Building browser extensions
 - Need cross-origin iframe communication
-- Want zero-copy structured clone transfer
+- Want structured clone rather than JSON serialization
+
+**Use `@enkaku/electron`** when:
+- Bridging Electron's main and renderer processes (it wraps `MessagePortMain` and `ipcMain`,
+  with a `SenderURLAllowlist` for sender validation)
 
 **Use NodeStreamsTransport** when:
 - Communicating with child processes via pipes

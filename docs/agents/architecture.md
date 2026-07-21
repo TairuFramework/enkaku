@@ -6,7 +6,7 @@ Technical architecture and design patterns for the Enkaku RPC framework.
 
 ## What is Enkaku?
 
-Enkaku is a modern, type-safe RPC framework for TypeScript applications. It provides protocol-driven client-server communication with strong typing, multiple transport options (HTTP, WebSocket, Node.js streams, MessagePort, Electron IPC), and schema-validated runtime safety. The framework is a pnpm-workspaces monorepo of modular packages that can be used independently or together.
+Enkaku is a modern, type-safe RPC framework for TypeScript applications. It provides protocol-driven client-server communication with strong typing, multiple transport options (HTTP, TCP/Unix sockets, Node.js streams, MessagePort, Electron IPC), and schema-validated runtime safety. The framework is a pnpm-workspaces monorepo of modular packages that can be used independently or together.
 
 Enkaku is the RPC layer of the five-repo Yulsi stack. Cross-cutting primitives it depends on come from sibling repos: build/tooling from `@kigu/*`, runtime/async/schema/transport utilities from `@sozai/*`, and identity/auth (tokens, capabilities, keystores) from `@kokuin/*`. Group/MLS and hub messaging now live downstream in `@kumiai/*` (formerly in-repo, moved out in the 0.18 stack refactor). Enkaku itself ships RPC core, transports, OTel naming, and React bindings only.
 
@@ -18,7 +18,7 @@ Enkaku is the RPC layer of the five-repo Yulsi stack. Cross-cutting primitives i
 
 **Four procedure types**: request (single response), event (fire-and-forget), stream (server-to-client data flow), channel (bidirectional communication).
 
-**Transport Layer**: Multiple transport mechanisms (HTTP, WebSocket, Node.js streams, MessagePort, Electron IPC). Transport implementations are modular and swappable without changing application code.
+**Transport Layer**: Multiple transport mechanisms (HTTP, TCP/Unix sockets, Node.js streams, MessagePort, Electron IPC). Transport implementations are modular and swappable without changing application code. There is no WebSocket transport -- bidirectional flows run over SSE-backed HTTP channels, sockets, or MessagePort.
 
 **Authentication (external)**: Enkaku's server enforces access control and encryption policy at the procedure level, but the token/keystore/capability implementations live in `@kokuin/*` (`@kokuin/token`, `@kokuin/capability`). Enkaku consumes them; it no longer ships them.
 
@@ -102,7 +102,7 @@ packages/[package-name]/
 - **transport** (`@enkaku/transport`): Generic transport abstraction and interfaces
 - **http-fetch** (`@enkaku/http-fetch`): HTTP transport for clients (POST-based sessions, SSE, fetch + eventsource-parser)
 - **http-serve** (`@enkaku/http-serve`): HTTP transport for servers (bounded request body, `413` on overflow)
-- **socket** (`@enkaku/socket`): WebSocket transport for clients and servers
+- **socket** (`@enkaku/socket`): TCP/Unix socket transport over `node:net`; connect-only (`SocketTransport`, `connectSocket`) -- servers supply their own accepted sockets
 - **node-streams** (`@enkaku/node-streams`): Node.js streams transport
 - **message** (`@enkaku/message`): MessagePort transport (web workers, iframes)
 - **electron** (`@enkaku/electron`): Electron IPC transport (sender allowlist)
@@ -140,7 +140,7 @@ The progressive discovery system provides focused guidance for specific domains.
 - `/enkaku:discover` - Entry point for exploring capabilities by domain or use case
 
 ### Domain Skills
-- `/enkaku:transport` - HTTP, WebSocket, streams, custom transports
+- `/enkaku:transport` - HTTP, sockets, streams, custom transports
 - `/enkaku:core-rpc` - Protocol, client, server basics
 
 > The former `/enkaku:auth`, `/enkaku:validation`, and `/enkaku:streaming` skills were removed in the 0.18 split — their domains moved to `/kokuin:auth` + `/kokuin:capability` (identity/keystores) and `/sozai:validation` + `/sozai:dataflow` (schema/streaming). See `/enkaku:discover` for the cross-repo map.

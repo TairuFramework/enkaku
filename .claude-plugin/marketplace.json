@@ -1,0 +1,11 @@
+{
+  "name": "enkaku",
+  "owner": { "name": "Paul Le Cam" },
+  "plugins": [
+    {
+      "name": "enkaku",
+      "source": "./plugins/enkaku",
+      "description": "Enkaku RPC discovery and domain skills."
+    }
+  ]
+}

@@ -8,6 +8,10 @@ owning repos (see bottom).
 
 ## Recent (2026)
 
+- **Stale pre-split docs cleanup** — deleted ~8.4k orphaned lines, verified the two surviving
+  reference docs claim-by-claim against source (134 claims, 9 wrong), and shipped the discovery
+  skills as an in-repo plugin so `/enkaku:discover` resolves.
+  `completed/2026-07-18-stale-docs-cleanup.complete.md`
 - **0.18 stack refactor / repo split** — trimmed Enkaku to 13 RPC-only packages, retooled
   onto `@kigu/dev`, published RPC at 0.18.0. `completed/2026-06-30-stack-refactoring`
 - **Transport framing/size limits** — bounded-memory knobs across all transports + the
@@ -35,17 +39,21 @@ Next (immediate):
   graceful-close hangs, socket write-after-close crash, SSE session timeout on live streams,
   plus medium-severity backpressure/rid-reuse/race fixes.
   `next/2026-07-07-client-transport-lifecycle-hardening.md`
-- **Stale docs cleanup** — ~8k lines of pre-split guidance in `docs/reference/` and
-  `website/`; regenerate typedoc output. `next/2026-07-07-stale-docs-cleanup.md`
 
 Backlog:
 
+- **Website post-split rewrite** — typedoc lists 14 packages that no longer exist, sidebars
+  link ~24 dead API pages, and every prose page imports a removed package. Expect API drift,
+  not just renames. `backlog/2026-07-16-website-post-split-rewrite.md`
 - **Test coverage gaps** — protocol schema tests (highest leverage), electron/react/deno
   gaps, socket + MessagePort integration coverage. `backlog/2026-07-07-test-coverage-gaps.md`
 - **Package hygiene & conventions sweep** — READMEs, script/catalog drift, `it` → `test`.
   `backlog/2026-07-07-package-hygiene.md`
 - **Docs & release gaps** — README quality, release tags, DX ideas. Tracking only while
   consumers are stack-internal. `backlog/docs-release-gaps.md`
+- **Sibling-repo skill plugins** — `kokuin` and `sozai` carry the same unwired `docs/skills/`
+  enkaku just migrated; verify content against source before serving it.
+  `backlog/2026-07-18-sibling-repo-skill-plugins.md`
 - **Transport typed constructors** — additive DX helpers so consumers can't drop transport
   type args and fall back to `as unknown as` casts. `backlog/transport-typed-constructors.md`
 
