@@ -6,7 +6,6 @@ import type {
   StreamCall,
 } from '@enkaku/client'
 import type { ProtocolDefinition } from '@enkaku/protocol'
-
 // canonicalize uses `module.exports = fn` but declares `export default fn`,
 // which is incorrect for CJS under nodenext. Double cast to bridge the mismatch.
 import canonicalize from 'canonicalize'

@@ -38,7 +38,7 @@ describe('Per-message size limits', () => {
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('error')
     expect(response.value?.payload.rid).toBe('r1')
-    expect((response.value?.payload as Record<string, unknown>).code).toBe('EK06')
+    expect((response.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK06')
     expect(handler).not.toHaveBeenCalled()
 
     await server.dispose()
@@ -79,7 +79,7 @@ describe('Per-message size limits', () => {
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('error')
     expect(response.value?.payload.rid).toBe('s1')
-    expect((response.value?.payload as Record<string, unknown>).code).toBe('EK06')
+    expect((response.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK06')
     expect(handler).not.toHaveBeenCalled()
 
     await server.dispose()
@@ -121,7 +121,7 @@ describe('Per-message size limits', () => {
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('error')
     expect(response.value?.payload.rid).toBe('c1')
-    expect((response.value?.payload as Record<string, unknown>).code).toBe('EK06')
+    expect((response.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK06')
     expect(handler).not.toHaveBeenCalled()
 
     await server.dispose()
@@ -211,7 +211,7 @@ describe('Per-message size limits', () => {
 
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('result')
-    expect((response.value?.payload as Record<string, unknown>).val).toBe('hello')
+    expect((response.value?.payload as Record<string, unknown> | undefined)?.val).toBe('hello')
 
     await server.dispose()
     await transports.dispose()

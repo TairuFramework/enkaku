@@ -31,6 +31,7 @@ import {
 } from '@sozai/otel'
 import { createRuntime, type Runtime } from '@sozai/runtime'
 import { createPipe, writeTo } from '@sozai/stream'
+
 import { RequestError } from './error.js'
 import type { ClientEmitter, ClientEvents } from './events.js'
 import { safeWrite, type WriteTarget } from './safe-write.js'

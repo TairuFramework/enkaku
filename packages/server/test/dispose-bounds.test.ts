@@ -166,7 +166,7 @@ describe('no cleanup timer outlives the disposal that armed it', () => {
   // `clearTimeout`, every client hang-up leaves one live 30s timer behind while
   // `activeTransportsCount` already reports the server fully clean.
   test('a client hang-up leaves no armed timer behind', async () => {
-    const CLIENTS = 5
+    const Clients = 5
     const server = new Server<Protocol>({
       handlers: { test: vi.fn() } as unknown as ProcedureHandlers<Protocol>,
       protocol,
@@ -181,7 +181,7 @@ describe('no cleanup timer outlives the disposal that armed it', () => {
 
     const all: Array<DirectTransports<AnyServerMessageOf<Protocol>, AnyClientMessageOf<Protocol>>> =
       []
-    for (let i = 0; i < CLIENTS; i++) {
+    for (let i = 0; i < Clients; i++) {
       const transports = new DirectTransports<
         AnyServerMessageOf<Protocol>,
         AnyClientMessageOf<Protocol>
@@ -196,7 +196,7 @@ describe('no cleanup timer outlives the disposal that armed it', () => {
         }) as AnyClientMessageOf<Protocol>,
       )
     }
-    expect(server.activeTransportsCount).toBe(CLIENTS)
+    expect(server.activeTransportsCount).toBe(Clients)
 
     // Every client hangs up cleanly: the `next.done` route in `handleNext`.
     for (const transports of all) {

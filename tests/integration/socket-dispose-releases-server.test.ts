@@ -1,7 +1,6 @@
 import { createServer, type Server, type Socket } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-
 import { SocketTransport } from '@enkaku/socket'
 import { describe, expect, test } from 'vitest'
 

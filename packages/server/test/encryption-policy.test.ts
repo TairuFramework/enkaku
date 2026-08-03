@@ -49,7 +49,7 @@ describe('encryption policy enforcement', () => {
     const read = await transports.client.read()
 
     expect(read.value?.payload.typ).toBe('error')
-    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK07')
+    expect((read.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK07')
     expect(handler).not.toHaveBeenCalled()
 
     await transports.dispose()
@@ -84,7 +84,7 @@ describe('encryption policy enforcement', () => {
     const read = await transports.client.read()
 
     expect(read.value?.payload.typ).toBe('result')
-    expect((read.value?.payload as Record<string, unknown>).val).toBe('OK')
+    expect((read.value?.payload as Record<string, unknown> | undefined)?.val).toBe('OK')
 
     await transports.dispose()
   })
@@ -117,7 +117,7 @@ describe('encryption policy enforcement', () => {
     const read = await transports.client.read()
 
     expect(read.value?.payload.typ).toBe('result')
-    expect((read.value?.payload as Record<string, unknown>).val).toBe('OK')
+    expect((read.value?.payload as Record<string, unknown> | undefined)?.val).toBe('OK')
 
     await transports.dispose()
   })
@@ -198,7 +198,7 @@ describe('encryption policy enforcement', () => {
 
     const read = await transports.client.read()
     expect(read.value?.payload.typ).toBe('error')
-    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK07')
+    expect((read.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK07')
 
     const emitted = await handlerErrorEvent
     expect(handler).not.toHaveBeenCalled()
@@ -247,7 +247,7 @@ describe('encryption policy enforcement', () => {
     const read = await transports.client.read()
 
     expect(read.value?.payload.typ).toBe('result')
-    expect((read.value?.payload as Record<string, unknown>).val).toBe('OK')
+    expect((read.value?.payload as Record<string, unknown> | undefined)?.val).toBe('OK')
 
     await transports.dispose()
   })
@@ -281,7 +281,7 @@ describe('encryption policy enforcement', () => {
     const read = await transports.client.read()
 
     expect(read.value?.payload.typ).toBe('error')
-    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK07')
+    expect((read.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK07')
     expect(handler).not.toHaveBeenCalled()
 
     await transports.dispose()

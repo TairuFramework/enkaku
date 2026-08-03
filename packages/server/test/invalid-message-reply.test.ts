@@ -68,7 +68,7 @@ describe('Schema-invalid message error replies', () => {
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('error')
     expect(response.value?.payload.rid).toBe('r1')
-    expect((response.value?.payload as Record<string, unknown>).code).toBe('EK08')
+    expect((response.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK08')
     expect(handler).not.toHaveBeenCalled()
 
     await server.dispose()
@@ -90,7 +90,7 @@ describe('Schema-invalid message error replies', () => {
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('error')
     expect(response.value?.payload.rid).toBe('s1')
-    expect((response.value?.payload as Record<string, unknown>).code).toBe('EK08')
+    expect((response.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK08')
 
     await server.dispose()
     await transports.dispose()
@@ -111,7 +111,7 @@ describe('Schema-invalid message error replies', () => {
     const response = await transports.client.read()
     expect(response.value?.payload.typ).toBe('error')
     expect(response.value?.payload.rid).toBe('c1')
-    expect((response.value?.payload as Record<string, unknown>).code).toBe('EK08')
+    expect((response.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK08')
 
     await server.dispose()
     await transports.dispose()
@@ -163,7 +163,7 @@ describe('Schema-invalid message error replies', () => {
     )
 
     const response = await transports.client.read()
-    expect((response.value?.payload as Record<string, unknown>).code).toBe('EK08')
+    expect((response.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK08')
     expect(invalidEvents.length).toBe(1)
 
     await server.dispose()

@@ -16,7 +16,7 @@ const protocol = {
 type Protocol = typeof protocol
 
 describe('teardown (integration)', () => {
-  const rejections: unknown[] = []
+  const rejections: Array<unknown> = []
   const onRejection = (reason: unknown) => rejections.push(reason)
 
   beforeEach(() => {

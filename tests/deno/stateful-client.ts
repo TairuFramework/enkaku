@@ -1,6 +1,7 @@
 import { Client } from '@enkaku/client'
 import { ClientTransport } from '@enkaku/http-fetch'
 import { createArraySink } from '@sozai/stream'
+
 import type { Protocol } from './stateful-protocol.ts'
 
 const client = new Client<Protocol>({

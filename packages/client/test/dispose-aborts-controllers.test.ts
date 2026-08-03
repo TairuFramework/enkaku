@@ -1,6 +1,7 @@
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { DirectTransports } from '@enkaku/transport'
 import { describe, expect, test } from 'vitest'
+
 import { Client } from '../src/index.js'
 
 const protocol = {

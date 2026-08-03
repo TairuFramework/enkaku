@@ -1,38 +1,38 @@
 {
   "name": "@enkaku/transport",
-  "version": "0.19.1",
-  "license": "MIT",
-  "homepage": "https://enkaku.dev",
+  "version": "0.20.0",
   "description": "Generic transport for Enkaku RPC clients and servers",
   "keywords": [
     "transport",
     "web",
     "stream"
   ],
+  "homepage": "https://enkaku.dev",
   "repository": {
     "type": "git",
     "url": "https://github.com/TairuFramework/enkaku",
     "directory": "packages/transport"
   },
+  "license": "MIT",
+  "sideEffects": false,
   "type": "module",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "exports": {
     ".": "./lib/index.js"
   },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "files": [
     "lib/*"
   ],
-  "sideEffects": false,
   "scripts": {
+    "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
     "build:clean": "del lib",
     "build:js": "swc src -d ./lib --config-file ../../node_modules/@kigu/dev/swc.json --strip-leading-paths",
     "build:types": "tsc --emitDeclarationOnly --skipLibCheck",
-    "build": "pnpm run build:clean && pnpm run build:js && pnpm run build:types",
-    "test:types": "tsc --noEmit -p tsconfig.test.json",
-    "test:unit": "vitest run",
+    "prepublishOnly": "pnpm run build",
     "test": "pnpm run test:types && pnpm run test:unit",
-    "prepublishOnly": "pnpm run build"
+    "test:types": "tsc --noEmit -p tsconfig.test.json",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@sozai/async": "catalog:",

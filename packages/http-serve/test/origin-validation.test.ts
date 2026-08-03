@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+
 import { createServerBridge } from '../src/index.js'
 
 describe('origin validation', () => {

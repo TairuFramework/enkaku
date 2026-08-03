@@ -108,7 +108,9 @@ describe('Channel send authorization', () => {
     const errorMsg = await transports.client.read()
     expect(errorMsg.value?.payload.typ).toBe('error')
     expect(errorMsg.value?.payload.rid).toBe('ch1')
-    expect((errorMsg.value?.payload as Record<string, unknown>).msg).toContain('signed')
+    expect((errorMsg.value?.payload as Record<string, unknown> | undefined)?.msg).toContain(
+      'signed',
+    )
 
     const emitted = await handlerErrorEvent
     expect(emitted).toEqual(

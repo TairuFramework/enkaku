@@ -66,7 +66,7 @@ describe('Server resource limits', () => {
     const r3Error = await transports.client.read()
     expect(r3Error.value?.payload.typ).toBe('error')
     expect(r3Error.value?.payload.rid).toBe('r3')
-    expect((r3Error.value?.payload as Record<string, unknown>).msg).toContain('limit')
+    expect((r3Error.value?.payload as Record<string, unknown> | undefined)?.msg).toContain('limit')
 
     // Only 2 handlers should have been called
     expect(handlerCalls).toEqual(['r1', 'r2'])
@@ -127,7 +127,9 @@ describe('Server resource limits', () => {
     const r3Error = await transports.client.read()
     expect(r3Error.value?.payload.typ).toBe('error')
     expect(r3Error.value?.payload.rid).toBe('r3')
-    expect((r3Error.value?.payload as Record<string, unknown>).msg).toContain('handler limit')
+    expect((r3Error.value?.payload as Record<string, unknown> | undefined)?.msg).toContain(
+      'handler limit',
+    )
 
     // Only first two handlers should have started
     expect(handlerStarts).toEqual(['first', 'second'])

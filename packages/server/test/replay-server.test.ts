@@ -552,14 +552,14 @@ test('does not consume the replay key when a message fails the encryption check'
 
   await transports.client.write(message)
   const first = await transports.client.read()
-  expect((first.value?.payload as Record<string, unknown>).code).toBe('EK07')
+  expect((first.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK07')
 
   // Resending the identical message must fail on encryption again (EK07), NOT be
   // rejected as a replay (EK09): the first, encryption-failed message never
   // recorded its dedup key, so a corrected retry reusing the jti is still viable.
   await transports.client.write(message)
   const second = await transports.client.read()
-  expect((second.value?.payload as Record<string, unknown>).code).toBe('EK07')
+  expect((second.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK07')
 
   expect(handler).not.toHaveBeenCalled()
 

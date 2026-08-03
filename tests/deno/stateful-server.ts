@@ -1,5 +1,6 @@
 import { ServerTransport } from '@enkaku/http-serve'
 import { serve } from '@enkaku/server'
+
 import type { Protocol } from './stateful-protocol.ts'
 
 const transport = new ServerTransport<Protocol>()

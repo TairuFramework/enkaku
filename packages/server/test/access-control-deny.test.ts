@@ -56,7 +56,7 @@ describe('access-control denial emits handlerError', () => {
 
     const read = await transports.client.read()
     expect(read.value?.payload.typ).toBe('error')
-    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK02')
+    expect((read.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK02')
 
     const emitted = await handlerErrorEvent
     expect(handler).not.toHaveBeenCalled()
@@ -104,7 +104,7 @@ describe('access-control denial emits handlerError', () => {
 
     const read = await transports.client.read()
     expect(read.value?.payload.typ).toBe('error')
-    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK02')
+    expect((read.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK02')
 
     const emitted = await handlerErrorEvent
     expect(handler).not.toHaveBeenCalled()
@@ -152,7 +152,7 @@ describe('access-control denial emits handlerError', () => {
 
     const read = await transports.client.read()
     expect(read.value?.payload.typ).toBe('error')
-    expect((read.value?.payload as Record<string, unknown>).code).toBe('EK02')
+    expect((read.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK02')
 
     const emitted = await handlerErrorEvent
     expect(handler).not.toHaveBeenCalled()

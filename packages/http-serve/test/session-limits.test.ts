@@ -1,4 +1,5 @@
 import { describe, expect, test, vi } from 'vitest'
+
 import { createServerBridge } from '../src/index.js'
 
 function createStreamPost(rid: string, sessionID?: string): Request {

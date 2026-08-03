@@ -2,18 +2,18 @@
   "name": "integration-tests",
   "version": "0.0.0",
   "private": true,
-  "license": "MIT",
   "keywords": [],
+  "license": "MIT",
+  "sideEffects": false,
   "type": "module",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "exports": {
     ".": "./lib/index.js"
   },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "files": [
     "lib/*"
   ],
-  "sideEffects": false,
   "scripts": {
     "test": "vitest run"
   },

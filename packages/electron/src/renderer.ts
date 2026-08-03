@@ -6,6 +6,7 @@ import { DEFAULT_BRIDGE_NAME } from './constants.js'
 import type { CreateProcess } from './types.js'
 
 declare global {
+  // biome-ignore lint/style/useConsistentTypeDefinitions: extend interface
   interface Window {
     Enkaku: {
       createProcess: CreateProcess
