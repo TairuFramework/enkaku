@@ -38,6 +38,7 @@ catalog:
   '@orama/plugin-docusaurus-v3': ^3.1.18
   '@playwright/test': 1.62.1
   '@sozai/async': ^0.2.1
+  '@sozai/codec': ^0.3.0
   '@sozai/event': ^0.1.3
   '@sozai/execution': ^0.2.1
   '@sozai/json': ^0.1.0

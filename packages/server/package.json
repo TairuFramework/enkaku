@@ -40,6 +40,7 @@
     "@kokuin/capability": "catalog:",
     "@kokuin/token": "catalog:",
     "@sozai/async": "catalog:",
+    "@sozai/codec": "catalog:",
     "@sozai/event": "catalog:",
     "@sozai/log": "catalog:",
     "@sozai/otel": "catalog:",
