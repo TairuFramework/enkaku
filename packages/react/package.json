@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@enkaku/client": "workspace:^",
-    "canonicalize": "catalog:"
+    "@sozai/json": "catalog:"
   },
   "devDependencies": {
     "@enkaku/protocol": "workspace:^",

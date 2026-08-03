@@ -1,26 +1,26 @@
 {
   "name": "enkaku-repo",
   "version": "0.0.0",
+  "private": true,
   "author": "Paul Le Cam",
   "type": "module",
-  "private": true,
-  "packageManager": "pnpm@11.18.0",
   "scripts": {
-    "prepare": "git config core.hooksPath .githooks",
-    "lint": "biome check --write ./packages ./tests",
-    "format": "biome format --write .",
-    "test": "turbo run test:types test:unit",
+    "build": "pnpm run build:types && pnpm run build:js",
     "build:js": "turbo run build:js",
     "build:types": "pnpm run -r build:types",
-    "build": "pnpm run build:types && pnpm run build:js",
     "changeset": "changeset",
-    "version": "changeset version",
-    "release": "pnpm run build && changeset publish"
+    "format": "biome format --write .",
+    "lint": "biome check --write ./packages ./tests",
+    "prepare": "git config core.hooksPath .githooks",
+    "release": "pnpm run build && changeset publish",
+    "test": "turbo run test:types test:unit",
+    "version": "changeset version"
   },
   "devDependencies": {
     "@changesets/cli": "catalog:",
     "@kigu/dev": "catalog:",
     "typedoc": "catalog:",
     "typedoc-plugin-markdown": "catalog:"
-  }
+  },
+  "packageManager": "pnpm@11.18.0"
 }
