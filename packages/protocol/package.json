@@ -42,5 +42,8 @@
   "devDependencies": {
     "@enkaku/transport": "workspace:^",
     "@sozai/schema": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

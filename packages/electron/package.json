@@ -52,5 +52,8 @@
     "@enkaku/protocol": "workspace:^",
     "electron": "catalog:",
     "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

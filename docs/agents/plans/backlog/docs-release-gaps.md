@@ -11,7 +11,7 @@
 
 ## Release infrastructure
 
-- Changesets and per-package CHANGELOGs exist since the 0.18 retooling onto `@kigu/dev`. Still missing: git tags, GitHub releases, a stability statement in the root README. Adopt when external consumers appear.
+- Intent files and per-package CHANGELOGs exist since the 0.18 retooling onto `@kigu/dev` (migrated from Changesets to pnpm built-in versioning on 2026-08-08). Still missing: git tags, GitHub releases, a stability statement in the root README. Adopt when external consumers appear.
 - Prevention idea for doc drift: CI step compiling doc snippets (twoslash) so API changes fail the build.
 
 ## DX improvements (ideas, unscheduled)

@@ -74,7 +74,7 @@ Enkaku is the RPC layer of the five-repo Yulsi stack. Cross-cutting primitives i
 - **Build System**: Turbo for build orchestration, SWC for compilation (`esnext` target)
 - **Testing**: Vitest test runner (`test:types` + `test:unit` via Turbo)
 - **Linting**: Biome for code formatting and linting
-- **Versioning**: Changesets
+- **Versioning**: pnpm built-in versioning (intent files under `.changeset/`, `pnpm change` / `pnpm version -r`)
 
 ### Package Structure
 All packages follow this standard layout:

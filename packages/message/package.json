@@ -39,5 +39,8 @@
   },
   "dependencies": {
     "@enkaku/transport": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

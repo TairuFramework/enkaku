@@ -38,5 +38,8 @@
     "@sozai/async": "catalog:",
     "@sozai/event": "catalog:",
     "@sozai/stream": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

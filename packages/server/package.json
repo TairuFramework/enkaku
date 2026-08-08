@@ -50,5 +50,8 @@
   },
   "devDependencies": {
     "@enkaku/transport": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

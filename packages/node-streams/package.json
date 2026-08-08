@@ -39,5 +39,8 @@
   "dependencies": {
     "@enkaku/transport": "workspace:^",
     "@sozai/stream": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

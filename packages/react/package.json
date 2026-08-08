@@ -50,5 +50,8 @@
     "happy-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

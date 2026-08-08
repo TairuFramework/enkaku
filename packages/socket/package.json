@@ -41,5 +41,8 @@
     "@enkaku/transport": "workspace:^",
     "@sozai/otel": "catalog:",
     "@sozai/stream": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

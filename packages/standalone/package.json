@@ -44,5 +44,8 @@
   "devDependencies": {
     "@enkaku/protocol": "workspace:^",
     "@kokuin/token": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

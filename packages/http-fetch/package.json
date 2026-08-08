@@ -43,5 +43,8 @@
     "@sozai/runtime": "catalog:",
     "@sozai/stream": "catalog:",
     "eventsource-parser": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
