@@ -1,5 +1,12 @@
 # @enkaku/message
 
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies:
+  - @enkaku/transport@0.21.0
+
 ## 0.19.0
 
 ### Patch Changes

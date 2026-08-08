@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/http-fetch",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "HTTP transport for Enkaku RPC clients",
   "keywords": [
     "http",

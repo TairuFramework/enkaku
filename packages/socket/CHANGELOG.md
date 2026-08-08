@@ -1,5 +1,19 @@
 # @enkaku/socket
 
+## 0.21.0
+
+### Patch Changes
+
+- **Behaviour change for bare `createTransportStream` consumers:** the socket is destroyed when the writable reaches any terminal state, instead of being half-closed with `end()` and `unref()`. Closing the `writable` used to leave the `readable` side alive to drain the peer's remaining responses; the read side now ends with it. If you relied on the half-close, keep the `writable` open until you are done reading.
+
+  Neither `end()` nor `unref()` closes a socket — the read side stayed open and the peer kept seeing a live connection. `SocketTransport` was unaffected (its `disposed` hook already destroyed the socket), but a bare `createTransportStream` with no `Transport` on top has no `disposed` event to hook, so it had no release path at all and leaked the socket until process exit.
+
+  Release now happens on every exit from the writable sink: clean close (after the flush), explicit `writer.abort()`, and a rejected write — which errors the stream, runs neither the `close` nor the `abort` callback, and is the path a stalled peer takes. The flush still precedes the destroy, so a clean close does not truncate.
+
+- Updated dependencies:
+  - @enkaku/otel@0.21.0
+  - @enkaku/transport@0.21.0
+
 ## 0.19.0
 
 ### Minor Changes

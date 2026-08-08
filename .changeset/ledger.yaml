@@ -1,0 +1,49 @@
+"@enkaku/client@0.21.0":
+  dir: packages/client
+  intents:
+    - already-aborted-signal-disposes
+    - kokuin-0-4-floor
+    - runtime-replaces-get-random-id
+    - w3c-trace-context
+"@enkaku/http-fetch@0.21.0":
+  dir: packages/http-fetch
+  intents:
+    - w3c-trace-context
+"@enkaku/http-serve@0.21.0":
+  dir: packages/http-serve
+  intents:
+    - already-aborted-signal-disposes
+    - kokuin-0-4-floor
+    - runtime-replaces-get-random-id
+    - w3c-trace-context
+"@enkaku/protocol@0.21.0":
+  dir: packages/protocol
+  intents:
+    - kokuin-0-4-floor
+"@enkaku/react@0.21.0":
+  dir: packages/react
+  intents:
+    - react-sozai-json
+"@enkaku/server@0.21.0":
+  dir: packages/server
+  intents:
+    - already-aborted-signal-disposes
+    - kokuin-0-4-floor
+    - replay-canonical-signature-key
+    - runtime-replaces-get-random-id
+    - server-shutdown-fixes
+    - w3c-trace-context
+"@enkaku/socket@0.21.0":
+  dir: packages/socket
+  intents:
+    - socket-release-destroys
+"@enkaku/standalone@0.21.0":
+  dir: packages/standalone
+  intents:
+    - kokuin-0-4-floor
+    - runtime-replaces-get-random-id
+"@enkaku/transport@0.21.0":
+  dir: packages/transport
+  intents:
+    - already-aborted-signal-disposes
+    - transport-signal-disposes

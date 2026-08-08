@@ -1,5 +1,18 @@
 # @enkaku/react
 
+## 0.21.0
+
+### Patch Changes
+
+- Replace the `canonicalize` dependency with `@sozai/json` in `createRequestKey`.
+
+  `canonicalize` declares `export default fn` but ships `module.exports = fn` — wrong for CJS under `nodenext` — so the import needed a double cast through `unknown` to be callable. `@sozai/json` is native ESM with real types.
+
+  Same RFC 8785 canonical form, same keys. Only difference: values with no canonical representation now throw `TypeError` — `NaN`, `Infinity`, `BigInt`, circular references — where `canonicalize@3.0.0` threw a plain `Error` for all but `BigInt`. Passing any of those as a request argument was already a caller bug; the throw propagates out of `createRequestKey` either way.
+
+- Updated dependencies:
+  - @enkaku/client@0.21.0
+
 ## 0.19.0
 
 ### Patch Changes

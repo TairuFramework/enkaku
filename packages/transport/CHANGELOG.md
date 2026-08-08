@@ -1,5 +1,21 @@
 # @enkaku/transport
 
+## 0.21.0
+
+### Patch Changes
+
+- Constructing with an **already-aborted** signal now actually disposes. Requires `@sozai/async` `^0.2.1`.
+
+  The dispose callback used to run synchronously from inside `Disposer`'s `super()`, before the subclass had initialized. Its first `this` access threw a `ReferenceError` that `Disposer` swallowed into a *resolved* `disposed`: teardown never ran, and the caller was told it succeeded. `Transport`, `DirectTransports` and `Server` were all affected — a `Server` reported a successful `dispose()` while never disposing its transports, aborting its handlers, or clearing its cleanup interval.
+
+  `@sozai/async@0.2.1` defers the invocation by a microtask, so the derived constructor always completes first. The three local microtask yields written to work around this are removed. The `^0.2.1` floor is load-bearing — on `0.2.0` an already-aborted signal silently disposes nothing.
+
+- **Behaviour change:** `Transport` forwards `params.signal` to its `Disposer`, so aborting that signal now disposes the transport. It was previously accepted, declared on `TransportParams`, and silently dropped. Every subclass (`SocketTransport`, `NodeStreamsTransport`, `MessageTransport`) passes `signal` up, so all of them leaked their underlying resource on abort. If you pass a `signal` and rely on it *not* disposing, stop passing it.
+
+  Abort now runs the same graceful teardown as `dispose()`: emit `disposing`, flush queued writes, emit `disposed`, release the resource.
+
+  `Transport.dispose()` awaits that flush with no deadline of its own — the bound is a property of the sink. `@enkaku/socket` bounds it (`END_GRACE_MS`); `MessageTransport`, `NodeStreamsTransport` and third-party transports do not. `@enkaku/server` bounds every wait it makes on `transport.dispose()` by `cleanupTimeoutMs`, so a sink that never drains cannot hang a server — a direct caller of `dispose()` gets whatever its sink provides.
+
 ## 0.19.0
 
 ### Minor Changes

@@ -1,5 +1,14 @@
 # @enkaku/electron
 
+## 0.21.0
+
+### Patch Changes
+
+- Updated dependencies:
+  - @enkaku/client@0.21.0
+  - @enkaku/server@0.21.0
+  - @enkaku/transport@0.21.0
+
 ## 0.19.0
 
 ### Patch Changes

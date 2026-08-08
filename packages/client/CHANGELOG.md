@@ -1,5 +1,46 @@
 # @enkaku/client
 
+## 0.21.0
+
+### Minor Changes
+
+- **Breaking:** raise the `@kokuin/token` floor to `^0.4.0` and `@kokuin/capability` to `^0.2.2`. Two upstream breaks reach the wire:
+
+  - A `did:peer:4` signer now embeds its long form in `iss` for any payload without a single string `aud`. Enkaku only sets `aud` when the client is given a `serverID`, so messages signed without one change shape. Pass `embedLongForm: false` to the identity to keep the short form.
+  - Base64 decoding is canonical-only. A signature or token carrying a non-canonical base64url spelling now throws `Invalid base64url encoding` instead of verifying. Every encoder in this stack emits canonical output; only hand-built or third-party payloads are affected.
+
+  No API these packages call changed. Consumers pinned to `@kokuin/token@0.2.x`/`0.3.x` must upgrade in step.
+
+- **Breaking:** the `getRandomID` option is removed from `ServerBaseParams`, `ClientParams`, `ServerBridgeOptions`, `ServerTransportOptions` and `StandaloneOptions`. Pass a `Runtime` instead:
+
+  ```ts
+  // before
+  new Client({ transport, getRandomID })
+  // after
+  new Client({ transport, runtime: createRuntime({ getRandomID }) })
+  ```
+
+  `getRandomID` was shorthand for exactly that, and passing both silently discarded it — a caller supplying a custom generator alongside a runtime got `crypto.randomUUID()` with no warning.
+
+  `@enkaku/standalone` gains the `runtime` option it was missing, threaded through to both client and server so they share one generator.
+
+- **Breaking (wire format):** trace context travels over W3C `traceparent`/`tracestate` instead of the custom `tid`/`sid` header pair, adopting `@sozai/otel` `^0.3.0`. Old and new peers still interoperate, but the server no longer sees the client's trace context — their spans land in separate traces instead of one.
+
+  The removed `injectTraceContext`/`extractTraceContext` were a second, unvalidated encoding: no trace/span ID validation, and `TraceFlags.SAMPLED` hardcoded, so any string became a remote `SpanContext` and every remote trace was force-sampled. The span link the server builds from the caller's context now carries the caller's real sampling flags.
+
+  `@enkaku/http-serve` reads the inbound `traceparent` header directly. `@enkaku/http-fetch` omits the header when `formatTraceparent` returns `undefined`, instead of sending the literal string `undefined`.
+
+### Patch Changes
+
+- Constructing with an **already-aborted** signal now actually disposes. Requires `@sozai/async` `^0.2.1`.
+
+  The dispose callback used to run synchronously from inside `Disposer`'s `super()`, before the subclass had initialized. Its first `this` access threw a `ReferenceError` that `Disposer` swallowed into a *resolved* `disposed`: teardown never ran, and the caller was told it succeeded. `Transport`, `DirectTransports` and `Server` were all affected — a `Server` reported a successful `dispose()` while never disposing its transports, aborting its handlers, or clearing its cleanup interval.
+
+  `@sozai/async@0.2.1` defers the invocation by a microtask, so the derived constructor always completes first. The three local microtask yields written to work around this are removed. The `^0.2.1` floor is load-bearing — on `0.2.0` an already-aborted signal silently disposes nothing.
+
+- Updated dependencies:
+  - @enkaku/otel@0.21.0
+
 ## 0.19.0
 
 ### Minor Changes

@@ -1,5 +1,20 @@
 # @enkaku/http-fetch
 
+## 0.21.0
+
+### Patch Changes
+
+- **Breaking (wire format):** trace context travels over W3C `traceparent`/`tracestate` instead of the custom `tid`/`sid` header pair, adopting `@sozai/otel` `^0.3.0`. Old and new peers still interoperate, but the server no longer sees the client's trace context — their spans land in separate traces instead of one.
+
+  The removed `injectTraceContext`/`extractTraceContext` were a second, unvalidated encoding: no trace/span ID validation, and `TraceFlags.SAMPLED` hardcoded, so any string became a remote `SpanContext` and every remote trace was force-sampled. The span link the server builds from the caller's context now carries the caller's real sampling flags.
+
+  `@enkaku/http-serve` reads the inbound `traceparent` header directly. `@enkaku/http-fetch` omits the header when `formatTraceparent` returns `undefined`, instead of sending the literal string `undefined`.
+
+- Updated dependencies:
+  - @enkaku/otel@0.21.0
+  - @enkaku/protocol@0.21.0
+  - @enkaku/transport@0.21.0
+
 ## 0.19.0
 
 ### Minor Changes
