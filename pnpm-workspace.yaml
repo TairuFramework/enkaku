@@ -27,11 +27,12 @@ catalog:
   '@docusaurus/types': ^3.10.2
   '@electron-forge/cli': ^7.11.2
   '@electron-forge/plugin-vite': ^7.11.2
-  '@hono/node-server': ^2.1.0
+  '@hono/node-server': ^2.1.1
   '@kigu/dev': ^0.2.1
-  '@kokuin/capability': ^0.2.2
-  '@kokuin/electron': ^0.4.1
-  '@kokuin/token': ^0.4.0
+  '@kokuin/capability': ^0.3.0
+  '@kokuin/controller': ^0.1.0
+  '@kokuin/electron': ^0.4.2
+  '@kokuin/token': ^0.5.0
   '@opentelemetry/sdk-trace-base': ^2.10.0
   '@opentelemetry/sdk-trace-node': ^2.10.0
   '@orama/plugin-docusaurus-v3': ^3.1.18
@@ -48,17 +49,17 @@ catalog:
   '@sozai/stream': ^0.2.0
   '@swc/cli': ^0.8.1
   '@swc/core': ^1.15.41
-  '@testing-library/jest-dom': ^7.0.0
+  '@testing-library/jest-dom': ^7.0.1
   '@testing-library/react': ^16.3.2
-  '@types/node': ^26.1.2
+  '@types/node': ^26.2.0
   '@types/react': ^19.2.18
   '@vitejs/plugin-react': ^6.0.5
   '@vitest/ui': ^4.1.9
   del-cli: ^7.0.0
-  electron: ^43.3.0
-  eventsource-parser: ^3.1.0
+  electron: ^43.4.0
+  eventsource-parser: ^4.0.0
   get-port: ^7.2.0
-  happy-dom: ^20.11.1
+  happy-dom: ^20.11.2
   react: 19.2.3
   react-dom: 19.2.3
   react-native-electron: ^0.22.1

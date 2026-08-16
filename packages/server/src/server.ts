@@ -16,6 +16,7 @@ import {
   type DIDResolver,
   type Identity,
   isSignedToken,
+  type MethodRegistry,
   normalizeDID,
   type SignedToken,
   type Token,
@@ -88,6 +89,7 @@ export type AccessControlParams = (
   verifyToken?: VerifyTokenHook
   cache?: DIDCache
   resolver?: DIDResolver
+  methods?: MethodRegistry
 }
 
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
@@ -654,6 +656,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           await verifyToken(message as SignedToken, {
             cache: params.cache,
             resolver: params.resolver,
+            methods: params.methods,
           })
           await checkClientToken(
             params.serverID,
@@ -663,6 +666,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               verifyToken: params.verifyToken,
               cache: params.cache,
               resolver: params.resolver,
+              methods: params.methods,
             },
           )
           const did = (message as unknown as SignedToken).payload.iss
@@ -819,6 +823,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               await verifyToken(msg as SignedToken, {
                 cache: params.cache,
                 resolver: params.resolver,
+                methods: params.methods,
               })
             } catch (cause) {
               const error = new HandlerError({
@@ -932,6 +937,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               await verifyToken(msg as SignedToken, {
                 cache: params.cache,
                 resolver: params.resolver,
+                methods: params.methods,
               })
             } catch (cause) {
               const error = new HandlerError({
@@ -1046,6 +1052,7 @@ export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   protocol?: Protocol
   replay?: ReplayOptions
   resolver?: DIDResolver
+  methods?: MethodRegistry
   tracer?: Tracer
   signal?: AbortSignal
   transports?: Array<ServerTransportOf<Protocol>>
@@ -1066,6 +1073,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #accessControl: AccessControlParams
   #cache: DIDCache
   #resolver?: DIDResolver
+  #methods?: MethodRegistry
   #events: ServerEmitter
   #runtime: Runtime
   #handlers: ProcedureHandlers<Protocol>
@@ -1145,6 +1153,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#handlers = params.handlers
     this.#cache = params.cache ?? createInMemoryDIDCache()
     this.#resolver = params.resolver
+    this.#methods = params.methods
     const serverID = params.identity?.id
     this.#logger =
       params.logger ??
@@ -1171,6 +1180,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         verifyToken: params.verifyToken,
         cache: this.#cache,
         resolver: this.#resolver,
+        methods: this.#methods,
       }
     } else {
       this.#accessControl = {
@@ -1181,6 +1191,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         verifyToken: params.verifyToken,
         cache: this.#cache,
         resolver: this.#resolver,
+        methods: this.#methods,
       }
     }
 
@@ -1226,6 +1237,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
         cache: this.#cache,
         resolver: this.#resolver,
+        methods: this.#methods,
       }
     } else if (accessRulesOverride != null) {
       // Override with AccessRules record
@@ -1243,6 +1255,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
         cache: this.#cache,
         resolver: this.#resolver,
+        methods: this.#methods,
       }
     } else {
       // Use server-level defaults

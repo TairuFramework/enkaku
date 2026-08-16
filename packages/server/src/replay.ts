@@ -1,5 +1,4 @@
 import { normalizeDID, type SignedToken } from '@kokuin/token'
-import { fromB64U, toB64U } from '@sozai/codec'
 
 export type ReplayCache = {
   /**
@@ -101,12 +100,11 @@ export type ReplayCheckResult =
  * verification -- the dedup key falls back to the signature when `jti` is absent, and an
  * unverified signature is attacker-chosen.
  *
- * Verification alone is not enough to make the *string* safe as a key. A signature is
- * verified by its bytes, and several base64url strings decode to the same bytes: the spare
- * bits in the final chunk of a 64-byte signature give 16 spellings, and padding gives more.
- * All of them verify, so keying on the received string let one captured message be replayed
- * once per spelling. Re-encoding through {@link fromB64U}/{@link toB64U} collapses them to
- * one canonical key.
+ * The received signature string is safe to key on directly: `verifyToken` decodes it with a
+ * strict base64url codec that rejects non-canonical spellings (the 16 spare-bit variants and
+ * padded forms of a 64-byte signature), so every message reaching this point already carries
+ * the one canonical spelling. A re-spelled signature is refused at verification and never
+ * arrives here.
  */
 export async function checkReplay(
   message: SignedToken,
@@ -132,9 +130,7 @@ export async function checkReplay(
   }
 
   const expiresAt = (expMs ?? (iatMs ?? now) + resolved.maxAge) + resolved.leeway
-  // The decode cannot fail here: verification already decoded this same string to check the
-  // signature bytes, so anything reaching this point is at least well-formed base64url.
-  const identifier = payload.jti ?? toB64U(fromB64U(message.signature))
+  const identifier = payload.jti ?? message.signature
   const key = `${normalizeDID(payload.iss)}:${identifier}`
   const fresh = await resolved.cache.checkAndRecord(key, expiresAt)
   return fresh ? { ok: true } : { ok: false, reason: 'replay_detected' }

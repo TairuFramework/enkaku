@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/server",
-  "version": "0.21.0",
+  "version": "0.21.1",
   "description": "Server logic for Enkaku RPC",
   "keywords": [
     "json",
@@ -40,7 +40,6 @@
     "@kokuin/capability": "catalog:",
     "@kokuin/token": "catalog:",
     "@sozai/async": "catalog:",
-    "@sozai/codec": "catalog:",
     "@sozai/event": "catalog:",
     "@sozai/log": "catalog:",
     "@sozai/otel": "catalog:",
@@ -49,7 +48,9 @@
     "@sozai/stream": "catalog:"
   },
   "devDependencies": {
-    "@enkaku/transport": "workspace:^"
+    "@enkaku/transport": "workspace:^",
+    "@kokuin/controller": "catalog:",
+    "@sozai/codec": "catalog:"
   },
   "publishConfig": {
     "access": "public"

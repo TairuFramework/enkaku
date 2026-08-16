@@ -226,7 +226,7 @@ describe('access control: predicate variant', () => {
       aud: serverSigner.id,
     } as unknown as Payload)
 
-    const allowList = [clientSigner.id]
+    const allowList: Array<string> = [clientSigner.id]
 
     const predicate = async ({ payload, verifyDelegation }: AllowContext) => {
       if (allowList.includes(payload.iss)) return true

@@ -859,6 +859,7 @@ class Server<Protocol extends ProtocolDefinition> extends Disposer {
   //   protocol?: Protocol                     // enables message validation
   //   replay?: ReplayOptions
   //   resolver?: DIDResolver
+  //   methods?: MethodRegistry               // DID method resolvers, e.g. did:kokuin: via @kokuin/controller
   //   runtime?: Runtime
   //   signal?: AbortSignal
   //   tracer?: Tracer

@@ -46,9 +46,9 @@ describe('MemoryReplayCache', () => {
   })
 })
 
-// Signatures must be decodable base64url: the dedup key re-encodes them canonically, so a
-// placeholder like `'sig-A'` would not survive the round trip. 64 bytes matches Ed25519, the
-// length whose final base64url chunk carries the spare bits that make the string malleable.
+// Signatures are canonical base64url: the dedup key uses the string verbatim, so a placeholder
+// like `'sig-A'` still works, but real spellings keep the test honest. 64 bytes matches Ed25519,
+// the length whose final base64url chunk carries the spare bits that make the string malleable.
 function signatureBytes(fill: number): Uint8Array {
   return new Uint8Array(64).fill(fill)
 }
@@ -122,10 +122,13 @@ describe('checkReplay', () => {
     expect(await checkReplay(b, resolved)).toEqual({ ok: true })
   })
 
-  test('a re-spelled signature is the same key', async () => {
-    // The spare bits in the final chunk of a 64-byte signature give 16 strings that decode to
-    // identical bytes, and every one of them verifies. Keying on the received string let an
-    // attacker replay one captured message once per spelling.
+  test('keys on the received signature verbatim, trusting upstream canonicalization', async () => {
+    // The 16 spare-bit spellings and padded forms of a 64-byte signature all decode to the same
+    // bytes; keying on the received string would let one captured message be replayed once per
+    // spelling. checkReplay no longer collapses them itself -- `verifyToken` decodes with a strict
+    // base64url codec that rejects every non-canonical spelling, so only the canonical one reaches
+    // here. This test pins that precondition: a re-spelled string, were it to arrive, keys
+    // distinctly, which is exactly why the codec must refuse it before this point.
     const resolved = resolveOrThrow({ now: base.now })
     const canonical = toB64U(signatureBytes(3))
     const respelled = `${canonical.slice(0, -1)}${nextInAlphabet(canonical.at(-1) as string)}`
@@ -134,16 +137,7 @@ describe('checkReplay', () => {
     const first = makeMessage({ exp: base.exp, signature: canonical })
     const second = makeMessage({ exp: base.exp, signature: respelled })
     expect(await checkReplay(first, resolved)).toEqual({ ok: true })
-    expect(await checkReplay(second, resolved)).toEqual({ ok: false, reason: 'replay_detected' })
-  })
-
-  test('a padded signature is the same key as its unpadded spelling', async () => {
-    const resolved = resolveOrThrow({ now: base.now })
-    const unpadded = toB64U(signatureBytes(4))
-    const first = makeMessage({ exp: base.exp, signature: unpadded })
-    const second = makeMessage({ exp: base.exp, signature: `${unpadded}==` })
-    expect(await checkReplay(first, resolved)).toEqual({ ok: true })
-    expect(await checkReplay(second, resolved)).toEqual({ ok: false, reason: 'replay_detected' })
+    expect(await checkReplay(second, resolved)).toEqual({ ok: true })
   })
 
   test('rejects a message whose exp is in the past', async () => {
