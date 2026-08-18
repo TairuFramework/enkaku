@@ -411,12 +411,17 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     if (returned instanceof Error) {
       limiter.removeController(rid)
       limiter.releaseHandler(longLived)
-      emitHandlerError(
-        events,
-        'handler',
-        HandlerError.from(returned, { code: ErrorCodes.HANDLER_ERROR }),
-        message.payload,
-      )
+      // A synchronous Error here means the handler never started (e.g. no
+      // handler is registered for the procedure), so nothing has been sent to
+      // the client yet -- unlike a handler that runs and reports its own error
+      // via `executeHandler`. Send the error response so the client rejects
+      // instead of hanging until its own timeout, matching every other error
+      // branch in `process`/`processHandler`.
+      const error = HandlerError.from(returned, { code: ErrorCodes.HANDLER_ERROR })
+      if (message.payload.typ !== 'event') {
+        context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
+      }
+      emitHandlerError(events, 'handler', error, message.payload)
     } else {
       running[rid] = returned
       returned
