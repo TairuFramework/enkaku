@@ -4,7 +4,7 @@
     "target": "es2025",
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "lib": ["es2025", "esnext.disposable"],
+    "lib": ["es2025"],
     "types": [],
     "declaration": true,
     "jsx": "react-jsx",

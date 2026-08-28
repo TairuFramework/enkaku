@@ -41,7 +41,6 @@ export function useAsyncState<V>(
     loading: true,
   })
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps are the caller's contract, not derived here
   useEffect(() => {
     const generation = ++generationRef.current
     const controller = new AbortController()
