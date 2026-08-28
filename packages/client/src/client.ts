@@ -384,7 +384,9 @@ export class Client<
         span.recordException(error instanceof Error ? error : new Error(String(error)))
         span.end()
         const status: 'ok' | 'error' | 'aborted' =
-          error === 'Close' || (error as { name?: string } | null)?.name === 'AbortError'
+          error === 'Close' ||
+          error === 'Dispose' ||
+          (error as { name?: string } | null)?.name === 'AbortError'
             ? 'aborted'
             : 'error'
         this.#events.emit('requestEnd', { ...meta, status })

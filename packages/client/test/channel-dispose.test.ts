@@ -97,6 +97,21 @@ describe('channel dispose', () => {
     await awaited
   })
 
+  test('dispose() reports requestEnd status "aborted", not "error"', async () => {
+    const { transports, client } = setup()
+    const channel = client.createChannel('echo', { param: {} })
+    void channel.catch(() => {})
+    await transports.server.read() // consume the open
+    const requestEnds: Array<{ rid: string; procedure: string; status: string }> = []
+    client.events.on('requestEnd', (data) => {
+      requestEnds.push(data)
+    })
+    await channel.dispose()
+    await new Promise((r) => setTimeout(r, 0))
+    expect(requestEnds).toHaveLength(1)
+    expect(requestEnds[0]?.status).toBe('aborted')
+  })
+
   test('no unhandled rejection when a stream is aborted then the client is disposed', async () => {
     const streamProtocol = {
       sub: { type: 'stream', receive: { type: 'string' }, result: { type: 'null' } },
