@@ -280,6 +280,53 @@ describe('useAsyncResource', () => {
     expect(dispose).toHaveBeenCalledTimes(1)
   })
 
+  test('uses a plain dispose() method when neither symbol is present', async () => {
+    const dispose = vi.fn(async () => {})
+    const resource = { dispose }
+    const { promise, resolve } = deferred<typeof resource>()
+    const { unmount } = renderHook(() => useAsyncResource(() => promise, []))
+
+    await act(async () => {
+      resolve(resource)
+      await promise
+    })
+    unmount()
+    expect(dispose).toHaveBeenCalledTimes(1)
+  })
+
+  test('prefers [Symbol.asyncDispose] over a dispose() method when both are present', async () => {
+    const asyncDispose = vi.fn(async () => {})
+    const dispose = vi.fn(async () => {})
+    const resource = { [Symbol.asyncDispose]: asyncDispose, dispose }
+    const { promise, resolve } = deferred<typeof resource>()
+    const { unmount } = renderHook(() => useAsyncResource(() => promise, []))
+
+    await act(async () => {
+      resolve(resource)
+      await promise
+    })
+    unmount()
+    expect(asyncDispose).toHaveBeenCalledTimes(1)
+    expect(dispose).not.toHaveBeenCalled()
+  })
+
+  test('swallows a rejecting dispose() method (no unhandled rejection, no visible error)', async () => {
+    const resource = { dispose: vi.fn(async () => Promise.reject(new Error('nope'))) }
+    const { promise, resolve } = deferred<typeof resource>()
+    const { result, unmount } = renderHook(() => useAsyncResource(() => promise, []))
+
+    await act(async () => {
+      resolve(resource)
+      await promise
+    })
+    expect(() => unmount()).not.toThrow()
+    expect(result.current.error).toBeNull()
+    // Let any microtask from the rejected dispose settle.
+    await act(async () => {
+      await Promise.resolve()
+    })
+  })
+
   test('swallows a rejecting async dispose (no unhandled rejection, no visible error)', async () => {
     const resource = { [Symbol.asyncDispose]: vi.fn(async () => Promise.reject(new Error('nope'))) }
     const { promise, resolve } = deferred<typeof resource>()

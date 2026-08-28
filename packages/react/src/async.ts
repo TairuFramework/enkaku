@@ -99,9 +99,12 @@ export function useCall<R>(
 
 /**
  * Dispose a resource via its standard teardown symbol, fire-and-forget.
- * Prefers [Symbol.asyncDispose]; falls back to [Symbol.dispose]. A synchronous
- * throw is caught; a rejected async-dispose promise is `.catch`-swallowed (a
- * bare `void` would leave an unhandled rejection). Never throws.
+ * Prefers [Symbol.asyncDispose]; falls back to [Symbol.dispose]; finally
+ * falls back to a plain `dispose()` method (e.g. an `@enkaku/client`
+ * `StreamCall`/`ChannelCall`, which exposes `dispose()` rather than a
+ * well-known symbol). A synchronous throw is caught; a rejected async
+ * dispose promise is `.catch`-swallowed (a bare `void` would leave an
+ * unhandled rejection). Never throws.
  */
 export function disposeResource(resource: object): void {
   try {
@@ -118,6 +121,15 @@ export function disposeResource(resource: object): void {
     const syncDispose = (resource as { [Symbol.dispose]?: () => void })[Symbol.dispose]
     if (typeof syncDispose === 'function') {
       syncDispose.call(resource)
+      return
+    }
+    const dispose = (resource as { dispose?: () => PromiseLike<void> | void }).dispose
+    if (typeof dispose === 'function') {
+      const result = dispose.call(resource) as Promise<void> | undefined
+      if (result != null && typeof result.then === 'function') {
+        result.then(undefined, () => {})
+      }
+      return
     }
   } catch {
     // Disposal failures never surface to the consumer.
