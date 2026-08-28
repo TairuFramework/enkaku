@@ -51,15 +51,15 @@ catalog:
   '@swc/core': ^1.15.41
   '@testing-library/jest-dom': ^7.0.1
   '@testing-library/react': ^16.3.2
-  '@types/node': ^26.2.0
+  '@types/node': ^26.4.0
   '@types/react': ^19.2.18
-  '@vitejs/plugin-react': ^6.0.5
+  '@vitejs/plugin-react': ^6.1.0
   '@vitest/ui': ^4.1.9
   del-cli: ^7.0.0
-  electron: ^43.4.0
-  eventsource-parser: ^4.0.0
+  electron: ^44.0.0
+  eventsource-parser: ^4.1.0
   get-port: ^7.2.0
-  happy-dom: ^20.11.2
+  happy-dom: ^20.11.8
   react: 19.2.3
   react-dom: 19.2.3
   react-native-electron: ^0.22.1
@@ -67,10 +67,10 @@ catalog:
   tsx: ^4.22.4
   turbo: ^2.9.18
   typedoc: ^0.28.20
-  typedoc-plugin-markdown: ^4.12.0
+  typedoc-plugin-markdown: ^4.13.0
   typescript: ^6.0.3
-  vite: ^8.2.1
-  vitest: ^4.1.10
+  vite: ^8.2.2
+  vitest: ^4.1.11
 
 catalogMode: prefer
 
