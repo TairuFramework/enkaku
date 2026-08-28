@@ -129,6 +129,27 @@ describe('useCall', () => {
     expect(captured?.aborted).toBe(true)
   })
 
+  test('aborts the run signal on deps change (re-run)', async () => {
+    const { promise } = deferred<number>()
+    const signals: Array<AbortSignal> = []
+    const { rerender } = renderHook(
+      ({ key }: { key: number }) =>
+        useCall(
+          (signal) => {
+            signals.push(signal)
+            return promise
+          },
+          [key],
+        ),
+      { initialProps: { key: 1 } },
+    )
+
+    expect(signals[0]?.aborted).toBe(false)
+    rerender({ key: 2 })
+    expect(signals[0]?.aborted).toBe(true)
+    expect(signals[1]?.aborted).toBe(false)
+  })
+
   test('does not set state after unmount (StrictMode safe)', async () => {
     const { promise, resolve } = deferred<number>()
     const wrapper = ({ children }: PropsWithChildren) => <StrictMode>{children}</StrictMode>
@@ -158,6 +179,33 @@ describe('useAsyncResource', () => {
     expect(result.current.resource).toBe(resource)
     expect(result.current.loading).toBe(false)
     expect(resource[Symbol.asyncDispose]).not.toHaveBeenCalled()
+  })
+
+  test('coerces a rejection to Error', async () => {
+    const { promise, reject } = deferred<{ [Symbol.asyncDispose]: () => Promise<void> }>()
+    const { result } = renderHook(() => useAsyncResource(() => promise, []))
+
+    await act(async () => {
+      reject('boom')
+      await promise.catch(() => {})
+    })
+
+    expect(result.current.resource).toBeNull()
+    expect(result.current.loading).toBe(false)
+    expect(result.current.error).toBeInstanceOf(Error)
+    expect(result.current.error?.message).toBe('boom')
+  })
+
+  test('coerces a synchronous throw to Error', async () => {
+    const { result } = renderHook(() =>
+      useAsyncResource(() => {
+        throw new Error('sync fail')
+      }, []),
+    )
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.error?.message).toBe('sync fail')
+    expect(result.current.resource).toBeNull()
   })
 
   test('disposes the current resource on unmount', async () => {
@@ -263,5 +311,67 @@ describe('useAsyncResource', () => {
       await promise
     })
     expect(() => unmount()).not.toThrow()
+  })
+
+  test('retains current resource while disposing late-arriving superseded one (active-mount)', async () => {
+    const disposeA = vi.fn(async () => {})
+    const disposeB = vi.fn(async () => {})
+    const resourceA = { [Symbol.asyncDispose]: disposeA }
+    const resourceB = { [Symbol.asyncDispose]: disposeB }
+    const aDeferred = deferred<typeof resourceA>()
+    const bDeferred = deferred<typeof resourceB>()
+    let whichDeferred = 0 // 0 for A, 1 for B
+    const { result, rerender } = renderHook(
+      ({ key }: { key: number }) =>
+        useAsyncResource(
+          () => (whichDeferred === 0 ? aDeferred.promise : bDeferred.promise),
+          [key],
+        ),
+      { initialProps: { key: 1 } },
+    )
+
+    // A is now pending on key: 1
+    whichDeferred = 1
+    rerender({ key: 2 })
+    // B is now pending on key: 2, A is still pending but superseded
+
+    // Resolve B first
+    await act(async () => {
+      bDeferred.resolve(resourceB)
+      await bDeferred.promise
+    })
+    expect(result.current.resource).toBe(resourceB)
+    expect(disposeB).not.toHaveBeenCalled()
+
+    // Now resolve the still-pending A late
+    await act(async () => {
+      aDeferred.resolve(resourceA)
+      await aDeferred.promise
+    })
+
+    // A should be disposed since it was superseded
+    expect(disposeA).toHaveBeenCalledTimes(1)
+    // B should still be current and retained
+    expect(result.current.resource).toBe(resourceB)
+    expect(disposeB).not.toHaveBeenCalled()
+  })
+
+  test('does not set state after unmount with remount (StrictMode remount safe)', async () => {
+    const dispose = vi.fn(async () => {})
+    const resource = { [Symbol.asyncDispose]: dispose }
+    const { promise, resolve } = deferred<typeof resource>()
+    const wrapper = ({ children }: PropsWithChildren) => <StrictMode>{children}</StrictMode>
+    const { result, unmount } = renderHook(() => useAsyncResource(() => promise, []), { wrapper })
+
+    unmount()
+    await act(async () => {
+      resolve(resource)
+      await promise
+    })
+    // No throw / no act warning; resource is disposed (late arrival); final state stays loading.
+    expect(result.current.resource).toBeNull()
+    expect(result.current.error).toBeNull()
+    expect(result.current.loading).toBe(true)
+    expect(dispose).toHaveBeenCalledTimes(1)
   })
 })

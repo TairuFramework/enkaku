@@ -122,6 +122,10 @@ export function disposeResource(resource: AsyncDisposable | Disposable): void {
   }
 }
 
+/**
+ * `open` must return a fresh resource on each invocation; the hook disposes
+ * superseded resources, so a memoized/shared resource could be disposed while still in use.
+ */
 export function useAsyncResource<R extends AsyncDisposable | Disposable>(
   open: (signal: AbortSignal) => Promise<R>,
   deps: DependencyList,
