@@ -97,3 +97,36 @@ export function useCall<R>(
   const { value, error, loading } = useAsyncState(run, deps)
   return { data: value, error, loading }
 }
+
+/**
+ * Dispose a resource via its standard teardown symbol, fire-and-forget.
+ * Prefers [Symbol.asyncDispose]; falls back to [Symbol.dispose]. A synchronous
+ * throw is caught; a rejected async-dispose promise is `.catch`-swallowed (a
+ * bare `void` would leave an unhandled rejection). Never throws.
+ */
+export function disposeResource(resource: AsyncDisposable | Disposable): void {
+  try {
+    const asyncDispose = (resource as AsyncDisposable)[Symbol.asyncDispose]
+    if (typeof asyncDispose === 'function') {
+      const result = asyncDispose.call(resource) as Promise<void> | undefined
+      if (result != null && typeof result.then === 'function') {
+        result.then(undefined, () => {})
+      }
+      return
+    }
+    const syncDispose = (resource as Disposable)[Symbol.dispose]
+    if (typeof syncDispose === 'function') {
+      syncDispose.call(resource)
+    }
+  } catch {
+    // Disposal failures never surface to the consumer.
+  }
+}
+
+export function useAsyncResource<R extends AsyncDisposable | Disposable>(
+  open: (signal: AbortSignal) => Promise<R>,
+  deps: DependencyList,
+): { resource: R | null; error: Error | null; loading: boolean } {
+  const { value, error, loading } = useAsyncState(open, deps, disposeResource)
+  return { resource: value, error, loading }
+}

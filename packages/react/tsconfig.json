@@ -1,7 +1,7 @@
 {
   "extends": "@kigu/dev/tsconfig.json",
   "compilerOptions": {
-    "lib": ["es2025", "dom"],
+    "lib": ["es2025", "dom", "esnext.disposable"],
     "rootDir": "./src",
     "outDir": "./lib"
   },
