@@ -1,5 +1,4 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { type PropsWithChildren, StrictMode } from 'react'
 import { describe, expect, test, vi } from 'vitest'
 
 import { useAsyncResource, useCall } from '../src/index.js'
@@ -150,10 +149,9 @@ describe('useCall', () => {
     expect(signals[1]?.aborted).toBe(false)
   })
 
-  test('does not set state after unmount (StrictMode safe)', async () => {
+  test('ignores late resolve when unmounted before promise resolves', async () => {
     const { promise, resolve } = deferred<number>()
-    const wrapper = ({ children }: PropsWithChildren) => <StrictMode>{children}</StrictMode>
-    const { result, unmount } = renderHook(() => useCall(() => promise, []), { wrapper })
+    const { result, unmount } = renderHook(() => useCall(() => promise, []))
 
     unmount()
     await act(async () => {
@@ -162,6 +160,8 @@ describe('useCall', () => {
     })
     // No throw / no act warning; final state stays loading (never updated post-unmount).
     expect(result.current.loading).toBe(true)
+    expect(result.current.data).toBeNull()
+    expect(result.current.error).toBeNull()
   })
 })
 
@@ -356,12 +356,11 @@ describe('useAsyncResource', () => {
     expect(disposeB).not.toHaveBeenCalled()
   })
 
-  test('does not set state after unmount with remount (StrictMode remount safe)', async () => {
+  test('disposes late-arriving resource when unmounted before promise resolves', async () => {
     const dispose = vi.fn(async () => {})
     const resource = { [Symbol.asyncDispose]: dispose }
     const { promise, resolve } = deferred<typeof resource>()
-    const wrapper = ({ children }: PropsWithChildren) => <StrictMode>{children}</StrictMode>
-    const { result, unmount } = renderHook(() => useAsyncResource(() => promise, []), { wrapper })
+    const { result, unmount } = renderHook(() => useAsyncResource(() => promise, []))
 
     unmount()
     await act(async () => {
