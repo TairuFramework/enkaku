@@ -1,5 +1,12 @@
 # @enkaku/client
 
+## 0.21.1
+
+### Patch Changes
+
+- Add a per-request timeout to `Client.request`: a `requestTimeoutMs` client-construction default and a per-call `timeout` config override. On expiry the in-flight request is aborted through the existing abort path and rejects with a new exported `RequestTimeoutError` (a `RequestError` subclass carrying `code: 'RequestTimeout'` and `{ procedure, timeoutMs }`). An explicit `timeout` of `0`, a negative, `NaN`, or a non-finite value disables the timer; streams and channels are never auto-timed-out.
+- Add a leak-free `dispose(reason?: string)` to stream and channel calls: it aborts the call's own read loop, closes the receive stream, removes the controller from the client map, and resolves once local teardown is done, with no unhandled rejection regardless of transport-teardown ordering and no consumer-side rejection-absorbing guard. A disposed channel rejects sends begun after disposal. Disposal is now classified as an `aborted` (not `error`) lifecycle outcome.
+
 ## 0.21.0
 
 ### Minor Changes

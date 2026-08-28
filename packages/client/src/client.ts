@@ -32,7 +32,7 @@ import {
 import { createRuntime, type Runtime } from '@sozai/runtime'
 import { createPipe, writeTo } from '@sozai/stream'
 
-import { RequestError } from './error.js'
+import { RequestError, RequestTimeoutError } from './error.js'
 import type { ClientEmitter, ClientEvents } from './events.js'
 import { safeWrite, type WriteTarget } from './safe-write.js'
 
@@ -56,6 +56,7 @@ export type RequestCall<Result> = Promise<Result> &
 
 export type StreamCall<Receive, Result> = RequestCall<Result> & {
   close: () => void
+  dispose: (reason?: string) => Promise<void>
   procedure: string
   readable: ReadableStream<Receive>
 }
@@ -128,6 +129,7 @@ type RequestController<Result> = AbortController &
     error: (error: RequestError) => void
     aborted: (signal: AbortSignal) => void
     header?: AnyHeader
+    readonly settled: boolean
   }
 
 type StreamController<Receive, Result> = RequestController<Result> & {
@@ -153,7 +155,7 @@ function createController<T>(
     done = true
     onDone?.()
   }
-  return Object.assign(new AbortController(), params, {
+  const controller = Object.assign(new AbortController(), params, {
     result: deferred.promise,
     ok: (value: T) => {
       deferred.resolve(value)
@@ -167,7 +169,14 @@ function createController<T>(
       deferred.reject(signal.reason)
       finish()
     },
-  })
+  }) as RequestController<T>
+  Object.defineProperty(controller, 'settled', { get: () => done, enumerable: false })
+  return controller
+}
+
+/** A timer is armed only for a finite value > 0; everything else means "off". */
+function normalizeTimeout(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
 }
 
 type CreateRequestParams<Result> = {
@@ -209,7 +218,7 @@ type CreateStreamParams<Receive, Result> = CreateRequestParams<Result> & {
 function createStream<Receive, Result>({
   readable,
   ...requestParams
-}: CreateStreamParams<Receive, Result>): StreamCall<Receive, Result> {
+}: CreateStreamParams<Receive, Result>): Omit<StreamCall<Receive, Result>, 'dispose'> {
   const request = createRequest(requestParams)
   return Object.assign(request, { close: () => request.abort('Close'), readable })
 }
@@ -267,6 +276,8 @@ export type ClientParams<Protocol extends ProtocolDefinition> = {
   serverID?: string
   identity?: Identity | Promise<Identity>
   now?: () => number
+  /** Default per-request timeout, in milliseconds. Overridden by `request()`'s own `timeout` option. */
+  requestTimeoutMs?: number
 }
 
 export class Client<
@@ -285,6 +296,7 @@ export class Client<
   #tracer: Tracer
   #transport: ClientTransportOf<Protocol>
   #events: ClientEmitter = new EventEmitter<ClientEvents>()
+  #requestTimeoutMs?: number
 
   constructor(params: ClientParams<Protocol>) {
     super({
@@ -309,6 +321,7 @@ export class Client<
       params.logger ?? getLogger(['enkaku', 'client'], { clientID: this.#runtime.getRandomID() })
     this.#tracer = params.tracer ?? defaultTracer
     this.#transport = params.transport
+    this.#requestTimeoutMs = params.requestTimeoutMs
     // Start reading from transport
     this.#setupTransport()
   }
@@ -371,7 +384,9 @@ export class Client<
         span.recordException(error instanceof Error ? error : new Error(String(error)))
         span.end()
         const status: 'ok' | 'error' | 'aborted' =
-          error === 'Close' || (error as { name?: string } | null)?.name === 'AbortError'
+          error === 'Close' ||
+          error === 'Dispose' ||
+          (error as { name?: string } | null)?.name === 'AbortError'
             ? 'aborted'
             : 'error'
         this.#events.emit('requestEnd', { ...meta, status })
@@ -493,6 +508,7 @@ export class Client<
     payload: AnyClientPayloadOf<Protocol>,
     header?: AnyHeader,
     rid?: string,
+    owner?: AnyClientController,
   ): Promise<void> {
     if (this.signal.aborted) {
       throw new Error('Client aborted', { cause: this.signal.reason })
@@ -508,11 +524,11 @@ export class Client<
       events: this.#events,
       signal: this.signal,
       onFailure: (error) => {
-        if (rid != null) {
-          // Surface the write failure on the per-rid controller so the
-          // awaited request/stream/channel promise rejects, instead of
-          // hanging on a server reply that will never arrive.
-          this.#controllers[rid]?.abort(error)
+        // Abort the OWNING controller, and only if it has not already settled:
+        // a map lookup could hit a reused-rid occupant; aborting a settled owner
+        // would fire a spurious server abort.
+        if (owner != null && !owner.settled) {
+          owner.abort(error)
         }
       },
     })
@@ -525,7 +541,12 @@ export class Client<
   // throw) and signing errors from `#createMessage`, which are the only paths
   // that still reject. `requestError` surfaces those so callers can observe
   // mid-abort failures without each abort site needing its own `.catch`.
-  #notifyAbort(rid: string, reason: unknown, header?: AnyHeader): void {
+  #notifyAbort(
+    rid: string,
+    reason: unknown,
+    header?: AnyHeader,
+    owner?: AnyClientController,
+  ): void {
     void (async () => {
       try {
         await this.#write(
@@ -536,6 +557,7 @@ export class Client<
           } as unknown as AnyClientPayloadOf<Protocol>,
           header,
           rid,
+          owner,
         )
       } catch (error) {
         if (!this.signal.aborted) {
@@ -553,21 +575,24 @@ export class Client<
     const signal = providedSignal
       ? AbortSignal.any([controller.signal, providedSignal])
       : controller.signal
-    signal.addEventListener(
-      'abort',
-      () => {
-        const reason = signal.reason?.name ?? signal.reason
-        this.#logger.trace('abort {type} {procedure} with ID {rid} and reason: {reason}', {
-          type: controller.type,
-          procedure: controller.procedure,
-          rid,
-          reason,
-        })
-        this.#notifyAbort(rid, reason, controller.header)
-        controller.aborted(signal)
+    const onAbort = () => {
+      const reason = signal.reason?.name ?? signal.reason
+      this.#logger.trace('abort {type} {procedure} with ID {rid} and reason: {reason}', {
+        type: controller.type,
+        procedure: controller.procedure,
+        rid,
+        reason,
+      })
+      this.#notifyAbort(rid, reason, controller.header, controller)
+      controller.aborted(signal)
+      if (this.#controllers[rid] === controller) {
         delete this.#controllers[rid]
-      },
-      { once: true },
+      }
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
+    void controller.result.then(
+      () => signal.removeEventListener('abort', onAbort),
+      () => signal.removeEventListener('abort', onAbort),
     )
     return signal
   }
@@ -617,8 +642,24 @@ export class Client<
   >(
     procedure: Procedure,
     ...args: T['Param'] extends never
-      ? [config?: { header?: AnyHeader; id?: string; param?: never; signal?: AbortSignal }]
-      : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
+      ? [
+          config?: {
+            header?: AnyHeader
+            id?: string
+            param?: never
+            signal?: AbortSignal
+            timeout?: number
+          },
+        ]
+      : [
+          config: {
+            header?: AnyHeader
+            id?: string
+            param: T['Param']
+            signal?: AbortSignal
+            timeout?: number
+          },
+        ]
   ): RequestCall<T['Result']> & Promise<T['Result']> {
     const config = args[0] ?? {}
     const rid = config.id ?? this.#runtime.getRandomID()
@@ -668,12 +709,35 @@ export class Client<
     }
     this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
+      this.#write(
+        payload as unknown as AnyClientPayloadOf<Protocol>,
+        config.header,
+        rid,
+        controller,
+      ),
     )
 
     this.#endSpanOnResult(span, controller.result, { rid, procedure })
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
+
+    const effectiveTimeout = normalizeTimeout(
+      'timeout' in config ? (config as { timeout?: number }).timeout : this.#requestTimeoutMs,
+    )
+    if (effectiveTimeout > 0) {
+      const timeoutTimer = setTimeout(() => {
+        // Fire only if this controller has not already reached a terminal state.
+        // Keyed off the controller's own `settled`, never map membership.
+        if (!controller.settled) {
+          controller.abort(new RequestTimeoutError(procedure, effectiveTimeout))
+        }
+      }, effectiveTimeout)
+      void controller.result.then(
+        () => clearTimeout(timeoutTimer),
+        () => clearTimeout(timeoutTimer),
+      )
+    }
+
     return createRequest({ id: rid, controller, signal, sent })
   }
 
@@ -702,8 +766,9 @@ export class Client<
     const receive = createPipe<T['Receive']>()
     const writer = receive.writable.getWriter()
     const controller: StreamController<T['Receive'], T['Result']> = Object.assign(
-      createController<T['Result']>({ type: 'stream', procedure, header: config.header }, () =>
-        writer.close(),
+      createController<T['Result']>(
+        { type: 'stream', procedure, header: config.header },
+        () => void writer.close().catch(() => {}),
       ),
       { receive: writer },
     )
@@ -716,13 +781,16 @@ export class Client<
         procedure,
         rid,
       })
-      return createStream({
+      void writer.close().catch(() => {}) // readable ends immediately
+      const call = createStream({
         id: rid,
         controller,
         signal: providedSignal,
         sent: Promise.reject(providedSignal),
         readable: receive.readable,
       })
+      void call.catch(() => {})
+      return Object.assign(call, { dispose: () => Promise.resolve() })
     }
 
     this.#controllers[rid] = controller
@@ -742,20 +810,29 @@ export class Client<
     }
     this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
+      this.#write(
+        payload as unknown as AnyClientPayloadOf<Protocol>,
+        config.header,
+        rid,
+        controller,
+      ),
     )
 
     this.#endSpanOnResult(span, controller.result, { rid, procedure })
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
-    return createStream({
-      id: rid,
-      controller,
-      signal,
-      sent,
-      readable: receive.readable,
-    })
+    const call = createStream({ id: rid, controller, signal, sent, readable: receive.readable })
+    void call.catch(() => {}) // no unhandled rejection on teardown; awaiters still see it (multicast)
+    let disposed: Promise<void> | undefined
+    const dispose = (reason = 'Dispose'): Promise<void> => {
+      if (disposed != null) return disposed
+      if (!controller.settled) controller.abort(reason)
+      if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+      disposed = Promise.resolve()
+      return disposed
+    }
+    return Object.assign(call, { dispose })
   }
 
   createChannel<
@@ -783,8 +860,9 @@ export class Client<
     const receive = createPipe<T['Receive']>()
     const writer = receive.writable.getWriter()
     const controller: StreamController<T['Receive'], T['Result']> = Object.assign(
-      createController<T['Result']>({ type: 'channel', procedure, header: config.header }, () =>
-        writer.close(),
+      createController<T['Result']>(
+        { type: 'channel', procedure, header: config.header },
+        () => void writer.close().catch(() => {}),
       ),
       { receive: writer },
     )
@@ -797,9 +875,10 @@ export class Client<
         procedure,
         rid,
       })
+      void writer.close().catch(() => {})
       // no-op
       const send = async (_val: T['Send']) => {}
-      return Object.assign(
+      const call = Object.assign(
         createStream({
           id: rid,
           controller,
@@ -809,6 +888,8 @@ export class Client<
         }),
         { send, writable: writeTo(send) },
       )
+      void call.catch(() => {})
+      return Object.assign(call, { dispose: () => Promise.resolve() })
     }
 
     this.#controllers[rid] = controller
@@ -828,14 +909,23 @@ export class Client<
     }
     this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
+      this.#write(
+        payload as unknown as AnyClientPayloadOf<Protocol>,
+        config.header,
+        rid,
+        controller,
+      ),
     )
 
     this.#endSpanOnResult(span, controller.result, { rid, procedure })
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
+    let disposed: Promise<void> | undefined
     const send = async (val: T['Send']) => {
+      if (disposed != null) {
+        throw new Error('Channel disposed')
+      }
       const channelSpan = this.#spans[rid]
       if (channelSpan != null) {
         channelSpan.addEvent('channel.message.sent', {
@@ -851,21 +941,22 @@ export class Client<
         { typ: 'send', prc: procedure, rid, val } as unknown as AnyClientPayloadOf<Protocol>,
         config.header,
         rid,
+        controller,
       )
     }
 
-    return Object.assign(
-      createStream({
-        id: rid,
-        controller,
-        signal,
-        sent,
-        readable: receive.readable,
-      }),
-      {
-        send,
-        writable: writeTo(send),
-      },
+    const call = Object.assign(
+      createStream({ id: rid, controller, signal, sent, readable: receive.readable }),
+      { send, writable: writeTo(send) },
     )
+    void call.catch(() => {})
+    const dispose = (reason = 'Dispose'): Promise<void> => {
+      if (disposed != null) return disposed
+      if (!controller.settled) controller.abort(reason)
+      if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+      disposed = Promise.resolve()
+      return disposed
+    }
+    return Object.assign(call, { dispose })
   }
 }

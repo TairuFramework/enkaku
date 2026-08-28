@@ -9,7 +9,7 @@
     "build:js": "turbo run build:js",
     "build:types": "pnpm run -r build:types",
     "format": "biome format --write .",
-    "lint": "biome check --write ./packages ./tests",
+    "lint": "biome check --write ./packages ./tests ./website",
     "prepare": "git config core.hooksPath .githooks",
     "release": "pnpm run build && pnpm publish -r",
     "test": "turbo run test:types test:unit"
@@ -19,5 +19,5 @@
     "typedoc": "catalog:",
     "typedoc-plugin-markdown": "catalog:"
   },
-  "packageManager": "pnpm@11.22.0"
+  "packageManager": "pnpm@11.24.0"
 }
