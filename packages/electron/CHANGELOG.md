@@ -1,5 +1,12 @@
 # @enkaku/electron
 
+## 0.21.1
+
+### Patch Changes
+
+- Updated dependencies:
+  - @enkaku/client@0.21.1
+
 ## 0.21.0
 
 ### Patch Changes
