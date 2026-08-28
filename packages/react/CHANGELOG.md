@@ -1,5 +1,11 @@
 # @enkaku/react
 
+## 0.21.3
+
+### Patch Changes
+
+- Add `useCall` and `useAsyncResource` async hooks for managing async-operation and disposable-resource lifecycles, decoupled from the enkaku client.
+
 ## 0.21.0
 
 ### Patch Changes
