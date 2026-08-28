@@ -77,7 +77,7 @@ const signal = providedSignal
 
 The timeout aborts `controller`, whose `controller.signal` is already in that merge, so the returned `call.signal` reflects whichever source fires first, with the correct reason. Race outcomes:
 
-- **External signal first:** listener fires → rejects with the external reason, deletes controller; the settle handler `clearTimeout`s the timer; a late timer fire hits the `this.#controllers[rid] === controller` guard (false) and no-ops.
+- **External signal first:** listener fires → rejects with the external reason, `finish()` sets `settled`, deletes controller; the settle handler `clearTimeout`s the timer; a late timer fire hits the `!controller.settled` guard (false → skip) and no-ops.
 - **Timeout first:** `controller.abort(RequestTimeoutError)` → merged signal aborts → listener rejects with `RequestTimeoutError`, deletes controller; a later external abort finds the `{ once: true }` listener already consumed — no double notify.
 - **Normal result:** read loop calls `controller.ok`, deletes controller, resolves `controller.result` → settle handler clears the timer; the timeout never fires.
 
