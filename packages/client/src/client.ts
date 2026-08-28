@@ -128,6 +128,7 @@ type RequestController<Result> = AbortController &
     error: (error: RequestError) => void
     aborted: (signal: AbortSignal) => void
     header?: AnyHeader
+    readonly settled: boolean
   }
 
 type StreamController<Receive, Result> = RequestController<Result> & {
@@ -153,7 +154,7 @@ function createController<T>(
     done = true
     onDone?.()
   }
-  return Object.assign(new AbortController(), params, {
+  const controller = Object.assign(new AbortController(), params, {
     result: deferred.promise,
     ok: (value: T) => {
       deferred.resolve(value)
@@ -167,7 +168,9 @@ function createController<T>(
       deferred.reject(signal.reason)
       finish()
     },
-  })
+  }) as RequestController<T>
+  Object.defineProperty(controller, 'settled', { get: () => done, enumerable: false })
+  return controller
 }
 
 type CreateRequestParams<Result> = {
@@ -493,6 +496,7 @@ export class Client<
     payload: AnyClientPayloadOf<Protocol>,
     header?: AnyHeader,
     rid?: string,
+    owner?: AnyClientController,
   ): Promise<void> {
     if (this.signal.aborted) {
       throw new Error('Client aborted', { cause: this.signal.reason })
@@ -508,11 +512,11 @@ export class Client<
       events: this.#events,
       signal: this.signal,
       onFailure: (error) => {
-        if (rid != null) {
-          // Surface the write failure on the per-rid controller so the
-          // awaited request/stream/channel promise rejects, instead of
-          // hanging on a server reply that will never arrive.
-          this.#controllers[rid]?.abort(error)
+        // Abort the OWNING controller, and only if it has not already settled:
+        // a map lookup could hit a reused-rid occupant; aborting a settled owner
+        // would fire a spurious server abort.
+        if (owner != null && !owner.settled) {
+          owner.abort(error)
         }
       },
     })
@@ -525,7 +529,12 @@ export class Client<
   // throw) and signing errors from `#createMessage`, which are the only paths
   // that still reject. `requestError` surfaces those so callers can observe
   // mid-abort failures without each abort site needing its own `.catch`.
-  #notifyAbort(rid: string, reason: unknown, header?: AnyHeader): void {
+  #notifyAbort(
+    rid: string,
+    reason: unknown,
+    header?: AnyHeader,
+    owner?: AnyClientController,
+  ): void {
     void (async () => {
       try {
         await this.#write(
@@ -536,6 +545,7 @@ export class Client<
           } as unknown as AnyClientPayloadOf<Protocol>,
           header,
           rid,
+          owner,
         )
       } catch (error) {
         if (!this.signal.aborted) {
@@ -553,21 +563,24 @@ export class Client<
     const signal = providedSignal
       ? AbortSignal.any([controller.signal, providedSignal])
       : controller.signal
-    signal.addEventListener(
-      'abort',
-      () => {
-        const reason = signal.reason?.name ?? signal.reason
-        this.#logger.trace('abort {type} {procedure} with ID {rid} and reason: {reason}', {
-          type: controller.type,
-          procedure: controller.procedure,
-          rid,
-          reason,
-        })
-        this.#notifyAbort(rid, reason, controller.header)
-        controller.aborted(signal)
+    const onAbort = () => {
+      const reason = signal.reason?.name ?? signal.reason
+      this.#logger.trace('abort {type} {procedure} with ID {rid} and reason: {reason}', {
+        type: controller.type,
+        procedure: controller.procedure,
+        rid,
+        reason,
+      })
+      this.#notifyAbort(rid, reason, controller.header, controller)
+      controller.aborted(signal)
+      if (this.#controllers[rid] === controller) {
         delete this.#controllers[rid]
-      },
-      { once: true },
+      }
+    }
+    signal.addEventListener('abort', onAbort, { once: true })
+    void controller.result.then(
+      () => signal.removeEventListener('abort', onAbort),
+      () => signal.removeEventListener('abort', onAbort),
     )
     return signal
   }
@@ -668,7 +681,12 @@ export class Client<
     }
     this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
+      this.#write(
+        payload as unknown as AnyClientPayloadOf<Protocol>,
+        config.header,
+        rid,
+        controller,
+      ),
     )
 
     this.#endSpanOnResult(span, controller.result, { rid, procedure })
@@ -702,8 +720,9 @@ export class Client<
     const receive = createPipe<T['Receive']>()
     const writer = receive.writable.getWriter()
     const controller: StreamController<T['Receive'], T['Result']> = Object.assign(
-      createController<T['Result']>({ type: 'stream', procedure, header: config.header }, () =>
-        writer.close(),
+      createController<T['Result']>(
+        { type: 'stream', procedure, header: config.header },
+        () => void writer.close().catch(() => {}),
       ),
       { receive: writer },
     )
@@ -742,7 +761,12 @@ export class Client<
     }
     this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
+      this.#write(
+        payload as unknown as AnyClientPayloadOf<Protocol>,
+        config.header,
+        rid,
+        controller,
+      ),
     )
 
     this.#endSpanOnResult(span, controller.result, { rid, procedure })
@@ -783,8 +807,9 @@ export class Client<
     const receive = createPipe<T['Receive']>()
     const writer = receive.writable.getWriter()
     const controller: StreamController<T['Receive'], T['Result']> = Object.assign(
-      createController<T['Result']>({ type: 'channel', procedure, header: config.header }, () =>
-        writer.close(),
+      createController<T['Result']>(
+        { type: 'channel', procedure, header: config.header },
+        () => void writer.close().catch(() => {}),
       ),
       { receive: writer },
     )
@@ -828,7 +853,12 @@ export class Client<
     }
     this.#events.emit('requestStart', { rid, procedure, type: controller.type })
     const sent = withActiveContext(spanCtx, () =>
-      this.#write(payload as unknown as AnyClientPayloadOf<Protocol>, config.header, rid),
+      this.#write(
+        payload as unknown as AnyClientPayloadOf<Protocol>,
+        config.header,
+        rid,
+        controller,
+      ),
     )
 
     this.#endSpanOnResult(span, controller.result, { rid, procedure })
@@ -851,6 +881,7 @@ export class Client<
         { typ: 'send', prc: procedure, rid, val } as unknown as AnyClientPayloadOf<Protocol>,
         config.header,
         rid,
+        controller,
       )
     }
 
