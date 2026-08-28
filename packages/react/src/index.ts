@@ -10,6 +10,7 @@
  * @module react
  */
 
+export { useCall } from './async.js'
 export { EnkakuProvider, useEnkakuClient } from './context.js'
 export { useSendEvent } from './event.js'
 export { useRequest, useRequestResult, useSendRequest } from './request.js'

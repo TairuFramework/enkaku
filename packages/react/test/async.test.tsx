@@ -1,0 +1,145 @@
+import { act, renderHook, waitFor } from '@testing-library/react'
+import { type PropsWithChildren, StrictMode } from 'react'
+import { describe, expect, test } from 'vitest'
+
+import { useCall } from '../src/index.js'
+
+/** A promise plus its resolve/reject, for driving hook timing from the test. */
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (error: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
+  return { promise, resolve, reject }
+}
+
+describe('useCall', () => {
+  test('resolves to data and clears loading', async () => {
+    const { promise, resolve } = deferred<number>()
+    const { result } = renderHook(() => useCall(() => promise, []))
+
+    expect(result.current).toEqual({ data: null, error: null, loading: true })
+
+    await act(async () => {
+      resolve(42)
+      await promise
+    })
+
+    expect(result.current).toEqual({ data: 42, error: null, loading: false })
+  })
+
+  test('coerces a rejection to Error', async () => {
+    const { promise, reject } = deferred<number>()
+    const { result } = renderHook(() => useCall(() => promise, []))
+
+    await act(async () => {
+      reject('boom')
+      await promise.catch(() => {})
+    })
+
+    expect(result.current.data).toBeNull()
+    expect(result.current.loading).toBe(false)
+    expect(result.current.error).toBeInstanceOf(Error)
+    expect(result.current.error?.message).toBe('boom')
+  })
+
+  test('coerces a synchronous throw to Error', async () => {
+    const { result } = renderHook(() =>
+      useCall(() => {
+        throw new Error('sync fail')
+      }, []),
+    )
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.error?.message).toBe('sync fail')
+    expect(result.current.data).toBeNull()
+  })
+
+  test('re-runs when deps change and clears prior data first', async () => {
+    let current = deferred<string>()
+    const runs: Array<number> = []
+    const { result, rerender } = renderHook(
+      ({ key }: { key: number }) =>
+        useCall(() => {
+          runs.push(key)
+          return current.promise
+        }, [key]),
+      { initialProps: { key: 1 } },
+    )
+
+    await act(async () => {
+      current.resolve('one')
+      await current.promise
+    })
+    expect(result.current.data).toBe('one')
+
+    current = deferred<string>()
+    rerender({ key: 2 })
+    // Prior data cleared while the new run is in flight.
+    expect(result.current).toEqual({ data: null, error: null, loading: true })
+
+    await act(async () => {
+      current.resolve('two')
+      await current.promise
+    })
+    expect(result.current.data).toBe('two')
+    expect(runs).toEqual([1, 2])
+  })
+
+  test('ignores a superseded resolution (A then B, A resolves late)', async () => {
+    const a = deferred<string>()
+    const b = deferred<string>()
+    let next = a
+    const { result, rerender } = renderHook(
+      ({ key }: { key: number }) => useCall(() => next.promise, [key]),
+      { initialProps: { key: 1 } },
+    )
+
+    next = b
+    rerender({ key: 2 })
+
+    await act(async () => {
+      b.resolve('B')
+      await b.promise
+    })
+    expect(result.current.data).toBe('B')
+
+    // A resolves after it was superseded — must be ignored.
+    await act(async () => {
+      a.resolve('A')
+      await a.promise
+    })
+    expect(result.current.data).toBe('B')
+  })
+
+  test('aborts the run signal on unmount', async () => {
+    const { promise } = deferred<number>()
+    let captured: AbortSignal | undefined
+    const { unmount } = renderHook(() =>
+      useCall((signal) => {
+        captured = signal
+        return promise
+      }, []),
+    )
+
+    expect(captured?.aborted).toBe(false)
+    unmount()
+    expect(captured?.aborted).toBe(true)
+  })
+
+  test('does not set state after unmount (StrictMode safe)', async () => {
+    const { promise, resolve } = deferred<number>()
+    const wrapper = ({ children }: PropsWithChildren) => <StrictMode>{children}</StrictMode>
+    const { result, unmount } = renderHook(() => useCall(() => promise, []), { wrapper })
+
+    unmount()
+    await act(async () => {
+      resolve(7)
+      await promise
+    })
+    // No throw / no act warning; final state stays loading (never updated post-unmount).
+    expect(result.current.loading).toBe(true)
+  })
+})
