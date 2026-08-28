@@ -56,6 +56,7 @@ export type RequestCall<Result> = Promise<Result> &
 
 export type StreamCall<Receive, Result> = RequestCall<Result> & {
   close: () => void
+  dispose: (reason?: string) => Promise<void>
   procedure: string
   readable: ReadableStream<Receive>
 }
@@ -217,7 +218,7 @@ type CreateStreamParams<Receive, Result> = CreateRequestParams<Result> & {
 function createStream<Receive, Result>({
   readable,
   ...requestParams
-}: CreateStreamParams<Receive, Result>): StreamCall<Receive, Result> {
+}: CreateStreamParams<Receive, Result>): Omit<StreamCall<Receive, Result>, 'dispose'> {
   const request = createRequest(requestParams)
   return Object.assign(request, { close: () => request.abort('Close'), readable })
 }
@@ -778,13 +779,16 @@ export class Client<
         procedure,
         rid,
       })
-      return createStream({
+      void writer.close().catch(() => {}) // readable ends immediately
+      const call = createStream({
         id: rid,
         controller,
         signal: providedSignal,
         sent: Promise.reject(providedSignal),
         readable: receive.readable,
       })
+      void call.catch(() => {})
+      return Object.assign(call, { dispose: () => Promise.resolve() })
     }
 
     this.#controllers[rid] = controller
@@ -816,13 +820,17 @@ export class Client<
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
-    return createStream({
-      id: rid,
-      controller,
-      signal,
-      sent,
-      readable: receive.readable,
-    })
+    const call = createStream({ id: rid, controller, signal, sent, readable: receive.readable })
+    void call.catch(() => {}) // no unhandled rejection on teardown; awaiters still see it (multicast)
+    let disposed: Promise<void> | undefined
+    const dispose = (reason = 'Dispose'): Promise<void> => {
+      if (disposed != null) return disposed
+      if (!controller.settled) controller.abort(reason)
+      if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+      disposed = Promise.resolve()
+      return disposed
+    }
+    return Object.assign(call, { dispose })
   }
 
   createChannel<
@@ -865,9 +873,10 @@ export class Client<
         procedure,
         rid,
       })
+      void writer.close().catch(() => {})
       // no-op
       const send = async (_val: T['Send']) => {}
-      return Object.assign(
+      const call = Object.assign(
         createStream({
           id: rid,
           controller,
@@ -877,6 +886,8 @@ export class Client<
         }),
         { send, writable: writeTo(send) },
       )
+      void call.catch(() => {})
+      return Object.assign(call, { dispose: () => Promise.resolve() })
     }
 
     this.#controllers[rid] = controller
@@ -908,7 +919,11 @@ export class Client<
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
+    let disposed: Promise<void> | undefined
     const send = async (val: T['Send']) => {
+      if (disposed != null) {
+        throw new Error('Channel disposed')
+      }
       const channelSpan = this.#spans[rid]
       if (channelSpan != null) {
         channelSpan.addEvent('channel.message.sent', {
@@ -928,18 +943,18 @@ export class Client<
       )
     }
 
-    return Object.assign(
-      createStream({
-        id: rid,
-        controller,
-        signal,
-        sent,
-        readable: receive.readable,
-      }),
-      {
-        send,
-        writable: writeTo(send),
-      },
+    const call = Object.assign(
+      createStream({ id: rid, controller, signal, sent, readable: receive.readable }),
+      { send, writable: writeTo(send) },
     )
+    void call.catch(() => {})
+    const dispose = (reason = 'Dispose'): Promise<void> => {
+      if (disposed != null) return disposed
+      if (!controller.settled) controller.abort(reason)
+      if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+      disposed = Promise.resolve()
+      return disposed
+    }
+    return Object.assign(call, { dispose })
   }
 }
