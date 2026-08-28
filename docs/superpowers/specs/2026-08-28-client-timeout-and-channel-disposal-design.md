@@ -118,24 +118,27 @@ The absorb is applied only to stream/channel calls, not to `request()` calls, so
 
 ### Piece 2 — `dispose()` clean teardown
 
-`dispose(reason = 'Dispose'): Promise<void>` is idempotent — a private `#disposed` flag/promise makes repeat calls return the same settled promise. Because `AbortController.abort()` and the controller's `finish()` (its `done` guard) are each **one-shot**, `dispose()` cannot double-reject or double-notify no matter how it races with a normal settle; the map delete is an additional cleanliness step, not the thing that provides idempotency.
+`dispose(reason = 'Dispose'): Promise<void>` is idempotent — a private `#disposed` flag/promise makes repeat calls return the same settled promise.
 
-**Ownership of stream closure:** the controller's existing `onDone` hook (`createController(..., () => writer.close())`) is the *single owner* of the receive-writer close. `dispose()` does **not** close the writer itself (doing so would double-close and the ignored second `writer.close()` promise could reject — the exact unhandled rejection this feature removes). Instead `dispose()` triggers the controller settle, which runs `onDone` → `writer.close()` exactly once; and the client wraps that single `writer.close()` in `.catch(() => {})` so a benign close rejection (writer already errored by an in-flight `#read()` write) is absorbed rather than leaked.
+**Settlement is controller-owned, not map-derived.** `createController`'s internal `done` flag is exposed as a one-shot read-only `controller.settled: boolean` (set true inside `finish()`). `dispose()` keys its "already done" decision off `controller.settled`, **never** off `#controllers[rid]` membership — the two are different facts: a controller can be pending yet absent from the map (its rid slot was overwritten by a reused explicit `id`, or it was never registered — the pre-aborted branch), and a controller can be settled. Using map membership to infer settlement (the previous draft's bug) would let `dispose()` wrongly no-op on a still-pending overwritten controller and leak its promise + receive stream.
 
-Steps:
+**Ownership of stream closure:** the controller's `onDone` hook is the *single owner* of the receive-writer close, and it is the place the close is absorbed. Both stream/channel controller construction sites change from `() => writer.close()` to `() => void writer.close().catch(() => {})`, so the one close can never leak an unhandled rejection (e.g. writer already errored by an in-flight `#read()` write). `dispose()` **never** closes the writer itself — it only settles the controller, which runs `onDone` exactly once.
 
-1. If already disposed **or already settled** (`this.#controllers[rid] !== controller`, i.e. a result/error/abort already won the race), skip to step 4 — teardown is a no-op and the call keeps whatever terminal state it reached. `dispose()` still resolves.
-2. **Identity-checked map removal:** `if (this.#controllers[rid] === controller) delete this.#controllers[rid]` — never an unconditional delete, so a reused explicit `id` whose slot now holds a *newer* controller is not clobbered. Removing this controller before any transport teardown keeps a later `#abortControllers` from finding it (belt-and-suspenders on top of the one-shot guards above).
-3. **Settle locally + best-effort server notify** via `controller.abort(reason)` (benign `'Dispose'`), which runs the `#handleSignal` path once: server `abort` notify (fire-and-forget), `controller.aborted` → `onDone` closes the receive writer once (close absorbed), reject-of-`controller.result` absorbed by Piece 1. For a **channel**, also close/error the send side so post-dispose `send()` / `writable` writes reject rather than emitting a `send` for a dead rid (see below).
-4. **Resolve** `Promise<void>` when *local* teardown is done — i.e. the controller is settled and the receive writer close has been initiated. It does **not** await the server `abort` acknowledgement (`#notifyAbort` is fire-and-forget; there is no ack to await). "Teardown complete" means local resources released, not a server round-trip.
+Algorithm (keys off `controller.settled`, which every held call — normal or pre-aborted — has):
 
-**Post-dispose sends (channel).** After `dispose()`, `send(value)` rejects (and `writable` is errored/closed) so a disposed channel cannot keep emitting `send` messages for a removed rid. Implementation: `send` checks the `#disposed` flag (or the controller's aborted signal) and rejects with the dispose reason before calling `#write`.
+1. If `#disposed` already set → return the stored promise. Set `#disposed`.
+2. If `!controller.settled`: settle it via `controller.abort(reason)` (benign `'Dispose'`). This runs the `#handleSignal` path once — best-effort server `abort` notify (fire-and-forget), `controller.aborted` → `finish()` → `onDone` closes the receive writer once (absorbed) → rejects `controller.result` (absorbed by Piece 1). For the **pre-aborted branch** the held controller is pending-and-unregistered, so this is exactly what closes its otherwise-leaked receive writer.
+3. **Identity-checked map removal** (separate from settlement): `if (this.#controllers[rid] === controller) delete this.#controllers[rid]`. Never unconditional, so a reused explicit `id` whose slot now holds a *newer* controller is not clobbered. (For a pre-aborted or already-removed controller this is a no-op.)
+4. **Channel send side:** mark disposed so `send()` rejects — see below.
+5. **Resolve** `Promise<void>` when *local* teardown is done (controller settled, receive close initiated). It does **not** await the server `abort` ack (`#notifyAbort` is fire-and-forget; there is no ack).
 
-**Already-settled interaction.** Because of step 1, the claim "a consumer awaiting a disposed call observes a rejection" holds **only when `dispose()` wins the race** against the server result. If the server result/error already settled the call, `await call` yields that result/error and `dispose()` is a clean no-op that still resolves. The linearization point is the controller settle: whichever of {result, error, external abort, dispose-abort} runs first wins; the rest are one-shot no-ops.
+**Post-dispose sends (channel) — narrowed guarantee.** After `dispose()`, a `send(value)` **begun after** disposal rejects with the dispose reason before touching the transport (the `send` closure checks the `#disposed` flag first), and `writable` — whose sink is that `send` closure — errors on its next write, so no *new* `send` reaches a dead rid. A `send()` **already in flight** when `dispose()` runs (e.g. parked awaiting token signing inside `#write`) is *not* forcibly cancelled and may still complete; disposal is not a send barrier. This is the intended, documented boundary (Sakui does not send after dispose). `writable` is not actively `close()`d — the flag causes its next write to reject and error the stream.
+
+**Already-settled interaction.** The claim "a consumer awaiting a disposed call observes a rejection" holds **only when `dispose()` settles the controller** (step 2 ran). If a server result/error already settled it (`controller.settled` true), `await call` yields that result/error and `dispose()` skips step 2 — a clean no-op that still resolves and still runs the identity-checked map cleanup. The linearization point is the controller's one-shot `finish()`: whichever of {result, error, external abort, dispose-abort} runs first wins; the rest are no-ops.
 
 ### Wiring
 
-`createStream`/`createChannel` are free functions built by the client; `dispose` needs the controller, `rid`, the `#disposed` flag, and access to `this.#controllers` plus the send-side handle. The client threads a `dispose` closure into the call the same way it already threads `signal`, and attaches the Piece 1 absorb to the assembled call object (both the normal and pre-aborted branches). For the pre-aborted branch, `dispose()` has no live controller — it is a no-op that resolves, and the Piece 1 absorb covers the rejected `sent`.
+`createStream`/`createChannel` are free functions built by the client; `dispose` needs the held `controller` (which carries `settled`), `rid`, the `#disposed` flag, `this.#controllers`, and (channel) the send-side disposed flag. The client threads a `dispose` closure into the call the way it already threads `signal`, and attaches the Piece 1 absorb to the assembled call object in **both** the normal and pre-aborted branches. `dispose()` on a pre-aborted call is **not** a no-op: it settles the held (unregistered) controller to close the receive writer, and the Piece 1 absorb covers the already-rejected `sent`.
 
 `dispose()` adds no event listeners.
 
@@ -156,6 +159,28 @@ void controller.result.then(
 
 **Scope of this fix (precise):** it removes *the listener Enkaku registered* from the composite on settle. It does **not** dispose the `AbortSignal.any` composite itself, nor stop a later external `providedSignal` abort from setting `call.signal.reason` after the request is done (the composite lives as long as `providedSignal` does — that is the runtime's behavior, not ours to change). The leak being fixed is precisely "our abort handler still referenced after settle"; the test asserts our handler was removed (spy on `removeEventListener` / the handler not firing post-settle), not composite garbage-collection.
 
+## Targeted improvement — identity-checked controller-rid mutations
+
+Needed so the disposal identity-check is not undone by *other* paths mutating the same rid slot, and closing a pre-existing latent hazard around reused explicit `id`s. Two controller-originated `#controllers[rid]` mutations fire **asynchronously**, after the slot may have been reused by a newer call sharing the rid:
+
+- `#handleSignal`'s abort listener ends with `delete this.#controllers[rid]` (unconditional). If a stale (overwritten) controller's external/provided signal aborts later, it deletes the *newer* controller.
+- `#write`'s `onFailure` does `this.#controllers[rid]?.abort(error)`. A late write failure for an old send can abort the newer controller occupying that rid.
+
+Both become identity-checked against the controller they belong to:
+
+```ts
+// #handleSignal onAbort:
+if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+// #write onFailure (capture the controller when the write is issued):
+if (this.#controllers[rid] === issuingController) this.#controllers[rid]?.abort(error)
+```
+
+The synchronous result/error deletes in `#read()` (they fetch the current controller for that rid and act on it in the same tick) are already safe and are left unchanged. This hardening is only meaningful when callers pass explicit `id`s and reuse them; with the default random rids it is inert, but it makes the disposal guarantees hold unconditionally.
+
+### `controller.settled` accessor
+
+`createController` gains a one-shot read-only `settled: boolean`, set `true` inside the existing `finish()` (alongside the `done` guard it already keeps). It is the single source of truth for "this call has reached a terminal state," consumed by `dispose()` (above) and available for tests. No behavior change to `ok`/`error`/`aborted`.
+
 ## Data flow
 
 ```
@@ -170,17 +195,18 @@ request(procedure, { param, signal?, timeout? })
                     -> #handleSignal onAbort -> notify server, reject, delete
 
 createChannel(...) / createStream(...)   [normal AND pre-aborted branch]
+  onDone = () => void writer.close().catch(() => {})   // single close owner, absorbed
   build call; void call.catch(() => {})   // no unhandled rejection, awaiters unaffected
-  dispose(reason='Dispose'):  // idempotent via #disposed; one-shot abort/finish
-    if already disposed or already settled (#controllers[rid] !== controller):
-        no-op teardown -> resolve
-    else:
-        if #controllers[rid] === controller: delete   // identity-checked
+  dispose(reason='Dispose'):  // idempotent via #disposed
+    if #disposed: return stored promise
+    set #disposed
+    if !controller.settled:                 // keyed off CONTROLLER, not the map
         controller.abort(reason)
             -> #handleSignal onAbort -> notify server (fire-and-forget),
-               onDone closes receive writer ONCE (close absorbed),
+               finish() sets settled, onDone closes receive writer ONCE (absorbed),
                reject controller.result [absorbed by call.catch]
-        channel: send()/writable now reject (no send for dead rid)
+    if #controllers[rid] === controller: delete   // identity-checked, separate
+    channel: mark disposed -> later send()/writable writes reject (no send for dead rid)
     -> resolve Promise<void> when LOCAL teardown done (no server ack awaited)
 ```
 
@@ -188,7 +214,7 @@ createChannel(...) / createStream(...)   [normal AND pre-aborted branch]
 
 - Timeout rejects the call with `RequestTimeoutError` (a `RequestError`, so existing `instanceof RequestError` catches still fire); `.code === 'RequestTimeout'` and `.data.procedure` / `.data.timeoutMs` are available. The server-side `abort` notification carries the reason string `'RequestTimeoutError'` (via the explicit `name`).
 - A disposed stream/channel never emits an unhandled rejection. An explicit `await` on a disposed call rejects with the dispose reason **only when `dispose()` won the race**; if a server result/error already settled the call, the awaiter sees that instead (see Feature 2 "Already-settled interaction").
-- **Concurrent inbound write during dispose:** `#read()` may already be mid-`receive.write()` when `dispose()` closes the writer. `#read()` already `.catch(() => {})`es its writes, and the single owned `writer.close()` is likewise absorbed, so neither races into an unhandled rejection. Data already queued in the pipe when `dispose()` runs is not guaranteed to drain — disposal is a teardown, not a flush.
+- **Concurrent inbound write during dispose:** `#read()` may already be mid-`receive.write()` when `dispose()` settles the controller (which runs `onDone` → `writer.close()`). `#read()` already `.catch(() => {})`es its writes, and the single owned `writer.close()` is now `.catch`-absorbed at its `onDone` site, so neither races into an unhandled rejection. Data already queued in the pipe when `dispose()` runs is not guaranteed to drain — disposal is a teardown, not a flush.
 - Neither feature changes the reasons or types produced by `abort()` or `close()`.
 
 ## Testing
@@ -212,13 +238,19 @@ createChannel(...) / createStream(...)   [normal AND pre-aborted branch]
 **Feature 2 — dispose:**
 - `dispose()` deletes the controller from the map, ends `readable` (receive writer closed exactly once), and resolves its `Promise<void>`.
 - **No unhandled rejection** when the transport is disposed *before* `dispose()` is called, and when it is disposed *after* — both orderings (assert via an `unhandledrejection` / process listener spy that stays clean).
-- **When `dispose()` wins the race** (server has not settled), a consumer awaiting the call observes the rejection (the absorb does not hide it).
-- **When a result settled first**, `dispose()` is a no-op that still resolves, and an awaiter sees the *result*, not a dispose rejection (already-settled interaction).
-- **Channel post-dispose send:** after `dispose()`, `send(value)` rejects and `writable` writes reject — no `send` message is written for the disposed rid.
-- **Identity-checked removal:** disposing an old call whose explicit `id` has been reused by a newer live call does not delete the newer controller from the map.
-- **Single close owner:** the receive writer is closed exactly once (no double-close); a benign close rejection is absorbed (no `unhandledrejection`).
+- **When `dispose()` settles the call** (`controller.settled` was false), a consumer awaiting it observes the rejection (the absorb does not hide it).
+- **When a result settled first** (`controller.settled` true), `dispose()` skips the abort — still resolves, still runs the identity-checked map cleanup — and an awaiter sees the *result*, not a dispose rejection.
+- **Settlement is not inferred from the map:** an overwritten-but-still-pending controller (reused explicit `id`) is disposed correctly — its receive writer is closed — rather than wrongly treated as settled.
+- **Channel post-dispose send:** a `send()` begun after `dispose()` rejects and `writable`'s next write rejects — no new `send` for the dead rid. (A send already in flight may still complete — documented boundary.)
+- **Identity-checked removal:** disposing an old call whose explicit `id` was reused by a newer live call does not delete the newer controller; likewise a late external-signal abort or write failure on the stale rid does not delete/abort the newer controller (identity-checked `#handleSignal` / `#write` paths).
+- **Single close owner:** the receive writer is closed exactly once via `onDone`, `dispose()` never closes it itself, and a benign close rejection is absorbed (no `unhandledrejection`).
 - Double `dispose()` is idempotent (second call returns the same resolved promise; no duplicate server notify).
-- **Pre-aborted branch:** a stream/channel created with an already-aborted `signal` produces no unhandled rejection, and `dispose()` on it resolves as a no-op.
+- **Pre-aborted branch:** a stream/channel created with an already-aborted `signal` produces no unhandled rejection, and `dispose()` on it settles the held controller so `readable` ends (the writer is closed), then resolves.
+
+**Controller-identity hardening (explicit-id reuse):**
+- A late abort of an old call's provided signal, after its explicit `id` was reused by a newer live call, does not delete the newer controller from the map (the newer call still receives its reply).
+- A late `#write` failure for an old send does not abort the newer controller sharing that rid.
+- `dispose()` on an overwritten-but-still-pending controller closes *its* receive writer and does not delete the newer controller's map entry.
 
 ## Non-goals / YAGNI
 
@@ -227,6 +259,7 @@ createChannel(...) / createStream(...)   [normal AND pre-aborted branch]
 - `AbortSignal.timeout` is not used (chose `setTimeout`/`clearTimeout` for fake-timer testability).
 - No new client-wide teardown API beyond `dispose()` on the call.
 - `dispose()` does not flush queued receive data or await a server acknowledgement — it is a teardown, not a graceful drain.
+- `dispose()` does not cancel a `send()` already in flight (parked inside `#write`); it only rejects sends begun after disposal. It is a send barrier for *new* sends, not an interrupt.
 
 ## Acceptance
 
