@@ -58,3 +58,17 @@ export class RequestError<
     return { code: this.#code, data: this.#data, message: this.message }
   }
 }
+
+export class RequestTimeoutError extends RequestError<
+  'RequestTimeout',
+  { procedure: string; timeoutMs: number }
+> {
+  constructor(procedure: string, timeoutMs: number) {
+    super({
+      code: 'RequestTimeout',
+      data: { procedure, timeoutMs },
+      message: `Request '${procedure}' timed out after ${timeoutMs}ms`,
+    })
+    this.name = 'RequestTimeoutError'
+  }
+}

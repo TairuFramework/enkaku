@@ -26,5 +26,6 @@ export {
   type ErrorObjectType,
   RequestError,
   type RequestErrorParams,
+  RequestTimeoutError,
 } from './error.js'
 export type { ClientEmitter, ClientEvents, ClientRequestStatus } from './events.js'

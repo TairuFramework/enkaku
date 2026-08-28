@@ -32,7 +32,7 @@ import {
 import { createRuntime, type Runtime } from '@sozai/runtime'
 import { createPipe, writeTo } from '@sozai/stream'
 
-import { RequestError } from './error.js'
+import { RequestError, RequestTimeoutError } from './error.js'
 import type { ClientEmitter, ClientEvents } from './events.js'
 import { safeWrite, type WriteTarget } from './safe-write.js'
 
@@ -173,6 +173,11 @@ function createController<T>(
   return controller
 }
 
+/** A timer is armed only for a finite value > 0; everything else means "off". */
+function normalizeTimeout(value: number | undefined): number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
+}
+
 type CreateRequestParams<Result> = {
   id: string
   controller: RequestController<Result>
@@ -270,6 +275,8 @@ export type ClientParams<Protocol extends ProtocolDefinition> = {
   serverID?: string
   identity?: Identity | Promise<Identity>
   now?: () => number
+  /** Default per-request timeout, in milliseconds. Overridden by `request()`'s own `timeout` option. */
+  requestTimeoutMs?: number
 }
 
 export class Client<
@@ -288,6 +295,7 @@ export class Client<
   #tracer: Tracer
   #transport: ClientTransportOf<Protocol>
   #events: ClientEmitter = new EventEmitter<ClientEvents>()
+  #requestTimeoutMs?: number
 
   constructor(params: ClientParams<Protocol>) {
     super({
@@ -312,6 +320,7 @@ export class Client<
       params.logger ?? getLogger(['enkaku', 'client'], { clientID: this.#runtime.getRandomID() })
     this.#tracer = params.tracer ?? defaultTracer
     this.#transport = params.transport
+    this.#requestTimeoutMs = params.requestTimeoutMs
     // Start reading from transport
     this.#setupTransport()
   }
@@ -630,8 +639,24 @@ export class Client<
   >(
     procedure: Procedure,
     ...args: T['Param'] extends never
-      ? [config?: { header?: AnyHeader; id?: string; param?: never; signal?: AbortSignal }]
-      : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
+      ? [
+          config?: {
+            header?: AnyHeader
+            id?: string
+            param?: never
+            signal?: AbortSignal
+            timeout?: number
+          },
+        ]
+      : [
+          config: {
+            header?: AnyHeader
+            id?: string
+            param: T['Param']
+            signal?: AbortSignal
+            timeout?: number
+          },
+        ]
   ): RequestCall<T['Result']> & Promise<T['Result']> {
     const config = args[0] ?? {}
     const rid = config.id ?? this.#runtime.getRandomID()
@@ -692,6 +717,24 @@ export class Client<
     this.#endSpanOnResult(span, controller.result, { rid, procedure })
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
+
+    const effectiveTimeout = normalizeTimeout(
+      'timeout' in config ? (config as { timeout?: number }).timeout : this.#requestTimeoutMs,
+    )
+    if (effectiveTimeout > 0) {
+      const timeoutTimer = setTimeout(() => {
+        // Fire only if this controller has not already reached a terminal state.
+        // Keyed off the controller's own `settled`, never map membership.
+        if (!controller.settled) {
+          controller.abort(new RequestTimeoutError(procedure, effectiveTimeout))
+        }
+      }, effectiveTimeout)
+      void controller.result.then(
+        () => clearTimeout(timeoutTimer),
+        () => clearTimeout(timeoutTimer),
+      )
+    }
+
     return createRequest({ id: rid, controller, signal, sent })
   }
 
