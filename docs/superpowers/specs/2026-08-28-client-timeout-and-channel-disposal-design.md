@@ -46,10 +46,12 @@ In `request()`, after `sent` is initiated and the controller is registered, if t
 
 ```ts
 const timeoutTimer = setTimeout(() => {
-  // Only if still in-flight: once the request settles (result / error /
-  // external abort) the controller has already been deleted from the map,
-  // so a late fire is a no-op — no spurious server-abort for a completed request.
-  if (this.#controllers[rid] === controller) {
+  // Fire only if this controller has not already reached a terminal state.
+  // Guard on the controller's own `settled`, NOT on map membership: an old
+  // request whose explicit `id` was reused is absent from the map yet may
+  // still be pending — a map guard would wrongly suppress its timeout and
+  // hang it forever. `settled` is the call's own truth.
+  if (!controller.settled) {
     controller.abort(new RequestTimeoutError(procedure, effectiveTimeout))
   }
 }, effectiveTimeout)
@@ -58,6 +60,8 @@ void controller.result.then(
   () => clearTimeout(timeoutTimer),
 )
 ```
+
+The `controller.result.then(clear, clear)` clears the timer the moment the request settles (any outcome), so the guard is defense-in-depth against the microtask window; together they mean no late fire and no spurious server-abort for a completed request.
 
 `controller.abort(reason)` reuses the existing abort path verbatim: the `#handleSignal` abort listener runs `#notifyAbort` (server notification), `controller.aborted(signal)` (rejects the call with `signal.reason` = the typed error), and `delete this.#controllers[rid]`. The timeout adds **no event listener** — it is a timer plus a settle handler that clears it.
 
@@ -180,7 +184,11 @@ if (this.#controllers[rid] === controller) delete this.#controllers[rid]
 // one-shot, so aborting an already-settled owner is a no-op, and a stale
 // owner is aborted instead of the newer occupant of its rid:
 async #write(payload, header?, rid?, owner?: AnyClientController) { /* ... */
-  onFailure: (error) => { owner?.abort(error) }   // was this.#controllers[rid]?.abort(error)
+  // Abort the OWNING controller, and only if it has not already settled —
+  // aborting a settled controller still fires its AbortController signal and
+  // would emit a spurious server abort. `!owner.settled` makes it a true no-op.
+  onFailure: (error) => { if (owner != null && !owner.settled) owner.abort(error) }
+  // (was `this.#controllers[rid]?.abort(error)` — a map lookup that could hit a reused-rid occupant)
 }
 ```
 
@@ -206,7 +214,7 @@ request(procedure, { param, signal?, timeout? })
   settle handler: clearTimeout + removeEventListener(onAbort)
   ── result   -> controller.ok  -> delete controller, resolve
   ── error    -> controller.error -> delete controller, reject(RequestError)
-  ── timeout  -> (if still in map) controller.abort(RequestTimeoutError)
+  ── timeout  -> (if !controller.settled) controller.abort(RequestTimeoutError)
                     -> #handleSignal onAbort -> notify server, reject, delete
   ── external -> providedSignal abort
                     -> #handleSignal onAbort -> notify server, reject, delete
@@ -233,7 +241,7 @@ PRE-ABORTED createStream/createChannel (providedSignal already aborted):
   dispose = () => Promise.resolve()        // resolved no-op; resources already gone
 
 #write(payload, header?, rid?, owner?):    // owner threaded from every rid write site
-  onFailure: (error) => owner?.abort(error)   // one-shot; never the reused-rid occupant
+  onFailure: (error) => { if (owner && !owner.settled) owner.abort(error) }  // never the reused-rid occupant, no spurious abort
 ```
 
 ## Error handling
@@ -260,6 +268,8 @@ PRE-ABORTED createStream/createChannel (providedSignal already aborted):
 - External `signal` aborts before the timeout: rejects with the external reason; advancing past the timeout deadline no-ops.
 - Timeout fires before an external abort: rejects with `RequestTimeoutError`; a subsequent external abort does not double-notify.
 - After a normal settle with an external `providedSignal` still alive, the merged signal has no remaining `abort` listener (assert via `providedSignal` not retaining the handler / a spy on the merged signal).
+- An old still-pending request whose explicit `id` was reused by a newer call still times out (fire guard is `!controller.settled`, not map membership) — it does not hang.
+- A late `#write` failure for a request that already resolved does not emit a spurious server `abort` (`owner.settled` guard).
 
 **Feature 2 — dispose:**
 - `dispose()` deletes the controller from the map, ends `readable` (receive writer closed exactly once), and resolves its `Promise<void>`.
