@@ -103,9 +103,11 @@ export function useCall<R>(
  * throw is caught; a rejected async-dispose promise is `.catch`-swallowed (a
  * bare `void` would leave an unhandled rejection). Never throws.
  */
-export function disposeResource(resource: AsyncDisposable | Disposable): void {
+export function disposeResource(resource: object): void {
   try {
-    const asyncDispose = (resource as AsyncDisposable)[Symbol.asyncDispose]
+    const asyncDispose = (resource as { [Symbol.asyncDispose]?: () => PromiseLike<void> | void })[
+      Symbol.asyncDispose
+    ]
     if (typeof asyncDispose === 'function') {
       const result = asyncDispose.call(resource) as Promise<void> | undefined
       if (result != null && typeof result.then === 'function') {
@@ -113,7 +115,7 @@ export function disposeResource(resource: AsyncDisposable | Disposable): void {
       }
       return
     }
-    const syncDispose = (resource as Disposable)[Symbol.dispose]
+    const syncDispose = (resource as { [Symbol.dispose]?: () => void })[Symbol.dispose]
     if (typeof syncDispose === 'function') {
       syncDispose.call(resource)
     }
@@ -126,7 +128,7 @@ export function disposeResource(resource: AsyncDisposable | Disposable): void {
  * `open` must return a fresh resource on each invocation; the hook disposes
  * superseded resources, so a memoized/shared resource could be disposed while still in use.
  */
-export function useAsyncResource<R extends AsyncDisposable | Disposable>(
+export function useAsyncResource<R extends object>(
   open: (signal: AbortSignal) => Promise<R>,
   deps: DependencyList,
 ): { resource: R | null; error: Error | null; loading: boolean } {
