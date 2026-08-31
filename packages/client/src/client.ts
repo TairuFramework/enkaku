@@ -233,6 +233,7 @@ type GetCreateMessageParams = {
   aud?: string
   getRandomID: () => string
   now?: () => number
+  embedLongForm?: boolean
 }
 
 function getCreateMessage<Protocol extends ProtocolDefinition>({
@@ -240,6 +241,7 @@ function getCreateMessage<Protocol extends ProtocolDefinition>({
   aud,
   getRandomID,
   now = Date.now,
+  embedLongForm,
 }: GetCreateMessageParams): CreateMessage<Protocol> {
   if (identity == null) {
     return createUnsignedToken
@@ -253,7 +255,7 @@ function getCreateMessage<Protocol extends ProtocolDefinition>({
       }
       return id.signToken<Record<string, unknown>>(
         { jti: getRandomID(), iat: Math.floor(now() / 1000), ...payload },
-        { header },
+        { header, embedLongForm },
       )
     })
   }
@@ -278,6 +280,15 @@ export type ClientParams<Protocol extends ProtocolDefinition> = {
   now?: () => number
   /** Default per-request timeout, in milliseconds. Overridden by `request()`'s own `timeout` option. */
   requestTimeoutMs?: number
+  /**
+   * Override the did:peer:4 long-form policy for every token this client signs
+   * (forwarded to `signToken`). Set `true` when the server cannot resolve a
+   * short-form issuer — e.g. a blind relay that keeps no cached DID document and
+   * whose verifying `Server` may be rebuilt between requests — so each token
+   * carries its own document. No-op for did:key. Default (`undefined`) keeps the
+   * long-on-first-contact-per-audience policy.
+   */
+  embedLongForm?: boolean
 }
 
 export class Client<
@@ -314,6 +325,7 @@ export class Client<
       aud: params.serverID,
       getRandomID: this.#runtime.getRandomID,
       now: params.now,
+      embedLongForm: params.embedLongForm,
     })
     this.#handleTransportDisposed = params.handleTransportDisposed
     this.#handleTransportError = params.handleTransportError

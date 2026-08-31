@@ -5,6 +5,7 @@
     - kokuin-0-4-floor
     - runtime-replaces-get-random-id
     - w3c-trace-context
+    - embed-long-form-option
 "@enkaku/http-fetch@0.21.0":
   dir: packages/http-fetch
   intents:
