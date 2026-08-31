@@ -1,6 +1,14 @@
 import { signedHeaderSchema, signedPayloadSchema, unsignedHeaderSchema } from '@kokuin/token'
 import type { Schema } from '@sozai/schema'
 
+/**
+ * Upper bound for the DID-valued claims (iss/sub/aud). A did:peer:4 long form
+ * inlines its DID document, so it far exceeds a did:key length; 1024 admits a
+ * typical two-key peer:4 long form (~518 chars) with headroom while still
+ * bounding token size.
+ */
+const DID_MAX_LENGTH = 1024
+
 /** @internal */
 function mergeSignedPayload(payloadSchema: Schema): Schema {
   const payloadObj = payloadSchema as {
@@ -12,9 +20,13 @@ function mergeSignedPayload(payloadSchema: Schema): Schema {
     type: 'object',
     properties: {
       ...signedPayloadSchema.properties,
-      iss: { type: 'string', maxLength: 256 },
-      sub: { type: 'string', maxLength: 256 },
-      aud: { type: 'string', maxLength: 256 },
+      // A did:peer:4 long form inlines the whole DID document, so iss/sub/aud can
+      // run ~518 chars for a two-key identity — well past the old 256 cap that
+      // predated peer:4 support and silently rejected every long-form frame
+      // (EK08) before the resolver ran. Widened to still bound abuse.
+      iss: { type: 'string', maxLength: DID_MAX_LENGTH },
+      sub: { type: 'string', maxLength: DID_MAX_LENGTH },
+      aud: { type: 'string', maxLength: DID_MAX_LENGTH },
       ...(payloadObj.properties ?? {}),
     },
     required: [...signedPayloadSchema.required, ...(payloadObj.required ?? [])],

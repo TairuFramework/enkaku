@@ -21,6 +21,7 @@
   dir: packages/protocol
   intents:
     - kokuin-0-4-floor
+    - did-peer4-iss-length
 "@enkaku/react@0.21.0":
   dir: packages/react
   intents:
