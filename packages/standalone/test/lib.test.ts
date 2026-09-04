@@ -34,7 +34,13 @@ describe('standalone', () => {
       // message (replay protection), so the exact signed payload can't be
       // precomputed. Capture the claims the client actually used and rebuild the
       // expected signed message from them to still assert the full payload.
-      const received = handler.mock.calls[0][0] as { message: { payload: Record<string, unknown> } }
+      const firstCall = handler.mock.calls[0]
+      if (firstCall == null) {
+        throw new Error('expected handler to have been called')
+      }
+      const received = firstCall[0] as {
+        message: { payload: Record<string, unknown> }
+      }
       const actualPayload = received.message.payload
       expect(typeof actualPayload.jti).toBe('string')
       expect(typeof actualPayload.iat).toBe('number')

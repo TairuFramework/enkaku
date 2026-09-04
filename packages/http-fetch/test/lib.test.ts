@@ -95,10 +95,14 @@ describe('createTransportStream()', () => {
     await writer.write(eventMsg)
 
     expect(requests).toHaveLength(1)
-    expect(requests[0].url).toBe('http://localhost/rpc')
-    expect(JSON.parse(requests[0].body)).toEqual(eventMsg)
+    const [eventRequest] = requests
+    if (eventRequest == null) {
+      throw new Error('expected a recorded request')
+    }
+    expect(eventRequest.url).toBe('http://localhost/rpc')
+    expect(JSON.parse(eventRequest.body)).toEqual(eventMsg)
     // No enkaku-session-id header for events
-    expect(requests[0].headers['enkaku-session-id']).toBeUndefined()
+    expect(eventRequest.headers['enkaku-session-id']).toBeUndefined()
 
     await writer.close()
   })
@@ -237,10 +241,14 @@ describe('createTransportStream() SSE session handling', () => {
 
     // Should have made 1 fetch call: POST that creates SSE session (message is sent in the body)
     expect(fetchCallCount).toBe(1)
+    const [streamRequest] = requests
+    if (streamRequest == null) {
+      throw new Error('expected a recorded request')
+    }
     // The request should be a POST (not GET)
-    expect(requests[0].method).toBe('POST')
+    expect(streamRequest.method).toBe('POST')
     // The request should include accept: text/event-stream
-    expect(requests[0].headers.accept).toBe('text/event-stream')
+    expect(streamRequest.headers.accept).toBe('text/event-stream')
 
     await writer.close()
   })
@@ -280,8 +288,12 @@ describe('createTransportStream() SSE session handling', () => {
     await writer.write(streamMsg2)
 
     expect(fetchCallCount).toBe(2)
+    const secondRequest = requests[1]
+    if (secondRequest == null) {
+      throw new Error('expected a second recorded request')
+    }
     // Second POST should include session ID header
-    expect(requests[1].headers['enkaku-session-id']).toBe('session-456')
+    expect(secondRequest.headers['enkaku-session-id']).toBe('session-456')
 
     await writer.close()
   })

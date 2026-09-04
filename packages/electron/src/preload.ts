@@ -6,9 +6,14 @@ async function createProcess<R, W>(
   name: string,
   onMessage: MessageFunc<R>,
 ): Promise<MessageFunc<W>> {
-  const port = await new Promise<MessagePort>((resolve) => {
+  const port = await new Promise<MessagePort>((resolve, reject) => {
     ipcRenderer.once(`enkaku:process/${name}/port`, (event) => {
-      resolve(event.ports[0])
+      const port = event.ports[0]
+      if (port == null) {
+        reject(new Error(`No port received for process: ${name}`))
+      } else {
+        resolve(port)
+      }
     })
     ipcRenderer.send(`enkaku:process/${name}/create`)
   })

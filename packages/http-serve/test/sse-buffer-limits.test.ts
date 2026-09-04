@@ -31,7 +31,11 @@ describe('SSE buffer limits', () => {
     writer.releaseLock()
 
     expect(onWriteError).toHaveBeenCalled()
-    const { error } = onWriteError.mock.calls[0][0] as { error: Error }
+    const firstCall = onWriteError.mock.calls[0]
+    if (firstCall == null) {
+      throw new Error('expected onWriteError to have been called')
+    }
+    const { error } = firstCall[0] as { error: Error }
     expect(error.message).toMatch(/overflow/i)
   })
 

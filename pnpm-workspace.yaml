@@ -28,13 +28,13 @@ catalog:
   '@electron-forge/cli': ^7.11.2
   '@electron-forge/plugin-vite': ^7.11.2
   '@hono/node-server': ^2.1.1
-  '@kigu/dev': ^0.2.1
+  '@kigu/dev': ^0.3.1
   '@kokuin/capability': ^0.3.0
   '@kokuin/controller': ^0.1.0
   '@kokuin/electron': ^0.4.2
   '@kokuin/token': ^0.5.0
-  '@opentelemetry/sdk-trace-base': ^2.10.0
-  '@opentelemetry/sdk-trace-node': ^2.10.0
+  '@opentelemetry/sdk-trace-base': ^2.11.0
+  '@opentelemetry/sdk-trace-node': ^2.11.0
   '@orama/plugin-docusaurus-v3': ^3.1.18
   '@playwright/test': 1.62.1
   '@sozai/async': ^0.2.1
@@ -51,15 +51,15 @@ catalog:
   '@swc/core': ^1.15.41
   '@testing-library/jest-dom': ^7.0.1
   '@testing-library/react': ^16.3.3
-  '@types/node': ^26.4.0
+  '@types/node': ^26.4.1
   '@types/react': ^19.2.18
   '@vitejs/plugin-react': ^6.1.1
   '@vitest/ui': ^4.1.9
   del-cli: ^7.0.0
-  electron: ^44.0.0
+  electron: ^44.1.1
   eventsource-parser: ^4.1.0
   get-port: ^7.2.0
-  happy-dom: ^20.12.0
+  happy-dom: ^20.13.2
   react: 19.2.3
   react-dom: 19.2.3
   react-native-electron: ^0.22.1
@@ -70,7 +70,7 @@ catalog:
   typedoc-plugin-markdown: ^4.13.0
   typescript: ^6.0.3
   vite: ^8.2.2
-  vitest: ^4.1.11
+  vitest: ^5.0.0
 
 catalogMode: prefer
 

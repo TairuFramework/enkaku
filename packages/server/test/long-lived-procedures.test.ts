@@ -59,7 +59,11 @@ describe('longLivedProcedures resource limits', () => {
 
     expect(timeoutHandler).not.toHaveBeenCalled()
     expect(holdSignals).toHaveLength(1)
-    expect(holdSignals[0].aborted).toBe(false)
+    const [holdSignal] = holdSignals
+    if (holdSignal == null) {
+      throw new Error('expected a hold signal')
+    }
+    expect(holdSignal.aborted).toBe(false)
 
     await server.dispose()
     await transports.dispose()

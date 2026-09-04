@@ -105,8 +105,9 @@ const messagesHandler = vi.fn(
           return
         }
 
-        if (current < messages.length) {
-          await writer.write({ message: messages[current] })
+        const message = messages[current]
+        if (message != null) {
+          await writer.write({ message })
           current++
         } else {
           clearInterval(timer)

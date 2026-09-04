@@ -7,17 +7,18 @@
   "scripts": {
     "build": "pnpm run build:types && pnpm run build:js",
     "build:js": "turbo run build:js",
-    "build:types": "pnpm run -r build:types",
+    "build:types": "turbo run build:types",
     "format": "biome format --write .",
     "lint": "biome check --write ./packages ./tests ./website",
     "prepare": "git config core.hooksPath .githooks",
     "release": "pnpm run build && pnpm publish -r",
-    "test": "turbo run test:types test:unit"
+    "test": "turbo run test:types test:unit",
+    "test:types": "turbo run test:types"
   },
   "devDependencies": {
     "@kigu/dev": "catalog:",
     "typedoc": "catalog:",
     "typedoc-plugin-markdown": "catalog:"
   },
-  "packageManager": "pnpm@11.24.0"
+  "packageManager": "pnpm@11.25.0"
 }

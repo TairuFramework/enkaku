@@ -74,7 +74,9 @@ describe('TransportEvents lifecycle', () => {
     expect(disposing).toHaveBeenCalledWith({ reason: 'test-reason' })
     expect(disposed).toHaveBeenCalledWith({ reason: 'test-reason' })
     // disposing must fire before disposed
-    expect(disposing.mock.invocationCallOrder[0]).toBeLessThan(disposed.mock.invocationCallOrder[0])
+    expect(disposing.mock.invocationCallOrder[0]).toBeLessThan(
+      disposed.mock.invocationCallOrder[0] as number,
+    )
 
     await transports.client.dispose()
   })
@@ -97,7 +99,7 @@ describe('TransportEvents lifecycle', () => {
     await expect(transport.read()).rejects.toThrow('upstream failure')
 
     expect(readFailed).toHaveBeenCalledTimes(1)
-    expect(readFailed.mock.calls[0][0]).toHaveProperty('error')
+    expect(readFailed.mock.calls[0]?.[0]).toHaveProperty('error')
 
     await transport.dispose()
   })

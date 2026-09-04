@@ -163,9 +163,13 @@ describe('handleChannel()', () => {
       } as unknown as HandlerContext<Protocol>,
       clientToken,
     )
-    await controllers['1'].writer.write(0)
-    await controllers['1'].writer.write(1)
-    await controllers['1'].writer.write(2)
+    const controller = controllers['1']
+    if (controller == null) {
+      throw new Error('expected controller for rid 1')
+    }
+    await controller.writer.write(0)
+    await controller.writer.write(1)
+    await controller.writer.write(2)
     await resultPromise
 
     expect(trace).toBeCalledWith('handle channel {procedure} with ID {rid} and param: {param}', {

@@ -4,6 +4,7 @@ import { toPromise } from '@sozai/async'
 import { HandlerError } from './error.js'
 import type {
   HandlerContext,
+  HandlerController,
   HandlerErrorCategory,
   HandlerErrorMessageType,
   ServerEmitter,
@@ -23,7 +24,11 @@ export function emitHandlerError(
   })
 }
 
-function canSend(signal: AbortSignal): boolean {
+function canSend(controller: HandlerController | undefined): boolean {
+  if (controller == null) {
+    return false
+  }
+  const { signal } = controller
   return !signal.aborted || signal.reason === 'Close'
 }
 
@@ -44,7 +49,7 @@ export async function executeHandler<Protocol extends ProtocolDefinition>(
     if (beforeEnd != null) {
       await beforeEnd()
     }
-    if (canSend(controller.signal)) {
+    if (canSend(controller)) {
       context.logger.trace('send result to {type} {procedure} with ID {rid}: {result}', {
         type: payload.typ,
         procedure: payload.prc,
@@ -74,7 +79,7 @@ export async function executeHandler<Protocol extends ProtocolDefinition>(
       message: cause instanceof Error ? cause.message : String(cause),
       cause,
     })
-    if (canSend(controller.signal)) {
+    if (canSend(controller)) {
       context.logger.trace('send error to {type} {procedure} with ID {rid}: {error}', {
         type: payload.typ,
         procedure: payload.prc,

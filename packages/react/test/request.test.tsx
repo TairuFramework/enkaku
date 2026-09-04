@@ -1,6 +1,6 @@
 import type { RequestCall } from '@enkaku/client'
 import { standalone } from '@enkaku/standalone'
-import { act, render, renderHook, waitFor } from '@testing-library/react'
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react'
 import { type PropsWithChildren, Suspense, use } from 'react'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
@@ -181,7 +181,7 @@ describe('useRequest', () => {
       return <span data-testid="result">{result.ok ? 'OK' : 'Error'}</span>
     }
 
-    const { getByTestId } = await act(async () =>
+    await act(async () =>
       render(
         <Suspense fallback={<span>Loading...</span>}>
           <Request />
@@ -191,7 +191,7 @@ describe('useRequest', () => {
     )
 
     await waitFor(() => {
-      expect(getByTestId('result')).toHaveTextContent('OK')
+      expect(screen.getByTestId('result')).toHaveTextContent('OK')
     })
   })
 })
@@ -204,7 +204,7 @@ describe('useResult', () => {
       return <span data-testid="result">{result.ok ? 'OK' : 'Error'}</span>
     }
 
-    const { getByTestId } = await act(async () =>
+    await act(async () =>
       render(
         <Suspense fallback={<span>Loading...</span>}>
           <Result />
@@ -214,7 +214,7 @@ describe('useResult', () => {
     )
 
     await waitFor(() => {
-      expect(getByTestId('result')).toHaveTextContent('OK')
+      expect(screen.getByTestId('result')).toHaveTextContent('OK')
     })
   })
 })
