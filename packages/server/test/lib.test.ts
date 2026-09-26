@@ -159,6 +159,7 @@ describe('serve()', () => {
       iss: signer.id,
       prc: 'test',
       rid: '1',
+      iat: Math.floor(Date.now() / 1000),
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -210,6 +211,7 @@ describe('serve()', () => {
       prc: 'test',
       rid: '1',
       prm: 3,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(message)
 
@@ -273,6 +275,7 @@ describe('serve()', () => {
       prc: 'test',
       rid: '1',
       prm: 5,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
 
     const send = [5, 3, 10, 20]
@@ -284,6 +287,7 @@ describe('serve()', () => {
           prc: 'test',
           rid: '1',
           val,
+          iat: Math.floor(Date.now() / 1000),
         } as const)
         await transports.client.write(sendMsg)
       }

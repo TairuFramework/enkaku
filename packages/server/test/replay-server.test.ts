@@ -13,6 +13,7 @@ import {
 
 const protocol = {
   notify: { type: 'event', data: { type: 'object' } },
+  ping: { type: 'request', result: { type: 'string' } },
   chat: {
     type: 'channel',
     send: { type: 'string' },
@@ -25,6 +26,102 @@ type Protocol = typeof protocol
 function nowSeconds(): number {
   return Math.floor(Date.now() / 1000)
 }
+
+test('rejects a signed request without exp or iat on its first send', async () => {
+  const signer = randomIdentity()
+  const handler = vi.fn(() => 'pong')
+  const handlers = { ping: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+  const server = serve<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { ping: { allow: true } },
+    transport: transports.server,
+  })
+  const message = await signer.signToken({
+    typ: 'request',
+    aud: signer.id,
+    prc: 'ping',
+    rid: 'unbounded-default',
+  } as const)
+
+  await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+  const response = await transports.client.read()
+  expect((response.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK09')
+  expect(handler).not.toHaveBeenCalled()
+
+  await server.dispose()
+  await transports.dispose()
+})
+
+test('rejects a signed request with a far-future exp with EK09', async () => {
+  const signer = randomIdentity()
+  const handler = vi.fn(() => 'pong')
+  const handlers = { ping: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+  const server = serve<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { ping: { allow: true } },
+    transport: transports.server,
+  })
+  const message = await signer.signToken({
+    typ: 'request',
+    aud: signer.id,
+    prc: 'ping',
+    rid: 'far-exp',
+    iat: nowSeconds(),
+    exp: nowSeconds() + 3_600,
+  } as const)
+
+  await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+  const response = await transports.client.read()
+  expect((response.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK09')
+  expect(handler).not.toHaveBeenCalled()
+
+  await server.dispose()
+  await transports.dispose()
+})
+
+test('accepts a request without exp or iat once when rejectStale is false', async () => {
+  const signer = randomIdentity()
+  const handler = vi.fn(() => 'pong')
+  const handlers = { ping: handler } as unknown as ProcedureHandlers<Protocol>
+  const transports = new DirectTransports<
+    AnyServerMessageOf<Protocol>,
+    AnyClientMessageOf<Protocol>
+  >()
+  const server = serve<Protocol>({
+    handlers,
+    identity: signer,
+    accessRules: { ping: { allow: true } },
+    transport: transports.server,
+    replay: { rejectStale: false },
+  })
+  const message = await signer.signToken({
+    typ: 'request',
+    aud: signer.id,
+    prc: 'ping',
+    rid: 'unbounded-dedup',
+  } as const)
+
+  await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+  const first = await transports.client.read()
+  expect(first.value?.payload).toEqual(expect.objectContaining({ typ: 'result', val: 'pong' }))
+  await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
+  const second = await transports.client.read()
+  expect((second.value?.payload as Record<string, unknown> | undefined)?.code).toBe('EK09')
+  expect(handler).toHaveBeenCalledTimes(1)
+
+  await server.dispose()
+  await transports.dispose()
+})
 
 test('rejects a replayed signed event with EK09', async () => {
   const signer = randomIdentity()

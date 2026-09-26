@@ -58,6 +58,7 @@ describe('Server verifyToken hook', () => {
       aud: serverSigner.id,
       sub: delegatorSigner.id,
       cap: stringifyToken(capability),
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
 
@@ -112,6 +113,7 @@ describe('Server verifyToken hook', () => {
       aud: serverSigner.id,
       sub: delegatorSigner.id,
       cap: stringifyToken(capability),
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
 

@@ -171,6 +171,7 @@ describe('Channel send authorization', () => {
       typ: 'send',
       rid: 'ch1',
       val: 'hello from owner',
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
 
@@ -229,6 +230,7 @@ describe('Channel send authorization', () => {
       typ: 'send',
       rid: 'ch1',
       val: 'hello from intruder',
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
 

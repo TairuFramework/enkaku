@@ -44,6 +44,7 @@ describe('encryption policy enforcement', () => {
       typ: 'request',
       prc: 'test',
       rid: '1',
+      iat: Math.floor(Date.now() / 1000),
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -79,6 +80,7 @@ describe('encryption policy enforcement', () => {
       typ: 'request',
       prc: 'test',
       rid: '1',
+      iat: Math.floor(Date.now() / 1000),
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -112,6 +114,7 @@ describe('encryption policy enforcement', () => {
       typ: 'request',
       prc: 'test',
       rid: '1',
+      iat: Math.floor(Date.now() / 1000),
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -193,6 +196,7 @@ describe('encryption policy enforcement', () => {
       typ: 'request',
       prc: 'test',
       rid: 'r1',
+      iat: Math.floor(Date.now() / 1000),
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
 
@@ -242,6 +246,7 @@ describe('encryption policy enforcement', () => {
       typ: 'request',
       prc: 'test',
       rid: '1',
+      iat: Math.floor(Date.now() / 1000),
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -276,6 +281,7 @@ describe('encryption policy enforcement', () => {
       typ: 'request',
       prc: 'test',
       rid: '1',
+      iat: Math.floor(Date.now() / 1000),
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()

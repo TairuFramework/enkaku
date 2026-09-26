@@ -53,6 +53,7 @@ describe('dispose with an in-flight auth check', () => {
       prc: 'test/request',
       rid: 'r1',
       aud: serverSigner.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(requestMsg as unknown as AnyClientMessageOf<Protocol>)
 

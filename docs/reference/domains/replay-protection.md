@@ -27,7 +27,7 @@ The feature lives entirely in the server (`@enkaku/server`). It is:
 |---|---|
 | Re-submitting a captured signed `event`, channel `send`, or channel `abort` to trigger the action again | Confidentiality of message contents (use encryption) |
 | The same message replayed across different connections to one server | Replays across separate `Server` instances **unless** a shared/persistent `cache` is supplied |
-| Stale messages resurfacing after their `exp`/`maxAge` window (when `rejectStale` is on) | A message with neither `exp` nor `iat` replayed after it is evicted from a bounded in-memory cache (see [Security considerations](#security-considerations)) |
+| Stale messages resurfacing after their `exp`/`maxAge` window, messages with neither claim, or messages whose validity end is too far ahead (when `rejectStale` is on) | A message replayed after its entry is evicted from a bounded in-memory cache while it remains within the allowed lifetime (see [Security considerations](#security-considerations)) |
 
 Replay protection assumes the message has **already passed signature
 verification** by the time it is checked. The server guarantees this ordering; a
@@ -73,18 +73,25 @@ key = normalizeDID(payload.iss) + ":" + (payload.jti ?? message.signature)
 Each recorded entry has an **expiry** after which it may be dropped:
 
 ```
-expiresAt = exp                      // if the token has an `exp` claim
-          = (iat ?? now) + maxAge    // otherwise
+expiresAt = exp + leeway                      // if the token has an `exp` claim
+          = (iat ?? now) + maxAge + leeway    // otherwise
 ```
 
 Before recording, when `rejectStale` is enabled (the default), the message is
-also checked for staleness and rejected up-front if it is already past its
-window:
+checked for a signed time bound and rejected if it is outside its window:
 
-- If `exp` is present and `now > exp` → rejected as stale.
-- Else if `iat` is present and `now > iat + maxAge` → rejected as stale.
-- If neither claim is present, no staleness bound applies and the message is
-  deduplicated only (see [Security considerations](#security-considerations)).
+- If neither `exp` nor `iat` is present, it is rejected as `replay_unbounded`.
+- If `exp` is present and `now > exp + leeway`, it is rejected as `replay_stale`.
+- Else if `iat` is present and `now > iat + maxAge + leeway`, it is rejected as `replay_stale`.
+- If the validity end (`exp`, or `iat + maxAge` without `exp`) is more than
+  `maxLifetime + leeway` ahead of **now**, it is rejected as `replay_unbounded`.
+  This catches future-dated `iat` claims even when `exp - iat` is short.
+
+`replay_unbounded` means there is no signed time bound, or the bound lies further
+ahead than `maxLifetime`. Both cases return `EK09` before the cache is written.
+With `rejectStale: false`, neither staleness nor `maxLifetime` is checked. Messages
+without either claim are accepted on first sight and deduplicated until
+`now + maxAge + leeway`.
 
 ### Units
 
@@ -92,8 +99,8 @@ Token `exp`, `iat` (and `nbf`) claims are **epoch seconds**, per the JWT/token
 convention. Everything internal to replay protection — `maxAge`, `expiresAt`, the
 injected `now()` clock, and the value handed to `ReplayCache.checkAndRecord` — is
 **milliseconds**. The seconds→milliseconds conversion happens once, internally,
-when a message is checked. Keep this in mind when writing a custom cache or a
-custom `now`.
+when a message is checked. `maxLifetime` and `leeway` are also milliseconds.
+Keep this in mind when writing a custom cache or a custom `now`.
 
 ## Configuration
 
@@ -104,7 +111,9 @@ type ReplayOptions = {
   enabled?: boolean       // default true when the server authenticates
   cache?: ReplayCache     // default: a new in-process MemoryReplayCache
   maxAge?: number         // default 60_000 (ms) — window for messages without `exp`
-  rejectStale?: boolean   // default true — reject already-expired/too-old messages
+  maxLifetime?: number    // default 300_000 (ms) — maximum remaining validity
+  leeway?: number         // default 5_000 (ms) — clock-skew tolerance
+  rejectStale?: boolean   // default true — reject stale or unbounded messages
   maxEntries?: number     // default 10_000 — cap for the built-in cache
   now?: () => number      // default Date.now — injectable clock (ms), mainly for tests
 }
@@ -115,7 +124,9 @@ type ReplayOptions = {
 | `enabled` | `true` (when authenticated) | Set to `false` to disable replay protection entirely. |
 | `cache` | new `MemoryReplayCache` | Plug in a persistent/shared backend (e.g. Redis). When supplied, `maxEntries` and the internal `now` are **not** passed to it — the cache owns its own storage and clock. |
 | `maxAge` | `60_000` ms | Dedup/staleness window for messages that carry no `exp`. |
-| `rejectStale` | `true` | Reject already-expired (`exp` in the past) or too-old (`iat + maxAge`) messages before the cache is consulted. |
+| `maxLifetime` | `300_000` ms (5 minutes) | Maximum time from now to `exp`, or `iat + maxAge` without `exp`, plus `leeway` tolerance. `Infinity` disables this cap. Must be at least `maxAge`; otherwise server setup throws. |
+| `leeway` | `5_000` ms | Tolerance for clock skew in stale and lifetime checks; extends cache entry expiry. |
+| `rejectStale` | `true` | Reject stale messages and messages with no time bound or a bound beyond `maxLifetime` before the cache is consulted. `false` disables both time checks but keeps deduplication. |
 | `maxEntries` | `10_000` | Bounds memory for the built-in `MemoryReplayCache`. Ignored when a custom `cache` is supplied. |
 | `now` | `Date.now` | Injectable millisecond clock; primarily for deterministic tests. |
 
@@ -128,7 +139,10 @@ serve({ handlers, identity, accessRules, transport, replay: { enabled: false } }
 // Widen the fallback window for clients that omit `exp` and clock-skew tolerance.
 serve({ handlers, identity, accessRules, transport, replay: { maxAge: 5 * 60_000 } })
 
-// Accept stale-but-unique messages (dedup only, no staleness rejection).
+// Allow a longer signed validity window (or use Infinity to disable the cap).
+serve({ handlers, identity, accessRules, transport, replay: { maxLifetime: 10 * 60_000 } })
+
+// Accept stale or unbounded messages (dedup only, no time-bound rejection).
 serve({ handlers, identity, accessRules, transport, replay: { rejectStale: false } })
 
 // Share dedup state across instances behind a load balancer.
@@ -208,9 +222,10 @@ server.events.on('handlerError', ({ error, category }) => {
 })
 ```
 
-On the tracing side, the rejection sets the span's auth attributes
-(`AUTH_REASON` = `replay_detected` | `replay_stale`, `AUTH_ALLOWED` = `false`)
-and records the error, so replays are visible in OpenTelemetry output.
+On the request processing path, the rejection sets the span's auth attributes
+(`AUTH_REASON` = `replay_detected` | `replay_stale` | `replay_unbounded`, `AUTH_ALLOWED` = `false`)
+and records the error. Channel `send` and `abort` rejections use the same `EK09`
+reply and `handlerError` event, without a request processing span.
 
 ## Security considerations
 
@@ -219,10 +234,23 @@ and records the error, so replays are visible in OpenTelemetry output.
   controller-existence lookup, which also means an unsigned/invalid `send`/`abort`
   to an unknown channel now returns the same `ACCESS_DENIED` whether or not the
   channel exists — i.e. it does **not** leak channel existence.
-- **Messages without `exp` or `iat`.** With `rejectStale` on but neither claim
-  present, there is no staleness bound — the message is deduplicated only, using
-  `now + maxAge` as its cache lifetime. Staleness cannot be enforced without a
-  timestamp; require clients to send `exp` (or `iat`) if you need a hard bound.
+- **Messages without `exp` or `iat`.** With `rejectStale` on, the server refuses
+  these messages as `replay_unbounded` (`EK09`) before writing to the cache.
+  Set `rejectStale: false` to allow them with deduplication only. Their cache
+  lifetime is `now + maxAge + leeway`, so they can be accepted again after expiry
+  or eviction.
+- **Long-lived and future-dated tokens.** A signed `exp` beyond the remaining
+  `maxLifetime` is refused, even if `iat` is close to `exp`. Without `exp`, a
+  future `iat` is refused when `iat + maxAge` lies too far ahead. A persistent
+  cache can preserve replay keys across restarts, but it does not bypass this
+  server policy; configure a larger `maxLifetime` or `Infinity` when longer
+  token validity is intentional. With `rejectStale: false`, the cap is disabled,
+  so a persistent cache must retain keys through each token's accepted lifetime
+  to prevent replays after restart.
+- **Client claim overrides.** The client's `createToken` spreads the caller's
+  payload after generating `jti` and `iat`. Callers can override either claim,
+  including `iat: undefined`. A message with no resulting `iat` is refused by a
+  default server unless it carries an `exp` within `maxLifetime`.
 - **Flood eviction.** See [Memory vs. replay trade-off](#memory-vs-replay-trade-off):
   a bounded in-memory cache can be pressured into evicting a live entry.
 - **Custom-cache clock.** The server's `now` (used for staleness) is not injected
@@ -254,6 +282,8 @@ export type ReplayOptions = {
   enabled?: boolean
   cache?: ReplayCache
   maxAge?: number
+  maxLifetime?: number
+  leeway?: number
   rejectStale?: boolean
   maxEntries?: number
   now?: () => number

@@ -318,14 +318,14 @@ describe('peer4 handshake integration', () => {
 
     // Send first message: short-form iss (same aud was already seen; embedLongForm:false)
     const send1 = await clientIdentity.signToken(
-      { typ: 'send', rid: 'ch-f-1', val: 'hello-1' },
+      { typ: 'send', rid: 'ch-f-1', val: 'hello-1', iat: Math.floor(Date.now() / 1000) },
       { embedLongForm: false },
     )
     await transports.client.write(send1 as unknown as AnyClientMessageOf<Protocol>)
 
     // Send second message: short-form iss
     const send2 = await clientIdentity.signToken(
-      { typ: 'send', rid: 'ch-f-1', val: 'hello-2' },
+      { typ: 'send', rid: 'ch-f-1', val: 'hello-2', iat: Math.floor(Date.now() / 1000) },
       { embedLongForm: false },
     )
     await transports.client.write(send2 as unknown as AnyClientMessageOf<Protocol>)
@@ -383,7 +383,7 @@ describe('peer4 handshake integration', () => {
 
     // Build a real-shaped send token with short-form iss, then replace signature with junk
     const realSend = await clientIdentity.signToken(
-      { typ: 'send', rid: 'ch-g-1', val: 'forged-value' },
+      { typ: 'send', rid: 'ch-g-1', val: 'forged-value', iat: Math.floor(Date.now() / 1000) },
       { embedLongForm: false },
     )
     const forgedSend = {

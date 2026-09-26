@@ -68,6 +68,7 @@ describe('auth-mode message ordering', () => {
       prc: 'chat',
       rid: 'c1',
       aud: serverSigner.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     const sendMsg = await clientSigner.signToken({
       typ: 'send',
@@ -75,6 +76,7 @@ describe('auth-mode message ordering', () => {
       rid: 'c1',
       val: 'hello',
       aud: serverSigner.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
 
     await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
@@ -137,6 +139,7 @@ describe('auth-mode message ordering', () => {
       prc: 'chat',
       rid: 'c1',
       aud: serverSigner.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     const sendMsgs = await Promise.all(
       ['one', 'two', 'three'].map((val) =>
@@ -146,6 +149,7 @@ describe('auth-mode message ordering', () => {
           rid: 'c1',
           val,
           aud: serverSigner.id,
+          iat: Math.floor(Date.now() / 1000),
         } as const),
       ),
     )
@@ -218,9 +222,14 @@ describe('auth-mode message ordering', () => {
     })
 
     const write = async (payload: Record<string, unknown>) => {
-      const message = await clientSigner.signToken({ ...payload, aud: serverSigner.id } as {
+      const message = await clientSigner.signToken({
+        ...payload,
+        aud: serverSigner.id,
+        iat: Math.floor(Date.now() / 1000),
+      } as {
         typ: string
         aud: string
+        iat: number
       })
       await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
     }
@@ -280,6 +289,7 @@ describe('auth-mode message ordering', () => {
       prc: 'chat',
       rid: 'c1',
       aud: serverSigner.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     const sendMsg = await clientSigner.signToken({
       typ: 'send',
@@ -287,6 +297,7 @@ describe('auth-mode message ordering', () => {
       rid: 'c1',
       val: 'hello',
       aud: serverSigner.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
 
     await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
@@ -351,6 +362,7 @@ describe('auth-mode message ordering', () => {
         prc: 'chat',
         rid,
         aud: serverSigner.id,
+        iat: Math.floor(Date.now() / 1000),
       } as const)
       await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
     }

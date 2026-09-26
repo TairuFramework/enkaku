@@ -1,11 +1,12 @@
 import { ErrorCodes } from '@enkaku/protocol'
 import type { SignedToken } from '@kokuin/token'
 import { toB64U } from '@sozai/codec'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 import {
   checkReplay,
   MemoryReplayCache,
+  type ReplayCache,
   type ReplayOptions,
   type ResolvedReplay,
   resolveReplay,
@@ -95,13 +96,20 @@ describe('resolveReplay', () => {
     const resolved = resolveReplay(undefined, true)
     expect(resolved).not.toBeNull()
     expect(resolved?.maxAge).toBe(60_000)
+    expect(resolved?.maxLifetime).toBe(300_000)
     expect(resolved?.rejectStale).toBe(true)
     expect(resolved?.cache).toBeDefined()
+  })
+
+  test('rejects a maxLifetime shorter than maxAge', () => {
+    expect(() => resolveReplay({ maxAge: 90_000, maxLifetime: 60_000 }, true)).toThrow(
+      'maxLifetime must be greater than or equal to maxAge',
+    )
   })
 })
 
 describe('checkReplay', () => {
-  const base = { now: () => 1_000_000, exp: 2_000 } // exp seconds -> 2_000_000 ms > now
+  const base = { now: () => 1_000_000, exp: 1_200 } // exp seconds -> 1_200_000 ms > now
 
   test('accepts a fresh message and rejects its replay', async () => {
     const resolved = resolveOrThrow({ now: base.now })
@@ -158,6 +166,75 @@ describe('checkReplay', () => {
     })
   })
 
+  test('rejects a message without exp or iat before recording it', async () => {
+    const checkAndRecord = vi.fn(() => true)
+    const cache: ReplayCache = { checkAndRecord }
+    const resolved = resolveOrThrow({ now: base.now, cache })
+    const message = makeMessage({ jti: 'unbounded' })
+
+    expect(await checkReplay(message, resolved)).toEqual({ ok: false, reason: 'replay_unbounded' })
+    expect(checkAndRecord).not.toHaveBeenCalled()
+  })
+
+  test('rejects a far-future exp before recording it', async () => {
+    const checkAndRecord = vi.fn(() => true)
+    const resolved = resolveOrThrow({ now: base.now, cache: { checkAndRecord } })
+    const message = makeMessage({ jti: 'far-exp', iat: 1_000, exp: 1_400 })
+
+    expect(await checkReplay(message, resolved)).toEqual({ ok: false, reason: 'replay_unbounded' })
+    expect(checkAndRecord).not.toHaveBeenCalled()
+  })
+
+  test('accepts exp within maxLifetime', async () => {
+    const resolved = resolveOrThrow({ now: base.now })
+    expect(await checkReplay(makeMessage({ jti: 'near-exp', exp: 1_300 }), resolved)).toEqual({
+      ok: true,
+    })
+  })
+
+  test('rejects a future iat without exp beyond maxLifetime', async () => {
+    const resolved = resolveOrThrow({ now: base.now })
+    expect(await checkReplay(makeMessage({ jti: 'future-iat', iat: 1_300 }), resolved)).toEqual({
+      ok: false,
+      reason: 'replay_unbounded',
+    })
+  })
+
+  test('rejects a future iat with a short exp-to-iat interval far from now', async () => {
+    const resolved = resolveOrThrow({ now: base.now })
+    const message = makeMessage({ jti: 'future-iat-exp', iat: 1_400, exp: 1_410 })
+    expect(await checkReplay(message, resolved)).toEqual({
+      ok: false,
+      reason: 'replay_unbounded',
+    })
+  })
+
+  test('accepts a far-future exp when maxLifetime is Infinity', async () => {
+    const resolved = resolveOrThrow({ now: base.now, maxLifetime: Number.POSITIVE_INFINITY })
+    expect(await checkReplay(makeMessage({ jti: 'infinite-cap', exp: 2_000 }), resolved)).toEqual({
+      ok: true,
+    })
+  })
+
+  test('accepts a far-future exp when rejectStale is false', async () => {
+    const resolved = resolveOrThrow({ now: base.now, rejectStale: false })
+    expect(await checkReplay(makeMessage({ jti: 'no-stale', exp: 2_000 }), resolved)).toEqual({
+      ok: true,
+    })
+  })
+
+  test('deduplicates a message without exp or iat when rejectStale is false', async () => {
+    const checkAndRecord = vi.fn(() => true)
+    const cache: ReplayCache = { checkAndRecord }
+    const resolved = resolveOrThrow({ now: base.now, cache, rejectStale: false })
+    const message = makeMessage({ jti: 'unbounded' })
+
+    expect(await checkReplay(message, resolved)).toEqual({ ok: true })
+    expect(checkAndRecord).toHaveBeenCalledWith('did:key:alice:unbounded', 1_065_000)
+    checkAndRecord.mockReturnValue(false)
+    expect(await checkReplay(message, resolved)).toEqual({ ok: false, reason: 'replay_detected' })
+  })
+
   test('accepts a stale message when rejectStale is false', async () => {
     const resolved = resolveOrThrow({ now: () => 1_000_000, rejectStale: false })
     const message = makeMessage({ jti: 'j4', iat: 900 })
@@ -167,9 +244,9 @@ describe('checkReplay', () => {
   test('accepts again once the cache entry has expired', async () => {
     let now = 1_000_000
     const resolved = resolveOrThrow({ now: () => now })
-    const message = makeMessage({ jti: 'j5', exp: 1_500 }) // expiresAt 1_500_000 ms
+    const message = makeMessage({ jti: 'j5', exp: 1_200 }) // expiresAt 1_200_000 ms
     expect(await checkReplay(message, resolved)).toEqual({ ok: true })
-    now = 1_600_000 // past expiresAt; also past exp, but rejectStale default would block — disable
+    now = 1_300_000 // past expiresAt; also past exp, but rejectStale default would block — disable
     const resolvedNoStale = resolveOrThrow({
       now: () => now,
       rejectStale: false,

@@ -57,9 +57,10 @@ export class MemoryReplayCache implements ReplayCache {
 export type ReplayOptions = {
   enabled?: boolean
   cache?: ReplayCache
-  maxAge?: number // milliseconds; fallback window for messages without exp
+  maxAge?: number // milliseconds; window for messages without exp
+  maxLifetime?: number // milliseconds; maximum remaining validity (default 5 minutes; Infinity disables)
   leeway?: number // milliseconds; clock-skew tolerance for staleness
-  rejectStale?: boolean
+  rejectStale?: boolean // default true; also refuses messages without exp or iat
   maxEntries?: number
   now?: () => number
 }
@@ -67,12 +68,14 @@ export type ReplayOptions = {
 export type ResolvedReplay = {
   cache: ReplayCache
   maxAge: number
+  maxLifetime: number
   leeway: number
   rejectStale: boolean
   now: () => number
 }
 
 const DEFAULT_MAX_AGE = 60_000
+const DEFAULT_MAX_LIFETIME = 300_000
 const DEFAULT_LEEWAY = 5_000
 
 export function resolveReplay(
@@ -82,9 +85,15 @@ export function resolveReplay(
   if (!requireAuth) return null
   if (options?.enabled === false) return null
   const now = options?.now ?? Date.now
+  const maxAge = options?.maxAge ?? DEFAULT_MAX_AGE
+  const maxLifetime = options?.maxLifetime ?? DEFAULT_MAX_LIFETIME
+  if (maxLifetime < maxAge) {
+    throw new Error('maxLifetime must be greater than or equal to maxAge')
+  }
   return {
     cache: options?.cache ?? new MemoryReplayCache({ maxEntries: options?.maxEntries, now }),
-    maxAge: options?.maxAge ?? DEFAULT_MAX_AGE,
+    maxAge,
+    maxLifetime,
     leeway: options?.leeway ?? DEFAULT_LEEWAY,
     rejectStale: options?.rejectStale ?? true,
     now,
@@ -93,7 +102,8 @@ export function resolveReplay(
 
 export type ReplayCheckResult =
   | { ok: true }
-  | { ok: false; reason: 'replay_detected' | 'replay_stale' }
+  /** `replay_unbounded`: no signed time bound, or one further ahead than maxLifetime. */
+  | { ok: false; reason: 'replay_detected' | 'replay_stale' | 'replay_unbounded' }
 
 /**
  * Precondition: must only be called on messages that have already passed signature
@@ -120,16 +130,23 @@ export async function checkReplay(
   // Token exp/iat claims are seconds; convert to milliseconds for comparison.
   const expMs = payload.exp != null ? payload.exp * 1000 : undefined
   const iatMs = payload.iat != null ? payload.iat * 1000 : undefined
+  const validUntil = expMs ?? (iatMs ?? now) + resolved.maxAge
 
   if (resolved.rejectStale) {
+    if (expMs == null && iatMs == null) {
+      return { ok: false, reason: 'replay_unbounded' }
+    }
     if (expMs != null) {
       if (now > expMs + resolved.leeway) return { ok: false, reason: 'replay_stale' }
     } else if (iatMs != null && now > iatMs + resolved.maxAge + resolved.leeway) {
       return { ok: false, reason: 'replay_stale' }
     }
+    if (validUntil - now > resolved.maxLifetime + resolved.leeway) {
+      return { ok: false, reason: 'replay_unbounded' }
+    }
   }
 
-  const expiresAt = (expMs ?? (iatMs ?? now) + resolved.maxAge) + resolved.leeway
+  const expiresAt = validUntil + resolved.leeway
   const identifier = payload.jti ?? message.signature
   const key = `${normalizeDID(payload.iss)}:${identifier}`
   const fresh = await resolved.cache.checkAndRecord(key, expiresAt)

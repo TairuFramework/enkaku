@@ -152,6 +152,7 @@ describe('messages arriving while dispose() is draining', () => {
       prc: 'test/slow',
       rid: 'r1',
       aud: signer.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
 
     // Let the cache throw and take the dispose route -- driven off the
@@ -176,6 +177,7 @@ describe('messages arriving while dispose() is draining', () => {
       prc: 'test/second',
       rid: 'r2',
       aud: signer.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(m2 as unknown as AnyClientMessageOf<Protocol>)
     // Give handleNext a chance to read (and, correctly, drop) message 2. This
@@ -232,6 +234,7 @@ describe('messages arriving while dispose() is draining', () => {
       prc: 'test/slow',
       rid: 'r1',
       aud: signer.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
     await new Promise((resolve) => setTimeout(resolve, 50))
@@ -288,6 +291,7 @@ describe('self-dispose routes leave the transport behind', () => {
       prc: 'test/slow',
       rid: 'r1',
       aud: signer.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
@@ -454,6 +458,7 @@ describe('ordering: transport disposal must wait for the running-handler drain',
       prc: 'gate/hold',
       rid: 'r1',
       aud: serverSigner.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(holdMessage as unknown as AnyClientMessageOf<GateProtocol>)
     // Let r1's access check reach and park on authGate.
@@ -464,6 +469,7 @@ describe('ordering: transport disposal must wait for the running-handler drain',
       prc: 'gate/reply',
       rid: 'r2',
       aud: serverSigner.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(replyMessage as unknown as AnyClientMessageOf<GateProtocol>)
     // Let r2's access check resolve and its handler start (and park on

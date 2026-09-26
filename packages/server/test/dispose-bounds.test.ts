@@ -302,6 +302,7 @@ describe('the disposal drain covers an event whose access check is still in flig
       prc: 'test/event',
       data: {},
       aud: serverSigner.id,
+      iat: Math.floor(Date.now() / 1000),
     } as const)
     await transports.client.write(eventMsg as unknown as AnyClientMessageOf<EventProtocol>)
 
