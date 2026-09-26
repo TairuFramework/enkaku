@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/react",
-  "version": "0.21.1",
+  "version": "0.21.3",
   "description": "React bindings for Enkaku RPC client",
   "keywords": [
     "rpc",
@@ -43,7 +43,7 @@
   "devDependencies": {
     "@enkaku/protocol": "workspace:^",
     "@enkaku/standalone": "workspace:^",
-    "@testing-library/dom": "^10.4.1",
+    "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/react": "catalog:",

@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/standalone",
-  "version": "0.21.1",
+  "version": "0.21.3",
   "description": "Standalone client and server for Enkaku RPC",
   "keywords": [
     "json",

@@ -35,7 +35,7 @@
     "@mdx-js/react": "^3.1.1",
     "@orama/plugin-docusaurus-v3": "catalog:",
     "clsx": "^2.1.1",
-    "docusaurus-plugin-typedoc": "^1.4.2",
+    "docusaurus-plugin-typedoc": "catalog:",
     "prism-react-renderer": "^2.4.1",
     "react": "catalog:",
     "react-dom": "catalog:"

@@ -35,6 +35,10 @@
     - runtime-replaces-get-random-id
     - server-shutdown-fixes
     - w3c-trace-context
+"@enkaku/server@0.21.3":
+  dir: packages/server
+  intents:
+    - replay-unbounded-tokens
 "@enkaku/socket@0.21.0":
   dir: packages/socket
   intents:
