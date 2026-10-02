@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/protocol",
-  "version": "0.21.3",
+  "version": "0.21.4",
   "description": "Enkaku RPC protocol",
   "keywords": [
     "protocol",
@@ -37,11 +37,11 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
-    "@kokuin/token": "catalog:"
+    "@kokuin/token": "catalog:",
+    "@sozai/schema": "catalog:"
   },
   "devDependencies": {
-    "@enkaku/transport": "workspace:^",
-    "@sozai/schema": "catalog:"
+    "@enkaku/transport": "workspace:^"
   },
   "publishConfig": {
     "access": "public"

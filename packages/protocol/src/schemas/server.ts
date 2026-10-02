@@ -1,4 +1,4 @@
-import type { Schema } from '@sozai/schema'
+import { rebaseDefinitionReferences, type Schema } from '@sozai/schema'
 
 import { createMessageSchema, type MessageType } from './message.js'
 import type {
@@ -122,5 +122,5 @@ export function createServerMessageSchema(
         }
     }
   }
-  return { anyOf: Object.values(schemasRecord) } as const satisfies Schema
+  return rebaseDefinitionReferences({ anyOf: Object.values(schemasRecord) })
 }

@@ -249,8 +249,8 @@ catalogs:
       specifier: ^0.1.0
       version: 0.1.0
     '@sozai/schema':
-      specifier: ^0.1.4
-      version: 0.1.4
+      specifier: ^0.1.5
+      version: 0.1.5
     '@sozai/stream':
       specifier: ^0.2.1
       version: 0.2.1
@@ -475,13 +475,13 @@ importers:
       '@kokuin/token':
         specifier: 'catalog:'
         version: 0.5.0(@logtape/logtape@2.3.0)
+      '@sozai/schema':
+        specifier: 'catalog:'
+        version: 0.1.5
     devDependencies:
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
-      '@sozai/schema':
-        specifier: 'catalog:'
-        version: 0.1.4
 
   packages/react:
     dependencies:
@@ -551,7 +551,7 @@ importers:
         version: 0.1.0
       '@sozai/schema':
         specifier: 'catalog:'
-        version: 0.1.4
+        version: 0.1.5
       '@sozai/stream':
         specifier: 'catalog:'
         version: 0.2.1
@@ -3274,11 +3274,8 @@ packages:
   '@sozai/runtime@0.1.0':
     resolution: {integrity: sha512-9WpqQ/UKDOlNWfiGCDjuW3hl9+sXrXuX2lbGE80ITbrhzueagwrEdboYkQhrHN8s8I/F8/ZM9hz+Fv3j7gUk2Q==}
 
-  '@sozai/schema@0.1.1':
-    resolution: {integrity: sha512-al9/4564WGYvyBqnXN9ehTnk2epr8ITi0e8feuy59tRZ3srhYg4XPAkSi3ppd+Kh/PyPYcPT4rXo256v/rDO+g==}
-
-  '@sozai/schema@0.1.4':
-    resolution: {integrity: sha512-x7EPfpWQXSbQmFzCr+pSS69aG6IR7RhxNKT7aNndDlq42PmldJGqoEs4ME3snWswFVAlOwmY0dZOUV9YaDkWgg==}
+  '@sozai/schema@0.1.5':
+    resolution: {integrity: sha512-mro7qt8Gm5LX/bvnjHV9Me5XiXncBwjOO3cbAm0WcczwGNlTWP5BPm3Ozcne3ou5biqj+vrP9XxoT1hWt2dtdA==}
 
   '@sozai/stream@0.2.1':
     resolution: {integrity: sha512-SR01SJ2b46JSINcTOXcZqZJ4HcD6tm1hi52ogpeLZ8V7RC4BF1OjQ8dcEnYxW7dO27PqknbKU/+ef1PNI3Zk1g==}
@@ -12527,7 +12524,7 @@ snapshots:
       '@scure/base': 2.3.0
       '@sozai/codec': 0.4.0
       '@sozai/otel': 0.3.2(@logtape/logtape@2.3.0)
-      '@sozai/schema': 0.1.1
+      '@sozai/schema': 0.1.5
     transitivePeerDependencies:
       - '@logtape/logtape'
 
@@ -13269,14 +13266,7 @@ snapshots:
 
   '@sozai/runtime@0.1.0': {}
 
-  '@sozai/schema@0.1.1':
-    dependencies:
-      '@standard-schema/spec': 1.1.0
-      ajv: 8.20.0
-      ajv-formats: 3.0.1
-      json-schema-to-ts: 3.1.1
-
-  '@sozai/schema@0.1.4':
+  '@sozai/schema@0.1.5':
     dependencies:
       '@sozai/json': 0.2.0
       '@standard-schema/spec': 1.1.0
@@ -16056,7 +16046,7 @@ snapshots:
 
   happy-dom@20.13.2:
     dependencies:
-      '@types/node': 26.4.1
+      '@types/node': 26.6.3
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       buffer-image-size: 0.6.4
