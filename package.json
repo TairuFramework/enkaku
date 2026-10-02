@@ -20,5 +20,5 @@
     "typedoc": "catalog:",
     "typedoc-plugin-markdown": "catalog:"
   },
-  "packageManager": "pnpm@12.6.0"
+  "packageManager": "pnpm@12.8.1"
 }
