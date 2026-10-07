@@ -349,13 +349,33 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
    * errors its stream permanently, so one failed event would kill the whole
    * transport), which also made writes concurrent — letting a channel `send`
    * POST land before the `channel` open it belongs to, which the server then
-   * drops as an unknown channel. Restore the ordering explicitly here.
+   * drops as an unknown channel. Restore the ordering explicitly here, but only
+   * where it matters: messages belonging to a stream/channel `rid` follow that
+   * `rid`'s open. Requests, events and everything else are sent immediately, so
+   * a slow request never blocks unrelated messages, and an abort for an
+   * in-flight request reaches the server while the handler is still running.
    */
-  let queue: Promise<unknown> = Promise.resolve()
+  const ridChains = new Map<string, Promise<void>>()
   function sendSerial(msg: AnyClientMessageOf<Protocol>): Promise<void> {
-    const next = queue.then(() => send(msg))
+    const typ = msg.payload.typ
+    const rid = (msg.payload as { rid?: string }).rid
+    if (rid == null) {
+      return send(msg)
+    }
+    const isOpen = typ === 'channel' || typ === 'stream'
+    const previous = ridChains.get(rid)
+    if (!isOpen && previous == null) {
+      return send(msg)
+    }
+    const next = previous == null ? send(msg) : previous.then(() => send(msg))
     // A rejected send must not poison the chain for the messages behind it.
-    queue = next.catch(() => {})
+    const tail = next.catch(() => {})
+    ridChains.set(rid, tail)
+    tail.then(() => {
+      if (ridChains.get(rid) === tail) {
+        ridChains.delete(rid)
+      }
+    })
     return next
   }
 
