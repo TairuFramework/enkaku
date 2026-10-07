@@ -201,8 +201,8 @@ catalogs:
       specifier: ^0.3.2
       version: 0.3.2
     '@kokuin/capability':
-      specifier: ^0.3.1
-      version: 0.3.1
+      specifier: ^0.4.0
+      version: 0.4.0
     '@kokuin/controller':
       specifier: ^0.1.0
       version: 0.1.0
@@ -530,7 +530,7 @@ importers:
         version: link:../protocol
       '@kokuin/capability':
         specifier: 'catalog:'
-        version: 0.3.1(@logtape/logtape@2.3.11)
+        version: 0.4.0(@logtape/logtape@2.3.11)
       '@kokuin/token':
         specifier: 'catalog:'
         version: 0.5.0(@logtape/logtape@2.3.11)
@@ -728,7 +728,7 @@ importers:
         version: 2.1.3(hono@4.12.27)
       '@kokuin/capability':
         specifier: 'catalog:'
-        version: 0.3.1(@logtape/logtape@2.3.11)
+        version: 0.4.0(@logtape/logtape@2.3.11)
       '@kokuin/token':
         specifier: 'catalog:'
         version: 0.5.0(@logtape/logtape@2.3.11)
@@ -2563,8 +2563,8 @@ packages:
     resolution: {integrity: sha512-imzXo4LX6knZtpV3WAgaMbZG631+vEtgFATfkntmYIa3aXG6LbKGq4pTlrb5czDL2xj6OwDbS78yYfZE5Wix4g==}
     hasBin: true
 
-  '@kokuin/capability@0.3.1':
-    resolution: {integrity: sha512-+BiFHrngXVoDlm+9d/pNgb0WTu7S5jxh5LcMutJ0BGHGpQKtci8OnyHZUvQCMgvEV+o/2C8Qq1Zj0M103zSuIA==}
+  '@kokuin/capability@0.4.0':
+    resolution: {integrity: sha512-bou6DCboZutVEX+kzNsDM2+bvqD8r0hH5kjgVTP1q3bdaujRVZPzQlWurwAUB+AgovT6MEZKYslTVG288ITV8Q==}
 
   '@kokuin/controller@0.1.0':
     resolution: {integrity: sha512-AgC97EW1F2oJYrdjXf4Ei4afM9NUP4em0Orr1Hr3W6QZRCJjGDZ6pctF5d4gA01uA9xbuzYw3UomhzaWlKy/EQ==}
@@ -3258,9 +3258,6 @@ packages:
   '@sozai/json@0.1.1':
     resolution: {integrity: sha512-5ftTPdDYVeFj14VZWBKi4jV5Xu0XC2yioNEWXgSfrdw9QkCY+R6nNwkukHaVwyFAnz8qLnKHYNjg+42gxAOo4Q==}
 
-  '@sozai/json@0.2.0':
-    resolution: {integrity: sha512-yGfDawu+8gYNigjjJHjcstRvBbRaKoUw+ec1F7MCA85V84L/ClL+yYzFmnZDKUQD8cxC4k2Hw8RxF+PvlbZW8w==}
-
   '@sozai/json@0.3.0':
     resolution: {integrity: sha512-ArThPadz4kZjDqVnHI+UROwervbL9riIEYQ4b0g9e9mtA22EZ54lvNgsNvEUHL+oK53tlhgmHsgO2w5FwCTrhg==}
 
@@ -3288,9 +3285,6 @@ packages:
 
   '@sozai/runtime@0.1.0':
     resolution: {integrity: sha512-9WpqQ/UKDOlNWfiGCDjuW3hl9+sXrXuX2lbGE80ITbrhzueagwrEdboYkQhrHN8s8I/F8/ZM9hz+Fv3j7gUk2Q==}
-
-  '@sozai/schema@0.1.5':
-    resolution: {integrity: sha512-mro7qt8Gm5LX/bvnjHV9Me5XiXncBwjOO3cbAm0WcczwGNlTWP5BPm3Ozcne3ou5biqj+vrP9XxoT1hWt2dtdA==}
 
   '@sozai/schema@0.1.6':
     resolution: {integrity: sha512-Px+GCyJM19CArYTJc5bUe6DWMP0g4vO5N6qc32a26wLgP1JnFjQZIbMHgstx7AFCgtV4PFv12ywy6kqDeYBS2g==}
@@ -12428,7 +12422,7 @@ snapshots:
       - supports-color
       - vite
 
-  '@kokuin/capability@0.3.1(@logtape/logtape@2.3.11)':
+  '@kokuin/capability@0.4.0(@logtape/logtape@2.3.11)':
     dependencies:
       '@kokuin/token': 0.5.0(@logtape/logtape@2.3.11)
     transitivePeerDependencies:
@@ -12470,9 +12464,9 @@ snapshots:
       '@noble/curves': 2.3.0
       '@noble/hashes': 2.3.0
       '@scure/base': 2.3.0
-      '@sozai/codec': 0.4.0
+      '@sozai/codec': 0.4.2
       '@sozai/otel': 0.3.3(@logtape/logtape@2.3.11)
-      '@sozai/schema': 0.1.5
+      '@sozai/schema': 0.1.6
     transitivePeerDependencies:
       - '@logtape/logtape'
 
@@ -13194,8 +13188,6 @@ snapshots:
 
   '@sozai/json@0.1.1': {}
 
-  '@sozai/json@0.2.0': {}
-
   '@sozai/json@0.3.0': {}
 
   '@sozai/lock@0.1.0':
@@ -13231,14 +13223,6 @@ snapshots:
       '@sozai/async': 0.4.0
 
   '@sozai/runtime@0.1.0': {}
-
-  '@sozai/schema@0.1.5':
-    dependencies:
-      '@sozai/json': 0.2.0
-      '@standard-schema/spec': 1.1.0
-      ajv: 8.20.0
-      ajv-formats: 3.0.1
-      json-schema-to-ts: 3.1.1
 
   '@sozai/schema@0.1.6':
     dependencies:

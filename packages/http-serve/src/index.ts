@@ -23,6 +23,12 @@ const tracer = createTracer('transport.http')
 export type RequestHandler = (request: Request) => Promise<Response>
 
 export type ServerBridge<Protocol extends ProtocolDefinition> = {
+  /**
+   * Shut the bridge down: end every open SSE session, answer every pending
+   * request with a 503 and reject new requests from then on. Runs on its own
+   * when the bridge's writable is closed or aborted. Idempotent.
+   */
+  dispose: () => void
   handleRequest: RequestHandler
   stream: ReadableWritablePair<AnyClientMessageOf<Protocol>, AnyServerMessageOf<Protocol>>
 }
@@ -116,6 +122,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
   const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+  let disposed = false
 
   function clearSessionInflight(sessionID: string, reason: unknown = 'SessionClosed'): void {
     for (const [rid, entry] of inflight) {
@@ -201,60 +208,105 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   }
 
   const [readable, controller] = createReadable<Incoming>()
-  const writable = writeTo<Outgoing>((msg) => {
-    const { rid } = msg.payload
-    const request = inflight.get(rid)
-    if (request == null) {
-      reportWriteError(new Error('Request not found'), rid)
+
+  /**
+   * Settle everything the bridge holds open. Reached from the writable's
+   * `close`, which per the Web Streams spec runs only after every queued write
+   * has been processed, so frames already written are delivered: unary
+   * responses resolved and SSE chunks enqueued, which the client still drains
+   * before its body ends.
+   */
+  function dispose(): void {
+    if (disposed) {
       return
     }
-    if (request.type === 'request') {
-      const timer = inflightTimers.get(rid)
-      if (timer != null) {
-        clearTimeout(timer)
-        inflightTimers.delete(rid)
-      }
-      request.resolve(Response.json(msg, { headers: request.headers }))
-      inflight.delete(msg.payload.rid)
-    } else {
-      // Terminal payloads end the stream/channel call — release the inflight slot
-      if (msg.payload.typ === 'result' || msg.payload.typ === 'error') {
-        inflight.delete(rid)
-      }
-      const session = sessions.get(request.sessionID)
-      if (session == null) {
-        inflight.delete(rid)
-        reportWriteError(new Error(`Session not found: ${request.sessionID}`), rid)
-        return
-      }
-      if (session.controller == null) {
-        reportWriteError(new Error(`No controller for session: ${request.sessionID}`), rid)
-        return
-      }
-      try {
-        session.controller.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
-        // Outbound traffic keeps the session alive: a stream whose consumer only
-        // reads would otherwise be reaped at sessionTimeoutMs.
-        session.lastAccess = Date.now()
-      } catch (cause) {
-        dropSession(
-          request.sessionID,
-          rid,
-          new Error(`Error writing to SSE feed for session: ${request.sessionID}`, { cause }),
-        )
-        return
-      }
-      if ((session.controller.desiredSize ?? 0) <= 0) {
-        // The consumer has fallen maxSessionBufferBytes behind. Drop this session
-        // alone rather than growing its queue without bound.
-        dropSession(
-          request.sessionID,
-          rid,
-          new Error(`SSE buffer overflow for session: ${request.sessionID}`),
+    disposed = true
+    clearInterval(cleanupInterval)
+    for (const timer of inflightTimers.values()) {
+      clearTimeout(timer)
+    }
+    inflightTimers.clear()
+    for (const entry of inflight.values()) {
+      if (entry.type === 'request') {
+        entry.resolve(
+          Response.json({ error: 'Server shutting down' }, { headers: entry.headers, status: 503 }),
         )
       }
     }
-  })
+    inflight.clear()
+    for (const session of sessions.values()) {
+      try {
+        session.controller?.close()
+      } catch {
+        // Already closed or errored
+      }
+    }
+    sessions.clear()
+    try {
+      controller.close()
+    } catch {
+      // Already closed or errored
+    }
+  }
+
+  const writable = writeTo<Outgoing>(
+    (msg) => {
+      const { rid } = msg.payload
+      const request = inflight.get(rid)
+      if (request == null) {
+        reportWriteError(new Error('Request not found'), rid)
+        return
+      }
+      if (request.type === 'request') {
+        const timer = inflightTimers.get(rid)
+        if (timer != null) {
+          clearTimeout(timer)
+          inflightTimers.delete(rid)
+        }
+        request.resolve(Response.json(msg, { headers: request.headers }))
+        inflight.delete(msg.payload.rid)
+      } else {
+        // Terminal payloads end the stream/channel call — release the inflight slot
+        if (msg.payload.typ === 'result' || msg.payload.typ === 'error') {
+          inflight.delete(rid)
+        }
+        const session = sessions.get(request.sessionID)
+        if (session == null) {
+          inflight.delete(rid)
+          reportWriteError(new Error(`Session not found: ${request.sessionID}`), rid)
+          return
+        }
+        if (session.controller == null) {
+          reportWriteError(new Error(`No controller for session: ${request.sessionID}`), rid)
+          return
+        }
+        try {
+          session.controller.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
+          // Outbound traffic keeps the session alive: a stream whose consumer only
+          // reads would otherwise be reaped at sessionTimeoutMs.
+          session.lastAccess = Date.now()
+        } catch (cause) {
+          dropSession(
+            request.sessionID,
+            rid,
+            new Error(`Error writing to SSE feed for session: ${request.sessionID}`, { cause }),
+          )
+          return
+        }
+        if ((session.controller.desiredSize ?? 0) <= 0) {
+          // The consumer has fallen maxSessionBufferBytes behind. Drop this session
+          // alone rather than growing its queue without bound.
+          dropSession(
+            request.sessionID,
+            rid,
+            new Error(`SSE buffer overflow for session: ${request.sessionID}`),
+          )
+        }
+      }
+    },
+    dispose,
+    dispose,
+  )
 
   function checkRequestOrigin(request: Request): Response | string | null {
     const origin = request.headers.get('origin')
@@ -305,10 +357,17 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
 
     const headers = checkedOrigin != null ? getAccessControlHeaders(checkedOrigin) : {}
+    if (disposed) {
+      return Response.json({ error: 'Server shutting down' }, { headers, status: 503 })
+    }
     try {
       const raw = await readBodyWithLimit(request, maxRequestBodySize)
       if (raw == null) {
         return Response.json({ error: 'Request body too large' }, { headers, status: 413 })
+      }
+      // Reading the body yields, so the bridge may have been disposed meanwhile.
+      if (disposed) {
+        return Response.json({ error: 'Server shutting down' }, { headers, status: 503 })
       }
       const message = JSON.parse(raw) as Incoming
       if (!VALID_PAYLOAD_TYPES.has(message?.payload?.typ)) {
@@ -506,7 +565,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
   }
 
-  return { handleRequest, stream: { readable, writable } }
+  return { dispose, handleRequest, stream: { readable, writable } }
 }
 
 export type ServerTransportOptions = {
