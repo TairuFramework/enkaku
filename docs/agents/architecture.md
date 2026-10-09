@@ -58,6 +58,13 @@ Enkaku is the RPC layer of the five-repo Yulsi stack. Cross-cutting primitives i
 - Handle backpressure and flow control
 - Support stream transformation and piping
 
+`Server` and `serve()` accept `streamHighWaterMark` for outgoing stream and channel handler pipes.
+It defaults to `1` and requires a positive finite safe integer.
+The option bounds each `receiveStream` readable queue in values, excluding transport buffers and pending writes queued by handlers.
+When transport sends stall, handler writes stay pending and the writer's `desiredSize` drops.
+Handlers must await writes or respect `writer.ready` to propagate backpressure.
+The channel's incoming `sendStream` keeps its existing queue behaviour.
+
 ### Connection Management
 - Handle connection state changes gracefully
 - Implement reconnection logic where appropriate

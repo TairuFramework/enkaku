@@ -100,6 +100,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
   replay?: ResolvedReplay | null
   runtime: Runtime
   signal: AbortSignal
+  streamHighWaterMark?: number
   tracer: Tracer
   transport: ServerTransportOf<Protocol>
   validator?: Validator<AnyClientMessageOf<Protocol>>
@@ -119,6 +120,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     logger,
     send: (payload, options) => safeWrite({ transport, payload, rid: options?.rid, ctx: context }),
     signal,
+    streamHighWaterMark: params.streamHighWaterMark,
   }
   const running: Record<string, Promise<void>> = Object.create(null)
   /**
@@ -1060,6 +1062,8 @@ export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   methods?: MethodRegistry
   tracer?: Tracer
   signal?: AbortSignal
+  /** Maximum queued outgoing values per stream or channel. Positive finite integer, defaults to 1. */
+  streamHighWaterMark?: number
   transports?: Array<ServerTransportOf<Protocol>>
   verifyToken?: VerifyTokenHook
 }
@@ -1087,9 +1091,14 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #logger: Logger
   #replay: ResolvedReplay | null
   #tracer: Tracer
+  #streamHighWaterMark: number
   #validator?: Validator<AnyClientMessageOf<Protocol>>
 
   constructor(params: ServerParams<Protocol>) {
+    const streamHighWaterMark = params.streamHighWaterMark ?? 1
+    if (!Number.isSafeInteger(streamHighWaterMark) || streamHighWaterMark <= 0) {
+      throw new RangeError('streamHighWaterMark must be a positive finite integer')
+    }
     super({
       dispose: async (reason?: unknown) => {
         await this.#events.emit('disposing', { reason })
@@ -1156,6 +1165,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#events = new EventEmitter<ServerEvents>()
     this.#runtime = params.runtime ?? createRuntime()
     this.#handlers = params.handlers
+    this.#streamHighWaterMark = streamHighWaterMark
     this.#cache = params.cache ?? createInMemoryDIDCache()
     this.#resolver = params.resolver
     this.#methods = params.methods
@@ -1278,6 +1288,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       replay: this.#replay,
       runtime: this.#runtime,
       signal: this.#abortController.signal,
+      streamHighWaterMark: this.#streamHighWaterMark,
       tracer: this.#tracer,
       transport,
       validator: this.#validator,

@@ -201,4 +201,5 @@ export type HandlerContext<Protocol extends ProtocolDefinition> = {
   logger: Logger
   send: (payload: AnyServerPayloadOf<Protocol>, options?: { rid?: string }) => Promise<void>
   signal: AbortSignal
+  streamHighWaterMark?: number
 }

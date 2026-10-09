@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/otel",
-  "version": "0.21.3",
+  "version": "0.21.5",
   "description": "Enkaku OpenTelemetry span and attribute names",
   "keywords": [
     "opentelemetry",

@@ -1,5 +1,11 @@
 # @enkaku/server
 
+## 0.21.5
+
+### Patch Changes
+
+- Bound outgoing stream and channel handler queues with the server option `streamHighWaterMark`, defaulting to 1. Stalled transport sends now keep handler writes pending and reduce the writer's `desiredSize`.
+
 ## 0.21.3
 
 ### Patch Changes

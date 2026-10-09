@@ -45,7 +45,9 @@ export function handleStream<
   const controller: RequestController = Object.assign(new AbortController(), { issuer })
   ctx.controllers[msg.payload.rid] = controller
 
-  const receiveStream = createPipe<ReceiveType<Protocol, Procedure>>()
+  const receiveStream = createPipe<ReceiveType<Protocol, Procedure>>({
+    highWaterMark: ctx.streamHighWaterMark ?? 1,
+  })
   const pipePromise = receiveStream.readable.pipeTo(
     writeTo<ReceiveType<Protocol, Procedure>>(async (val) => {
       if (controller.signal.aborted) {

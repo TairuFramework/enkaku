@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/http-serve",
-  "version": "0.21.4",
+  "version": "0.21.5",
   "description": "HTTP transport for Enkaku RPC servers",
   "keywords": [
     "http",
