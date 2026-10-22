@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/server",
-  "version": "0.21.6",
+  "version": "0.22.0",
   "description": "Server logic for Enkaku RPC",
   "keywords": [
     "json",

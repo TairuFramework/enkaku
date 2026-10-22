@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/protocol",
-  "version": "0.21.6",
+  "version": "0.22.0",
   "description": "Enkaku RPC protocol",
   "keywords": [
     "protocol",

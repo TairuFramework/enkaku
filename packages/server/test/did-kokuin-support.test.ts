@@ -2,12 +2,12 @@ import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from 
 import { DirectTransports } from '@enkaku/transport'
 import {
   authorityPath,
+  type ControllerLog,
   createControllerResolver,
   createInception,
   deriveKeyPair,
   didFromInception,
   encodeKey,
-  type SignedEvent,
 } from '@kokuin/controller'
 import { createSigningIdentityForDID, type MethodRegistry, randomIdentity } from '@kokuin/token'
 import { describe, expect, it, vi } from 'vitest'
@@ -36,11 +36,11 @@ function makeController(seedFill: number) {
   const pair = deriveKeyPair(seed, authorityPath(0, 0, 0), 'EdDSA')
   const identity = createSigningIdentityForDID(did as never, pair.privateKey)
   const kid = `#${encodeKey(pair.publicKey, 'EdDSA')}`
-  const log: Array<SignedEvent> = [inception]
+  const log: ControllerLog = { chain: [inception], events: [] }
   return { did, identity, kid, log }
 }
 
-function registryFor(did: string, log: Array<SignedEvent>): MethodRegistry {
+function registryFor(did: string, log: ControllerLog): MethodRegistry {
   return [createControllerResolver({ loadLog: async (asked) => (asked === did ? log : undefined) })]
 }
 
