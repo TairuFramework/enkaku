@@ -1,7 +1,7 @@
 import type { AnyClientMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { describe, expect, test, vi } from 'vitest'
 
-import { ClientTransport } from '../src/index.js'
+import { ClientTransport, createTransportStream } from '../src/index.js'
 
 const protocol = {
   'test/request': { type: 'request' },
@@ -156,6 +156,103 @@ function sseResponse(body: ReadableStream<Uint8Array>) {
 }
 
 describe('http-fetch cancelOnAbort', () => {
+  test('signal combination failure is caught and a reused rid can be cancelled', async () => {
+    const failure = new Error('Signal combination failed')
+    const combine = vi.spyOn(AbortSignal, 'any').mockImplementationOnce(() => {
+      throw failure
+    })
+    const pending = deferred<Response>()
+    let requestSignal: AbortSignal | null | undefined
+    const stream = createTransportStream<Protocol>({
+      url: 'http://localhost/',
+      cancelOnAbort: true,
+      fetch: mockFetch(async (payload, signal) => {
+        if (payload.typ === 'abort') return new Response(null, { status: 204 })
+        requestSignal = signal
+        return await pending.promise
+      }),
+    })
+    const reader = stream.readable.getReader()
+    const readableError = reader.closed.catch((error: unknown) => error)
+    let next: Promise<void> | undefined
+    try {
+      await expect(
+        stream.send(message({ typ: 'request', prc: 'test/request', rid: 'r' })),
+      ).rejects.toMatchObject({ message: 'Transport write failed', cause: failure })
+      await expect(readableError).resolves.toMatchObject({ cause: failure })
+      next = stream.send(message({ typ: 'request', prc: 'test/request', rid: 'r' }))
+      await stream.send(message({ typ: 'abort', rid: 'r' }))
+      expect(requestSignal?.aborted).toBe(true)
+    } finally {
+      combine.mockRestore()
+      pending.resolve(new Response(null, { status: 204 }))
+      await next
+      await stream.writable.close()
+      reader.releaseLock()
+    }
+  })
+
+  test('first SSE open does not combine per-request signals', async () => {
+    const combine = vi.spyOn(AbortSignal, 'any').mockImplementation(() => {
+      throw new Error('Must not combine SSE signals')
+    })
+    let bodyController!: ReadableStreamDefaultController<Uint8Array>
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        bodyController = controller
+      },
+    })
+    const stream = createTransportStream<Protocol>({
+      url: 'http://localhost/',
+      cancelOnAbort: true,
+      fetch: mockFetch(async () => sseResponse(body)),
+    })
+    try {
+      await expect(
+        stream.send(message({ typ: 'stream', prc: 'test/stream', rid: 's' })),
+      ).resolves.toBeUndefined()
+      expect(combine).not.toHaveBeenCalled()
+    } finally {
+      combine.mockRestore()
+      await stream.writable.close()
+      bodyController.close()
+    }
+  })
+
+  test.each([true, false])(
+    'dispose during body read leaves readable unerrored with cancelOnAbort=%s',
+    async (cancelOnAbort) => {
+      const stream = createTransportStream<Protocol>({
+        url: 'http://localhost/',
+        cancelOnAbort,
+        fetch: mockFetch(
+          async (_payload, signal) =>
+            new Response(
+              new ReadableStream({
+                start(controller) {
+                  signal?.addEventListener('abort', () => controller.error(signal.reason), {
+                    once: true,
+                  })
+                },
+              }),
+            ),
+        ),
+      })
+      const reader = stream.readable.getReader()
+      const errors: Array<unknown> = []
+      void reader.closed.catch((error: unknown) => errors.push(error))
+      try {
+        await stream.send(message({ typ: 'request', prc: 'test/request', rid: 'r' }))
+        await stream.writable.close()
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        expect(errors).toEqual([])
+      } finally {
+        await reader.cancel().catch(() => {})
+        reader.releaseLock()
+      }
+    },
+  )
+
   test.each([true, undefined])(
     'in-flight request cancellation with cancelOnAbort=%s',
     async (cancelOnAbort) => {

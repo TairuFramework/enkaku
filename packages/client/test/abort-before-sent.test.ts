@@ -5,9 +5,11 @@ import type {
   ProtocolDefinition,
 } from '@enkaku/protocol'
 import { DirectTransports } from '@enkaku/transport'
+import type { Identity } from '@kokuin/token'
+import { getLogger } from '@sozai/log'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
-import { Client, RequestTimeoutError } from '../src/index.js'
+import { Client, type ClientParams, RequestTimeoutError } from '../src/index.js'
 
 const protocol = {
   'test/request': { type: 'request', result: { type: 'string' } },
@@ -25,7 +27,7 @@ type Protocol = typeof protocol
 describe('abort before sent', () => {
   const cleanups: Array<() => Promise<void>> = []
 
-  function setup(requestTimeoutMs?: number) {
+  function setup(requestTimeoutMs?: number, options?: Partial<ClientParams<Protocol>>) {
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
@@ -35,12 +37,16 @@ describe('abort before sent', () => {
       payloads.push(message.payload)
       return message.payload.typ === 'abort' ? Promise.resolve() : new Promise<void>(() => {})
     })
-    const client = new Client<Protocol>({ transport: transports.client, requestTimeoutMs })
+    const client = new Client<Protocol>({
+      transport: transports.client,
+      requestTimeoutMs,
+      ...options,
+    })
     cleanups.push(async () => {
       await client.dispose()
       await transports.dispose()
     })
-    return { client, payloads, write }
+    return { client, payloads, write, transports }
   }
 
   afterEach(async () => {
@@ -125,6 +131,41 @@ describe('abort before sent', () => {
     await expect(client.createChannel('channel', { signal })).rejects.toBe(signal)
   })
 
+  test.each(['request', 'stream', 'channel'] as const)(
+    '%s drops replies after message creation fails',
+    async (type) => {
+      const identity = Promise.withResolvers<Identity>()
+      const logger = getLogger(['enkaku', 'test', 'send-error'])
+      const warn = vi.spyOn(logger, 'warn')
+      const { client, transports, write } = setup(undefined, {
+        identity: identity.promise,
+        logger,
+      })
+      const call =
+        type === 'request'
+          ? client.request('request')
+          : type === 'stream'
+            ? client.createStream('stream')
+            : client.createChannel('channel')
+      const failure = new Error('Message creation failed')
+      const rejected = expect(call).rejects.toBe(failure)
+      identity.reject(failure)
+      await rejected
+      expect(write).not.toHaveBeenCalled()
+
+      await transports.server.write({
+        header: { typ: 'JWT', alg: 'none' },
+        payload: { typ: 'result', rid: call.id, val: 'late' },
+      })
+      await vi.waitFor(() =>
+        expect(warn).toHaveBeenCalledWith(
+          'controller not found for request {rid}',
+          expect.objectContaining({ rid: call.id }),
+        ),
+      )
+    },
+  )
+
   test('no unhandled rejection when sent rejects after abort', async () => {
     const rejections: Array<unknown> = []
     const onRejection = (reason: unknown) => {
@@ -132,17 +173,23 @@ describe('abort before sent', () => {
     }
     process.on('unhandledRejection', onRejection)
     try {
-      const { client, write } = setup()
-      const sent = Promise.withResolvers<void>()
-      write.mockImplementationOnce(() => sent.promise)
+      const identity = Promise.withResolvers<Identity>()
+      const { client, write } = setup(undefined, { identity: identity.promise })
+      const abortFailure = vi.fn()
+      client.events.on('requestError', abortFailure)
       const call = client.request('request')
-      void call.catch(() => {})
-      await vi.waitFor(() => expect(write).toHaveBeenCalledOnce())
+      const rejected = expect(call).rejects.toBe('Stop')
 
-      call.abort()
-      setTimeout(() => sent.reject(new Error('Late send failure')), 10)
+      call.abort('Stop')
+      await rejected
+      const failure = new Error('Late message creation failure')
+      identity.reject(failure)
+      await vi.waitFor(() =>
+        expect(abortFailure).toHaveBeenCalledWith({ rid: call.id, error: failure }),
+      )
       await new Promise((resolve) => setTimeout(resolve, 20))
 
+      expect(write).not.toHaveBeenCalled()
       expect(rejections).toHaveLength(0)
     } finally {
       process.off('unhandledRejection', onRejection)

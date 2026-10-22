@@ -17,4 +17,5 @@ The first stream/channel open establishes the shared SSE connection using only t
 Per-rid cancellation never cancels that connection.
 Disposing the transport cancels its in-flight POSTs with either option value.
 
-For React Native/Expo, import `@sozai/runtime-expo/polyfill` first (`AbortSignal.any`).
+On React Native/Expo, the transport requires `AbortSignal.any`.
+A polyfill is planned in `@sozai/runtime-expo`.

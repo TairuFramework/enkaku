@@ -321,7 +321,8 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
             (cause) => {
               if (
                 msg.payload.typ === 'abort' ||
-                (cancel?.signal.aborted && !abortController.signal.aborted)
+                abortController.signal.aborted ||
+                cancel?.signal.aborted
               ) {
                 return
               }
@@ -342,7 +343,7 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
   }
 
   async function send(msg: AnyClientMessageOf<Protocol>, cancel?: AbortController): Promise<void> {
-    const signal =
+    const getSignal = () =>
       cancel == null ? undefined : AbortSignal.any([abortController.signal, cancel.signal])
     try {
       if (msg.payload.typ === 'channel' || msg.payload.typ === 'stream') {
@@ -366,10 +367,10 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
         } else {
           // Subsequent stream/channel messages — wait for session and send with ID
           const sessionID = await getSessionID()
-          await sendClientMessage(msg, sessionID, signal, cancel)
+          await sendClientMessage(msg, sessionID, getSignal(), cancel)
         }
       } else {
-        await sendClientMessage(msg, undefined, signal, cancel)
+        await sendClientMessage(msg, undefined, getSignal(), cancel)
       }
     } catch (cause) {
       clearCancel(msg, cancel)

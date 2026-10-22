@@ -5,7 +5,7 @@ import type { ProtocolDefinition } from '@enkaku/protocol'
 import { type ProcedureHandlers, serve } from '@enkaku/server'
 import { serve as serveHTTP } from '@hono/node-server'
 import getPort from 'get-port'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 
 async function createContext<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,
@@ -43,11 +43,9 @@ const protocol = {
 } as const satisfies ProtocolDefinition
 
 describe('HTTP request cancellation', () => {
-  test.each(['abort()', 'config.signal', 'timeout: 50'] as const)(
+  test.each(['abort()', 'config.signal', 'timeout: 300'] as const)(
     'four withheld requests aborted, fifth succeeds with %s',
     async (cancellation) => {
-      const started = Array.from({ length: 4 }, () => Promise.withResolvers<void>())
-      const aborted = Array.from({ length: 4 }, () => Promise.withResolvers<void>())
       const handlerSignals: Array<AbortSignal> = []
       const { client, dispose } = await createContext<typeof protocol>(
         {
@@ -58,12 +56,10 @@ describe('HTTP request cancellation', () => {
               signal.addEventListener(
                 'abort',
                 () => {
-                  aborted[index].resolve()
                   resolve('ABORTED')
                 },
                 { once: true },
               )
-              started[index].resolve()
             })
           },
           responding: () => 'OK',
@@ -78,21 +74,23 @@ describe('HTTP request cancellation', () => {
           return client.request('withheld', {
             param: param + 1,
             ...(cancellation === 'config.signal' ? { signal: controller.signal } : {}),
-            ...(cancellation === 'timeout: 50' ? { timeout: 50 } : {}),
+            ...(cancellation === 'timeout: 300' ? { timeout: 300 } : {}),
           })
         })
         // Observe rejections before the timeout can fire during handler startup.
         const rejected = calls.map((call) => {
-          return cancellation === 'timeout: 50'
+          return cancellation === 'timeout: 300'
             ? expect(call).rejects.toMatchObject({
                 name: 'RequestTimeoutError',
                 code: 'RequestTimeout',
-                data: { procedure: 'withheld', timeoutMs: 50 },
+                data: { procedure: 'withheld', timeoutMs: 300 },
               })
             : expect(call).rejects.toBe(reason)
         })
 
-        await Promise.all(started.map(({ promise }) => promise))
+        await vi.waitFor(() => expect(handlerSignals.filter(Boolean)).toHaveLength(4), {
+          timeout: 1000,
+        })
         if (cancellation === 'abort()') {
           for (const call of calls) {
             call.abort(reason)
@@ -104,7 +102,7 @@ describe('HTTP request cancellation', () => {
         }
 
         await Promise.all(rejected)
-        await Promise.all(aborted.map(({ promise }) => promise))
+        await vi.waitFor(() => expect(handlerSignals.every((signal) => signal.aborted)).toBe(true))
         expect(handlerSignals).toHaveLength(4)
         expect(handlerSignals.every((signal) => signal.aborted)).toBe(true)
         await expect(client.request('responding')).resolves.toBe('OK')

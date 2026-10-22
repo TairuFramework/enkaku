@@ -184,11 +184,13 @@ type CreateRequestParams<Result> = {
   controller: RequestController<Result>
   signal: AbortSignal
   sent: Promise<unknown>
+  onSendError?: () => void
 }
 
 function createRequest<Result>({
   controller,
   sent,
+  onSendError,
   ...call
 }: CreateRequestParams<Result>): RequestCall<Result> {
   const abort = (reason?: string) => {
@@ -196,7 +198,10 @@ function createRequest<Result>({
   }
   // Handle send failures even after abort, without delaying local settlement.
   void sent.catch((error) => {
-    if (!controller.settled) controller.error(error as RequestError)
+    if (!controller.settled) {
+      onSendError?.()
+      controller.error(error as RequestError)
+    }
   })
   return Object.assign(controller.result, call, {
     type: controller.type,
@@ -710,9 +715,10 @@ export class Client<
 
     this.#controllers[rid] = controller
     const prm = config.param
-    const payload = prm
-      ? { typ: 'request', rid, prc: procedure, prm }
-      : { typ: 'request', rid, prc: procedure }
+    const payload =
+      prm != null
+        ? { typ: 'request', rid, prc: procedure, prm }
+        : { typ: 'request', rid, prc: procedure }
     if (prm == null) {
       this.#logger.trace('send request {procedure} with ID {rid}', { procedure, rid })
     } else {
@@ -753,7 +759,15 @@ export class Client<
       )
     }
 
-    return createRequest({ id: rid, controller, signal, sent })
+    return createRequest({
+      id: rid,
+      controller,
+      signal,
+      sent,
+      onSendError: () => {
+        if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+      },
+    })
   }
 
   createStream<
@@ -833,9 +847,10 @@ export class Client<
     this.#controllers[rid] = controller
     this.#spans[rid] = span
     const prm = config.param
-    const payload = prm
-      ? { typ: 'stream', rid, prc: procedure, prm }
-      : { typ: 'stream', rid, prc: procedure }
+    const payload =
+      prm != null
+        ? { typ: 'stream', rid, prc: procedure, prm }
+        : { typ: 'stream', rid, prc: procedure }
     if (prm == null) {
       this.#logger.trace('create stream {procedure} with ID {rid}', { procedure, rid })
     } else {
@@ -859,7 +874,16 @@ export class Client<
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
-    const call = createStream({ id: rid, controller, signal, sent, readable: receive.readable })
+    const call = createStream({
+      id: rid,
+      controller,
+      signal,
+      sent,
+      readable: receive.readable,
+      onSendError: () => {
+        if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+      },
+    })
     void call.catch(() => {}) // no unhandled rejection on teardown; awaiters still see it (multicast)
     let disposed: Promise<void> | undefined
     const dispose = (reason = 'Dispose'): Promise<void> => {
@@ -954,9 +978,10 @@ export class Client<
     this.#controllers[rid] = controller
     this.#spans[rid] = span
     const prm = config.param
-    const payload = prm
-      ? { typ: 'channel', rid, prc: procedure, prm }
-      : { typ: 'channel', rid, prc: procedure }
+    const payload =
+      prm != null
+        ? { typ: 'channel', rid, prc: procedure, prm }
+        : { typ: 'channel', rid, prc: procedure }
     if (prm == null) {
       this.#logger.trace('create channel {procedure} with ID {rid}', { procedure, rid })
     } else {
@@ -1005,7 +1030,16 @@ export class Client<
     }
 
     const call = Object.assign(
-      createStream({ id: rid, controller, signal, sent, readable: receive.readable }),
+      createStream({
+        id: rid,
+        controller,
+        signal,
+        sent,
+        readable: receive.readable,
+        onSendError: () => {
+          if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+        },
+      }),
       { send, writable: writeTo(send) },
     )
     void call.catch(() => {})
