@@ -192,23 +192,17 @@ function createRequest<Result>({
   ...call
 }: CreateRequestParams<Result>): RequestCall<Result> {
   const abort = (reason?: string) => {
-    void sent.then(
-      () => {
-        controller.abort(reason)
-      },
-      () => {
-        // The send already failed, so there is no in-flight request to notify,
-        // but the local controller is still aborted to clear any pending state
-        // without surfacing an unhandled rejection.
-        controller.abort(reason)
-      },
-    )
+    controller.abort(reason)
   }
-  return Object.assign(
-    sent.then(() => controller.result),
-    call,
-    { type: controller.type, procedure: controller.procedure, abort },
-  )
+  // Handle send failures even after abort, without delaying local settlement.
+  void sent.catch((error) => {
+    if (!controller.settled) controller.error(error as RequestError)
+  })
+  return Object.assign(controller.result, call, {
+    type: controller.type,
+    procedure: controller.procedure,
+    abort,
+  })
 }
 
 type CreateStreamParams<Receive, Result> = CreateRequestParams<Result> & {
