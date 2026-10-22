@@ -184,31 +184,30 @@ type CreateRequestParams<Result> = {
   controller: RequestController<Result>
   signal: AbortSignal
   sent: Promise<unknown>
+  onSendError?: () => void
 }
 
 function createRequest<Result>({
   controller,
   sent,
+  onSendError,
   ...call
 }: CreateRequestParams<Result>): RequestCall<Result> {
   const abort = (reason?: string) => {
-    void sent.then(
-      () => {
-        controller.abort(reason)
-      },
-      () => {
-        // The send already failed, so there is no in-flight request to notify,
-        // but the local controller is still aborted to clear any pending state
-        // without surfacing an unhandled rejection.
-        controller.abort(reason)
-      },
-    )
+    controller.abort(reason)
   }
-  return Object.assign(
-    sent.then(() => controller.result),
-    call,
-    { type: controller.type, procedure: controller.procedure, abort },
-  )
+  // Handle send failures even after abort, without delaying local settlement.
+  void sent.catch((error) => {
+    if (!controller.settled) {
+      onSendError?.()
+      controller.error(error as RequestError)
+    }
+  })
+  return Object.assign(controller.result, call, {
+    type: controller.type,
+    procedure: controller.procedure,
+    abort,
+  })
 }
 
 type CreateStreamParams<Receive, Result> = CreateRequestParams<Result> & {
@@ -529,6 +528,7 @@ export class Client<
     const enrichedHeader = otelInjectTraceContext(baseHeader)
     const finalHeader = Object.keys(enrichedHeader).length > 0 ? enrichedHeader : undefined
     const message = await this.#createMessage(payload, finalHeader)
+    if (owner?.settled && payload.typ !== 'abort') return
     await safeWrite({
       transport: this.#transport as unknown as WriteTarget,
       message,
@@ -657,6 +657,10 @@ export class Client<
       ? [
           config?: {
             header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
             id?: string
             param?: never
             signal?: AbortSignal
@@ -666,6 +670,10 @@ export class Client<
       : [
           config: {
             header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
             id?: string
             param: T['Param']
             signal?: AbortSignal
@@ -707,9 +715,10 @@ export class Client<
 
     this.#controllers[rid] = controller
     const prm = config.param
-    const payload = prm
-      ? { typ: 'request', rid, prc: procedure, prm }
-      : { typ: 'request', rid, prc: procedure }
+    const payload =
+      prm != null
+        ? { typ: 'request', rid, prc: procedure, prm }
+        : { typ: 'request', rid, prc: procedure }
     if (prm == null) {
       this.#logger.trace('send request {procedure} with ID {rid}', { procedure, rid })
     } else {
@@ -750,7 +759,15 @@ export class Client<
       )
     }
 
-    return createRequest({ id: rid, controller, signal, sent })
+    return createRequest({
+      id: rid,
+      controller,
+      signal,
+      sent,
+      onSendError: () => {
+        if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+      },
+    })
   }
 
   createStream<
@@ -759,8 +776,30 @@ export class Client<
   >(
     procedure: Procedure,
     ...args: T['Param'] extends never
-      ? [config?: { header?: AnyHeader; id?: string; param?: never; signal?: AbortSignal }]
-      : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
+      ? [
+          config?: {
+            header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
+            id?: string
+            param?: never
+            signal?: AbortSignal
+          },
+        ]
+      : [
+          config: {
+            header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
+            id?: string
+            param: T['Param']
+            signal?: AbortSignal
+          },
+        ]
   ): StreamCall<T['Receive'], T['Result']> {
     const config = args[0] ?? {}
     const rid = config.id ?? this.#runtime.getRandomID()
@@ -808,9 +847,10 @@ export class Client<
     this.#controllers[rid] = controller
     this.#spans[rid] = span
     const prm = config.param
-    const payload = prm
-      ? { typ: 'stream', rid, prc: procedure, prm }
-      : { typ: 'stream', rid, prc: procedure }
+    const payload =
+      prm != null
+        ? { typ: 'stream', rid, prc: procedure, prm }
+        : { typ: 'stream', rid, prc: procedure }
     if (prm == null) {
       this.#logger.trace('create stream {procedure} with ID {rid}', { procedure, rid })
     } else {
@@ -834,7 +874,16 @@ export class Client<
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
-    const call = createStream({ id: rid, controller, signal, sent, readable: receive.readable })
+    const call = createStream({
+      id: rid,
+      controller,
+      signal,
+      sent,
+      readable: receive.readable,
+      onSendError: () => {
+        if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+      },
+    })
     void call.catch(() => {}) // no unhandled rejection on teardown; awaiters still see it (multicast)
     let disposed: Promise<void> | undefined
     const dispose = (reason = 'Dispose'): Promise<void> => {
@@ -853,8 +902,30 @@ export class Client<
   >(
     procedure: Procedure,
     ...args: T['Param'] extends never
-      ? [config?: { header?: AnyHeader; id?: string; param?: never; signal?: AbortSignal }]
-      : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
+      ? [
+          config?: {
+            header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
+            id?: string
+            param?: never
+            signal?: AbortSignal
+          },
+        ]
+      : [
+          config: {
+            header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
+            id?: string
+            param: T['Param']
+            signal?: AbortSignal
+          },
+        ]
   ): ChannelCall<T['Receive'], T['Send'], T['Result']> {
     const config = args[0] ?? {}
     const rid = config.id ?? this.#runtime.getRandomID()
@@ -907,9 +978,10 @@ export class Client<
     this.#controllers[rid] = controller
     this.#spans[rid] = span
     const prm = config.param
-    const payload = prm
-      ? { typ: 'channel', rid, prc: procedure, prm }
-      : { typ: 'channel', rid, prc: procedure }
+    const payload =
+      prm != null
+        ? { typ: 'channel', rid, prc: procedure, prm }
+        : { typ: 'channel', rid, prc: procedure }
     if (prm == null) {
       this.#logger.trace('create channel {procedure} with ID {rid}', { procedure, rid })
     } else {
@@ -958,7 +1030,16 @@ export class Client<
     }
 
     const call = Object.assign(
-      createStream({ id: rid, controller, signal, sent, readable: receive.readable }),
+      createStream({
+        id: rid,
+        controller,
+        signal,
+        sent,
+        readable: receive.readable,
+        onSendError: () => {
+          if (this.#controllers[rid] === controller) delete this.#controllers[rid]
+        },
+      }),
       { send, writable: writeTo(send) },
     )
     void call.catch(() => {})

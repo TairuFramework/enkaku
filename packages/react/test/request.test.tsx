@@ -150,6 +150,7 @@ describe('useRequest', () => {
       wrapper: abortWrapper,
     })
     const call = result.current
+    await vi.waitFor(() => expect(abortableHandler).toHaveBeenCalled())
     act(() => {
       call.abort()
     })
