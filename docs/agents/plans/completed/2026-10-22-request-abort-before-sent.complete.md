@@ -38,5 +38,5 @@ Origin: kumiai Spec P 2.3a carry-forward, item 4 "Uncancellable hub fetches". ku
 
 ## Follow-on
 
-- `docs/agents/plans/backlog/2026-10-22-otel-integration-tracing-failures.md`
+- `docs/agents/plans/backlog/2026-10-22-otel-api-1-10-sdk-3-upgrade.md`
 - Optional: `channel.send()` after the channel settles resolves silently (the write is skipped). Rejecting with a "channel closed" error would be a separate behaviour change.
