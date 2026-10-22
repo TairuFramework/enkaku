@@ -42,7 +42,7 @@ npm install @enkaku/generator
 
 `Promise`\<`TReturn`\>
 
-***
+---
 
 ### fromEmitter()
 
@@ -52,11 +52,11 @@ npm install @enkaku/generator
 
 ##### Events
 
-`Events` *extends* `Record`\<`string`, `unknown`\>
+`Events` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### EventName
 
-`EventName` *extends* `string` = keyof `Events` & `string`
+`EventName` _extends_ `string` = keyof `Events` & `string`
 
 #### Parameters
 
@@ -82,7 +82,7 @@ npm install @enkaku/generator
 
 `AsyncGenerator`\<`Events`\[`EventName`\], `void`, `void`\>
 
-***
+---
 
 ### fromStream()
 

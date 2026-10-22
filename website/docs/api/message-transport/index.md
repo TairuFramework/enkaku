@@ -178,13 +178,13 @@ npm install @enkaku/message-transport
 
 > `optional` **signal?**: `AbortSignal`
 
-***
+---
 
 ### PortOrPromise
 
 > **PortOrPromise** = `MessagePort` \| `Promise`\<`MessagePort`\>
 
-***
+---
 
 ### PortSource
 

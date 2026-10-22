@@ -56,11 +56,11 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` _extends_ [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 #### Properties
 
@@ -72,7 +72,7 @@ npm install @enkaku/flow
 
 > `optional` **stateValidator?**: `Validator`\<`State`\>
 
-***
+---
 
 ### CreateGeneratorParams
 
@@ -82,13 +82,13 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` _extends_ [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
-***
+---
 
 ### FlowAction
 
@@ -98,15 +98,15 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` _extends_ [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 ##### Action
 
-`Action` *extends* keyof `Handlers` = keyof `Handlers`
+`Action` _extends_ keyof `Handlers` = keyof `Handlers`
 
 #### Properties
 
@@ -118,7 +118,7 @@ npm install @enkaku/flow
 
 > **params**: `Parameters`\<`Handlers`\[`Action`\]\>\[`0`\]\[`"params"`\]
 
-***
+---
 
 ### FlowGenerator
 
@@ -142,13 +142,13 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` _extends_ [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
-***
+---
 
 ### GenerateFlowParams
 
@@ -158,11 +158,11 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` _extends_ [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 #### Properties
 
@@ -178,7 +178,7 @@ npm install @enkaku/flow
 
 > **state**: `State`
 
-***
+---
 
 ### GenerateNext
 
@@ -188,11 +188,11 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` _extends_ [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 #### Properties
 
@@ -208,7 +208,7 @@ npm install @enkaku/flow
 
 > `optional` **state?**: `State`
 
-***
+---
 
 ### GeneratorDoneValue
 
@@ -218,9 +218,9 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
-***
+---
 
 ### GeneratorValue
 
@@ -230,13 +230,13 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Params
 
 `Params` = `unknown`
 
-***
+---
 
 ### GenericHandlerContext
 
@@ -246,7 +246,7 @@ npm install @enkaku/flow
 
 ##### Events
 
-`Events` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `never`\>
+`Events` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `never`\>
 
 #### Properties
 
@@ -258,7 +258,7 @@ npm install @enkaku/flow
 
 > `optional` **signal?**: `AbortSignal`
 
-***
+---
 
 ### Handler
 
@@ -268,15 +268,15 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Params
 
-`Params` *extends* `Record`\<`string`, `unknown`\>
+`Params` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Events
 
-`Events` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `never`\>
+`Events` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `never`\>
 
 #### Parameters
 
@@ -288,11 +288,11 @@ npm install @enkaku/flow
 
 [`GeneratorValue`](#generatorvalue)\<`State`\> \| `Promise`\<[`GeneratorValue`](#generatorvalue)\<`State`\>\>
 
-***
+---
 
 ### HandlerEvents
 
-> **HandlerEvents**\<`H`\> = `H` *extends* [`Handler`](#handler)\<`Record`\<`string`, `unknown`\>, `Record`\<`string`, `unknown`\>, infer Events\> ? `Events` : `never`
+> **HandlerEvents**\<`H`\> = `H` _extends_ [`Handler`](#handler)\<`Record`\<`string`, `unknown`\>, `Record`\<`string`, `unknown`\>, infer Events\> ? `Events` : `never`
 
 #### Type Parameters
 
@@ -300,7 +300,7 @@ npm install @enkaku/flow
 
 `H`
 
-***
+---
 
 ### HandlerExecutionContext
 
@@ -320,17 +320,17 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Params
 
-`Params` *extends* `Record`\<`string`, `unknown`\>
+`Params` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Events
 
-`Events` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `never`\>
+`Events` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `never`\>
 
-***
+---
 
 ### HandlersEvents
 
@@ -340,13 +340,13 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` _extends_ [`HandlersRecord`](#handlersrecord)\<`State`\>
 
-***
+---
 
 ### HandlersRecord
 
@@ -356,11 +356,11 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Events
 
-`Events` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `never`\>
+`Events` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `never`\>
 
 #### Index Signature
 
@@ -376,11 +376,11 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` _extends_ [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 #### Parameters
 
@@ -392,7 +392,7 @@ npm install @enkaku/flow
 
 (`params`) => [`FlowGenerator`](#flowgenerator)\<`State`, `Handlers`\>
 
-***
+---
 
 ### createGenerator()
 
@@ -402,11 +402,11 @@ npm install @enkaku/flow
 
 ##### State
 
-`State` *extends* `Record`\<`string`, `unknown`\>
+`State` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Handlers
 
-`Handlers` *extends* [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
+`Handlers` _extends_ [`HandlersRecord`](#handlersrecord)\<`State`, `Record`\<`string`, `unknown`\>\> = [`HandlersRecord`](#handlersrecord)\<`State`\>
 
 #### Parameters
 

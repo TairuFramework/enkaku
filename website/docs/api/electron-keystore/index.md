@@ -150,7 +150,7 @@ npm install @enkaku/electron-keystore
 
 `KeyEntry.setAsync`
 
-***
+---
 
 ### ElectronKeyStore
 
@@ -228,7 +228,7 @@ npm install @enkaku/electron-keystore
 
 `FullIdentity`
 
-***
+---
 
 ### provideFullIdentityAsync()
 

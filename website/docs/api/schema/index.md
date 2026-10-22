@@ -88,7 +88,7 @@ readonly [`ValidationErrorObject`](#validationerrorobject)[]
 
 `unknown`
 
-***
+---
 
 ### ValidationErrorObject
 
@@ -158,7 +158,7 @@ readonly `string`[]
 
 JSON schema type used by the library.
 
-***
+---
 
 ### Validator
 
@@ -210,7 +210,7 @@ Asserts the type of the given `value` using the `validator`.
 
 `asserts value is T`
 
-***
+---
 
 ### asType()
 
@@ -238,7 +238,7 @@ Asserts the type of the given `value` using the `validator` and returns it.
 
 `T`
 
-***
+---
 
 ### createStandardValidator()
 
@@ -250,7 +250,7 @@ Create a standard schema validator.
 
 ##### S
 
-`S` *extends* `Readonly`\<\{ \}\>
+`S` _extends_ `Readonly`\<\{ \}\>
 
 ##### T
 
@@ -266,7 +266,7 @@ Create a standard schema validator.
 
 `StandardSchemaV1`\<`T`\>
 
-***
+---
 
 ### createValidator()
 
@@ -278,7 +278,7 @@ Validator function factory using a JSON schema.
 
 ##### S
 
-`S` *extends* `Readonly`\<\{ \}\>
+`S` _extends_ `Readonly`\<\{ \}\>
 
 ##### T
 
@@ -294,7 +294,7 @@ Validator function factory using a JSON schema.
 
 [`Validator`](#validator)\<`T`\>
 
-***
+---
 
 ### isType()
 
@@ -322,7 +322,7 @@ Checks the type of the given `value` using the `validator`.
 
 `value is T`
 
-***
+---
 
 ### resolveReference()
 
@@ -342,7 +342,7 @@ Checks the type of the given `value` using the `validator`.
 
 [`Schema`](#schema-1)
 
-***
+---
 
 ### resolveSchema()
 
@@ -362,7 +362,7 @@ Checks the type of the given `value` using the `validator`.
 
 [`Schema`](#schema-1)
 
-***
+---
 
 ### toStandardValidator()
 

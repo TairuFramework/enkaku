@@ -24,7 +24,7 @@ npm install @enkaku/execution
 
 ##### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 #### Implements
 
@@ -260,7 +260,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Returns
 
@@ -278,7 +278,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### OutE
 
-`OutE` *extends* `Error` = `Error`
+`OutE` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -302,7 +302,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### OutE
 
-`OutE` *extends* `Error` = `Error`
+`OutE` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -326,7 +326,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### OutE
 
-`OutE` *extends* `Error` = `Error`
+`OutE` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -350,7 +350,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### OutE
 
-`OutE` *extends* `Error` = `Error`
+`OutE` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -378,7 +378,7 @@ The **`abort()`** method of the AbortController interface aborts an asynchronous
 
 ###### OutE
 
-`OutE` *extends* `Error` = `Error`
+`OutE` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -460,7 +460,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -488,7 +488,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -516,7 +516,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -544,7 +544,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -572,7 +572,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -600,7 +600,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -630,9 +630,9 @@ A Promise for the completion of which ever callback is executed.
 
 ##### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
-***
+---
 
 ### ExecuteContext
 
@@ -646,7 +646,7 @@ A Promise for the completion of which ever callback is executed.
 
 ##### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 #### Properties
 
@@ -670,7 +670,7 @@ A Promise for the completion of which ever callback is executed.
 
 > `optional` **timeout?**: `number`
 
-***
+---
 
 ### ExecuteFn
 
@@ -684,7 +684,7 @@ A Promise for the completion of which ever callback is executed.
 
 ##### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 #### Parameters
 
@@ -696,7 +696,7 @@ A Promise for the completion of which ever callback is executed.
 
 [`ExecutionResult`](#executionresult)\<`V`, `E`\>
 
-***
+---
 
 ### ExecutionResult
 
@@ -710,9 +710,9 @@ A Promise for the completion of which ever callback is executed.
 
 ##### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
-***
+---
 
 ### NextFn
 
@@ -730,11 +730,11 @@ A Promise for the completion of which ever callback is executed.
 
 ##### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ##### OutE
 
-`OutE` *extends* `Error` = `Error`
+`OutE` _extends_ `Error` = `Error`
 
 #### Parameters
 

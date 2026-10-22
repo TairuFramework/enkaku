@@ -20,7 +20,7 @@ npm install @enkaku/http-client-transport
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
 #### Indexable
 
@@ -158,7 +158,7 @@ npm install @enkaku/http-client-transport
 
 `Transport.write`
 
-***
+---
 
 ### ResponseError
 
@@ -218,13 +218,13 @@ npm install @enkaku/http-client-transport
 
 > **url**: `string`
 
-***
+---
 
 ### FetchFunction
 
-> **FetchFunction** = *typeof* `globalThis.fetch`
+> **FetchFunction** = _typeof_ `globalThis.fetch`
 
-***
+---
 
 ### TransportStream
 
@@ -240,9 +240,9 @@ npm install @enkaku/http-client-transport
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
-***
+---
 
 ### TransportStreamParams
 
@@ -272,7 +272,7 @@ npm install @enkaku/http-client-transport
 
 ##### Protocol
 
-`Protocol` *extends* `object`
+`Protocol` _extends_ `object`
 
 #### Parameters
 

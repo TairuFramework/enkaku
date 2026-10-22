@@ -1,5 +1,15 @@
 # @enkaku/http-fetch
 
+## 0.21.6
+
+### Patch Changes
+
+- Settle aborted calls before send completes; add http-fetch cancelOnAbort; cancel POSTs on dispose; isolate abort POST failures
+
+  Calls aborted before their messages are sent are no longer written, so their handlers never run.
+  Falsy params (`0`, `''`, `false`) are now sent.
+  An unhandled request rejection no longer raises `unhandledRejection`, because the call promise is the controller result.
+
 ## 0.21.5
 
 ## 0.21.3
@@ -26,7 +36,6 @@
 - 2b7949c: Client and transport lifecycle hardening.
 
   Fixes:
-
   - The client read loop no longer dies on a malformed server message. `#controllers` and `#spans` are null-prototype maps, so a message with `rid: "__proto__"` cannot resolve to `Object.prototype`, and message dispatch is guarded so no throw can kill the loop.
   - A graceful remote close now disposes the transport, so in-flight requests are aborted and `handleTransportDisposed` runs instead of every request hanging forever.
   - The socket transport keeps a permanent `'error'` listener, so a write on a destroyed socket rejects rather than escalating to an uncaught exception.
@@ -39,12 +48,10 @@
   - `Server.dispose()` waits for in-flight access checks, so an authenticated request can no longer start its handler — with a signal nothing can abort — after `dispose()` resolved.
 
   New options:
-
   - `@enkaku/socket`: `highWaterMark` (default 1 MiB) bounds read and write buffering.
   - `@enkaku/http-serve`: `maxSessionBufferBytes` (default 1 MiB) bounds each SSE session's queue; a session that exceeds it is dropped.
 
   Behavior changes:
-
   - `client.sendEvent()` now rejects when the transport write fails for a non-teardown reason. It previously resolved as if the event had been delivered. Over `@enkaku/http-fetch`, a non-2xx response to an event rejects that call alone and leaves the transport usable.
   - `@enkaku/react`: `useSendEvent()` and `ReactClient.sendEvent()` propagate the client change above — they now **reject** on a write failure instead of resolving as if the event had been delivered.
   - `http-serve` returns `409` for a duplicate in-flight request ID.
@@ -53,7 +60,6 @@
   - `@enkaku/server`: `Server.handle()` now requires `transport.events` at runtime — it subscribes to the transport's `requestAborted` event. `TransportType` already declares `events` as non-optional, so typed consumers are unaffected, but a duck-typed transport double or a JavaScript consumer without an `events` emitter now throws.
 
   New public API:
-
   - `TransportEvents` gains `requestAborted: { rid: string; reason?: unknown }`.
   - `createServerBridge` gains `onRequestAborted`.
   - `@enkaku/http-fetch`: `TransportStream` gains `send`, and `ClientTransport.write` uses it rather than the writable's sink. Calls to `send` are serialized, so a channel `send` cannot overtake the `channel` open it belongs to.

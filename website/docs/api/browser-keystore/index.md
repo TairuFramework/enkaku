@@ -108,7 +108,7 @@ npm install @enkaku/browser-keystore
 
 `KeyEntry.setAsync`
 
-***
+---
 
 ### BrowserKeyStore
 
@@ -182,7 +182,7 @@ npm install @enkaku/browser-keystore
 
 `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
-***
+---
 
 ### provideSigningIdentity()
 
@@ -202,7 +202,7 @@ npm install @enkaku/browser-keystore
 
 `Promise`\<`SigningIdentity`\>
 
-***
+---
 
 ### randomKeyPair()
 

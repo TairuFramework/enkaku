@@ -18,7 +18,7 @@ npm install @enkaku/standalone
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Properties
 
@@ -56,7 +56,7 @@ npm install @enkaku/standalone
 
 ##### Protocol
 
-`Protocol` *extends* `object`
+`Protocol` _extends_ `object`
 
 #### Parameters
 

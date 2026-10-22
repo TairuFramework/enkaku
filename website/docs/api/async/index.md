@@ -52,7 +52,7 @@ npm install @enkaku/async
 
 [`Interruption`](#interruption).[`isInterruption`](#isinterruption-3)
 
-***
+---
 
 ### CancelInterruption
 
@@ -96,7 +96,7 @@ npm install @enkaku/async
 
 [`Interruption`](#interruption).[`isInterruption`](#isinterruption-3)
 
-***
+---
 
 ### DisposeInterruption
 
@@ -140,7 +140,7 @@ npm install @enkaku/async
 
 [`Interruption`](#interruption).[`isInterruption`](#isinterruption-3)
 
-***
+---
 
 ### Disposer
 
@@ -221,7 +221,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 `Promise`\<`void`\>
 
-***
+---
 
 ### Interruption
 
@@ -268,7 +268,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 `boolean`
 
-***
+---
 
 ### LazyPromise
 
@@ -483,7 +483,7 @@ A promise whose internal state matches the provided promise.
 
 `Promise.resolve`
 
-***
+---
 
 ### ScheduledTimeout
 
@@ -577,7 +577,7 @@ A promise whose internal state matches the provided promise.
 
 [`ScheduledTimeout`](#scheduledtimeout)
 
-***
+---
 
 ### TimeoutInterruption
 
@@ -673,7 +673,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 `void`
 
-***
+---
 
 ### DisposerParams
 
@@ -699,7 +699,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 > `optional` **signal?**: `AbortSignal`
 
-***
+---
 
 ### ExecuteFn
 
@@ -725,7 +725,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 `void`
 
-***
+---
 
 ### InterruptionOptions
 
@@ -737,7 +737,7 @@ Deferred object, providing a Promise with associated resolve and reject function
 
 > `optional` **message?**: `string`
 
-***
+---
 
 ### ScheduledTimeoutParams
 
@@ -771,7 +771,7 @@ Create a Deferred object.
 
 [`Deferred`](#deferred)\<`T`, `R`\>
 
-***
+---
 
 ### isBenignTeardownError()
 
@@ -791,7 +791,7 @@ teardown paths so benign rejections can be swallowed.
 
 `boolean`
 
-***
+---
 
 ### lazy()
 
@@ -815,7 +815,7 @@ Lazily run the `execute` function at most once when awaited.
 
 [`LazyPromise`](#lazypromise)\<`T`\>
 
-***
+---
 
 ### raceSignal()
 
@@ -841,7 +841,7 @@ Lazily run the `execute` function at most once when awaited.
 
 `Promise`\<`T`\>
 
-***
+---
 
 ### sleep()
 
@@ -857,7 +857,7 @@ Lazily run the `execute` function at most once when awaited.
 
 `Promise`\<`void`\>
 
-***
+---
 
 ### toPromise()
 

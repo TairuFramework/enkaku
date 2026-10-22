@@ -8,4 +8,4 @@ jobs:
     uses: TairuFramework/kigu/.github/workflows/e2e-desktop.yml@main
     with:
       working-directory: tests/e2e-electron
-      node-version: '24'
+      node-version: "24"

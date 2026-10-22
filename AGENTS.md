@@ -51,17 +51,17 @@ pnpm run lint         # Format and lint all packages
 
 Load these files based on your current task:
 
-| Task | Files to read |
-|------|---------------|
-| Planning | `docs/agents/architecture.md` |
-| Implementation | the `conventions` and `development` skills |
-| Review | the `conventions` skill, `docs/agents/architecture.md`, the `development` skill |
+| Task           | Files to read                                                                   |
+| -------------- | ------------------------------------------------------------------------------- |
+| Planning       | `docs/agents/architecture.md`                                                   |
+| Implementation | the `conventions` and `development` skills                                      |
+| Review         | the `conventions` skill, `docs/agents/architecture.md`, the `development` skill |
 
 ## Workflow Skills
 
-| Skill | Purpose |
-|-------|---------|
-| `/dev-loop` | Orchestrate the full development cycle with session resumption |
-| `/project-loop` | Manage project priorities, roadmap, architecture review, and triage |
-| `/complete` | Summarise finished plan, move to `completed/`, clean up ephemeral files |
-| `/archive` | Consolidate unreferenced completed plans into monthly summaries |
+| Skill           | Purpose                                                                 |
+| --------------- | ----------------------------------------------------------------------- |
+| `/dev-loop`     | Orchestrate the full development cycle with session resumption          |
+| `/project-loop` | Manage project priorities, roadmap, architecture review, and triage     |
+| `/complete`     | Summarise finished plan, move to `completed/`, clean up ephemeral files |
+| `/archive`      | Consolidate unreferenced completed plans into monthly summaries         |

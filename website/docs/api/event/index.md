@@ -16,7 +16,7 @@ npm install @enkaku/event
 
 ##### Events
 
-`Events` *extends* `Record`\<`string`, `unknown`\>
+`Events` _extends_ `Record`\<`string`, `unknown`\>
 
 #### Constructors
 
@@ -40,7 +40,7 @@ npm install @enkaku/event
 
 ###### Name
 
-`Name` *extends* `string` \| `number` \| `symbol`
+`Name` _extends_ `string` \| `number` \| `symbol`
 
 ###### Parameters
 
@@ -60,7 +60,7 @@ npm install @enkaku/event
 
 ###### Name
 
-`Name` *extends* `string` \| `number` \| `symbol`
+`Name` _extends_ `string` \| `number` \| `symbol`
 
 ###### Parameters
 
@@ -84,7 +84,7 @@ npm install @enkaku/event
 
 ###### Name
 
-`Name` *extends* `string` \| `number` \| `symbol`
+`Name` _extends_ `string` \| `number` \| `symbol`
 
 ###### Parameters
 
@@ -112,7 +112,7 @@ npm install @enkaku/event
 
 ###### Name
 
-`Name` *extends* `string` \| `number` \| `symbol`
+`Name` _extends_ `string` \| `number` \| `symbol`
 
 ###### Parameters
 
@@ -136,7 +136,7 @@ npm install @enkaku/event
 
 ###### Name
 
-`Name` *extends* `string` \| `number` \| `symbol`
+`Name` _extends_ `string` \| `number` \| `symbol`
 
 ###### Parameters
 
@@ -160,7 +160,7 @@ npm install @enkaku/event
 
 ###### Name
 
-`Name` *extends* `string` \| `number` \| `symbol`
+`Name` _extends_ `string` \| `number` \| `symbol`
 
 ###### Parameters
 
@@ -182,9 +182,9 @@ npm install @enkaku/event
 
 ##### Events
 
-`Events` *extends* `Record`\<`string`, `unknown`\>
+`Events` _extends_ `Record`\<`string`, `unknown`\>
 
-***
+---
 
 ### ListenerOptions
 
@@ -216,7 +216,7 @@ npm install @enkaku/event
 
 > `optional` **signal?**: `AbortSignal`
 
-***
+---
 
 ### UnsubscribeFunction
 

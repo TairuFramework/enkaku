@@ -30,7 +30,7 @@ Convert a JSON object to a base64url-encoded string.
 
 `string`
 
-***
+---
 
 ### b64uFromUTF()
 
@@ -48,7 +48,7 @@ Convert a UTF string to a base64url-encoded string.
 
 `string`
 
-***
+---
 
 ### b64uToJSON()
 
@@ -72,7 +72,7 @@ Convert a base64url-encoded string to a JSON object.
 
 `T`
 
-***
+---
 
 ### b64uToUTF()
 
@@ -90,7 +90,7 @@ Convert a base64url-encoded string to a UTF string.
 
 `string`
 
-***
+---
 
 ### fromB64()
 
@@ -106,7 +106,7 @@ Convert a base64url-encoded string to a UTF string.
 
 `Uint8Array`
 
-***
+---
 
 ### fromB64atob()
 
@@ -124,7 +124,7 @@ Convert a base64-encoded string to a Uint8Array.
 
 `Uint8Array`
 
-***
+---
 
 ### fromB64U()
 
@@ -140,7 +140,7 @@ Convert a base64-encoded string to a Uint8Array.
 
 `Uint8Array`
 
-***
+---
 
 ### fromB64Uatob()
 
@@ -158,7 +158,7 @@ Convert a base64url-encoded string to a Uint8Array.
 
 `Uint8Array`
 
-***
+---
 
 ### fromUTF()
 
@@ -176,7 +176,7 @@ Convert a UTF string to a Uint8Array.
 
 `Uint8Array`
 
-***
+---
 
 ### toB64()
 
@@ -194,7 +194,7 @@ Convert a Uint8Array to a base64-encoded string.
 
 `string`
 
-***
+---
 
 ### toB64U()
 
@@ -212,7 +212,7 @@ Convert a Uint8Array to a base64url-encoded string.
 
 `string`
 
-***
+---
 
 ### toUTF()
 

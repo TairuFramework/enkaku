@@ -40,7 +40,7 @@ npm install @enkaku/capability
 
 > **sub**: `string`
 
-***
+---
 
 ### CapabilityToken
 
@@ -50,13 +50,13 @@ npm install @enkaku/capability
 
 ##### Payload
 
-`Payload` *extends* [`CapabilityPayload`](#capabilitypayload) = [`CapabilityPayload`](#capabilitypayload)
+`Payload` _extends_ [`CapabilityPayload`](#capabilitypayload) = [`CapabilityPayload`](#capabilitypayload)
 
 ##### Header
 
-`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Header` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
-***
+---
 
 ### CreateCapabilityOptions
 
@@ -74,7 +74,7 @@ Parent capability token (stringified) that authorizes this delegation.
 Required when creating a capability where signer is not the subject.
 The signer must be the audience of the parent capability.
 
-***
+---
 
 ### DelegationChainOptions
 
@@ -102,7 +102,7 @@ Maximum depth of delegation chain. Defaults to 20.
 
 Optional hook called for each token in the chain after verification. Can be used for revocation checks.
 
-***
+---
 
 ### Permission
 
@@ -118,7 +118,7 @@ Optional hook called for each token in the chain after verification. Can be used
 
 > **res**: `string` \| `string`[]
 
-***
+---
 
 ### RevocationBackend
 
@@ -154,7 +154,7 @@ Optional hook called for each token in the chain after verification. Can be used
 
 `Promise`\<`boolean`\>
 
-***
+---
 
 ### RevocationRecord
 
@@ -178,7 +178,7 @@ Optional hook called for each token in the chain after verification. Can be used
 
 > **rev**: `true`
 
-***
+---
 
 ### SignCapabilityPayload
 
@@ -190,7 +190,7 @@ Optional hook called for each token in the chain after verification. Can be used
 
 > `optional` **iss?**: `string`
 
-***
+---
 
 ### VerifyTokenHook
 
@@ -230,7 +230,7 @@ Default maximum delegation chain depth
 
 ##### Payload
 
-`Payload` *extends* [`CapabilityPayload`](#capabilitypayload)
+`Payload` _extends_ [`CapabilityPayload`](#capabilitypayload)
 
 #### Parameters
 
@@ -242,7 +242,7 @@ Default maximum delegation chain depth
 
 `asserts token is CapabilityToken<Payload, Record<string, unknown>>`
 
-***
+---
 
 ### assertNonExpired()
 
@@ -264,7 +264,7 @@ Default maximum delegation chain depth
 
 `void`
 
-***
+---
 
 ### assertValidDelegation()
 
@@ -288,7 +288,7 @@ Default maximum delegation chain depth
 
 `void`
 
-***
+---
 
 ### assertValidIssuedAt()
 
@@ -310,7 +310,7 @@ Default maximum delegation chain depth
 
 `void`
 
-***
+---
 
 ### assertValidPattern()
 
@@ -326,7 +326,7 @@ Default maximum delegation chain depth
 
 `void`
 
-***
+---
 
 ### checkCapability()
 
@@ -376,7 +376,7 @@ Default maximum delegation chain depth
 
 `Promise`\<`void`\>
 
-***
+---
 
 ### checkDelegationChain()
 
@@ -400,7 +400,7 @@ Default maximum delegation chain depth
 
 `Promise`\<`void`\>
 
-***
+---
 
 ### createCapability()
 
@@ -410,11 +410,11 @@ Default maximum delegation chain depth
 
 ##### Payload
 
-`Payload` *extends* [`SignCapabilityPayload`](#signcapabilitypayload) = [`SignCapabilityPayload`](#signcapabilitypayload)
+`Payload` _extends_ [`SignCapabilityPayload`](#signcapabilitypayload) = [`SignCapabilityPayload`](#signcapabilitypayload)
 
 ##### HeaderParams
 
-`HeaderParams` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`HeaderParams` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
@@ -438,7 +438,7 @@ Default maximum delegation chain depth
 
 `Promise`\<[`CapabilityToken`](#capabilitytoken)\<`Payload` & `object`, \{\[`key`: `string`\]: `unknown`; `alg`: `"EdDSA"` \| `"ES256"`; `typ`: `"JWT"`; \}\>\>
 
-***
+---
 
 ### createMemoryRevocationBackend()
 
@@ -448,7 +448,7 @@ Default maximum delegation chain depth
 
 [`RevocationBackend`](#revocationbackend)
 
-***
+---
 
 ### createRevocationChecker()
 
@@ -464,7 +464,7 @@ Default maximum delegation chain depth
 
 [`VerifyTokenHook`](#verifytokenhook)
 
-***
+---
 
 ### createRevocationRecord()
 
@@ -484,7 +484,7 @@ Default maximum delegation chain depth
 
 `Promise`\<[`RevocationRecord`](#revocationrecord)\>
 
-***
+---
 
 ### hasPartsMatch()
 
@@ -504,7 +504,7 @@ Default maximum delegation chain depth
 
 `boolean`
 
-***
+---
 
 ### hasPermission()
 
@@ -524,7 +524,7 @@ Default maximum delegation chain depth
 
 `boolean`
 
-***
+---
 
 ### isCapabilityToken()
 
@@ -534,7 +534,7 @@ Default maximum delegation chain depth
 
 ##### Payload
 
-`Payload` *extends* [`CapabilityPayload`](#capabilitypayload)
+`Payload` _extends_ [`CapabilityPayload`](#capabilitypayload)
 
 #### Parameters
 
@@ -546,7 +546,7 @@ Default maximum delegation chain depth
 
 `token is CapabilityToken<Payload, Record<string, unknown>>`
 
-***
+---
 
 ### isMatch()
 
@@ -566,7 +566,7 @@ Default maximum delegation chain depth
 
 `boolean`
 
-***
+---
 
 ### now()
 

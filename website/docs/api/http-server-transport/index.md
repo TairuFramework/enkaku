@@ -20,7 +20,7 @@ npm install @enkaku/http-server-transport
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
 #### Constructors
 
@@ -196,7 +196,7 @@ npm install @enkaku/http-server-transport
 
 `Promise`\<`Response`\>
 
-***
+---
 
 ### ServerBridge
 
@@ -206,7 +206,7 @@ npm install @enkaku/http-server-transport
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
 #### Properties
 
@@ -218,7 +218,7 @@ npm install @enkaku/http-server-transport
 
 > **stream**: `ReadableWritablePair`\<`AnyClientMessageOf`\<`Protocol`\>, `AnyServerMessageOf`\<`Protocol`\>\>
 
-***
+---
 
 ### ServerBridgeOptions
 
@@ -272,7 +272,7 @@ npm install @enkaku/http-server-transport
 
 > `optional` **sessionTimeoutMs?**: `number`
 
-***
+---
 
 ### ServerTransportOptions
 
@@ -322,7 +322,7 @@ npm install @enkaku/http-server-transport
 
 ##### Protocol
 
-`Protocol` *extends* `object`
+`Protocol` _extends_ `object`
 
 #### Parameters
 

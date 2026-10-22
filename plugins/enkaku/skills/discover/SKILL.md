@@ -1,4 +1,5 @@
 ---
+
 name: discover
 description: Use when exploring Enkaku RPC capabilities - progressive discovery of this repo's domain skills.
 ---
@@ -7,7 +8,7 @@ description: Use when exploring Enkaku RPC capabilities - progressive discovery 
 
 As of the 0.18 stack split, Enkaku is the **RPC-only** layer of the Yulsi stack: protocol,
 client, server, transports, OTel naming, and React bindings. Identity/auth, MLS/group/hub,
-and the shared utilities it builds on live in sibling repos — see *Cross-repo* below.
+and the shared utilities it builds on live in sibling repos — see _Cross-repo_ below.
 
 ## How to Explore
 

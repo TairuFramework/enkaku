@@ -18,20 +18,20 @@
 
 ## Design Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Key agreement | X25519 (Ed25519 keystores) + P-256 ECDH (browser keystore) | Matches existing key types per platform |
-| Decryption | Algorithm-agnostic, dispatch from JWE header | Single decryption path handles either `alg` |
-| Envelope modes | `plain`, `jws`, `jws-in-jwe`, `jwe-in-jws` | Protocol supports all four; consumers choose per threat model |
-| Wire format | JWE Compact Serialization (single recipient) | Protocol messages target one recipient |
-| Multi-recipient | JWE JSON Serialization via token utilities | `@enkaku/token` exposes multi-recipient utilities for consumers |
-| ECDH-ES variants | `ECDH-ES` direct (compact) + `ECDH-ES+A256KW` (JSON/multi) | Direct for protocol simplicity, key wrapping for multi-recipient |
-| Content encryption | A256GCM only | Fast, authenticated, Web Crypto native, `@noble/ciphers` for Node |
-| Key discovery | DID-derived by default, explicit override | Leverages existing DID infrastructure, escape hatch for key separation |
-| Identity types | All in `@enkaku/token` | Avoids circular dependency with a separate identity package |
-| Breaking changes | Clean cut, no deprecated APIs | Remove `TokenSigner`, `provideTokenSigner()` entirely |
-| Encryption direction | Independently configurable per direction | Client-to-server and server-to-client encryption are separate concerns |
-| Server signing | Supported via `SigningIdentity` on server | Server can sign responses using same identity hierarchy |
+| Decision             | Choice                                                     | Rationale                                                              |
+| -------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Key agreement        | X25519 (Ed25519 keystores) + P-256 ECDH (browser keystore) | Matches existing key types per platform                                |
+| Decryption           | Algorithm-agnostic, dispatch from JWE header               | Single decryption path handles either `alg`                            |
+| Envelope modes       | `plain`, `jws`, `jws-in-jwe`, `jwe-in-jws`                 | Protocol supports all four; consumers choose per threat model          |
+| Wire format          | JWE Compact Serialization (single recipient)               | Protocol messages target one recipient                                 |
+| Multi-recipient      | JWE JSON Serialization via token utilities                 | `@enkaku/token` exposes multi-recipient utilities for consumers        |
+| ECDH-ES variants     | `ECDH-ES` direct (compact) + `ECDH-ES+A256KW` (JSON/multi) | Direct for protocol simplicity, key wrapping for multi-recipient       |
+| Content encryption   | A256GCM only                                               | Fast, authenticated, Web Crypto native, `@noble/ciphers` for Node      |
+| Key discovery        | DID-derived by default, explicit override                  | Leverages existing DID infrastructure, escape hatch for key separation |
+| Identity types       | All in `@enkaku/token`                                     | Avoids circular dependency with a separate identity package            |
+| Breaking changes     | Clean cut, no deprecated APIs                              | Remove `TokenSigner`, `provideTokenSigner()` entirely                  |
+| Encryption direction | Independently configurable per direction                   | Client-to-server and server-to-client encryption are separate concerns |
+| Server signing       | Supported via `SigningIdentity` on server                  | Server can sign responses using same identity hierarchy                |
 
 ---
 
@@ -65,12 +65,12 @@ Key conversion: Ed25519 -> X25519 via `edwardsToMontgomeryPriv`/`edwardsToMontgo
 
 ### Envelope modes
 
-| Mode | Wire format | Processing order | Use case |
-|------|------------|-----------------|----------|
-| `plain` | Unsigned token (`alg: 'none'`) | Direct parse | Public, trusted transport |
-| `jws` | Signed token | Verify signature | Authentication without confidentiality |
-| `jws-in-jwe` | JWE wrapping a JWS | Decrypt -> verify | Full privacy: signer identity hidden |
-| `jwe-in-jws` | JWS wrapping a JWE | Verify -> decrypt | Routable: intermediaries authenticate sender |
+| Mode         | Wire format                    | Processing order  | Use case                                     |
+| ------------ | ------------------------------ | ----------------- | -------------------------------------------- |
+| `plain`      | Unsigned token (`alg: 'none'`) | Direct parse      | Public, trusted transport                    |
+| `jws`        | Signed token                   | Verify signature  | Authentication without confidentiality       |
+| `jws-in-jwe` | JWE wrapping a JWS             | Decrypt -> verify | Full privacy: signer identity hidden         |
+| `jwe-in-jws` | JWS wrapping a JWE             | Verify -> decrypt | Routable: intermediaries authenticate sender |
 
 ### JWE wire format
 
@@ -88,23 +88,26 @@ type TokenEncrypter = {
   encrypt(payload: Uint8Array, options?: EncryptOptions): Promise<string>
 }
 
-function createTokenEncrypter(recipient: string | Uint8Array, options?: { algorithm?: 'X25519' | 'P-256' }): TokenEncrypter
+function createTokenEncrypter(
+  recipient: string | Uint8Array,
+  options?: { algorithm?: 'X25519' | 'P-256' },
+): TokenEncrypter
 ```
 
 ### Consumer migrations
 
 All packages updated from `TokenSigner`/`signer` to `Identity`/`identity`:
 
-| Package | Old API | New API |
-|---------|---------|---------|
-| `@enkaku/capability` | `createCapability(signer: TokenSigner)` | `createCapability(signer: SigningIdentity)` |
-| `@enkaku/client` | `signer?: TokenSigner` | `identity?: Identity` |
-| `@enkaku/server` | `id?: string` | `identity?: Identity` |
-| `@enkaku/standalone` | `signer?: TokenSigner` | `identity?: Identity` |
-| `@enkaku/node-keystore` | `provideTokenSigner()` | `provideFullIdentity()` / `provideFullIdentityAsync()` |
-| `@enkaku/electron-keystore` | `provideTokenSigner()` | `provideFullIdentity()` / `provideFullIdentityAsync()` |
-| `@enkaku/expo-keystore` | `provideTokenSigner()` | `provideFullIdentity()` / `provideFullIdentityAsync()` |
-| `@enkaku/browser-keystore` | `provideTokenSigner()` | `provideSigningIdentity()` (P-256 ECDSA only, no decryption) |
+| Package                     | Old API                                 | New API                                                      |
+| --------------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| `@enkaku/capability`        | `createCapability(signer: TokenSigner)` | `createCapability(signer: SigningIdentity)`                  |
+| `@enkaku/client`            | `signer?: TokenSigner`                  | `identity?: Identity`                                        |
+| `@enkaku/server`            | `id?: string`                           | `identity?: Identity`                                        |
+| `@enkaku/standalone`        | `signer?: TokenSigner`                  | `identity?: Identity`                                        |
+| `@enkaku/node-keystore`     | `provideTokenSigner()`                  | `provideFullIdentity()` / `provideFullIdentityAsync()`       |
+| `@enkaku/electron-keystore` | `provideTokenSigner()`                  | `provideFullIdentity()` / `provideFullIdentityAsync()`       |
+| `@enkaku/expo-keystore`     | `provideTokenSigner()`                  | `provideFullIdentity()` / `provideFullIdentityAsync()`       |
+| `@enkaku/browser-keystore`  | `provideTokenSigner()`                  | `provideSigningIdentity()` (P-256 ECDSA only, no decryption) |
 
 ### Encryption policy enforcement (`@enkaku/server`)
 
@@ -153,27 +156,27 @@ Kubun and Mokei depend on Enkaku and need matching updates:
 
 ## Commit Log
 
-| Task | Phase | Description | Commit |
-|------|-------|-------------|--------|
-| 1 | 1 | Identity type hierarchy and type guards | `f06d5a0` |
-| 2 | 1 | Identity factory functions for Ed25519 keys | `16848b7` |
-| 3 | 1 | Export identity types, update signToken | `ef543de` |
-| 4 | 2 | Concat KDF implementation | `ade28dd` |
-| 5 | 2 | JWE encrypt/decrypt with ECDH-ES + A256GCM | `32aa047` |
-| 6 | 2 | DID-based TokenEncrypter creation | `f725883` |
-| 7 | 2 | Envelope wrapping/unwrapping (4 modes) | `3192e78` |
-| 8 | 3 | Migrate capability to SigningIdentity | `e492362` |
-| 9 | 3 | Migrate client (signer -> identity) | `f4c36cb` |
-| 10 | 3 | Migrate server (id -> identity) | `5da0cd1` |
-| 11 | 3 | Migrate standalone (signer -> identity) | `fa5119c` |
-| 12 | 4 | Remove TokenSigner and old signer APIs | `3891965` |
-| 13 | 4 | Update Node keystore | `2857ee0` |
-| 14 | 4 | Update Electron keystore | `9e6a72f` |
-| 15 | 4 | Update Expo keystore | `79b1e68` |
-| 16 | 4 | Update Browser keystore | `0361edd` |
-| 17 | 5 | Add EncryptionPolicy types | `58ddb3a` |
-| 18 | 5 | Server encryption policy enforcement | `daadbe4` |
-| 19 | 6 | Update E2E tests | `1120bd5` |
-| 20 | 6 | Update documentation | `25a9f37` |
-| 21 | 6 | Full test suite validation | `d7f68cc` |
-| -- | -- | Lint + test fixes + biome formatting | `111d8b1` |
+| Task | Phase | Description                                 | Commit    |
+| ---- | ----- | ------------------------------------------- | --------- |
+| 1    | 1     | Identity type hierarchy and type guards     | `f06d5a0` |
+| 2    | 1     | Identity factory functions for Ed25519 keys | `16848b7` |
+| 3    | 1     | Export identity types, update signToken     | `ef543de` |
+| 4    | 2     | Concat KDF implementation                   | `ade28dd` |
+| 5    | 2     | JWE encrypt/decrypt with ECDH-ES + A256GCM  | `32aa047` |
+| 6    | 2     | DID-based TokenEncrypter creation           | `f725883` |
+| 7    | 2     | Envelope wrapping/unwrapping (4 modes)      | `3192e78` |
+| 8    | 3     | Migrate capability to SigningIdentity       | `e492362` |
+| 9    | 3     | Migrate client (signer -> identity)         | `f4c36cb` |
+| 10   | 3     | Migrate server (id -> identity)             | `5da0cd1` |
+| 11   | 3     | Migrate standalone (signer -> identity)     | `fa5119c` |
+| 12   | 4     | Remove TokenSigner and old signer APIs      | `3891965` |
+| 13   | 4     | Update Node keystore                        | `2857ee0` |
+| 14   | 4     | Update Electron keystore                    | `9e6a72f` |
+| 15   | 4     | Update Expo keystore                        | `79b1e68` |
+| 16   | 4     | Update Browser keystore                     | `0361edd` |
+| 17   | 5     | Add EncryptionPolicy types                  | `58ddb3a` |
+| 18   | 5     | Server encryption policy enforcement        | `daadbe4` |
+| 19   | 6     | Update E2E tests                            | `1120bd5` |
+| 20   | 6     | Update documentation                        | `25a9f37` |
+| 21   | 6     | Full test suite validation                  | `d7f68cc` |
+| --   | --    | Lint + test fixes + biome formatting        | `111d8b1` |

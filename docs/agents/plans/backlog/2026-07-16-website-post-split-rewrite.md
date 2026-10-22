@@ -37,8 +37,7 @@ here.
 
 The reference-docs half of this work is the warning. `docs/reference/` looked like it needed a
 rename sweep -- the audit counted 20 stale package references in `transport.md`. Verifying every
-claim against `packages/*/src` instead found that *renames were the least of it*:
-
+claim against `packages/*/src` instead found that _renames were the least of it_:
 - Every code example was non-compiling. `Client` takes no `protocol` option (it is a type
   parameter); `Server` takes plural `transports` plus a **required** access option, and throws
   at construction without it.

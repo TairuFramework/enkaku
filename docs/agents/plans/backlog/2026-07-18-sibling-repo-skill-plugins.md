@@ -9,7 +9,6 @@ the same pre-template artifact enkaku had. Any `AGENTS.md` instruction to run `/
 `/sozai:*` is currently false, and enkaku's discover skill now routes to those namespaces.
 
 Enkaku established the working pattern:
-
 - `.claude-plugin/marketplace.json` at repo root listing one plugin with a relative `source`
 - `plugins/<name>/.claude-plugin/plugin.json`
 - `plugins/<name>/skills/<skill>/SKILL.md` with **bare** frontmatter names -- the namespace comes

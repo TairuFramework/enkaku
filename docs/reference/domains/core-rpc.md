@@ -38,13 +38,13 @@ const protocol = {
     param: { type: 'string' }, // userId
     result: {
       type: 'object',
-      properties: { name: { type: 'string' }, email: { type: 'string' } }
-    }
+      properties: { name: { type: 'string' }, email: { type: 'string' } },
+    },
   },
   'metrics/live': {
     type: 'stream',
-    receive: { type: 'number' }
-  }
+    receive: { type: 'number' },
+  },
 } as const satisfies ProtocolDefinition
 ```
 
@@ -81,7 +81,7 @@ const client = new Client<MyProtocol>({ transport })
 
 // TypeScript knows param type and result type from protocol
 const result = await client.request('greet', {
-  param: { name: 'Alice' } // Type-checked
+  param: { name: 'Alice' }, // Type-checked
 })
 // result is typed based on protocol definition
 ```
@@ -168,12 +168,12 @@ const myProtocol = {
       type: 'object',
       properties: {
         a: { type: 'number' },
-        b: { type: 'number' }
+        b: { type: 'number' },
       },
       required: ['a', 'b'],
-      additionalProperties: false
+      additionalProperties: false,
     },
-    result: { type: 'number' }
+    result: { type: 'number' },
   },
 
   // Request with optional param
@@ -186,10 +186,10 @@ const myProtocol = {
         type: 'object',
         properties: {
           id: { type: 'string' },
-          name: { type: 'string' }
-        }
-      }
-    }
+          name: { type: 'string' },
+        },
+      },
+    },
   },
 
   // Stream with param
@@ -199,11 +199,11 @@ const myProtocol = {
       type: 'object',
       properties: {
         lines: { type: 'number' },
-        filter: { type: 'string' }
-      }
+        filter: { type: 'string' },
+      },
     },
     receive: { type: 'string' },
-    result: { type: 'null' }
+    result: { type: 'null' },
   },
 
   // Channel for bidirectional communication
@@ -211,22 +211,24 @@ const myProtocol = {
     type: 'channel',
     param: {
       type: 'object',
-      properties: { roomId: { type: 'string' } }
+      properties: { roomId: { type: 'string' } },
     },
-    send: { // Client to server
+    send: {
+      // Client to server
       type: 'object',
       properties: {
         message: { type: 'string' },
-        timestamp: { type: 'number' }
-      }
+        timestamp: { type: 'number' },
+      },
     },
-    receive: { // Server to client
+    receive: {
+      // Server to client
       type: 'object',
       properties: {
         userId: { type: 'string' },
-        message: { type: 'string' }
-      }
-    }
+        message: { type: 'string' },
+      },
+    },
   },
 
   // Event (no response)
@@ -236,9 +238,9 @@ const myProtocol = {
       type: 'object',
       properties: {
         event: { type: 'string' },
-        properties: { type: 'object' }
-      }
-    }
+        properties: { type: 'object' },
+      },
+    },
   },
 
   // Custom error type
@@ -248,23 +250,23 @@ const myProtocol = {
       type: 'object',
       properties: {
         username: { type: 'string' },
-        password: { type: 'string' }
-      }
+        password: { type: 'string' },
+      },
     },
     result: {
       type: 'object',
-      properties: { token: { type: 'string' } }
+      properties: { token: { type: 'string' } },
     },
     error: {
       type: 'object',
       properties: {
         code: { type: 'string', enum: ['INVALID_CREDENTIALS', 'ACCOUNT_LOCKED'] },
-        message: { type: 'string' }
+        message: { type: 'string' },
       },
       required: ['code', 'message'],
-      additionalProperties: false
-    }
-  }
+      additionalProperties: false,
+    },
+  },
 } as const satisfies ProtocolDefinition
 
 // Extract type for use in client/server
@@ -304,7 +306,7 @@ import { ClientTransport } from '@enkaku/http-fetch'
 import { RequestError } from '@enkaku/client'
 
 const transport = new ClientTransport<MyProtocol>({
-  url: 'https://api.example.com/rpc'
+  url: 'https://api.example.com/rpc',
 })
 
 const client = new Client<MyProtocol>({ transport })
@@ -312,7 +314,7 @@ const client = new Client<MyProtocol>({ transport })
 // Handle RPC errors
 try {
   const result = await client.request('user/authenticate', {
-    param: { username: 'alice', password: 'wrong' }
+    param: { username: 'alice', password: 'wrong' },
   })
 } catch (err) {
   if (err instanceof RequestError) {
@@ -329,7 +331,7 @@ try {
 // Abort a long-running request
 const controller = new AbortController()
 const request = client.request('longOperation', {
-  signal: controller.signal
+  signal: controller.signal,
 })
 
 setTimeout(() => controller.abort('Timed out'), 5000) // Timeout after 5s
@@ -351,9 +353,9 @@ const clientWithRecovery = new Client<MyProtocol>({
     console.error('Transport error:', error)
     // Return new transport to reconnect
     return new ClientTransport<MyProtocol>({
-      url: 'https://api.example.com/rpc'
+      url: 'https://api.example.com/rpc',
     })
-  }
+  },
 })
 
 // Listen to client lifecycle
@@ -364,7 +366,7 @@ client.disposed.then(() => {
 
 **Key points**:
 - `RequestError` indicates server returned error response
-- Cancellation surfaces as the signal's abort *reason*, not as an `AbortSignal` instance
+- Cancellation surfaces as the signal's abort _reason_, not as an `AbortSignal` instance
 - `handleTransportError` enables reconnection: return a replacement transport to adopt it,
   return nothing to abort the client. Its sibling `handleTransportDisposed` does the same when
   the transport is disposed rather than erroring
@@ -411,9 +413,10 @@ const server = serve<StreamProtocol>({
     },
 
     // Stream: Generate sequence
-    'fibonacci': async ({ param, writable }) => {
+    fibonacci: async ({ param, writable }) => {
       const writer = writable.getWriter()
-      let a = 0, b = 1
+      let a = 0,
+        b = 1
 
       for (let i = 0; i < param.count; i++) {
         await writer.write(a)
@@ -433,7 +436,7 @@ const server = serve<StreamProtocol>({
       const unsubscribe = room.subscribe((msg) => {
         writer.write({
           userId: msg.userId,
-          message: msg.text
+          message: msg.text,
         })
       })
 
@@ -443,7 +446,7 @@ const server = serve<StreamProtocol>({
           room.broadcast({
             userId: 'current-user',
             text: msg.message,
-            timestamp: msg.timestamp
+            timestamp: msg.timestamp,
           })
         }
       } finally {
@@ -470,8 +473,8 @@ const server = serve<StreamProtocol>({
       }
 
       return 'Done'
-    }
-  }
+    },
+  },
 })
 ```
 
@@ -485,7 +488,7 @@ const server = serve<StreamProtocol>({
   `writer.write` will not detect a disconnect -- use `signal`
 - Use `signal` to detect client disconnect
 - For infinite streams, wait on signal abort promise
-- The handler's return value is the call's *result*, distinct from the data written to
+- The handler's return value is the call's _result_, distinct from the data written to
   `writable`
 
 ### Pattern: Server with Schema Validation
@@ -508,9 +511,9 @@ const server = serve<MyProtocol>({
     'math/add': async ({ param }) => {
       // param is guaranteed to match schema
       return param.a + param.b
-    }
+    },
     // ...plus an entry for every other procedure in MyProtocol
-  }
+  },
 })
 
 // Listen for validation errors
@@ -554,19 +557,19 @@ const protocol = {
       type: 'object',
       properties: {
         name: { type: 'string' },
-        email: { type: 'string' }
-      }
+        email: { type: 'string' },
+      },
     },
     result: {
       type: 'object',
-      properties: { id: { type: 'string' } }
-    }
+      properties: { id: { type: 'string' } },
+    },
   },
   'events/stream': {
     type: 'stream',
     param: { type: 'number' },
-    receive: { type: 'string' }
-  }
+    receive: { type: 'string' },
+  },
 } as const satisfies ProtocolDefinition
 
 type Protocol = typeof protocol
@@ -579,11 +582,11 @@ describe('User handlers', () => {
         const id = await db.createUser(param)
         return { id }
       },
-      'events/stream': async () => {} // Stub unused handlers
+      'events/stream': async () => {}, // Stub unused handlers
     })
 
     const result = await client.request('user/create', {
-      param: { name: 'Alice', email: 'alice@example.com' }
+      param: { name: 'Alice', email: 'alice@example.com' },
     })
 
     expect(result.id).toBeDefined()
@@ -598,7 +601,7 @@ describe('User handlers', () => {
           await writer.write(`Event ${i}`)
         }
         await writer.close()
-      }
+      },
     })
 
     const stream = client.createStream('events/stream', { param: 3 })
@@ -660,7 +663,7 @@ const handlers: ProcedureHandlers<MyProtocol> = {
     // param type inferred from protocol
     return param.a + param.b
     // return type checked against protocol
-  }
+  },
 }
 ```
 
@@ -931,10 +934,10 @@ export const apiProtocol = {
         type: 'object',
         properties: {
           id: { type: 'string' },
-          name: { type: 'string' }
-        }
-      }
-    }
+          name: { type: 'string' },
+        },
+      },
+    },
   },
   'users/get': {
     type: 'request',
@@ -944,9 +947,9 @@ export const apiProtocol = {
       properties: {
         id: { type: 'string' },
         name: { type: 'string' },
-        email: { type: 'string' }
-      }
-    }
+        email: { type: 'string' },
+      },
+    },
   },
   'users/create': {
     type: 'request',
@@ -954,15 +957,15 @@ export const apiProtocol = {
       type: 'object',
       properties: {
         name: { type: 'string' },
-        email: { type: 'string' }
+        email: { type: 'string' },
       },
-      required: ['name', 'email']
+      required: ['name', 'email'],
     },
     result: {
       type: 'object',
-      properties: { id: { type: 'string' } }
-    }
-  }
+      properties: { id: { type: 'string' } },
+    },
+  },
 } as const satisfies ProtocolDefinition
 
 export type ApiProtocol = typeof apiProtocol
@@ -988,13 +991,13 @@ const server = serve<ApiProtocol>({
     'users/create': async ({ param }) => {
       const user = await db.users.create(param)
       return { id: user.id }
-    }
-  }
+    },
+  },
 })
 
 Bun.serve({
   port: 3000,
-  fetch: transport.fetch
+  fetch: transport.fetch,
 })
 
 // client.ts
@@ -1003,7 +1006,7 @@ import { ClientTransport } from '@enkaku/http-fetch'
 import type { ApiProtocol } from './shared/protocol'
 
 const transport = new ClientTransport<ApiProtocol>({
-  url: 'http://localhost:3000/rpc'
+  url: 'http://localhost:3000/rpc',
 })
 
 const client = new Client<ApiProtocol>({ transport })
@@ -1013,7 +1016,7 @@ const users = await client.request('users/list')
 console.log('All users:', users)
 
 const newUser = await client.request('users/create', {
-  param: { name: 'Alice', email: 'alice@example.com' }
+  param: { name: 'Alice', email: 'alice@example.com' },
 })
 console.log('Created user:', newUser.id)
 
@@ -1040,17 +1043,17 @@ const streamProtocol = {
       type: 'object',
       properties: {
         symbol: { type: 'string' },
-        interval: { type: 'number' }
-      }
+        interval: { type: 'number' },
+      },
     },
     receive: {
       type: 'object',
       properties: {
         symbol: { type: 'string' },
         price: { type: 'number' },
-        timestamp: { type: 'number' }
-      }
-    }
+        timestamp: { type: 'number' },
+      },
+    },
   },
   'logs/tail': {
     type: 'stream',
@@ -1058,18 +1061,18 @@ const streamProtocol = {
       type: 'object',
       properties: {
         service: { type: 'string' },
-        level: { type: 'string', enum: ['info', 'warn', 'error'] }
-      }
+        level: { type: 'string', enum: ['info', 'warn', 'error'] },
+      },
     },
     receive: {
       type: 'object',
       properties: {
         timestamp: { type: 'number' },
         level: { type: 'string' },
-        message: { type: 'string' }
-      }
-    }
-  }
+        message: { type: 'string' },
+      },
+    },
+  },
 } as const satisfies ProtocolDefinition
 
 type StreamProtocol = typeof streamProtocol
@@ -1088,7 +1091,7 @@ const server = serve<StreamProtocol>({
           await writer.write({
             symbol: param.symbol,
             price,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           })
         } catch (err) {
           clearInterval(interval)
@@ -1111,7 +1114,7 @@ const server = serve<StreamProtocol>({
           writer.write({
             timestamp: log.timestamp,
             level: log.level,
-            message: log.message
+            message: log.message,
           })
         }
       })
@@ -1122,13 +1125,13 @@ const server = serve<StreamProtocol>({
       })
 
       await new Promise((resolve) => signal.addEventListener('abort', resolve))
-    }
-  }
+    },
+  },
 })
 
 // client.ts
 const stream = client.createStream('stock/watch', {
-  param: { symbol: 'AAPL', interval: 1000 }
+  param: { symbol: 'AAPL', interval: 1000 },
 })
 
 for await (const quote of stream.readable) {
@@ -1159,26 +1162,28 @@ const chatProtocol = {
       type: 'object',
       properties: {
         roomId: { type: 'string' },
-        username: { type: 'string' }
-      }
+        username: { type: 'string' },
+      },
     },
-    send: { // Client to server
+    send: {
+      // Client to server
       type: 'object',
       properties: {
         type: { type: 'string', enum: ['message', 'typing', 'read'] },
-        content: { type: 'string' }
-      }
+        content: { type: 'string' },
+      },
     },
-    receive: { // Server to client
+    receive: {
+      // Server to client
       type: 'object',
       properties: {
         type: { type: 'string', enum: ['message', 'join', 'leave', 'typing'] },
         username: { type: 'string' },
         content: { type: 'string' },
-        timestamp: { type: 'number' }
-      }
-    }
-  }
+        timestamp: { type: 'number' },
+      },
+    },
+  },
 } as const satisfies ProtocolDefinition
 
 type ChatProtocol = typeof chatProtocol
@@ -1207,7 +1212,7 @@ const server = serve<ChatProtocol>({
         type: 'join' as const,
         username: param.username,
         content: `${param.username} joined`,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       }
       for (const w of room) {
         if (w !== writer) {
@@ -1222,7 +1227,7 @@ const server = serve<ChatProtocol>({
             type: msg.type,
             username: param.username,
             content: msg.content,
-            timestamp: Date.now()
+            timestamp: Date.now(),
           }
 
           // Send to all users in room
@@ -1240,7 +1245,7 @@ const server = serve<ChatProtocol>({
           type: 'leave' as const,
           username: param.username,
           content: `${param.username} left`,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         }
         for (const w of room) {
           w.write(leaveMsg)
@@ -1248,13 +1253,13 @@ const server = serve<ChatProtocol>({
 
         await writer.close()
       }
-    }
-  }
+    },
+  },
 })
 
 // client.ts
 const channel = client.createChannel('chat/room', {
-  param: { roomId: 'general', username: 'Alice' }
+  param: { roomId: 'general', username: 'Alice' },
 })
 
 // Receive messages
@@ -1272,7 +1277,7 @@ for await (const msg of channel.readable) {
 async function sendMessage(content: string) {
   await channel.send({
     type: 'message',
-    content
+    content,
   })
 }
 
@@ -1280,7 +1285,7 @@ async function sendMessage(content: string) {
 async function sendTyping() {
   await channel.send({
     type: 'typing',
-    content: ''
+    content: '',
   })
 }
 ```
@@ -1316,19 +1321,19 @@ const protocol = {
       type: 'object',
       properties: {
         name: { type: 'string' },
-        email: { type: 'string' }
+        email: { type: 'string' },
       },
-      required: ['name', 'email'] // Both required
-    }
-  }
+      required: ['name', 'email'], // Both required
+    },
+  },
 } as const satisfies ProtocolDefinition
 
 // Provide all required fields
 await client.request('user/create', {
   param: {
     name: 'Alice',
-    email: 'alice@example.com' // Don't forget this!
-  }
+    email: 'alice@example.com', // Don't forget this!
+  },
 })
 
 // Or make fields optional in protocol
@@ -1339,11 +1344,11 @@ const protocol = {
       type: 'object',
       properties: {
         name: { type: 'string' },
-        email: { type: 'string' }
+        email: { type: 'string' },
       },
-      required: ['name'] // Only name required
-    }
-  }
+      required: ['name'], // Only name required
+    },
+  },
 }
 ```
 
@@ -1432,8 +1437,8 @@ const server = new Server<MyProtocol>({
       await writer.close()
 
       return 'Done'
-    }
-  }
+    },
+  },
 })
 
 // Client: consume the readable
@@ -1471,11 +1476,11 @@ for await (const data of stream.readable) {
 const server = new Server<MyProtocol>({
   requireAuth: false,
   handlers: {
-    'compute': async ({ param }) => {
+    compute: async ({ param }) => {
       const result = await heavyComputation(param)
       return result // MUST return!
-    }
-  }
+    },
+  },
 })
 
 // Add timeout to client calls
@@ -1485,7 +1490,7 @@ const timeout = setTimeout(() => controller.abort(), 10000)
 try {
   const result = await client.request('compute', {
     param: data,
-    signal: controller.signal
+    signal: controller.signal,
   })
 } finally {
   clearTimeout(timeout)
@@ -1497,7 +1502,7 @@ const client = new Client<MyProtocol>({
   handleTransportError: (error) => {
     console.error('Transport error:', error)
     // Return a replacement transport to keep going, or nothing to abort the client
-  }
+  },
 })
 
 // Check server errors
@@ -1533,7 +1538,7 @@ try {
 // Or use abort signal
 const controller = new AbortController()
 const stream = client.createStream('data/stream', {
-  signal: controller.signal
+  signal: controller.signal,
 })
 
 // Later: abort to cleanup
@@ -1564,9 +1569,9 @@ const server = new Server<MyProtocol>({
         clearInterval(interval)
       })
 
-      await new Promise(r => signal.addEventListener('abort', r))
-    }
-  }
+      await new Promise((r) => signal.addEventListener('abort', r))
+    },
+  },
 })
 ```
 
@@ -1578,11 +1583,11 @@ const server = new Server<MyProtocol>({
 `protocol` server param drives one thing -- message validation. A client sending a message the
 server's protocol rejects gets an `EK08` (`INVALID_MESSAGE`) error reply, and the server emits
 `invalidMessage`. A procedure the server has no handler for produces no reply at all, so the
-call hangs (see *Handler Never Called*).
+call hangs (see _Handler Never Called_).
 
 **Causes**:
 - Client and server built against different protocol definitions
-- Breaking changes to param schemas -- the server validates *client* messages, so a param that
+- Breaking changes to param schemas -- the server validates _client_ messages, so a param that
   no longer matches is rejected
 - Removed or renamed procedures
 
@@ -1601,9 +1606,9 @@ const protocolV2 = {
       type: 'object',
       properties: {
         name: { type: 'string' },
-        email: { type: 'string' } // Added field
-      }
-    }
-  }
+        email: { type: 'string' }, // Added field
+      },
+    },
+  },
 } as const satisfies ProtocolDefinition
 ```

@@ -23,7 +23,6 @@
 ## Problem Statement
 
 Enkaku is a modular RPC framework with 28+ packages serving as foundational primitives for building applications. LLMs working with Enkaku face challenges:
-
 - **Context overload**: Loading all package documentation exhausts context windows
 - **Discovery difficulty**: Hard to know what capabilities exist without exploring everything
 - **Pattern confusion**: Understanding how packages work together requires deep codebase knowledge
@@ -36,7 +35,6 @@ Enkaku is a modular RPC framework with 28+ packages serving as foundational prim
 ## Solution Overview
 
 Create a progressive discovery system combining:
-
 1. **AGENTS.md** - Lightweight entry point for all AI agents
 2. **Discovery skill** - Guided exploration by domain or use case
 3. **Domain skills** - Deep dives into specific capability areas
@@ -136,6 +134,7 @@ LLM generates code with patterns and examples
 **Structure**:
 ```markdown
 ---
+
 name: enkaku:discover
 description: Explore Enkaku capabilities by domain or use case
 ---
@@ -145,6 +144,7 @@ description: Explore Enkaku capabilities by domain or use case
 ## How to Explore
 
 ### By Domain (When you know the technical area)
+
 - Transport - HTTP, WebSocket, Node streams, message-based
 - Authentication & Security - Tokens, keystores, access control
 - Streaming & Data Flow - Stream utilities, async patterns
@@ -154,6 +154,7 @@ description: Explore Enkaku capabilities by domain or use case
 → Use: /enkaku:transport, /enkaku:auth, etc.
 
 ### By Use Case (When you know what to build)
+
 - Building an RPC server
 - Adding real-time communication
 - Securing endpoints
@@ -183,8 +184,9 @@ description: Explore Enkaku capabilities by domain or use case
 **Purpose**: Load detailed patterns for a specific capability area.
 
 **Structure Template**:
-```markdown
+````markdown
 ---
+
 name: enkaku:[domain]
 description: [Domain] patterns, packages, and usage examples
 ---
@@ -199,9 +201,11 @@ description: [Domain] patterns, packages, and usage examples
 ## Key Patterns
 
 ### Pattern 1: [Name]
+
 ```typescript
 [Complete working example with imports]
 ```
+````
 **Use case**: [when to use]
 **Key points**: [3-5 bullets]
 
@@ -218,7 +222,7 @@ description: [Domain] patterns, packages, and usage examples
 ## Detailed Reference
 
 For complete API: docs/capabilities/domains/[domain].md
-```
+````
 
 **Size**: ~2-3k tokens per domain skill
 
@@ -266,7 +270,7 @@ Two types: Domain docs and Use-case docs.
 **Implementation**:
 ```typescript
 [Complete working example]
-```
+````
 **Key points**:
 - [Best practice 1]
 - [Gotcha 2]
@@ -286,6 +290,7 @@ Two types: Domain docs and Use-case docs.
 ## Examples by Scenario
 
 ### Scenario 1: [Real-world use case]
+
 [Complete code example]
 
 [2-3 scenarios]
@@ -293,7 +298,7 @@ Two types: Domain docs and Use-case docs.
 ## Troubleshooting
 
 [Common issues and solutions]
-```
+````
 
 **Size**: ~3-5k tokens per doc
 
@@ -313,11 +318,12 @@ Two types: Domain docs and Use-case docs.
 ## Prerequisites
 ```bash
 pnpm add @enkaku/client @enkaku/server
-```
+````
 
 ## Step-by-Step Implementation
 
 ### Step 1: [Setup]
+
 ```typescript
 [Code with full imports]
 ```
@@ -326,16 +332,19 @@ pnpm add @enkaku/client @enkaku/server
 ### Step 2-4: [Additional steps]
 
 ## Complete Example
+
 ```typescript
 [Full working code that can be copied]
 ```
 
 ## Extending This Example
+
 - How to add feature X
 - How to handle scenario Y
 - Performance considerations
 
 ## Related Capabilities
+
 - Domain: [Link to domain doc]
 - Use cases: [Related use-case docs]
 ```
@@ -617,3 +626,4 @@ This progressive discovery system enables LLMs to effectively work with Enkaku's
 - Navigate between domains as use cases evolve
 
 **Next step**: Begin Phase 1 implementation (AGENTS.md, discovery skill, docs structure).
+```

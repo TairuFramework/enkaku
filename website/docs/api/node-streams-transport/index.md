@@ -186,7 +186,7 @@ npm install @enkaku/node-streams-transport
 
 > **streams**: [`StreamsSource`](#streamssource)
 
-***
+---
 
 ### Streams
 
@@ -202,13 +202,13 @@ npm install @enkaku/node-streams-transport
 
 > **writable**: `Writable`
 
-***
+---
 
 ### StreamsOrPromise
 
 > **StreamsOrPromise** = [`Streams`](#streams-1) \| `Promise`\<[`Streams`](#streams-1)\>
 
-***
+---
 
 ### StreamsSource
 

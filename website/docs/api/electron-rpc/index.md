@@ -38,7 +38,7 @@ npm install @enkaku/electron-rpc
 
 [`MessageFunc`](#messagefunc)\<`W`\>
 
-***
+---
 
 ### MessageFunc
 
@@ -60,7 +60,7 @@ npm install @enkaku/electron-rpc
 
 `void`
 
-***
+---
 
 ### PortHandler
 
@@ -80,19 +80,19 @@ npm install @enkaku/electron-rpc
 
 `void` \| `Promise`\<`void`\>
 
-***
+---
 
 ### PortInput
 
 > **PortInput** = [`PortOrPromise`](#portorpromise) \| (() => [`PortOrPromise`](#portorpromise))
 
-***
+---
 
 ### PortOrPromise
 
 > **PortOrPromise** = `MessagePortMain` \| `Promise`\<`MessagePortMain`\>
 
-***
+---
 
 ### RendererClientOptions
 
@@ -108,9 +108,9 @@ npm install @enkaku/electron-rpc
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
-***
+---
 
 ### ServeProcessParams
 
@@ -126,7 +126,7 @@ npm install @enkaku/electron-rpc
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
 ## Functions
 
@@ -154,7 +154,7 @@ npm install @enkaku/electron-rpc
 
 `Promise`\<`ReadableWritablePair`\<`R`, `W`\>\>
 
-***
+---
 
 ### createRendererClient()
 
@@ -164,7 +164,7 @@ npm install @enkaku/electron-rpc
 
 ##### Protocol
 
-`Protocol` *extends* `object`
+`Protocol` _extends_ `object`
 
 #### Parameters
 
@@ -176,7 +176,7 @@ npm install @enkaku/electron-rpc
 
 [`Client`](../client/index.md#client)\<`Protocol`, [`ClientDefinitionsType`](../client/index.md#clientdefinitionstype)\<`Protocol`\>\>
 
-***
+---
 
 ### createRendererTransportStream()
 
@@ -202,7 +202,7 @@ npm install @enkaku/electron-rpc
 
 `Promise`\<`ReadableWritablePair`\<`R`, `W`\>\>
 
-***
+---
 
 ### serveProcess()
 
@@ -212,7 +212,7 @@ npm install @enkaku/electron-rpc
 
 ##### Protocol
 
-`Protocol` *extends* `object`
+`Protocol` _extends_ `object`
 
 #### Parameters
 

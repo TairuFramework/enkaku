@@ -18,7 +18,6 @@ Plus three narrower server hardening gaps.
 
 Four changes across client and server; no protocol-schema or `@kokuin/*` changes
 (`jti`/`iat`/`exp` stay optional on the wire).
-
 - **Client `jti`/`iat` injection** (`@enkaku/client`, `packages/client/src/client.ts`).
   `getCreateMessage` now stamps every **signed** message before signing: `jti` =
   `runtime.getRandomID()` (crypto.randomUUID, unique per message → unique dedup

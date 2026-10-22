@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/socket",
-  "version": "0.21.5",
+  "version": "0.21.6",
   "description": "Socket transport for Enkaku RPC clients and servers",
   "keywords": [
     "transport",

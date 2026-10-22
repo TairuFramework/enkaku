@@ -46,7 +46,7 @@ The Transport layer in Enkaku provides the communication foundation for RPC syst
 - Uses `fetch` + `eventsource-parser` (not EventSource API) for SSE consumption, allowing custom fetch functions and better stream control
 - No reconnection: when the SSE stream drops, the session returns to `idle` and the readable is
   errored. In-flight streams terminate rather than resume. Recovery is opt-in at the client
-  level via `handleTransportError` / `handleTransportDisposed`, which must return a *new*
+  level via `handleTransportError` / `handleTransportDisposed`, which must return a _new_
   transport -- and even then the dropped stream is not replayed
 
 ### HTTP Server Transport: @enkaku/http-serve
@@ -120,7 +120,7 @@ transport's `writeFailed` event.
 **How it works**:
 - Bridges Node.js streams to Web Streams API
 - Input: Converts Readable to ReadableStream via `Readable.toWeb()`
-- Output: Converts the Node Writable *into* a WritableStream via `Writable.toWeb()`, then pipes
+- Output: Converts the Node Writable _into_ a WritableStream via `Writable.toWeb()`, then pipes
   the JSONL-encoded output to it
 - Uses JSON Lines format with `toJSONLines()` and `fromJSONLines()`
 
@@ -188,7 +188,7 @@ import type { MyProtocol } from './protocol'
 
 // Client setup (browser or Node.js)
 const clientTransport = new ClientTransport<MyProtocol>({
-  url: 'https://api.example.com/rpc'
+  url: 'https://api.example.com/rpc',
 })
 
 // The protocol is a type parameter -- `Client` takes no `protocol` option
@@ -199,7 +199,7 @@ const result = await client.request('greet', { param: { name: 'Alice' } })
 
 // Server setup
 const serverTransport = new ServerTransport<MyProtocol>({
-  allowedOrigin: ['https://example.com', 'https://app.example.com']
+  allowedOrigin: ['https://example.com', 'https://app.example.com'],
 })
 
 const server = serve<MyProtocol>({
@@ -209,14 +209,14 @@ const server = serve<MyProtocol>({
   handlers: {
     greet: async ({ param }) => {
       return { message: `Hello, ${param.name}!` }
-    }
-  }
+    },
+  },
 })
 
 // Integration with HTTP server (Bun example)
 Bun.serve({
   port: 3000,
-  fetch: serverTransport.fetch
+  fetch: serverTransport.fetch,
 })
 
 // Or with standard Request/Response
@@ -254,10 +254,7 @@ import type { MyProtocol } from './protocol'
 
 describe('RPC handlers', () => {
   test('should greet user', async () => {
-    const transports = new DirectTransports<
-      ServerMessage,
-      ClientMessage
-    >()
+    const transports = new DirectTransports<ServerMessage, ClientMessage>()
 
     const server = serve<MyProtocol>({
       requireAuth: false,
@@ -266,14 +263,14 @@ describe('RPC handlers', () => {
       handlers: {
         greet: async ({ param }) => {
           return { message: `Hello, ${param.name}!` }
-        }
-      }
+        },
+      },
     })
 
     const client = new Client<MyProtocol>({ transport: transports.client })
 
     const result = await client.request('greet', {
-      param: { name: 'Test' }
+      param: { name: 'Test' },
     })
 
     expect(result.message).toBe('Hello, Test!')
@@ -316,7 +313,7 @@ const socketPath = '/tmp/my-service.sock'
 
 const netServer = createServer((socket) => {
   const transport = new SocketTransport<ClientMessage, ServerMessage>({
-    socket
+    socket,
   })
 
   const server = serve<MyProtocol>({
@@ -325,7 +322,7 @@ const netServer = createServer((socket) => {
     transport,
     handlers: {
       // Your handlers here
-    }
+    },
   })
 
   socket.on('close', () => {
@@ -339,7 +336,7 @@ netServer.listen(socketPath, () => {
 
 // Client process
 const clientTransport = new SocketTransport<ServerMessage, ClientMessage>({
-  socket: socketPath
+  socket: socketPath,
 })
 
 const client = new Client<MyProtocol>({ transport: clientTransport })
@@ -372,7 +369,7 @@ import type { WorkerProtocol } from './protocol'
 
 // Main thread (main.ts)
 const worker = new Worker(new URL('./worker.ts', import.meta.url), {
-  type: 'module'
+  type: 'module',
 })
 
 const { port1, port2 } = new MessageChannel()
@@ -382,21 +379,21 @@ worker.postMessage({ type: 'init', port: port2 }, [port2])
 
 // Create client using port1
 const transport = new MessageTransport<FromWorker, ToWorker>({
-  port: port1
+  port: port1,
 })
 
 const client = new Client<WorkerProtocol>({ transport })
 
 // Call worker procedures
 const result = await client.request('processData', {
-  param: { data: largeDataset }
+  param: { data: largeDataset },
 })
 
 // Worker thread (worker.ts)
 self.addEventListener('message', (event) => {
   if (event.data.type === 'init') {
     const transport = new MessageTransport<ToWorker, FromWorker>({
-      port: event.data.port
+      port: event.data.port,
     })
 
     const server = serve<WorkerProtocol>({
@@ -407,8 +404,8 @@ self.addEventListener('message', (event) => {
         processData: async ({ param }) => {
           // Heavy computation here
           return { result: processedData }
-        }
-      }
+        },
+      },
     })
   }
 })
@@ -440,14 +437,14 @@ import type { ChildProtocol } from './protocol'
 
 // Parent process
 const child = spawn('node', ['child.js'], {
-  stdio: ['pipe', 'pipe', 'inherit'] // stdin, stdout, stderr
+  stdio: ['pipe', 'pipe', 'inherit'], // stdin, stdout, stderr
 })
 
 const parentTransport = new NodeStreamsTransport<FromChild, ToChild>({
   streams: {
     readable: child.stdout,
-    writable: child.stdin
-  }
+    writable: child.stdin,
+  },
 })
 
 const client = new Client<ChildProtocol>({ transport: parentTransport })
@@ -466,8 +463,8 @@ import process from 'node:process'
 const childTransport = new NodeStreamsTransport<ToChild, FromChild>({
   streams: {
     readable: process.stdin,
-    writable: process.stdout
-  }
+    writable: process.stdout,
+  },
 })
 
 const server = serve<ChildProtocol>({
@@ -478,8 +475,8 @@ const server = serve<ChildProtocol>({
     task: async ({ param }) => {
       // Process task
       return { result: 'done' }
-    }
-  }
+    },
+  },
 })
 
 // Keep process alive
@@ -543,7 +540,7 @@ const unsubscribe = transport.events.on('writeFailed', ({ error, rid }) => {
 
 `on()` returns an unsubscribe function; there is no `off()` method.
 
-Note that `writeFailed` on a *transport* is not how `Client` and `Server` learn about write
+Note that `writeFailed` on a _transport_ is not how `Client` and `Server` learn about write
 failures. The base `Transport.write()` neither catches nor emits, so only the transports that
 wrap their own writer (`@enkaku/http-serve`, `@enkaku/node-streams`) ever fire it. `Client` and
 `Server` catch write rejections directly and emit their own `writeFailed` on their own
@@ -609,11 +606,11 @@ class ServerTransport<Protocol extends ProtocolDefinition> extends Transport<
 > {
   constructor(options?: {
     allowedOrigin?: string | Array<string>
-    maxSessions?: number            // default 1000
+    maxSessions?: number // default 1000
     runtime?: Runtime
-    sessionTimeoutMs?: number       // default 300_000 (5 minutes)
-    maxInflightRequests?: number    // default 10_000
-    requestTimeoutMs?: number       // default 30_000
+    sessionTimeoutMs?: number // default 300_000 (5 minutes)
+    maxInflightRequests?: number // default 10_000
+    requestTimeoutMs?: number // default 30_000
     maxRequestBodySize?: number
     maxSessionBufferBytes?: number
   })
@@ -630,7 +627,7 @@ class SocketTransport<R, W> extends Transport<R, W> {
   constructor(params: {
     socket: Socket | Promise<Socket> | (() => Socket | Promise<Socket>) | string
     signal?: AbortSignal
-    connectTimeoutMs?: number       // default 10_000; `0` disables
+    connectTimeoutMs?: number // default 10_000; `0` disables
   })
 }
 
@@ -646,9 +643,11 @@ function connectSocket(
 // Also accepts the inherited FromJSONLines options
 class NodeStreamsTransport<R, W> extends Transport<R, W> {
   constructor(params: {
-    streams: { readable: Readable; writable: Writable }
+    streams:
+      | { readable: Readable; writable: Writable }
       | Promise<{ readable: Readable; writable: Writable }>
-      | (() => { readable: Readable; writable: Writable }
+      | (() =>
+          | { readable: Readable; writable: Writable }
           | Promise<{ readable: Readable; writable: Writable }>)
     signal?: AbortSignal
   })
@@ -678,7 +677,7 @@ import { ServerTransport } from '@enkaku/http-serve'
 import type { MyProtocol } from './protocol'
 
 const transport = new ServerTransport<MyProtocol>({
-  allowedOrigin: ['https://myapp.com']
+  allowedOrigin: ['https://myapp.com'],
 })
 
 const server = serve<MyProtocol>({
@@ -687,13 +686,13 @@ const server = serve<MyProtocol>({
   transport,
   handlers: {
     // Your handlers
-  }
+  },
 })
 
 export default {
   async fetch(request: Request): Promise<Response> {
     return transport.fetch(request)
-  }
+  },
 }
 ```
 
@@ -736,8 +735,8 @@ const server = serve<DashboardProtocol>({
       } finally {
         await writer.close()
       }
-    }
-  }
+    },
+  },
 })
 
 // Client (browser)
@@ -745,13 +744,13 @@ import { Client } from '@enkaku/client'
 import { ClientTransport } from '@enkaku/http-fetch'
 
 const transport = new ClientTransport<DashboardProtocol>({
-  url: '/rpc'
+  url: '/rpc',
 })
 
 const client = new Client<DashboardProtocol>({ transport })
 
 const stream = client.createStream('liveMetrics', {
-  param: { interval: 1000 }
+  param: { interval: 1000 },
 })
 
 const reader = stream.readable.getReader()
@@ -787,7 +786,7 @@ import { Client } from '@enkaku/client'
 // Listen for incoming connections -- the accept loop is node:net, not @enkaku/socket
 const server = createServer((socket) => {
   const transport = new SocketTransport<ClientMsg, ServerMsg>({
-    socket
+    socket,
   })
 
   serve<GatewayProtocol>({
@@ -796,7 +795,7 @@ const server = createServer((socket) => {
     transport,
     handlers: {
       // Gateway handlers
-    }
+    },
   })
 })
 
@@ -805,8 +804,8 @@ server.listen('/tmp/gateway.sock')
 // Connect to other services
 const authClient = new Client<AuthProtocol>({
   transport: new SocketTransport({
-    socket: '/tmp/auth.sock'
-  })
+    socket: '/tmp/auth.sock',
+  }),
 })
 
 // Service B (auth.ts)
@@ -816,7 +815,7 @@ import { SocketTransport } from '@enkaku/socket'
 
 const server = createServer((socket) => {
   const transport = new SocketTransport<AuthClientMsg, AuthServerMsg>({
-    socket
+    socket,
   })
 
   serve<AuthProtocol>({
@@ -827,8 +826,8 @@ const server = createServer((socket) => {
       validateToken: async ({ param }) => {
         // Validation logic
         return { valid: true }
-      }
-    }
+      },
+    },
   })
 })
 
@@ -882,21 +881,21 @@ replayed.
   carrying an `Origin` header is rejected `403`
 - Incorrect origin in `allowedOrigin` array
 
-Preflight is *not* a cause -- `ServerTransport` answers `OPTIONS` itself.
+Preflight is _not_ a cause -- `ServerTransport` answers `OPTIONS` itself.
 
 **Solutions**:
 ```typescript
 const transport = new ServerTransport<Protocol>({
   allowedOrigin: [
     'https://app.example.com',
-    'http://localhost:3000' // Development
-  ]
+    'http://localhost:3000', // Development
+  ],
 })
 
 // Or allow all origins (not recommended for production). Note a present Origin must still be
 // a valid http:/https: origin, so '*' is not unconditional.
 const transport = new ServerTransport<Protocol>({
-  allowedOrigin: '*'
+  allowedOrigin: '*',
 })
 ```
 
@@ -950,8 +949,8 @@ console.error('Debug info') // Safe
 const transport = new NodeStreamsTransport<R, W>({
   streams: {
     readable: process.stdin,
-    writable: process.stdout
-  }
+    writable: process.stdout,
+  },
 })
 // Transport handles JSON.stringify + '\n' automatically
 ```
@@ -979,17 +978,16 @@ try {
 // Aborting the signal disposes the transport -- an explicit dispose() call is redundant
 const controller = new AbortController()
 const transports = new DirectTransports<ToClient, ToServer>({
-  signal: controller.signal
+  signal: controller.signal,
 })
 
 // Later: this alone tears both sides down
 controller.abort()
 
 // Unsubscribe with the function `on()` returns -- there is no `off()`
-const unsubscribe = transport.events.on(
-  'writeFailed',
-  (event: TransportEvents['writeFailed']) => { /* ... */ },
-)
+const unsubscribe = transport.events.on('writeFailed', (event: TransportEvents['writeFailed']) => {
+  /* ... */
+})
 // Later:
 unsubscribe()
 ```

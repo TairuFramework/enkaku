@@ -20,7 +20,7 @@ npm install @enkaku/result
 
 ##### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 #### Implements
 
@@ -94,7 +94,7 @@ npm install @enkaku/result
 
 ###### OutE
 
-`OutE` *extends* `Error` = `Error`
+`OutE` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -114,7 +114,7 @@ npm install @enkaku/result
 
 ###### OutE
 
-`OutE` *extends* `Error` = `Error`
+`OutE` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -192,7 +192,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -216,7 +216,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -240,7 +240,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -264,7 +264,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -288,7 +288,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -312,7 +312,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -324,7 +324,7 @@ A Promise for the completion of which ever callback is executed.
 
 [`AsyncResult`](#asyncresult)\<`V`, `E`\>
 
-***
+---
 
 ### Option
 
@@ -518,7 +518,7 @@ A Promise for the completion of which ever callback is executed.
 
 [`Option`](#option)\<`V`\>
 
-***
+---
 
 ### Result
 
@@ -530,7 +530,7 @@ A Promise for the completion of which ever callback is executed.
 
 ##### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 #### Constructors
 
@@ -620,7 +620,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### OutE
 
-`OutE` *extends* `Error` = `Error`
+`OutE` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -640,7 +640,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### OutE
 
-`OutE` *extends* `Error` = `Error`
+`OutE` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -678,7 +678,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -702,7 +702,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -726,7 +726,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -750,7 +750,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -774,7 +774,7 @@ A Promise for the completion of which ever callback is executed.
 
 ###### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`
 
 ###### Parameters
 
@@ -804,4 +804,4 @@ A Promise for the completion of which ever callback is executed.
 
 ##### E
 
-`E` *extends* `Error` = `Error`
+`E` _extends_ `Error` = `Error`

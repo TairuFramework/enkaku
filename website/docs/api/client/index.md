@@ -22,11 +22,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
 ##### ClientDefinitions
 
-`ClientDefinitions` *extends* [`ClientDefinitionsType`](#clientdefinitionstype)\<`Protocol`\> = [`ClientDefinitionsType`](#clientdefinitionstype)\<`Protocol`\>
+`ClientDefinitions` _extends_ [`ClientDefinitionsType`](#clientdefinitionstype)\<`Protocol`\> = [`ClientDefinitionsType`](#clientdefinitionstype)\<`Protocol`\>
 
 #### Indexable
 
@@ -88,11 +88,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ###### T
 
-`T` *extends* `object` = `ClientDefinitions`\[`"Channels"`\]\[`Procedure`\]
+`T` _extends_ `object` = `ClientDefinitions`\[`"Channels"`\]\[`Procedure`\]
 
 ###### Parameters
 
@@ -102,7 +102,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### args
 
-...`T`\[`"Param"`\] *extends* `never` ? \[`object`\] : \[`object`\]
+...`T`\[`"Param"`\] _extends_ `never` ? \[`object`\] : \[`object`\]
 
 ###### Returns
 
@@ -116,11 +116,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ###### T
 
-`T` *extends* `object` = `ClientDefinitions`\[`"Streams"`\]\[`Procedure`\]
+`T` _extends_ `object` = `ClientDefinitions`\[`"Streams"`\]\[`Procedure`\]
 
 ###### Parameters
 
@@ -130,7 +130,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### args
 
-...`T`\[`"Param"`\] *extends* `never` ? \[`object`\] : \[`object`\]
+...`T`\[`"Param"`\] _extends_ `never` ? \[`object`\] : \[`object`\]
 
 ###### Returns
 
@@ -162,11 +162,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ###### T
 
-`T` *extends* `object` = `ClientDefinitions`\[`"Requests"`\]\[`Procedure`\]
+`T` _extends_ `object` = `ClientDefinitions`\[`"Requests"`\]\[`Procedure`\]
 
 ###### Parameters
 
@@ -176,7 +176,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### args
 
-...`T`\[`"Param"`\] *extends* `never` ? \[`object`\] : \[`object`\]
+...`T`\[`"Param"`\] _extends_ `never` ? \[`object`\] : \[`object`\]
 
 ###### Returns
 
@@ -190,11 +190,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ###### T
 
-`T` *extends* `object` = `ClientDefinitions`\[`"Events"`\]\[`Procedure`\]
+`T` _extends_ `object` = `ClientDefinitions`\[`"Events"`\]\[`Procedure`\]
 
 ###### Parameters
 
@@ -204,13 +204,13 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ###### args
 
-...`T`\[`"Data"`\] *extends* `never` ? \[`object`\] : \[`object`\]
+...`T`\[`"Data"`\] _extends_ `never` ? \[`object`\] : \[`object`\]
 
 ###### Returns
 
 `Promise`\<`void`\>
 
-***
+---
 
 ### RequestError
 
@@ -222,11 +222,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Code
 
-`Code` *extends* `string` = `string`
+`Code` _extends_ `string` = `string`
 
 ##### Data
 
-`Data` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Data` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Implements
 
@@ -310,11 +310,11 @@ Returns a string representation of an object.
 
 ###### Code
 
-`Code` *extends* `string` = `string`
+`Code` _extends_ `string` = `string`
 
 ###### Data
 
-`Data` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Data` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ###### Parameters
 
@@ -366,7 +366,7 @@ Returns a string representation of an object.
 
 `Result`
 
-***
+---
 
 ### ChannelDefinitionsType
 
@@ -376,9 +376,9 @@ Returns a string representation of an object.
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
-***
+---
 
 ### ClientDefinitionsType
 
@@ -388,7 +388,7 @@ Returns a string representation of an object.
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
 #### Properties
 
@@ -408,13 +408,13 @@ Returns a string representation of an object.
 
 > **Streams**: [`StreamDefinitionsType`](#streamdefinitionstype)\<`Protocol`\>
 
-***
+---
 
 ### ClientEmitter
 
 > **ClientEmitter** = `EventEmitter`\<[`ClientEvents`](#clientevents-1)\>
 
-***
+---
 
 ### ClientEvents
 
@@ -522,7 +522,7 @@ Returns a string representation of an object.
 
 > `optional` **rid?**: `string`
 
-***
+---
 
 ### ClientParams
 
@@ -532,7 +532,7 @@ Returns a string representation of an object.
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
 #### Properties
 
@@ -596,13 +596,13 @@ Returns a string representation of an object.
 
 > **transport**: `ClientTransportOf`\<`Protocol`\>
 
-***
+---
 
 ### ClientRequestStatus
 
 > **ClientRequestStatus** = `"ok"` \| `"error"` \| `"aborted"`
 
-***
+---
 
 ### ErrorObjectType
 
@@ -612,11 +612,11 @@ Returns a string representation of an object.
 
 ##### Code
 
-`Code` *extends* `string` = `string`
+`Code` _extends_ `string` = `string`
 
 ##### Data
 
-`Data` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Data` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Properties
 
@@ -632,7 +632,7 @@ Returns a string representation of an object.
 
 > **message**: `string`
 
-***
+---
 
 ### EventDefinitionsType
 
@@ -642,9 +642,9 @@ Returns a string representation of an object.
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
-***
+---
 
 ### RequestCall
 
@@ -680,7 +680,7 @@ Returns a string representation of an object.
 
 `Result`
 
-***
+---
 
 ### RequestDefinitionsType
 
@@ -690,9 +690,9 @@ Returns a string representation of an object.
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`
 
-***
+---
 
 ### RequestErrorParams
 
@@ -702,13 +702,13 @@ Returns a string representation of an object.
 
 ##### Code
 
-`Code` *extends* `string` = `string`
+`Code` _extends_ `string` = `string`
 
 ##### Data
 
-`Data` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Data` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
-***
+---
 
 ### StreamCall
 
@@ -742,7 +742,7 @@ Returns a string representation of an object.
 
 `Result`
 
-***
+---
 
 ### StreamDefinitionsType
 
@@ -752,4 +752,4 @@ Returns a string representation of an object.
 
 ##### Protocol
 
-`Protocol` *extends* `ProtocolDefinition`
+`Protocol` _extends_ `ProtocolDefinition`

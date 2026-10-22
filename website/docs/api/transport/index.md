@@ -108,7 +108,7 @@ Create direct Transports for communication between a client and server in the sa
 
 [`Disposer`](../async/index.md#disposer).[`dispose`](../async/index.md#dispose)
 
-***
+---
 
 ### Transport
 
@@ -288,7 +288,7 @@ Base Transport class implementing TransportType.
 
 > `optional` **signal?**: `AbortSignal`
 
-***
+---
 
 ### TransportEvents
 
@@ -332,7 +332,7 @@ Base Transport class implementing TransportType.
 
 > **rid**: `string`
 
-***
+---
 
 ### TransportInput
 
@@ -348,7 +348,7 @@ Base Transport class implementing TransportType.
 
 `W`
 
-***
+---
 
 ### TransportParams
 
@@ -374,7 +374,7 @@ Base Transport class implementing TransportType.
 
 > **stream**: [`TransportInput`](#transportinput)\<`R`, `W`\>
 
-***
+---
 
 ### TransportStream
 
@@ -390,7 +390,7 @@ Base Transport class implementing TransportType.
 
 `W`
 
-***
+---
 
 ### TransportType
 

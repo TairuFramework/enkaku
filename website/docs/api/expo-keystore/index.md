@@ -160,7 +160,7 @@ npm install @enkaku/expo-keystore
 
 `FullIdentity`
 
-***
+---
 
 ### provideFullIdentityAsync()
 
@@ -176,7 +176,7 @@ npm install @enkaku/expo-keystore
 
 `Promise`\<`FullIdentity`\>
 
-***
+---
 
 ### randomPrivateKey()
 
@@ -186,7 +186,7 @@ npm install @enkaku/expo-keystore
 
 `Uint8Array`
 
-***
+---
 
 ### randomPrivateKeyAsync()
 

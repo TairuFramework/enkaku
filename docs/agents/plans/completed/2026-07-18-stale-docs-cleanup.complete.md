@@ -33,7 +33,7 @@ transport}/SKILL.md`, wired through `.claude/settings.json`. `docs/skills/` dele
 ## Key design decisions
 
 **Verify, do not rename.** The audit framed this as a rename sweep -- 20 stale package
-references in `transport.md`. Fixing only imports would have made the docs *look* current while
+references in `transport.md`. Fixing only imports would have made the docs _look_ current while
 leaving unverified API claims in place: worse than obviously stale, because nothing signals
 distrust. Verification found the renames were the least of it. Every code example was
 non-compiling. Whole APIs were documented that have never existed (`accessControl`,
@@ -66,7 +66,6 @@ RPC domain already covers.
 Two independent reviews ran after the work was called done. They converged: the plan-alignment
 review's only merge blockers were the same WebSocket claims the adversarial fact-check found,
 having never seen the other report.
-
 - **There is no WebSocket transport in this repo, and no evidence one ever shipped.**
   `@enkaku/socket` is a `node:net` TCP/Unix socket transport, connect-only -- it exports
   `SocketTransport` and `connectSocket`, no listener. The claim sat in the discover skill
@@ -80,11 +79,10 @@ having never seen the other report.
   bridge name string. Both were documented as taking options objects.
 
 **Where the process failed, for the next cycle:**
-
 - The plugin commit contained only the `git mv` renames. The manifests were untracked and the
   content edits unstaged, so the branch briefly carried a plugin that could not load, under a
   commit message describing work it did not contain. The pre-commit hook passed because it
-  lints *staged* files. Nothing checked that the commit matched its message.
+  lints _staged_ files. Nothing checked that the commit matched its message.
 - The Done criteria all passed against a broken branch, because they inspect the working tree,
   not `HEAD`.
 - The file with the most errors (`discover/SKILL.md`, 5 of 9) was the one changed least, skipped

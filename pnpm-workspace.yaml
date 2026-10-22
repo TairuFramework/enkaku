@@ -28,7 +28,7 @@ catalog:
   '@electron-forge/cli': ^8.0.1
   '@electron-forge/plugin-vite': ^8.0.1
   '@hono/node-server': ^2.1.5
-  '@kigu/dev': ^0.3.2
+  '@kigu/dev': ^0.3.3
   '@kokuin/capability': ^0.4.2
   '@kokuin/controller': ^0.1.0
   '@kokuin/electron': ^0.4.2

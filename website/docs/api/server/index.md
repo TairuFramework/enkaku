@@ -22,7 +22,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Constructors
 
@@ -124,41 +124,41 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ### ChannelHandler
 
-> **ChannelHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
+> **ChannelHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] _extends_ [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ##### Procedure
 
-`Procedure` *extends* keyof `Protocol` & `string`
+`Procedure` _extends_ keyof `Protocol` & `string`
 
-***
+---
 
 ### ChannelHandlerContext
 
-> **ChannelHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`StreamHandlerContext`](#streamhandlercontext)\<`Protocol`, `Procedure`\> & `object` : `never`
+> **ChannelHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] _extends_ [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`StreamHandlerContext`](#streamhandlercontext)\<`Protocol`, `Procedure`\> & `object` : `never`
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ##### Procedure
 
-`Procedure` *extends* keyof `Protocol` & `string`
+`Procedure` _extends_ keyof `Protocol` & `string`
 
-***
+---
 
 ### EncryptionPolicy
 
 > **EncryptionPolicy** = `"required"` \| `"optional"` \| `"none"`
 
-***
+---
 
 ### EventHandler
 
@@ -168,11 +168,11 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ##### Procedure
 
-`Procedure` *extends* keyof `Protocol` & `string`
+`Procedure` _extends_ keyof `Protocol` & `string`
 
 #### Parameters
 
@@ -184,23 +184,23 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 `void` \| `Promise`\<`void`\>
 
-***
+---
 
 ### EventHandlerContext
 
-> **EventHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`EventProcedureDefinition`](../protocol/index.md#eventproceduredefinition) ? `object` : `never`
+> **EventHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] _extends_ [`EventProcedureDefinition`](../protocol/index.md#eventproceduredefinition) ? `object` : `never`
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ##### Procedure
 
-`Procedure` *extends* keyof `Protocol` & `string`
+`Procedure` _extends_ keyof `Protocol` & `string`
 
-***
+---
 
 ### HandlerReturn
 
@@ -216,7 +216,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 `Result` = [`ReturnOf`](../protocol/index.md#returnof)\<`ResultSchema`\>
 
-***
+---
 
 ### ProcedureAccessConfig
 
@@ -232,19 +232,19 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 > `optional` **encryption?**: [`EncryptionPolicy`](#encryptionpolicy)
 
-***
+---
 
 ### ProcedureAccessRecord
 
 > **ProcedureAccessRecord** = `Record`\<`string`, [`ProcedureAccessValue`](#procedureaccessvalue)\>
 
-***
+---
 
 ### ProcedureAccessValue
 
 > **ProcedureAccessValue** = `boolean` \| `string`[] \| [`ProcedureAccessConfig`](#procedureaccessconfig)
 
-***
+---
 
 ### ProcedureHandlers
 
@@ -254,41 +254,41 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-***
+---
 
 ### RequestHandler
 
-> **RequestHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
+> **RequestHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] _extends_ [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ##### Procedure
 
-`Procedure` *extends* keyof `Protocol` & `string`
+`Procedure` _extends_ keyof `Protocol` & `string`
 
-***
+---
 
 ### RequestHandlerContext
 
-> **RequestHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? `object` : `never`
+> **RequestHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] _extends_ [`AnyRequestProcedureDefinition`](../protocol/index.md#anyrequestproceduredefinition) ? `object` : `never`
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ##### Procedure
 
-`Procedure` *extends* keyof `Protocol` & `string`
+`Procedure` _extends_ keyof `Protocol` & `string`
 
-***
+---
 
 ### ResourceLimiter
 
@@ -368,7 +368,7 @@ Disposer class, providing a dispose function and a disposed Promise.
 
 `void`
 
-***
+---
 
 ### ResourceLimits
 
@@ -406,7 +406,7 @@ Maximum number of concurrent controllers (in-flight requests). Default: 10000
 
 Maximum size in bytes for any individual message payload. Default: 10485760 (10 MB)
 
-***
+---
 
 ### ServeParams
 
@@ -422,15 +422,15 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
-***
+---
 
 ### ServerEmitter
 
 > **ServerEmitter** = [`EventEmitter`](../event/index.md#eventemitter)\<[`ServerEvents`](#serverevents-1)\>
 
-***
+---
 
 ### ServerEvents
 
@@ -586,7 +586,7 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 
 > `optional` **rid?**: `string`
 
-***
+---
 
 ### ServerParams
 
@@ -596,7 +596,7 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 #### Properties
 
@@ -656,37 +656,37 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 
 > `optional` **verifyToken?**: [`VerifyTokenHook`](../capability/index.md#verifytokenhook)
 
-***
+---
 
 ### StreamHandler
 
-> **StreamHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
+> **StreamHandler**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] _extends_ [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? (`context`) => [`HandlerReturn`](#handlerreturn)\<`Protocol`\[`Procedure`\]\[`"result"`\]\> : `never`
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ##### Procedure
 
-`Procedure` *extends* keyof `Protocol` & `string`
+`Procedure` _extends_ keyof `Protocol` & `string`
 
-***
+---
 
 ### StreamHandlerContext
 
-> **StreamHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] *extends* [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`RequestHandlerContext`](#requesthandlercontext)\<`Protocol`, `Procedure`\> & `object` : `never`
+> **StreamHandlerContext**\<`Protocol`, `Procedure`\> = `Protocol`\[`Procedure`\] _extends_ [`StreamProcedureDefinition`](../protocol/index.md#streamproceduredefinition) \| [`ChannelProcedureDefinition`](../protocol/index.md#channelproceduredefinition) ? [`RequestHandlerContext`](#requesthandlercontext)\<`Protocol`, `Procedure`\> & `object` : `never`
 
 #### Type Parameters
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](../protocol/index.md#protocoldefinition)
 
 ##### Procedure
 
-`Procedure` *extends* keyof `Protocol` & `string`
+`Procedure` _extends_ keyof `Protocol` & `string`
 
 ## Variables
 
@@ -710,7 +710,7 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 
 [`ResourceLimiter`](#resourcelimiter)
 
-***
+---
 
 ### resolveEncryptionPolicy()
 
@@ -734,7 +734,7 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 
 [`EncryptionPolicy`](#encryptionpolicy)
 
-***
+---
 
 ### serve()
 
@@ -744,7 +744,7 @@ Maximum size in bytes for any individual message payload. Default: 10485760 (10 
 
 ##### Protocol
 
-`Protocol` *extends* `object`
+`Protocol` _extends_ `object`
 
 #### Parameters
 

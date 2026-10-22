@@ -52,49 +52,49 @@ Error thrown when patch operations fail.
 
 ### PatchAddOperation
 
-> **PatchAddOperation** = `FromSchema`\<*typeof* [`patchAddOperationSchema`](#patchaddoperationschema)\>
+> **PatchAddOperation** = `FromSchema`\<_typeof_ [`patchAddOperationSchema`](#patchaddoperationschema)\>
 
-***
+---
 
 ### PatchCopyOperation
 
-> **PatchCopyOperation** = `FromSchema`\<*typeof* [`patchCopyOperationSchema`](#patchcopyoperationschema)\>
+> **PatchCopyOperation** = `FromSchema`\<_typeof_ [`patchCopyOperationSchema`](#patchcopyoperationschema)\>
 
-***
+---
 
 ### PatchMoveOperation
 
-> **PatchMoveOperation** = `FromSchema`\<*typeof* [`patchMoveOperationSchema`](#patchmoveoperationschema)\>
+> **PatchMoveOperation** = `FromSchema`\<_typeof_ [`patchMoveOperationSchema`](#patchmoveoperationschema)\>
 
-***
+---
 
 ### PatchOperation
 
-> **PatchOperation** = `FromSchema`\<*typeof* [`patchOperationSchema`](#patchoperationschema)\>
+> **PatchOperation** = `FromSchema`\<_typeof_ [`patchOperationSchema`](#patchoperationschema)\>
 
-***
+---
 
 ### PatchRemoveOperation
 
-> **PatchRemoveOperation** = `FromSchema`\<*typeof* [`patchRemoveOperationSchema`](#patchremoveoperationschema)\>
+> **PatchRemoveOperation** = `FromSchema`\<_typeof_ [`patchRemoveOperationSchema`](#patchremoveoperationschema)\>
 
-***
+---
 
 ### PatchReplaceOperation
 
-> **PatchReplaceOperation** = `FromSchema`\<*typeof* [`patchReplaceOperationSchema`](#patchreplaceoperationschema)\>
+> **PatchReplaceOperation** = `FromSchema`\<_typeof_ [`patchReplaceOperationSchema`](#patchreplaceoperationschema)\>
 
-***
+---
 
 ### PatchSetOperation
 
-> **PatchSetOperation** = `FromSchema`\<*typeof* [`patchSetOperationSchema`](#patchsetoperationschema)\>
+> **PatchSetOperation** = `FromSchema`\<_typeof_ [`patchSetOperationSchema`](#patchsetoperationschema)\>
 
-***
+---
 
 ### PatchTestOperation
 
-> **PatchTestOperation** = `FromSchema`\<*typeof* [`patchTestOperationSchema`](#patchtestoperationschema)\>
+> **PatchTestOperation** = `FromSchema`\<_typeof_ [`patchTestOperationSchema`](#patchtestoperationschema)\>
 
 ## Variables
 
@@ -144,7 +144,7 @@ Error thrown when patch operations fail.
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### patchCopyOperationSchema
 
@@ -196,7 +196,7 @@ Error thrown when patch operations fail.
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### patchMoveOperationSchema
 
@@ -248,7 +248,7 @@ Error thrown when patch operations fail.
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### patchOperationSchema
 
@@ -260,7 +260,7 @@ Error thrown when patch operations fail.
 
 > `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"add"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"set"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"remove"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"op"`, `"path"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"replace"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `from`: \{ `type`: `"string"`; \}; `op`: \{ `const`: `"move"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"op"`, `"from"`, `"path"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `from`: \{ `type`: `"string"`; \}; `op`: \{ `const`: `"copy"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"op"`, `"from"`, `"path"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `op`: \{ `const`: `"test"`; `type`: `"string"`; \}; `path`: \{ `type`: `"string"`; \}; `value`: \{ \}; \}; `required`: readonly \[`"op"`, `"path"`, `"value"`\]; `type`: `"object"`; \}\]
 
-***
+---
 
 ### patchRemoveOperationSchema
 
@@ -304,7 +304,7 @@ Error thrown when patch operations fail.
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### patchReplaceOperationSchema
 
@@ -352,7 +352,7 @@ Error thrown when patch operations fail.
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### patchSetOperationSchema
 
@@ -400,7 +400,7 @@ Error thrown when patch operations fail.
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### patchTestOperationSchema
 
@@ -493,12 +493,12 @@ When any operation fails
 const data = { foo: { bar: 1 } }
 applyPatches(data, [
   { op: 'replace', path: '/foo/bar', value: 2 },
-  { op: 'add', path: '/foo/baz', value: 3 }
+  { op: 'add', path: '/foo/baz', value: 3 },
 ])
 // data is now { foo: { bar: 2, baz: 3 } }
 ```
 
-***
+---
 
 ### createPatches()
 

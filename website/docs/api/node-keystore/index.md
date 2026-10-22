@@ -150,7 +150,7 @@ npm install @enkaku/node-keystore
 
 `KeyEntry.setAsync`
 
-***
+---
 
 ### NodeKeyStore
 
@@ -244,7 +244,7 @@ npm install @enkaku/node-keystore
 
 `FullIdentity`
 
-***
+---
 
 ### provideFullIdentityAsync()
 

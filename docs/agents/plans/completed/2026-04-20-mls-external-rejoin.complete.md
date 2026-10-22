@@ -31,7 +31,7 @@ Add RFC 9420 external-commit support to `@enkaku/group`, scoped to the stale-dev
 
 A design-review phase resolved seven tradeoff questions before planning began; those resolutions are the Key Design Decisions listed above. Two rounds of code review post-implementation: an initial round flagged three Important issues (unnecessary cast, weak codec-test, ambiguous README wording); all three fixed in `cdbfd27`. Final pre-merge review: approved.
 
-Scope boundary set at design time and still current: fresh external join by a *new* DID (no live inviter), the `proposeAddExternal` flow, and the distribution mechanism for `GroupInfo` were all deliberately deferred — see Follow-ups below. Capability chains are not re-validated on rejoin: the caller's stored `MemberCredential` is taken as given, because it was already validated when originally accepted during `processWelcome`. Re-validation would only matter if storage tampering were in the threat model, which it is not.
+Scope boundary set at design time and still current: fresh external join by a _new_ DID (no live inviter), the `proposeAddExternal` flow, and the distribution mechanism for `GroupInfo` were all deliberately deferred — see Follow-ups below. Capability chains are not re-validated on rejoin: the caller's stored `MemberCredential` is taken as given, because it was already validated when originally accepted during `processWelcome`. Re-validation would only matter if storage tampering were in the threat model, which it is not.
 
 ## Outcomes
 

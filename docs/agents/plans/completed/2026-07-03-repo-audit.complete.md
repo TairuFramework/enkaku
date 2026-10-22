@@ -62,7 +62,6 @@ All actionable findings were triaged into plans on 2026-07-07: `next/2026-07-07-
 ## 4. Test coverage gaps
 
 Coverage is otherwise strong — `server` is excellent (33 test files, every src module directly exercised), `client`/`http-serve`/`http-fetch`/`socket` good, all four procedure types covered in integration.
-
 1. `packages/protocol/src/schemas/protocol.ts` + `schemas/error.ts` — the procedure-definition schemas gating all downstream validation have no direct tests. Highest-leverage gap.
 2. React: one `test.skip` (Suspense path, `packages/react/test/request.test.tsx:201`); `src/hooks.ts` is unexported and untested — dead code or unfinished API, decide.
 3. Electron: only `allowlist.test.ts` at unit level; `main.ts`/`preload.ts`/`renderer.ts` are covered solely by one Playwright e2e that needs a full Forge build.
@@ -74,7 +73,6 @@ Coverage is otherwise strong — `server` is excellent (33 test files, every src
 ## 5. Conventions compliance
 
 Near-perfect. Only actionable items:
-
 - `it` → `test` in 3 test files: `packages/server/test/peer4-handshake.test.ts`, `packages/react/test/context.test.tsx`, `packages/react/test/event.test.tsx`.
 - One inline `import('@sozai/log').Logger` type annotation in `packages/server/test/safe-write.test.ts:31` — should be a module-level `import type`.
 

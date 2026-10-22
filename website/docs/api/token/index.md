@@ -36,7 +36,7 @@ npm install @enkaku/token
 
 > **sharedSecret**: `Uint8Array`
 
-***
+---
 
 ### DecryptingIdentity
 
@@ -72,7 +72,7 @@ npm install @enkaku/token
 
 `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
-***
+---
 
 ### EncryptOptions
 
@@ -84,19 +84,19 @@ npm install @enkaku/token
 
 > **algorithm**: `"X25519"`
 
-***
+---
 
 ### EnvelopeMode
 
 > **EnvelopeMode** = `"plain"` \| `"jws"` \| `"jws-in-jwe"` \| `"jwe-in-jws"`
 
-***
+---
 
 ### FullIdentity
 
 > **FullIdentity** = [`SigningIdentity`](#signingidentity) & [`DecryptingIdentity`](#decryptingidentity)
 
-***
+---
 
 ### Identity
 
@@ -108,7 +108,7 @@ npm install @enkaku/token
 
 > `readonly` **id**: `string`
 
-***
+---
 
 ### IdentityProvider
 
@@ -118,7 +118,7 @@ npm install @enkaku/token
 
 ##### T
 
-`T` *extends* [`SigningIdentity`](#signingidentity) = [`SigningIdentity`](#signingidentity)
+`T` _extends_ [`SigningIdentity`](#signingidentity) = [`SigningIdentity`](#signingidentity)
 
 #### Methods
 
@@ -136,7 +136,7 @@ npm install @enkaku/token
 
 `Promise`\<`T`\>
 
-***
+---
 
 ### JWEHeader
 
@@ -176,7 +176,7 @@ npm install @enkaku/token
 
 > **x**: `string`
 
-***
+---
 
 ### OwnIdentity
 
@@ -188,7 +188,7 @@ npm install @enkaku/token
 
 > **privateKey**: `Uint8Array`
 
-***
+---
 
 ### SignedToken
 
@@ -198,11 +198,11 @@ npm install @enkaku/token
 
 ##### Payload
 
-`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ##### Header
 
-`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Header` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Properties
 
@@ -222,7 +222,7 @@ npm install @enkaku/token
 
 > **signature**: `string`
 
-***
+---
 
 ### SigningIdentity
 
@@ -242,11 +242,11 @@ npm install @enkaku/token
 
 ###### Payload
 
-`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ###### Header
 
-`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Header` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ###### Parameters
 
@@ -262,7 +262,7 @@ npm install @enkaku/token
 
 `Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
 
-***
+---
 
 ### TimeClaimsPayload
 
@@ -290,7 +290,7 @@ Issued at time (seconds since epoch)
 
 Not before time (seconds since epoch)
 
-***
+---
 
 ### TimeValidationOptions
 
@@ -312,7 +312,7 @@ Current time in seconds. Defaults to now().
 
 Clock skew tolerance in seconds. Defaults to 0.
 
-***
+---
 
 ### Token
 
@@ -322,13 +322,13 @@ Clock skew tolerance in seconds. Defaults to 0.
 
 ##### Payload
 
-`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ##### Header
 
-`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Header` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
-***
+---
 
 ### TokenEncrypter
 
@@ -356,7 +356,7 @@ Clock skew tolerance in seconds. Defaults to 0.
 
 `Promise`\<`string`\>
 
-***
+---
 
 ### UnsignedToken
 
@@ -366,11 +366,11 @@ Clock skew tolerance in seconds. Defaults to 0.
 
 ##### Payload
 
-`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ##### Header
 
-`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Header` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Properties
 
@@ -390,7 +390,7 @@ Clock skew tolerance in seconds. Defaults to 0.
 
 > `optional` **signature?**: `undefined`
 
-***
+---
 
 ### UnwrapOptions
 
@@ -406,7 +406,7 @@ Clock skew tolerance in seconds. Defaults to 0.
 
 > `optional` **verifiers?**: `Verifiers`
 
-***
+---
 
 ### UnwrappedEnvelope
 
@@ -422,7 +422,7 @@ Clock skew tolerance in seconds. Defaults to 0.
 
 > **payload**: `Record`\<`string`, `unknown`\>
 
-***
+---
 
 ### VerifiedToken
 
@@ -438,13 +438,13 @@ Clock skew tolerance in seconds. Defaults to 0.
 
 ##### Payload
 
-`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 ##### Header
 
-`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Header` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
-***
+---
 
 ### WrapOptions
 
@@ -508,7 +508,7 @@ Validate time-based claims in a token payload.
 
 Error if token is expired or not yet valid
 
-***
+---
 
 ### concatKDF()
 
@@ -527,7 +527,7 @@ Single SHA-256 iteration (sufficient for 256-bit keys).
 
 `Uint8Array`
 
-***
+---
 
 ### createDecryptingIdentity()
 
@@ -546,7 +546,7 @@ Uses X25519 key derivation for ECDH key agreement.
 
 [`DecryptingIdentity`](#decryptingidentity)
 
-***
+---
 
 ### createFullIdentity()
 
@@ -564,7 +564,7 @@ Create a full identity (signing + decrypting) from an Ed25519 private key.
 
 [`FullIdentity`](#fullidentity)
 
-***
+---
 
 ### createSigningIdentity()
 
@@ -582,7 +582,7 @@ Create a signing identity from an Ed25519 private key.
 
 [`SigningIdentity`](#signingidentity)
 
-***
+---
 
 ### createTokenEncrypter()
 
@@ -622,7 +622,7 @@ Create a token encrypter for a recipient identified by X25519 public key or DID 
 
 [`TokenEncrypter`](#tokenencrypter)
 
-***
+---
 
 ### createUnsignedToken()
 
@@ -634,11 +634,11 @@ Create an unsigned token object.
 
 ##### Payload
 
-`Payload` *extends* `Record`\<`string`, `unknown`\>
+`Payload` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Header
 
-`Header` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Header` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
@@ -654,7 +654,7 @@ Create an unsigned token object.
 
 [`UnsignedToken`](#unsignedtoken)\<`Payload`, `Header`\>
 
-***
+---
 
 ### decodePrivateKey()
 
@@ -670,7 +670,7 @@ Create an unsigned token object.
 
 `Uint8Array`
 
-***
+---
 
 ### decryptToken()
 
@@ -692,7 +692,7 @@ Decrypt a JWE compact serialization string.
 
 `Promise`\<`Uint8Array`\<`ArrayBufferLike`\>\>
 
-***
+---
 
 ### encodePrivateKey()
 
@@ -710,7 +710,7 @@ Convert a Uint8Array to a base64-encoded string.
 
 `string`
 
-***
+---
 
 ### encryptToken()
 
@@ -732,7 +732,7 @@ Encrypt plaintext to JWE compact serialization using the given encrypter.
 
 `Promise`\<`string`\>
 
-***
+---
 
 ### isDecryptingIdentity()
 
@@ -748,7 +748,7 @@ Encrypt plaintext to JWE compact serialization using the given encrypter.
 
 `identity is DecryptingIdentity`
 
-***
+---
 
 ### isFullIdentity()
 
@@ -764,7 +764,7 @@ Encrypt plaintext to JWE compact serialization using the given encrypter.
 
 `identity is FullIdentity`
 
-***
+---
 
 ### isOwnIdentity()
 
@@ -780,7 +780,7 @@ Encrypt plaintext to JWE compact serialization using the given encrypter.
 
 `identity is OwnIdentity`
 
-***
+---
 
 ### isSignedToken()
 
@@ -792,7 +792,7 @@ Check if a token is signed.
 
 ##### Payload
 
-`Payload` *extends* `object` = \{\[`key`: `string`\]: `unknown`; `aud?`: `string`; `cap?`: `string` \| `string`[]; `exp?`: `number`; `iat?`: `number`; `iss`: `string`; `nbf?`: `number`; `sub?`: `string`; \}
+`Payload` _extends_ `object` = \{\[`key`: `string`\]: `unknown`; `aud?`: `string`; `cap?`: `string` \| `string`[]; `exp?`: `number`; `iat?`: `number`; `iss`: `string`; `nbf?`: `number`; `sub?`: `string`; \}
 
 #### Parameters
 
@@ -804,7 +804,7 @@ Check if a token is signed.
 
 `token is SignedToken<Payload>`
 
-***
+---
 
 ### isSigningIdentity()
 
@@ -820,7 +820,7 @@ Check if a token is signed.
 
 `identity is SigningIdentity`
 
-***
+---
 
 ### isUnsignedToken()
 
@@ -832,7 +832,7 @@ Check if a token is unsigned.
 
 ##### Payload
 
-`Payload` *extends* `Record`\<`string`, `unknown`\>
+`Payload` _extends_ `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
@@ -844,7 +844,7 @@ Check if a token is unsigned.
 
 `token is UnsignedToken<Payload>`
 
-***
+---
 
 ### isVerifiedToken()
 
@@ -856,7 +856,7 @@ Check if a token is verified.
 
 ##### Payload
 
-`Payload` *extends* `object`
+`Payload` _extends_ `object`
 
 #### Parameters
 
@@ -868,7 +868,7 @@ Check if a token is verified.
 
 `token is VerifiedToken<Payload>`
 
-***
+---
 
 ### now()
 
@@ -880,7 +880,7 @@ Get the current time in seconds since Unix epoch.
 
 `number`
 
-***
+---
 
 ### randomIdentity()
 
@@ -892,7 +892,7 @@ Generate a random identity with a new Ed25519 private key.
 
 [`OwnIdentity`](#ownidentity)
 
-***
+---
 
 ### signToken()
 
@@ -904,11 +904,11 @@ Sign a token object if not already signed.
 
 ##### Payload
 
-`Payload` *extends* `Record`\<`string`, `unknown`\>
+`Payload` _extends_ `Record`\<`string`, `unknown`\>
 
 ##### Header
 
-`Header` *extends* `Record`\<`string`, `unknown`\>
+`Header` _extends_ `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
@@ -924,7 +924,7 @@ Sign a token object if not already signed.
 
 `Promise`\<[`SignedToken`](#signedtoken)\<`Payload`, `Header`\>\>
 
-***
+---
 
 ### stringifyToken()
 
@@ -942,7 +942,7 @@ Convert a Token object to its JWT string representation.
 
 `string`
 
-***
+---
 
 ### unwrapEnvelope()
 
@@ -964,7 +964,7 @@ Unwrap a token string, auto-detecting the envelope mode from its structure.
 
 `Promise`\<[`UnwrappedEnvelope`](#unwrappedenvelope)\>
 
-***
+---
 
 ### verifyToken()
 
@@ -977,7 +977,7 @@ Also validates time-based claims (exp, nbf) if present.
 
 ##### Payload
 
-`Payload` *extends* `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
+`Payload` _extends_ `Record`\<`string`, `unknown`\> = `Record`\<`string`, `unknown`\>
 
 #### Parameters
 
@@ -997,7 +997,7 @@ Also validates time-based claims (exp, nbf) if present.
 
 `Promise`\<[`Token`](#token)\<`Payload`\>\>
 
-***
+---
 
 ### wrapEnvelope()
 

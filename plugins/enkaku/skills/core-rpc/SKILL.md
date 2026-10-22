@@ -1,4 +1,5 @@
 ---
+
 name: core-rpc
 description: Use when working on Enkaku protocol definitions, client/server setup, handlers, or type-safe calls.
 ---
@@ -29,35 +30,35 @@ const myProtocol = {
       type: 'object',
       properties: { name: { type: 'string' } },
       required: ['name'],
-      additionalProperties: false
+      additionalProperties: false,
     },
     result: {
       type: 'object',
       properties: { message: { type: 'string' } },
       required: ['message'],
-      additionalProperties: false
-    }
+      additionalProperties: false,
+    },
   },
   'data/stream': {
     type: 'stream',
     param: { type: 'number' },
     receive: { type: 'number' },
-    result: { type: 'string' }
+    result: { type: 'string' },
   },
   'chat/channel': {
     type: 'channel',
     send: { type: 'string' },
     receive: { type: 'string' },
-    result: { type: 'null' }
+    result: { type: 'null' },
   },
   'user/logout': {
     type: 'event',
     data: {
       type: 'object',
       properties: { userId: { type: 'string' } },
-      required: ['userId']
-    }
-  }
+      required: ['userId'],
+    },
+  },
 } as const satisfies ProtocolDefinition
 
 type MyProtocol = typeof myProtocol
@@ -84,26 +85,26 @@ const myProtocol = {
   greet: {
     type: 'request',
     param: { type: 'object', properties: { name: { type: 'string' } } },
-    result: { type: 'string' }
+    result: { type: 'string' },
   },
   numbers: {
     type: 'stream',
     param: { type: 'number' },
-    receive: { type: 'number' }
-  }
+    receive: { type: 'number' },
+  },
 } as const satisfies ProtocolDefinition
 
 type MyProtocol = typeof myProtocol
 
 const transport = new ClientTransport<MyProtocol>({
-  url: 'https://api.example.com/rpc'
+  url: 'https://api.example.com/rpc',
 })
 
 const client = new Client<MyProtocol>({ transport })
 
 // Type-safe request
 const result = await client.request('greet', {
-  param: { name: 'Alice' }
+  param: { name: 'Alice' },
 })
 console.log(result) // Typed as string
 
@@ -139,20 +140,20 @@ const myProtocol = {
   greet: {
     type: 'request',
     param: { type: 'object', properties: { name: { type: 'string' } } },
-    result: { type: 'string' }
+    result: { type: 'string' },
   },
   countdown: {
     type: 'stream',
     param: { type: 'number' },
     receive: { type: 'number' },
-    result: { type: 'string' }
-  }
+    result: { type: 'string' },
+  },
 } as const satisfies ProtocolDefinition
 
 type MyProtocol = typeof myProtocol
 
 const transport = new ServerTransport<MyProtocol>({
-  allowedOrigin: ['https://example.com']
+  allowedOrigin: ['https://example.com'],
 })
 
 const server = serve<MyProtocol>({
@@ -167,18 +168,18 @@ const server = serve<MyProtocol>({
       const writer = writable.getWriter()
       for (let i = param; i >= 0; i--) {
         await writer.write(i)
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000))
       }
       await writer.close()
       return 'Done!'
-    }
-  }
+    },
+  },
 })
 
 // For Bun/Deno/Cloudflare Workers
 Bun.serve({
   port: 3000,
-  fetch: transport.fetch
+  fetch: transport.fetch,
 })
 ```
 
@@ -189,7 +190,7 @@ Bun.serve({
   every procedure in the protocol needs an entry
 - Request handlers receive `{ param, signal, message }` context
 - Stream handlers add a `writable` stream for sending data to the client. They are not
-  generators, and their return value is the call's *result*, separate from what they write
+  generators, and their return value is the call's _result_, separate from what they write
 - Closing the writer is optional -- the server drains and closes the pipe once the handler
   settles
 - Server validates messages against protocol schema when `protocol` is provided
@@ -209,16 +210,16 @@ const myProtocol = {
       type: 'object',
       properties: {
         a: { type: 'number' },
-        b: { type: 'number' }
-      }
+        b: { type: 'number' },
+      },
     },
-    result: { type: 'number' }
+    result: { type: 'number' },
   },
   fibonacci: {
     type: 'stream',
     param: { type: 'number' },
-    receive: { type: 'number' }
-  }
+    receive: { type: 'number' },
+  },
 } as const satisfies ProtocolDefinition
 
 type MyProtocol = typeof myProtocol
@@ -229,13 +230,14 @@ const client = standalone<MyProtocol>({
   },
   fibonacci: async ({ param, writable }) => {
     const writer = writable.getWriter()
-    let a = 0, b = 1
+    let a = 0,
+      b = 1
     for (let i = 0; i < param; i++) {
       await writer.write(a)
       ;[a, b] = [b, a + b]
     }
     await writer.close()
-  }
+  },
 })
 
 // Use like regular client
@@ -269,20 +271,20 @@ const protocol = {
   // Event: Fire-and-forget, no response
   'user/logout': {
     type: 'event',
-    data: { type: 'object', properties: { userId: { type: 'string' } } }
+    data: { type: 'object', properties: { userId: { type: 'string' } } },
   },
   // Request: Single param -> single result
   'user/profile': {
     type: 'request',
     param: { type: 'string' }, // userId
-    result: { type: 'object', properties: { name: { type: 'string' } } }
+    result: { type: 'object', properties: { name: { type: 'string' } } },
   },
   // Stream: Param -> stream of values from server
   'logs/tail': {
     type: 'stream',
     param: { type: 'number' }, // lines
     receive: { type: 'string' },
-    result: { type: 'null' }
+    result: { type: 'null' },
   },
   // Channel: Bidirectional streaming
   'chat/room': {
@@ -290,8 +292,8 @@ const protocol = {
     param: { type: 'string' }, // roomId
     send: { type: 'string' }, // Client -> Server
     receive: { type: 'string' }, // Server -> Client
-    result: { type: 'null' }
-  }
+    result: { type: 'null' },
+  },
 } as const satisfies ProtocolDefinition
 
 type Protocol = typeof protocol
@@ -332,8 +334,8 @@ const server = serve<Protocol>({
       // Cleanup on abort
       signal.addEventListener('abort', () => room.leave())
       return null
-    }
-  }
+    },
+  },
 })
 ```
 

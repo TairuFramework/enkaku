@@ -11,7 +11,6 @@ Two related feature efforts, both originating from cross-repo Sakui requests, im
 ### `@enkaku/react` — `useCall` and `useAsyncResource`
 
 Two client-agnostic hooks (new `packages/react/src/async.ts`), decoupled from `ReactClient`/`EnkakuContext` and from enkaku procedure strings, so an app talking to the runtime through a domain wrapper client gets first-class hooks:
-
 - `useCall(run, deps)` → `{ data, error, loading }` — runs an async function.
 - `useAsyncResource(open, deps)` → `{ resource, error, loading }` — runs an async factory returning a disposable resource and owns its full lifecycle including teardown.
 
@@ -42,7 +41,7 @@ Both are the non-Suspense, additive counterpart to the existing procedure/Suspen
 - **The no-unhandled-rejection absorb is scoped to stream/channel calls only.** A creation-time `void call.catch(() => {})` on the assembled stream/channel call marks its promise handled (promise multicast) while awaiters still observe the rejection. Plain `request()` calls are deliberately **not** absorbed — an unobserved failed request still surfaces. (An early implementation attempt centralized the absorb inside the shared `createRequest`, which also silenced abandoned `request()` rejections; that was reverted to preserve this boundary.)
 - **`dispose()` never closes the receive writer itself.** The controller's `onDone` hook is the single close owner and is where the close is absorbed (`() => void writer.close().catch(() => {})`); `dispose()` only settles the controller, which runs `onDone` exactly once. `dispose()` is idempotent (a cached `Promise<void>`), resolves on local teardown only (no server-ack await), and rejects post-dispose channel sends begun after disposal (a send already in flight is not cancelled — a documented boundary).
 - **Timer primitive is `setTimeout`/`clearTimeout`** (not `AbortSignal.timeout`) so timeout tests drive virtual time with fake timers; the timer adds no event listener, fires only when `!controller.settled`, and is cleared on any settle via `controller.result.then(clear, clear)`.
-- **`#handleSignal` hardening.** Its abort handler is named, its map delete is identity-checked, and the abort listener is removed on settle so no listener dangles when an external `providedSignal` outlives the request. `#write` threads the owning controller so a write failure aborts *that* controller (guarded by `!owner.settled`), never a reused-rid occupant.
+- **`#handleSignal` hardening.** Its abort handler is named, its map delete is identity-checked, and the abort listener is removed on settle so no listener dangles when an external `providedSignal` outlives the request. `#write` threads the owning controller so a write failure aborts _that_ controller (guarded by `!owner.settled`), never a reused-rid occupant.
 - A clean `dispose()` is classified as an `aborted` (not `error`) lifecycle outcome in the OTel `requestEnd` span, matching `close()`.
 
 ## Versioning

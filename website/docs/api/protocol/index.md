@@ -28,7 +28,7 @@ npm install @enkaku/protocol
 
 > **typ**: `"abort"`
 
-***
+---
 
 ### AnyClientMessageOf
 
@@ -38,9 +38,9 @@ npm install @enkaku/protocol
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](#protocoldefinition)
 
-***
+---
 
 ### AnyClientPayloadOf
 
@@ -50,21 +50,21 @@ npm install @enkaku/protocol
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](#protocoldefinition)
 
-***
+---
 
 ### AnyProcedureDefinition
 
-> **AnyProcedureDefinition** = `FromSchema`\<*typeof* [`anyProcedureDefinition`](#anyproceduredefinition-1)\>
+> **AnyProcedureDefinition** = `FromSchema`\<_typeof_ [`anyProcedureDefinition`](#anyproceduredefinition-1)\>
 
-***
+---
 
 ### AnyRequestProcedureDefinition
 
-> **AnyRequestProcedureDefinition** = `FromSchema`\<*typeof* [`anyRequestProcedureDefinition`](#anyrequestproceduredefinition-1)\>
+> **AnyRequestProcedureDefinition** = `FromSchema`\<_typeof_ [`anyRequestProcedureDefinition`](#anyrequestproceduredefinition-1)\>
 
-***
+---
 
 ### AnyServerMessageOf
 
@@ -74,9 +74,9 @@ npm install @enkaku/protocol
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](#protocoldefinition)
 
-***
+---
 
 ### AnyServerPayloadOf
 
@@ -86,31 +86,31 @@ npm install @enkaku/protocol
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](#protocoldefinition)
 
-***
+---
 
 ### ChannelPayloadOf
 
-> **ChannelPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"channel"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
+> **ChannelPayloadOf**\<`Procedure`, `Definition`\> = `Definition` _extends_ [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"channel"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
 
 #### Type Parameters
 
 ##### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ##### Definition
 
 `Definition`
 
-***
+---
 
 ### ChannelProcedureDefinition
 
-> **ChannelProcedureDefinition** = `FromSchema`\<*typeof* [`channelProcedureDefinition`](#channelproceduredefinition-1)\>
+> **ChannelProcedureDefinition** = `FromSchema`\<_typeof_ [`channelProcedureDefinition`](#channelproceduredefinition-1)\>
 
-***
+---
 
 ### ClientMessage
 
@@ -120,25 +120,25 @@ npm install @enkaku/protocol
 
 ##### Payload
 
-`Payload` *extends* [`UnknownCallPayload`](#unknowncallpayload) = [`UnknownCallPayload`](#unknowncallpayload)
+`Payload` _extends_ [`UnknownCallPayload`](#unknowncallpayload) = [`UnknownCallPayload`](#unknowncallpayload)
 
-***
+---
 
 ### ClientPayloadOf
 
-> **ClientPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`EventProcedureDefinition`](#eventproceduredefinition) ? [`EventCallPayload`](#eventcallpayload)\<`Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"data"`\]\>\> : `Definition` *extends* [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"request"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"stream"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"channel"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`SendCallPayload`](#sendcallpayload)\<[`DataOf`](#dataof)\<`Definition`\[`"send"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `never`
+> **ClientPayloadOf**\<`Procedure`, `Definition`\> = `Definition` _extends_ [`EventProcedureDefinition`](#eventproceduredefinition) ? [`EventCallPayload`](#eventcallpayload)\<`Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"data"`\]\>\> : `Definition` _extends_ [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"request"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `Definition` _extends_ [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"stream"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `Definition` _extends_ [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"channel"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> \| [`SendCallPayload`](#sendcallpayload)\<[`DataOf`](#dataof)\<`Definition`\[`"send"`\]\>\> \| [`AbortCallPayload`](#abortcallpayload) : `never`
 
 #### Type Parameters
 
 ##### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ##### Definition
 
 `Definition`
 
-***
+---
 
 ### ClientPayloadRecordsOf
 
@@ -148,9 +148,9 @@ npm install @enkaku/protocol
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](#protocoldefinition)
 
-***
+---
 
 ### ClientTransportOf
 
@@ -160,13 +160,13 @@ npm install @enkaku/protocol
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](#protocoldefinition)
 
-***
+---
 
 ### DataOf
 
-> **DataOf**\<`S`\> = `S` *extends* `Schema` ? `FromSchema`\<`S`\> : `never`
+> **DataOf**\<`S`\> = `S` _extends_ `Schema` ? `FromSchema`\<`S`\> : `never`
 
 #### Type Parameters
 
@@ -174,29 +174,29 @@ npm install @enkaku/protocol
 
 `S`
 
-***
+---
 
 ### ErrorDefinition
 
-> **ErrorDefinition** = `FromSchema`\<*typeof* [`errorDefinition`](#errordefinition-1)\>
+> **ErrorDefinition** = `FromSchema`\<_typeof_ [`errorDefinition`](#errordefinition-1)\>
 
-***
+---
 
 ### ErrorObject
 
-> **ErrorObject** = `FromSchema`\<*typeof* [`errorObject`](#errorobject-1)\>
+> **ErrorObject** = `FromSchema`\<_typeof_ [`errorObject`](#errorobject-1)\>
 
-***
+---
 
 ### ErrorObjectDefinition
 
-> **ErrorObjectDefinition** = `FromSchema`\<*typeof* [`errorObjectDefinition`](#errorobjectdefinition-1)\>
+> **ErrorObjectDefinition** = `FromSchema`\<_typeof_ [`errorObjectDefinition`](#errorobjectdefinition-1)\>
 
-***
+---
 
 ### ErrorPayloadOf
 
-> **ErrorPayloadOf**\<`Definition`\> = `Definition` *extends* [`AnyRequestProcedureDefinition`](#anyrequestproceduredefinition) ? [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `never`
+> **ErrorPayloadOf**\<`Definition`\> = `Definition` _extends_ [`AnyRequestProcedureDefinition`](#anyrequestproceduredefinition) ? [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -204,7 +204,7 @@ npm install @enkaku/protocol
 
 `Definition`
 
-***
+---
 
 ### ErrorReplyPayload
 
@@ -214,11 +214,11 @@ npm install @enkaku/protocol
 
 ##### Code
 
-`Code` *extends* `string`
+`Code` _extends_ `string`
 
 ##### Data
 
-`Data` *extends* `Record`\<`string`, `unknown`\> \| `undefined`
+`Data` _extends_ `Record`\<`string`, `unknown`\> \| `undefined`
 
 #### Properties
 
@@ -242,11 +242,11 @@ npm install @enkaku/protocol
 
 > **typ**: `"error"`
 
-***
+---
 
 ### ErrorReplyPayloadOf
 
-> **ErrorReplyPayloadOf**\<`Error`\> = `Error` *extends* [`ErrorObject`](#errorobject) ? [`ErrorReplyPayload`](#errorreplypayload)\<`Error`\[`"code"`\], `Error`\[`"data"`\]\> : [`ErrorReplyPayload`](#errorreplypayload)\<`string`, `Record`\<`string`, `unknown`\>\>
+> **ErrorReplyPayloadOf**\<`Error`\> = `Error` _extends_ [`ErrorObject`](#errorobject) ? [`ErrorReplyPayload`](#errorreplypayload)\<`Error`\[`"code"`\], `Error`\[`"data"`\]\> : [`ErrorReplyPayload`](#errorreplypayload)\<`string`, `Record`\<`string`, `unknown`\>\>
 
 #### Type Parameters
 
@@ -254,11 +254,11 @@ npm install @enkaku/protocol
 
 `Error` = `unknown`
 
-***
+---
 
 ### EventCallPayload
 
-> **EventCallPayload**\<`Procedure`, `Data`\> = `object` & `Data` *extends* `undefined` ? `object` : `object`
+> **EventCallPayload**\<`Procedure`, `Data`\> = `object` & `Data` _extends_ `undefined` ? `object` : `object`
 
 #### Type Declaration
 
@@ -274,35 +274,35 @@ npm install @enkaku/protocol
 
 ##### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ##### Data
 
-`Data` *extends* `Record`\<`string`, `unknown`\> \| `undefined`
+`Data` _extends_ `Record`\<`string`, `unknown`\> \| `undefined`
 
-***
+---
 
 ### EventPayloadOf
 
-> **EventPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`EventProcedureDefinition`](#eventproceduredefinition) ? [`EventCallPayload`](#eventcallpayload)\<`Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"data"`\]\>\> : `never`
+> **EventPayloadOf**\<`Procedure`, `Definition`\> = `Definition` _extends_ [`EventProcedureDefinition`](#eventproceduredefinition) ? [`EventCallPayload`](#eventcallpayload)\<`Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"data"`\]\>\> : `never`
 
 #### Type Parameters
 
 ##### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ##### Definition
 
 `Definition`
 
-***
+---
 
 ### EventProcedureDefinition
 
-> **EventProcedureDefinition** = `FromSchema`\<*typeof* [`eventProcedureDefinition`](#eventproceduredefinition-1)\>
+> **EventProcedureDefinition** = `FromSchema`\<_typeof_ [`eventProcedureDefinition`](#eventproceduredefinition-1)\>
 
-***
+---
 
 ### KeyEntry
 
@@ -360,7 +360,7 @@ npm install @enkaku/protocol
 
 `Promise`\<`void`\>
 
-***
+---
 
 ### KeyStore
 
@@ -374,7 +374,7 @@ npm install @enkaku/protocol
 
 ##### EntryType
 
-`EntryType` *extends* [`KeyEntry`](#keyentry)\<`PrivateKeyType`\> = [`KeyEntry`](#keyentry)\<`PrivateKeyType`\>
+`EntryType` _extends_ [`KeyEntry`](#keyentry)\<`PrivateKeyType`\> = [`KeyEntry`](#keyentry)\<`PrivateKeyType`\>
 
 #### Methods
 
@@ -392,7 +392,7 @@ npm install @enkaku/protocol
 
 `EntryType`
 
-***
+---
 
 ### Message
 
@@ -402,25 +402,25 @@ npm install @enkaku/protocol
 
 ##### Payload
 
-`Payload` *extends* `Record`\<`string`, `unknown`\>
+`Payload` _extends_ `Record`\<`string`, `unknown`\>
 
-***
+---
 
 ### MessageType
 
 > **MessageType** = `"signed"` \| `"unsigned"` \| `"any"`
 
-***
+---
 
 ### ProtocolDefinition
 
-> **ProtocolDefinition** = `FromSchema`\<*typeof* [`protocolDefinition`](#protocoldefinition-1)\>
+> **ProtocolDefinition** = `FromSchema`\<_typeof_ [`protocolDefinition`](#protocoldefinition-1)\>
 
-***
+---
 
 ### ReceiveActionPayloadOf
 
-> **ReceiveActionPayloadOf**\<`Definition`\> = `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> : `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> : `never`
+> **ReceiveActionPayloadOf**\<`Definition`\> = `Definition` _extends_ [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> : `Definition` _extends_ [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -428,7 +428,7 @@ npm install @enkaku/protocol
 
 `Definition`
 
-***
+---
 
 ### ReceiveReplyPayload
 
@@ -454,7 +454,7 @@ npm install @enkaku/protocol
 
 > **val**: `Value`
 
-***
+---
 
 ### RequestCallPayload
 
@@ -464,11 +464,11 @@ npm install @enkaku/protocol
 
 ##### Type
 
-`Type` *extends* [`RequestType`](#requesttype)
+`Type` _extends_ [`RequestType`](#requesttype)
 
 ##### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ##### Params
 
@@ -492,39 +492,39 @@ npm install @enkaku/protocol
 
 > **typ**: `Type`
 
-***
+---
 
 ### RequestPayloadOf
 
-> **RequestPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"request"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
+> **RequestPayloadOf**\<`Procedure`, `Definition`\> = `Definition` _extends_ [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"request"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
 
 #### Type Parameters
 
 ##### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ##### Definition
 
 `Definition`
 
-***
+---
 
 ### RequestProcedureDefinition
 
-> **RequestProcedureDefinition** = `FromSchema`\<*typeof* [`requestProcedureDefinition`](#requestproceduredefinition-1)\>
+> **RequestProcedureDefinition** = `FromSchema`\<_typeof_ [`requestProcedureDefinition`](#requestproceduredefinition-1)\>
 
-***
+---
 
 ### RequestType
 
 > **RequestType** = [`AnyRequestProcedureDefinition`](#anyrequestproceduredefinition)\[`"type"`\]
 
-***
+---
 
 ### ResultPayloadOf
 
-> **ResultPayloadOf**\<`Definition`\> = `Definition` *extends* [`AnyRequestProcedureDefinition`](#anyrequestproceduredefinition) ? [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> : `never`
+> **ResultPayloadOf**\<`Definition`\> = `Definition` _extends_ [`AnyRequestProcedureDefinition`](#anyrequestproceduredefinition) ? [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -532,7 +532,7 @@ npm install @enkaku/protocol
 
 `Definition`
 
-***
+---
 
 ### ResultReplyPayload
 
@@ -558,11 +558,11 @@ npm install @enkaku/protocol
 
 > **val**: `Value`
 
-***
+---
 
 ### ReturnOf
 
-> **ReturnOf**\<`S`\> = `S` *extends* `Schema` ? `FromSchema`\<`S`\> : `void`
+> **ReturnOf**\<`S`\> = `S` _extends_ `Schema` ? `FromSchema`\<`S`\> : `void`
 
 #### Type Parameters
 
@@ -570,7 +570,7 @@ npm install @enkaku/protocol
 
 `S`
 
-***
+---
 
 ### SendCallPayload
 
@@ -596,11 +596,11 @@ npm install @enkaku/protocol
 
 > **val**: `Value`
 
-***
+---
 
 ### SendPayloadOf
 
-> **SendPayloadOf**\<`Definition`\> = `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`SendCallPayload`](#sendcallpayload)\<[`DataOf`](#dataof)\<`Definition`\[`"send"`\]\>\> : `never`
+> **SendPayloadOf**\<`Definition`\> = `Definition` _extends_ [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`SendCallPayload`](#sendcallpayload)\<[`DataOf`](#dataof)\<`Definition`\[`"send"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -608,7 +608,7 @@ npm install @enkaku/protocol
 
 `Definition`
 
-***
+---
 
 ### ServerMessage
 
@@ -618,13 +618,13 @@ npm install @enkaku/protocol
 
 ##### Payload
 
-`Payload` *extends* [`UnknownReplyPayload`](#unknownreplypayload) = [`UnknownReplyPayload`](#unknownreplypayload)
+`Payload` _extends_ [`UnknownReplyPayload`](#unknownreplypayload) = [`UnknownReplyPayload`](#unknownreplypayload)
 
-***
+---
 
 ### ServerPayloadOf
 
-> **ServerPayloadOf**\<`Definition`\> = `Definition` *extends* [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof) : `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `Definition` *extends* [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `never`
+> **ServerPayloadOf**\<`Definition`\> = `Definition` _extends_ [`RequestProcedureDefinition`](#requestproceduredefinition) ? [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof) : `Definition` _extends_ [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `Definition` _extends_ [`ChannelProcedureDefinition`](#channelproceduredefinition) ? [`ReceiveReplyPayload`](#receivereplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"receive"`\]\>\> \| [`ResultReplyPayload`](#resultreplypayload)\<[`DataOf`](#dataof)\<`Definition`\[`"result"`\]\>\> \| [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<[`DataOf`](#dataof)\<`Definition`\[`"error"`\]\>\> : `never`
 
 #### Type Parameters
 
@@ -632,7 +632,7 @@ npm install @enkaku/protocol
 
 `Definition`
 
-***
+---
 
 ### ServerPayloadRecordsOf
 
@@ -642,9 +642,9 @@ npm install @enkaku/protocol
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](#protocoldefinition)
 
-***
+---
 
 ### ServerTransportOf
 
@@ -654,37 +654,37 @@ npm install @enkaku/protocol
 
 ##### Protocol
 
-`Protocol` *extends* [`ProtocolDefinition`](#protocoldefinition)
+`Protocol` _extends_ [`ProtocolDefinition`](#protocoldefinition)
 
-***
+---
 
 ### StreamPayloadOf
 
-> **StreamPayloadOf**\<`Procedure`, `Definition`\> = `Definition` *extends* [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"stream"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
+> **StreamPayloadOf**\<`Procedure`, `Definition`\> = `Definition` _extends_ [`StreamProcedureDefinition`](#streamproceduredefinition) ? [`RequestCallPayload`](#requestcallpayload)\<`"stream"`, `Procedure`, [`DataOf`](#dataof)\<`Definition`\[`"param"`\]\>\> : `never`
 
 #### Type Parameters
 
 ##### Procedure
 
-`Procedure` *extends* `string`
+`Procedure` _extends_ `string`
 
 ##### Definition
 
 `Definition`
 
-***
+---
 
 ### StreamProcedureDefinition
 
-> **StreamProcedureDefinition** = `FromSchema`\<*typeof* [`streamProcedureDefinition`](#streamproceduredefinition-1)\>
+> **StreamProcedureDefinition** = `FromSchema`\<_typeof_ [`streamProcedureDefinition`](#streamproceduredefinition-1)\>
 
-***
+---
 
 ### TransportMessage
 
 > **TransportMessage** = `SignedToken`\<`SignedPayload` & [`TransportMessagePayload`](#transportmessagepayload), [`TransportMessageHeader`](#transportmessageheader)\> \| `UnsignedToken`\<[`TransportMessagePayload`](#transportmessagepayload), [`TransportMessageHeader`](#transportmessageheader)\>
 
-***
+---
 
 ### TransportMessageHeader
 
@@ -696,13 +696,13 @@ npm install @enkaku/protocol
 
 > **src**: `"transport"`
 
-***
+---
 
 ### TransportMessagePayload
 
 > **TransportMessagePayload** = [`TransportPingPayload`](#transportpingpayload) \| [`TransportPongPayload`](#transportpongpayload)
 
-***
+---
 
 ### TransportPingPayload
 
@@ -718,7 +718,7 @@ npm install @enkaku/protocol
 
 > **type**: `"ping"`
 
-***
+---
 
 ### TransportPongPayload
 
@@ -734,19 +734,19 @@ npm install @enkaku/protocol
 
 > **type**: `"pong"`
 
-***
+---
 
 ### UnknownCallPayload
 
 > **UnknownCallPayload** = [`AbortCallPayload`](#abortcallpayload) \| [`EventCallPayload`](#eventcallpayload)\<`string`, `Record`\<`string`, `unknown`\> \| `undefined`\> \| [`RequestCallPayload`](#requestcallpayload)\<[`RequestType`](#requesttype), `string`, `unknown`\> \| [`SendCallPayload`](#sendcallpayload)\<`unknown`\>
 
-***
+---
 
 ### UnknownReplyPayload
 
 > **UnknownReplyPayload** = [`ErrorReplyPayloadOf`](#errorreplypayloadof)\<`unknown`\> \| [`ReceiveReplyPayload`](#receivereplypayload)\<`unknown`\> \| [`ResultReplyPayload`](#resultreplypayload)\<`unknown`\>
 
-***
+---
 
 ### ValueOf
 
@@ -770,7 +770,7 @@ npm install @enkaku/protocol
 
 > `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `false`; `properties`: \{ `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"event"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"request"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `receive`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"stream"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"receive"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `receive`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `send`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"channel"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"send"`, `"receive"`\]; `type`: `"object"`; \}\]
 
-***
+---
 
 ### anyRequestProcedureDefinition
 
@@ -782,7 +782,7 @@ npm install @enkaku/protocol
 
 > `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"request"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `receive`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"stream"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"receive"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `false`; `properties`: \{ `description`: \{ `type`: `"string"`; \}; `error`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: ...; \}; `description`: \{ `type`: ...; \}; `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: ...; `type`: ...; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `param`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `receive`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `result`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `send`: \{ `anyOf`: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]; \}; `type`: \{ `const`: `"channel"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"send"`, `"receive"`\]; `type`: `"object"`; \}\]
 
-***
+---
 
 ### anyTypeDefinition
 
@@ -794,7 +794,7 @@ npm install @enkaku/protocol
 
 > `readonly` **anyOf**: readonly \[\{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}, \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `anyOf`: \{ `items`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `enum`: readonly \[`"array"`, `"boolean"`, `"integer"`, `"null"`, `"number"`, `"object"`, `"string"`\]; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `type`: `"array"`; \}; `description`: \{ `type`: `"string"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
-***
+---
 
 ### channelProcedureDefinition
 
@@ -1042,7 +1042,7 @@ npm install @enkaku/protocol
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### errorDefinition
 
@@ -1054,7 +1054,7 @@ npm install @enkaku/protocol
 
 > `readonly` **anyOf**: readonly \[\{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: `"string"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: \{ `type`: `"string"`; \}; `description`: \{ `type`: `"string"`; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: \{ `const`: `"string"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[`"code"`, `"message"`\]; \}, \{ `const`: readonly \[`"code"`, `"message"`, `"data"`\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}, \{ `properties`: \{ `anyOf`: \{ `items`: \{ `properties`: \{ `additionalProperties`: \{ `const`: `false`; `type`: `"boolean"`; \}; `properties`: \{ `properties`: \{ `code`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `data`: \{ `additionalProperties`: `true`; `properties`: \{ `$id`: ...; `description`: ...; `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; `message`: \{ `additionalProperties`: `true`; `properties`: \{ `type`: ...; \}; `required`: readonly \[...\]; `type`: `"object"`; \}; \}; `type`: `"object"`; \}; `required`: \{ `anyOf`: readonly \[\{ `const`: readonly \[..., ...\]; \}, \{ `const`: readonly \[..., ..., ...\]; \}\]; \}; `type`: \{ `const`: `"object"`; `type`: `"string"`; \}; \}; `required`: readonly \[`"type"`, `"properties"`, `"required"`, `"additionalProperties"`\]; `type`: `"object"`; \}; `minItems`: `1`; `type`: `"array"`; \}; \}; `required`: readonly \[`"anyOf"`\]; `type`: `"object"`; \}\]
 
-***
+---
 
 ### errorObject
 
@@ -1102,7 +1102,7 @@ npm install @enkaku/protocol
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### errorObjectDefinition
 
@@ -1278,7 +1278,7 @@ npm install @enkaku/protocol
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### eventProcedureDefinition
 
@@ -1370,7 +1370,7 @@ npm install @enkaku/protocol
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### objectTypeDefinition
 
@@ -1422,7 +1422,7 @@ npm install @enkaku/protocol
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### protocolDefinition
 
@@ -1442,7 +1442,7 @@ npm install @enkaku/protocol
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### requestProcedureDefinition
 
@@ -1674,7 +1674,7 @@ npm install @enkaku/protocol
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### singleTypeDefinition
 
@@ -1726,7 +1726,7 @@ npm install @enkaku/protocol
 
 > `readonly` **type**: `"object"` = `'object'`
 
-***
+---
 
 ### streamProcedureDefinition
 
@@ -1984,7 +1984,7 @@ npm install @enkaku/protocol
 
 `Schema`
 
-***
+---
 
 ### createServerMessageSchema()
 

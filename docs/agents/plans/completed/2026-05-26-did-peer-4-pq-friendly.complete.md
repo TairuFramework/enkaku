@@ -22,7 +22,6 @@ Add `did:peer:4` support to `@enkaku/token` alongside the existing `did:key` met
 ## What was built
 
 Inside `@enkaku/token`:
-
 - `multibase.ts` — base58btc multibase + SHA-256 multihash helpers.
 - `peer4.ts` — DID document schema + validator; `did:peer:4` encode/decode with hash binding verification, JSON multicodec framing, oversize-doc guards (default 64 KB, preflight at 2× the encoded-form bound).
 - `cache.ts` — `DIDResolver` and `DIDCache` types; in-memory implementation that verifies short-form/doc binding on every `set`.

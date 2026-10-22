@@ -11,7 +11,6 @@ rejects any later message that reuses the same identity — returning the `EK09`
 (`REPLAY_DETECTED`) error.
 
 The feature lives entirely in the server (`@enkaku/server`). It is:
-
 - **On by default** whenever the server authenticates messages (an `identity` is
   configured — see [When it is active](#when-it-is-active)).
 - **Server-wide**: a single cache is shared across every transport/connection
@@ -23,10 +22,10 @@ The feature lives entirely in the server (`@enkaku/server`). It is:
 
 ## Threat model
 
-| Protects against | Does **not** protect against |
-|---|---|
-| Re-submitting a captured signed `event`, channel `send`, or channel `abort` to trigger the action again | Confidentiality of message contents (use encryption) |
-| The same message replayed across different connections to one server | Replays across separate `Server` instances **unless** a shared/persistent `cache` is supplied |
+| Protects against                                                                                                                                                      | Does **not** protect against                                                                                                                                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Re-submitting a captured signed `event`, channel `send`, or channel `abort` to trigger the action again                                                               | Confidentiality of message contents (use encryption)                                                                                                                                |
+| The same message replayed across different connections to one server                                                                                                  | Replays across separate `Server` instances **unless** a shared/persistent `cache` is supplied                                                                                       |
 | Stale messages resurfacing after their `exp`/`maxAge` window, messages with neither claim, or messages whose validity end is too far ahead (when `rejectStale` is on) | A message replayed after its entry is evicted from a bounded in-memory cache while it remains within the allowed lifetime (see [Security considerations](#security-considerations)) |
 
 Replay protection assumes the message has **already passed signature
@@ -79,7 +78,6 @@ expiresAt = exp + leeway                      // if the token has an `exp` claim
 
 Before recording, when `rejectStale` is enabled (the default), the message is
 checked for a signed time bound and rejected if it is outside its window:
-
 - If neither `exp` nor `iat` is present, it is rejected as `replay_unbounded`.
 - If `exp` is present and `now > exp + leeway`, it is rejected as `replay_stale`.
 - Else if `iat` is present and `now > iat + maxAge + leeway`, it is rejected as `replay_stale`.
@@ -108,27 +106,27 @@ Pass a `replay?: ReplayOptions` object to `serve()` / `new Server()`:
 
 ```ts
 type ReplayOptions = {
-  enabled?: boolean       // default true when the server authenticates
-  cache?: ReplayCache     // default: a new in-process MemoryReplayCache
-  maxAge?: number         // default 60_000 (ms) — window for messages without `exp`
-  maxLifetime?: number    // default 300_000 (ms) — maximum remaining validity
-  leeway?: number         // default 5_000 (ms) — clock-skew tolerance
-  rejectStale?: boolean   // default true — reject stale or unbounded messages
-  maxEntries?: number     // default 10_000 — cap for the built-in cache
-  now?: () => number      // default Date.now — injectable clock (ms), mainly for tests
+  enabled?: boolean // default true when the server authenticates
+  cache?: ReplayCache // default: a new in-process MemoryReplayCache
+  maxAge?: number // default 60_000 (ms) — window for messages without `exp`
+  maxLifetime?: number // default 300_000 (ms) — maximum remaining validity
+  leeway?: number // default 5_000 (ms) — clock-skew tolerance
+  rejectStale?: boolean // default true — reject stale or unbounded messages
+  maxEntries?: number // default 10_000 — cap for the built-in cache
+  now?: () => number // default Date.now — injectable clock (ms), mainly for tests
 }
 ```
 
-| Option | Default | Purpose |
-|---|---|---|
-| `enabled` | `true` (when authenticated) | Set to `false` to disable replay protection entirely. |
-| `cache` | new `MemoryReplayCache` | Plug in a persistent/shared backend (e.g. Redis). When supplied, `maxEntries` and the internal `now` are **not** passed to it — the cache owns its own storage and clock. |
-| `maxAge` | `60_000` ms | Dedup/staleness window for messages that carry no `exp`. |
-| `maxLifetime` | `300_000` ms (5 minutes) | Maximum time from now to `exp`, or `iat + maxAge` without `exp`, plus `leeway` tolerance. `Infinity` disables this cap. Must be at least `maxAge`; otherwise server setup throws. |
-| `leeway` | `5_000` ms | Tolerance for clock skew in stale and lifetime checks; extends cache entry expiry. |
-| `rejectStale` | `true` | Reject stale messages and messages with no time bound or a bound beyond `maxLifetime` before the cache is consulted. `false` disables both time checks but keeps deduplication. |
-| `maxEntries` | `10_000` | Bounds memory for the built-in `MemoryReplayCache`. Ignored when a custom `cache` is supplied. |
-| `now` | `Date.now` | Injectable millisecond clock; primarily for deterministic tests. |
+| Option        | Default                     | Purpose                                                                                                                                                                           |
+| ------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`     | `true` (when authenticated) | Set to `false` to disable replay protection entirely.                                                                                                                             |
+| `cache`       | new `MemoryReplayCache`     | Plug in a persistent/shared backend (e.g. Redis). When supplied, `maxEntries` and the internal `now` are **not** passed to it — the cache owns its own storage and clock.         |
+| `maxAge`      | `60_000` ms                 | Dedup/staleness window for messages that carry no `exp`.                                                                                                                          |
+| `maxLifetime` | `300_000` ms (5 minutes)    | Maximum time from now to `exp`, or `iat + maxAge` without `exp`, plus `leeway` tolerance. `Infinity` disables this cap. Must be at least `maxAge`; otherwise server setup throws. |
+| `leeway`      | `5_000` ms                  | Tolerance for clock skew in stale and lifetime checks; extends cache entry expiry.                                                                                                |
+| `rejectStale` | `true`                      | Reject stale messages and messages with no time bound or a bound beyond `maxLifetime` before the cache is consulted. `false` disables both time checks but keeps deduplication.   |
+| `maxEntries`  | `10_000`                    | Bounds memory for the built-in `MemoryReplayCache`. Ignored when a custom `cache` is supplied.                                                                                    |
+| `now`         | `Date.now`                  | Injectable millisecond clock; primarily for deterministic tests.                                                                                                                  |
 
 ### Examples
 
@@ -209,7 +207,6 @@ unacceptable for your threat model.
 ## Error handling & observability
 
 A rejected message produces:
-
 - A `HandlerError` with code `EK09` (`ErrorCodes.REPLAY_DETECTED`), sent back to
   the client for request-bearing messages (fire-and-forget `event`s get no reply).
 - A `handlerError` server event in the `auth` category:
@@ -257,7 +254,7 @@ reply and `handlerError` event, without a request processing span.
   into a custom `cache`; keep the two clocks consistent, and prefer a TTL derived
   from the `expiresAt` argument rather than an independent clock.
 - **Cross-instance replays.** The default cache is per-process. Behind a load
-  balancer, a message replayed against a *different* instance is not caught unless
+  balancer, a message replayed against a _different_ instance is not caught unless
   you supply a shared/persistent `cache`.
 - **Known follow-up.** The dedup key is recorded before the message's encryption
   policy is checked, so a message that will fail the encryption check still

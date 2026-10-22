@@ -6,10 +6,18 @@
     - runtime-replaces-get-random-id
     - w3c-trace-context
     - embed-long-form-option
+"@enkaku/client@0.21.6":
+  dir: packages/client
+  intents:
+    - wide-onions-notice
 "@enkaku/http-fetch@0.21.0":
   dir: packages/http-fetch
   intents:
     - w3c-trace-context
+"@enkaku/http-fetch@0.21.6":
+  dir: packages/http-fetch
+  intents:
+    - wide-onions-notice
 "@enkaku/http-serve@0.21.0":
   dir: packages/http-serve
   intents:

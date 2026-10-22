@@ -29,30 +29,35 @@ Enkaku is the RPC layer of the five-repo Yulsi stack. Cross-cutting primitives i
 ## RPC Framework Patterns
 
 ### Protocol Definitions
+
 - Define protocols using `type` with procedure type definitions
 - Use `RequestProcedureDefinition`, `EventProcedureDefinition`, `StreamProcedureDefinition`, `ChannelProcedureDefinition`
 - Include proper parameter and return type definitions
 - Use schema validation for runtime type checking
 
 ### Client Implementation
+
 - Create typed clients using protocol definitions
 - Implement request/response, streaming, and channel patterns
 - Use abort controllers for cancellation
 - Return promises with additional metadata (id, abort, signal)
 
 ### Server Implementation
+
 - Register handlers using protocol procedure names
 - Implement proper error handling and propagation
 - Use execution chains for middleware-like functionality
 - Support access control and authentication (via `@kokuin/*` identities)
 
 ### Transport Layer
+
 - Create transport abstractions for different communication methods
 - Implement bidirectional communication patterns
 - Handle connection lifecycle (connect, disconnect, error)
 - Support message serialization/deserialization
 
 ### Streaming Patterns
+
 - Implement readable/writable stream interfaces
 - Use async iterators for consuming streams
 - Handle backpressure and flow control
@@ -66,6 +71,7 @@ Handlers must await writes or respect `writer.ready` to propagate backpressure.
 The channel's incoming `sendStream` keeps its existing queue behaviour.
 
 ### Connection Management
+
 - Handle connection state changes gracefully
 - Implement reconnection logic where appropriate
 - Use disposers for cleanup and resource management
@@ -76,6 +82,7 @@ The channel's incoming `sendStream` keeps its existing queue behaviour.
 ## Architecture Overview
 
 ### Core Structure
+
 - **Monorepo**: pnpm workspaces with packages in `packages/`, tests in `tests/`, docs site in `website/`
 - **Tooling**: `@kigu/dev` provides shared biome/tsconfig/swc config; root `biome.json` and package tsconfigs extend it
 - **Build System**: Turbo for build orchestration, SWC for compilation (`esnext` target)
@@ -84,6 +91,7 @@ The channel's incoming `sendStream` keeps its existing queue behaviour.
 - **Versioning**: pnpm built-in versioning (intent files under `.changeset/`, `pnpm change` / `pnpm version -r`)
 
 ### Package Structure
+
 All packages follow this standard layout:
 ```
 packages/[package-name]/
@@ -100,12 +108,14 @@ packages/[package-name]/
 ### Key Packages (13)
 
 #### Core RPC
+
 - **protocol** (`@enkaku/protocol`): Core protocol definitions, schemas, and types
 - **client** (`@enkaku/client`): Client-side RPC implementation with typed procedure calls
 - **server** (`@enkaku/server`): Server-side RPC with handler registration, access control, and `HandlerError`
 - **standalone** (`@enkaku/standalone`): Combined client and server for in-process RPC (no transport needed)
 
 #### Transport
+
 - **transport** (`@enkaku/transport`): Generic transport abstraction and interfaces
 - **http-fetch** (`@enkaku/http-fetch`): HTTP transport for clients (POST-based sessions, SSE, fetch + eventsource-parser)
 - **http-serve** (`@enkaku/http-serve`): HTTP transport for servers (bounded request body, `413` on overflow)
@@ -115,12 +125,15 @@ packages/[package-name]/
 - **electron** (`@enkaku/electron`): Electron IPC transport (sender allowlist)
 
 #### Observability
+
 - **otel** (`@enkaku/otel`): OpenTelemetry span/attribute names + W3C Trace Context propagation codecs (`traceparent`/`tracestate`/`baggage`, inbound + outbound)
 
 #### Platform
+
 - **react** (`@enkaku/react`): React bindings for the Enkaku RPC client
 
 ### External dependencies (sibling repos)
+
 - `@sozai/*` — `async`, `event`, `execution`, `log`, `otel`, `runtime`, `schema`, `stream`
 - `@kokuin/*` — `token`, `capability`
 - `@kigu/dev` — shared build/lint/test tooling
@@ -130,7 +143,6 @@ packages/[package-name]/
 ## Lifecycle events
 
 Each of `Transport`, `Server`, and `Client` exposes an `events` EventEmitter so consumers can observe the full connection lifecycle:
-
 - **`Transport.events`** — `writeFailed` (optional, transport-specific), `readFailed`, `disposing`, `disposed`.
 - **`Server.events`** — `handlerError` (discriminated by `category` ∈ {auth, limit, encryption, handler} and `messageType` ∈ {event, request, channel, stream, send}), `handlerTimeout`, `invalidMessage`, `handlerStart`, `handlerEnd`, `handlerAbort`, `writeDropped`, `writeFailed`, `disposing`, `disposed`, `transportAdded`, `transportRemoved`.
 - **`Client.events`** — `requestStart`, `requestEnd`, `requestError`, `writeDropped`, `transportError`, `transportReplaced`, `disposing`, `disposed`.
@@ -144,9 +156,11 @@ Benign teardown errors (`AbortError`, `DisposeInterruption`, closed-writer/reade
 The progressive discovery system provides focused guidance for specific domains.
 
 ### Discovery
+
 - `/enkaku:discover` - Entry point for exploring capabilities by domain or use case
 
 ### Domain Skills
+
 - `/enkaku:transport` - HTTP, sockets, streams, custom transports
 - `/enkaku:core-rpc` - Protocol, client, server basics
 

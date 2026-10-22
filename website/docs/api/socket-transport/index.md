@@ -176,13 +176,13 @@ npm install @enkaku/socket-transport
 
 > **SocketOrPromise** = `Socket` \| `Promise`\<`Socket`\>
 
-***
+---
 
 ### SocketSource
 
 > **SocketSource** = [`SocketOrPromise`](#socketorpromise) \| (() => [`SocketOrPromise`](#socketorpromise))
 
-***
+---
 
 ### SocketTransportParams
 
@@ -220,7 +220,7 @@ npm install @enkaku/socket-transport
 
 `Promise`\<`Socket`\>
 
-***
+---
 
 ### createTransportStream()
 

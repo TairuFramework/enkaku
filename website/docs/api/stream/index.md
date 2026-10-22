@@ -80,7 +80,7 @@ npm install @enkaku/stream
 
 `T`
 
-***
+---
 
 ### EncodeJSON
 
@@ -102,7 +102,7 @@ npm install @enkaku/stream
 
 `string`
 
-***
+---
 
 ### FromJSONLinesOptions
 
@@ -146,7 +146,7 @@ npm install @enkaku/stream
 
 `void`
 
-***
+---
 
 ### Pipe
 
@@ -190,7 +190,7 @@ npm install @enkaku/stream
 
 \[`WritableStream`\<`T`\>, `Promise`\<`T`[]\>\]
 
-***
+---
 
 ### createConnection()
 
@@ -212,7 +212,7 @@ Create a tuple of `ReadableWritablePair` streams connected to each other.
 
 \[`ReadableWritablePair`\<`BtoA`, `AtoB`\>, `ReadableWritablePair`\<`AtoB`, `BtoA`\>\]
 
-***
+---
 
 ### createPipe()
 
@@ -234,7 +234,7 @@ buffered values.
 
 [`Pipe`](#pipe)\<`T`\>
 
-***
+---
 
 ### createReadable()
 
@@ -258,7 +258,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 \[`ReadableStream`\<`T`\>, `ReadableStreamDefaultController`\<`T`\>\]
 
-***
+---
 
 ### fromJSONLines()
 
@@ -280,7 +280,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 `TransformStream`\<`string` \| `Uint8Array`\<`ArrayBufferLike`\>, `T`\>
 
-***
+---
 
 ### map()
 
@@ -306,7 +306,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 `TransformStream`\<`I`, `O`\>
 
-***
+---
 
 ### mapAsync()
 
@@ -332,7 +332,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 `TransformStream`\<`I`, `O`\>
 
-***
+---
 
 ### tap()
 
@@ -354,7 +354,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 `TransformStream`\<`T`, `T`\>
 
-***
+---
 
 ### toJSONLines()
 
@@ -376,7 +376,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 `TransformStream`\<`T`, `string`\>
 
-***
+---
 
 ### transform()
 
@@ -406,7 +406,7 @@ Create a tuple of [ReadableStream](https://developer.mozilla.org/en-US/docs/Web/
 
 `TransformStream`\<`I`, `O`\>
 
-***
+---
 
 ### writeTo()
 

@@ -1,4 +1,5 @@
 ---
+
 name: transport
 description: Use when choosing or configuring an Enkaku transport - HTTP, TCP/Unix sockets, Node streams, MessagePort, or Electron IPC.
 ---
@@ -28,13 +29,13 @@ import type { MyProtocol } from './protocol'
 
 // Client side
 const transport = new ClientTransport<MyProtocol>({
-  url: 'https://api.example.com/rpc'
+  url: 'https://api.example.com/rpc',
 })
 const client = new Client<MyProtocol>({ transport })
 
 // Server side
 const serverTransport = new ServerTransport<MyProtocol>({
-  allowedOrigin: ['https://example.com']
+  allowedOrigin: ['https://example.com'],
 })
 const server = serve<MyProtocol>({
   requireAuth: false,
@@ -46,7 +47,7 @@ const server = serve<MyProtocol>({
 // Use with Bun/Deno/Node HTTP server
 Bun.serve({
   port: 3000,
-  fetch: serverTransport.fetch
+  fetch: serverTransport.fetch,
 })
 ```
 
@@ -102,11 +103,8 @@ import { SocketTransport, connectSocket } from '@enkaku/socket'
 import type { MyProtocol } from './protocol'
 
 // Client connecting to Unix socket
-const clientTransport = new SocketTransport<
-  ServerMessage,
-  ClientMessage
->({
-  socket: '/tmp/my-app.sock'
+const clientTransport = new SocketTransport<ServerMessage, ClientMessage>({
+  socket: '/tmp/my-app.sock',
 })
 
 // Server accepting socket connections -- @enkaku/socket is connect-only,
@@ -116,7 +114,7 @@ import { serve } from '@enkaku/server'
 
 const netServer = createServer(async (socket) => {
   const transport = new SocketTransport<ClientMessage, ServerMessage>({
-    socket
+    socket,
   })
   const server = serve<MyProtocol>({
     requireAuth: false,
@@ -191,14 +189,14 @@ import { spawn } from 'node:child_process'
 
 // Parent process communicating with child
 const child = spawn('node', ['child.js'], {
-  stdio: ['pipe', 'pipe', 'inherit']
+  stdio: ['pipe', 'pipe', 'inherit'],
 })
 
 const transport = new NodeStreamsTransport<FromChild, ToChild>({
   streams: {
     readable: child.stdout,
-    writable: child.stdin
-  }
+    writable: child.stdin,
+  },
 })
 
 const client = new Client<MyProtocol>({ transport })
@@ -207,8 +205,8 @@ const client = new Client<MyProtocol>({ transport })
 const transport = new NodeStreamsTransport<ToChild, FromChild>({
   streams: {
     readable: process.stdin,
-    writable: process.stdout
-  }
+    writable: process.stdout,
+  },
 })
 
 const server = serve<MyProtocol>({

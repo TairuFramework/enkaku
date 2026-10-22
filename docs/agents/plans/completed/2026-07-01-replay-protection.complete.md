@@ -18,7 +18,6 @@ captured messages would pass.
 A self-contained replay layer in `@enkaku/server` (`packages/server/src/replay.ts`)
 plus wiring in the server message loop and a new stable error code. No changes to
 `@kokuin/*` or the protocol schemas — `jti`/`exp`/`iat` stay optional on the wire.
-
 - **`ReplayCache` interface** — single atomic `checkAndRecord(key, expiresAt)`.
 - **`MemoryReplayCache`** — in-memory default: `Map<key, expiresAt>`, lazy expiry,
   `maxEntries` FIFO cap (default 10_000) as a DoS backstop, injectable `now()`.
@@ -52,7 +51,7 @@ plus wiring in the server message loop and a new stable error code. No changes t
 ## Post-review change
 
 The whole-branch review flagged that `send`/`abort` checked controller-existence
-*before* verification, so a replayed message to an already-torn-down controller
+_before_ verification, so a replayed message to an already-torn-down controller
 silently no-op'd without `EK09`. The verification + replay check was moved ahead
 of the controller lookup (issuer-match stays after, since it needs the
 controller). Side benefit: unsigned/invalid `send`/`abort` now return identical
@@ -69,7 +68,6 @@ unit tests + 10 server integration tests.
 ## Follow-ups (resolved)
 
 Both Minor review follow-ups were addressed on this branch:
-
 - The `process` path now runs the encryption-policy check **before** `checkReplay`,
   so a message that fails encryption no longer consumes its dedup key (a corrected
   retry may reuse its `jti`). Covered by a regression test.

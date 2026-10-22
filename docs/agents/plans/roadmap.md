@@ -30,7 +30,6 @@ Enkaku is in maintenance/hardening — no large feature in flight. The 2026-07-0
 (`completed/2026-07-03-repo-audit.complete.md`) set the current priorities.
 
 Next (immediate):
-
 - **Replay protection hardening** — the 0.18.x replay feature (shipped
   `completed/2026-07-01-replay-protection`) doesn't meet its threat model: no client
   `jti`/`iat` means deterministic-signature dedup keys and inert staleness rejection.
@@ -41,7 +40,6 @@ Next (immediate):
   `next/2026-07-07-client-transport-lifecycle-hardening.md`
 
 Backlog:
-
 - **Website post-split rewrite** — typedoc lists 14 packages that no longer exist, sidebars
   link ~24 dead API pages, and every prose page imports a removed package. Expect API drift,
   not just renames. `backlog/2026-07-16-website-post-split-rewrite.md`
