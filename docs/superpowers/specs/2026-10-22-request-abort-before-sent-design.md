@@ -17,8 +17,9 @@ cancelled so the connection is released (browser/RN per-origin limits).
   A late response for an aborted rid is dropped (existing behaviour once the controller is removed).
   Pre-aborted `config.signal` calls (`client.ts:700`, `:797`, `:894`) keep their current rejection
   value (the signal object) to stay non-breaking; their `sent` rejection must still settle
-  `controller.result` (via `controller.aborted(signal)`, not `controller.abort()`, which has no listener
-  on that path).
+  `controller.result`. Forward the rejection value unchanged with `controller.error(value)`: neither
+  `controller.abort()` (no listener on that path) nor `controller.aborted(signal)` (rejects with
+  `signal.reason`, a value change) will do.
 - **Caller-supplied rid reuse:** the wire protocol carries only the rid, so an old call's late response
   or delayed `abort` cannot be told apart from a replacement call's. Early settlement widens that
   window. Constraint, documented on `config.id`: do not reuse the id of an aborted call while its
