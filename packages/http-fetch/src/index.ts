@@ -250,12 +250,13 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
   async function sendClientMessage(
     msg: AnyClientMessageOf<Protocol>,
     sessionID?: string,
+    signal?: AbortSignal,
   ): Promise<void> {
     const headers: Record<string, string> = { ...HEADERS }
     if (sessionID != null) {
       headers['enkaku-session-id'] = sessionID
     }
-    const res = await sendMessage(msg, headers)
+    const res = await sendMessage(msg, headers, signal ?? abortController.signal)
     if (!res.ok) {
       const rid = (msg.payload as { rid?: string }).rid
       if (rid == null) {
@@ -291,6 +292,9 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
           }
         },
         (cause) => {
+          if (msg.payload.typ === 'abort') {
+            return
+          }
           try {
             controller.error(new Error('Failed to parse response', { cause }))
           } catch {
@@ -329,6 +333,9 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
         await sendClientMessage(msg)
       }
     } catch (cause) {
+      if (msg.payload.typ === 'abort' || abortController.signal.aborted) {
+        throw cause
+      }
       if (cause instanceof ResponseError) {
         // The server answered and the connection is alive. Fail this message
         // alone: erroring the readable would tear the whole transport down.
