@@ -523,6 +523,7 @@ export class Client<
     const enrichedHeader = otelInjectTraceContext(baseHeader)
     const finalHeader = Object.keys(enrichedHeader).length > 0 ? enrichedHeader : undefined
     const message = await this.#createMessage(payload, finalHeader)
+    if (owner?.settled && payload.typ !== 'abort') return
     await safeWrite({
       transport: this.#transport as unknown as WriteTarget,
       message,
@@ -651,6 +652,10 @@ export class Client<
       ? [
           config?: {
             header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
             id?: string
             param?: never
             signal?: AbortSignal
@@ -660,6 +665,10 @@ export class Client<
       : [
           config: {
             header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
             id?: string
             param: T['Param']
             signal?: AbortSignal
@@ -753,8 +762,30 @@ export class Client<
   >(
     procedure: Procedure,
     ...args: T['Param'] extends never
-      ? [config?: { header?: AnyHeader; id?: string; param?: never; signal?: AbortSignal }]
-      : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
+      ? [
+          config?: {
+            header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
+            id?: string
+            param?: never
+            signal?: AbortSignal
+          },
+        ]
+      : [
+          config: {
+            header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
+            id?: string
+            param: T['Param']
+            signal?: AbortSignal
+          },
+        ]
   ): StreamCall<T['Receive'], T['Result']> {
     const config = args[0] ?? {}
     const rid = config.id ?? this.#runtime.getRandomID()
@@ -847,8 +878,30 @@ export class Client<
   >(
     procedure: Procedure,
     ...args: T['Param'] extends never
-      ? [config?: { header?: AnyHeader; id?: string; param?: never; signal?: AbortSignal }]
-      : [config: { header?: AnyHeader; id?: string; param: T['Param']; signal?: AbortSignal }]
+      ? [
+          config?: {
+            header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
+            id?: string
+            param?: never
+            signal?: AbortSignal
+          },
+        ]
+      : [
+          config: {
+            header?: AnyHeader
+            /**
+             * Do not reuse the ID of an aborted call while its request may still be in flight:
+             * replies are matched by ID only.
+             */
+            id?: string
+            param: T['Param']
+            signal?: AbortSignal
+          },
+        ]
   ): ChannelCall<T['Receive'], T['Send'], T['Result']> {
     const config = args[0] ?? {}
     const rid = config.id ?? this.#runtime.getRandomID()

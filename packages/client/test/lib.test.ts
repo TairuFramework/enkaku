@@ -585,13 +585,13 @@ describe('Client', () => {
         procedure: 'test/request',
         rid: request.id,
       })
-      request.abort('test')
-
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as RequestPayloadOf<
         'test/request',
         Protocol['test/request']
       >
+      request.abort('test')
+
       const abortRead = await transports.server.read()
       expect(abortRead.value?.payload).toEqual({
         typ: 'abort',
@@ -739,13 +739,13 @@ describe('Client', () => {
       const client = new Client<Protocol>({ logger, transport: transports.client })
 
       const stream = client.createStream('test/stream')
-      stream.abort('test')
-
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as StreamPayloadOf<
         'test/stream',
         Protocol['test/stream']
       >
+      stream.abort('test')
+
       const abortRead = await transports.server.read()
       expect(abortRead.value?.payload).toEqual({
         typ: 'abort',
@@ -1073,13 +1073,13 @@ describe('Client', () => {
       const client = new Client<Protocol>({ logger, transport: transports.client })
 
       const channel = client.createChannel('test/channel')
-      channel.abort('test')
-
       const requestRead = await transports.server.read()
       const payload = requestRead.value?.payload as ChannelPayloadOf<
         'test/channel',
         Protocol['test/channel']
       >
+      channel.abort('test')
+
       const abortRead = await transports.server.read()
       expect(abortRead.value?.payload).toEqual({
         typ: 'abort',

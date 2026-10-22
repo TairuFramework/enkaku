@@ -10,6 +10,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import { Client, RequestTimeoutError } from '../src/index.js'
 
 const protocol = {
+  'test/request': { type: 'request', result: { type: 'string' } },
   request: { type: 'request', result: { type: 'string' } },
   stream: { type: 'stream', receive: { type: 'string' }, result: { type: 'string' } },
   channel: {
@@ -46,6 +47,22 @@ describe('abort before sent', () => {
     vi.useRealTimers()
     for (const cleanup of cleanups.splice(0)) await cleanup()
     vi.restoreAllMocks()
+  })
+
+  test('aborted request is never written', async () => {
+    const { client, payloads, write } = setup()
+    write.mockImplementation((message) => {
+      payloads.push(message.payload)
+      return Promise.resolve()
+    })
+    const call = client.request('test/request')
+
+    call.abort()
+
+    await expect(call).rejects.toBeInstanceOf(DOMException)
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    expect(payloads.map((payload) => payload.typ)).toEqual(['abort'])
   })
 
   test('request rejects on call.abort() while write is pending', async () => {
