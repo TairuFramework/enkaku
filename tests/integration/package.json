@@ -29,8 +29,9 @@
     "@hono/node-server": "catalog:",
     "@kokuin/capability": "catalog:",
     "@kokuin/token": "catalog:",
-    "@opentelemetry/sdk-trace-base": "catalog:",
-    "@opentelemetry/sdk-trace-node": "catalog:",
+    "@opentelemetry/api": "catalog:",
+    "@opentelemetry/context-async-hooks": "catalog:",
+    "@opentelemetry/sdk-trace": "catalog:",
     "@sozai/event": "catalog:",
     "get-port": "catalog:"
   }

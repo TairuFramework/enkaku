@@ -3,8 +3,9 @@ import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from 
 import { type ProcedureHandlers, type RequestHandler, serve } from '@enkaku/server'
 import { DirectTransports } from '@enkaku/transport'
 import { randomIdentity } from '@kokuin/token'
-import { InMemorySpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
+import { context, trace } from '@opentelemetry/api'
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks'
+import { InMemorySpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace'
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 const protocol = {
@@ -23,14 +24,15 @@ type Protocol = typeof protocol
 
 describe('end-to-end tracing', () => {
   let exporter: InMemorySpanExporter
-  let provider: NodeTracerProvider
+  let provider: TracerProvider
 
   beforeAll(() => {
     exporter = new InMemorySpanExporter()
-    provider = new NodeTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(exporter)],
+    provider = new TracerProvider({
+      spanProcessors: [new SimpleSpanProcessor({ exporter })],
     })
-    provider.register()
+    context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable())
+    trace.setGlobalTracerProvider(provider)
   })
 
   beforeEach(() => {
@@ -39,6 +41,8 @@ describe('end-to-end tracing', () => {
 
   afterAll(async () => {
     await provider.shutdown()
+    trace.disable()
+    context.disable()
   })
 
   test('traces a request from client through server', async () => {
