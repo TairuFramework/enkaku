@@ -266,6 +266,8 @@ describe('useCreateStream', () => {
       streamCall = createStream({ count: 3 })
     })
 
+    await vi.waitFor(() => expect(abortableHandler).toHaveBeenCalled())
+
     // Abort the stream
     act(() => {
       streamCall.abort()
