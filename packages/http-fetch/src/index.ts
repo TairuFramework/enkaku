@@ -59,6 +59,7 @@ export type TransportStreamParams = {
   fetch?: FetchFunction
   runtime?: Runtime
   maxBufferSize?: number
+  cancelOnAbort?: boolean
 }
 
 export type TransportStream<Protocol extends ProtocolDefinition> = ReadableWritablePair<
@@ -84,6 +85,14 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
   const [readable, controller] = createReadable<AnyServerMessageOf<Protocol>>()
   let sessionState: SSESessionState = { status: 'idle' }
   const abortController = new AbortController()
+  const cancels = new Map<string, AbortController>()
+
+  function clearCancel(msg: AnyClientMessageOf<Protocol>, cancel?: AbortController): void {
+    const rid = (msg.payload as { rid?: string }).rid
+    if (rid != null && cancel != null && cancels.get(rid) === cancel) {
+      cancels.delete(rid)
+    }
+  }
 
   async function sendMessage(
     msg: AnyClientMessageOf<Protocol> | TransportMessage,
@@ -251,61 +260,90 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
     msg: AnyClientMessageOf<Protocol>,
     sessionID?: string,
     signal?: AbortSignal,
+    cancel?: AbortController,
   ): Promise<void> {
-    const headers: Record<string, string> = { ...HEADERS }
-    if (sessionID != null) {
-      headers['enkaku-session-id'] = sessionID
-    }
-    const res = await sendMessage(msg, headers, signal ?? abortController.signal)
-    if (!res.ok) {
-      const rid = (msg.payload as { rid?: string }).rid
-      if (rid == null) {
-        // No controller to route the failure to — the send itself must reject,
-        // or the caller (client.sendEvent) sees a silent success.
-        throw new ResponseError(res)
+    let readingBody = false
+    try {
+      if (cancel?.signal.aborted) {
+        return
       }
-      // Reject only this call: enqueue a synthetic error reply for its rid.
-      // Session-level failures keep using controller.error elsewhere.
-      try {
-        controller.enqueue({
-          payload: {
-            typ: 'error',
-            rid,
-            code: 'EK_HTTP_REQUEST_FAILED',
-            msg: `Transport request failed with status ${res.status} (${res.statusText})`,
-            data: { status: res.status },
-          },
-        } as unknown as AnyServerMessageOf<Protocol>)
-      } catch {
-        // Readable already closed or errored (e.g. a concurrent SSE disconnect) —
-        // there is no longer anywhere to deliver the per-rid error
+      const headers: Record<string, string> = { ...HEADERS }
+      if (sessionID != null) {
+        headers['enkaku-session-id'] = sessionID
       }
-      return
-    }
-    if (res.status !== 204) {
-      res.json().then(
-        (msg) => {
-          try {
-            controller.enqueue(msg)
-          } catch {
-            // Readable already closed or errored (e.g. a concurrent SSE disconnect)
-          }
-        },
-        (cause) => {
-          if (msg.payload.typ === 'abort') {
-            return
-          }
-          try {
-            controller.error(new Error('Failed to parse response', { cause }))
-          } catch {
-            // Readable already closed or errored
-          }
-        },
-      )
+      const res = await sendMessage(msg, headers, signal ?? abortController.signal)
+      if (cancel?.signal.aborted && !abortController.signal.aborted) {
+        return
+      }
+      if (!res.ok) {
+        if (msg.payload.typ === 'abort') {
+          return
+        }
+        const rid = (msg.payload as { rid?: string }).rid
+        if (rid == null) {
+          // No controller to route the failure to — the send itself must reject,
+          // or the caller (client.sendEvent) sees a silent success.
+          throw new ResponseError(res)
+        }
+        // Reject only this call: enqueue a synthetic error reply for its rid.
+        // Session-level failures keep using controller.error elsewhere.
+        try {
+          controller.enqueue({
+            payload: {
+              typ: 'error',
+              rid,
+              code: 'EK_HTTP_REQUEST_FAILED',
+              msg: `Transport request failed with status ${res.status} (${res.statusText})`,
+              data: { status: res.status },
+            },
+          } as unknown as AnyServerMessageOf<Protocol>)
+        } catch {
+          // Readable already closed or errored (e.g. a concurrent SSE disconnect) —
+          // there is no longer anywhere to deliver the per-rid error
+        }
+        return
+      }
+      if (res.status !== 204) {
+        readingBody = true
+        res
+          .json()
+          .then(
+            (reply) => {
+              if (cancel?.signal.aborted) {
+                return
+              }
+              try {
+                controller.enqueue(reply)
+              } catch {
+                // Readable already closed or errored (e.g. a concurrent SSE disconnect)
+              }
+            },
+            (cause) => {
+              if (
+                msg.payload.typ === 'abort' ||
+                (cancel?.signal.aborted && !abortController.signal.aborted)
+              ) {
+                return
+              }
+              try {
+                controller.error(new Error('Failed to parse response', { cause }))
+              } catch {
+                // Readable already closed or errored
+              }
+            },
+          )
+          .finally(() => clearCancel(msg, cancel))
+      }
+    } finally {
+      if (!readingBody) {
+        clearCancel(msg, cancel)
+      }
     }
   }
 
-  async function send(msg: AnyClientMessageOf<Protocol>): Promise<void> {
+  async function send(msg: AnyClientMessageOf<Protocol>, cancel?: AbortController): Promise<void> {
+    const signal =
+      cancel == null ? undefined : AbortSignal.any([abortController.signal, cancel.signal])
     try {
       if (msg.payload.typ === 'channel' || msg.payload.typ === 'stream') {
         if (sessionState.status === 'idle') {
@@ -324,15 +362,20 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
               controller.error(error)
             })
           await promise
+          clearCancel(msg, cancel)
         } else {
           // Subsequent stream/channel messages — wait for session and send with ID
           const sessionID = await getSessionID()
-          await sendClientMessage(msg, sessionID)
+          await sendClientMessage(msg, sessionID, signal, cancel)
         }
       } else {
-        await sendClientMessage(msg)
+        await sendClientMessage(msg, undefined, signal, cancel)
       }
     } catch (cause) {
+      clearCancel(msg, cancel)
+      if (cancel?.signal.aborted && !abortController.signal.aborted) {
+        return
+      }
       if (msg.payload.typ === 'abort' || abortController.signal.aborted) {
         throw cause
       }
@@ -370,11 +413,21 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
       return send(msg)
     }
     const isOpen = typ === 'channel' || typ === 'stream'
+    let cancel: AbortController | undefined
+    if (params.cancelOnAbort) {
+      if (typ === 'request' || isOpen) {
+        cancel = new AbortController()
+        cancels.set(rid, cancel)
+      } else if (typ === 'abort') {
+        // Cancel before waiting behind a stream/channel open.
+        cancels.get(rid)?.abort()
+      }
+    }
     const previous = ridChains.get(rid)
     if (!isOpen && previous == null) {
-      return send(msg)
+      return send(msg, cancel)
     }
-    const next = previous == null ? send(msg) : previous.then(() => send(msg))
+    const next = previous == null ? send(msg, cancel) : previous.then(() => send(msg, cancel))
     // A rejected send must not poison the chain for the messages behind it.
     const tail = next.catch(() => {})
     ridChains.set(rid, tail)
@@ -402,6 +455,7 @@ export type ClientTransportParams = {
   fetch?: FetchFunction
   runtime?: Runtime
   maxBufferSize?: number
+  cancelOnAbort?: boolean
 }
 
 export class ClientTransport<Protocol extends ProtocolDefinition> extends Transport<
