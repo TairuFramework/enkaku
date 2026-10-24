@@ -207,8 +207,8 @@ catalogs:
       specifier: ^0.2.4
       version: 0.2.4
     '@kokuin/electron':
-      specifier: ^0.4.3
-      version: 0.4.3
+      specifier: ^0.4.4
+      version: 0.4.4
     '@kokuin/token':
       specifier: ^0.6.2
       version: 0.6.2
@@ -634,7 +634,7 @@ importers:
         version: link:../../packages/transport
       '@kokuin/electron':
         specifier: 'catalog:'
-        version: 0.4.3(@logtape/logtape@2.3.11)
+        version: 0.4.4(@logtape/logtape@2.3.11)
       '@kokuin/token':
         specifier: 'catalog:'
         version: 0.6.2(@logtape/logtape@2.3.11)
@@ -2566,11 +2566,8 @@ packages:
   '@kokuin/controller@0.2.4':
     resolution: {integrity: sha512-lncv9XhO54hSOoB779p00Vy8gJEo38HUP8/8eD1Qg3WDFgko5pjwOkPRp1zLVMuxMaeu/OCgF0f9o3aFa1xRCw==}
 
-  '@kokuin/electron@0.4.3':
-    resolution: {integrity: sha512-OVGQgWR4kwiKj7DI5isGeRfL8yr/hOErU3r+0JDgzCqUX/9/ziBPEXsXIJGSEnZmloS/edKkd2lgog0rzQmEQg==}
-
-  '@kokuin/otel@0.3.0':
-    resolution: {integrity: sha512-XwnBYkrglkV0aVcPx/ajDL6DNAZgFeZ7cNyzAHMW6ex4/RyY9xJ7htNYzl/sCFlYMNQ8M/lPayrzYf3hdN4dUQ==}
+  '@kokuin/electron@0.4.4':
+    resolution: {integrity: sha512-mRp7Kr6+ojNCBdobSV2U0/Fs6GWRPzJyZ9jgwplAxQa9e50fyjkZ1T9gDj8sITKTB4PDZALYIHXINbKvTA6arg==}
 
   '@kokuin/otel@0.3.1':
     resolution: {integrity: sha512-dXv3mA8NG/EnCfJFGkfnxlofWuJxkXO7+w91UdQbl4gd4KlMWHnOhSwH1B9zenW72aVX9oM2YK6J95jZqmoz2w==}
@@ -3239,9 +3236,6 @@ packages:
     resolution: {integrity: sha512-t/r0WfnC3n94s21pw3/2YV/C/0WTKzbrtsNGv8gNdDeKBFJ0a9jYEo8MBpcLr1c1zn15S5k3Gpt9sf3VvFGPEQ==}
     peerDependencies:
       '@logtape/logtape': ^2.3.11
-
-  '@sozai/otel@0.3.4':
-    resolution: {integrity: sha512-qnX2hMqHYRIKMADURHNXxfAuSzyNoyMbtz9/zNDhULsPTr2neuEOgx8BH8svRem2pJHEUb0qIISd6EOmBTOUYw==}
 
   '@sozai/otel@0.4.0':
     resolution: {integrity: sha512-IJJQDJO6QwlvkfOJa5f0OGde68qMzZg9RpxzV71NSh6CTa3qqH05NlSg4nHcDbDBNFbrJti4k+BwIKrOcOUQIw==}
@@ -12427,22 +12421,15 @@ snapshots:
     transitivePeerDependencies:
       - '@logtape/logtape'
 
-  '@kokuin/electron@0.4.3(@logtape/logtape@2.3.11)':
+  '@kokuin/electron@0.4.4(@logtape/logtape@2.3.11)':
     dependencies:
-      '@kokuin/otel': 0.3.0(@logtape/logtape@2.3.11)
+      '@kokuin/otel': 0.3.1(@logtape/logtape@2.3.11)
       '@kokuin/token': 0.6.2(@logtape/logtape@2.3.11)
       '@sozai/codec': 0.4.3
       '@sozai/lock': 0.1.2
       '@sozai/log': 0.4.0(@logtape/logtape@2.3.11)
-      '@sozai/otel': 0.3.4(@logtape/logtape@2.3.11)
+      '@sozai/otel': 0.4.0(@logtape/logtape@2.3.11)
       electron-store: 12.0.0
-    transitivePeerDependencies:
-      - '@logtape/logtape'
-
-  '@kokuin/otel@0.3.0(@logtape/logtape@2.3.11)':
-    dependencies:
-      '@opentelemetry/api': 1.10.0
-      '@sozai/otel': 0.3.4(@logtape/logtape@2.3.11)
     transitivePeerDependencies:
       - '@logtape/logtape'
 
@@ -13163,14 +13150,6 @@ snapshots:
   '@sozai/log@0.4.0(@logtape/logtape@2.3.11)':
     dependencies:
       '@logtape/logtape': 2.3.11
-
-  '@sozai/otel@0.3.4(@logtape/logtape@2.3.11)':
-    dependencies:
-      '@opentelemetry/api': 1.10.0
-      '@opentelemetry/api-logs': 0.223.0
-      '@sozai/log': 0.4.0(@logtape/logtape@2.3.11)
-    transitivePeerDependencies:
-      - '@logtape/logtape'
 
   '@sozai/otel@0.4.0(@logtape/logtape@2.3.11)':
     dependencies:

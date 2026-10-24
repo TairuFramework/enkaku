@@ -91,6 +91,10 @@
   dir: packages/server
   intents:
     - kokuin-0-6-floor
+"@enkaku/server@0.22.2":
+  dir: packages/server
+  intents:
+    - kokuin-canonical-deny
 "@enkaku/socket@0.21.0":
   dir: packages/socket
   intents:
