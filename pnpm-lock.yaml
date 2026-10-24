@@ -201,17 +201,17 @@ catalogs:
       specifier: ^0.3.4
       version: 0.3.4
     '@kokuin/capability':
-      specifier: ^0.5.0
-      version: 0.5.0
+      specifier: ^0.5.2
+      version: 0.5.2
     '@kokuin/controller':
-      specifier: ^0.2.0
-      version: 0.2.0
+      specifier: ^0.2.4
+      version: 0.2.4
     '@kokuin/electron':
       specifier: ^0.4.3
       version: 0.4.3
     '@kokuin/token':
-      specifier: ^0.6.0
-      version: 0.6.0
+      specifier: ^0.6.2
+      version: 0.6.2
     '@opentelemetry/api':
       specifier: ^1.10.0
       version: 1.10.0
@@ -342,7 +342,7 @@ importers:
         version: link:../otel
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.6.0(@logtape/logtape@2.3.11)
+        version: 0.6.2(@logtape/logtape@2.3.11)
       '@sozai/async':
         specifier: 'catalog:'
         version: 0.4.1
@@ -447,7 +447,7 @@ importers:
         version: link:../server
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.6.0(@logtape/logtape@2.3.11)
+        version: 0.6.2(@logtape/logtape@2.3.11)
 
   packages/message:
     dependencies:
@@ -477,7 +477,7 @@ importers:
     dependencies:
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.6.0(@logtape/logtape@2.3.11)
+        version: 0.6.2(@logtape/logtape@2.3.11)
       '@sozai/schema':
         specifier: 'catalog:'
         version: 0.1.6
@@ -533,10 +533,10 @@ importers:
         version: link:../protocol
       '@kokuin/capability':
         specifier: 'catalog:'
-        version: 0.5.0(@logtape/logtape@2.3.11)
+        version: 0.5.2(@logtape/logtape@2.3.11)
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.6.0(@logtape/logtape@2.3.11)
+        version: 0.6.2(@logtape/logtape@2.3.11)
       '@sozai/async':
         specifier: 'catalog:'
         version: 0.4.1
@@ -564,7 +564,7 @@ importers:
         version: link:../transport
       '@kokuin/controller':
         specifier: 'catalog:'
-        version: 0.2.0(@logtape/logtape@2.3.11)
+        version: 0.2.4(@logtape/logtape@2.3.11)
       '@sozai/codec':
         specifier: 'catalog:'
         version: 0.4.3
@@ -604,7 +604,7 @@ importers:
         version: link:../protocol
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.6.0(@logtape/logtape@2.3.11)
+        version: 0.6.2(@logtape/logtape@2.3.11)
 
   packages/transport:
     dependencies:
@@ -637,7 +637,7 @@ importers:
         version: 0.4.3(@logtape/logtape@2.3.11)
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.6.0(@logtape/logtape@2.3.11)
+        version: 0.6.2(@logtape/logtape@2.3.11)
       react:
         specifier: 'catalog:'
         version: 19.3.0
@@ -710,10 +710,10 @@ importers:
         version: 2.1.5(hono@4.12.27)
       '@kokuin/capability':
         specifier: 'catalog:'
-        version: 0.5.0(@logtape/logtape@2.3.11)
+        version: 0.5.2(@logtape/logtape@2.3.11)
       '@kokuin/token':
         specifier: 'catalog:'
-        version: 0.6.0(@logtape/logtape@2.3.11)
+        version: 0.6.2(@logtape/logtape@2.3.11)
       '@opentelemetry/api':
         specifier: 'catalog:'
         version: 1.10.0
@@ -2560,11 +2560,11 @@ packages:
     resolution: {integrity: sha512-Ti+Ob/Ct0amJDnefhOpOxWJWzYPN2AKb5w0eF78DXYG2Oqg96iJ1VeGRb4HmLJGBi+NNwikIpFOBz8r6qDrzVQ==}
     hasBin: true
 
-  '@kokuin/capability@0.5.0':
-    resolution: {integrity: sha512-HUEzYU9mcDLFiXKe+8aAlEKwOs+2mZ7PkZOoKh8XMBg0J09p+Ha1m3UgPQ24v0f35evN/+hE2wfWc2aahA7yWA==}
+  '@kokuin/capability@0.5.2':
+    resolution: {integrity: sha512-TSHpklIIpHv6jjv4cZ0gPy/Id4noEIy4wuSCkrNLSNJSCWsHXh4g9Qbprp79OgNOWfFODAGqTvYpWsNFh/8jdw==}
 
-  '@kokuin/controller@0.2.0':
-    resolution: {integrity: sha512-FuJX5PP7Q8nRoeTA+qh+2PNZXOStq1pPexKQ4UXO0QJnAL2qcEvguDezW2VkbGcU4Bnz2T0uWdwkvLbDhiPkyA==}
+  '@kokuin/controller@0.2.4':
+    resolution: {integrity: sha512-lncv9XhO54hSOoB779p00Vy8gJEo38HUP8/8eD1Qg3WDFgko5pjwOkPRp1zLVMuxMaeu/OCgF0f9o3aFa1xRCw==}
 
   '@kokuin/electron@0.4.3':
     resolution: {integrity: sha512-OVGQgWR4kwiKj7DI5isGeRfL8yr/hOErU3r+0JDgzCqUX/9/ziBPEXsXIJGSEnZmloS/edKkd2lgog0rzQmEQg==}
@@ -2572,8 +2572,11 @@ packages:
   '@kokuin/otel@0.3.0':
     resolution: {integrity: sha512-XwnBYkrglkV0aVcPx/ajDL6DNAZgFeZ7cNyzAHMW6ex4/RyY9xJ7htNYzl/sCFlYMNQ8M/lPayrzYf3hdN4dUQ==}
 
-  '@kokuin/token@0.6.0':
-    resolution: {integrity: sha512-A6K7BRBIhgABLMwLJrQGL4hU22EkEsIB0lXviuqEujvoalIAJ+rV5ZwVMNcq9vUvS1NsLm3uLjyojbd2YpaguQ==}
+  '@kokuin/otel@0.3.1':
+    resolution: {integrity: sha512-dXv3mA8NG/EnCfJFGkfnxlofWuJxkXO7+w91UdQbl4gd4KlMWHnOhSwH1B9zenW72aVX9oM2YK6J95jZqmoz2w==}
+
+  '@kokuin/token@0.6.2':
+    resolution: {integrity: sha512-W0ba8j1hsmW1F0+qanDAnrxPCu/dNtSViopDuGJpbrL3y59/Ao884JI65l0m2Gp6dEgSqKH+GBnp04EpdYgELg==}
 
   '@leichtgewicht/ip-codec@2.0.5':
     resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
@@ -12407,15 +12410,15 @@ snapshots:
       - supports-color
       - vite
 
-  '@kokuin/capability@0.5.0(@logtape/logtape@2.3.11)':
+  '@kokuin/capability@0.5.2(@logtape/logtape@2.3.11)':
     dependencies:
-      '@kokuin/token': 0.6.0(@logtape/logtape@2.3.11)
+      '@kokuin/token': 0.6.2(@logtape/logtape@2.3.11)
     transitivePeerDependencies:
       - '@logtape/logtape'
 
-  '@kokuin/controller@0.2.0(@logtape/logtape@2.3.11)':
+  '@kokuin/controller@0.2.4(@logtape/logtape@2.3.11)':
     dependencies:
-      '@kokuin/token': 0.6.0(@logtape/logtape@2.3.11)
+      '@kokuin/token': 0.6.2(@logtape/logtape@2.3.11)
       '@noble/curves': 2.4.0
       '@noble/hashes': 2.4.0
       '@scure/base': 2.4.0
@@ -12427,7 +12430,7 @@ snapshots:
   '@kokuin/electron@0.4.3(@logtape/logtape@2.3.11)':
     dependencies:
       '@kokuin/otel': 0.3.0(@logtape/logtape@2.3.11)
-      '@kokuin/token': 0.6.0(@logtape/logtape@2.3.11)
+      '@kokuin/token': 0.6.2(@logtape/logtape@2.3.11)
       '@sozai/codec': 0.4.3
       '@sozai/lock': 0.1.2
       '@sozai/log': 0.4.0(@logtape/logtape@2.3.11)
@@ -12443,14 +12446,21 @@ snapshots:
     transitivePeerDependencies:
       - '@logtape/logtape'
 
-  '@kokuin/token@0.6.0(@logtape/logtape@2.3.11)':
+  '@kokuin/otel@0.3.1(@logtape/logtape@2.3.11)':
     dependencies:
-      '@kokuin/otel': 0.3.0(@logtape/logtape@2.3.11)
+      '@opentelemetry/api': 1.10.0
+      '@sozai/otel': 0.4.0(@logtape/logtape@2.3.11)
+    transitivePeerDependencies:
+      - '@logtape/logtape'
+
+  '@kokuin/token@0.6.2(@logtape/logtape@2.3.11)':
+    dependencies:
+      '@kokuin/otel': 0.3.1(@logtape/logtape@2.3.11)
       '@noble/curves': 2.4.0
       '@noble/hashes': 2.4.0
       '@scure/base': 2.4.0
       '@sozai/codec': 0.4.3
-      '@sozai/otel': 0.3.4(@logtape/logtape@2.3.11)
+      '@sozai/otel': 0.4.0(@logtape/logtape@2.3.11)
       '@sozai/schema': 0.1.6
     transitivePeerDependencies:
       - '@logtape/logtape'
