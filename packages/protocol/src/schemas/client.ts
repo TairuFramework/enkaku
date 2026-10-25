@@ -137,10 +137,26 @@ export function createSendMessageSchema(
   return createMessageSchema(payloadSchema, type)
 }
 
+// Keyed by protocol object so createValidator()'s schema-identity cache hits across callers.
+const clientMessageSchemas = new WeakMap<ProtocolDefinition, Map<MessageType, Schema>>()
+
+/**
+ * Memoized per protocol object and message type: callers get the same schema instance.
+ * Do not mutate the returned schema or the protocol after first use.
+ */
 export function createClientMessageSchema(
   protocol: ProtocolDefinition,
-  type?: MessageType,
+  type: MessageType = 'any',
 ): Schema {
+  let byType = clientMessageSchemas.get(protocol)
+  if (byType == null) {
+    byType = new Map()
+    clientMessageSchemas.set(protocol, byType)
+  }
+  const cached = byType.get(type)
+  if (cached != null) {
+    return cached
+  }
   let addAbort = false
   const schemasRecord: Record<string, Schema> = {}
   for (const [procedure, definition] of Object.entries(protocol)) {
@@ -175,5 +191,7 @@ export function createClientMessageSchema(
   if (addAbort) {
     schemasRecord.abort = createAbortMessageSchema(type)
   }
-  return rebaseDefinitionReferences({ anyOf: Object.values(schemasRecord) })
+  const schema = rebaseDefinitionReferences({ anyOf: Object.values(schemasRecord) })
+  byType.set(type, schema)
+  return schema
 }
