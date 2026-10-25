@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/client",
-  "version": "0.22.2",
+  "version": "0.22.3",
   "description": "Enkaku RPC client",
   "keywords": [
     "rpc",
