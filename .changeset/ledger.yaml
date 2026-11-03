@@ -41,6 +41,10 @@
   dir: packages/http-serve
   intents:
     - kokuin-0-6-floor
+"@enkaku/http-serve@0.22.4":
+  dir: packages/http-serve
+  intents:
+    - sse-heartbeat
 "@enkaku/message@0.22.0":
   dir: packages/message
   intents:

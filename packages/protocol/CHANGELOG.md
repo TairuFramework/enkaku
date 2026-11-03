@@ -1,5 +1,7 @@
 # @enkaku/protocol
 
+## 0.22.4
+
 ## 0.22.3
 
 ### Patch Changes
