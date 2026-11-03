@@ -53,6 +53,12 @@ export type ServerBridgeOptions = {
   requestTimeoutMs?: number
   maxRequestBodySize?: number
   maxSessionBufferBytes?: number
+  /**
+   * Interval between SSE comment lines written to every open stream, so proxies
+   * and clients with body or idle timeouts don't drop a quiet stream. Defaults
+   * to 15 seconds; 0 disables it.
+   */
+  heartbeatIntervalMs?: number
 }
 
 const VALID_PAYLOAD_TYPES = new Set(['abort', 'channel', 'event', 'request', 'send', 'stream'])
@@ -119,6 +125,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const requestTimeoutMs = options.requestTimeoutMs ?? 30_000 // 30 seconds
   const maxRequestBodySize = options.maxRequestBodySize ?? 1_048_576 // 1 MiB
   const maxSessionBufferBytes = options.maxSessionBufferBytes ?? 1_048_576 // 1 MiB
+  const heartbeatIntervalMs = options.heartbeatIntervalMs ?? 15_000
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
   const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
@@ -207,6 +214,30 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     cleanupInterval.unref()
   }
 
+  // Keep quiet streams alive. A comment is skipped when the stream's buffer is
+  // full: the consumer is not reading, and the buffer bound must stay a bound.
+  const heartbeatInterval =
+    heartbeatIntervalMs > 0
+      ? setInterval(() => {
+          for (const session of sessions.values()) {
+            const sse = session.controller
+            if (sse == null || (sse.desiredSize ?? 0) <= 0) continue
+            try {
+              sse.enqueue(':\n\n')
+            } catch {
+              // Closed or errored; the session's own cleanup removes it.
+            }
+          }
+        }, heartbeatIntervalMs)
+      : null
+  if (
+    heartbeatInterval != null &&
+    typeof heartbeatInterval === 'object' &&
+    'unref' in heartbeatInterval
+  ) {
+    heartbeatInterval.unref()
+  }
+
   const [readable, controller] = createReadable<Incoming>()
 
   /**
@@ -222,6 +253,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
     disposed = true
     clearInterval(cleanupInterval)
+    if (heartbeatInterval != null) clearInterval(heartbeatInterval)
     for (const timer of inflightTimers.values()) {
       clearTimeout(timer)
     }
@@ -577,6 +609,7 @@ export type ServerTransportOptions = {
   requestTimeoutMs?: number
   maxRequestBodySize?: number
   maxSessionBufferBytes?: number
+  heartbeatIntervalMs?: number
 }
 
 export class ServerTransport<Protocol extends ProtocolDefinition> extends Transport<
@@ -595,6 +628,7 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
       requestTimeoutMs: options.requestTimeoutMs,
       maxRequestBodySize: options.maxRequestBodySize,
       maxSessionBufferBytes: options.maxSessionBufferBytes,
+      heartbeatIntervalMs: options.heartbeatIntervalMs,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
       },
