@@ -42,7 +42,17 @@ type InflightRequest =
   | ({ type: 'request'; headers: Record<string, string> } & Deferred<Response>)
   | { type: 'stream'; sessionID: string }
 
+export type SessionDropReason = 'buffer-overflow' | 'write-error' | 'idle-timeout'
+
+export type SessionDropInfo = {
+  sessionID: string
+  rid?: string
+  reason: SessionDropReason
+  error?: Error
+}
+
 export type ServerBridgeOptions = {
+  onSessionDrop?: (info: SessionDropInfo) => void
   allowedOrigin?: string | Array<string>
   onWriteError?: (event: TransportEvents['writeFailed']) => void
   onRequestAborted?: (event: TransportEvents['requestAborted']) => void
@@ -178,7 +188,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
    * on purpose: the bridge's writable sink is shared by every session, so
    * blocking on one slow consumer would stall all the others.
    */
-  function dropSession(sessionID: string, rid: string | undefined, error: Error): void {
+  function dropSession(info: SessionDropInfo): void {
+    const { sessionID, rid, error } = info
+    if (!sessions.has(sessionID)) return
     const session = sessions.get(sessionID)
     if (session?.controller != null) {
       try {
@@ -189,7 +201,13 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
     sessions.delete(sessionID)
     clearSessionInflight(sessionID)
-    reportWriteError(error, rid)
+    try {
+      // An enqueue error's cause may contain payloads; diagnostics only receive our message.
+      options.onSessionDrop?.(error == null ? info : { ...info, error: new Error(error.message) })
+    } catch {
+      // Diagnostics must never break the shared writable or sweep timer.
+    }
+    if (error != null) reportWriteError(error, rid)
   }
 
   // Periodic cleanup of expired sessions
@@ -198,13 +216,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       const now = Date.now()
       for (const [id, session] of sessions) {
         if (now - session.lastAccess > sessionTimeoutMs) {
-          if (session.controller != null) {
-            try {
-              session.controller.close()
-            } catch {}
-          }
-          sessions.delete(id)
-          clearSessionInflight(id)
+          dropSession({ sessionID: id, reason: 'idle-timeout' })
         }
       }
     },
@@ -318,21 +330,21 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           // reads would otherwise be reaped at sessionTimeoutMs.
           session.lastAccess = Date.now()
         } catch (cause) {
-          dropSession(
-            request.sessionID,
-            rid,
-            new Error(`Error writing to SSE feed for session: ${request.sessionID}`, { cause }),
-          )
+          const error = new Error(`Error writing to SSE feed for session: ${request.sessionID}`, {
+            cause,
+          })
+          dropSession({ sessionID: request.sessionID, rid, reason: 'write-error', error })
           return
         }
         if ((session.controller.desiredSize ?? 0) <= 0) {
           // The consumer has fallen maxSessionBufferBytes behind. Drop this session
           // alone rather than growing its queue without bound.
-          dropSession(
-            request.sessionID,
+          dropSession({
+            sessionID: request.sessionID,
             rid,
-            new Error(`SSE buffer overflow for session: ${request.sessionID}`),
-          )
+            reason: 'buffer-overflow',
+            error: new Error(`SSE buffer overflow for session: ${request.sessionID}`),
+          })
         }
       }
     },
@@ -601,6 +613,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
 }
 
 export type ServerTransportOptions = {
+  onSessionDrop?: (info: SessionDropInfo) => void
   allowedOrigin?: string | Array<string>
   maxSessions?: number
   runtime?: Runtime
@@ -629,6 +642,7 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
       maxRequestBodySize: options.maxRequestBodySize,
       maxSessionBufferBytes: options.maxSessionBufferBytes,
       heartbeatIntervalMs: options.heartbeatIntervalMs,
+      onSessionDrop: options.onSessionDrop,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
       },
