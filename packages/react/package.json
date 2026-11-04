@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/react",
-  "version": "0.22.4",
+  "version": "0.22.5",
   "description": "React bindings for Enkaku RPC client",
   "keywords": [
     "rpc",

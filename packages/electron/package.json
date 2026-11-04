@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/electron",
-  "version": "0.22.4",
+  "version": "0.22.5",
   "description": "Enkaku RPC using Electron IPC",
   "keywords": [
     "electron",

@@ -45,6 +45,10 @@
   dir: packages/http-serve
   intents:
     - sse-heartbeat
+"@enkaku/http-serve@0.22.5":
+  dir: packages/http-serve
+  intents:
+    - session-drop-diagnostics
 "@enkaku/message@0.22.0":
   dir: packages/message
   intents:

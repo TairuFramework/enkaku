@@ -1,5 +1,11 @@
 # @enkaku/http-serve
 
+## 0.22.5
+
+### Patch Changes
+
+- Add an optional onSessionDrop diagnostics hook for SSE buffer overflow, write errors and idle timeout, without exposing message contents.
+
 ## 0.22.4
 
 ### Patch Changes
