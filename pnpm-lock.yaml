@@ -210,8 +210,8 @@ catalogs:
       specifier: ^0.7.0
       version: 0.7.0
     '@kokuin/crypto-napi':
-      specifier: ^0.7.0
-      version: 0.7.0
+      specifier: ^0.7.1
+      version: 0.7.1
     '@kokuin/electron':
       specifier: ^0.7.0
       version: 0.7.0
@@ -646,7 +646,7 @@ importers:
         version: link:../../packages/transport
       '@kokuin/crypto-napi':
         specifier: 'catalog:'
-        version: 0.7.0
+        version: 0.7.1
       '@kokuin/electron':
         specifier: 'catalog:'
         version: 0.7.0(@logtape/logtape@2.3.11)
@@ -2581,8 +2581,8 @@ packages:
   '@kokuin/controller@0.7.0':
     resolution: {integrity: sha512-lHc2HXVfnZaj10h2Z+FORr1AxXg0QMQDHeYC4QFXXTZd5EdGh0tbQz4zVgB5rfGJ0KG/LYc8geTmOXekjBzp7A==}
 
-  '@kokuin/crypto-napi@0.7.0':
-    resolution: {integrity: sha512-rr/ZDGspQhb9vaI1bFxDfruNbr+yKtCAPkAMbail2MtaM6wsT9ccK5cTI7o7AeTx0rLOGEEGcSjcg9aizpvX4g==}
+  '@kokuin/crypto-napi@0.7.1':
+    resolution: {integrity: sha512-pn7Q3usDPusWzpeR355+WaYFQqnihPjNR4IDQO4eh8DolgMuQb0r/GKwlL0p1dPY1PlUjy3szsp5T3UYxo6tzg==}
     engines: {node: '>=22'}
 
   '@kokuin/crypto-node@0.7.0':
@@ -12499,7 +12499,7 @@ snapshots:
     transitivePeerDependencies:
       - '@logtape/logtape'
 
-  '@kokuin/crypto-napi@0.7.0':
+  '@kokuin/crypto-napi@0.7.1':
     dependencies:
       '@kokuin/crypto': 0.7.0
       '@kokuin/crypto-node': 0.7.0
