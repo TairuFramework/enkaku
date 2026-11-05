@@ -209,6 +209,9 @@ catalogs:
     '@kokuin/crypto':
       specifier: ^0.7.0
       version: 0.7.0
+    '@kokuin/crypto-napi':
+      specifier: ^0.7.0
+      version: 0.7.0
     '@kokuin/electron':
       specifier: ^0.7.0
       version: 0.7.0
@@ -641,6 +644,9 @@ importers:
       '@enkaku/transport':
         specifier: workspace:*
         version: link:../../packages/transport
+      '@kokuin/crypto-napi':
+        specifier: 'catalog:'
+        version: 0.7.0
       '@kokuin/electron':
         specifier: 'catalog:'
         version: 0.7.0(@logtape/logtape@2.3.11)
@@ -2574,6 +2580,14 @@ packages:
 
   '@kokuin/controller@0.7.0':
     resolution: {integrity: sha512-lHc2HXVfnZaj10h2Z+FORr1AxXg0QMQDHeYC4QFXXTZd5EdGh0tbQz4zVgB5rfGJ0KG/LYc8geTmOXekjBzp7A==}
+
+  '@kokuin/crypto-napi@0.7.0':
+    resolution: {integrity: sha512-rr/ZDGspQhb9vaI1bFxDfruNbr+yKtCAPkAMbail2MtaM6wsT9ccK5cTI7o7AeTx0rLOGEEGcSjcg9aizpvX4g==}
+    engines: {node: '>=22'}
+
+  '@kokuin/crypto-node@0.7.0':
+    resolution: {integrity: sha512-OPHApzzulCpd9/5XrI0jmU1kGN1LNYsv7TDjyrRutCXXMiXjub+reyM0dp8CWXkXIywBqLDk9FcQ0MzBrRawew==}
+    engines: {node: '>=22'}
 
   '@kokuin/crypto@0.7.0':
     resolution: {integrity: sha512-PLKA4Mb171ThOcGEaS5LNn1nATwDg8Q5cMwLZlaOJ81B/rhnuilsFMQbYEoKwc5sXsHBhDO8rqM10v/R6UR2SA==}
@@ -12484,6 +12498,15 @@ snapshots:
       micro-key-producer: 0.10.2
     transitivePeerDependencies:
       - '@logtape/logtape'
+
+  '@kokuin/crypto-napi@0.7.0':
+    dependencies:
+      '@kokuin/crypto': 0.7.0
+      '@kokuin/crypto-node': 0.7.0
+
+  '@kokuin/crypto-node@0.7.0':
+    dependencies:
+      '@kokuin/crypto': 0.7.0
 
   '@kokuin/crypto@0.7.0':
     dependencies:

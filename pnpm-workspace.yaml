@@ -32,6 +32,7 @@ catalog:
   '@kokuin/capability': ^0.7.0
   '@kokuin/controller': ^0.7.0
   '@kokuin/crypto': ^0.7.0
+  '@kokuin/crypto-napi': ^0.7.0
   '@kokuin/electron': ^0.7.0
   '@kokuin/token': ^0.7.0
   '@opentelemetry/api': ^1.10.0

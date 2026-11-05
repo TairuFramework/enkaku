@@ -1,6 +1,6 @@
 import { createRendererClient } from '@enkaku/electron/renderer'
 import { type Token, verifyToken } from '@kokuin/token'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button, StyleSheet, Text, View } from 'react-native'
 
 import type { Protocol } from './protocol'
@@ -12,8 +12,13 @@ type Data = {
 }
 
 export default function App() {
+  const [backend, setBackend] = useState<string | null>(null)
   const [signedToken, setSignedToken] = useState<string | null>(null)
   const [verifiedToken, setVerifiedToken] = useState<Token<Data> | null>(null)
+
+  useEffect(() => {
+    client.request('backend').then(setBackend)
+  }, [])
 
   let button = null
   if (signedToken == null) {
@@ -37,6 +42,7 @@ export default function App() {
   }
   return (
     <View style={styles.container}>
+      {backend ? <Text>Crypto backend: {backend}</Text> : null}
       {button}
       {verifiedToken ? <Text>Verified token: {verifiedToken.payload.test}</Text> : null}
     </View>

@@ -1,16 +1,19 @@
 import path from 'node:path'
 import { serveProcess } from '@enkaku/electron'
+import { createNapiCrypto } from '@kokuin/crypto-napi'
 import { ElectronKeyStore } from '@kokuin/electron'
 import { stringifyToken } from '@kokuin/token'
 import { app, BrowserWindow } from 'electron'
 
 import type { Protocol } from './protocol'
 
-const keyStore = ElectronKeyStore.open({ name: 'EnkakuKeystore' })
+const crypto = createNapiCrypto()
+const keyStore = ElectronKeyStore.open({ crypto, name: 'EnkakuKeystore' })
 
 serveProcess<Protocol>({
   requireAuth: false,
   handlers: {
+    backend: async () => crypto.backend,
     sign: async ({ param }) => {
       const identity = await keyStore.provideIdentity(param.keyID ?? 'test')
       const token = await identity.signToken({ payload: param.payload })

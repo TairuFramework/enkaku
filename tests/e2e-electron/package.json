@@ -14,6 +14,7 @@
     "@enkaku/electron": "workspace:*",
     "@enkaku/server": "workspace:*",
     "@enkaku/transport": "workspace:*",
+    "@kokuin/crypto-napi": "catalog:",
     "@kokuin/electron": "catalog:",
     "@kokuin/token": "catalog:",
     "react": "catalog:",
