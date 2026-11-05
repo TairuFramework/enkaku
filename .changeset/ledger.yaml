@@ -14,6 +14,10 @@
   dir: packages/client
   intents:
     - kokuin-0-6-floor
+"@enkaku/client@0.23.0":
+  dir: packages/client
+  intents:
+    - kokuin-0-7-crypto-provider
 "@enkaku/electron@0.22.0":
   dir: packages/electron
   intents:
@@ -49,6 +53,10 @@
   dir: packages/http-serve
   intents:
     - session-drop-diagnostics
+"@enkaku/http-serve@0.23.0":
+  dir: packages/http-serve
+  intents:
+    - kokuin-0-7-crypto-provider
 "@enkaku/message@0.22.0":
   dir: packages/message
   intents:
@@ -74,6 +82,10 @@
   dir: packages/protocol
   intents:
     - memoize-message-schemas
+"@enkaku/protocol@0.23.0":
+  dir: packages/protocol
+  intents:
+    - kokuin-0-7-crypto-provider
 "@enkaku/react@0.21.0":
   dir: packages/react
   intents:
@@ -111,6 +123,10 @@
   dir: packages/server
   intents:
     - memoize-message-schemas
+"@enkaku/server@0.23.0":
+  dir: packages/server
+  intents:
+    - kokuin-0-7-crypto-provider
 "@enkaku/socket@0.21.0":
   dir: packages/socket
   intents:
@@ -128,6 +144,10 @@
   dir: packages/standalone
   intents:
     - kokuin-0-6-floor
+"@enkaku/standalone@0.23.0":
+  dir: packages/standalone
+  intents:
+    - kokuin-0-7-crypto-provider
 "@enkaku/transport@0.21.0":
   dir: packages/transport
   intents:

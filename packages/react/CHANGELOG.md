@@ -1,5 +1,12 @@
 # @enkaku/react
 
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies:
+  - @enkaku/client@0.23.0
+
 ## 0.22.5
 
 ## 0.22.4

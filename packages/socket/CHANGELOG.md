@@ -1,5 +1,13 @@
 # @enkaku/socket
 
+## 0.23.0
+
+### Patch Changes
+
+- Updated dependencies:
+  - @enkaku/otel@0.23.0
+  - @enkaku/transport@0.23.0
+
 ## 0.22.5
 
 ## 0.22.4
