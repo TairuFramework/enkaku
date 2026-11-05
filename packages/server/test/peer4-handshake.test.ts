@@ -309,12 +309,8 @@ describe('peer4 handshake integration', () => {
     })
     await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
-    // Give time for channel to be established and cache populated
-    await new Promise((resolve) => setTimeout(resolve, 50))
-
     // Cache should now contain client's short form from the channel-open
-    const cached = await cache.get(clientShortForm)
-    expect(cached).toBeDefined()
+    await vi.waitFor(async () => expect(await cache.get(clientShortForm)).toBeDefined())
 
     // Send first message: short-form iss (same aud was already seen; embedLongForm:false)
     const send1 = await clientIdentity.signToken({
@@ -330,11 +326,8 @@ describe('peer4 handshake integration', () => {
     })
     await transports.client.write(send2 as unknown as AnyClientMessageOf<Protocol>)
 
-    // Give time for processing
-    await new Promise((resolve) => setTimeout(resolve, 50))
-
-    // Both values should have been received by the handler
-    expect(receivedValues).toEqual(['hello-1', 'hello-2'])
+    // Both values should reach the handler, in order
+    await vi.waitFor(() => expect(receivedValues).toEqual(['hello-1', 'hello-2']))
 
     await server.dispose()
     await transports.dispose()
