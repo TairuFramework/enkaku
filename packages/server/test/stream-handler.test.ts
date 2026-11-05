@@ -24,11 +24,13 @@ type StreamContext = StreamHandlerContext<Protocol, 'test'>
 
 describe('handleStream()', () => {
   const clientToken = createUnsignedToken({
-    typ: 'stream',
-    rid: '1',
-    prc: 'test',
-    prm: { test: true },
-  } as const)
+    payload: {
+      typ: 'stream',
+      rid: '1',
+      prc: 'test',
+      prm: { test: true },
+    } as const,
+  })
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const unknownPayload = { typ: 'stream', rid: '1', prc: 'unknown' }

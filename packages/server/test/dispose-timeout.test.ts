@@ -37,9 +37,11 @@ describe('Server dispose timeout', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        prc: 'stuck',
-        rid: 'r1',
+        payload: {
+          typ: 'request',
+          prc: 'stuck',
+          rid: 'r1',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
 

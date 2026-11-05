@@ -69,8 +69,12 @@ describe.each(['stream', 'channel'] as const)('%s handler backpressure', (type) 
       try {
         await transports.client.write(
           type === 'stream'
-            ? createUnsignedToken({ typ: 'stream', prc: 'stream', rid: '1', prm: null } as const)
-            : createUnsignedToken({ typ: 'channel', prc: 'channel', rid: '1', prm: null } as const),
+            ? createUnsignedToken({
+                payload: { typ: 'stream', prc: 'stream', rid: '1', prm: null } as const,
+              })
+            : createUnsignedToken({
+                payload: { typ: 'channel', prc: 'channel', rid: '1', prm: null } as const,
+              }),
         )
         const writer = await writerStarted.promise
         await sending.promise

@@ -55,9 +55,11 @@ describe('Controller timeout cleanup', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        prc: 'slow',
-        rid: 'r1',
+        payload: {
+          typ: 'request',
+          prc: 'slow',
+          rid: 'r1',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
 

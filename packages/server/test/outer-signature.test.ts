@@ -51,13 +51,15 @@ describe('outer-message signature verification', () => {
 
     // Get a real valid token to steal header/payload/data from, then replace signature
     const realToken = await clientSigner.signToken({
-      typ: 'request',
-      prc: 'test',
-      rid: 'r-forged',
-      prm: 'hello',
-      aud: serverSigner.id,
-      exp: expiresAt,
-    } as unknown as Record<string, unknown>)
+      payload: {
+        typ: 'request',
+        prc: 'test',
+        rid: 'r-forged',
+        prm: 'hello',
+        aud: serverSigner.id,
+        exp: expiresAt,
+      } as unknown as Record<string, unknown>,
+    })
 
     // Replace the real signature with 64 random bytes — NOT a valid ed25519 signature
     const fakeSignature = toB64U(crypto.getRandomValues(new Uint8Array(64)))
@@ -108,14 +110,16 @@ describe('outer-message signature verification', () => {
     // verifyToken now recomputes data from canonical-JSON header+payload when data is absent,
     // so the signature still verifies and the handler runs successfully.
     const realToken = await clientSigner.signToken({
-      iss: clientSigner.id,
-      aud: serverSigner.id,
-      prc: 'test',
-      rid: 'r-nodata',
-      typ: 'request',
-      prm: 'hello',
-      exp: expiresAt,
-    } as unknown as Record<string, unknown>)
+      payload: {
+        iss: clientSigner.id,
+        aud: serverSigner.id,
+        prc: 'test',
+        rid: 'r-nodata',
+        typ: 'request',
+        prm: 'hello',
+        exp: expiresAt,
+      } as unknown as Record<string, unknown>,
+    })
     const messageWithoutData = {
       header: realToken.header,
       payload: realToken.payload,
@@ -152,13 +156,15 @@ describe('outer-message signature verification', () => {
     })
 
     const msg = await clientSigner.signToken({
-      typ: 'request',
-      prc: 'test',
-      rid: 'r-valid-key',
-      prm: 'hello',
-      aud: serverSigner.id,
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'request',
+        prc: 'test',
+        rid: 'r-valid-key',
+        prm: 'hello',
+        aud: serverSigner.id,
+        exp: expiresAt,
+      } as const,
+    })
 
     await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
 
@@ -200,8 +206,8 @@ describe('outer-message signature verification', () => {
     })
 
     // Use embedLongForm: true so the long form (self-contained) is included in iss
-    const msg = await peer4Identity.signToken(
-      {
+    const msg = await peer4Identity.signToken({
+      payload: {
         typ: 'request',
         prc: 'test',
         rid: 'r-peer4',
@@ -209,8 +215,8 @@ describe('outer-message signature verification', () => {
         aud: serverSigner.id,
         exp: expiresAt,
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
 
     await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
 

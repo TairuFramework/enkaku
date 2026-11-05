@@ -342,12 +342,14 @@ describe('Client', () => {
       expect(typeof actualPayload.jti).toBe('string')
       expect(typeof actualPayload.iat).toBe('number')
       const signedMessage = await clientIdentity.signToken({
-        jti: actualPayload.jti as string,
-        iat: actualPayload.iat as number,
-        aud: serverIdentity.id,
-        typ: 'event',
-        prc: 'test/event',
-        data: { hello: 'world' },
+        payload: {
+          jti: actualPayload.jti as string,
+          iat: actualPayload.iat as number,
+          aud: serverIdentity.id,
+          typ: 'event',
+          prc: 'test/event',
+          data: { hello: 'world' },
+        },
       })
       expect(eventRead.value).toEqual(signedMessage)
       await transports.dispose()
@@ -413,7 +415,9 @@ describe('Client', () => {
         Protocol['test/request']
       >
       expect(payload.prc).toBe('test/request')
-      await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'result', rid: payload.rid, val: 'OK' } }),
+      )
       await expect(request).resolves.toBe('OK')
       expect(logger.trace).toHaveBeenCalledWith(
         'result reply for {type} {procedure} with ID {rid}: {result}',
@@ -457,7 +461,9 @@ describe('Client', () => {
         prc: 'test/paramRequest',
         prm: 'hello',
       })
-      await transports.server.write(unsignedToken({ typ: 'result', rid: request.id, val: 'world' }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'result', rid: request.id, val: 'world' } }),
+      )
       await expect(request).resolves.toBe('world')
 
       await transports.dispose()
@@ -475,7 +481,9 @@ describe('Client', () => {
 
       const requestRead = await transports.server.read()
       expect(requestRead.value?.payload).toMatchObject({ rid: 'custom-id' })
-      await transports.server.write(unsignedToken({ typ: 'result', rid: 'custom-id', val: 'OK' }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'result', rid: 'custom-id', val: 'OK' } }),
+      )
       await expect(request).resolves.toBe('OK')
 
       await transports.dispose()
@@ -501,10 +509,12 @@ describe('Client', () => {
       >
       await transports.server.write(
         unsignedToken({
-          typ: 'error',
-          rid: payload.rid,
-          code: 'NOT_FOUND',
-          msg: 'Not found',
+          payload: {
+            typ: 'error',
+            rid: payload.rid,
+            code: 'NOT_FOUND',
+            msg: 'Not found',
+          },
         }) as unknown as AnyServerMessageOf<Protocol>,
       )
 
@@ -625,7 +635,9 @@ describe('Client', () => {
       const client = new Client<Protocol>({ logger, transport: transports.client })
 
       // Send a result for an unknown rid
-      await transports.server.write(unsignedToken({ typ: 'result', rid: 'unknown-rid', val: 'OK' }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'result', rid: 'unknown-rid', val: 'OK' } }),
+      )
       // Give the read loop time to process
       await new Promise((resolve) => setTimeout(resolve, 50))
 
@@ -677,10 +689,18 @@ describe('Client', () => {
         Protocol['test/stream']
       >
 
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 1 }))
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 3 }))
-      await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: payload.rid, val: 1 } }),
+      )
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: payload.rid, val: 2 } }),
+      )
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: payload.rid, val: 3 } }),
+      )
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'result', rid: payload.rid, val: 'OK' } }),
+      )
       await expect(stream).resolves.toBe('OK')
 
       const [writable, received] = createArraySink<number>()
@@ -778,11 +798,17 @@ describe('Client', () => {
       const pipeDone = stream.readable.pipeTo(writable)
 
       await transports.server.read()
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 1 }))
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 2 }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: stream.id, val: 1 } }),
+      )
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: stream.id, val: 2 } }),
+      )
 
       stream.abort()
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 3 }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: stream.id, val: 3 } }),
+      )
       await pipeDone
       await expect(receivedPromise).resolves.toEqual([1, 2])
       stream.catch((reason) => {
@@ -806,8 +832,12 @@ describe('Client', () => {
         Protocol['test/stream']
       >
 
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 1 }))
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: payload.rid, val: 1 } }),
+      )
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: payload.rid, val: 2 } }),
+      )
 
       stream.close()
       const closeRead = await transports.server.read()
@@ -830,8 +860,12 @@ describe('Client', () => {
       const pipeDone = stream.readable.pipeTo(writable)
 
       await transports.server.read()
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 1 }))
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: stream.id, val: 2 }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: stream.id, val: 1 } }),
+      )
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: stream.id, val: 2 } }),
+      )
 
       stream.close()
 
@@ -871,7 +905,9 @@ describe('Client', () => {
         prm: 'hello',
       })
 
-      await transports.server.write(unsignedToken({ typ: 'result', rid: stream.id, val: 'OK' }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'result', rid: stream.id, val: 'OK' } }),
+      )
       await expect(stream).resolves.toBe('OK')
 
       await transports.dispose()
@@ -893,10 +929,12 @@ describe('Client', () => {
       await transports.server.read()
       await transports.server.write(
         unsignedToken({
-          typ: 'error',
-          rid: stream.id,
-          code: 'FAILED',
-          msg: 'Stream failed',
+          payload: {
+            typ: 'error',
+            rid: stream.id,
+            code: 'FAILED',
+            msg: 'Stream failed',
+          },
         }) as unknown as AnyServerMessageOf<Protocol>,
       )
 
@@ -1011,10 +1049,18 @@ describe('Client', () => {
       >
       await expect(sent2).toEqual({ typ: 'send', prc: 'test/channel', rid: payload.rid, val: 2 })
 
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 1 }))
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 3 }))
-      await transports.server.write(unsignedToken({ typ: 'result', rid: payload.rid, val: 'OK' }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: payload.rid, val: 1 } }),
+      )
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: payload.rid, val: 2 } }),
+      )
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: payload.rid, val: 3 } }),
+      )
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'result', rid: payload.rid, val: 'OK' } }),
+      )
       await expect(channel).resolves.toBe('OK')
 
       const [writable, received] = createArraySink<number>()
@@ -1130,8 +1176,12 @@ describe('Client', () => {
       >
       await expect(sent2).toEqual({ typ: 'send', prc: 'test/channel', rid: payload.rid, val: 2 })
 
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 1 }))
-      await transports.server.write(unsignedToken({ typ: 'receive', rid: payload.rid, val: 2 }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: payload.rid, val: 1 } }),
+      )
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'receive', rid: payload.rid, val: 2 } }),
+      )
 
       channel.close()
       const closeRead = await transports.server.read()
@@ -1171,7 +1221,9 @@ describe('Client', () => {
         prm: 'hello',
       })
 
-      await transports.server.write(unsignedToken({ typ: 'result', rid: channel.id, val: 'OK' }))
+      await transports.server.write(
+        unsignedToken({ payload: { typ: 'result', rid: channel.id, val: 'OK' } }),
+      )
       await expect(channel).resolves.toBe('OK')
 
       await transports.dispose()
@@ -1193,10 +1245,12 @@ describe('Client', () => {
       await transports.server.read()
       await transports.server.write(
         unsignedToken({
-          typ: 'error',
-          rid: channel.id,
-          code: 'FAILED',
-          msg: 'Channel failed',
+          payload: {
+            typ: 'error',
+            rid: channel.id,
+            code: 'FAILED',
+            msg: 'Channel failed',
+          },
         }) as unknown as AnyServerMessageOf<Protocol>,
       )
 

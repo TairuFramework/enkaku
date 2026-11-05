@@ -39,10 +39,12 @@ describe('Channel send authorization', () => {
     // Send to non-existent channel - should be ignored
     await transports.client.write(
       createUnsignedToken({
-        typ: 'send',
-        prc: 'chat',
-        rid: 'unknown',
-        val: 'hello',
+        payload: {
+          typ: 'send',
+          prc: 'chat',
+          rid: 'unknown',
+          val: 'hello',
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
@@ -82,13 +84,15 @@ describe('Channel send authorization', () => {
 
     // Establish channel with valid signed token
     const channelMsg = await signer.signToken({
-      typ: 'channel',
-      aud: signer.id,
-      prc: 'chat',
-      rid: 'ch1',
-      prm: undefined,
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'channel',
+        aud: signer.id,
+        prc: 'chat',
+        rid: 'ch1',
+        prm: undefined,
+        exp: expiresAt,
+      } as const,
+    })
     await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel to be established
@@ -97,10 +101,12 @@ describe('Channel send authorization', () => {
     // Send unsigned message - should be rejected
     await transports.client.write(
       createUnsignedToken({
-        typ: 'send',
-        prc: 'chat',
-        rid: 'ch1',
-        val: 'unauthorized',
+        payload: {
+          typ: 'send',
+          prc: 'chat',
+          rid: 'ch1',
+          val: 'unauthorized',
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
@@ -154,13 +160,15 @@ describe('Channel send authorization', () => {
 
     // Establish channel with valid signed token
     const channelMsg = await signer.signToken({
-      typ: 'channel',
-      aud: signer.id,
-      prc: 'chat',
-      rid: 'ch1',
-      prm: undefined,
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'channel',
+        aud: signer.id,
+        prc: 'chat',
+        rid: 'ch1',
+        prm: undefined,
+        exp: expiresAt,
+      } as const,
+    })
     await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel to be established
@@ -168,11 +176,13 @@ describe('Channel send authorization', () => {
 
     // Send signed message from the same identity that opened the channel
     const sendMsg = await signer.signToken({
-      typ: 'send',
-      rid: 'ch1',
-      val: 'hello from owner',
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'send',
+        rid: 'ch1',
+        val: 'hello from owner',
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for processing
@@ -213,13 +223,15 @@ describe('Channel send authorization', () => {
 
     // Establish channel with valid signed token
     const channelMsg = await signer.signToken({
-      typ: 'channel',
-      aud: signer.id,
-      prc: 'chat',
-      rid: 'ch1',
-      prm: undefined,
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'channel',
+        aud: signer.id,
+        prc: 'chat',
+        rid: 'ch1',
+        prm: undefined,
+        exp: expiresAt,
+      } as const,
+    })
     await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel to be established
@@ -227,11 +239,13 @@ describe('Channel send authorization', () => {
 
     // Send signed message from a different identity
     const sendMsg = await otherIdentity.signToken({
-      typ: 'send',
-      rid: 'ch1',
-      val: 'hello from intruder',
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'send',
+        rid: 'ch1',
+        val: 'hello from intruder',
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Should receive error
@@ -279,10 +293,12 @@ describe('Channel send authorization', () => {
     // Establish channel
     await transports.client.write(
       createUnsignedToken({
-        typ: 'channel',
-        prc: 'chat',
-        rid: 'ch1',
-        prm: undefined,
+        payload: {
+          typ: 'channel',
+          prc: 'chat',
+          rid: 'ch1',
+          prm: undefined,
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
@@ -292,9 +308,11 @@ describe('Channel send authorization', () => {
     // Send unsigned message in public mode - should work
     await transports.client.write(
       createUnsignedToken({
-        typ: 'send',
-        rid: 'ch1',
-        val: 'hello public',
+        payload: {
+          typ: 'send',
+          rid: 'ch1',
+          val: 'hello public',
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 

@@ -32,7 +32,9 @@ describe('Per-message size limits', () => {
 
     // Send a request with a large param that exceeds the limit
     await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'echo', rid: 'r1', prm: 'x'.repeat(200) }),
+      createUnsignedToken({
+        payload: { typ: 'request', prc: 'echo', rid: 'r1', prm: 'x'.repeat(200) },
+      }),
     )
 
     const response = await transports.client.read()
@@ -73,7 +75,9 @@ describe('Per-message size limits', () => {
     })
 
     await transports.client.write(
-      createUnsignedToken({ typ: 'stream', prc: 'data', rid: 's1', prm: 'x'.repeat(200) }),
+      createUnsignedToken({
+        payload: { typ: 'stream', prc: 'data', rid: 's1', prm: 'x'.repeat(200) },
+      }),
     )
 
     const response = await transports.client.read()
@@ -115,7 +119,9 @@ describe('Per-message size limits', () => {
     })
 
     await transports.client.write(
-      createUnsignedToken({ typ: 'channel', prc: 'chat', rid: 'c1', prm: 'x'.repeat(200) }),
+      createUnsignedToken({
+        payload: { typ: 'channel', prc: 'chat', rid: 'c1', prm: 'x'.repeat(200) },
+      }),
     )
 
     const response = await transports.client.read()
@@ -158,9 +164,11 @@ describe('Per-message size limits', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'event',
-        prc: 'notify',
-        dat: 'x'.repeat(200),
+        payload: {
+          typ: 'event',
+          prc: 'notify',
+          dat: 'x'.repeat(200),
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
@@ -206,7 +214,7 @@ describe('Per-message size limits', () => {
     })
 
     await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'echo', rid: 'r1', prm: 'hello' }),
+      createUnsignedToken({ payload: { typ: 'request', prc: 'echo', rid: 'r1', prm: 'hello' } }),
     )
 
     const response = await transports.client.read()

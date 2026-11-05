@@ -30,7 +30,9 @@ describe('handling list cleanup', () => {
     // Send a message to initialize the client transport stream, then close it.
     // Closing the client side ends the server read loop (done: true).
     await transports.client.write(
-      createUnsignedToken({ typ: 'event', prc: 'test', data: {} }) as AnyClientMessageOf<Protocol>,
+      createUnsignedToken({
+        payload: { typ: 'event', prc: 'test', data: {} },
+      }) as AnyClientMessageOf<Protocol>,
     )
     await transports.client.dispose()
     await new Promise((resolve) => setTimeout(resolve, 50))

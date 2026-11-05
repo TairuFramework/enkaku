@@ -69,18 +69,22 @@ describe('definition references in message schemas', () => {
   test('client schema validates recursive unsigned payloads', () => {
     const validator = createValidator(createClientMessageSchema(protocol, 'unsigned'))
     const valid = createUnsignedToken({
-      typ: 'request',
-      prc: 'flow/run',
-      rid: '1',
-      prm: { value: nestedValue },
+      payload: {
+        typ: 'request',
+        prc: 'flow/run',
+        rid: '1',
+        prm: { value: nestedValue },
+      },
     })
     expect(isType(validator, valid)).toBe(true)
 
     const invalid = createUnsignedToken({
-      typ: 'request',
-      prc: 'flow/run',
-      rid: '1',
-      prm: { value: { a: [undefined, () => {}] } },
+      payload: {
+        typ: 'request',
+        prc: 'flow/run',
+        rid: '1',
+        prm: { value: { a: [undefined, () => {}] } },
+      },
     })
     expect(isType(validator, invalid)).toBe(false)
   })
@@ -89,18 +93,22 @@ describe('definition references in message schemas', () => {
     const validator = createValidator(createClientMessageSchema(protocol, 'signed'))
     const identity = randomIdentity()
     const valid = await identity.signToken({
-      typ: 'stream',
-      prc: 'flow/watch',
-      rid: '1',
-      prm: { value: nestedValue },
+      payload: {
+        typ: 'stream',
+        prc: 'flow/watch',
+        rid: '1',
+        prm: { value: nestedValue },
+      },
     })
     expect(isType(validator, valid)).toBe(true)
 
     const invalid = await identity.signToken({
-      typ: 'stream',
-      prc: 'flow/watch',
-      rid: '1',
-      prm: { value: { a: [Symbol.for('x')] } },
+      payload: {
+        typ: 'stream',
+        prc: 'flow/watch',
+        rid: '1',
+        prm: { value: { a: [Symbol.for('x')] } },
+      },
     })
     expect(isType(validator, invalid)).toBe(false)
   })
@@ -108,25 +116,30 @@ describe('definition references in message schemas', () => {
   test('client schema accepts both envelope types by default', async () => {
     const validator = createValidator(createClientMessageSchema(protocol))
     const payload = { typ: 'request', prc: 'flow/run', rid: '1', prm: { value: nestedValue } }
-    expect(isType(validator, createUnsignedToken(payload))).toBe(true)
-    expect(isType(validator, await randomIdentity().signToken(payload))).toBe(true)
+    expect(isType(validator, createUnsignedToken({ payload }))).toBe(true)
+    expect(isType(validator, await randomIdentity().signToken({ payload }))).toBe(true)
   })
 
   test('server schema validates recursive results and receive values', async () => {
     const validator = createValidator(createServerMessageSchema(protocol))
-    expect(isType(validator, createUnsignedToken({ typ: 'result', rid: '1', val: { tree } }))).toBe(
-      true,
-    )
     expect(
       isType(
         validator,
-        await randomIdentity().signToken({ typ: 'receive', rid: '1', val: { tree } }),
+        createUnsignedToken({ payload: { typ: 'result', rid: '1', val: { tree } } }),
       ),
     ).toBe(true)
     expect(
       isType(
         validator,
-        createUnsignedToken({ typ: 'result', rid: '1', val: { tree: { children: [] } } }),
+        await randomIdentity().signToken({ payload: { typ: 'receive', rid: '1', val: { tree } } }),
+      ),
+    ).toBe(true)
+    expect(
+      isType(
+        validator,
+        createUnsignedToken({
+          payload: { typ: 'result', rid: '1', val: { tree: { children: [] } } },
+        }),
       ),
     ).toBe(false)
   })
@@ -135,10 +148,12 @@ describe('definition references in message schemas', () => {
     const schema = createClientMessageSchema(protocol)
     const validator = createValidator({ ...schema, $id: 'client-with-id' })
     const valid = createUnsignedToken({
-      typ: 'request',
-      prc: 'flow/run',
-      rid: '1',
-      prm: { value: nestedValue },
+      payload: {
+        typ: 'request',
+        prc: 'flow/run',
+        rid: '1',
+        prm: { value: nestedValue },
+      },
     })
     expect(isType(validator, valid)).toBe(true)
   })
@@ -157,7 +172,7 @@ describe('definition references in message schemas', () => {
     } as const satisfies ProtocolDefinition
     const validator = createValidator(createClientMessageSchema(escapedProtocol, 'unsigned'))
     const event = (value: unknown) =>
-      createUnsignedToken({ typ: 'event', prc: 'escaped/event', data: { value } })
+      createUnsignedToken({ payload: { typ: 'event', prc: 'escaped/event', data: { value } } })
     expect(isType(validator, event('x'))).toBe(true)
     expect(isType(validator, event(1))).toBe(false)
   })
@@ -179,9 +194,11 @@ describe('definition references in message schemas', () => {
       isType(
         validator,
         createUnsignedToken({
-          typ: 'event',
-          prc: 'literal/event',
-          data: { ref: { $ref: '#/definitions/json' } },
+          payload: {
+            typ: 'event',
+            prc: 'literal/event',
+            data: { ref: { $ref: '#/definitions/json' } },
+          },
         }),
       ),
     ).toBe(true)

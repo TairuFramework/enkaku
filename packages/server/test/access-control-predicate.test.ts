@@ -12,9 +12,11 @@ describe('access control: predicate variant', () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload,
+    })
 
     const predicate = vi.fn(({ payload }: AllowContext) => payload.iss === clientSigner.id)
 
@@ -35,9 +37,11 @@ describe('access control: predicate variant', () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload,
+    })
 
     await expect(
       checkClientToken(
@@ -54,9 +58,11 @@ describe('access control: predicate variant', () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload,
+    })
 
     await expect(
       checkClientToken(
@@ -77,9 +83,11 @@ describe('access control: predicate variant', () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload,
+    })
 
     await expect(
       checkClientToken(
@@ -100,9 +108,11 @@ describe('access control: predicate variant', () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload,
+    })
 
     const predicate = vi.fn<(ctx: AllowContext) => boolean>(() => true)
 
@@ -129,9 +139,11 @@ describe('access control: predicate variant', () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload,
+    })
 
     await expect(
       checkClientToken(
@@ -148,9 +160,11 @@ describe('access control: predicate variant', () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload,
+    })
 
     await expect(
       checkClientToken(
@@ -166,18 +180,23 @@ describe('access control: predicate variant', () => {
   test('verifyDelegation returns true on a valid chain', async () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
-    const delegation = await createCapability(serverSigner, {
-      aud: clientSigner.id,
-      sub: serverSigner.id,
-      act: 'enkaku:graph/*',
-      res: serverSigner.id,
+    const delegation = await createCapability({
+      signer: serverSigner,
+      payload: {
+        aud: clientSigner.id,
+        sub: serverSigner.id,
+        act: 'enkaku:graph/*',
+        res: serverSigner.id,
+      },
     })
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-      sub: serverSigner.id,
-      cap: stringifyToken(delegation),
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+        sub: serverSigner.id,
+        cap: stringifyToken(delegation),
+      } as unknown as Payload,
+    })
 
     const predicate = vi.fn(async ({ payload, verifyDelegation }: AllowContext) => {
       if (payload.sub === serverSigner.id) return await verifyDelegation()
@@ -199,9 +218,11 @@ describe('access control: predicate variant', () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload,
+    })
 
     const predicate = vi.fn(async ({ verifyDelegation }: AllowContext) => {
       return await verifyDelegation()
@@ -222,9 +243,11 @@ describe('access control: predicate variant', () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload,
+    })
 
     const allowList: Array<string> = [clientSigner.id]
 
@@ -261,9 +284,11 @@ describe('access control: predicate variant', () => {
     const serverSigner = randomIdentity()
     const clientSigner = randomIdentity()
     const token = await clientSigner.signToken({
-      prc: 'enkaku:graph/test',
-      aud: serverSigner.id,
-    } as unknown as Payload)
+      payload: {
+        prc: 'enkaku:graph/test',
+        aud: serverSigner.id,
+      } as unknown as Payload,
+    })
 
     const first = vi.fn(() => false)
     const second = vi.fn(() => true)

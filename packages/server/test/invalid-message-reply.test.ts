@@ -58,10 +58,12 @@ describe('Schema-invalid message error replies', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        prc: 'echo',
-        rid: 'r1',
-        prm: 123,
+        payload: {
+          typ: 'request',
+          prc: 'echo',
+          rid: 'r1',
+          prm: 123,
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
@@ -80,10 +82,12 @@ describe('Schema-invalid message error replies', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'stream',
-        prc: 'data',
-        rid: 's1',
-        prm: 123,
+        payload: {
+          typ: 'stream',
+          prc: 'data',
+          rid: 's1',
+          prm: 123,
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
@@ -101,10 +105,12 @@ describe('Schema-invalid message error replies', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'channel',
-        prc: 'chat',
-        rid: 'c1',
-        prm: 123,
+        payload: {
+          typ: 'channel',
+          prc: 'chat',
+          rid: 'c1',
+          prm: 123,
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
@@ -127,13 +133,15 @@ describe('Schema-invalid message error replies', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'event',
-        prc: 'notify',
-        dat: 'not-an-object',
+        payload: {
+          typ: 'event',
+          prc: 'notify',
+          dat: 'not-an-object',
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
     await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'echo', rid: 'r2', prm: 'hello' }),
+      createUnsignedToken({ payload: { typ: 'request', prc: 'echo', rid: 'r2', prm: 'hello' } }),
     )
 
     const response = await transports.client.read()
@@ -155,10 +163,12 @@ describe('Schema-invalid message error replies', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        prc: 'echo',
-        rid: 'r3',
-        prm: 123,
+        payload: {
+          typ: 'request',
+          prc: 'echo',
+          rid: 'r3',
+          prm: 123,
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 

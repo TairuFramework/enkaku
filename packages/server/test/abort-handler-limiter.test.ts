@@ -63,14 +63,14 @@ describe('requestAborted releases the handler slot exactly once', () => {
     // keepAlive ("K") occupies one of the two slots for the whole test: it is
     // never aborted and only resolves at teardown.
     await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'k', prm: 'K' }),
+      createUnsignedToken({ payload: { typ: 'request', prc: 'slow', rid: 'k', prm: 'K' } }),
     )
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(started).toEqual(['K'])
 
     // A occupies the second (and last) slot.
     await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'a', prm: 'A' }),
+      createUnsignedToken({ payload: { typ: 'request', prc: 'slow', rid: 'a', prm: 'A' } }),
     )
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(started).toEqual(['K', 'A'])
@@ -88,7 +88,7 @@ describe('requestAborted releases the handler slot exactly once', () => {
     // B should be ACCEPTED: A's slot was freed. This catches UNDER-release
     // (a slot that never frees).
     await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'b', prm: 'B' }),
+      createUnsignedToken({ payload: { typ: 'request', prc: 'slow', rid: 'b', prm: 'B' } }),
     )
     await new Promise((resolve) => setTimeout(resolve, 20))
     expect(started).toEqual(['K', 'A', 'B'])
@@ -97,7 +97,7 @@ describe('requestAborted releases the handler slot exactly once', () => {
     // abortRunningHandler had double-released A's slot, the pool would be
     // inflated (or underflowed) and C would be wrongly accepted here.
     await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'slow', rid: 'c', prm: 'C' }),
+      createUnsignedToken({ payload: { typ: 'request', prc: 'slow', rid: 'c', prm: 'C' } }),
     )
     await new Promise((resolve) => setTimeout(resolve, 20))
 

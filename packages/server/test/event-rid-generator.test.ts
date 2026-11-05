@@ -51,9 +51,11 @@ describe('event rid generation', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'event',
-        prc: 'test',
-        data: {},
+        payload: {
+          typ: 'event',
+          prc: 'test',
+          data: {},
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
     await new Promise((resolve) => setTimeout(resolve, 20))

@@ -190,9 +190,11 @@ describe('no cleanup timer outlives the disposal that armed it', () => {
       server.handle(transports.server)
       await transports.client.write(
         createUnsignedToken({
-          typ: 'event',
-          prc: 'test',
-          data: {},
+          payload: {
+            typ: 'event',
+            prc: 'test',
+            data: {},
+          },
         }) as AnyClientMessageOf<Protocol>,
       )
     }
@@ -298,12 +300,14 @@ describe('the disposal drain covers an event whose access check is still in flig
     })
 
     const eventMsg = await clientSigner.signToken({
-      typ: 'event',
-      prc: 'test/event',
-      data: {},
-      aud: serverSigner.id,
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'event',
+        prc: 'test/event',
+        data: {},
+        aud: serverSigner.id,
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(eventMsg as unknown as AnyClientMessageOf<EventProtocol>)
 
     // The access check is blocked at the gate.

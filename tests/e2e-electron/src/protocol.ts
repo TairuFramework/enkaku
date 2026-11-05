@@ -1,6 +1,10 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
 
 export const protocol = {
+  backend: {
+    type: 'request',
+    result: { type: 'string' },
+  },
   sign: {
     type: 'request',
     param: {

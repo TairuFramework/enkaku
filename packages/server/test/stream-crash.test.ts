@@ -35,10 +35,12 @@ describe('Stream crash cleanup', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'stream',
-        prc: 'failing',
-        rid: 's1',
-        prm: undefined,
+        payload: {
+          typ: 'stream',
+          prc: 'failing',
+          rid: 's1',
+          prm: undefined,
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
@@ -92,10 +94,12 @@ describe('Stream crash cleanup', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'channel',
-        prc: 'failing',
-        rid: 'c1',
-        prm: undefined,
+        payload: {
+          typ: 'channel',
+          prc: 'failing',
+          rid: 'c1',
+          prm: undefined,
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 

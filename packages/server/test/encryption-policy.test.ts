@@ -41,10 +41,12 @@ describe('encryption policy enforcement', () => {
     })
 
     const message = (await signer.signToken({
-      typ: 'request',
-      prc: 'test',
-      rid: '1',
-      iat: Math.floor(Date.now() / 1000),
+      payload: {
+        typ: 'request',
+        prc: 'test',
+        rid: '1',
+        iat: Math.floor(Date.now() / 1000),
+      },
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -77,10 +79,12 @@ describe('encryption policy enforcement', () => {
     })
 
     const message = (await signer.signToken({
-      typ: 'request',
-      prc: 'test',
-      rid: '1',
-      iat: Math.floor(Date.now() / 1000),
+      payload: {
+        typ: 'request',
+        prc: 'test',
+        rid: '1',
+        iat: Math.floor(Date.now() / 1000),
+      },
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -111,10 +115,12 @@ describe('encryption policy enforcement', () => {
     })
 
     const message = (await signer.signToken({
-      typ: 'request',
-      prc: 'test',
-      rid: '1',
-      iat: Math.floor(Date.now() / 1000),
+      payload: {
+        typ: 'request',
+        prc: 'test',
+        rid: '1',
+        iat: Math.floor(Date.now() / 1000),
+      },
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -148,12 +154,14 @@ describe('encryption policy enforcement', () => {
     const handlerErrorEvent = server.events.once('handlerError')
 
     const message = await signer.signToken({
-      typ: 'event',
-      aud: signer.id,
-      prc: 'notify',
-      data: 'hello',
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'event',
+        aud: signer.id,
+        prc: 'notify',
+        data: 'hello',
+        exp: expiresAt,
+      } as const,
+    })
     await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
     const emitted = await handlerErrorEvent
@@ -193,10 +201,12 @@ describe('encryption policy enforcement', () => {
     const handlerErrorEvent = server.events.once('handlerError')
 
     const message = (await signer.signToken({
-      typ: 'request',
-      prc: 'test',
-      rid: 'r1',
-      iat: Math.floor(Date.now() / 1000),
+      payload: {
+        typ: 'request',
+        prc: 'test',
+        rid: 'r1',
+        iat: Math.floor(Date.now() / 1000),
+      },
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
 
@@ -243,10 +253,12 @@ describe('encryption policy enforcement', () => {
     })
 
     const message = (await signer.signToken({
-      typ: 'request',
-      prc: 'test',
-      rid: '1',
-      iat: Math.floor(Date.now() / 1000),
+      payload: {
+        typ: 'request',
+        prc: 'test',
+        rid: '1',
+        iat: Math.floor(Date.now() / 1000),
+      },
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -278,10 +290,12 @@ describe('encryption policy enforcement', () => {
 
     const signer = randomIdentity()
     const message = (await signer.signToken({
-      typ: 'request',
-      prc: 'test',
-      rid: '1',
-      iat: Math.floor(Date.now() / 1000),
+      payload: {
+        typ: 'request',
+        prc: 'test',
+        rid: '1',
+        iat: Math.floor(Date.now() / 1000),
+      },
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()

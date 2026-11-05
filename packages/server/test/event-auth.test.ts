@@ -34,9 +34,11 @@ describe('Event auth error', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'event',
-        prc: 'notify',
-        data: 'hello',
+        payload: {
+          typ: 'event',
+          prc: 'notify',
+          data: 'hello',
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 
@@ -84,12 +86,14 @@ describe('Event auth error', () => {
 
     // Send valid signed event
     const message = await signer.signToken({
-      typ: 'event',
-      aud: signer.id,
-      prc: 'notify',
-      data: 'hello',
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'event',
+        aud: signer.id,
+        prc: 'notify',
+        data: 'hello',
+        exp: expiresAt,
+      } as const,
+    })
     await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
     await server.dispose()

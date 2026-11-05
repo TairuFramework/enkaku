@@ -48,10 +48,12 @@ describe('longLivedProcedures resource limits', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'channel',
-        prc: 'hold',
-        rid: 'c1',
-        prm: {},
+        payload: {
+          typ: 'channel',
+          prc: 'hold',
+          rid: 'c1',
+          prm: {},
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     // Cleanup interval runs every min(controllerTimeoutMs, 10000) = 50ms
@@ -86,18 +88,22 @@ describe('longLivedProcedures resource limits', () => {
     // Two concurrent long-lived channels with maxConcurrentHandlers: 1
     await transports.client.write(
       createUnsignedToken({
-        typ: 'channel',
-        prc: 'hold',
-        rid: 'c1',
-        prm: {},
+        payload: {
+          typ: 'channel',
+          prc: 'hold',
+          rid: 'c1',
+          prm: {},
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     await transports.client.write(
       createUnsignedToken({
-        typ: 'channel',
-        prc: 'hold',
-        rid: 'c2',
-        prm: {},
+        payload: {
+          typ: 'channel',
+          prc: 'hold',
+          rid: 'c2',
+          prm: {},
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     await new Promise((resolve) => setTimeout(resolve, 50))
@@ -106,9 +112,11 @@ describe('longLivedProcedures resource limits', () => {
     // A regular request still has its full handler budget available
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        prc: 'ping',
-        rid: 'r1',
+        payload: {
+          typ: 'request',
+          prc: 'ping',
+          rid: 'r1',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     let result: unknown

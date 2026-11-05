@@ -45,13 +45,15 @@ describe('access-control denial emits handlerError', () => {
     const handlerErrorEvent = server.events.once('handlerError')
 
     const message = await clientSigner.signToken({
-      typ: 'request',
-      aud: serverSigner.id,
-      prc: 'req',
-      rid: 'r1',
-      prm: undefined,
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'request',
+        aud: serverSigner.id,
+        prc: 'req',
+        rid: 'r1',
+        prm: undefined,
+        exp: expiresAt,
+      } as const,
+    })
     await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
     const read = await transports.client.read()
@@ -93,13 +95,15 @@ describe('access-control denial emits handlerError', () => {
     const handlerErrorEvent = server.events.once('handlerError')
 
     const message = await clientSigner.signToken({
-      typ: 'channel',
-      aud: serverSigner.id,
-      prc: 'chan',
-      rid: 'c1',
-      prm: undefined,
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'channel',
+        aud: serverSigner.id,
+        prc: 'chan',
+        rid: 'c1',
+        prm: undefined,
+        exp: expiresAt,
+      } as const,
+    })
     await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
     const read = await transports.client.read()
@@ -141,13 +145,15 @@ describe('access-control denial emits handlerError', () => {
     const handlerErrorEvent = server.events.once('handlerError')
 
     const message = await clientSigner.signToken({
-      typ: 'stream',
-      aud: serverSigner.id,
-      prc: 'str',
-      rid: 's1',
-      prm: undefined,
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'stream',
+        aud: serverSigner.id,
+        prc: 'str',
+        rid: 's1',
+        prm: undefined,
+        exp: expiresAt,
+      } as const,
+    })
     await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
     const read = await transports.client.read()

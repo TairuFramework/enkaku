@@ -42,11 +42,13 @@ test('rejects a signed request without exp or iat on its first send', async () =
     transport: transports.server,
   })
   const message = await signer.signToken({
-    typ: 'request',
-    aud: signer.id,
-    prc: 'ping',
-    rid: 'unbounded-default',
-  } as const)
+    payload: {
+      typ: 'request',
+      aud: signer.id,
+      prc: 'ping',
+      rid: 'unbounded-default',
+    } as const,
+  })
 
   await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
   const response = await transports.client.read()
@@ -72,13 +74,15 @@ test('rejects a signed request with a far-future exp with EK09', async () => {
     transport: transports.server,
   })
   const message = await signer.signToken({
-    typ: 'request',
-    aud: signer.id,
-    prc: 'ping',
-    rid: 'far-exp',
-    iat: nowSeconds(),
-    exp: nowSeconds() + 3_600,
-  } as const)
+    payload: {
+      typ: 'request',
+      aud: signer.id,
+      prc: 'ping',
+      rid: 'far-exp',
+      iat: nowSeconds(),
+      exp: nowSeconds() + 3_600,
+    } as const,
+  })
 
   await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
   const response = await transports.client.read()
@@ -105,11 +109,13 @@ test('accepts a request without exp or iat once when rejectStale is false', asyn
     replay: { rejectStale: false },
   })
   const message = await signer.signToken({
-    typ: 'request',
-    aud: signer.id,
-    prc: 'ping',
-    rid: 'unbounded-dedup',
-  } as const)
+    payload: {
+      typ: 'request',
+      aud: signer.id,
+      prc: 'ping',
+      rid: 'unbounded-dedup',
+    } as const,
+  })
 
   await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
   const first = await transports.client.read()
@@ -140,13 +146,15 @@ test('rejects a replayed signed event with EK09', async () => {
   })
 
   const message = await signer.signToken({
-    typ: 'event',
-    aud: signer.id,
-    prc: 'notify',
-    data: 'hello',
-    jti: 'evt-1',
-    exp: nowSeconds() + 300,
-  } as const)
+    payload: {
+      typ: 'event',
+      aud: signer.id,
+      prc: 'notify',
+      data: 'hello',
+      jti: 'evt-1',
+      exp: nowSeconds() + 300,
+    } as const,
+  })
 
   await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
   const errorEvent = server.events.once('handlerError')
@@ -179,13 +187,15 @@ test('rejects a replay across two connections to the same server', async () => {
   })
 
   const message = await signer.signToken({
-    typ: 'event',
-    aud: signer.id,
-    prc: 'notify',
-    data: 'hello',
-    jti: 'evt-cross',
-    exp: nowSeconds() + 300,
-  } as const)
+    payload: {
+      typ: 'event',
+      aud: signer.id,
+      prc: 'notify',
+      data: 'hello',
+      jti: 'evt-cross',
+      exp: nowSeconds() + 300,
+    } as const,
+  })
 
   await t1.client.write(message as unknown as AnyClientMessageOf<Protocol>)
   const errorEvent = server.events.once('handlerError')
@@ -219,13 +229,15 @@ test('rejects a stale message (no exp, old iat) when rejectStale is on', async (
   })
 
   const message = await signer.signToken({
-    typ: 'event',
-    aud: signer.id,
-    prc: 'notify',
-    data: 'hello',
-    jti: 'evt-stale',
-    iat: nowSeconds() - 300, // 300s old, far beyond 1s maxAge; no exp
-  } as const)
+    payload: {
+      typ: 'event',
+      aud: signer.id,
+      prc: 'notify',
+      data: 'hello',
+      jti: 'evt-stale',
+      iat: nowSeconds() - 300, // 300s old, far beyond 1s maxAge; no exp
+    } as const,
+  })
 
   const errorEvent = server.events.once('handlerError')
   await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
@@ -260,13 +272,15 @@ test('replay: { enabled: false } disables protection', async () => {
   server.events.on('handlerError', errorHandler)
 
   const message = await signer.signToken({
-    typ: 'event',
-    aud: signer.id,
-    prc: 'notify',
-    data: 'hello',
-    jti: 'evt-off',
-    exp: nowSeconds() + 300,
-  } as const)
+    payload: {
+      typ: 'event',
+      aud: signer.id,
+      prc: 'notify',
+      data: 'hello',
+      jti: 'evt-off',
+      exp: nowSeconds() + 300,
+    } as const,
+  })
 
   await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
   await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
@@ -297,13 +311,15 @@ test('uses a custom cache when provided', async () => {
   })
 
   const message = await signer.signToken({
-    typ: 'event',
-    aud: signer.id,
-    prc: 'notify',
-    data: 'hello',
-    jti: 'evt-custom',
-    exp: nowSeconds() + 300,
-  } as const)
+    payload: {
+      typ: 'event',
+      aud: signer.id,
+      prc: 'notify',
+      data: 'hello',
+      jti: 'evt-custom',
+      exp: nowSeconds() + 300,
+    } as const,
+  })
   await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
   await server.dispose()
@@ -337,25 +353,29 @@ test('rejects a replayed signed channel send with EK09', async () => {
 
   // Establish the channel with a valid signed token.
   const channelMsg = await signer.signToken({
-    typ: 'channel',
-    aud: signer.id,
-    prc: 'chat',
-    rid: 'send-replay',
-    prm: undefined,
-    exp: expiresAt,
-  } as const)
+    payload: {
+      typ: 'channel',
+      aud: signer.id,
+      prc: 'chat',
+      rid: 'send-replay',
+      prm: undefined,
+      exp: expiresAt,
+    } as const,
+  })
   await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
   await new Promise((resolve) => setTimeout(resolve, 50))
 
   // Signed send from the channel owner, with a unique jti + future exp for a
   // deterministic dedup key.
   const sendMsg = await signer.signToken({
-    typ: 'send',
-    rid: 'send-replay',
-    val: 'hello',
-    jti: 'send-replay-1',
-    exp: expiresAt,
-  } as const)
+    payload: {
+      typ: 'send',
+      rid: 'send-replay',
+      val: 'hello',
+      jti: 'send-replay-1',
+      exp: expiresAt,
+    } as const,
+  })
 
   await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
   await new Promise((resolve) => setTimeout(resolve, 50))
@@ -403,25 +423,29 @@ test('rejects a replayed signed channel abort with EK09', async () => {
 
   // Establish the channel with a valid signed token.
   const channelMsg = await signer.signToken({
-    typ: 'channel',
-    aud: signer.id,
-    prc: 'chat',
-    rid: 'abort-replay',
-    prm: undefined,
-    exp: expiresAt,
-  } as const)
+    payload: {
+      typ: 'channel',
+      aud: signer.id,
+      prc: 'chat',
+      rid: 'abort-replay',
+      prm: undefined,
+      exp: expiresAt,
+    } as const,
+  })
   await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
   await new Promise((resolve) => setTimeout(resolve, 50))
 
   // Signed abort from the channel owner, with a unique jti + future exp for a
   // deterministic dedup key.
   const abortMsg = await signer.signToken({
-    typ: 'abort',
-    rid: 'abort-replay',
-    rsn: 'Close',
-    jti: 'abort-replay-1',
-    exp: expiresAt,
-  } as const)
+    payload: {
+      typ: 'abort',
+      rid: 'abort-replay',
+      rsn: 'Close',
+      jti: 'abort-replay-1',
+      exp: expiresAt,
+    } as const,
+  })
 
   const aborted = vi.fn()
   server.events.on('handlerAbort', aborted)
@@ -473,23 +497,27 @@ test('rejects a replayed abort even after its target controller is gone', async 
   })
 
   const channelMsg = await signer.signToken({
-    typ: 'channel',
-    aud: signer.id,
-    prc: 'chat',
-    rid: 'abort-gone',
-    prm: undefined,
-    exp: expiresAt,
-  } as const)
+    payload: {
+      typ: 'channel',
+      aud: signer.id,
+      prc: 'chat',
+      rid: 'abort-gone',
+      prm: undefined,
+      exp: expiresAt,
+    } as const,
+  })
   await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
   await new Promise((resolve) => setTimeout(resolve, 50))
 
   const abortMsg = await signer.signToken({
-    typ: 'abort',
-    rid: 'abort-gone',
-    rsn: 'Close',
-    jti: 'abort-gone-1',
-    exp: expiresAt,
-  } as const)
+    payload: {
+      typ: 'abort',
+      rid: 'abort-gone',
+      rsn: 'Close',
+      jti: 'abort-gone-1',
+      exp: expiresAt,
+    } as const,
+  })
 
   const aborted = vi.fn()
   server.events.on('handlerAbort', aborted)
@@ -539,21 +567,25 @@ test('does not treat a reused jti from a different issuer as a replay', async ()
   // Two distinct issuers deliberately reuse the SAME jti value. The dedup key is
   // namespaced by issuer, so the second must NOT be rejected as a replay.
   const messageA = await signerA.signToken({
-    typ: 'event',
-    aud: signerA.id,
-    prc: 'notify',
-    data: 'from-a',
-    jti: 'shared-jti',
-    exp: nowSeconds() + 300,
-  } as const)
+    payload: {
+      typ: 'event',
+      aud: signerA.id,
+      prc: 'notify',
+      data: 'from-a',
+      jti: 'shared-jti',
+      exp: nowSeconds() + 300,
+    } as const,
+  })
   const messageB = await signerB.signToken({
-    typ: 'event',
-    aud: signerA.id,
-    prc: 'notify',
-    data: 'from-b',
-    jti: 'shared-jti',
-    exp: nowSeconds() + 300,
-  } as const)
+    payload: {
+      typ: 'event',
+      aud: signerA.id,
+      prc: 'notify',
+      data: 'from-b',
+      jti: 'shared-jti',
+      exp: nowSeconds() + 300,
+    } as const,
+  })
 
   await transports.client.write(messageA as unknown as AnyClientMessageOf<Protocol>)
   await transports.client.write(messageB as unknown as AnyClientMessageOf<Protocol>)
@@ -593,13 +625,15 @@ test('delegates the dedup decision to a custom cache', async () => {
   })
 
   const message = await signer.signToken({
-    typ: 'event',
-    aud: signer.id,
-    prc: 'notify',
-    data: 'hello',
-    jti: 'evt-delegate',
-    exp: nowSeconds() + 300,
-  } as const)
+    payload: {
+      typ: 'event',
+      aud: signer.id,
+      prc: 'notify',
+      data: 'hello',
+      jti: 'evt-delegate',
+      exp: nowSeconds() + 300,
+    } as const,
+  })
 
   const errorEvent = server.events.once('handlerError')
   await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
@@ -640,11 +674,13 @@ test('does not consume the replay key when a message fails the encryption check'
   // Signed by the server identity (self-authenticated), but sent in plaintext to
   // a server that requires encryption -- so it fails the encryption gate.
   const message = (await signer.signToken({
-    typ: 'request',
-    prc: 'secret',
-    rid: 'r1',
-    jti: 'enc-fail-1',
-    exp: nowSeconds() + 300,
+    payload: {
+      typ: 'request',
+      prc: 'secret',
+      rid: 'r1',
+      jti: 'enc-fail-1',
+      exp: nowSeconds() + 300,
+    },
   })) as unknown as AnyClientMessageOf<Local>
 
   await transports.client.write(message)
@@ -689,13 +725,15 @@ test('a rejecting async replay cache surfaces transportError and disposes', asyn
   })
 
   const message = await signer.signToken({
-    typ: 'event',
-    aud: signer.id,
-    prc: 'notify',
-    data: 'hello',
-    jti: 'evt-guard',
-    iat: nowSeconds(),
-  } as const)
+    payload: {
+      typ: 'event',
+      aud: signer.id,
+      prc: 'notify',
+      data: 'hello',
+      jti: 'evt-guard',
+      iat: nowSeconds(),
+    } as const,
+  })
 
   const transportError = server.events.once('transportError')
   const handling = server.handle(transports.server)
@@ -750,24 +788,28 @@ test('a rejecting async replay cache surfaces transportError and disposes (send 
 
   // Establish the channel with a valid signed token (accepted by the cache).
   const channelMsg = await signer.signToken({
-    typ: 'channel',
-    aud: signer.id,
-    prc: 'chat',
-    rid: 'send-guard-rid',
-    prm: undefined,
-    exp: expiresAt,
-  } as const)
+    payload: {
+      typ: 'channel',
+      aud: signer.id,
+      prc: 'chat',
+      rid: 'send-guard-rid',
+      prm: undefined,
+      exp: expiresAt,
+    } as const,
+  })
   await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
   await new Promise((resolve) => setTimeout(resolve, 50))
 
   // Signed send whose jti makes the dedup key match the rejecting cache branch.
   const sendMsg = await signer.signToken({
-    typ: 'send',
-    rid: 'send-guard-rid',
-    val: 'hello',
-    jti: 'send-guard-1',
-    exp: expiresAt,
-  } as const)
+    payload: {
+      typ: 'send',
+      rid: 'send-guard-rid',
+      val: 'hello',
+      jti: 'send-guard-1',
+      exp: expiresAt,
+    } as const,
+  })
 
   const transportError = server.events.once('transportError')
   await transports.client.write(sendMsg as unknown as AnyClientMessageOf<Protocol>)
@@ -821,24 +863,28 @@ test('a rejecting async replay cache surfaces transportError and disposes (abort
 
   // Establish the channel with a valid signed token (accepted by the cache).
   const channelMsg = await signer.signToken({
-    typ: 'channel',
-    aud: signer.id,
-    prc: 'chat',
-    rid: 'abort-guard-rid',
-    prm: undefined,
-    exp: expiresAt,
-  } as const)
+    payload: {
+      typ: 'channel',
+      aud: signer.id,
+      prc: 'chat',
+      rid: 'abort-guard-rid',
+      prm: undefined,
+      exp: expiresAt,
+    } as const,
+  })
   await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
   await new Promise((resolve) => setTimeout(resolve, 50))
 
   // Signed abort whose jti makes the dedup key match the rejecting cache branch.
   const abortMsg = await signer.signToken({
-    typ: 'abort',
-    rid: 'abort-guard-rid',
-    rsn: 'Close',
-    jti: 'abort-guard-1',
-    exp: expiresAt,
-  } as const)
+    payload: {
+      typ: 'abort',
+      rid: 'abort-guard-rid',
+      rsn: 'Close',
+      jti: 'abort-guard-1',
+      exp: expiresAt,
+    } as const,
+  })
 
   const aborted = vi.fn()
   server.events.on('handlerAbort', aborted)

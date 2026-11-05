@@ -46,12 +46,14 @@ describe('serve()', () => {
     const invalidMessageEventPromise = server.events.once('invalidMessage')
 
     const invalidMessage = await signer.signToken({
-      typ: 'event',
-      aud: signer.id,
-      prc: 'invalid',
-      data: { hello: 'world' },
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'event',
+        aud: signer.id,
+        prc: 'invalid',
+        data: { hello: 'world' },
+        exp: expiresAt,
+      } as const,
+    })
     // @ts-expect-error: invalid message
     await transports.client.write(invalidMessage)
 
@@ -61,12 +63,14 @@ describe('serve()', () => {
     expect(emittedError.error.cause).toBeInstanceOf(ValidationError)
 
     const message = await signer.signToken({
-      typ: 'event',
-      aud: signer.id,
-      prc: 'test',
-      data: { hello: 'world' },
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'event',
+        aud: signer.id,
+        prc: 'test',
+        data: { hello: 'world' },
+        exp: expiresAt,
+      } as const,
+    })
     await transports.client.write(message)
 
     await server.dispose()
@@ -109,12 +113,14 @@ describe('serve()', () => {
     })
 
     const message = await signer.signToken({
-      typ: 'event',
-      aud: signer.id,
-      prc: 'test',
-      data: { hello: 'world' },
-      exp: expiresAt,
-    } as const)
+      payload: {
+        typ: 'event',
+        aud: signer.id,
+        prc: 'test',
+        data: { hello: 'world' },
+        exp: expiresAt,
+      } as const,
+    })
     await transports.client.write(message)
     await server.dispose()
     await transports.dispose()
@@ -155,11 +161,13 @@ describe('serve()', () => {
     serve<Protocol>({ handlers, identity: signer, protocol, transport: transports.server })
 
     const message = (await signer.signToken({
-      typ: 'request',
-      iss: signer.id,
-      prc: 'test',
-      rid: '1',
-      iat: Math.floor(Date.now() / 1000),
+      payload: {
+        typ: 'request',
+        iss: signer.id,
+        prc: 'test',
+        rid: '1',
+        iat: Math.floor(Date.now() / 1000),
+      },
     })) as unknown as AnyClientMessageOf<Protocol>
     await transports.client.write(message)
     const read = await transports.client.read()
@@ -207,12 +215,14 @@ describe('serve()', () => {
     serve<Protocol>({ handlers, identity: signer, protocol, transport: transports.server })
 
     const message = await signer.signToken({
-      typ: 'stream',
-      prc: 'test',
-      rid: '1',
-      prm: 3,
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'stream',
+        prc: 'test',
+        rid: '1',
+        prm: 3,
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(message)
 
     const received: Array<number> = []
@@ -271,24 +281,28 @@ describe('serve()', () => {
     })
 
     const message = await signer.signToken({
-      typ: 'channel',
-      prc: 'test',
-      rid: '1',
-      prm: 5,
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'channel',
+        prc: 'test',
+        rid: '1',
+        prm: 5,
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
 
     const send = [5, 3, 10, 20]
     async function sendNext() {
       const val = send.shift()
       if (val != null) {
         const sendMsg = await signer.signToken({
-          typ: 'send',
-          prc: 'test',
-          rid: '1',
-          val,
-          iat: Math.floor(Date.now() / 1000),
-        } as const)
+          payload: {
+            typ: 'send',
+            prc: 'test',
+            rid: '1',
+            val,
+            iat: Math.floor(Date.now() / 1000),
+          } as const,
+        })
         await transports.client.write(sendMsg)
       }
     }
