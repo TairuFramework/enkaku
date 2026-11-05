@@ -41,9 +41,11 @@ describe('ServerTransport', () => {
     headers.set('content-type', 'application/json')
 
     const eventMessage = createUnsignedToken({
-      typ: 'event',
-      prc: 'test/event',
-      data: { hello: 'world' },
+      payload: {
+        typ: 'event',
+        prc: 'test/event',
+        data: { hello: 'world' },
+      },
     })
     await transport.fetch(
       new Request('http://localhost/test', {
@@ -58,7 +60,7 @@ describe('ServerTransport', () => {
       message: eventMessage,
     })
 
-    const requestMessage = createUnsignedToken({ typ: 'request', prc: 'test/request' })
+    const requestMessage = createUnsignedToken({ payload: { typ: 'request', prc: 'test/request' } })
     const response = await transport.fetch(
       new Request('http://localhost/test', {
         headers,
@@ -67,7 +69,7 @@ describe('ServerTransport', () => {
       }),
     )
     await expect(response.json()).resolves.toEqual(
-      createUnsignedToken({ typ: 'result', val: 'hello' }),
+      createUnsignedToken({ payload: { typ: 'result', val: 'hello' } }),
     )
 
     await server.dispose()
@@ -161,7 +163,9 @@ describe('ServerTransport', () => {
       headers.set('content-type', 'application/json')
       headers.set('origin', 'http://example.com')
 
-      const requestMessage = createUnsignedToken({ typ: 'request', prc: 'test/request' })
+      const requestMessage = createUnsignedToken({
+        payload: { typ: 'request', prc: 'test/request' },
+      })
       const response = await transport.fetch(
         new Request('http://localhost/test', {
           headers,
@@ -170,7 +174,7 @@ describe('ServerTransport', () => {
         }),
       )
       await expect(response.json()).resolves.toEqual(
-        createUnsignedToken({ typ: 'result', val: 'hello' }),
+        createUnsignedToken({ payload: { typ: 'result', val: 'hello' } }),
       )
       expect(response.headers.get('access-control-allow-origin')).toBe('http://example.com')
       expect(response.headers.get('access-control-allow-methods')).toBe('POST, OPTIONS')
@@ -224,10 +228,12 @@ describe('POST-based SSE sessions', () => {
   test('first stream POST creates SSE session', async () => {
     const bridge = createServerBridge<Protocol>()
     const message = createUnsignedToken({
-      typ: 'stream',
-      prc: 'test/stream',
-      rid: 'r1',
-      prm: 'hello',
+      payload: {
+        typ: 'stream',
+        prc: 'test/stream',
+        rid: 'r1',
+        prm: 'hello',
+      },
     })
     const response = await postMessage(bridge.handleRequest, message)
     expect(response.status).toBe(200)
@@ -239,10 +245,12 @@ describe('POST-based SSE sessions', () => {
   test('first channel POST creates SSE session', async () => {
     const bridge = createServerBridge<Protocol>()
     const message = createUnsignedToken({
-      typ: 'channel',
-      prc: 'test/channel',
-      rid: 'r1',
-      prm: 'hello',
+      payload: {
+        typ: 'channel',
+        prc: 'test/channel',
+        rid: 'r1',
+        prm: 'hello',
+      },
     })
     const response = await postMessage(bridge.handleRequest, message)
     expect(response.status).toBe(200)
@@ -254,20 +262,24 @@ describe('POST-based SSE sessions', () => {
   test('subsequent stream POST with session ID returns 204', async () => {
     const bridge = createServerBridge<Protocol>()
     const message1 = createUnsignedToken({
-      typ: 'stream',
-      prc: 'test/stream',
-      rid: 'r1',
-      prm: 'hello',
+      payload: {
+        typ: 'stream',
+        prc: 'test/stream',
+        rid: 'r1',
+        prm: 'hello',
+      },
     })
     const response1 = await postMessage(bridge.handleRequest, message1)
     expect(response1.status).toBe(200)
     const sessionID = response1.headers.get('enkaku-session-id') as string
 
     const message2 = createUnsignedToken({
-      typ: 'stream',
-      prc: 'test/stream',
-      rid: 'r2',
-      prm: 'world',
+      payload: {
+        typ: 'stream',
+        prc: 'test/stream',
+        rid: 'r2',
+        prm: 'world',
+      },
     })
     const response2 = await postMessage(bridge.handleRequest, message2, sessionID)
     expect(response2.status).toBe(204)
@@ -276,10 +288,12 @@ describe('POST-based SSE sessions', () => {
   test('stream POST with invalid session ID returns 400', async () => {
     const bridge = createServerBridge<Protocol>()
     const message = createUnsignedToken({
-      typ: 'stream',
-      prc: 'test/stream',
-      rid: 'r1',
-      prm: 'hello',
+      payload: {
+        typ: 'stream',
+        prc: 'test/stream',
+        rid: 'r1',
+        prm: 'hello',
+      },
     })
     const response = await postMessage(bridge.handleRequest, message, 'nonexistent')
     expect(response.status).toBe(400)
@@ -288,10 +302,12 @@ describe('POST-based SSE sessions', () => {
   test('routes responses through SSE stream', async () => {
     const bridge = createServerBridge<Protocol>()
     const message = createUnsignedToken({
-      typ: 'stream',
-      prc: 'test/stream',
-      rid: 'r1',
-      prm: 'hello',
+      payload: {
+        typ: 'stream',
+        prc: 'test/stream',
+        rid: 'r1',
+        prm: 'hello',
+      },
     })
     const response = await postMessage(bridge.handleRequest, message)
     expect(response.status).toBe(200)
@@ -304,7 +320,7 @@ describe('POST-based SSE sessions', () => {
 
     // Write a response through the bridge's writable stream
     const writer = bridge.stream.writable.getWriter()
-    const serverResponse = createUnsignedToken({ typ: 'receive', rid: 'r1', val: 42 })
+    const serverResponse = createUnsignedToken({ payload: { typ: 'receive', rid: 'r1', val: 42 } })
     await writer.write(serverResponse as never)
     writer.releaseLock()
 
@@ -327,19 +343,23 @@ describe('POST-based SSE sessions', () => {
   test('rejects session creation when maxSessions reached', async () => {
     const bridge = createServerBridge<Protocol>({ maxSessions: 1 })
     const message1 = createUnsignedToken({
-      typ: 'stream',
-      prc: 'test/stream',
-      rid: 'r1',
-      prm: 'hello',
+      payload: {
+        typ: 'stream',
+        prc: 'test/stream',
+        rid: 'r1',
+        prm: 'hello',
+      },
     })
     const response1 = await postMessage(bridge.handleRequest, message1)
     expect(response1.status).toBe(200)
 
     const message2 = createUnsignedToken({
-      typ: 'stream',
-      prc: 'test/stream',
-      rid: 'r2',
-      prm: 'world',
+      payload: {
+        typ: 'stream',
+        prc: 'test/stream',
+        rid: 'r2',
+        prm: 'world',
+      },
     })
     const response2 = await postMessage(bridge.handleRequest, message2)
     expect(response2.status).toBe(503)

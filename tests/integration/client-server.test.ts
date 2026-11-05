@@ -42,7 +42,9 @@ describe('client-server integration', () => {
       await client.sendEvent('test', { data: { hello: 'world' } })
       expect(handler).toHaveBeenCalledWith({
         data: { hello: 'world' },
-        message: createUnsignedToken({ typ: 'event', prc: 'test', data: { hello: 'world' } }),
+        message: createUnsignedToken({
+          payload: { typ: 'event', prc: 'test', data: { hello: 'world' } },
+        }),
       })
 
       await transports.dispose()

@@ -45,9 +45,11 @@ describe('Invalid channel send', () => {
     // Open the channel so a controller is registered for rid 'c1'.
     await transports.client.write(
       createUnsignedToken({
-        typ: 'channel',
-        prc: 'chat',
-        rid: 'c1',
+        payload: {
+          typ: 'channel',
+          prc: 'chat',
+          rid: 'c1',
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
     await new Promise((resolve) => setTimeout(resolve, 50))
@@ -55,10 +57,12 @@ describe('Invalid channel send', () => {
     // Send a value that violates the send schema (number, not string).
     await transports.client.write(
       createUnsignedToken({
-        typ: 'send',
-        prc: 'chat',
-        rid: 'c1',
-        val: 123,
+        payload: {
+          typ: 'send',
+          prc: 'chat',
+          rid: 'c1',
+          val: 123,
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
 

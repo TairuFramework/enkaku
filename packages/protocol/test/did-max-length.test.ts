@@ -28,10 +28,10 @@ describe('signed message DID claim length', () => {
     expect(identity.longForm.length).toBeGreaterThan(256)
     expect(identity.longForm.length).toBeLessThanOrEqual(1024)
 
-    const token = await identity.signToken(
-      { typ: 'request', prc: 'test/request', rid: '1' },
-      { embedLongForm: true },
-    )
+    const token = await identity.signToken({
+      payload: { typ: 'request', prc: 'test/request', rid: '1' },
+      embedLongForm: true,
+    })
     expect(token.payload.iss).toBe(identity.longForm)
 
     const validator = createValidator({

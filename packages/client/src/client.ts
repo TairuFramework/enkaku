@@ -243,7 +243,7 @@ function getCreateMessage<Protocol extends ProtocolDefinition>({
   embedLongForm,
 }: GetCreateMessageParams): CreateMessage<Protocol> {
   if (identity == null) {
-    return createUnsignedToken
+    return (payload, header) => createUnsignedToken({ payload, header })
   }
 
   const identityPromise = Promise.resolve(identity)
@@ -252,10 +252,11 @@ function getCreateMessage<Protocol extends ProtocolDefinition>({
       if (!isSigningIdentity(id)) {
         throw new Error('Identity does not support signing')
       }
-      return id.signToken<Record<string, unknown>>(
-        { jti: getRandomID(), iat: Math.floor(now() / 1000), ...payload },
-        { header, embedLongForm },
-      )
+      return id.signToken<Record<string, unknown>>({
+        payload: { jti: getRandomID(), iat: Math.floor(now() / 1000), ...payload },
+        header,
+        embedLongForm,
+      })
     })
   }
 

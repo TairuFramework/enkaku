@@ -79,8 +79,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // First request: long-form iss (embedLongForm: true forces it even though sentTo is empty)
-    const msg1 = await clientIdentity.signToken(
-      {
+    const msg1 = await clientIdentity.signToken({
+      payload: {
         typ: 'request',
         prc: 'ping',
         rid: 'r-a-1',
@@ -88,8 +88,8 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
 
     await transports.client.write(msg1 as unknown as AnyClientMessageOf<Protocol>)
     const response1 = await transports.client.read()
@@ -100,8 +100,8 @@ describe('peer4 handshake integration', () => {
     expect(cached).toBeDefined()
 
     // Second request: short-form iss (embedLongForm: false forces short form)
-    const msg2 = await clientIdentity.signToken(
-      {
+    const msg2 = await clientIdentity.signToken({
+      payload: {
         typ: 'request',
         prc: 'ping',
         rid: 'r-a-2',
@@ -109,8 +109,8 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: false },
-    )
+      embedLongForm: false,
+    })
 
     await transports.client.write(msg2 as unknown as AnyClientMessageOf<Protocol>)
     const response2 = await transports.client.read()
@@ -141,8 +141,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // Build a valid long-form token, then replace the signature with random bytes
-    const realToken = await clientIdentity.signToken(
-      {
+    const realToken = await clientIdentity.signToken({
+      payload: {
         typ: 'request',
         prc: 'ping',
         rid: 'r-b-1',
@@ -150,8 +150,8 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
 
     const forgedSignature = toB64U(crypto.getRandomValues(new Uint8Array(64)))
     const forgedMessage = {
@@ -202,8 +202,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // Client sends with long-form iss (first contact)
-    const msg = await clientIdentity.signToken(
-      {
+    const msg = await clientIdentity.signToken({
+      payload: {
         typ: 'request',
         prc: 'ping',
         rid: 'r-c-1',
@@ -211,8 +211,8 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
 
     await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
     const response = await transports.client.read()
@@ -243,8 +243,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // Force short-form iss — resolver cannot resolve it
-    const msg = await clientIdentity.signToken(
-      {
+    const msg = await clientIdentity.signToken({
+      payload: {
         typ: 'request',
         prc: 'ping',
         rid: 'r-d-1',
@@ -252,8 +252,8 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: false },
-    )
+      embedLongForm: false,
+    })
 
     const handlerErrorEvent = server.events.once('handlerError')
     await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
@@ -296,8 +296,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // Open channel with long-form iss (first contact, embedLongForm: true)
-    const channelMsg = await clientIdentity.signToken(
-      {
+    const channelMsg = await clientIdentity.signToken({
+      payload: {
         typ: 'channel',
         prc: 'chat',
         rid: 'ch-f-1',
@@ -305,8 +305,8 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
     await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel to be established and cache populated
@@ -317,17 +317,17 @@ describe('peer4 handshake integration', () => {
     expect(cached).toBeDefined()
 
     // Send first message: short-form iss (same aud was already seen; embedLongForm:false)
-    const send1 = await clientIdentity.signToken(
-      { typ: 'send', rid: 'ch-f-1', val: 'hello-1', iat: Math.floor(Date.now() / 1000) },
-      { embedLongForm: false },
-    )
+    const send1 = await clientIdentity.signToken({
+      payload: { typ: 'send', rid: 'ch-f-1', val: 'hello-1', iat: Math.floor(Date.now() / 1000) },
+      embedLongForm: false,
+    })
     await transports.client.write(send1 as unknown as AnyClientMessageOf<Protocol>)
 
     // Send second message: short-form iss
-    const send2 = await clientIdentity.signToken(
-      { typ: 'send', rid: 'ch-f-1', val: 'hello-2', iat: Math.floor(Date.now() / 1000) },
-      { embedLongForm: false },
-    )
+    const send2 = await clientIdentity.signToken({
+      payload: { typ: 'send', rid: 'ch-f-1', val: 'hello-2', iat: Math.floor(Date.now() / 1000) },
+      embedLongForm: false,
+    })
     await transports.client.write(send2 as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for processing
@@ -365,8 +365,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // Open channel with long-form iss to populate cache
-    const channelMsg = await clientIdentity.signToken(
-      {
+    const channelMsg = await clientIdentity.signToken({
+      payload: {
         typ: 'channel',
         prc: 'chat',
         rid: 'ch-g-1',
@@ -374,18 +374,23 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
     await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel to be established
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Build a real-shaped send token with short-form iss, then replace signature with junk
-    const realSend = await clientIdentity.signToken(
-      { typ: 'send', rid: 'ch-g-1', val: 'forged-value', iat: Math.floor(Date.now() / 1000) },
-      { embedLongForm: false },
-    )
+    const realSend = await clientIdentity.signToken({
+      payload: {
+        typ: 'send',
+        rid: 'ch-g-1',
+        val: 'forged-value',
+        iat: Math.floor(Date.now() / 1000),
+      },
+      embedLongForm: false,
+    })
     const forgedSend = {
       header: realSend.header,
       payload: realSend.payload,
@@ -434,8 +439,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // First request: short-form iss — resolver is invoked
-    const msg1 = await clientIdentity.signToken(
-      {
+    const msg1 = await clientIdentity.signToken({
+      payload: {
         typ: 'request',
         prc: 'ping',
         rid: 'r-e-1',
@@ -443,8 +448,8 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: false },
-    )
+      embedLongForm: false,
+    })
 
     await transports.client.write(msg1 as unknown as AnyClientMessageOf<Protocol>)
     const response1 = await transports.client.read()
@@ -459,8 +464,8 @@ describe('peer4 handshake integration', () => {
     expect(cached).toBeDefined()
 
     // Second request: short-form iss again — cache hit, resolver NOT called again
-    const msg2 = await clientIdentity.signToken(
-      {
+    const msg2 = await clientIdentity.signToken({
+      payload: {
         typ: 'request',
         prc: 'ping',
         rid: 'r-e-2',
@@ -468,8 +473,8 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: false },
-    )
+      embedLongForm: false,
+    })
 
     await transports.client.write(msg2 as unknown as AnyClientMessageOf<Protocol>)
     const response2 = await transports.client.read()
@@ -508,8 +513,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // Legit client opens a channel (long-form to populate cache)
-    const channelMsg = await clientIdentity.signToken(
-      {
+    const channelMsg = await clientIdentity.signToken({
+      payload: {
         typ: 'channel',
         prc: 'chat',
         rid: 'ch-h-1',
@@ -517,8 +522,8 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
     await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel to be established
@@ -528,16 +533,16 @@ describe('peer4 handshake integration', () => {
     const attackerIdentity = await createIdentity({
       keys: [{ purpose: 'sig', alg: 'EdDSA' }],
     })
-    const forgedAbort = await attackerIdentity.signToken(
-      {
+    const forgedAbort = await attackerIdentity.signToken({
+      payload: {
         typ: 'abort',
         rid: 'ch-h-1',
         rsn: 'forged',
         aud: serverIdentity.id,
         exp: expiresAt(),
       } as unknown as Parameters<typeof attackerIdentity.signToken>[0],
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
 
     const handlerErrorEvent = server.events.once('handlerError')
     await transports.client.write(forgedAbort as unknown as AnyClientMessageOf<Protocol>)
@@ -586,8 +591,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // Client opens a channel (long-form to populate cache)
-    const channelMsg = await clientIdentity.signToken(
-      {
+    const channelMsg = await clientIdentity.signToken({
+      payload: {
         typ: 'channel',
         prc: 'chat',
         rid: 'ch-i-1',
@@ -595,24 +600,24 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
     await transports.client.write(channelMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel to be established and cache populated
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Same client sends a valid abort with short-form iss
-    const abortMsg = await clientIdentity.signToken(
-      {
+    const abortMsg = await clientIdentity.signToken({
+      payload: {
         typ: 'abort',
         rid: 'ch-i-1',
         rsn: 'client-cancel',
         aud: serverIdentity.id,
         exp: expiresAt(),
       } as unknown as Parameters<typeof clientIdentity.signToken>[0],
-      { embedLongForm: false },
-    )
+      embedLongForm: false,
+    })
 
     const handlerAbortEvent = server.events.once('handlerAbort')
     await transports.client.write(abortMsg as unknown as AnyClientMessageOf<Protocol>)
@@ -684,8 +689,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // Client A starts a long-running request (long-form to populate cache)
-    const requestMsg = await clientIdentity.signToken(
-      {
+    const requestMsg = await clientIdentity.signToken({
+      payload: {
         typ: 'request',
         prc: 'ping',
         rid: 'r-k-1',
@@ -693,16 +698,16 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
     await transports.client.write(requestMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Wait for client A's handler to start (so the controller is registered)
     await handlerStartedPromise
 
     // Client B sends a fast request (long-form) to populate its DID in the server cache
-    const requestBMsg = await clientBIdentity.signToken(
-      {
+    const requestBMsg = await clientBIdentity.signToken({
+      payload: {
         typ: 'request',
         prc: 'ping',
         rid: 'r-k-b',
@@ -710,8 +715,8 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
     await transports.client.write(requestBMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // Wait for client B's result (its handler resolves immediately on second call)
@@ -719,16 +724,16 @@ describe('peer4 handshake integration', () => {
     await handlerBResult
 
     // Client B tries to abort client A's request using its own valid credentials
-    const forgedAbort = await clientBIdentity.signToken(
-      {
+    const forgedAbort = await clientBIdentity.signToken({
+      payload: {
         typ: 'abort',
         rid: 'r-k-1',
         rsn: 'hijack',
         aud: serverIdentity.id,
         exp: expiresAt(),
       } as unknown as Parameters<typeof clientBIdentity.signToken>[0],
-      { embedLongForm: false },
-    )
+      embedLongForm: false,
+    })
 
     const handlerErrorEvent = server.events.once('handlerError')
     await transports.client.write(forgedAbort as unknown as AnyClientMessageOf<Protocol>)
@@ -793,8 +798,8 @@ describe('peer4 handshake integration', () => {
     })
 
     // Client A opens a channel (long-form to populate cache)
-    const channelMsgA = await clientIdentity.signToken(
-      {
+    const channelMsgA = await clientIdentity.signToken({
+      payload: {
         typ: 'channel',
         prc: 'chat',
         rid: 'ch-j-1',
@@ -802,16 +807,16 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
     await transports.client.write(channelMsgA as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel A to be established and cache populated
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Client B also establishes itself (long-form to populate its cache entry)
-    const channelMsgB = await clientBIdentity.signToken(
-      {
+    const channelMsgB = await clientBIdentity.signToken({
+      payload: {
         typ: 'channel',
         prc: 'chat',
         rid: 'ch-j-2',
@@ -819,24 +824,24 @@ describe('peer4 handshake integration', () => {
         aud: serverIdentity.id,
         exp: expiresAt(),
       },
-      { embedLongForm: true },
-    )
+      embedLongForm: true,
+    })
     await transports.client.write(channelMsgB as unknown as AnyClientMessageOf<Protocol>)
 
     // Give time for channel B to be established
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     // Client B now tries to abort client A's channel using its own (valid) credentials
-    const wrongAbort = await clientBIdentity.signToken(
-      {
+    const wrongAbort = await clientBIdentity.signToken({
+      payload: {
         typ: 'abort',
         rid: 'ch-j-1',
         rsn: 'hijack',
         aud: serverIdentity.id,
         exp: expiresAt(),
       } as unknown as Parameters<typeof clientBIdentity.signToken>[0],
-      { embedLongForm: false },
-    )
+      embedLongForm: false,
+    })
 
     const handlerErrorEvent = server.events.once('handlerError')
     await transports.client.write(wrongAbort as unknown as AnyClientMessageOf<Protocol>)

@@ -69,7 +69,9 @@ describe('HTTP transports', () => {
       await setTimeout(100)
       expect(handler).toHaveBeenCalledWith({
         data: { hello: 'world' },
-        message: createUnsignedToken({ typ: 'event', prc: 'test', data: { hello: 'world' } }),
+        message: createUnsignedToken({
+          payload: { typ: 'event', prc: 'test', data: { hello: 'world' } },
+        }),
       })
 
       await dispose()

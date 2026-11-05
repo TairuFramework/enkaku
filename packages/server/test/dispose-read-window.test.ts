@@ -46,9 +46,11 @@ describe('messages arriving while dispose() is draining', () => {
     })
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        rid: 'r1',
-        prc: 'test/slow',
+        payload: {
+          typ: 'request',
+          rid: 'r1',
+          prc: 'test/slow',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     await r1Started
@@ -73,9 +75,11 @@ describe('messages arriving while dispose() is draining', () => {
     // readable -- it is only disposed after `handling.done` resolves.
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        rid: 'r2',
-        prc: 'test/second',
+        payload: {
+          typ: 'request',
+          rid: 'r2',
+          prc: 'test/second',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     // Give handleNext a chance to read (and, correctly, drop) message 2 before
@@ -148,12 +152,14 @@ describe('messages arriving while dispose() is draining', () => {
     })
 
     const m1 = await signer.signToken({
-      typ: 'request',
-      prc: 'test/slow',
-      rid: 'r1',
-      aud: signer.id,
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'request',
+        prc: 'test/slow',
+        rid: 'r1',
+        aud: signer.id,
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
 
     // Let the cache throw and take the dispose route -- driven off the
     // `transportError` event this catch block emits rather than a guessed
@@ -173,12 +179,14 @@ describe('messages arriving while dispose() is draining', () => {
     expect(calls).toBe(1)
 
     const m2 = await signer.signToken({
-      typ: 'request',
-      prc: 'test/second',
-      rid: 'r2',
-      aud: signer.id,
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'request',
+        prc: 'test/second',
+        rid: 'r2',
+        aud: signer.id,
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(m2 as unknown as AnyClientMessageOf<Protocol>)
     // Give handleNext a chance to read (and, correctly, drop) message 2. This
     // wait is ordinary async settling time, not a guess about when the replay
@@ -230,12 +238,14 @@ describe('messages arriving while dispose() is draining', () => {
     })
 
     const message = await signer.signToken({
-      typ: 'request',
-      prc: 'test/slow',
-      rid: 'r1',
-      aud: signer.id,
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'request',
+        prc: 'test/slow',
+        rid: 'r1',
+        aud: signer.id,
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
     await new Promise((resolve) => setTimeout(resolve, 50))
 
@@ -287,12 +297,14 @@ describe('self-dispose routes leave the transport behind', () => {
     })
 
     const message = await signer.signToken({
-      typ: 'request',
-      prc: 'test/slow',
-      rid: 'r1',
-      aud: signer.id,
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'request',
+        prc: 'test/slow',
+        rid: 'r1',
+        aud: signer.id,
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(message as unknown as AnyClientMessageOf<Protocol>)
 
     // Let the cache throw and take the (now non-deadlocking) self-dispose route.
@@ -337,9 +349,11 @@ describe('self-dispose routes leave the transport behind', () => {
     // for it to close and the server never sees `done`.
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        rid: 'r1',
-        prc: 'test/slow',
+        payload: {
+          typ: 'request',
+          rid: 'r1',
+          prc: 'test/slow',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     await new Promise((resolve) => setTimeout(resolve, 20))
@@ -454,23 +468,27 @@ describe('ordering: transport disposal must wait for the running-handler drain',
     })
 
     const holdMessage = await clientSigner.signToken({
-      typ: 'request',
-      prc: 'gate/hold',
-      rid: 'r1',
-      aud: serverSigner.id,
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'request',
+        prc: 'gate/hold',
+        rid: 'r1',
+        aud: serverSigner.id,
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(holdMessage as unknown as AnyClientMessageOf<GateProtocol>)
     // Let r1's access check reach and park on authGate.
     await new Promise((resolve) => setTimeout(resolve, 20))
 
     const replyMessage = await clientSigner.signToken({
-      typ: 'request',
-      prc: 'gate/reply',
-      rid: 'r2',
-      aud: serverSigner.id,
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'request',
+        prc: 'gate/reply',
+        rid: 'r2',
+        aud: serverSigner.id,
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(replyMessage as unknown as AnyClientMessageOf<GateProtocol>)
     // Let r2's access check resolve and its handler start (and park on
     // replyGate) -- so r2 is out of `pending` and into `running` before

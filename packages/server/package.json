@@ -38,6 +38,7 @@
     "@enkaku/otel": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@kokuin/capability": "catalog:",
+    "@kokuin/crypto": "catalog:",
     "@kokuin/token": "catalog:",
     "@sozai/async": "catalog:",
     "@sozai/event": "catalog:",

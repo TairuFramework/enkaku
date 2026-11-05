@@ -13,7 +13,7 @@ serveProcess<Protocol>({
   handlers: {
     sign: async ({ param }) => {
       const identity = await keyStore.provideIdentity(param.keyID ?? 'test')
-      const token = await identity.signToken(param.payload)
+      const token = await identity.signToken({ payload: param.payload })
       return stringifyToken(token)
     },
   },

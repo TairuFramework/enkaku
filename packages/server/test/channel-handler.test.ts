@@ -31,11 +31,13 @@ type ChannelContext = ChannelHandlerContext<Protocol, 'test'>
 
 describe('handleChannel()', () => {
   const clientToken = createUnsignedToken({
-    typ: 'channel',
-    rid: '1',
-    prc: 'test',
-    prm: { test: true },
-  } as const)
+    payload: {
+      typ: 'channel',
+      rid: '1',
+      prc: 'test',
+      prm: { test: true },
+    } as const,
+  })
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const unknownPayload = { typ: 'channel', rid: '1', prc: 'unknown', prm: {} } as const

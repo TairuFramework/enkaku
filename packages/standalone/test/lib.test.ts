@@ -1,5 +1,6 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import type { ChannelHandler, EventHandler, RequestHandler, StreamHandler } from '@enkaku/server'
+import { nobleCrypto } from '@kokuin/crypto'
 import { randomIdentity } from '@kokuin/token'
 import { describe, expect, test, vi } from 'vitest'
 
@@ -45,12 +46,14 @@ describe('standalone', () => {
       expect(typeof actualPayload.jti).toBe('string')
       expect(typeof actualPayload.iat).toBe('number')
       const message = await identity.signToken({
-        jti: actualPayload.jti as string,
-        iat: actualPayload.iat as number,
-        aud: identity.id,
-        typ: 'event',
-        prc: 'test',
-        data: { hello: 'world' },
+        payload: {
+          jti: actualPayload.jti as string,
+          iat: actualPayload.iat as number,
+          aud: identity.id,
+          typ: 'event',
+          prc: 'test',
+          data: { hello: 'world' },
+        },
       })
       expect(handler).toHaveBeenCalledWith({ data: { hello: 'world' }, message })
     })
@@ -183,5 +186,24 @@ describe('standalone', () => {
       expect(received).toEqual([10, 8, 15])
       await expect(channel).resolves.toBe('END')
     })
+  })
+
+  test('forwards crypto to the server', async () => {
+    const identity = randomIdentity()
+    const protocol = {
+      test: { type: 'request', result: { type: 'string' } },
+    } as const satisfies ProtocolDefinition
+    type Protocol = typeof protocol
+
+    const handler = vi.fn<RequestHandler<Protocol, 'test'>>(async () => 'ok')
+    const verify = vi.fn(async () => false)
+    const client = standalone<Protocol>(
+      { test: handler },
+      { identity, crypto: { ...nobleCrypto, verify } },
+    )
+
+    await expect(client.request('test')).rejects.toThrow()
+    expect(verify).toHaveBeenCalledTimes(1)
+    expect(handler).not.toHaveBeenCalled()
   })
 })

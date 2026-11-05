@@ -95,7 +95,7 @@ describe('request timeout', () => {
     const read = await reading
     const { createUnsignedToken: unsignedToken } = await import('@kokuin/token')
     const rid = (read.value as { payload: { rid: string } }).payload.rid
-    await transports.server.write(unsignedToken({ typ: 'result', rid, val: 'ok' }))
+    await transports.server.write(unsignedToken({ payload: { typ: 'result', rid, val: 'ok' } }))
     await expect(call).resolves.toBe('ok')
     // Advancing past the deadline produces no late rejection.
     await vi.advanceTimersByTimeAsync(5000)

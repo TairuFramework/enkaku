@@ -48,7 +48,7 @@ export function resolveEncryptionPolicy(
 ): EncryptionPolicy {
   if (rules != null) {
     for (const [pattern, rule] of Object.entries(rules)) {
-      if (hasPartsMatch(procedure, pattern)) {
+      if (hasPartsMatch({ expected: procedure, actual: pattern })) {
         if (rule.encryption != null) {
           return rule.encryption
         }
@@ -72,12 +72,16 @@ export async function checkProcedureAccess(
   const procedure = payload.prc
 
   for (const [pattern, rule] of Object.entries(rules)) {
-    if (!hasPartsMatch(procedure, pattern)) continue
+    if (!hasPartsMatch({ expected: procedure, actual: pattern })) continue
 
     const verifyDelegation = async (): Promise<boolean> => {
       if (payload.sub == null) return false
       try {
-        await checkCapability({ act: procedure, res: serverID }, payload, options)
+        await checkCapability({
+          ...options,
+          permission: { act: procedure, res: serverID },
+          payload,
+        })
         return true
       } catch (err) {
         const message = err instanceof Error ? err.message : ''
@@ -146,14 +150,18 @@ export async function checkClientToken(
       throw new Error('Invalid audience')
     }
     if (payload.exp != null) {
-      assertNonExpired(payload, options?.atTime)
+      assertNonExpired({ payload, atTime: options?.atTime })
     }
     return
   }
 
   if (payload.sub != null && normalizeDID(payload.sub) === normalizedServerID) {
     // If subject is the server, check capability directly
-    await checkCapability({ act: procedure, res: serverID }, payload, options)
+    await checkCapability({
+      ...options,
+      permission: { act: procedure, res: serverID },
+      payload,
+    })
     return
   }
 

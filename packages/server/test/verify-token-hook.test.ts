@@ -42,24 +42,29 @@ describe('Server verifyToken hook', () => {
     })
 
     // Delegator creates a capability for the client
-    const capability = await createCapability(delegatorSigner, {
-      sub: delegatorSigner.id,
-      aud: clientSigner.id,
-      act: '*',
-      res: '*',
+    const capability = await createCapability({
+      signer: delegatorSigner,
+      payload: {
+        sub: delegatorSigner.id,
+        aud: clientSigner.id,
+        act: '*',
+        res: '*',
+      },
     })
 
     // Client sends a request using the delegated capability
     const msg = await clientSigner.signToken({
-      typ: 'request',
-      prc: 'test',
-      rid: 'r1',
-      prm: 'hello',
-      aud: serverSigner.id,
-      sub: delegatorSigner.id,
-      cap: stringifyToken(capability),
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'request',
+        prc: 'test',
+        rid: 'r1',
+        prm: 'hello',
+        aud: serverSigner.id,
+        sub: delegatorSigner.id,
+        cap: stringifyToken(capability),
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
 
     // Wait for response
@@ -98,23 +103,28 @@ describe('Server verifyToken hook', () => {
     })
 
     // Delegator creates a capability for the client
-    const capability = await createCapability(delegatorSigner, {
-      sub: delegatorSigner.id,
-      aud: clientSigner.id,
-      act: '*',
-      res: '*',
+    const capability = await createCapability({
+      signer: delegatorSigner,
+      payload: {
+        sub: delegatorSigner.id,
+        aud: clientSigner.id,
+        act: '*',
+        res: '*',
+      },
     })
 
     const msg = await clientSigner.signToken({
-      typ: 'request',
-      prc: 'test',
-      rid: 'r1',
-      prm: 'hello',
-      aud: serverSigner.id,
-      sub: delegatorSigner.id,
-      cap: stringifyToken(capability),
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'request',
+        prc: 'test',
+        rid: 'r1',
+        prm: 'hello',
+        aud: serverSigner.id,
+        sub: delegatorSigner.id,
+        cap: stringifyToken(capability),
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
 
     // Should get error response

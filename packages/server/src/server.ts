@@ -10,6 +10,7 @@ import {
   type ServerTransportOf,
 } from '@enkaku/protocol'
 import type { VerifyTokenHook } from '@kokuin/capability'
+import type { CryptoProvider } from '@kokuin/crypto'
 import {
   createInMemoryDIDCache,
   type DIDCache,
@@ -88,6 +89,7 @@ export type AccessControlParams = (
   encryptionPolicy?: EncryptionPolicy
   verifyToken?: VerifyTokenHook
   cache?: DIDCache
+  crypto?: CryptoProvider
   resolver?: DIDResolver
   methods?: MethodRegistry
 }
@@ -660,8 +662,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             span.setAttribute(EnkakuAttributeKeys.AUTH_ALLOWED, false)
             throw new Error('Message is not signed')
           }
-          await verifyToken(message as SignedToken, {
+          await verifyToken({
+            token: message as SignedToken,
             cache: params.cache,
+            crypto: params.crypto,
             resolver: params.resolver,
             methods: params.methods,
           })
@@ -672,6 +676,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             {
               verifyToken: params.verifyToken,
               cache: params.cache,
+              crypto: params.crypto,
               resolver: params.resolver,
               methods: params.methods,
             },
@@ -827,8 +832,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               break
             }
             try {
-              await verifyToken(msg as SignedToken, {
+              await verifyToken({
+                token: msg as SignedToken,
                 cache: params.cache,
+                crypto: params.crypto,
                 resolver: params.resolver,
                 methods: params.methods,
               })
@@ -941,8 +948,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               break
             }
             try {
-              await verifyToken(msg as SignedToken, {
+              await verifyToken({
+                token: msg as SignedToken,
                 cache: params.cache,
+                crypto: params.crypto,
                 resolver: params.resolver,
                 methods: params.methods,
               })
@@ -1058,6 +1067,8 @@ export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   logger?: Logger
   protocol?: Protocol
   replay?: ReplayOptions
+  /** Verifies token and capability signatures. Defaults to strict `nobleCrypto`; captured once. */
+  crypto?: CryptoProvider
   resolver?: DIDResolver
   methods?: MethodRegistry
   tracer?: Tracer
@@ -1081,6 +1092,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #abortController: AbortController
   #accessControl: AccessControlParams
   #cache: DIDCache
+  #crypto?: CryptoProvider
   #resolver?: DIDResolver
   #methods?: MethodRegistry
   #events: ServerEmitter
@@ -1167,6 +1179,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#handlers = params.handlers
     this.#streamHighWaterMark = streamHighWaterMark
     this.#cache = params.cache ?? createInMemoryDIDCache()
+    this.#crypto = params.crypto
     this.#resolver = params.resolver
     this.#methods = params.methods
     const serverID = params.identity?.id
@@ -1194,6 +1207,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         encryptionPolicy: params.encryptionPolicy,
         verifyToken: params.verifyToken,
         cache: this.#cache,
+        crypto: this.#crypto,
         resolver: this.#resolver,
         methods: this.#methods,
       }
@@ -1205,6 +1219,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         encryptionPolicy: params.encryptionPolicy,
         verifyToken: params.verifyToken,
         cache: this.#cache,
+        crypto: this.#crypto,
         resolver: this.#resolver,
         methods: this.#methods,
       }
@@ -1251,6 +1266,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         encryptionPolicy,
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
         cache: this.#cache,
+        crypto: this.#crypto,
         resolver: this.#resolver,
         methods: this.#methods,
       }
@@ -1269,6 +1285,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
         encryptionPolicy,
         verifyToken: options.verifyToken ?? this.#accessControl.verifyToken,
         cache: this.#cache,
+        crypto: this.#crypto,
         resolver: this.#resolver,
         methods: this.#methods,
       }

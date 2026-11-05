@@ -37,7 +37,7 @@ describe('controller hardening', () => {
     // Reply to the NEW call; it must still resolve even if the OLD one's signal later aborts.
     const read = await transports.server.read()
     const rid = (read.value as { payload: { rid: string } }).payload.rid
-    await transports.server.write(unsignedToken({ typ: 'result', rid, val: 'ok' }))
+    await transports.server.write(unsignedToken({ payload: { typ: 'result', rid, val: 'ok' } }))
     await expect(second).resolves.toBe('ok')
     // first was superseded in the map; abort its (independent) controller — must not affect anything delivered.
     void first.catch(() => {})

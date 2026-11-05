@@ -11,34 +11,41 @@ describe('access control', () => {
   describe('using server signer', () => {
     test('server signer can access all procedures', async () => {
       const signer = randomIdentity()
-      const token = await signer.signToken({ prc: 'enkaku:test/test' } as Payload)
+      const token = await signer.signToken({ payload: { prc: 'enkaku:test/test' } as Payload })
       await expect(checkClientToken(signer.id, {}, token)).resolves.toBeUndefined()
     })
 
     test('with delegation', async () => {
       const serverSigner = randomIdentity()
       const clientSigner = randomIdentity()
-      const delegation = await createCapability(serverSigner, {
-        aud: clientSigner.id,
-        sub: serverSigner.id,
-        act: 'enkaku:graph/*',
-        res: serverSigner.id,
+      const delegation = await createCapability({
+        signer: serverSigner,
+        payload: {
+          aud: clientSigner.id,
+          sub: serverSigner.id,
+          act: 'enkaku:graph/*',
+          res: serverSigner.id,
+        },
       })
       const token = await clientSigner.signToken({
-        prc: 'enkaku:graph/test',
-        aud: serverSigner.id,
-        sub: serverSigner.id,
-        cap: stringifyToken(delegation),
-      } as unknown as Payload)
+        payload: {
+          prc: 'enkaku:graph/test',
+          aud: serverSigner.id,
+          sub: serverSigner.id,
+          cap: stringifyToken(delegation),
+        } as unknown as Payload,
+      })
       await expect(checkClientToken(serverSigner.id, {}, token)).resolves.toBeUndefined()
     })
 
     test('audience check', async () => {
       const signer = randomIdentity()
       const token = await signer.signToken({
-        prc: 'enkaku:test/test',
-        aud: 'did:test:123',
-      } as unknown as Payload)
+        payload: {
+          prc: 'enkaku:test/test',
+          aud: 'did:test:123',
+        } as unknown as Payload,
+      })
       await expect(async () => {
         await checkClientToken(signer.id, {}, token)
       }).rejects.toThrow('Invalid audience')
@@ -47,9 +54,11 @@ describe('access control', () => {
     test('expiration check', async () => {
       const signer = randomIdentity()
       const token = await signer.signToken({
-        prc: 'enkaku:test/test',
-        exp: 1000,
-      } as unknown as Payload)
+        payload: {
+          prc: 'enkaku:test/test',
+          exp: 1000,
+        } as unknown as Payload,
+      })
       await expect(async () => {
         await checkClientToken(signer.id, {}, token)
       }).rejects.toThrow('Invalid token: expired')
@@ -61,9 +70,11 @@ describe('access control', () => {
       const serverSigner = randomIdentity()
       const clientSigner = randomIdentity()
       const token = await clientSigner.signToken({
-        prc: 'enkaku:graph/test',
-        aud: serverSigner.id,
-      } as unknown as Payload)
+        payload: {
+          prc: 'enkaku:graph/test',
+          aud: serverSigner.id,
+        } as unknown as Payload,
+      })
       await expect(
         checkClientToken(serverSigner.id, { 'enkaku:graph/test': { allow: true } }, token),
       ).resolves.toBeUndefined()
@@ -75,9 +86,11 @@ describe('access control', () => {
       const serverSigner = randomIdentity()
       const clientSigner = randomIdentity()
       const token = await clientSigner.signToken({
-        prc: 'enkaku:graph/test',
-        aud: serverSigner.id,
-      } as unknown as Payload)
+        payload: {
+          prc: 'enkaku:graph/test',
+          aud: serverSigner.id,
+        } as unknown as Payload,
+      })
       const config: AccessRule = { allow: true, encryption: 'required' }
       await expect(
         checkClientToken(serverSigner.id, { 'enkaku:graph/test': config }, token),
@@ -88,9 +101,11 @@ describe('access control', () => {
       const serverSigner = randomIdentity()
       const clientSigner = randomIdentity()
       const token = await clientSigner.signToken({
-        prc: 'enkaku:graph/test',
-        aud: serverSigner.id,
-      } as unknown as Payload)
+        payload: {
+          prc: 'enkaku:graph/test',
+          aud: serverSigner.id,
+        } as unknown as Payload,
+      })
       const config: AccessRule = {
         allow: [clientSigner.id],
         encryption: 'required',
@@ -106,9 +121,11 @@ describe('access control', () => {
       const serverSigner = randomIdentity()
       const clientSigner = randomIdentity()
       const token = await clientSigner.signToken({
-        prc: 'enkaku:graph/test',
-        aud: serverSigner.id,
-      } as unknown as Payload)
+        payload: {
+          prc: 'enkaku:graph/test',
+          aud: serverSigner.id,
+        } as unknown as Payload,
+      })
       await expect(
         checkClientToken(
           serverSigner.id,
@@ -123,18 +140,23 @@ describe('access control', () => {
       const delegationSigner = randomIdentity()
       const clientSigner = randomIdentity()
       // Delegation signer is subject, audience is client to grant access to and resource is server
-      const delegation = await createCapability(delegationSigner, {
-        aud: clientSigner.id,
-        sub: delegationSigner.id,
-        act: 'enkaku:graph/*',
-        res: serverSigner.id,
+      const delegation = await createCapability({
+        signer: delegationSigner,
+        payload: {
+          aud: clientSigner.id,
+          sub: delegationSigner.id,
+          act: 'enkaku:graph/*',
+          res: serverSigner.id,
+        },
       })
       const token = await clientSigner.signToken({
-        prc: 'enkaku:graph/test',
-        aud: serverSigner.id,
-        sub: delegationSigner.id,
-        cap: stringifyToken(delegation),
-      } as unknown as Payload)
+        payload: {
+          prc: 'enkaku:graph/test',
+          aud: serverSigner.id,
+          sub: delegationSigner.id,
+          cap: stringifyToken(delegation),
+        } as unknown as Payload,
+      })
       await expect(
         checkClientToken(
           serverSigner.id,
@@ -151,18 +173,23 @@ describe('access control', () => {
       const delegationSigner = randomIdentity()
       const clientSigner = randomIdentity()
 
-      const delegation = await createCapability(delegationSigner, {
-        aud: clientSigner.id,
-        sub: delegationSigner.id,
-        act: 'enkaku:graph/*',
-        res: serverSigner.id,
+      const delegation = await createCapability({
+        signer: delegationSigner,
+        payload: {
+          aud: clientSigner.id,
+          sub: delegationSigner.id,
+          act: 'enkaku:graph/*',
+          res: serverSigner.id,
+        },
       })
       const token = await clientSigner.signToken({
-        prc: 'enkaku:graph/test',
-        aud: serverSigner.id,
-        sub: delegationSigner.id,
-        cap: stringifyToken(delegation),
-      } as unknown as Payload)
+        payload: {
+          prc: 'enkaku:graph/test',
+          aud: serverSigner.id,
+          sub: delegationSigner.id,
+          cap: stringifyToken(delegation),
+        } as unknown as Payload,
+      })
 
       const verifyToken = vi.fn()
 
@@ -181,18 +208,23 @@ describe('access control', () => {
       const delegationSigner = randomIdentity()
       const clientSigner = randomIdentity()
 
-      const delegation = await createCapability(delegationSigner, {
-        aud: clientSigner.id,
-        sub: delegationSigner.id,
-        act: 'enkaku:graph/*',
-        res: serverSigner.id,
+      const delegation = await createCapability({
+        signer: delegationSigner,
+        payload: {
+          aud: clientSigner.id,
+          sub: delegationSigner.id,
+          act: 'enkaku:graph/*',
+          res: serverSigner.id,
+        },
       })
       const token = await clientSigner.signToken({
-        prc: 'enkaku:graph/test',
-        aud: serverSigner.id,
-        sub: delegationSigner.id,
-        cap: stringifyToken(delegation),
-      } as unknown as Payload)
+        payload: {
+          prc: 'enkaku:graph/test',
+          aud: serverSigner.id,
+          sub: delegationSigner.id,
+          cap: stringifyToken(delegation),
+        } as unknown as Payload,
+      })
 
       const verifyToken = vi.fn(() => {
         throw new Error('Token revoked')

@@ -42,23 +42,29 @@ describe('Server resource limits', () => {
     // Send 3 requests - only 2 should be accepted
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        prc: 'slow',
-        rid: 'r1',
+        payload: {
+          typ: 'request',
+          prc: 'slow',
+          rid: 'r1',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        prc: 'slow',
-        rid: 'r2',
+        payload: {
+          typ: 'request',
+          prc: 'slow',
+          rid: 'r2',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        prc: 'slow',
-        rid: 'r3',
+        payload: {
+          typ: 'request',
+          prc: 'slow',
+          rid: 'r3',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
 
@@ -114,13 +120,15 @@ describe('Server resource limits', () => {
 
     // Send 3 requests
     await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'tracked', rid: 'r1', prm: 'first' }),
+      createUnsignedToken({ payload: { typ: 'request', prc: 'tracked', rid: 'r1', prm: 'first' } }),
     )
     await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'tracked', rid: 'r2', prm: 'second' }),
+      createUnsignedToken({
+        payload: { typ: 'request', prc: 'tracked', rid: 'r2', prm: 'second' },
+      }),
     )
     await transports.client.write(
-      createUnsignedToken({ typ: 'request', prc: 'tracked', rid: 'r3', prm: 'third' }),
+      createUnsignedToken({ payload: { typ: 'request', prc: 'tracked', rid: 'r3', prm: 'third' } }),
     )
 
     // r3 should be rejected because handler limit is 2

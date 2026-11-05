@@ -44,58 +44,72 @@ describe('protocol messages validation', () => {
     const schema = createClientMessageSchema(protocol)
     const validator = createValidator({ ...schema, $id: 'client' })
 
-    const validAbort = createUnsignedToken({ typ: 'abort', rid: '1' })
+    const validAbort = createUnsignedToken({ payload: { typ: 'abort', rid: '1' } })
     expect(isType(validator, validAbort)).toBe(true)
 
-    const invalidAbort = createUnsignedToken({ typ: 'abort' })
+    const invalidAbort = createUnsignedToken({ payload: { typ: 'abort' } })
     expect(isType(validator, invalidAbort)).toBe(false)
 
     const validEvent = createUnsignedToken({
-      typ: 'event',
-      prc: 'test/event',
-      data: { foo: 'bar' },
+      payload: {
+        typ: 'event',
+        prc: 'test/event',
+        data: { foo: 'bar' },
+      },
     })
     expect(isType(validator, validEvent)).toBe(true)
 
     const invalidEvent = createUnsignedToken({
-      typ: 'event',
-      prc: 'test/event',
-      data: { foo: 'bar', invalid: true },
+      payload: {
+        typ: 'event',
+        prc: 'test/event',
+        data: { foo: 'bar', invalid: true },
+      },
     })
     expect(isType(validator, invalidEvent)).toBe(false)
 
     const validRequest = createUnsignedToken({
-      typ: 'request',
-      prc: 'test/request',
-      rid: '1',
+      payload: {
+        typ: 'request',
+        prc: 'test/request',
+        rid: '1',
+      },
     })
     expect(isType(validator, validRequest)).toBe(true)
 
     const invalidRequest = createUnsignedToken({
-      typ: 'request',
-      prc: 'test/request',
+      payload: {
+        typ: 'request',
+        prc: 'test/request',
+      },
     })
     expect(isType(validator, invalidRequest)).toBe(false)
 
     const validStream = createUnsignedToken({
-      typ: 'stream',
-      prc: 'test/stream',
-      rid: '1',
-      prm: 1,
+      payload: {
+        typ: 'stream',
+        prc: 'test/stream',
+        rid: '1',
+        prm: 1,
+      },
     })
     expect(isType(validator, validStream)).toBe(true)
 
     const invalidStream = createUnsignedToken({
-      typ: 'stream',
-      prc: 'test/other',
-      rid: '1',
+      payload: {
+        typ: 'stream',
+        prc: 'test/other',
+        rid: '1',
+      },
     })
     expect(isType(validator, invalidStream)).toBe(false)
 
-    const validSend = createUnsignedToken({ typ: 'send', prc: 'test/channel', rid: '1', val: '1' })
+    const validSend = createUnsignedToken({
+      payload: { typ: 'send', prc: 'test/channel', rid: '1', val: '1' },
+    })
     expect(isType(validator, validSend)).toBe(true)
 
-    const invalidSend = createUnsignedToken({ typ: 'send', val: '1' })
+    const invalidSend = createUnsignedToken({ payload: { typ: 'send', val: '1' } })
     expect(isType(validator, invalidSend)).toBe(false)
   })
 
@@ -104,26 +118,32 @@ describe('protocol messages validation', () => {
     const validator = createValidator({ ...schema, $id: 'server' })
 
     const validResult = createUnsignedToken({
-      typ: 'result',
-      rid: '1',
-      val: 'test',
+      payload: {
+        typ: 'result',
+        rid: '1',
+        val: 'test',
+      },
     })
     expect(isType(validator, validResult)).toBe(true)
 
-    const invalidResult = createUnsignedToken({ typ: 'result', val: 'test' })
+    const invalidResult = createUnsignedToken({ payload: { typ: 'result', val: 'test' } })
     expect(isType(validator, invalidResult)).toBe(false)
 
     const validReceive = createUnsignedToken({
-      typ: 'receive',
-      rid: '1',
-      val: 1,
+      payload: {
+        typ: 'receive',
+        rid: '1',
+        val: 1,
+      },
     })
     expect(isType(validator, validReceive)).toBe(true)
 
     const invalidReceive = createUnsignedToken({
-      typ: 'receive',
-      rid: '1',
-      val: { test: true },
+      payload: {
+        typ: 'receive',
+        rid: '1',
+        val: { test: true },
+      },
     })
     expect(isType(validator, invalidReceive)).toBe(false)
   })
@@ -134,31 +154,39 @@ describe('H-06: additional properties rejection', () => {
     const schema = createClientMessageSchema(protocol)
     const validator = createValidator({ ...schema, $id: 'client-h06' })
 
-    const abortWithExtra = createUnsignedToken({ typ: 'abort', rid: '1', extra: 'field' })
+    const abortWithExtra = createUnsignedToken({
+      payload: { typ: 'abort', rid: '1', extra: 'field' },
+    })
     expect(isType(validator, abortWithExtra)).toBe(false)
 
     const requestWithExtra = createUnsignedToken({
-      typ: 'request',
-      prc: 'test/request',
-      rid: '1',
-      extra: 'field',
+      payload: {
+        typ: 'request',
+        prc: 'test/request',
+        rid: '1',
+        extra: 'field',
+      },
     })
     expect(isType(validator, requestWithExtra)).toBe(false)
 
     const eventWithExtra = createUnsignedToken({
-      typ: 'event',
-      prc: 'test/event',
-      data: { foo: 'bar' },
-      extra: 'field',
+      payload: {
+        typ: 'event',
+        prc: 'test/event',
+        data: { foo: 'bar' },
+        extra: 'field',
+      },
     })
     expect(isType(validator, eventWithExtra)).toBe(false)
 
     const sendWithExtra = createUnsignedToken({
-      typ: 'send',
-      prc: 'test/channel',
-      rid: '1',
-      val: '1',
-      extra: 'field',
+      payload: {
+        typ: 'send',
+        prc: 'test/channel',
+        rid: '1',
+        val: '1',
+        extra: 'field',
+      },
     })
     expect(isType(validator, sendWithExtra)).toBe(false)
   })
@@ -168,27 +196,33 @@ describe('H-06: additional properties rejection', () => {
     const validator = createValidator({ ...schema, $id: 'server-h06' })
 
     const resultWithExtra = createUnsignedToken({
-      typ: 'result',
-      rid: '1',
-      val: 'test',
-      extra: 'field',
+      payload: {
+        typ: 'result',
+        rid: '1',
+        val: 'test',
+        extra: 'field',
+      },
     })
     expect(isType(validator, resultWithExtra)).toBe(false)
 
     const receiveWithExtra = createUnsignedToken({
-      typ: 'receive',
-      rid: '1',
-      val: 1,
-      extra: 'field',
+      payload: {
+        typ: 'receive',
+        rid: '1',
+        val: 1,
+        extra: 'field',
+      },
     })
     expect(isType(validator, receiveWithExtra)).toBe(false)
 
     const errorWithExtra = createUnsignedToken({
-      typ: 'error',
-      rid: '1',
-      code: 'ERR',
-      msg: 'test',
-      extra: 'field',
+      payload: {
+        typ: 'error',
+        rid: '1',
+        code: 'ERR',
+        msg: 'test',
+        extra: 'field',
+      },
     })
     expect(isType(validator, errorWithExtra)).toBe(false)
   })
@@ -197,7 +231,7 @@ describe('H-06: additional properties rejection', () => {
     const schema = createClientMessageSchema(protocol)
     const validator = createValidator({ ...schema, $id: 'wrapper-h06' })
 
-    const token = createUnsignedToken({ typ: 'abort', rid: '1' })
+    const token = createUnsignedToken({ payload: { typ: 'abort', rid: '1' } })
     const withExtra = { ...token, extraField: 'value' }
     expect(isType(validator, withExtra)).toBe(false)
   })
@@ -206,23 +240,25 @@ describe('H-06: additional properties rejection', () => {
     const clientSchema = createClientMessageSchema(protocol)
     const clientValidator = createValidator({ ...clientSchema, $id: 'client-h06-valid' })
 
-    expect(isType(clientValidator, createUnsignedToken({ typ: 'abort', rid: '1' }))).toBe(true)
+    expect(
+      isType(clientValidator, createUnsignedToken({ payload: { typ: 'abort', rid: '1' } })),
+    ).toBe(true)
     expect(
       isType(
         clientValidator,
-        createUnsignedToken({ typ: 'request', prc: 'test/request', rid: '1' }),
+        createUnsignedToken({ payload: { typ: 'request', prc: 'test/request', rid: '1' } }),
       ),
     ).toBe(true)
     expect(
       isType(
         clientValidator,
-        createUnsignedToken({ typ: 'event', prc: 'test/event', data: { foo: 'bar' } }),
+        createUnsignedToken({ payload: { typ: 'event', prc: 'test/event', data: { foo: 'bar' } } }),
       ),
     ).toBe(true)
     expect(
       isType(
         clientValidator,
-        createUnsignedToken({ typ: 'send', prc: 'test/channel', rid: '1', val: '1' }),
+        createUnsignedToken({ payload: { typ: 'send', prc: 'test/channel', rid: '1', val: '1' } }),
       ),
     ).toBe(true)
 
@@ -230,15 +266,21 @@ describe('H-06: additional properties rejection', () => {
     const serverValidator = createValidator({ ...serverSchema, $id: 'server-h06-valid' })
 
     expect(
-      isType(serverValidator, createUnsignedToken({ typ: 'result', rid: '1', val: 'test' })),
+      isType(
+        serverValidator,
+        createUnsignedToken({ payload: { typ: 'result', rid: '1', val: 'test' } }),
+      ),
     ).toBe(true)
-    expect(isType(serverValidator, createUnsignedToken({ typ: 'receive', rid: '1', val: 1 }))).toBe(
-      true,
-    )
     expect(
       isType(
         serverValidator,
-        createUnsignedToken({ typ: 'error', rid: '1', code: 'ERR', msg: 'test' }),
+        createUnsignedToken({ payload: { typ: 'receive', rid: '1', val: 1 } }),
+      ),
+    ).toBe(true)
+    expect(
+      isType(
+        serverValidator,
+        createUnsignedToken({ payload: { typ: 'error', rid: '1', code: 'ERR', msg: 'test' } }),
       ),
     ).toBe(true)
   })
@@ -247,7 +289,9 @@ describe('H-06: additional properties rejection', () => {
     const schema = createClientMessageSchema(protocol)
     const validator = createValidator({ ...schema, $id: 'client-h06-jti' })
 
-    const abortWithJti = createUnsignedToken({ typ: 'abort', rid: '1', jti: 'abc-123' })
+    const abortWithJti = createUnsignedToken({
+      payload: { typ: 'abort', rid: '1', jti: 'abc-123' },
+    })
     expect(isType(validator, abortWithJti)).toBe(true)
   })
 })
@@ -259,13 +303,15 @@ describe('H-05: string length constraints', () => {
 
     const oversizedRid = 'x'.repeat(200)
 
-    const abortOversized = createUnsignedToken({ typ: 'abort', rid: oversizedRid })
+    const abortOversized = createUnsignedToken({ payload: { typ: 'abort', rid: oversizedRid } })
     expect(isType(validator, abortOversized)).toBe(false)
 
     const requestOversized = createUnsignedToken({
-      typ: 'request',
-      prc: 'test/request',
-      rid: oversizedRid,
+      payload: {
+        typ: 'request',
+        prc: 'test/request',
+        rid: oversizedRid,
+      },
     })
     expect(isType(validator, requestOversized)).toBe(false)
   })
@@ -275,7 +321,7 @@ describe('H-05: string length constraints', () => {
     const validator = createValidator({ ...schema, $id: 'client-h05-jti' })
 
     const oversizedJti = 'x'.repeat(200)
-    const abort = createUnsignedToken({ typ: 'abort', rid: '1', jti: oversizedJti })
+    const abort = createUnsignedToken({ payload: { typ: 'abort', rid: '1', jti: oversizedJti } })
     expect(isType(validator, abort)).toBe(false)
   })
 
@@ -284,7 +330,7 @@ describe('H-05: string length constraints', () => {
     const validator = createValidator({ ...schema, $id: 'client-h05-rsn' })
 
     const oversizedRsn = 'x'.repeat(2000)
-    const abort = createUnsignedToken({ typ: 'abort', rid: '1', rsn: oversizedRsn })
+    const abort = createUnsignedToken({ payload: { typ: 'abort', rid: '1', rsn: oversizedRsn } })
     expect(isType(validator, abort)).toBe(false)
   })
 
@@ -293,18 +339,22 @@ describe('H-05: string length constraints', () => {
     const validator = createValidator({ ...schema, $id: 'server-h05-error' })
 
     const errorOversizedCode = createUnsignedToken({
-      typ: 'error',
-      rid: '1',
-      code: 'x'.repeat(200),
-      msg: 'test',
+      payload: {
+        typ: 'error',
+        rid: '1',
+        code: 'x'.repeat(200),
+        msg: 'test',
+      },
     })
     expect(isType(validator, errorOversizedCode)).toBe(false)
 
     const errorOversizedMsg = createUnsignedToken({
-      typ: 'error',
-      rid: '1',
-      code: 'ERR',
-      msg: 'x'.repeat(5000),
+      payload: {
+        typ: 'error',
+        rid: '1',
+        code: 'ERR',
+        msg: 'x'.repeat(5000),
+      },
     })
     expect(isType(validator, errorOversizedMsg)).toBe(false)
   })
@@ -317,10 +367,12 @@ describe('H-05: string length constraints', () => {
       isType(
         clientValidator,
         createUnsignedToken({
-          typ: 'abort',
-          rid: 'abc-123',
-          jti: 'jti-456',
-          rsn: 'user cancelled',
+          payload: {
+            typ: 'abort',
+            rid: 'abc-123',
+            jti: 'jti-456',
+            rsn: 'user cancelled',
+          },
         }),
       ),
     ).toBe(true)
@@ -332,10 +384,12 @@ describe('H-05: string length constraints', () => {
       isType(
         serverValidator,
         createUnsignedToken({
-          typ: 'error',
-          rid: '1',
-          code: 'NOT_FOUND',
-          msg: 'Resource not found',
+          payload: {
+            typ: 'error',
+            rid: '1',
+            code: 'NOT_FOUND',
+            msg: 'Resource not found',
+          },
         }),
       ),
     ).toBe(true)

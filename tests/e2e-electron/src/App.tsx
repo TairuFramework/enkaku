@@ -30,7 +30,7 @@ export default function App() {
       <Button
         title="Verify token"
         onPress={() => {
-          verifyToken<Data>(signedToken).then(setVerifiedToken)
+          verifyToken<Data>({ token: signedToken }).then(setVerifiedToken)
         }}
       />
     )

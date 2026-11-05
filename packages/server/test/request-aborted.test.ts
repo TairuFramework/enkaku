@@ -38,9 +38,11 @@ describe('transport requestAborted', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        prc: 'test/request',
-        rid: 'r1',
+        payload: {
+          typ: 'request',
+          prc: 'test/request',
+          rid: 'r1',
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
     await new Promise((resolve) => setTimeout(resolve, 20))
@@ -81,9 +83,11 @@ describe('transport requestAborted', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        prc: 'test/request',
-        rid: 'r1',
+        payload: {
+          typ: 'request',
+          prc: 'test/request',
+          rid: 'r1',
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
     await new Promise((resolve) => setTimeout(resolve, 20))

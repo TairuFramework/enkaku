@@ -36,7 +36,7 @@ describe('createController onDone fires at most once', () => {
       const rid = sentRead.value?.payload.rid as string
 
       // Server replies with a final result — fires controller.ok → onDone (1st writer.close).
-      await transports.server.write(unsignedToken({ typ: 'result', rid, val: 'OK' }))
+      await transports.server.write(unsignedToken({ payload: { typ: 'result', rid, val: 'OK' } }))
       await expect(channel).resolves.toBe('OK')
 
       // Calling close() on an already-resolved channel fires controller.abort() via the
@@ -69,7 +69,7 @@ describe('createController onDone fires at most once', () => {
       const sentRead = await transports.server.read()
       const rid = sentRead.value?.payload.rid as string
 
-      await transports.server.write(unsignedToken({ typ: 'result', rid, val: 'OK' }))
+      await transports.server.write(unsignedToken({ payload: { typ: 'result', rid, val: 'OK' } }))
       await expect(stream).resolves.toBe('OK')
 
       // Fire the per-rid abort after the stream already resolved.
@@ -104,7 +104,7 @@ describe('createController onDone fires at most once', () => {
 
       // Server replies with an error — fires controller.error → onDone (1st writer.close).
       await transports.server.write(
-        unsignedToken({ typ: 'error', rid, code: 'boom', msg: 'boom', data: {} }),
+        unsignedToken({ payload: { typ: 'error', rid, code: 'boom', msg: 'boom', data: {} } }),
       )
       await expect(channel).rejects.toMatchObject({ code: 'boom', message: 'boom' })
 

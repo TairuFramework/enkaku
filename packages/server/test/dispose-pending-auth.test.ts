@@ -49,12 +49,14 @@ describe('dispose with an in-flight auth check', () => {
     })
 
     const requestMsg = await clientSigner.signToken({
-      typ: 'request',
-      prc: 'test/request',
-      rid: 'r1',
-      aud: serverSigner.id,
-      iat: Math.floor(Date.now() / 1000),
-    } as const)
+      payload: {
+        typ: 'request',
+        prc: 'test/request',
+        rid: 'r1',
+        aud: serverSigner.id,
+        iat: Math.floor(Date.now() / 1000),
+      } as const,
+    })
     await transports.client.write(requestMsg as unknown as AnyClientMessageOf<Protocol>)
 
     // The access check is blocked at the gate.

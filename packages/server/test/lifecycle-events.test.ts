@@ -36,9 +36,11 @@ describe('Server lifecycle events', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        rid: 'r1',
-        prc: 'ping',
+        payload: {
+          typ: 'request',
+          rid: 'r1',
+          prc: 'ping',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
 
@@ -104,9 +106,11 @@ describe('Server lifecycle events', () => {
     // Send a real request so server creates a controller for rid 'r1'
     await transports.client.write(
       createUnsignedToken({
-        typ: 'request',
-        rid: 'r1',
-        prc: 'ping',
+        payload: {
+          typ: 'request',
+          rid: 'r1',
+          prc: 'ping',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     // Wait for the handler to start
@@ -116,9 +120,11 @@ describe('Server lifecycle events', () => {
     // Now send the abort for the real rid
     await transports.client.write(
       createUnsignedToken({
-        typ: 'abort',
-        rid: 'r1',
-        rsn: 'Close',
+        payload: {
+          typ: 'abort',
+          rid: 'r1',
+          rsn: 'Close',
+        },
       }) as AnyClientMessageOf<Protocol>,
     )
     // Allow abort handling to propagate

@@ -54,10 +54,12 @@ describe('channel writer promises are not left floating', () => {
 
     await transports.client.write(
       createUnsignedToken({
-        typ: 'channel',
-        prc: 'echo',
-        rid: 'c1',
-        prm: {},
+        payload: {
+          typ: 'channel',
+          prc: 'echo',
+          rid: 'c1',
+          prm: {},
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
     await new Promise((resolve) => setTimeout(resolve, 20))
@@ -65,9 +67,11 @@ describe('channel writer promises are not left floating', () => {
     // Pre-fix: this write rejects on the cancelled pipe → unhandled rejection
     await transports.client.write(
       createUnsignedToken({
-        typ: 'send',
-        rid: 'c1',
-        val: {},
+        payload: {
+          typ: 'send',
+          rid: 'c1',
+          val: {},
+        },
       }) as unknown as AnyClientMessageOf<Protocol>,
     )
     await new Promise((resolve) => setTimeout(resolve, 50))

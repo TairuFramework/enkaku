@@ -38,7 +38,7 @@ describe('missing handler reply', () => {
 
     await transports.client.write(
       // @ts-expect-error: `unknown` is not in the protocol/handlers — the server has no handler.
-      createUnsignedToken({ typ: 'request', prc: 'unknown', rid: 'r1', prm: 'hi' }),
+      createUnsignedToken({ payload: { typ: 'request', prc: 'unknown', rid: 'r1', prm: 'hi' } }),
     )
 
     const response = await transports.client.read()

@@ -14,11 +14,14 @@ import { Client } from '@enkaku/client'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { type ProcedureHandlers, type ServerAccessOptions, serve } from '@enkaku/server'
 import { DirectTransports } from '@enkaku/transport'
+import type { CryptoProvider } from '@kokuin/crypto'
 import { createRuntime, type Runtime } from '@sozai/runtime'
 
 export type StandaloneOptions<Protocol extends ProtocolDefinition> = {
   /** Defaults to `createRuntime()`. Shared by the client and the server. */
   runtime?: Runtime
+  /** Forwarded to the server. Defaults to strict `nobleCrypto`. */
+  crypto?: CryptoProvider
   protocol?: Protocol
   signal?: AbortSignal
 } & ServerAccessOptions
@@ -27,7 +30,7 @@ export function standalone<Protocol extends ProtocolDefinition>(
   handlers: ProcedureHandlers<Protocol>,
   options: StandaloneOptions<Protocol> = { requireAuth: false },
 ): Client<Protocol> {
-  const { protocol, signal } = options
+  const { crypto, protocol, signal } = options
   const runtime = options.runtime ?? createRuntime()
   const transports = new DirectTransports<
     AnyServerMessageOf<Protocol>,
@@ -36,6 +39,7 @@ export function standalone<Protocol extends ProtocolDefinition>(
 
   if (options.identity != null) {
     serve<Protocol>({
+      crypto,
       handlers,
       identity: options.identity,
       protocol,
@@ -46,6 +50,7 @@ export function standalone<Protocol extends ProtocolDefinition>(
     })
   } else {
     serve<Protocol>({
+      crypto,
       handlers,
       requireAuth: false,
       protocol,

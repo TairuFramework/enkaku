@@ -22,10 +22,12 @@ type Protocol = typeof protocol
 
 describe('handleEvent()', () => {
   const clientToken = createUnsignedToken({
-    typ: 'event',
-    prc: 'test',
-    data: { test: true },
-  } as const)
+    payload: {
+      typ: 'event',
+      prc: 'test',
+      data: { test: true },
+    } as const,
+  })
 
   test('synchronously returns an ErrorRejection if the handler is missing', () => {
     const payload = { typ: 'event', prc: 'unknown' }
@@ -111,7 +113,7 @@ describe('handleEvent()', () => {
       data: { test: true },
     })
     expect(handler).toHaveBeenCalledWith({
-      message: createUnsignedToken(payload),
+      message: createUnsignedToken({ payload }),
       data: { test: true },
     })
     expect(handlerErrorListener).not.toHaveBeenCalled()

@@ -22,7 +22,7 @@ export async function safeWrite<Protocol extends ProtocolDefinition>(
 ): Promise<void> {
   const { transport, payload, rid, ctx } = params
   try {
-    await transport.write(createUnsignedToken(payload) as never)
+    await transport.write(createUnsignedToken({ payload }) as never)
     return
   } catch (error) {
     const controller = rid != null ? ctx.controllers[rid] : undefined
