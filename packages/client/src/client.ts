@@ -717,10 +717,10 @@ export class Client<
     this.#controllers[rid] = controller
     const prm = config.param
     const payload =
-      prm != null
+      prm !== undefined
         ? { typ: 'request', rid, prc: procedure, prm }
         : { typ: 'request', rid, prc: procedure }
-    if (prm == null) {
+    if (prm === undefined) {
       this.#logger.trace('send request {procedure} with ID {rid}', { procedure, rid })
     } else {
       this.#logger.trace('send request {procedure} with ID {rid} and param: {param}', {
@@ -849,10 +849,10 @@ export class Client<
     this.#spans[rid] = span
     const prm = config.param
     const payload =
-      prm != null
+      prm !== undefined
         ? { typ: 'stream', rid, prc: procedure, prm }
         : { typ: 'stream', rid, prc: procedure }
-    if (prm == null) {
+    if (prm === undefined) {
       this.#logger.trace('create stream {procedure} with ID {rid}', { procedure, rid })
     } else {
       this.#logger.trace('create stream {procedure} with ID {rid} and param: {param}', {
@@ -980,10 +980,10 @@ export class Client<
     this.#spans[rid] = span
     const prm = config.param
     const payload =
-      prm != null
+      prm !== undefined
         ? { typ: 'channel', rid, prc: procedure, prm }
         : { typ: 'channel', rid, prc: procedure }
-    if (prm == null) {
+    if (prm === undefined) {
       this.#logger.trace('create channel {procedure} with ID {rid}', { procedure, rid })
     } else {
       this.#logger.trace('create channel {procedure} with ID {rid} and param: {param}', {
