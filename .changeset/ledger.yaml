@@ -18,6 +18,10 @@
   dir: packages/client
   intents:
     - kokuin-0-7-crypto-provider
+"@enkaku/client@0.23.1":
+  dir: packages/client
+  intents:
+    - fix-null-param-messages
 "@enkaku/electron@0.22.0":
   dir: packages/electron
   intents:
@@ -57,6 +61,10 @@
   dir: packages/http-serve
   intents:
     - kokuin-0-7-crypto-provider
+"@enkaku/http-serve@0.23.1":
+  dir: packages/http-serve
+  intents:
+    - http-message-context
 "@enkaku/message@0.22.0":
   dir: packages/message
   intents:
@@ -127,6 +135,10 @@
   dir: packages/server
   intents:
     - kokuin-0-7-crypto-provider
+"@enkaku/server@0.23.1":
+  dir: packages/server
+  intents:
+    - invocation-hook
 "@enkaku/socket@0.21.0":
   dir: packages/socket
   intents:
@@ -157,3 +169,7 @@
   dir: packages/transport
   intents:
     - kokuin-0-6-floor
+"@enkaku/transport@0.23.1":
+  dir: packages/transport
+  intents:
+    - transport-message-context

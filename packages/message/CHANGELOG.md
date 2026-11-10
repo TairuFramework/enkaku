@@ -1,5 +1,7 @@
 # @enkaku/message
 
+## 0.23.1
+
 ## 0.23.0
 
 ### Patch Changes

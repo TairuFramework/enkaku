@@ -1,5 +1,11 @@
 # @enkaku/client
 
+## 0.23.1
+
+### Patch Changes
+
+- Preserve null parameters in request, stream, and channel messages so calls pass protocol validation and handlers receive null.
+
 ## 0.23.0
 
 ### Minor Changes
