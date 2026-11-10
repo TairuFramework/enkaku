@@ -11,6 +11,7 @@
  */
 
 export type {
+  AccessDecision,
   AccessRule,
   AccessRules,
   AllowContext,
@@ -21,6 +22,8 @@ export { resolveEncryptionPolicy } from './access-control.js'
 export {
   HandlerError,
   type HandlerErrorParams,
+  InvocationRejectedError,
+  type InvocationRejectedErrorParams,
 } from './error.js'
 export {
   createResourceLimiter,
@@ -49,6 +52,9 @@ export type {
   HandlerErrorCategory,
   HandlerErrorMessageType,
   HandlerReturn,
+  InvocationCaller,
+  InvocationContext,
+  InvocationHook,
   ProcedureHandlers,
   RequestHandler,
   RequestHandlerContext,

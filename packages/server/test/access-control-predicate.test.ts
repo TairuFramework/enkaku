@@ -28,7 +28,7 @@ describe('access control: predicate variant', () => {
         },
         token,
       ),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
 
     expect(predicate).toHaveBeenCalledTimes(1)
   })
@@ -153,7 +153,7 @@ describe('access control: predicate variant', () => {
         },
         token,
       ),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
   })
 
   test('predicate async return is awaited correctly', async () => {
@@ -174,7 +174,7 @@ describe('access control: predicate variant', () => {
         },
         token,
       ),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
   })
 
   test('verifyDelegation returns true on a valid chain', async () => {
@@ -211,7 +211,7 @@ describe('access control: predicate variant', () => {
         },
         token,
       ),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
   })
 
   test('verifyDelegation returns false when sub is missing', async () => {
@@ -267,7 +267,7 @@ describe('access control: predicate variant', () => {
         },
         token,
       ),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
 
     await expect(
       checkClientToken(
@@ -277,7 +277,7 @@ describe('access control: predicate variant', () => {
         },
         token,
       ),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
   })
 
   test('first matching predicate that returns true wins', async () => {
@@ -304,7 +304,7 @@ describe('access control: predicate variant', () => {
         },
         token,
       ),
-    ).resolves.toBeUndefined()
+    ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
 
     expect(first).toHaveBeenCalledTimes(1)
     expect(second).toHaveBeenCalledTimes(1)
