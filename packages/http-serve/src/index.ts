@@ -22,6 +22,11 @@ const tracer = createTracer('transport.http')
 
 export type RequestHandler = (request: Request) => Promise<Response>
 
+export type HTTPMessageContext = {
+  request: Request
+  sessionID?: string
+}
+
 export type ServerBridge<Protocol extends ProtocolDefinition> = {
   /**
    * Shut the bridge down: end every open SSE session, answer every pending
@@ -30,6 +35,7 @@ export type ServerBridge<Protocol extends ProtocolDefinition> = {
    */
   dispose: () => void
   handleRequest: RequestHandler
+  getMessageContext: (message: unknown) => HTTPMessageContext | undefined
   stream: ReadableWritablePair<AnyClientMessageOf<Protocol>, AnyServerMessageOf<Protocol>>
 }
 
@@ -139,7 +145,12 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
   const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+  const contexts = new WeakMap<object, HTTPMessageContext>()
   let disposed = false
+
+  function getMessageContext(message: unknown): HTTPMessageContext | undefined {
+    return typeof message === 'object' && message != null ? contexts.get(message) : undefined
+  }
 
   function clearSessionInflight(sessionID: string, reason: unknown = 'SessionClosed'): void {
     for (const [rid, entry] of inflight) {
@@ -422,6 +433,12 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
         case 'abort':
         case 'event':
         case 'send':
+          contexts.set(message, {
+            request,
+            ...(message.payload.typ !== 'event' && request.headers.has('enkaku-session-id')
+              ? { sessionID: request.headers.get('enkaku-session-id') as string }
+              : {}),
+          })
           controller.enqueue(message)
           return new Response(null, { headers, status: 204 })
         // Immediate response message
@@ -480,6 +497,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             { once: true },
           )
 
+          contexts.set(message, { request })
           controller.enqueue(message)
           // Wait for reply from message handler
           return response.promise
@@ -502,6 +520,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             }
             session.lastAccess = Date.now()
             inflight.set(message.payload.rid, { type: 'stream', sessionID: sid })
+            contexts.set(message, { request, sessionID: sid })
             controller.enqueue(message)
             return new Response(null, { headers, status: 204 })
           }
@@ -539,6 +558,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           })
 
           inflight.set(message.payload.rid, { type: 'stream', sessionID })
+          contexts.set(message, { request, sessionID })
           controller.enqueue(message)
 
           return new Response(body.pipeThrough(new TextEncoderStream()), {
@@ -609,7 +629,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
   }
 
-  return { dispose, handleRequest, stream: { readable, writable } }
+  return { dispose, getMessageContext, handleRequest, stream: { readable, writable } }
 }
 
 export type ServerTransportOptions = {
@@ -656,5 +676,9 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
 
   fetch = async (request: Request): Promise<Response> => {
     return await this.#bridge.handleRequest(request)
+  }
+
+  getMessageContext(message: unknown): HTTPMessageContext | undefined {
+    return this.#bridge.getMessageContext(message)
   }
 }

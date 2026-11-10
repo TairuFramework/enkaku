@@ -39,6 +39,7 @@ export type TransportType<R, W> = Disposer & {
   [Symbol.asyncIterator](): AsyncIterator<R, R | null>
   get events(): EventEmitter<TransportEvents>
   getWritable: () => WritableStream<W>
+  getMessageContext?(message: unknown): unknown
   read: () => Promise<ReadableStreamReadResult<R>>
   write: (value: W) => Promise<void>
 }
