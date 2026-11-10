@@ -53,3 +53,22 @@ export class HandlerError<
     } as ErrorReplyPayload<Code, Data>
   }
 }
+
+export type InvocationRejectedErrorParams = {
+  code: string
+  message: string
+  cause?: unknown
+}
+
+export class InvocationRejectedError extends Error {
+  #code: string
+
+  constructor(params: InvocationRejectedErrorParams) {
+    super(params.message, { cause: params.cause })
+    this.#code = params.code
+  }
+
+  get code(): string {
+    return this.#code
+  }
+}

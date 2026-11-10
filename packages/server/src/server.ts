@@ -44,13 +44,9 @@ import {
   type Validator,
 } from '@sozai/schema'
 
-import {
-  type AccessRules,
-  checkClientToken,
-  type EncryptionPolicy,
-  resolveEncryptionPolicy,
-} from './access-control.js'
-import { HandlerError } from './error.js'
+import type { AccessDecision, AccessRules, EncryptionPolicy } from './access-control.js'
+import { checkClientToken, resolveEncryptionPolicy } from './access-control.js'
+import { HandlerError, InvocationRejectedError } from './error.js'
 import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'
 import { type EventMessageOf, handleEvent } from './handlers/event.js'
 import { handleRequest, type RequestMessageOf } from './handlers/request.js'
@@ -68,6 +64,7 @@ import type {
   ChannelController,
   HandlerContext,
   HandlerController,
+  InvocationHook,
   ProcedureHandlers,
   ServerEmitter,
   ServerEvents,
@@ -99,6 +96,7 @@ export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessCo
   handlers: ProcedureHandlers<Protocol>
   limiter: ResourceLimiter
   logger: Logger
+  onInvocation?: InvocationHook
   replay?: ResolvedReplay | null
   runtime: Runtime
   signal: AbortSignal
@@ -115,6 +113,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
+  const invocationControllers = new Map<string, AbortController>()
   const context: HandlerContext<Protocol> = {
     controllers,
     events,
@@ -227,6 +226,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
    * it does the bookkeeping itself.)
    */
   function abortRunningHandler(rid: string, reason: unknown): void {
+    invocationControllers.get(rid)?.abort(reason)
     const controller = controllers[rid]
     if (controller == null) {
       return
@@ -619,6 +619,61 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     }
   }
 
+  async function invokeHook(
+    message: ProcessMessageOf<Protocol>,
+    span: Span,
+    handle: () => Error | Promise<void>,
+    eventRID?: string,
+    decision?: AccessDecision,
+  ): Promise<void> {
+    const payload = message.payload
+    const rid = payload.typ === 'event' ? (eventRID as string) : payload.rid
+    const controller = new AbortController()
+    const invocationSignal = AbortSignal.any([signal, disposer.signal, controller.signal])
+    invocationControllers.set(rid, controller)
+    try {
+      const signedPayload = (message as unknown as SignedToken).payload
+      await params.onInvocation?.({
+        signal: invocationSignal,
+        type: payload.typ,
+        procedure: payload.prc,
+        rid: payload.typ === 'event' ? undefined : payload.rid,
+        caller: params.requireAuth ? { iss: signedPayload.iss, sub: signedPayload.sub } : undefined,
+        verifyDelegation: decision?.verifyDelegation ?? (async () => false),
+        transport: transport.getMessageContext?.(message),
+        message,
+      })
+    } catch (cause) {
+      const rejected = cause instanceof InvocationRejectedError
+      const error = new HandlerError({
+        cause,
+        code: rejected ? cause.code : ErrorCodes.HANDLER_ERROR,
+        message: rejected ? cause.message : 'Invocation hook failed',
+      })
+      if (!rejected) logger.warn('invocation hook failed', { cause })
+      span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, error.code)
+      span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, error.message)
+      span.setStatus({ code: SpanStatusCode.ERROR, message: error.message })
+      span.recordException(error)
+      span.end()
+      if (payload.typ !== 'event') {
+        context.send(error.toPayload(payload.rid) as AnyServerPayloadOf<Protocol>, {
+          rid: payload.rid,
+        })
+      }
+      emitHandlerError(events, 'invocation', error, payload)
+      return
+    } finally {
+      if (invocationControllers.get(rid) === controller) invocationControllers.delete(rid)
+    }
+    // A transport abort can arrive before the handler has registered its controller.
+    if (invocationSignal.aborted) {
+      span.end()
+      return
+    }
+    processHandler(message, wrapHandle(span, handle), eventRID)
+  }
+
   const process = !params.requireAuth
     ? (
         message: ProcessMessageOf<Protocol>,
@@ -642,6 +697,9 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           return
         }
 
+        if (params.onInvocation != null) {
+          return invokeHook(message, span, handle, eventRID)
+        }
         processHandler(message, wrapHandle(span, handle), eventRID)
       }
     : async (
@@ -656,6 +714,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           })
         }
 
+        let decision: AccessDecision
         try {
           if (!isSignedToken(message as Token)) {
             span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, 'unsigned_message')
@@ -669,7 +728,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             resolver: params.resolver,
             methods: params.methods,
           })
-          await checkClientToken(
+          decision = await checkClientToken(
             params.serverID,
             params.access,
             message as unknown as SignedToken,
@@ -765,6 +824,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             emitHandlerError(events, 'auth', error, message.payload)
             return
           }
+        }
+
+        if (params.onInvocation != null) {
+          await invokeHook(message, span, handle, eventRID, decision)
+          return
         }
 
         processHandler(message, wrapHandle(span, handle), eventRID)
@@ -1065,6 +1129,7 @@ export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   handlers: ProcedureHandlers<Protocol>
   limits?: Partial<ResourceLimits>
   logger?: Logger
+  onInvocation?: InvocationHook
   protocol?: Protocol
   replay?: ReplayOptions
   /** Verifies token and capability signatures. Defaults to strict `nobleCrypto`; captured once. */
@@ -1083,6 +1148,7 @@ export type ServerParams<Protocol extends ProtocolDefinition> = ServerBaseParams
   ServerAccessOptions
 
 export type HandleOptions = {
+  onInvocation?: InvocationHook
   accessRules?: false | AccessRules
   logger?: Logger
   verifyToken?: VerifyTokenHook
@@ -1100,6 +1166,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #handlers: ProcedureHandlers<Protocol>
   #handling: Array<HandlingTransport<Protocol>> = []
   #limiter: ResourceLimiter
+  #onInvocation?: InvocationHook
   #logger: Logger
   #replay: ResolvedReplay | null
   #tracer: Tracer
@@ -1176,6 +1243,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#abortController = new AbortController()
     this.#events = new EventEmitter<ServerEvents>()
     this.#runtime = params.runtime ?? createRuntime()
+    this.#onInvocation = params.onInvocation
     this.#handlers = params.handlers
     this.#streamHighWaterMark = streamHighWaterMark
     this.#cache = params.cache ?? createInMemoryDIDCache()
@@ -1302,6 +1370,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       handlers: this.#handlers,
       limiter: this.#limiter,
       logger,
+      onInvocation: options.onInvocation ?? this.#onInvocation,
       replay: this.#replay,
       runtime: this.#runtime,
       signal: this.#abortController.signal,

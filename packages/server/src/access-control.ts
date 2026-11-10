@@ -6,6 +6,38 @@ import {
 } from '@kokuin/capability'
 import { normalizeDID, type SignedToken } from '@kokuin/token'
 
+export type AccessDecision = { verifyDelegation: () => Promise<boolean> }
+
+function createAccessDecision(
+  serverID: string,
+  payload: ProcedureAccessPayload,
+  options?: DelegationChainOptions,
+  verified = false,
+): AccessDecision {
+  let verification: Promise<boolean> | undefined = verified ? Promise.resolve(true) : undefined
+  const verify = async (): Promise<boolean> => {
+    if (payload.sub == null || normalizeDID(payload.sub) === normalizeDID(payload.iss)) return false
+    try {
+      await checkCapability({
+        ...options,
+        permission: { act: payload.prc as string, res: serverID },
+        payload,
+      })
+      return true
+    } catch (err) {
+      const message = err instanceof Error ? err.message : ''
+      if (
+        message.startsWith('Invalid capability') ||
+        message.startsWith('Invalid payload') ||
+        message.startsWith('Invalid token')
+      )
+        return false
+      throw err
+    }
+  }
+  return { verifyDelegation: () => (verification ??= verify()) }
+}
+
 export type EncryptionPolicy = 'required' | 'optional' | 'none'
 
 export type ProcedureAccessPayload = {
@@ -63,7 +95,18 @@ export async function checkProcedureAccess(
   rules: AccessRules,
   token: SignedToken<ProcedureAccessPayload>,
   options?: DelegationChainOptions,
-): Promise<void> {
+): Promise<AccessDecision> {
+  const decision = createAccessDecision(serverID, token.payload, options)
+  return evaluateProcedureAccess(serverID, rules, token, decision)
+}
+
+async function evaluateProcedureAccess(
+  serverID: string,
+  rules: AccessRules,
+  token: SignedToken<ProcedureAccessPayload>,
+  decision: AccessDecision,
+): Promise<AccessDecision> {
+  const { verifyDelegation } = decision
   const payload = token.payload
   if (payload.prc == null) {
     throw new Error('No procedure to check')
@@ -74,42 +117,20 @@ export async function checkProcedureAccess(
   for (const [pattern, rule] of Object.entries(rules)) {
     if (!hasPartsMatch({ expected: procedure, actual: pattern })) continue
 
-    const verifyDelegation = async (): Promise<boolean> => {
-      if (payload.sub == null) return false
-      try {
-        await checkCapability({
-          ...options,
-          permission: { act: procedure, res: serverID },
-          payload,
-        })
-        return true
-      } catch (err) {
-        const message = err instanceof Error ? err.message : ''
-        if (
-          message.startsWith('Invalid capability') ||
-          message.startsWith('Invalid payload') ||
-          message.startsWith('Invalid token')
-        ) {
-          return false
-        }
-        throw err
-      }
-    }
-
     const { allow } = rule
 
     if (allow === true) {
-      return
+      return decision
     }
 
     if (Array.isArray(allow)) {
       const normalizedAllow = allow.map(normalizeDID)
       const normalizedIss = normalizeDID(payload.iss)
-      if (normalizedAllow.includes(normalizedIss)) return
+      if (normalizedAllow.includes(normalizedIss)) return decision
       if (payload.sub != null) {
         const normalizedSub = normalizeDID(payload.sub)
         if (normalizedAllow.includes(normalizedSub)) {
-          if (await verifyDelegation()) return
+          if (await verifyDelegation()) return decision
         }
       }
       continue
@@ -124,7 +145,7 @@ export async function checkProcedureAccess(
       serverID,
       verifyDelegation,
     }
-    if (await allow(ctx)) return
+    if (await allow(ctx)) return decision
   }
 
   throw new Error('Access denied')
@@ -135,13 +156,14 @@ export async function checkClientToken(
   rules: AccessRules,
   token: SignedToken,
   options?: DelegationChainOptions,
-): Promise<void> {
+): Promise<AccessDecision> {
   const payload = token.payload
   const procedure = (payload as ProcedureAccessPayload).prc
   if (procedure == null) {
     throw new Error('No procedure to check')
   }
 
+  const decision = createAccessDecision(serverID, payload, options)
   const normalizedServerID = normalizeDID(serverID)
 
   if (normalizeDID(payload.iss) === normalizedServerID) {
@@ -152,7 +174,7 @@ export async function checkClientToken(
     if (payload.exp != null) {
       assertNonExpired({ payload, atTime: options?.atTime })
     }
-    return
+    return decision
   }
 
   if (payload.sub != null && normalizeDID(payload.sub) === normalizedServerID) {
@@ -162,11 +184,16 @@ export async function checkClientToken(
       permission: { act: procedure, res: serverID },
       payload,
     })
-    return
+    return createAccessDecision(serverID, payload, options, true)
   }
 
   if (payload.aud == null || normalizeDID(payload.aud) !== normalizedServerID) {
     throw new Error('Invalid audience')
   }
-  await checkProcedureAccess(serverID, rules, token as SignedToken<ProcedureAccessPayload>, options)
+  return evaluateProcedureAccess(
+    serverID,
+    rules,
+    token as SignedToken<ProcedureAccessPayload>,
+    decision,
+  )
 }

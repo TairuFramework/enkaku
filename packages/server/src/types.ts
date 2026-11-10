@@ -17,6 +17,25 @@ import type { Logger } from '@sozai/log'
 
 import type { HandlerError } from './error.js'
 
+export type InvocationCaller = {
+  iss: string
+  /** Caller-asserted until verifyDelegation() returns true. */
+  sub?: string
+}
+
+export type InvocationContext = {
+  signal: AbortSignal
+  type: 'request' | 'stream' | 'channel' | 'event'
+  procedure: string
+  rid?: string
+  caller?: InvocationCaller
+  verifyDelegation: () => Promise<boolean>
+  transport?: unknown
+  message: Message<Record<string, unknown>>
+}
+
+export type InvocationHook = (ctx: InvocationContext) => void | Promise<void>
+
 export type RequestController = AbortController & {
   issuer?: string
 }
@@ -162,7 +181,7 @@ export type SendType<
   ? DataOf<Protocol[Procedure]['send']>
   : never
 
-export type HandlerErrorCategory = 'auth' | 'limit' | 'encryption' | 'handler'
+export type HandlerErrorCategory = 'auth' | 'limit' | 'encryption' | 'handler' | 'invocation'
 
 export type HandlerErrorMessageType = 'event' | 'request' | 'channel' | 'stream' | 'send'
 

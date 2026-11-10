@@ -39,14 +39,14 @@
     "@enkaku/otel": "workspace:^",
     "@enkaku/protocol": "workspace:^",
     "@enkaku/transport": "workspace:^",
+    "@kokuin/token": "catalog:",
     "@sozai/async": "catalog:",
     "@sozai/otel": "catalog:",
     "@sozai/runtime": "catalog:",
     "@sozai/stream": "catalog:"
   },
   "devDependencies": {
-    "@enkaku/server": "workspace:^",
-    "@kokuin/token": "catalog:"
+    "@enkaku/server": "workspace:^"
   },
   "publishConfig": {
     "access": "public"

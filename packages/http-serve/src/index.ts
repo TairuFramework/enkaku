@@ -13,6 +13,7 @@
 import { createTracer, EnkakuAttributeKeys, EnkakuSpanNames } from '@enkaku/otel'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { Transport, type TransportEvents } from '@enkaku/transport'
+import { normalizeDID } from '@kokuin/token'
 import { type Deferred, defer } from '@sozai/async'
 import { AttributeKeys, extractW3CTraceContext, SpanStatusCode } from '@sozai/otel'
 import { createRuntime, type Runtime } from '@sozai/runtime'
@@ -22,6 +23,18 @@ const tracer = createTracer('transport.http')
 
 export type RequestHandler = (request: Request) => Promise<Response>
 
+export type HTTPSessionHandle = {
+  get id(): string
+  get owner(): string | undefined
+  bindOwner(did: string): void
+}
+
+export type HTTPMessageContext = {
+  request: Request
+  sessionID?: string
+  session?: HTTPSessionHandle
+}
+
 export type ServerBridge<Protocol extends ProtocolDefinition> = {
   /**
    * Shut the bridge down: end every open SSE session, answer every pending
@@ -30,10 +43,12 @@ export type ServerBridge<Protocol extends ProtocolDefinition> = {
    */
   dispose: () => void
   handleRequest: RequestHandler
+  getMessageContext: (message: unknown) => HTTPMessageContext | undefined
   stream: ReadableWritablePair<AnyClientMessageOf<Protocol>, AnyServerMessageOf<Protocol>>
 }
 
 type ActiveSession = {
+  handle: HTTPSessionHandle
   controller: ReadableStreamDefaultController<string> | null
   lastAccess: number
 }
@@ -51,8 +66,18 @@ export type SessionDropInfo = {
   error?: Error
 }
 
+export type FrameWrittenInfo = {
+  kind: 'response' | 'sse' | 'heartbeat'
+  bytes: number
+  rid?: string
+  sessionID?: string
+}
+
 export type ServerBridgeOptions = {
+  /** Defaults to true. */
+  enforceSessionOwner?: boolean
   onSessionDrop?: (info: SessionDropInfo) => void
+  onFrameWritten?: (info: FrameWrittenInfo) => void
   allowedOrigin?: string | Array<string>
   onWriteError?: (event: TransportEvents['writeFailed']) => void
   onRequestAborted?: (event: TransportEvents['requestAborted']) => void
@@ -139,7 +164,21 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const sessions: Map<string, ActiveSession> = new Map()
   const inflight: Map<string, InflightRequest> = new Map()
   const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+  const contexts = new WeakMap<object, HTTPMessageContext>()
   let disposed = false
+
+  function reportFrameWritten(frame: string, info: Omit<FrameWrittenInfo, 'bytes'>): void {
+    if (options.onFrameWritten == null) return
+    try {
+      options.onFrameWritten({ ...info, bytes: new TextEncoder().encode(frame).byteLength })
+    } catch (error) {
+      console.error('Frame written callback failed', error)
+    }
+  }
+
+  function getMessageContext(message: unknown): HTTPMessageContext | undefined {
+    return typeof message === 'object' && message != null ? contexts.get(message) : undefined
+  }
 
   function clearSessionInflight(sessionID: string, reason: unknown = 'SessionClosed'): void {
     for (const [rid, entry] of inflight) {
@@ -235,7 +274,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             const sse = session.controller
             if (sse == null || (sse.desiredSize ?? 0) <= 0) continue
             try {
-              sse.enqueue(':\n\n')
+              const frame = ':\n\n'
+              sse.enqueue(frame)
+              reportFrameWritten(frame, { kind: 'heartbeat', sessionID: session.handle.id })
             } catch {
               // Closed or errored; the session's own cleanup removes it.
             }
@@ -307,8 +348,14 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           clearTimeout(timer)
           inflightTimers.delete(rid)
         }
-        request.resolve(Response.json(msg, { headers: request.headers }))
+        const body = JSON.stringify(msg)
+        request.resolve(
+          new Response(body, {
+            headers: { ...request.headers, 'Content-Type': 'application/json' },
+          }),
+        )
         inflight.delete(msg.payload.rid)
+        reportFrameWritten(body, { kind: 'response', rid })
       } else {
         // Terminal payloads end the stream/channel call — release the inflight slot
         if (msg.payload.typ === 'result' || msg.payload.typ === 'error') {
@@ -324,8 +371,10 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           reportWriteError(new Error(`No controller for session: ${request.sessionID}`), rid)
           return
         }
+        let frame: string
         try {
-          session.controller.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
+          frame = `data: ${JSON.stringify(msg)}\n\n`
+          session.controller.enqueue(frame)
           // Outbound traffic keeps the session alive: a stream whose consumer only
           // reads would otherwise be reaped at sessionTimeoutMs.
           session.lastAccess = Date.now()
@@ -336,6 +385,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           dropSession({ sessionID: request.sessionID, rid, reason: 'write-error', error })
           return
         }
+        reportFrameWritten(frame, { kind: 'sse', rid, sessionID: request.sessionID })
         if ((session.controller.desiredSize ?? 0) <= 0) {
           // The consumer has fallen maxSessionBufferBytes behind. Drop this session
           // alone rather than growing its queue without bound.
@@ -345,6 +395,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             reason: 'buffer-overflow',
             error: new Error(`SSE buffer overflow for session: ${request.sessionID}`),
           })
+          return
         }
       }
     },
@@ -417,11 +468,31 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       if (!VALID_PAYLOAD_TYPES.has(message?.payload?.typ)) {
         return Response.json({ error: 'Invalid message type' }, { headers, status: 400 })
       }
+      const sessionID = request.headers.get('enkaku-session-id')
+      const session = sessionID == null ? undefined : sessions.get(sessionID)
+      if (
+        options.enforceSessionOwner !== false &&
+        session?.handle.owner !== undefined &&
+        (!('iss' in message.payload) ||
+          normalizeDID(message.payload.iss) !== normalizeDID(session.handle.owner))
+      ) {
+        return Response.json({ error: 'Session owner mismatch' }, { headers, status: 403 })
+      }
+      const context: HTTPMessageContext = {
+        request,
+        ...(session == null ? {} : { sessionID: session.handle.id, session: session.handle }),
+      }
       switch (message.payload.typ) {
         // Fire and forget messages
         case 'abort':
         case 'event':
         case 'send':
+          contexts.set(message, {
+            ...context,
+            ...(message.payload.typ !== 'event' && request.headers.has('enkaku-session-id')
+              ? { sessionID: request.headers.get('enkaku-session-id') as string }
+              : {}),
+          })
           controller.enqueue(message)
           return new Response(null, { headers, status: 204 })
         // Immediate response message
@@ -480,6 +551,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             { once: true },
           )
 
+          contexts.set(message, context)
           controller.enqueue(message)
           // Wait for reply from message handler
           return response.promise
@@ -502,6 +574,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             }
             session.lastAccess = Date.now()
             inflight.set(message.payload.rid, { type: 'stream', sessionID: sid })
+            contexts.set(message, context)
             controller.enqueue(message)
             return new Response(null, { headers, status: 204 })
           }
@@ -528,7 +601,24 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           const controllerRef = sseController as ReadableStreamDefaultController<string>
           // Send an SSE comment to flush response headers immediately.
           controllerRef.enqueue(':\n\n')
-          sessions.set(sessionID, { controller: controllerRef, lastAccess: Date.now() })
+          reportFrameWritten(':\n\n', { kind: 'heartbeat', sessionID })
+          let owner: string | undefined
+          const handle: HTTPSessionHandle = {
+            get id() {
+              return sessionID
+            },
+            get owner() {
+              return owner
+            },
+            bindOwner(did) {
+              const normalizedOwner = normalizeDID(did)
+              if (owner !== undefined && normalizeDID(owner) !== normalizedOwner) {
+                throw new Error('Session already bound to another owner')
+              }
+              owner = normalizedOwner
+            },
+          }
+          sessions.set(sessionID, { handle, controller: controllerRef, lastAccess: Date.now() })
 
           request.signal.addEventListener('abort', () => {
             try {
@@ -539,6 +629,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           })
 
           inflight.set(message.payload.rid, { type: 'stream', sessionID })
+          contexts.set(message, { request, sessionID, session: handle })
           controller.enqueue(message)
 
           return new Response(body.pipeThrough(new TextEncoderStream()), {
@@ -609,11 +700,14 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
     }
   }
 
-  return { dispose, handleRequest, stream: { readable, writable } }
+  return { dispose, getMessageContext, handleRequest, stream: { readable, writable } }
 }
 
 export type ServerTransportOptions = {
+  /** Defaults to true. */
+  enforceSessionOwner?: boolean
   onSessionDrop?: (info: SessionDropInfo) => void
+  onFrameWritten?: (info: FrameWrittenInfo) => void
   allowedOrigin?: string | Array<string>
   maxSessions?: number
   runtime?: Runtime
@@ -633,6 +727,7 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
 
   constructor(options: ServerTransportOptions = {}) {
     const bridge = createServerBridge<Protocol>({
+      enforceSessionOwner: options.enforceSessionOwner,
       allowedOrigin: options.allowedOrigin,
       maxSessions: options.maxSessions,
       runtime: options.runtime,
@@ -643,6 +738,7 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
       maxSessionBufferBytes: options.maxSessionBufferBytes,
       heartbeatIntervalMs: options.heartbeatIntervalMs,
       onSessionDrop: options.onSessionDrop,
+      onFrameWritten: options.onFrameWritten,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
       },
@@ -656,5 +752,9 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
 
   fetch = async (request: Request): Promise<Response> => {
     return await this.#bridge.handleRequest(request)
+  }
+
+  getMessageContext(message: unknown): HTTPMessageContext | undefined {
+    return this.#bridge.getMessageContext(message)
   }
 }

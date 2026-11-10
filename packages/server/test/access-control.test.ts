@@ -12,7 +12,9 @@ describe('access control', () => {
     test('server signer can access all procedures', async () => {
       const signer = randomIdentity()
       const token = await signer.signToken({ payload: { prc: 'enkaku:test/test' } as Payload })
-      await expect(checkClientToken(signer.id, {}, token)).resolves.toBeUndefined()
+      await expect(checkClientToken(signer.id, {}, token)).resolves.toEqual({
+        verifyDelegation: expect.any(Function),
+      })
     })
 
     test('with delegation', async () => {
@@ -35,7 +37,9 @@ describe('access control', () => {
           cap: stringifyToken(delegation),
         } as unknown as Payload,
       })
-      await expect(checkClientToken(serverSigner.id, {}, token)).resolves.toBeUndefined()
+      await expect(checkClientToken(serverSigner.id, {}, token)).resolves.toEqual({
+        verifyDelegation: expect.any(Function),
+      })
     })
 
     test('audience check', async () => {
@@ -77,7 +81,7 @@ describe('access control', () => {
       })
       await expect(
         checkClientToken(serverSigner.id, { 'enkaku:graph/test': { allow: true } }, token),
-      ).resolves.toBeUndefined()
+      ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
     })
   })
 
@@ -94,7 +98,7 @@ describe('access control', () => {
       const config: AccessRule = { allow: true, encryption: 'required' }
       await expect(
         checkClientToken(serverSigner.id, { 'enkaku:graph/test': config }, token),
-      ).resolves.toBeUndefined()
+      ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
     })
 
     test('config with allow-list works like array access', async () => {
@@ -112,7 +116,7 @@ describe('access control', () => {
       }
       await expect(
         checkClientToken(serverSigner.id, { 'enkaku:graph/test': config }, token),
-      ).resolves.toBeUndefined()
+      ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
     })
   })
 
@@ -132,7 +136,7 @@ describe('access control', () => {
           { 'enkaku:graph/test': { allow: [clientSigner.id] } },
           token,
         ),
-      ).resolves.toBeUndefined()
+      ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
     })
 
     test('with delegation', async () => {
@@ -163,7 +167,7 @@ describe('access control', () => {
           { 'enkaku:graph/test': { allow: [delegationSigner.id] } },
           token,
         ),
-      ).resolves.toBeUndefined()
+      ).resolves.toEqual({ verifyDelegation: expect.any(Function) })
     })
   })
 
