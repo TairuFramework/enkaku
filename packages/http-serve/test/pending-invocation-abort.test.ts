@@ -1,5 +1,6 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
-import { type InvocationContext, Server } from '@enkaku/server'
+import type { InvocationContext } from '@enkaku/server'
+import { Server } from '@enkaku/server'
 import { randomIdentity } from '@kokuin/token'
 import { defer } from '@sozai/async'
 import { expect, test, vi } from 'vitest'

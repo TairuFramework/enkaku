@@ -44,13 +44,8 @@ import {
   type Validator,
 } from '@sozai/schema'
 
-import {
-  type AccessDecision,
-  type AccessRules,
-  checkClientToken,
-  type EncryptionPolicy,
-  resolveEncryptionPolicy,
-} from './access-control.js'
+import type { AccessDecision, AccessRules, EncryptionPolicy } from './access-control.js'
+import { checkClientToken, resolveEncryptionPolicy } from './access-control.js'
 import { HandlerError, InvocationRejectedError } from './error.js'
 import { type ChannelMessageOf, handleChannel } from './handlers/channel.js'
 import { type EventMessageOf, handleEvent } from './handlers/event.js'

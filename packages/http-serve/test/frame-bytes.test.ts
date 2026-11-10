@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest'
 
-import { createServerBridge, type FrameWrittenInfo, ServerTransport } from '../src/index.js'
+import type { FrameWrittenInfo } from '../src/index.js'
+import { createServerBridge, ServerTransport } from '../src/index.js'
 
 function post(typ: 'request' | 'stream', rid = 'r1'): Request {
   return new Request('http://localhost/', {

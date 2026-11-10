@@ -26,7 +26,8 @@ Sessions start unbound. Binding the same DID again succeeds. Binding another DID
 Bind ownership from the verified caller in an authenticated invocation hook:
 
 ```ts
-import { type HTTPMessageContext, ServerTransport } from '@enkaku/http-serve'
+import type { HTTPMessageContext } from '@enkaku/http-serve'
+import { ServerTransport } from '@enkaku/http-serve'
 import { Server } from '@enkaku/server'
 
 const transport = new ServerTransport<typeof protocol>()
@@ -46,10 +47,11 @@ server.handle(transport)
 ```
 
 `ServerTransportOptions` and `ServerBridgeOptions` accept `enforceSessionOwner`, defaulting to `true`.
-Subsequent POSTs referencing a bound session must carry a `payload.iss` exactly matching its owner DID string.
+Subsequent POSTs referencing a bound session must carry a `payload.iss` matching its normalised owner DID.
+Binding stores the normalised DID. Long and short `did:peer:4` forms identify the same owner.
 A missing or different issuer produces HTTP `403` with `{ error: 'Session owner mismatch' }` before enqueueing the message.
 This applies to request, event, stream, channel, send and abort messages.
-The bridge checks the issuer string. The RPC server still authenticates the message.
+The bridge compares normalised DIDs. The RPC server still authenticates the message.
 Unbound sessions keep their existing behaviour. Setting `enforceSessionOwner: false` disables the check without clearing ownership.
 
 ## Written frame bytes

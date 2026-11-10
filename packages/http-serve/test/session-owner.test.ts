@@ -1,11 +1,12 @@
 import { Server } from '@enkaku/server'
-import { createUnsignedToken, randomIdentity } from '@kokuin/token'
+import { createUnsignedToken, encodePeer4, randomIdentity } from '@kokuin/token'
 import { describe, expect, test } from 'vitest'
 
-import { createServerBridge, type HTTPMessageContext, ServerTransport } from '../src/index.js'
+import type { HTTPMessageContext } from '../src/index.js'
+import { createServerBridge, ServerTransport } from '../src/index.js'
 
-const OWNER = 'did:key:owner'
-const FOREIGN = 'did:key:foreign'
+const OWNER = randomIdentity().id
+const FOREIGN = randomIdentity().id
 
 function post(typ: string, rid: string, iss?: string, sessionID?: string): Request {
   return new Request('http://localhost/rpc', {
@@ -54,6 +55,39 @@ describe('HTTP session owner', () => {
       fixture.close()
     }
   })
+
+  test.each(['long', 'short'] as const)(
+    'accepts the other DID form after binding the %s form',
+    async (form) => {
+      const { longForm, shortForm } = encodePeer4({
+        '@context': ['https://www.w3.org/ns/did/v1'],
+        verificationMethod: [
+          { id: '#key-0', type: 'Multikey', publicKeyMultibase: OWNER.slice('did:key:'.length) },
+        ],
+        authentication: ['#key-0'],
+      })
+      const owner = form === 'long' ? longForm : shortForm
+      const issuer = form === 'long' ? shortForm : longForm
+      const fixture = await setup()
+      try {
+        fixture.session?.bindOwner(owner)
+        const accepted = await fixture.bridge.handleRequest(
+          post('send', 'same-owner', issuer, fixture.sessionID),
+        )
+        expect(accepted.status).toBe(204)
+        expect((await fixture.reader.read()).value?.payload).toMatchObject({ iss: issuer })
+        expect(fixture.session?.owner).toBe(shortForm)
+        expect(() => fixture.session?.bindOwner(issuer)).not.toThrow()
+        const rejected = await fixture.bridge.handleRequest(
+          post('send', 'different-owner', FOREIGN, fixture.sessionID),
+        )
+        expect(rejected.status).toBe(403)
+        expect(await rejected.json()).toEqual({ error: 'Session owner mismatch' })
+      } finally {
+        fixture.close()
+      }
+    },
+  )
 
   test('rebinding to another DID throws', async () => {
     const fixture = await setup()

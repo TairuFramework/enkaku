@@ -5,13 +5,8 @@ import { randomIdentity, stringifyToken } from '@kokuin/token'
 import { defer } from '@sozai/async'
 import { expect, test, vi } from 'vitest'
 
-import {
-  type AccessRules,
-  type InvocationContext,
-  InvocationRejectedError,
-  type ProcedureHandlers,
-  Server,
-} from '../src/index.js'
+import type { AccessRules, InvocationContext, ProcedureHandlers } from '../src/index.js'
+import { InvocationRejectedError, Server } from '../src/index.js'
 
 const protocol = {
   ping: { type: 'request', param: { type: 'null' }, result: { type: 'string' } },
@@ -302,9 +297,9 @@ test.each([false, true])(
           const reader = readable.getReader()
           received.push((await reader.read()).value)
           if (!signal.aborted) {
-            await new Promise<void>((resolve) =>
-              signal.addEventListener('abort', () => resolve(), { once: true }),
-            )
+            await new Promise<void>((resolve) => {
+              signal.addEventListener('abort', () => resolve(), { once: true })
+            })
           }
           return 'done'
         },

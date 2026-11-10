@@ -13,6 +13,7 @@
 import { createTracer, EnkakuAttributeKeys, EnkakuSpanNames } from '@enkaku/otel'
 import type { AnyClientMessageOf, AnyServerMessageOf, ProtocolDefinition } from '@enkaku/protocol'
 import { Transport, type TransportEvents } from '@enkaku/transport'
+import { normalizeDID } from '@kokuin/token'
 import { type Deferred, defer } from '@sozai/async'
 import { AttributeKeys, extractW3CTraceContext, SpanStatusCode } from '@sozai/otel'
 import { createRuntime, type Runtime } from '@sozai/runtime'
@@ -23,8 +24,8 @@ const tracer = createTracer('transport.http')
 export type RequestHandler = (request: Request) => Promise<Response>
 
 export type HTTPSessionHandle = {
-  readonly id: string
-  readonly owner: string | undefined
+  get id(): string
+  get owner(): string | undefined
   bindOwner(did: string): void
 }
 
@@ -73,7 +74,7 @@ export type FrameWrittenInfo = {
 }
 
 export type ServerBridgeOptions = {
-  /** Reject mismatched issuers on owner-bound sessions. Defaults to true. */
+  /** Defaults to true. */
   enforceSessionOwner?: boolean
   onSessionDrop?: (info: SessionDropInfo) => void
   onFrameWritten?: (info: FrameWrittenInfo) => void
@@ -472,7 +473,8 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       if (
         options.enforceSessionOwner !== false &&
         session?.handle.owner !== undefined &&
-        (!('iss' in message.payload) || message.payload.iss !== session.handle.owner)
+        (!('iss' in message.payload) ||
+          normalizeDID(message.payload.iss) !== normalizeDID(session.handle.owner))
       ) {
         return Response.json({ error: 'Session owner mismatch' }, { headers, status: 403 })
       }
@@ -609,10 +611,11 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
               return owner
             },
             bindOwner(did) {
-              if (owner !== undefined && owner !== did) {
+              const normalizedOwner = normalizeDID(did)
+              if (owner !== undefined && normalizeDID(owner) !== normalizedOwner) {
                 throw new Error('Session already bound to another owner')
               }
-              owner = did
+              owner = normalizedOwner
             },
           }
           sessions.set(sessionID, { handle, controller: controllerRef, lastAccess: Date.now() })
@@ -701,7 +704,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
 }
 
 export type ServerTransportOptions = {
-  /** Reject mismatched issuers on owner-bound sessions. Defaults to true. */
+  /** Defaults to true. */
   enforceSessionOwner?: boolean
   onSessionDrop?: (info: SessionDropInfo) => void
   onFrameWritten?: (info: FrameWrittenInfo) => void
