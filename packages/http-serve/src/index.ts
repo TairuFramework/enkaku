@@ -65,10 +65,18 @@ export type SessionDropInfo = {
   error?: Error
 }
 
+export type FrameWrittenInfo = {
+  kind: 'response' | 'sse' | 'heartbeat'
+  bytes: number
+  rid?: string
+  sessionID?: string
+}
+
 export type ServerBridgeOptions = {
   /** Reject mismatched issuers on owner-bound sessions. Defaults to true. */
   enforceSessionOwner?: boolean
   onSessionDrop?: (info: SessionDropInfo) => void
+  onFrameWritten?: (info: FrameWrittenInfo) => void
   allowedOrigin?: string | Array<string>
   onWriteError?: (event: TransportEvents['writeFailed']) => void
   onRequestAborted?: (event: TransportEvents['requestAborted']) => void
@@ -157,6 +165,15 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
   const inflightTimers: Map<string, ReturnType<typeof setTimeout>> = new Map()
   const contexts = new WeakMap<object, HTTPMessageContext>()
   let disposed = false
+
+  function reportFrameWritten(frame: string, info: Omit<FrameWrittenInfo, 'bytes'>): void {
+    if (options.onFrameWritten == null) return
+    try {
+      options.onFrameWritten({ ...info, bytes: new TextEncoder().encode(frame).byteLength })
+    } catch (error) {
+      console.error('Frame written callback failed', error)
+    }
+  }
 
   function getMessageContext(message: unknown): HTTPMessageContext | undefined {
     return typeof message === 'object' && message != null ? contexts.get(message) : undefined
@@ -256,7 +273,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             const sse = session.controller
             if (sse == null || (sse.desiredSize ?? 0) <= 0) continue
             try {
-              sse.enqueue(':\n\n')
+              const frame = ':\n\n'
+              sse.enqueue(frame)
+              reportFrameWritten(frame, { kind: 'heartbeat', sessionID: session.handle.id })
             } catch {
               // Closed or errored; the session's own cleanup removes it.
             }
@@ -328,8 +347,14 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           clearTimeout(timer)
           inflightTimers.delete(rid)
         }
-        request.resolve(Response.json(msg, { headers: request.headers }))
+        const body = JSON.stringify(msg)
+        request.resolve(
+          new Response(body, {
+            headers: { ...request.headers, 'Content-Type': 'application/json' },
+          }),
+        )
         inflight.delete(msg.payload.rid)
+        reportFrameWritten(body, { kind: 'response', rid })
       } else {
         // Terminal payloads end the stream/channel call — release the inflight slot
         if (msg.payload.typ === 'result' || msg.payload.typ === 'error') {
@@ -345,8 +370,10 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           reportWriteError(new Error(`No controller for session: ${request.sessionID}`), rid)
           return
         }
+        let frame: string
         try {
-          session.controller.enqueue(`data: ${JSON.stringify(msg)}\n\n`)
+          frame = `data: ${JSON.stringify(msg)}\n\n`
+          session.controller.enqueue(frame)
           // Outbound traffic keeps the session alive: a stream whose consumer only
           // reads would otherwise be reaped at sessionTimeoutMs.
           session.lastAccess = Date.now()
@@ -366,7 +393,9 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             reason: 'buffer-overflow',
             error: new Error(`SSE buffer overflow for session: ${request.sessionID}`),
           })
+          return
         }
+        reportFrameWritten(frame, { kind: 'sse', rid, sessionID: request.sessionID })
       }
     },
     dispose,
@@ -674,6 +703,7 @@ export type ServerTransportOptions = {
   /** Reject mismatched issuers on owner-bound sessions. Defaults to true. */
   enforceSessionOwner?: boolean
   onSessionDrop?: (info: SessionDropInfo) => void
+  onFrameWritten?: (info: FrameWrittenInfo) => void
   allowedOrigin?: string | Array<string>
   maxSessions?: number
   runtime?: Runtime
@@ -704,6 +734,7 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
       maxSessionBufferBytes: options.maxSessionBufferBytes,
       heartbeatIntervalMs: options.heartbeatIntervalMs,
       onSessionDrop: options.onSessionDrop,
+      onFrameWritten: options.onFrameWritten,
       onWriteError: (event) => {
         this.events.emit('writeFailed', event)
       },
