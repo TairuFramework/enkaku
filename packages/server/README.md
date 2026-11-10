@@ -6,6 +6,54 @@
 npm install @enkaku/server
 ```
 
+## Invocation hook
+
+`Server`, `serve()` and `server.handle(transport, options)` accept an optional `onInvocation: InvocationHook` callback.
+The per-transport hook overrides the server hook.
+The server awaits the hook after validation, authentication, access control, encryption and replay checks, before starting the handler.
+It runs once for each request, stream, channel or event invocation, never for `send` or `abort` messages.
+
+`InvocationContext` contains:
+
+| Field | Meaning |
+| --- | --- |
+| `type` | `'request'`, `'stream'`, `'channel'` or `'event'` |
+| `procedure` | Procedure name |
+| `rid` | Request ID, absent for events |
+| `caller` | `InvocationCaller` with verified `iss` and optional caller-asserted `sub` |
+| `verifyDelegation()` | Asynchronous delegation check for this procedure and server |
+| `transport` | Transport-specific context, typed as `unknown` |
+| `message` | Original message |
+
+With `requireAuth: false`, `caller` is absent and `verifyDelegation()` returns `false`.
+`sub` becomes trustworthy only when `verifyDelegation()` returns `true`.
+Missing or invalid delegation returns `false`, as does a subject matching the issuer. Unexpected verification failures reject the promise.
+The check memoises its promise and shares it with access-control predicates.
+The access-check functions return an `AccessDecision` exposing the same `verifyDelegation()` method.
+
+```ts
+import { InvocationRejectedError, Server } from '@enkaku/server'
+
+const server = new Server({
+  protocol,
+  handlers,
+  identity,
+  accessRules,
+  async onInvocation(ctx) {
+    if (ctx.caller?.sub != null && !(await ctx.verifyDelegation())) {
+      throw new InvocationRejectedError({
+        code: 'DELEGATION_REQUIRED',
+        message: 'A valid delegation is required',
+      })
+    }
+  },
+})
+```
+
+Throwing `InvocationRejectedError({ code, message, cause? })` skips the handler and preserves the supplied code and message in the error reply.
+Other exceptions produce code `EK01` and message `Invocation hook failed`, without exposing the exception message.
+Events receive no reply. All hook failures emit `handlerError` with category `'invocation'` and mark the invocation span as failed.
+
 ## Outgoing stream backpressure
 
 `Server` and `serve()` accept `streamHighWaterMark`, a positive finite safe integer defaulting to `1`.
