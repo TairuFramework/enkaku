@@ -435,6 +435,9 @@ importers:
       '@enkaku/transport':
         specifier: workspace:^
         version: link:../transport
+      '@kokuin/token':
+        specifier: 'catalog:'
+        version: 0.7.0(@logtape/logtape@2.3.11)
       '@sozai/async':
         specifier: 'catalog:'
         version: 0.4.3
@@ -451,9 +454,6 @@ importers:
       '@enkaku/server':
         specifier: workspace:^
         version: link:../server
-      '@kokuin/token':
-        specifier: 'catalog:'
-        version: 0.7.0(@logtape/logtape@2.3.11)
 
   packages/message:
     dependencies:
