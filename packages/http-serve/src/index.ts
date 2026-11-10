@@ -22,9 +22,16 @@ const tracer = createTracer('transport.http')
 
 export type RequestHandler = (request: Request) => Promise<Response>
 
+export type HTTPSessionHandle = {
+  readonly id: string
+  readonly owner: string | undefined
+  bindOwner(did: string): void
+}
+
 export type HTTPMessageContext = {
   request: Request
   sessionID?: string
+  session?: HTTPSessionHandle
 }
 
 export type ServerBridge<Protocol extends ProtocolDefinition> = {
@@ -40,6 +47,7 @@ export type ServerBridge<Protocol extends ProtocolDefinition> = {
 }
 
 type ActiveSession = {
+  handle: HTTPSessionHandle
   controller: ReadableStreamDefaultController<string> | null
   lastAccess: number
 }
@@ -58,6 +66,8 @@ export type SessionDropInfo = {
 }
 
 export type ServerBridgeOptions = {
+  /** Reject mismatched issuers on owner-bound sessions. Defaults to true. */
+  enforceSessionOwner?: boolean
   onSessionDrop?: (info: SessionDropInfo) => void
   allowedOrigin?: string | Array<string>
   onWriteError?: (event: TransportEvents['writeFailed']) => void
@@ -428,13 +438,26 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
       if (!VALID_PAYLOAD_TYPES.has(message?.payload?.typ)) {
         return Response.json({ error: 'Invalid message type' }, { headers, status: 400 })
       }
+      const sessionID = request.headers.get('enkaku-session-id')
+      const session = sessionID == null ? undefined : sessions.get(sessionID)
+      if (
+        options.enforceSessionOwner !== false &&
+        session?.handle.owner !== undefined &&
+        (!('iss' in message.payload) || message.payload.iss !== session.handle.owner)
+      ) {
+        return Response.json({ error: 'Session owner mismatch' }, { headers, status: 403 })
+      }
+      const context: HTTPMessageContext = {
+        request,
+        ...(session == null ? {} : { sessionID: session.handle.id, session: session.handle }),
+      }
       switch (message.payload.typ) {
         // Fire and forget messages
         case 'abort':
         case 'event':
         case 'send':
           contexts.set(message, {
-            request,
+            ...context,
             ...(message.payload.typ !== 'event' && request.headers.has('enkaku-session-id')
               ? { sessionID: request.headers.get('enkaku-session-id') as string }
               : {}),
@@ -497,7 +520,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             { once: true },
           )
 
-          contexts.set(message, { request })
+          contexts.set(message, context)
           controller.enqueue(message)
           // Wait for reply from message handler
           return response.promise
@@ -520,7 +543,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
             }
             session.lastAccess = Date.now()
             inflight.set(message.payload.rid, { type: 'stream', sessionID: sid })
-            contexts.set(message, { request, sessionID: sid })
+            contexts.set(message, context)
             controller.enqueue(message)
             return new Response(null, { headers, status: 204 })
           }
@@ -547,7 +570,22 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           const controllerRef = sseController as ReadableStreamDefaultController<string>
           // Send an SSE comment to flush response headers immediately.
           controllerRef.enqueue(':\n\n')
-          sessions.set(sessionID, { controller: controllerRef, lastAccess: Date.now() })
+          let owner: string | undefined
+          const handle: HTTPSessionHandle = {
+            get id() {
+              return sessionID
+            },
+            get owner() {
+              return owner
+            },
+            bindOwner(did) {
+              if (owner !== undefined && owner !== did) {
+                throw new Error('Session already bound to another owner')
+              }
+              owner = did
+            },
+          }
+          sessions.set(sessionID, { handle, controller: controllerRef, lastAccess: Date.now() })
 
           request.signal.addEventListener('abort', () => {
             try {
@@ -558,7 +596,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           })
 
           inflight.set(message.payload.rid, { type: 'stream', sessionID })
-          contexts.set(message, { request, sessionID })
+          contexts.set(message, { request, sessionID, session: handle })
           controller.enqueue(message)
 
           return new Response(body.pipeThrough(new TextEncoderStream()), {
@@ -633,6 +671,8 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
 }
 
 export type ServerTransportOptions = {
+  /** Reject mismatched issuers on owner-bound sessions. Defaults to true. */
+  enforceSessionOwner?: boolean
   onSessionDrop?: (info: SessionDropInfo) => void
   allowedOrigin?: string | Array<string>
   maxSessions?: number
@@ -653,6 +693,7 @@ export class ServerTransport<Protocol extends ProtocolDefinition> extends Transp
 
   constructor(options: ServerTransportOptions = {}) {
     const bridge = createServerBridge<Protocol>({
+      enforceSessionOwner: options.enforceSessionOwner,
       allowedOrigin: options.allowedOrigin,
       maxSessions: options.maxSessions,
       runtime: options.runtime,

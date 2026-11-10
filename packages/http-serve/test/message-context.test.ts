@@ -41,7 +41,7 @@ describe('HTTP message context', () => {
       const sessionID = response.headers.get('enkaku-session-id')
       expect(sessionID).toBeTruthy()
       const { value: message } = await reader.read()
-      expect(bridge.getMessageContext(message)).toEqual({ request, sessionID })
+      expect(bridge.getMessageContext(message)).toMatchObject({ request, sessionID })
     } finally {
       bridge.dispose()
       reader.releaseLock()
@@ -61,7 +61,7 @@ describe('HTTP message context', () => {
         const request = createPost(typ, 'r2', sessionID)
         expect((await bridge.handleRequest(request)).status).toBe(204)
         const { value: message } = await reader.read()
-        expect(bridge.getMessageContext(message)).toEqual({ request, sessionID })
+        expect(bridge.getMessageContext(message)).toMatchObject({ request, sessionID })
       } finally {
         bridge.dispose()
         reader.releaseLock()
