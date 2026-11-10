@@ -19,6 +19,7 @@ It runs once for each request, stream, channel or event invocation, never for `s
 | --- | --- |
 | `type` | `'request'`, `'stream'`, `'channel'` or `'event'` |
 | `procedure` | Procedure name |
+| `signal` | AbortSignal for cancellation while the hook awaits dispatch |
 | `rid` | Request ID, absent for events |
 | `caller` | `InvocationCaller` with verified `iss` and optional caller-asserted `sub` |
 | `verifyDelegation()` | Asynchronous delegation check for this procedure and server |
@@ -28,6 +29,8 @@ It runs once for each request, stream, channel or event invocation, never for `s
 With `requireAuth: false`, `caller` is absent and `verifyDelegation()` returns `false`.
 `sub` becomes trustworthy only when `verifyDelegation()` returns `true`.
 Missing or invalid delegation returns `false`, as does a subject matching the issuer. Unexpected verification failures reject the promise.
+Transport cancellation aborts `signal` while the hook is pending. Hooks can use it to cancel asynchronous checks.
+After cancellation, resolving the hook never starts the handler.
 The check memoises its promise and shares it with access-control predicates.
 The access-check functions return an `AccessDecision` exposing the same `verifyDelegation()` method.
 

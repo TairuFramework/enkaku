@@ -92,7 +92,7 @@ describe('HTTP message context', () => {
     }
   })
 
-  test('context map is weak', async () => {
+  test('context lookup uses message object identity', async () => {
     const bridge = createServerBridge()
     const reader = bridge.stream.readable.getReader()
     try {

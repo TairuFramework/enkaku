@@ -50,6 +50,7 @@ describe('written frame bytes', () => {
         'data: {"payload":{"typ":"receive","rid":"r1","val":"雪😀"}}\n\n',
       )
       expect(frames).toEqual([
+        { kind: 'heartbeat', bytes: 3, sessionID: response.headers.get('enkaku-session-id') },
         {
           kind: 'sse',
           bytes: chunk?.byteLength,
@@ -76,10 +77,15 @@ describe('written frame bytes', () => {
       if (response.body == null) throw new Error('Expected SSE body')
       const reader = response.body.getReader()
       await reader.read()
+      expect(frames).toEqual([
+        { kind: 'heartbeat', bytes: 3, sessionID: response.headers.get('enkaku-session-id') },
+      ])
+      expect(frames[0]?.rid).toBeUndefined()
       vi.advanceTimersByTime(1000)
       const chunk = (await reader.read()).value
       expect(new TextDecoder().decode(chunk)).toBe(':\n\n')
       expect(frames).toEqual([
+        { kind: 'heartbeat', bytes: 3, sessionID: response.headers.get('enkaku-session-id') },
         { kind: 'heartbeat', bytes: 3, sessionID: response.headers.get('enkaku-session-id') },
       ])
       reader.releaseLock()
@@ -126,7 +132,7 @@ describe('written frame bytes', () => {
     },
   )
 
-  test('does not report frames dropped by buffer overflow', async () => {
+  test('reports every delivered frame including the frame that triggers buffer overflow', async () => {
     const frames: Array<FrameWrittenInfo> = []
     const onSessionDrop = vi.fn()
     const bridge = createServerBridge({
@@ -135,13 +141,23 @@ describe('written frame bytes', () => {
       onFrameWritten: (info) => frames.push(info),
     })
     try {
-      await bridge.handleRequest(post('stream'))
+      const response = await bridge.handleRequest(post('stream'))
       const writer = bridge.stream.writable.getWriter()
       await writer.write({ payload: { typ: 'receive', rid: 'r1', val: 'x'.repeat(300) } } as never)
       expect(onSessionDrop).toHaveBeenCalledWith(
         expect.objectContaining({ reason: 'buffer-overflow' }),
       )
-      expect(frames).toEqual([])
+      const body = await response.text()
+      const frame = `data: ${JSON.stringify({ payload: { typ: 'receive', rid: 'r1', val: 'x'.repeat(300) } })}\n\n`
+      expect(body).toBe(`:\n\n${frame}`)
+      const sessionID = response.headers.get('enkaku-session-id')
+      expect(frames).toEqual([
+        { kind: 'heartbeat', bytes: 3, sessionID },
+        { kind: 'sse', bytes: new TextEncoder().encode(frame).byteLength, rid: 'r1', sessionID },
+      ])
+      expect(frames.reduce((total, info) => total + info.bytes, 0)).toBe(
+        new TextEncoder().encode(body).byteLength,
+      )
       writer.releaseLock()
     } finally {
       bridge.dispose()

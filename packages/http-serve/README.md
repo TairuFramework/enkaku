@@ -17,6 +17,7 @@ Unary requests and messages without a session still expose their HTTP request.
 Context lookup uses message object identity and a weak map. Unknown objects, cloned messages and non-object values return `undefined`.
 Context stays outside the serialised message.
 The server's `onInvocation` hook receives this context through `ctx.transport`, typed as `unknown`.
+A client disconnect or session drop aborts `ctx.signal` during a pending hook and prevents subsequent handler dispatch.
 
 ## SSE session ownership
 
@@ -71,7 +72,7 @@ const transport = new ServerTransport<typeof protocol>({
 ```
 
 Response counts cover the JSON message body. SSE counts include the `data: ` prefix and trailing `\n\n`.
-Periodic heartbeat comments contain `:\n\n` and count as three bytes. The initial SSE comment is excluded.
-Dropped frames, including buffer overflow, produce no callback.
+Initial and periodic heartbeat comments contain `:\n\n` and count as three bytes, with a session ID and no request ID.
+Every enqueued SSE frame produces a callback, including the frame triggering buffer overflow. Frames rejected before enqueueing produce no callback.
 Counts exclude HTTP headers and network overhead. Resolving a response or enqueueing a frame does not confirm delivery to the client.
 Synchronous callback exceptions are logged and swallowed so writes continue.

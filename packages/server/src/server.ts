@@ -118,6 +118,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     params
 
   const controllers: Record<string, HandlerController> = Object.create(null)
+  const invocationControllers = new Map<string, AbortController>()
   const context: HandlerContext<Protocol> = {
     controllers,
     events,
@@ -230,6 +231,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
    * it does the bookkeeping itself.)
    */
   function abortRunningHandler(rid: string, reason: unknown): void {
+    invocationControllers.get(rid)?.abort(reason)
     const controller = controllers[rid]
     if (controller == null) {
       return
@@ -625,12 +627,19 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   async function invokeHook(
     message: ProcessMessageOf<Protocol>,
     span: Span,
+    handle: () => Error | Promise<void>,
+    eventRID?: string,
     decision?: AccessDecision,
-  ): Promise<boolean> {
+  ): Promise<void> {
     const payload = message.payload
+    const rid = payload.typ === 'event' ? (eventRID as string) : payload.rid
+    const controller = new AbortController()
+    const invocationSignal = AbortSignal.any([signal, disposer.signal, controller.signal])
+    invocationControllers.set(rid, controller)
     try {
       const signedPayload = (message as unknown as SignedToken).payload
       await params.onInvocation?.({
+        signal: invocationSignal,
         type: payload.typ,
         procedure: payload.prc,
         rid: payload.typ === 'event' ? undefined : payload.rid,
@@ -639,7 +648,6 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         transport: transport.getMessageContext?.(message),
         message,
       })
-      return true
     } catch (cause) {
       const rejected = cause instanceof InvocationRejectedError
       const error = new HandlerError({
@@ -659,8 +667,16 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         })
       }
       emitHandlerError(events, 'invocation', error, payload)
-      return false
+      return
+    } finally {
+      if (invocationControllers.get(rid) === controller) invocationControllers.delete(rid)
     }
+    // A transport abort can arrive before the handler has registered its controller.
+    if (invocationSignal.aborted) {
+      span.end()
+      return
+    }
+    processHandler(message, wrapHandle(span, handle), eventRID)
   }
 
   const process = !params.requireAuth
@@ -687,9 +703,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         }
 
         if (params.onInvocation != null) {
-          return invokeHook(message, span).then((allowed) => {
-            if (allowed) processHandler(message, wrapHandle(span, handle), eventRID)
-          })
+          return invokeHook(message, span, handle, eventRID)
         }
         processHandler(message, wrapHandle(span, handle), eventRID)
       }
@@ -817,7 +831,10 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           }
         }
 
-        if (params.onInvocation != null && !(await invokeHook(message, span, decision))) return
+        if (params.onInvocation != null) {
+          await invokeHook(message, span, handle, eventRID, decision)
+          return
+        }
 
         processHandler(message, wrapHandle(span, handle), eventRID)
       }

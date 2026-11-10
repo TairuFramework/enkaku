@@ -384,6 +384,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           dropSession({ sessionID: request.sessionID, rid, reason: 'write-error', error })
           return
         }
+        reportFrameWritten(frame, { kind: 'sse', rid, sessionID: request.sessionID })
         if ((session.controller.desiredSize ?? 0) <= 0) {
           // The consumer has fallen maxSessionBufferBytes behind. Drop this session
           // alone rather than growing its queue without bound.
@@ -395,7 +396,6 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           })
           return
         }
-        reportFrameWritten(frame, { kind: 'sse', rid, sessionID: request.sessionID })
       }
     },
     dispose,
@@ -599,6 +599,7 @@ export function createServerBridge<Protocol extends ProtocolDefinition>(
           const controllerRef = sseController as ReadableStreamDefaultController<string>
           // Send an SSE comment to flush response headers immediately.
           controllerRef.enqueue(':\n\n')
+          reportFrameWritten(':\n\n', { kind: 'heartbeat', sessionID })
           let owner: string | undefined
           const handle: HTTPSessionHandle = {
             get id() {

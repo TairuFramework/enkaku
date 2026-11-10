@@ -24,6 +24,7 @@ export type InvocationCaller = {
 }
 
 export type InvocationContext = {
+  signal: AbortSignal
   type: 'request' | 'stream' | 'channel' | 'event'
   procedure: string
   rid?: string
