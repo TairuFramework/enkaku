@@ -9,7 +9,7 @@ import { getActiveSpan } from '@sozai/otel'
 import { createPipe, writeTo } from '@sozai/stream'
 
 import type { HandlerContext, ReceiveType, RequestController, StreamHandler } from '../types.js'
-import { executeHandler } from '../utils.js'
+import { executeHandler, isRedacted } from '../utils.js'
 
 export type StreamMessageOf<
   Protocol extends ProtocolDefinition,
@@ -26,7 +26,8 @@ export function handleStream<
   }
 
   const param = msg.payload.prm
-  if (param == null) {
+  const redacted = isRedacted(ctx, msg.payload.prc)
+  if (param == null || redacted) {
     ctx.logger.trace('handle stream {procedure} with ID {rid}', {
       procedure: msg.payload.prc,
       rid: msg.payload.rid,
@@ -42,7 +43,10 @@ export function handleStream<
   const activeSpan = getActiveSpan()
 
   const issuer = (msg.payload as Record<string, unknown>).iss as string | undefined
-  const controller: RequestController = Object.assign(new AbortController(), { issuer })
+  const controller: RequestController = Object.assign(new AbortController(), {
+    issuer,
+    procedure: msg.payload.prc,
+  })
   ctx.controllers[msg.payload.rid] = controller
 
   const receiveStream = createPipe<ReceiveType<Protocol, Procedure>>({
@@ -58,11 +62,18 @@ export function handleStream<
           [EnkakuAttributeKeys.MESSAGE_DIRECTION]: 'send',
         })
       }
-      ctx.logger.trace('send value to stream {procedure} with ID {rid}: {val}', {
-        procedure: msg.payload.prc,
-        rid: msg.payload.rid,
-        val,
-      })
+      if (redacted) {
+        ctx.logger.trace('send value to stream {procedure} with ID {rid}', {
+          procedure: msg.payload.prc,
+          rid: msg.payload.rid,
+        })
+      } else {
+        ctx.logger.trace('send value to stream {procedure} with ID {rid}: {val}', {
+          procedure: msg.payload.prc,
+          rid: msg.payload.rid,
+          val,
+        })
+      }
       await ctx.send(
         {
           typ: 'receive',

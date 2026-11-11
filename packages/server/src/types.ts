@@ -38,10 +38,12 @@ export type InvocationHook = (ctx: InvocationContext) => void | Promise<void>
 
 export type RequestController = AbortController & {
   issuer?: string
+  procedure?: string
 }
 
 export type ChannelController<Send = unknown> = AbortController & {
   issuer?: string
+  procedure?: string
   writer: WritableStreamDefaultWriter<Send>
 }
 
@@ -218,6 +220,8 @@ export type HandlerContext<Protocol extends ProtocolDefinition> = {
   events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
   logger: Logger
+  /** True when the procedure's payloads must never be logged. */
+  redact?: (procedure: string) => boolean
   send: (payload: AnyServerPayloadOf<Protocol>, options?: { rid?: string }) => Promise<void>
   signal: AbortSignal
   streamHighWaterMark?: number

@@ -370,6 +370,7 @@ test('rejects a replayed signed channel send with EK09', async () => {
   const sendMsg = await signer.signToken({
     payload: {
       typ: 'send',
+      prc: 'chat',
       rid: 'send-replay',
       val: 'hello',
       jti: 'send-replay-1',
@@ -804,6 +805,7 @@ test('a rejecting async replay cache surfaces transportError and disposes (send 
   const sendMsg = await signer.signToken({
     payload: {
       typ: 'send',
+      prc: 'chat',
       rid: 'send-guard-rid',
       val: 'hello',
       jti: 'send-guard-1',

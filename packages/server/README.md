@@ -78,3 +78,39 @@ The writer's `desiredSize` drops to `0` until downstream consumption resumes.
 Values already in transport buffers sit outside this queue limit.
 Handlers must await writes or respect `writer.ready` to avoid accumulating pending writes themselves.
 The default now applies backpressure where previous versions allowed unbounded outgoing queues.
+
+## Channel sends
+
+The server delivers a `send` message only when its `prc` matches the procedure of the channel open on its `rid`.
+Any other `send`, including one addressed to a request or stream, is an invalid message.
+The server emits `invalidMessage` and replies with error code `EK08` on that `rid`.
+As with other invalid sends, the client then treats the channel as failed, while the server handler may keep running.
+`abort` messages carry no procedure and are routed by `rid` alone.
+
+## Payload redaction
+
+`Server` and `serve()` accept `redactProcedures`, an array of procedure names or a predicate `(procedure: string) => boolean`.
+A predicate that throws counts as a match.
+The server never logs payloads of a redacted procedure, at any level.
+This covers params, event data, sent and received channel or stream values, results, and handler or invocation hook errors.
+Invalid messages that name a redacted procedure are logged without their validation error.
+Channel `send` messages and invalid messages use the procedure of the live request for their `rid`, not the client-supplied `prc`.
+With the option set, an invalid message naming no known procedure is also logged without its validation error.
+So is an invalid `send` or `abort` that arrives while authentication of its request is still pending.
+Log records keep the procedure name, request ID, message type and error code.
+Error records also keep the error name, never its message or cause.
+Spans of a redacted procedure record the error code and name only.
+Their error message and status message read `Error details redacted`, as does the validation error of an invalid message.
+Messages on the wire are unchanged.
+In-process `handlerError` and `invalidMessage` events still carry the payload, and the `error.cause` of `writeFailed` events can too.
+Consumers must not log those payloads.
+
+```ts
+const server = serve({
+  requireAuth: false,
+  protocol,
+  handlers,
+  transport,
+  redactProcedures: ['secrets/provision', 'mcp/callTool'],
+})
+```

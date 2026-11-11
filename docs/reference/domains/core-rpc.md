@@ -860,6 +860,7 @@ class Server<Protocol extends ProtocolDefinition> extends Disposer {
   //   limits?: Partial<ResourceLimits>
   //   logger?: Logger
   //   protocol?: Protocol                     // enables message validation
+  //   redactProcedures?: Array<string> | ((procedure: string) => boolean)  // never log payloads
   //   replay?: ReplayOptions
   //   resolver?: DIDResolver
   //   crypto?: CryptoProvider                // verifies token and capability signatures; defaults to strict nobleCrypto
