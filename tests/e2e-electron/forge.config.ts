@@ -3,7 +3,8 @@ import type { ForgeConfig } from '@electron-forge/shared-types'
 
 const config: ForgeConfig = {
   packagerConfig: {
-    asar: true,
+    // A basename pattern: asar's `**/*.node` does not cross the dot directory `.vite`.
+    asar: { unpack: '*.node' },
   },
   rebuildConfig: {},
   makers: [],
