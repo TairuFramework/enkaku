@@ -1,5 +1,11 @@
 # @enkaku/standalone
 
+## 0.23.2
+
+### Patch Changes
+
+- Declare every package imported by published code: `@enkaku/protocol` moves to `dependencies` in client, electron, react and standalone, `@enkaku/transport` moves to `dependencies` in protocol, and react and electron gain `react` and `electron` peer dependencies. Strict installs (isolated linker, no hoisting) no longer fail to resolve these from the published declarations.
+
 ## 0.23.1
 
 ## 0.23.0

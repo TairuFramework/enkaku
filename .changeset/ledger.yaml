@@ -22,10 +22,18 @@
   dir: packages/client
   intents:
     - fix-null-param-messages
+"@enkaku/client@0.23.2":
+  dir: packages/client
+  intents:
+    - declare-workspace-deps
 "@enkaku/electron@0.22.0":
   dir: packages/electron
   intents:
     - kokuin-0-6-floor
+"@enkaku/electron@0.23.2":
+  dir: packages/electron
+  intents:
+    - declare-workspace-deps
 "@enkaku/http-fetch@0.21.0":
   dir: packages/http-fetch
   intents:
@@ -38,6 +46,10 @@
   dir: packages/http-fetch
   intents:
     - kokuin-0-6-floor
+"@enkaku/http-fetch@0.23.2":
+  dir: packages/http-fetch
+  intents:
+    - http-fetch-stale-connection-retry
 "@enkaku/http-serve@0.21.0":
   dir: packages/http-serve
   intents:
@@ -94,6 +106,10 @@
   dir: packages/protocol
   intents:
     - kokuin-0-7-crypto-provider
+"@enkaku/protocol@0.23.2":
+  dir: packages/protocol
+  intents:
+    - declare-workspace-deps
 "@enkaku/react@0.21.0":
   dir: packages/react
   intents:
@@ -102,6 +118,10 @@
   dir: packages/react
   intents:
     - kokuin-0-6-floor
+"@enkaku/react@0.23.2":
+  dir: packages/react
+  intents:
+    - declare-workspace-deps
 "@enkaku/server@0.21.0":
   dir: packages/server
   intents:
@@ -160,6 +180,10 @@
   dir: packages/standalone
   intents:
     - kokuin-0-7-crypto-provider
+"@enkaku/standalone@0.23.2":
+  dir: packages/standalone
+  intents:
+    - declare-workspace-deps
 "@enkaku/transport@0.21.0":
   dir: packages/transport
   intents:
