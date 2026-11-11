@@ -38,10 +38,10 @@
   },
   "dependencies": {
     "@enkaku/client": "workspace:^",
+    "@enkaku/protocol": "workspace:^",
     "@sozai/json": "catalog:"
   },
   "devDependencies": {
-    "@enkaku/protocol": "workspace:^",
     "@enkaku/standalone": "workspace:^",
     "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",
@@ -50,6 +50,9 @@
     "happy-dom": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   },
   "publishConfig": {
     "access": "public"

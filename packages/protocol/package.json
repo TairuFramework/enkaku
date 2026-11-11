@@ -37,11 +37,9 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
+    "@enkaku/transport": "workspace:^",
     "@kokuin/token": "catalog:",
     "@sozai/schema": "catalog:"
-  },
-  "devDependencies": {
-    "@enkaku/transport": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
