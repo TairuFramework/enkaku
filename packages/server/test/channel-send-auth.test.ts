@@ -178,6 +178,7 @@ describe('Channel send authorization', () => {
     const sendMsg = await signer.signToken({
       payload: {
         typ: 'send',
+        prc: 'chat',
         rid: 'ch1',
         val: 'hello from owner',
         iat: Math.floor(Date.now() / 1000),
@@ -241,6 +242,7 @@ describe('Channel send authorization', () => {
     const sendMsg = await otherIdentity.signToken({
       payload: {
         typ: 'send',
+        prc: 'chat',
         rid: 'ch1',
         val: 'hello from intruder',
         iat: Math.floor(Date.now() / 1000),
@@ -310,6 +312,7 @@ describe('Channel send authorization', () => {
       createUnsignedToken({
         payload: {
           typ: 'send',
+          prc: 'chat',
           rid: 'ch1',
           val: 'hello public',
         },

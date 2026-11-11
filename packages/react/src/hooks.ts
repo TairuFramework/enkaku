@@ -23,6 +23,7 @@ export function createLazyRequestHook<
   Call extends RequestCall<unknown>,
   Param,
 >(execute: ExecuteRequest<Procedure, Call, Param>) {
+  // biome-ignore lint/correctness/noComponentHookFactories: the factory binds the execute function once, at module level
   return function useLazyRequest(procedure: Procedure): [ExecuteCall<Call, Param>, Call | null] {
     const client = useEnkakuClient()
     const [currentCall, setCurrentCall] = useState<Call | null>(null)
@@ -53,6 +54,7 @@ export function createSuspenseRequestHook<
   Call extends RequestCall<unknown>,
   Param,
 >(execute: ExecuteRequest<Procedure, Call, Param>) {
+  // biome-ignore lint/correctness/noComponentHookFactories: the factory binds the execute function once, at module level
   return function useSuspenseRequest(
     procedure: Procedure,
     ...args: Param extends never ? [] : [Param]

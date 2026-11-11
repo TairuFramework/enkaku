@@ -8,7 +8,7 @@ import { toPromise } from '@sozai/async'
 
 import { HandlerError } from '../error.js'
 import type { EventHandler, EventHandlerContext, HandlerContext } from '../types.js'
-import { emitHandlerError } from '../utils.js'
+import { emitHandlerError, getErrorName, isRedacted } from '../utils.js'
 
 export type EventMessageOf<
   Protocol extends ProtocolDefinition,
@@ -25,7 +25,10 @@ export function handleEvent<
   }
 
   const data = msg.payload.data
-  if (data == null) {
+  const redacted = isRedacted(ctx, msg.payload.prc)
+  if (redacted) {
+    ctx.logger.trace('handle event {procedure}', { procedure: msg.payload.prc })
+  } else if (data == null) {
     ctx.logger.trace('handle event {procedure} without data', {
       procedure: msg.payload.prc,
     })
@@ -45,7 +48,13 @@ export function handleEvent<
       code: ErrorCodes.HANDLER_ERROR,
       message: (cause as Error).message ?? 'Handler execution failed',
     })
-    if (data == null) {
+    if (redacted) {
+      ctx.logger.debug('handler error for event {procedure}: {name} with code {code}', {
+        procedure: msg.payload.prc,
+        code: error.code,
+        name: getErrorName(cause),
+      })
+    } else if (data == null) {
       ctx.logger.debug('handler error for event {procedure} without data: {error}', {
         procedure: msg.payload.prc,
         error,

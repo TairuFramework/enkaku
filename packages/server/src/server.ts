@@ -69,7 +69,7 @@ import type {
   ServerEmitter,
   ServerEvents,
 } from './types.js'
-import { emitHandlerError } from './utils.js'
+import { emitHandlerError, getErrorName, isRedacted } from './utils.js'
 
 type ProcessMessageOf<Protocol extends ProtocolDefinition> =
   | EventMessageOf<Protocol>
@@ -91,12 +91,30 @@ export type AccessControlParams = (
   methods?: MethodRegistry
 }
 
+const REDACTED_ERROR_MESSAGE = 'Error details redacted'
+
+// Spans leave the process: for redacted procedures keep the error name and code only.
+function recordSpanError(span: Span, error: Error, redacted: boolean): void {
+  const message = redacted ? REDACTED_ERROR_MESSAGE : error.message
+  span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, message)
+  span.setStatus({ code: SpanStatusCode.ERROR, message })
+  if (redacted) {
+    const code = (error as { code?: unknown }).code
+    span.recordException(
+      typeof code === 'string' ? { name: error.name, code } : { name: error.name },
+    )
+  } else {
+    span.recordException(error)
+  }
+}
+
 export type HandleMessagesParams<Protocol extends ProtocolDefinition> = AccessControlParams & {
   events: ServerEmitter
   handlers: ProcedureHandlers<Protocol>
   limiter: ResourceLimiter
   logger: Logger
   onInvocation?: InvocationHook
+  redact?: (procedure: string) => boolean
   replay?: ResolvedReplay | null
   runtime: Runtime
   signal: AbortSignal
@@ -119,6 +137,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     events,
     handlers,
     logger,
+    redact: params.redact,
     send: (payload, options) => safeWrite({ transport, payload, rid: options?.rid, ctx: context }),
     signal,
     streamHighWaterMark: params.streamHighWaterMark,
@@ -132,6 +151,31 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
    * rids never wait on each other, and the read loop never waits at all.
    */
   const pending: Record<string, Promise<void>> = Object.create(null)
+
+  type RawPayload = { prc?: unknown; rid?: unknown; typ?: unknown }
+
+  /**
+   * Redaction for raw or rid-routed messages. A live controller's procedure wins:
+   * the client-supplied `prc` is untrusted. Fails closed on an unknown procedure.
+   */
+  function isRedactedMessage(raw: RawPayload): boolean {
+    if (params.redact == null) {
+      return false
+    }
+    const { rid, prc: procedure, typ } = raw
+    const live = typeof rid === 'string' ? controllers[rid]?.procedure : undefined
+    if (live != null) {
+      return isRedacted(context, live)
+    }
+    // Auth still in flight: the controller and its procedure are not known yet.
+    if (typeof rid === 'string' && (typ === 'send' || typ === 'abort') && rid in pending) {
+      return true
+    }
+    if (typeof procedure !== 'string' || !Object.hasOwn(handlers, procedure)) {
+      return true
+    }
+    return isRedacted(context, procedure)
+  }
 
   function track(rid: string, result: void | Promise<void>): void {
     if (!(result instanceof Promise)) {
@@ -186,11 +230,19 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         // guard: keep it, but only log — there is no well-typed HandlerError
         // messageType for an arbitrary control message here, and no public
         // event shape to invent one for.
-        logger.warn('failed to deliver {typ} message for {rid}', {
-          typ: payload.typ,
-          rid,
-          cause,
-        })
+        if (isRedactedMessage(payload as RawPayload)) {
+          logger.warn('failed to deliver {typ} message for {rid}: {name}', {
+            typ: payload.typ,
+            rid,
+            name: getErrorName(cause),
+          })
+        } else {
+          logger.warn('failed to deliver {typ} message for {rid}', {
+            typ: payload.typ,
+            rid,
+            cause,
+          })
+        }
       }
     }
     // A rejected barrier still delivers: an auth failure leaves no controller
@@ -320,44 +372,72 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     signal,
   })
 
+  type ReportInvalidMessageParams = {
+    message: unknown
+    raw: RawPayload
+    cause: Error
+    redacted: boolean
+  }
+
+  function reportInvalidMessage(report: ReportInvalidMessageParams): void {
+    const { message, raw, cause, redacted } = report
+    if (redacted) {
+      const live = typeof raw.rid === 'string' ? controllers[raw.rid]?.procedure : undefined
+      const known =
+        typeof raw.prc === 'string' && Object.hasOwn(handlers, raw.prc) ? raw.prc : undefined
+      const properties: Record<string, string> = {}
+      if (typeof raw.typ === 'string') properties.type = raw.typ
+      if (typeof raw.rid === 'string') properties.rid = raw.rid
+      if ((live ?? known) != null) properties.procedure = (live ?? known) as string
+      logger.debug('received invalid {type} message with ID {rid}', properties)
+    } else {
+      logger.debug('received invalid message', { error: cause })
+    }
+    events.emit('invalidMessage', {
+      error: new Error('Invalid protocol message', { cause }),
+      message,
+    })
+    // If the raw message carries a rid on a reply-capable type, send an
+    // error reply instead of leaving the client to hang forever.
+    const { rid, typ } = raw
+    if (
+      typeof rid === 'string' &&
+      (typ === 'request' || typ === 'stream' || typ === 'channel' || typ === 'send')
+    ) {
+      const error = new HandlerError({
+        code: ErrorCodes.INVALID_MESSAGE,
+        message: 'Invalid protocol message',
+      })
+      context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
+    }
+  }
+
   const processMessage = validator
     ? (message: unknown) => {
         const result = validator(message)
         if (result instanceof ValidationError) {
+          const rawPayload =
+            message != null && typeof message === 'object' && 'payload' in message
+              ? (message as { payload: unknown }).payload
+              : undefined
+          const raw = (
+            rawPayload != null && typeof rawPayload === 'object' ? rawPayload : {}
+          ) as RawPayload
+          // ValidationError holds the invalid value.
+          const redacted = isRedactedMessage(raw)
           const validationSpan = params.tracer.startSpan(EnkakuSpanNames.SERVER_HANDLE, {
             attributes: { [AttributeKeys.RPC_SYSTEM]: 'enkaku' },
           })
           validationSpan.addEvent('enkaku.validation', {
             [EnkakuAttributeKeys.VALIDATION_SUCCESS]: false,
-            [EnkakuAttributeKeys.VALIDATION_ERROR]: result.message,
+            [EnkakuAttributeKeys.VALIDATION_ERROR]: redacted
+              ? REDACTED_ERROR_MESSAGE
+              : result.message,
           })
           validationSpan.setStatus({ code: SpanStatusCode.ERROR, message: 'Validation failed' })
           validationSpan.end()
 
-          logger.debug('received invalid message', { error: result })
-          events.emit('invalidMessage', {
-            error: new Error('Invalid protocol message', { cause: result }),
-            message,
-          })
-          // If the raw message carries a rid on a reply-capable type, send an
-          // error reply instead of leaving the client to hang forever.
-          const rawPayload =
-            message != null && typeof message === 'object' && 'payload' in message
-              ? (message as { payload: unknown }).payload
-              : undefined
-          if (rawPayload != null && typeof rawPayload === 'object') {
-            const { rid, typ } = rawPayload as { rid?: unknown; typ?: unknown }
-            if (
-              typeof rid === 'string' &&
-              (typ === 'request' || typ === 'stream' || typ === 'channel' || typ === 'send')
-            ) {
-              const error = new HandlerError({
-                code: ErrorCodes.INVALID_MESSAGE,
-                message: 'Invalid protocol message',
-              })
-              context.send(error.toPayload(rid) as AnyServerPayloadOf<Protocol>, { rid })
-            }
-          }
+          reportInvalidMessage({ message, raw, cause: result, redacted })
           return null
         }
         return (result as StandardSchemaV1.SuccessResult<AnyClientMessageOf<Protocol>>).value
@@ -540,10 +620,14 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
     )
   }
 
-  function wrapHandle(
-    span: Span,
-    handle: () => Error | Promise<void>,
-  ): () => Error | Promise<void> {
+  type WrapHandleParams = {
+    span: Span
+    handle: () => Error | Promise<void>
+    redacted: boolean
+  }
+
+  function wrapHandle(wrap: WrapHandleParams): () => Error | Promise<void> {
+    const { span, handle, redacted } = wrap
     return () => {
       const spanCtx = setSpanOnContext(undefined, span)
       const result = withActiveContext(spanCtx, () => {
@@ -557,9 +641,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               (handlerResult as Record<string, unknown>).code as string,
             )
           }
-          handlerSpan.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, handlerResult.message)
-          handlerSpan.setStatus({ code: SpanStatusCode.ERROR, message: handlerResult.message })
-          handlerSpan.recordException(handlerResult)
+          recordSpanError(handlerSpan, handlerResult, redacted)
           handlerSpan.end()
           return handlerResult
         }
@@ -576,9 +658,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
                 (err as Record<string, unknown>).code as string,
               )
             }
-            handlerSpan.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, err.message)
-            handlerSpan.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
-            handlerSpan.recordException(err)
+            recordSpanError(handlerSpan, err, redacted)
             handlerSpan.end()
           })
 
@@ -592,9 +672,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             (result as Record<string, unknown>).code as string,
           )
         }
-        span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, result.message)
-        span.setStatus({ code: SpanStatusCode.ERROR, message: result.message })
-        span.recordException(result)
+        recordSpanError(span, result, redacted)
         span.end()
         return result
       }
@@ -610,9 +688,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               (err as Record<string, unknown>).code as string,
             )
           }
-          span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, err.message)
-          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message })
-          span.recordException(err)
+          recordSpanError(span, err, redacted)
           span.end()
         })
       return result
@@ -628,6 +704,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
   ): Promise<void> {
     const payload = message.payload
     const rid = payload.typ === 'event' ? (eventRID as string) : payload.rid
+    const redacted = isRedacted(context, payload.prc)
     const controller = new AbortController()
     const invocationSignal = AbortSignal.any([signal, disposer.signal, controller.signal])
     invocationControllers.set(rid, controller)
@@ -650,11 +727,19 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         code: rejected ? cause.code : ErrorCodes.HANDLER_ERROR,
         message: rejected ? cause.message : 'Invocation hook failed',
       })
-      if (!rejected) logger.warn('invocation hook failed', { cause })
+      if (!rejected) {
+        if (redacted) {
+          logger.warn('invocation hook failed for {procedure}: {name}', {
+            procedure: payload.prc,
+            rid,
+            name: getErrorName(cause),
+          })
+        } else {
+          logger.warn('invocation hook failed', { cause })
+        }
+      }
       span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, error.code)
-      span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, error.message)
-      span.setStatus({ code: SpanStatusCode.ERROR, message: error.message })
-      span.recordException(error)
+      recordSpanError(span, error, redacted)
       span.end()
       if (payload.typ !== 'event') {
         context.send(error.toPayload(payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -671,7 +756,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
       span.end()
       return
     }
-    processHandler(message, wrapHandle(span, handle), eventRID)
+    processHandler(message, wrapHandle({ span, handle, redacted }), eventRID)
   }
 
   const process = !params.requireAuth
@@ -700,7 +785,11 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
         if (params.onInvocation != null) {
           return invokeHook(message, span, handle, eventRID)
         }
-        processHandler(message, wrapHandle(span, handle), eventRID)
+        processHandler(
+          message,
+          wrapHandle({ span, handle, redacted: isRedacted(context, message.payload.prc) }),
+          eventRID,
+        )
       }
     : async (
         message: ProcessMessageOf<Protocol>,
@@ -714,6 +803,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           })
         }
 
+        const redacted = isRedacted(context, message.payload.prc)
         let decision: AccessDecision
         try {
           if (!isSignedToken(message as Token)) {
@@ -753,7 +843,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             span.setAttribute(EnkakuAttributeKeys.AUTH_DID, did)
           }
           span.setAttribute(EnkakuAttributeKeys.AUTH_ALLOWED, false)
-          if (!(cause as Error).message?.includes('unsigned')) {
+          if (!redacted && !(cause as Error).message?.includes('unsigned')) {
             span.setAttribute(EnkakuAttributeKeys.AUTH_REASON, (cause as Error).message)
           }
 
@@ -763,9 +853,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
             message: (cause as Error).message ?? 'Access denied',
           })
           span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, error.code)
-          span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, error.message)
-          span.setStatus({ code: SpanStatusCode.ERROR, message: error.message })
-          span.recordException(error)
+          recordSpanError(span, error, redacted)
           span.end()
 
           if (message.payload.typ !== 'event') {
@@ -812,9 +900,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
               message: 'Replay detected',
             })
             span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, error.code)
-            span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, error.message)
-            span.setStatus({ code: SpanStatusCode.ERROR, message: error.message })
-            span.recordException(error)
+            recordSpanError(span, error, redacted)
             span.end()
             if (message.payload.typ !== 'event') {
               context.send(error.toPayload(message.payload.rid) as AnyServerPayloadOf<Protocol>, {
@@ -831,7 +917,7 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
           return
         }
 
-        processHandler(message, wrapHandle(span, handle), eventRID)
+        processHandler(message, wrapHandle({ span, handle, redacted }), eventRID)
       }
 
   async function handleNext() {
@@ -1079,9 +1165,31 @@ async function handleMessages<Protocol extends ProtocolDefinition>(
                 return
               }
             }
+            // Routed by rid: only a channel of the named procedure takes the value.
+            if (!('writer' in controller) || sendPayload.prc !== controller.procedure) {
+              reportInvalidMessage({
+                message: msg,
+                raw: sendPayload,
+                cause: new Error('Send procedure does not match the channel procedure'),
+                redacted: isRedactedMessage(sendPayload),
+              })
+              return
+            }
+            // Before the write: the controller may be gone when it rejects.
+            const redacted = isRedactedMessage(sendPayload)
             controller.writer.write(sendPayload.val).catch((cause) => {
               const error = new Error('Failed to write to channel', { cause })
-              logger.debug('failed to write send value to channel {rid}', { rid: sendRID, cause })
+              if (redacted) {
+                logger.debug('failed to write send value to channel {rid}: {name}', {
+                  rid: sendRID,
+                  name: getErrorName(cause),
+                })
+              } else {
+                logger.debug('failed to write send value to channel {rid}', {
+                  rid: sendRID,
+                  cause,
+                })
+              }
               events.emit('writeFailed', { error, rid: sendRID })
             })
           })
@@ -1114,6 +1222,28 @@ export type ServerAccessOptions =
   | { identity?: undefined; requireAuth: false; accessRules?: never }
   | { identity: Identity; accessRules?: AccessRules }
 
+export type RedactProcedures = Array<string> | ((procedure: string) => boolean)
+
+function toRedactPredicate(
+  redact: RedactProcedures | undefined,
+): ((procedure: string) => boolean) | undefined {
+  if (redact == null) {
+    return undefined
+  }
+  if (typeof redact === 'function') {
+    return (procedure) => {
+      try {
+        return redact(procedure)
+      } catch {
+        // Fail closed: a broken predicate must not leak payloads.
+        return true
+      }
+    }
+  }
+  const procedures = new Set(redact)
+  return (procedure) => procedures.has(procedure)
+}
+
 export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   cache?: DIDCache
   encryptionPolicy?: EncryptionPolicy
@@ -1131,6 +1261,8 @@ export type ServerBaseParams<Protocol extends ProtocolDefinition> = {
   logger?: Logger
   onInvocation?: InvocationHook
   protocol?: Protocol
+  /** Procedures whose params, values, results and error details are never logged. */
+  redactProcedures?: RedactProcedures
   replay?: ReplayOptions
   /** Verifies token and capability signatures. Defaults to strict `nobleCrypto`; captured once. */
   crypto?: CryptoProvider
@@ -1168,6 +1300,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
   #limiter: ResourceLimiter
   #onInvocation?: InvocationHook
   #logger: Logger
+  #redact?: (procedure: string) => boolean
   #replay: ResolvedReplay | null
   #tracer: Tracer
   #streamHighWaterMark: number
@@ -1244,6 +1377,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
     this.#events = new EventEmitter<ServerEvents>()
     this.#runtime = params.runtime ?? createRuntime()
     this.#onInvocation = params.onInvocation
+    this.#redact = toRedactPredicate(params.redactProcedures)
     this.#handlers = params.handlers
     this.#streamHighWaterMark = streamHighWaterMark
     this.#cache = params.cache ?? createInMemoryDIDCache()
@@ -1371,6 +1505,7 @@ export class Server<Protocol extends ProtocolDefinition> extends Disposer {
       limiter: this.#limiter,
       logger,
       onInvocation: options.onInvocation ?? this.#onInvocation,
+      redact: this.#redact,
       replay: this.#replay,
       runtime: this.#runtime,
       signal: this.#abortController.signal,

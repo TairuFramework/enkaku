@@ -37,6 +37,7 @@ export {
   type ReplayOptions,
 } from './replay.js'
 export {
+  type RedactProcedures,
   type ServeParams,
   Server,
   type ServerAccessOptions,

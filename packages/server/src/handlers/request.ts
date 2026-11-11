@@ -1,7 +1,7 @@
 import type { ClientMessage, ProtocolDefinition, RequestPayloadOf } from '@enkaku/protocol'
 
 import type { HandlerContext, RequestController, RequestHandler } from '../types.js'
-import { executeHandler } from '../utils.js'
+import { executeHandler, isRedacted } from '../utils.js'
 
 export type RequestMessageOf<
   Protocol extends ProtocolDefinition,
@@ -21,7 +21,8 @@ export function handleRequest<
   }
 
   const param = msg.payload.prm
-  if (param == null) {
+  const redacted = isRedacted(ctx, msg.payload.prc)
+  if (param == null || redacted) {
     ctx.logger.trace('handle request {procedure} with ID {rid}', {
       procedure: msg.payload.prc,
       rid: msg.payload.rid,
@@ -35,7 +36,10 @@ export function handleRequest<
   }
 
   const issuer = (msg.payload as Record<string, unknown>).iss as string | undefined
-  const controller: RequestController = Object.assign(new AbortController(), { issuer })
+  const controller: RequestController = Object.assign(new AbortController(), {
+    issuer,
+    procedure: msg.payload.prc,
+  })
   ctx.controllers[msg.payload.rid] = controller
 
   const handlerContext = {

@@ -176,6 +176,7 @@ describe('useRequest', () => {
   })
 
   test('can be used with use() to suspend', async () => {
+    // biome-ignore lint/correctness/noComponentHookFactories: test-local component
     const Request = () => {
       const request = useRequest<Protocol>('test', { message: 'Suspend' })
       const result = use(request)
@@ -200,6 +201,7 @@ describe('useRequest', () => {
 describe('useResult', () => {
   // TODO: this test fails because the DOM contains 2 <span data-testid="result">
   test.skip('suspends to return the result', async () => {
+    // biome-ignore lint/correctness/noComponentHookFactories: test-local component
     const Result = () => {
       const result = useRequestResult<Protocol>('test', { message: 'Suspend' })
       return <span data-testid="result">{result.ok ? 'OK' : 'Error'}</span>

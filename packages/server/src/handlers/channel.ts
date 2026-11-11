@@ -15,7 +15,7 @@ import type {
   ReceiveType,
   SendType,
 } from '../types.js'
-import { executeHandler } from '../utils.js'
+import { executeHandler, isRedacted } from '../utils.js'
 
 export type ChannelMessageOf<
   Protocol extends ProtocolDefinition,
@@ -35,7 +35,8 @@ export function handleChannel<
   }
 
   const param = msg.payload.prm
-  if (param == null) {
+  const redacted = isRedacted(ctx, msg.payload.prc)
+  if (param == null || redacted) {
     ctx.logger.trace('handle channel {procedure} with ID {rid}', {
       procedure: msg.payload.prc,
       rid: msg.payload.rid,
@@ -54,7 +55,7 @@ export function handleChannel<
   const issuer = (msg.payload as Record<string, unknown>).iss as string | undefined
   const controller: ChannelController<SendType<Protocol, Procedure>> = Object.assign(
     new AbortController(),
-    { issuer, writer: sendStream.writable.getWriter() },
+    { issuer, procedure: msg.payload.prc, writer: sendStream.writable.getWriter() },
   )
   controller.signal.addEventListener('abort', () => {
     controller.writer.close().catch(() => {
@@ -76,11 +77,18 @@ export function handleChannel<
           [EnkakuAttributeKeys.MESSAGE_DIRECTION]: 'send',
         })
       }
-      ctx.logger.trace('send value to channel {procedure} with ID {rid}: {val}', {
-        procedure: msg.payload.prc,
-        rid: msg.payload.rid,
-        val,
-      })
+      if (redacted) {
+        ctx.logger.trace('send value to channel {procedure} with ID {rid}', {
+          procedure: msg.payload.prc,
+          rid: msg.payload.rid,
+        })
+      } else {
+        ctx.logger.trace('send value to channel {procedure} with ID {rid}: {val}', {
+          procedure: msg.payload.prc,
+          rid: msg.payload.rid,
+          val,
+        })
+      }
       await ctx.send(
         {
           typ: 'receive',
@@ -100,11 +108,18 @@ export function handleChannel<
           [EnkakuAttributeKeys.MESSAGE_DIRECTION]: 'receive',
         })
       }
-      ctx.logger.trace('received value from channel {procedure} with ID {rid}: {value}', {
-        procedure: msg.payload.prc,
-        rid: msg.payload.rid,
-        value,
-      })
+      if (redacted) {
+        ctx.logger.trace('received value from channel {procedure} with ID {rid}', {
+          procedure: msg.payload.prc,
+          rid: msg.payload.rid,
+        })
+      } else {
+        ctx.logger.trace('received value from channel {procedure} with ID {rid}: {value}', {
+          procedure: msg.payload.prc,
+          rid: msg.payload.rid,
+          value,
+        })
+      }
     }),
   )
 

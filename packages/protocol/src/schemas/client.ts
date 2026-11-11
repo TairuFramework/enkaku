@@ -163,13 +163,11 @@ export function createClientMessageSchema(
     const def = definition as AnyProcedureDefinition
     switch (def.type) {
       case 'event':
-        if (def.data != null) {
-          schemasRecord[def.data?.$id ?? `${procedure}:data`] = createEventMessageSchema(
-            procedure,
-            def,
-            type,
-          )
-        }
+        schemasRecord[def.data?.$id ?? `${procedure}:data`] = createEventMessageSchema(
+          procedure,
+          def,
+          type,
+        )
         break
       // biome-ignore lint/suspicious/noFallthroughSwitchClause: fallthrough is intentional
       case 'channel':

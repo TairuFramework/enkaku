@@ -41,6 +41,7 @@ export function useAsyncState<V>(
     loading: true,
   })
 
+  // biome-ignore-start lint/correctness/useExhaustiveDependencies: deps are supplied by the caller
   useEffect(() => {
     const generation = ++generationRef.current
     const controller = new AbortController()
@@ -85,6 +86,7 @@ export function useAsyncState<V>(
       }
     }
   }, deps)
+  // biome-ignore-end lint/correctness/useExhaustiveDependencies: deps are supplied by the caller
 
   return state
 }

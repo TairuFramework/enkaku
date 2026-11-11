@@ -395,3 +395,30 @@ describe('H-05: string length constraints', () => {
     ).toBe(true)
   })
 })
+
+describe('events without data', () => {
+  const dataless = {
+    'test/ping': { type: 'event' },
+    'test/request': { type: 'request', result: { type: 'string' } },
+  } as const satisfies ProtocolDefinition
+
+  test('accepts an event without data', () => {
+    const validator = createValidator({
+      ...createClientMessageSchema(dataless),
+      $id: 'client-dataless',
+    })
+    const ping = createUnsignedToken({ payload: { typ: 'event', prc: 'test/ping' } })
+    expect(isType(validator, ping)).toBe(true)
+  })
+
+  test('rejects data on an event that declares none', () => {
+    const validator = createValidator({
+      ...createClientMessageSchema(dataless),
+      $id: 'client-dataless-extra',
+    })
+    const ping = createUnsignedToken({
+      payload: { typ: 'event', prc: 'test/ping', data: { foo: 'bar' } },
+    })
+    expect(isType(validator, ping)).toBe(false)
+  })
+})
