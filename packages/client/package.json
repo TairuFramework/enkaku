@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@enkaku/otel": "workspace:^",
+    "@enkaku/protocol": "workspace:^",
     "@kokuin/token": "catalog:",
     "@sozai/async": "catalog:",
     "@sozai/event": "catalog:",
@@ -47,7 +48,6 @@
     "@sozai/stream": "catalog:"
   },
   "devDependencies": {
-    "@enkaku/protocol": "workspace:^",
     "@enkaku/transport": "workspace:^"
   },
   "publishConfig": {

@@ -45,13 +45,16 @@
   },
   "dependencies": {
     "@enkaku/client": "workspace:^",
+    "@enkaku/protocol": "workspace:^",
     "@enkaku/server": "workspace:^",
     "@enkaku/transport": "workspace:^"
   },
   "devDependencies": {
-    "@enkaku/protocol": "workspace:^",
     "electron": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "electron": ">=45.0.0"
   },
   "publishConfig": {
     "access": "public"
