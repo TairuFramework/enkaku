@@ -1,5 +1,14 @@
 # @enkaku/server
 
+## 0.23.3
+
+### Patch Changes
+
+- Deliver a channel send only when its procedure matches the channel's procedure. Other sends are rejected as invalid messages.
+
+- Add a redactProcedures server option: the server never logs params, values, results or error details of the matching procedures, at any level, and their spans record only the error code and name.
+  Export the RedactProcedures type.
+
 ## 0.23.2
 
 ## 0.23.1

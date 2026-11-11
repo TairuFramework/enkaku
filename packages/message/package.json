@@ -1,6 +1,6 @@
 {
   "name": "@enkaku/message",
-  "version": "0.23.2",
+  "version": "0.23.3",
   "description": "MessagePort transport for Enkaku RPC clients and servers",
   "keywords": [
     "message",

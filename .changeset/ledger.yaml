@@ -110,6 +110,10 @@
   dir: packages/protocol
   intents:
     - declare-workspace-deps
+"@enkaku/protocol@0.23.3":
+  dir: packages/protocol
+  intents:
+    - event-without-data-schema
 "@enkaku/react@0.21.0":
   dir: packages/react
   intents:
@@ -159,6 +163,11 @@
   dir: packages/server
   intents:
     - invocation-hook
+"@enkaku/server@0.23.3":
+  dir: packages/server
+  intents:
+    - channel-send-procedure-check
+    - redact-procedure-payloads
 "@enkaku/socket@0.21.0":
   dir: packages/socket
   intents:

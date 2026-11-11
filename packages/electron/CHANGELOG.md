@@ -1,5 +1,7 @@
 # @enkaku/electron
 
+## 0.23.3
+
 ## 0.23.2
 
 ### Patch Changes

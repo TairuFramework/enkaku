@@ -1,5 +1,11 @@
 # @enkaku/protocol
 
+## 0.23.3
+
+### Patch Changes
+
+- Include events that declare no data in the client message schema, so validating servers accept them.
+
 ## 0.23.2
 
 ### Patch Changes
