@@ -48,6 +48,19 @@ export class ResponseError extends Error {
   }
 }
 
+const PEER_RESET_CODES = new Set(['ECONNRESET', 'EPIPE', 'UND_ERR_SOCKET'])
+
+function isPeerReset(error: unknown): boolean {
+  for (let current = error, depth = 0; current != null && depth < 4; depth++) {
+    const code = (current as { code?: unknown }).code
+    if (typeof code === 'string' && PEER_RESET_CODES.has(code)) {
+      return true
+    }
+    current = (current as { cause?: unknown }).cause
+  }
+  return false
+}
+
 type SSESessionState =
   | { status: 'idle' }
   | { status: 'connecting'; promise: Promise<string> }
@@ -120,12 +133,24 @@ export function createTransportStream<Protocol extends ProtocolDefinition>(
           requestHeaders.traceparent = traceparent
         }
       }
-      const res = await runtime.fetch(params.url, {
+      const init: RequestInit = {
         method: 'POST',
         body: JSON.stringify(msg),
         headers: requestHeaders,
         signal,
-      })
+      }
+      let res: Response
+      try {
+        res = await runtime.fetch(params.url, init)
+      } catch (error) {
+        if (signal?.aborted || !isPeerReset(error)) {
+          throw error
+        }
+        // A pooled keep-alive socket the server already closed (e.g. after a restart on the
+        // same port) fails the next POST before it is sent. Retry once on a fresh connection.
+        span.addEvent('retry', { 'error.message': (error as Error).message })
+        res = await runtime.fetch(params.url, init)
+      }
       span.setAttribute(AttributeKeys.HTTP_STATUS_CODE, res.status)
       if (!res.ok) {
         span.setStatus({ code: SpanStatusCode.ERROR, message: `HTTP ${res.status}` })
