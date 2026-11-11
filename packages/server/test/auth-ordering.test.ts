@@ -89,9 +89,8 @@ describe('auth-mode message ordering', () => {
     // The send has raced ahead while the channel is stuck in its access check.
     await new Promise((resolve) => setTimeout(resolve, 20))
     gate.resolve()
-    await new Promise((resolve) => setTimeout(resolve, 50))
 
-    expect(receivedValues).toEqual(['hello'])
+    await vi.waitFor(() => expect(receivedValues).toEqual(['hello']), { timeout: 2000 })
 
     await server.dispose()
     await transports.dispose()
@@ -173,11 +172,11 @@ describe('auth-mode message ordering', () => {
     expect(received).toEqual([])
 
     gate.resolve()
-    await new Promise((resolve) => setTimeout(resolve, 80))
 
     // Arrival order must be preserved: this is the property `deliverInOrder`
     // exists for, and it only shows up with more than one queued message per rid.
-    expect(received).toEqual(['one', 'two', 'three'])
+    // Poll rather than sleep: each send verifies a signature, slow on CI runners.
+    await vi.waitFor(() => expect(received).toEqual(['one', 'two', 'three']), { timeout: 2000 })
 
     await server.dispose()
     await transports.dispose()
@@ -249,15 +248,12 @@ describe('auth-mode message ordering', () => {
     await write({ typ: 'channel', prc: 'chat', rid: 'c2' })
     await write({ typ: 'send', prc: 'chat', rid: 'c2', val: 'free' })
 
-    await new Promise((resolve) => setTimeout(resolve, 50))
-
     // c2 flows while c1 is still stuck in its access check.
-    expect(receivedByRID.c2).toEqual(['free'])
+    await vi.waitFor(() => expect(receivedByRID.c2).toEqual(['free']), { timeout: 2000 })
     expect(receivedByRID.c1).toEqual([])
 
     gate.resolve()
-    await new Promise((resolve) => setTimeout(resolve, 50))
-    expect(receivedByRID.c1).toEqual(['blocked'])
+    await vi.waitFor(() => expect(receivedByRID.c1).toEqual(['blocked']), { timeout: 2000 })
 
     await server.dispose()
     await transports.dispose()
@@ -383,12 +379,12 @@ describe('auth-mode message ordering', () => {
       await transports.client.write(msg as unknown as AnyClientMessageOf<Protocol>)
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 20))
-    // Release before asserting: the counter is already captured, and a failing
-    // expectation must not leave three access checks hanging on the gate.
-    gate.resolve()
-    await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(maxConcurrent).toBe(3)
+    // Release before a failing expectation could leave three access checks hanging on the gate.
+    try {
+      await vi.waitFor(() => expect(maxConcurrent).toBe(3), { timeout: 2000 })
+    } finally {
+      gate.resolve()
+    }
 
     await server.dispose()
     await transports.dispose()
