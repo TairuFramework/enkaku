@@ -443,7 +443,8 @@ export class Client<
         this.#events.emit('transportError', { error })
         const newTransport = this.#handleTransportError?.(error)
         if (newTransport == null) {
-          this.#logger.warn('aborting following unhanded transport error')
+          // The abort reason and the transportError event carry the error to the caller, which owns any retry.
+          this.#logger.debug('aborting following unhandled transport error', { cause })
           // Abort client if no new transport is provided
           this.abort(error)
         } else {
