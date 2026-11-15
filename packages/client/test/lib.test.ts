@@ -221,7 +221,10 @@ describe('Client', () => {
       expect(client.signal.aborted).toBe(true)
       expect((client.signal.reason as Error).message).toBe('Transport read failed')
       expect(logger.debug).toHaveBeenCalledWith('failed to read from transport', { cause })
-      expect(logger.warn).toHaveBeenCalledWith('aborting following unhanded transport error')
+      expect(logger.debug).toHaveBeenCalledWith('aborting following unhandled transport error', {
+        cause,
+      })
+      expect(logger.warn).not.toHaveBeenCalled()
     })
 
     test('aborts the client if no handler provided', async () => {
@@ -251,7 +254,10 @@ describe('Client', () => {
       expect((client.signal.reason as Error).message).toBe('Transport read failed')
       expect((client.signal.reason as Error).cause).toBe(cause)
       expect(logger.debug).toHaveBeenCalledWith('failed to read from transport', { cause })
-      expect(logger.warn).toHaveBeenCalledWith('aborting following unhanded transport error')
+      expect(logger.debug).toHaveBeenCalledWith('aborting following unhandled transport error', {
+        cause,
+      })
+      expect(logger.warn).not.toHaveBeenCalled()
     })
 
     test('does not call the handler if the client itself is aborted', async () => {
