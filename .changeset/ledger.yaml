@@ -26,6 +26,10 @@
   dir: packages/client
   intents:
     - declare-workspace-deps
+"@enkaku/client@0.23.4":
+  dir: packages/client
+  intents:
+    - quiet-unhandled-transport-abort
 "@enkaku/electron@0.22.0":
   dir: packages/electron
   intents:

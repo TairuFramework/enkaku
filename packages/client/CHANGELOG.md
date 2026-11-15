@@ -1,5 +1,11 @@
 # @enkaku/client
 
+## 0.23.4
+
+### Patch Changes
+
+- Log a client abort after an unhandled transport error at debug, with its cause. The abort reason and the `transportError` event already report it to the caller.
+
 ## 0.23.3
 
 ## 0.23.2
