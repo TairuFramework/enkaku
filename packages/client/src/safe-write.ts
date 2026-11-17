@@ -1,6 +1,6 @@
 import { isBenignTeardownError } from '@sozai/async'
 
-import type { ClientEmitter } from './events.js'
+import type { ClientEmitter, ClientEvents } from './events.js'
 
 export type WriteTarget = { write: (message: unknown) => Promise<void> }
 
@@ -10,6 +10,8 @@ export type SafeWriteParams = {
   rid?: string
   events: ClientEmitter
   signal: AbortSignal
+  request?: ClientEvents['requestWritten']
+  onWritten?: () => void
   /**
    * Called with the raw transport error when a write fails for a reason that
    * is NOT a benign teardown. Benign teardown errors are absorbed as
@@ -36,6 +38,8 @@ export async function safeWrite(params: SafeWriteParams): Promise<void> {
   const { transport, message, rid, events, signal, onFailure } = params
   try {
     await transport.write(message)
+    params.onWritten?.()
+    if (params.request != null) events.fire('requestWritten', params.request)
     return
   } catch (error) {
     if (isBenignTeardownError(error) && signal.aborted) {

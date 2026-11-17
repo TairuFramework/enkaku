@@ -129,6 +129,7 @@ type RequestController<Result> = AbortController &
     error: (error: RequestError) => void
     aborted: (signal: AbortSignal) => void
     header?: AnyHeader
+    written: boolean
     readonly settled: boolean
   }
 
@@ -157,6 +158,7 @@ function createController<T>(
   }
   const controller = Object.assign(new AbortController(), params, {
     result: deferred.promise,
+    written: false,
     ok: (value: T) => {
       deferred.resolve(value)
       finish()
@@ -296,6 +298,14 @@ export class Client<
   ClientDefinitions extends ClientDefinitionsType<Protocol> = ClientDefinitionsType<Protocol>,
 > extends Disposer {
   #controllers: Record<string, AnyClientController> = Object.create(null)
+  #tombstones = new Map<
+    string,
+    {
+      procedure: string
+      terminal: Exclude<ClientEvents['lateReply']['terminal'], 'unknown'>
+      at: number
+    }
+  >()
   #createMessage: CreateMessage<Protocol>
   #runtime: Runtime
   #spans: Record<string, Span> = Object.create(null)
@@ -372,19 +382,47 @@ export class Client<
     this.#read()
   }
 
+  #pruneTombstones(now: number): void {
+    for (const [rid, tombstone] of this.#tombstones) {
+      if (now - tombstone.at < 600_000 && this.#tombstones.size <= 1000) break
+      this.#tombstones.delete(rid)
+    }
+  }
+
+  #recordTerminal(
+    meta: { rid: string; procedure: string },
+    terminal: Exclude<ClientEvents['lateReply']['terminal'], 'unknown'>,
+  ): void {
+    const at = Date.now()
+    this.#tombstones.delete(meta.rid)
+    this.#tombstones.set(meta.rid, { procedure: meta.procedure, terminal, at })
+    this.#pruneTombstones(at)
+  }
+
   #endSpanOnResult(
     span: Span,
-    result: Promise<unknown>,
+    controller: AnyClientController,
     meta: { rid: string; procedure: string },
+    providedSignal?: AbortSignal,
   ): void {
-    result.then(
+    controller.result.then(
       () => {
+        this.#recordTerminal(meta, 'completed')
         span.setStatus({ code: SpanStatusCode.OK })
         span.end()
         this.#events.emit('requestEnd', { ...meta, status: 'ok' })
         delete this.#spans[meta.rid]
       },
       (error) => {
+        const signal = providedSignal?.aborted ? providedSignal : controller.signal
+        this.#recordTerminal(
+          meta,
+          signal.reason instanceof RequestTimeoutError
+            ? 'timeout'
+            : signal.aborted
+              ? 'aborted'
+              : 'completed',
+        )
         if (error instanceof RequestError) {
           span.setAttribute(EnkakuAttributeKeys.ERROR_CODE, error.code)
           span.setAttribute(EnkakuAttributeKeys.ERROR_MESSAGE, error.message)
@@ -461,6 +499,15 @@ export class Client<
       try {
         const controller = this.#controllers[msg.payload.rid]
         if (controller == null) {
+          const now = Date.now()
+          this.#pruneTombstones(now)
+          const tombstone = this.#tombstones.get(msg.payload.rid)
+          this.#events.fire('lateReply', {
+            rid: msg.payload.rid,
+            procedure: tombstone?.procedure ?? null,
+            terminal: tombstone?.terminal ?? 'unknown',
+            sinceTerminalMs: tombstone == null ? null : now - tombstone.at,
+          })
           this.#logger.warn('controller not found for request {rid}', {
             rid: msg.payload.rid,
           })
@@ -537,6 +584,19 @@ export class Client<
       rid,
       events: this.#events,
       signal: this.signal,
+      request:
+        owner != null &&
+        (payload.typ === 'request' || payload.typ === 'stream' || payload.typ === 'channel')
+          ? { rid: payload.rid, procedure: owner.procedure, type: owner.type }
+          : undefined,
+      onWritten: () => {
+        if (
+          owner != null &&
+          (payload.typ === 'request' || payload.typ === 'stream' || payload.typ === 'channel')
+        ) {
+          owner.written = true
+        }
+      },
       onFailure: (error) => {
         // Abort the OWNING controller, and only if it has not already settled:
         // a map lookup could hit a reused-rid occupant; aborting a settled owner
@@ -740,7 +800,7 @@ export class Client<
       ),
     )
 
-    this.#endSpanOnResult(span, controller.result, { rid, procedure })
+    this.#endSpanOnResult(span, controller, { rid, procedure }, providedSignal)
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
@@ -748,10 +808,18 @@ export class Client<
       'timeout' in config ? (config as { timeout?: number }).timeout : this.#requestTimeoutMs,
     )
     if (effectiveTimeout > 0) {
+      const startedAt = Date.now()
       const timeoutTimer = setTimeout(() => {
         // Fire only if this controller has not already reached a terminal state.
         // Keyed off the controller's own `settled`, never map membership.
         if (!controller.settled) {
+          this.#events.fire('requestTimeout', {
+            rid,
+            procedure,
+            budgetMs: effectiveTimeout,
+            elapsedMs: Date.now() - startedAt,
+            written: controller.written,
+          })
           controller.abort(new RequestTimeoutError(procedure, effectiveTimeout))
         }
       }, effectiveTimeout)
@@ -872,7 +940,7 @@ export class Client<
       ),
     )
 
-    this.#endSpanOnResult(span, controller.result, { rid, procedure })
+    this.#endSpanOnResult(span, controller, { rid, procedure }, providedSignal)
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
@@ -1003,7 +1071,7 @@ export class Client<
       ),
     )
 
-    this.#endSpanOnResult(span, controller.result, { rid, procedure })
+    this.#endSpanOnResult(span, controller, { rid, procedure }, providedSignal)
 
     const signal = this.#handleSignal(rid, controller, providedSignal)
 
