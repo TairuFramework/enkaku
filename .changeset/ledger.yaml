@@ -30,6 +30,10 @@
   dir: packages/client
   intents:
     - quiet-unhandled-transport-abort
+"@enkaku/client@0.23.5":
+  dir: packages/client
+  intents:
+    - client-request-diagnostics-events
 "@enkaku/electron@0.22.0":
   dir: packages/electron
   intents:
@@ -38,6 +42,10 @@
   dir: packages/electron
   intents:
     - declare-workspace-deps
+"@enkaku/electron@0.23.4":
+  dir: packages/electron
+  intents:
+    - client-request-diagnostics-events
 "@enkaku/http-fetch@0.21.0":
   dir: packages/http-fetch
   intents:
@@ -130,6 +138,10 @@
   dir: packages/react
   intents:
     - declare-workspace-deps
+"@enkaku/react@0.23.4":
+  dir: packages/react
+  intents:
+    - client-request-diagnostics-events
 "@enkaku/server@0.21.0":
   dir: packages/server
   intents:
@@ -197,6 +209,10 @@
   dir: packages/standalone
   intents:
     - declare-workspace-deps
+"@enkaku/standalone@0.23.4":
+  dir: packages/standalone
+  intents:
+    - client-request-diagnostics-events
 "@enkaku/transport@0.21.0":
   dir: packages/transport
   intents:
