@@ -34,6 +34,10 @@
   dir: packages/client
   intents:
     - client-request-diagnostics-events
+"@enkaku/client@0.23.6":
+  dir: packages/client
+  intents:
+    - client-dynamic-protocol-types
 "@enkaku/electron@0.22.0":
   dir: packages/electron
   intents:

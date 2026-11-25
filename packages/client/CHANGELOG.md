@@ -1,5 +1,11 @@
 # @enkaku/client
 
+## 0.23.6
+
+### Patch Changes
+
+- Keep event, request, stream and channel calls available on clients typed for a runtime protocol definition. Keep literal procedure and data checking strict.
+
 ## 0.23.5
 
 ### Patch Changes
