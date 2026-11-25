@@ -100,7 +100,6 @@ export function handleChannel<
     }),
   )
 
-  // @ts-expect-error type instantiation too deep
   const readable = sendStream.readable.pipeThrough(
     tap((value) => {
       if (activeSpan != null) {
@@ -134,7 +133,6 @@ export function handleChannel<
   return executeHandler({
     context: ctx,
     payload: msg.payload,
-    // @ts-expect-error handler context types
     execute: () => handler(handlerContext),
     beforeEnd: () => receiveStream.drain(pipePromise),
   })
