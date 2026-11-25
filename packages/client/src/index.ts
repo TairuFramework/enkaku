@@ -11,6 +11,7 @@
  */
 
 export type {
+  AnyRequestArguments,
   ChannelCall,
   ChannelDefinitionsType,
   ClientDefinitionsType,
@@ -18,6 +19,7 @@ export type {
   EventDefinitionsType,
   RequestCall,
   RequestDefinitionsType,
+  RequestOptions,
   StreamCall,
   StreamDefinitionsType,
 } from './client.js'

@@ -132,6 +132,23 @@ export type RequestArguments<Param> = Param extends never
   ? [config?: { param?: never; signal?: AbortSignal }]
   : [config: { param: Param; signal?: AbortSignal }]
 
+/** Options of a `request` call, apart from its param. */
+export type RequestOptions = {
+  header?: AnyHeader
+  /**
+   * Do not reuse the ID of an aborted call while its request may still be in flight:
+   * replies are matched by ID only.
+   */
+  id?: string
+  signal?: AbortSignal
+  timeout?: number
+}
+
+/** Arguments after the procedure name that `request` accepts for a procedure of any param type. */
+export type AnyRequestArguments =
+  | [config?: RequestOptions & { param?: never }]
+  | [config: RequestOptions & { param: unknown }]
+
 type RequestController<Result> = AbortController &
   RequestMeta & {
     result: Promise<Result>
@@ -726,32 +743,8 @@ export class Client<
   >(
     procedure: Procedure,
     ...args: T['Param'] extends never
-      ? [
-          config?: {
-            header?: AnyHeader
-            /**
-             * Do not reuse the ID of an aborted call while its request may still be in flight:
-             * replies are matched by ID only.
-             */
-            id?: string
-            param?: never
-            signal?: AbortSignal
-            timeout?: number
-          },
-        ]
-      : [
-          config: {
-            header?: AnyHeader
-            /**
-             * Do not reuse the ID of an aborted call while its request may still be in flight:
-             * replies are matched by ID only.
-             */
-            id?: string
-            param: T['Param']
-            signal?: AbortSignal
-            timeout?: number
-          },
-        ]
+      ? [config?: RequestOptions & { param?: never }]
+      : [config: RequestOptions & { param: T['Param'] }]
   ): RequestCall<T['Result']> & Promise<T['Result']> {
     const config = args[0] ?? {}
     const rid = config.id ?? this.#runtime.getRandomID()
