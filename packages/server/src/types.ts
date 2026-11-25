@@ -52,31 +52,30 @@ export type HandlerController<Send = unknown> = RequestController | ChannelContr
 export type EventHandlerContext<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends EventProcedureDefinition
+  Definition = Protocol[Procedure],
+> = Definition extends EventProcedureDefinition
   ? {
-      message: Message<EventCallPayload<Procedure, DataOf<Protocol[Procedure]['data']>>>
-      data: DataOf<Protocol[Procedure]['data']>
+      message: Message<EventCallPayload<Procedure, DataOf<Definition['data']>>>
+      data: DataOf<Definition['data']>
     }
   : never
 
 export type EventHandler<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = (context: EventHandlerContext<Protocol, Procedure>) => void | Promise<void>
+  Definition = Protocol[Procedure],
+> = (context: EventHandlerContext<Protocol, Procedure, Definition>) => void | Promise<void>
 
 export type RequestHandlerContext<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends AnyRequestProcedureDefinition
+  Definition = Protocol[Procedure],
+> = Definition extends AnyRequestProcedureDefinition
   ? {
       message: Message<
-        RequestCallPayload<
-          Protocol[Procedure]['type'],
-          Procedure,
-          DataOf<Protocol[Procedure]['param']>
-        >
+        RequestCallPayload<Definition['type'], Procedure, DataOf<Definition['param']>>
       >
-      param: DataOf<Protocol[Procedure]['param']>
+      param: DataOf<Definition['param']>
       signal: AbortSignal
     }
   : never
@@ -86,102 +85,115 @@ export type HandlerReturn<ResultSchema, Result = ReturnOf<ResultSchema>> = Resul
 export type RequestHandler<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends AnyRequestProcedureDefinition
+  Definition = Protocol[Procedure],
+> = Definition extends AnyRequestProcedureDefinition
   ? (
-      context: RequestHandlerContext<Protocol, Procedure>,
-    ) => HandlerReturn<Protocol[Procedure]['result']>
+      context: RequestHandlerContext<Protocol, Procedure, Definition>,
+    ) => HandlerReturn<Definition['result']>
   : never
 
 export type StreamHandlerContext<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends StreamProcedureDefinition | ChannelProcedureDefinition
-  ? RequestHandlerContext<Protocol, Procedure> & {
-      writable: WritableStream<DataOf<Protocol[Procedure]['receive']>>
+  Definition = Protocol[Procedure],
+> = Definition extends StreamProcedureDefinition | ChannelProcedureDefinition
+  ? RequestHandlerContext<Protocol, Procedure, Definition> & {
+      writable: WritableStream<DataOf<Definition['receive']>>
     }
   : never
 
 export type StreamHandler<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends StreamProcedureDefinition | ChannelProcedureDefinition
+  Definition = Protocol[Procedure],
+> = Definition extends StreamProcedureDefinition | ChannelProcedureDefinition
   ? (
-      context: StreamHandlerContext<Protocol, Procedure>,
-    ) => HandlerReturn<Protocol[Procedure]['result']>
+      context: StreamHandlerContext<Protocol, Procedure, Definition>,
+    ) => HandlerReturn<Definition['result']>
   : never
 
 export type ChannelHandlerContext<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends ChannelProcedureDefinition
-  ? StreamHandlerContext<Protocol, Procedure> & {
-      readable: ReadableStream<DataOf<Protocol[Procedure]['send']>>
+  Definition = Protocol[Procedure],
+> = Definition extends ChannelProcedureDefinition
+  ? StreamHandlerContext<Protocol, Procedure, Definition> & {
+      readable: ReadableStream<DataOf<Definition['send']>>
     }
   : never
 
 export type ChannelHandler<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends ChannelProcedureDefinition
+  Definition = Protocol[Procedure],
+> = Definition extends ChannelProcedureDefinition
   ? (
-      context: ChannelHandlerContext<Protocol, Procedure>,
-    ) => HandlerReturn<Protocol[Procedure]['result']>
+      context: ChannelHandlerContext<Protocol, Procedure, Definition>,
+    ) => HandlerReturn<Definition['result']>
   : never
 
+type ProcedureContext<
+  Protocol extends ProtocolDefinition,
+  Procedure extends keyof Protocol & string,
+> =
+  | EventHandlerContext<Protocol, Procedure>
+  | RequestHandlerContext<
+      Protocol,
+      Procedure,
+      Extract<Protocol[Procedure], RequestProcedureDefinition>
+    >
+  | StreamHandlerContext<
+      Protocol,
+      Procedure,
+      Extract<Protocol[Procedure], StreamProcedureDefinition>
+    >
+  | ChannelHandlerContext<Protocol, Procedure>
+
+type ProcedureReturn<Definition> = Definition extends EventProcedureDefinition
+  ? ReturnType<() => void>
+  : Definition extends AnyRequestProcedureDefinition
+    ? HandlerReturn<Definition['result']>
+    : never
+
 export type ProcedureHandlers<Protocol extends ProtocolDefinition> = {
-  [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition
-    ? (context: EventHandlerContext<Protocol, Procedure>) => void
-    : Protocol[Procedure] extends RequestProcedureDefinition
-      ? (
-          context: RequestHandlerContext<Protocol, Procedure>,
-        ) => HandlerReturn<Protocol[Procedure]['result']>
-      : Protocol[Procedure] extends StreamProcedureDefinition
-        ? (
-            context: StreamHandlerContext<Protocol, Procedure>,
-          ) => HandlerReturn<Protocol[Procedure]['result']>
-        : Protocol[Procedure] extends ChannelProcedureDefinition
-          ? (
-              context: ChannelHandlerContext<Protocol, Procedure>,
-            ) => HandlerReturn<Protocol[Procedure]['result']>
-          : never
+  [Procedure in keyof Protocol & string]: (
+    context: ProcedureContext<Protocol, Procedure>,
+  ) => ProcedureReturn<Protocol[Procedure]>
 }
 
 export type EventDataType<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends EventProcedureDefinition
-  ? DataOf<Protocol[Procedure]['data']>
-  : never
+  Definition = Protocol[Procedure],
+> = Definition extends EventProcedureDefinition ? DataOf<Definition['data']> : never
 
 export type ParamType<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends AnyRequestProcedureDefinition
-  ? DataOf<Protocol[Procedure]['param']>
-  : never
+  Definition = Protocol[Procedure],
+> = Definition extends AnyRequestProcedureDefinition ? DataOf<Definition['param']> : never
 
 export type ReceiveType<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends StreamProcedureDefinition
-  ? DataOf<Protocol[Procedure]['receive']>
-  : Protocol[Procedure] extends ChannelProcedureDefinition
-    ? DataOf<Protocol[Procedure]['receive']>
+  Definition = Protocol[Procedure],
+> = Definition extends StreamProcedureDefinition
+  ? DataOf<Definition['receive']>
+  : Definition extends ChannelProcedureDefinition
+    ? DataOf<Definition['receive']>
     : never
 
 export type ResultType<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends AnyRequestProcedureDefinition
-  ? DataOf<Protocol[Procedure]['result']>
-  : never
+  Definition = Protocol[Procedure],
+> = Definition extends AnyRequestProcedureDefinition ? DataOf<Definition['result']> : never
 
 export type SendType<
   Protocol extends ProtocolDefinition,
   Procedure extends keyof Protocol & string,
-> = Protocol[Procedure] extends ChannelProcedureDefinition
-  ? DataOf<Protocol[Procedure]['send']>
-  : never
+  Definition = Protocol[Procedure],
+> = Definition extends ChannelProcedureDefinition ? DataOf<Definition['send']> : never
 
 export type HandlerErrorCategory = 'auth' | 'limit' | 'encryption' | 'handler' | 'invocation'
 

@@ -67,17 +67,39 @@ function hostileTransport(settle: 'never' | 'immediate'): {
   return { transport, disposeCalls: () => calls }
 }
 
-function countTimers(): number {
-  return process.getActiveResourcesInfo().filter((resource) => resource === 'Timeout').length
-}
-
 /**
- * The test runner itself holds one short-lived timer for the first ~100ms of a
- * worker's life; wait it out so the baseline below is a genuine zero and the
- * assertions are absolute rather than relative to runner noise.
+ * Observe real timer handles through the globals used by the server. Vitest uses
+ * cached timer functions for its task-update throttle; process-wide resource
+ * counts include that unrelated timer, which can rearm between measurements.
+ * Keep real time and require every created handle to be explicitly cleared.
  */
-async function quiesce(): Promise<void> {
-  await sleep(150)
+function observeTimers() {
+  const timeout = vi.spyOn(globalThis, 'setTimeout')
+  const interval = vi.spyOn(globalThis, 'setInterval')
+  const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout')
+  const clearIntervalSpy = vi.spyOn(globalThis, 'clearInterval')
+  return {
+    expectCleared(timeouts: number, intervals: number) {
+      // Exact counts ensure that these assertions actually observe the server's
+      // disposal deadlines and controller-cleanup intervals.
+      expect(timeout).toHaveBeenCalledTimes(timeouts)
+      expect(interval).toHaveBeenCalledTimes(intervals)
+      for (const result of timeout.mock.results) {
+        expect(result.type).toBe('return')
+        expect(clearTimeoutSpy).toHaveBeenCalledWith(result.value)
+      }
+      for (const result of interval.mock.results) {
+        expect(result.type).toBe('return')
+        expect(clearIntervalSpy).toHaveBeenCalledWith(result.value)
+      }
+    },
+    restore() {
+      timeout.mockRestore()
+      interval.mockRestore()
+      clearTimeoutSpy.mockRestore()
+      clearIntervalSpy.mockRestore()
+    },
+  }
 }
 
 describe('a transport whose dispose() never settles cannot hang the server', () => {
@@ -167,63 +189,62 @@ describe('no cleanup timer outlives the disposal that armed it', () => {
   // `activeTransportsCount` already reports the server fully clean.
   test('a client hang-up leaves no armed timer behind', async () => {
     const Clients = 5
+    const timers = observeTimers()
     const server = new Server<Protocol>({
       handlers: { test: vi.fn() } as unknown as ProcedureHandlers<Protocol>,
       protocol,
       requireAuth: false,
-      // Long on purpose: a leaked timer must still be armed when we count.
       limits: { cleanupTimeoutMs: 30_000 },
     })
-
-    await quiesce()
-    const baseline = countTimers()
-    expect(baseline).toBe(0)
-
     const all: Array<DirectTransports<AnyServerMessageOf<Protocol>, AnyClientMessageOf<Protocol>>> =
       []
-    for (let i = 0; i < Clients; i++) {
-      const transports = new DirectTransports<
-        AnyServerMessageOf<Protocol>,
-        AnyClientMessageOf<Protocol>
-      >()
-      all.push(transports)
-      server.handle(transports.server)
-      await transports.client.write(
-        createUnsignedToken({
-          payload: {
-            typ: 'event',
-            prc: 'test',
-            data: {},
-          },
-        }) as AnyClientMessageOf<Protocol>,
-      )
-    }
-    expect(server.activeTransportsCount).toBe(Clients)
+    const handling: Array<Promise<void>> = []
+    try {
+      for (let i = 0; i < Clients; i++) {
+        const transports = new DirectTransports<
+          AnyServerMessageOf<Protocol>,
+          AnyClientMessageOf<Protocol>
+        >()
+        all.push(transports)
+        handling.push(server.handle(transports.server))
+        await transports.client.write(
+          createUnsignedToken({
+            payload: {
+              typ: 'event',
+              prc: 'test',
+              data: {},
+            },
+          }) as AnyClientMessageOf<Protocol>,
+        )
+      }
+      expect(server.activeTransportsCount).toBe(Clients)
 
-    // Every client hangs up cleanly: the `next.done` route in `handleNext`.
-    for (const transports of all) {
-      await transports.client.dispose()
-    }
-    await sleep(100)
+      // Every client hangs up cleanly: the `next.done` route in `handleNext`.
+      for (const transports of all) {
+        await transports.client.dispose()
+      }
+      await Promise.all(handling)
 
-    // Teardown reports fully clean...
-    expect(server.activeTransportsCount).toBe(0)
-    // ...so nothing may still be holding the event loop. Pre-fix: 5 -- one live
-    // 30s timer per disconnect, orphaned by the uncancelled `Promise.race` loser.
-    expect(countTimers()).toBe(baseline)
-
-    await server.dispose()
-    for (const transports of all) {
-      await transports.dispose()
+      expect(server.activeTransportsCount).toBe(0)
+      // One disposal deadline and one controller interval per connection, all
+      // cleared. This catches an orphaned Promise.race loser even if unref'd.
+      timers.expectCleared(Clients, Clients)
+    } finally {
+      try {
+        await server.dispose()
+        for (const transports of all) {
+          await transports.dispose()
+        }
+      } finally {
+        timers.restore()
+      }
     }
   })
 
-  // CRITICAL. Same bug, other site: `Server.dispose()` arms its own
-  // `cleanupTimeoutMs` timer for the graceful race. The graceful path wins in the
-  // normal case, so that timer is left armed and holds the process open for
-  // `cleanupTimeoutMs` AFTER `dispose()` has already resolved. Bisected as an
-  // INDEPENDENT hold from the one above -- both must be cleared.
+  // Server.dispose() also arms a graceful-shutdown deadline. Both it and the
+  // transport disposal deadline must be cleared when the graceful path wins.
   test('Server.dispose() leaves no armed timer behind', async () => {
+    const timers = observeTimers()
     const transports = new DirectTransports<
       AnyServerMessageOf<Protocol>,
       AnyClientMessageOf<Protocol>
@@ -235,21 +256,19 @@ describe('no cleanup timer outlives the disposal that armed it', () => {
       transport: transports.server,
       limits: { cleanupTimeoutMs: 30_000 },
     })
+    try {
+      await server.dispose()
 
-    await quiesce()
-    // Includes exactly one timer belonging to this server: the handled
-    // transport's controller-cleanup interval, which its disposer clears.
-    const baseline = countTimers()
-
-    await server.dispose()
-    await sleep(50)
-
-    // So disposal must NET OUT one timer, having armed nothing that outlives it.
-    // Pre-fix it nets out zero: the interval goes, but the graceful race leaves
-    // its 30s timer armed in the interval's place.
-    expect(countTimers()).toBe(baseline - 1)
-
-    await transports.dispose()
+      expect(server.activeTransportsCount).toBe(0)
+      timers.expectCleared(2, 1)
+    } finally {
+      try {
+        await server.dispose()
+        await transports.dispose()
+      } finally {
+        timers.restore()
+      }
+    }
   })
 })
 
