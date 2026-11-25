@@ -1,12 +1,14 @@
 import type { ProtocolDefinition } from '@enkaku/protocol'
 import { expectTypeOf, test } from 'vitest'
 
-import type {
-  ChannelDefinitionsType,
+import {
+  type AnyRequestArguments,
+  type ChannelDefinitionsType,
   Client,
-  EventDefinitionsType,
-  RequestDefinitionsType,
-  StreamDefinitionsType,
+  type EventDefinitionsType,
+  type RequestCall,
+  type RequestDefinitionsType,
+  type StreamDefinitionsType,
 } from '../src/index.js'
 
 type Literal = {
@@ -63,6 +65,17 @@ function literalCalls(client: Client<Literal>) {
   void channel.send(1)
 }
 void literalCalls
+
+// A wrapper installed over every client forwards any request without casts.
+const request = Client.prototype.request
+const wrapped: typeof request = function (
+  this: Client<ProtocolDefinition>,
+  procedure: string,
+  ...args: AnyRequestArguments
+): RequestCall<unknown> {
+  return request.call(this, procedure, ...args)
+}
+void wrapped
 
 test('literal protocols keep one definition kind per procedure', () => {
   expectTypeOf<keyof EventDefinitionsType<Literal>>().toEqualTypeOf<'notify'>()
