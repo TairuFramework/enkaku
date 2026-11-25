@@ -66,42 +66,52 @@ export type ChannelCall<Receive, Send, Result> = StreamCall<Receive, Result> & {
   writable: WritableStream<Send>
 }
 
+// Each `*DefinitionOf` helper is a distributive conditional over one procedure
+// definition. A literal protocol maps each name to its own shape; an open
+// runtime protocol (`ProtocolDefinition`) maps its index signature over the union
+// of definition kinds, so every kind's calls stay available with wide data types.
+type EventDefinitionOf<Definition> = Definition extends EventProcedureDefinition
+  ? { Data: DataOf<Definition['data']> }
+  : never
+
+type RequestDefinitionOf<Definition> = Definition extends RequestProcedureDefinition
+  ? {
+      Param: DataOf<Definition['param']>
+      Result: ReturnOf<Definition['result']>
+    }
+  : never
+
+type StreamDefinitionOf<Definition> = Definition extends StreamProcedureDefinition
+  ? {
+      Param: Definition['param'] extends undefined ? never : DataOf<Definition['param']>
+      Receive: DataOf<Definition['receive']>
+      Result: ReturnOf<Definition['result']>
+    }
+  : never
+
+type ChannelDefinitionOf<Definition> = Definition extends ChannelProcedureDefinition
+  ? {
+      Param: DataOf<Definition['param']>
+      Receive: DataOf<Definition['receive']>
+      Result: ReturnOf<Definition['result']>
+      Send: DataOf<Definition['send']>
+    }
+  : never
+
 export type EventDefinitionsType<Protocol extends ProtocolDefinition> = FilterNever<{
-  [Procedure in keyof Protocol & string]: Protocol[Procedure] extends EventProcedureDefinition
-    ? { Data: DataOf<Protocol[Procedure]['data']> }
-    : never
+  [Procedure in keyof Protocol & string]: EventDefinitionOf<Protocol[Procedure]>
 }>
 
 export type RequestDefinitionsType<Protocol extends ProtocolDefinition> = FilterNever<{
-  [Procedure in keyof Protocol & string]: Protocol[Procedure] extends RequestProcedureDefinition
-    ? {
-        Param: DataOf<Protocol[Procedure]['param']>
-        Result: ReturnOf<Protocol[Procedure]['result']>
-      }
-    : never
+  [Procedure in keyof Protocol & string]: RequestDefinitionOf<Protocol[Procedure]>
 }>
 
 export type StreamDefinitionsType<Protocol extends ProtocolDefinition> = FilterNever<{
-  [Procedure in keyof Protocol & string]: Protocol[Procedure] extends StreamProcedureDefinition
-    ? {
-        Param: Protocol[Procedure]['param'] extends undefined
-          ? never
-          : DataOf<Protocol[Procedure]['param']>
-        Receive: DataOf<Protocol[Procedure]['receive']>
-        Result: ReturnOf<Protocol[Procedure]['result']>
-      }
-    : never
+  [Procedure in keyof Protocol & string]: StreamDefinitionOf<Protocol[Procedure]>
 }>
 
 export type ChannelDefinitionsType<Protocol extends ProtocolDefinition> = FilterNever<{
-  [Procedure in keyof Protocol & string]: Protocol[Procedure] extends ChannelProcedureDefinition
-    ? {
-        Param: DataOf<Protocol[Procedure]['param']>
-        Receive: DataOf<Protocol[Procedure]['receive']>
-        Result: ReturnOf<Protocol[Procedure]['result']>
-        Send: DataOf<Protocol[Procedure]['send']>
-      }
-    : never
+  [Procedure in keyof Protocol & string]: ChannelDefinitionOf<Protocol[Procedure]>
 }>
 
 export type ClientDefinitionsType<Protocol extends ProtocolDefinition> = {
