@@ -1,5 +1,11 @@
 # @enkaku/server
 
+## 0.23.4
+
+### Patch Changes
+
+- Preserve usable data, handler and context types for runtime protocol definitions. Keep literal schema inference and result checking strict.
+
 ## 0.23.3
 
 ### Patch Changes

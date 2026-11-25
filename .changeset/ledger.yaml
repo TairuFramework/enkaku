@@ -126,6 +126,10 @@
   dir: packages/protocol
   intents:
     - event-without-data-schema
+"@enkaku/protocol@0.23.4":
+  dir: packages/protocol
+  intents:
+    - dynamic-protocol-types
 "@enkaku/react@0.21.0":
   dir: packages/react
   intents:
@@ -184,6 +188,10 @@
   intents:
     - channel-send-procedure-check
     - redact-procedure-payloads
+"@enkaku/server@0.23.4":
+  dir: packages/server
+  intents:
+    - dynamic-protocol-types
 "@enkaku/socket@0.21.0":
   dir: packages/socket
   intents:
